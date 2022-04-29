@@ -14,7 +14,7 @@ def test_create_compose():
 
 def test_fetch_empty_logs():
     compose = create_docker_compose()
-    stdout, stderr = compose.get_logs()
+    stdout, stderr = compose.logs()
     assert stderr == ""
     assert stdout != ""
 

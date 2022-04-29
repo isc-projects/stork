@@ -131,7 +131,7 @@ def finish(request):
 
         # Collect logs
         compose = create_docker_compose()
-        stdout, stderr = compose.get_logs()
+        stdout, stderr = compose.logs()
 
         # prepare test directory for logs, etc
         tests_dir = Path('test-results')

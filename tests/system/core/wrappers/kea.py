@@ -20,7 +20,7 @@ class Kea(Agent):
         self._restart_supervisor_service('stork-agent')
 
     def has_failed_TLS_handshake_log_entry(self):
-        stdout, _ = self._compose.get_logs(self._service_name)
+        stdout, _ = self._compose.logs(self._service_name)
         return "HTTP_CONNECTION_HANDSHAKE_FAILED" in stdout
 
     def get_ip_address(self, subnet_name: str):

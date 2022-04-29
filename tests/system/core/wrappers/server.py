@@ -248,7 +248,7 @@ class Server(ComposeServiceWrapper):
 
         @wait_for_success()
         def worker():
-            stdout, _ = self._compose.get_logs(self._service_name)
+            stdout, _ = self._compose.logs(self._service_name)
             for log_entry in split_log_messages(stdout):
                 if not log_entry.is_service(self._service_name):
                     continue

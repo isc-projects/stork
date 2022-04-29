@@ -10,25 +10,25 @@ class ComposeServiceWrapper:
 
     def _restart_supervisor_service(self, name: str):
         cmd = ["supervisorctl", "restart", name]
-        self._compose.exec_in_container(self._service_name, cmd)
+        self._compose.exec(self._service_name, cmd)
         self._compose.wait_for_operational(self._service_name)
 
     def _read_file(self, path: str):
         cmd = ["cat", path]
-        _, stdout, _ = self._compose.exec_in_container(
+        _, stdout, _ = self._compose.exec(
             self._service_name, cmd)
         return stdout
 
     def _hash_file(self, path: str):
         cmd = ["sha1sum", path]
-        _, stdout, _ = self._compose.exec_in_container(self._service_name, cmd)
+        _, stdout, _ = self._compose.exec(self._service_name, cmd)
         return stdout.split()[0]
 
     def is_operational(self):
         return self._compose.is_operational(self._service_name)
 
     def search_for_logs(self, condition: Callable[[GoLogEntry], bool]):
-        logs, _ = self._compose.get_logs(self._service_name)
+        logs, _ = self._compose.logs(self._service_name)
         for entry in split_log_messages(logs):
             go_entry = entry.as_go()
             if condition(go_entry):

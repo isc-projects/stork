@@ -17,7 +17,7 @@ class Agent(ComposeServiceWrapper):
     def is_registered(self):
         if self._server_service is None:
             return False
-        stdout, _ = self._compose.get_logs()
+        stdout, _ = self._compose.logs()
         return "machine registered" in stdout
 
     @wait_for_success()

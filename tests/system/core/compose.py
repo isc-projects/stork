@@ -255,29 +255,27 @@ class DockerCompose(object):
             *args]
         return self._call_command(cmd=run_cmd, check=check)
 
-    def get_logs(self, service_name: str = None):
+    def logs(self, *service_names: str):
         """
         Returns all log output from stdout and stderr
 
         Parameters
         ----------
-        service_name: str
-            Name of the service. If None then all logs are fetched.
+        service_names: str
+            Names of the service. If empty then all logs are fetched.
 
         Returns
         -------
         tuple[bytes, bytes]
             stdout, stderr
         """
-        opts = ["logs", "--no-color", "-t"]
-        if service_name is not None:
-            opts.append(service_name)
+        opts = ["logs", "--no-color", "-t", *service_names]
 
         logs_cmd = self.docker_compose_command() + opts
-        _, stdout, stderr = self._call_command(logs_cmd)
+        _, stdout, stderr = self._call_command(cmd=logs_cmd)
         return stdout, stderr
 
-    def exec_in_container(self, service_name, command, check=True):
+    def exec(self, service_name, command, check=True):
         """
         Executes a command in the container of one of the services.
 
@@ -296,80 +294,9 @@ class DockerCompose(object):
         exec_cmd = self.docker_compose_command(
         ) + ['exec', '-T', service_name] + command
         return self._call_command(
-            exec_cmd,
+            cmd=exec_cmd,
             check=check
         )
-
-    def get_service_ip_address(self, service_name, network_name):
-        """
-        Returns the assigned IP address for one of the services.
-
-        Parameters
-        ----------
-        service_name: str
-            Name of the docker compose service
-        network_name: str
-            Name of the network
-
-        Returns
-        -------
-        str:
-            The IP address for the service in a given network
-        """
-        prefixed_network_name = "%s_%s" % (self._project_name, network_name)
-        return self.inspect(service_name,
-                            ".NetworkSettings.Networks.%s.IPAddress"
-                            % prefixed_network_name)[0]
-
-    def get_service_mapped_host_and_port(self, service_name, port):
-        """
-        Returns the mapped host and the mapped port for one of the services.
-
-        Parameters
-        ----------
-        service_name: str
-            Name of the docker compose service
-        port: int
-            The internal port to get the host for
-
-        Returns
-        -------
-        tuple[str, str]:
-            The hostname and port for the service
-        """
-        port_cmd = self.docker_compose_command() + ["port", service_name,
-                                                    str(port)]
-        _, stdout, _ = self._call_command(port_cmd)
-        result = stdout.split(":")
-        if len(result) == 1:
-            raise NoSuchPortExposed("Port {} was not exposed for service {}"
-                                    .format(port, service_name))
-        return result
-
-    def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
-        env = os.environ.copy()
-        if self._env_vars is not None:
-            env.update(self._env_vars)
-        if env_vars is not None:
-            env.update(env_vars)
-        env["PWD"] = self._project_directory
-
-        result = subprocess.run(cmd, check=check, cwd=self._project_directory,
-                                capture_output=capture_output, env=env)
-        stdout = result.stdout
-        stderr = result.stderr
-        if capture_output:
-            stdout = stdout.decode("utf-8").rstrip()
-            stderr = stderr.decode("utf-8").rstrip()
-            return result.returncode, stdout, stderr
-        return result.returncode, None, None
-
-    def get_container_id(self, service_name):
-        cmd = self.docker_compose_command() + ["ps", "-q", service_name]
-        _, container_id, _ = self._call_command(cmd)
-        if container_id == "":
-            return None
-        return container_id
 
     def inspect(self, service_name, *properties: str) -> list[str]:
         """
@@ -398,11 +325,81 @@ class DockerCompose(object):
         format = _construct_inspect_format(properties)
 
         cmd = ["docker", "inspect", "--format", format, container_id]
-        _, stdout, _ = self._call_command(cmd)
+        _, stdout, _ = self._call_command(cmd=cmd)
 
         # Split the values and parse none's.
         return [i if i != _INSPECT_NONE_MARK else None
                 for i in stdout.split(_INSPECT_DELIMITER)]
+
+    def port(self, service_name, port):
+        """
+        Returns the mapped host and the mapped port for one of the services.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the docker compose service
+        port: int
+            The internal port to get the host for
+
+        Returns
+        -------
+        tuple[str, str]:
+            The hostname and port for the service
+        """
+        port_cmd = self.docker_compose_command() + ["port", service_name,
+                                                    str(port)]
+        _, stdout, _ = self._call_command(cmd=port_cmd)
+        result = stdout.split(":")
+        if len(result) == 1:
+            raise NoSuchPortExposed("Port {} was not exposed for service {}"
+                                    .format(port, service_name))
+        return result
+
+    def get_service_ip_address(self, service_name, network_name):
+        """
+        Returns the assigned IP address for one of the services.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the docker compose service
+        network_name: str
+            Name of the network
+
+        Returns
+        -------
+        str:
+            The IP address for the service in a given network
+        """
+        prefixed_network_name = "%s_%s" % (self._project_name, network_name)
+        return self.inspect(service_name,
+                            ".NetworkSettings.Networks.%s.IPAddress"
+                            % prefixed_network_name)[0]
+
+    def get_container_id(self, service_name):
+        """
+        Return a container ID assigned with a given service
+
+        Parameters
+        ----------
+        service_name : str
+            Name of the docker-compose service
+
+        Returns
+        -------
+        str
+            Container ID or None if any container doesn't exist
+
+        Notes
+        -----
+        It doesn't support scaling.
+        """
+        cmd = self.docker_compose_command() + ["ps", "-q", service_name]
+        _, container_id, _ = self._call_command(cmd=cmd)
+        if container_id == "":
+            return None
+        return container_id
 
     def get_service_status(self, service_name):
         """
@@ -458,3 +455,21 @@ class DockerCompose(object):
             if health == "unhealthy":
                 # break
                 raise ContainerUnhealthyException(health)
+
+    def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
+        env = os.environ.copy()
+        if self._env_vars is not None:
+            env.update(self._env_vars)
+        if env_vars is not None:
+            env.update(env_vars)
+        env["PWD"] = self._project_directory
+
+        result = subprocess.run(cmd, check=check, cwd=self._project_directory,
+                                capture_output=capture_output, env=env)
+        stdout = result.stdout
+        stderr = result.stderr
+        if capture_output:
+            stdout = stdout.decode("utf-8").rstrip()
+            stderr = stderr.decode("utf-8").rstrip()
+            return result.returncode, stdout, stderr
+        return result.returncode, None, None
