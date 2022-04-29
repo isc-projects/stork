@@ -58,7 +58,7 @@ def test_wait_for_success_with_retries():
     # Arrange
     call_count = 0
 
-    @wait_for_success(max_tries=5, sleep_time=0)
+    @wait_for_success(max_tries=5, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -107,7 +107,7 @@ def test_wait_for_success_with_retries_use_custom_expected_exception():
     # Arrange
     call_count = 0
 
-    @wait_for_success(LookupError, max_tries=5, sleep_time=0)
+    @wait_for_success(LookupError, max_tries=5, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -129,7 +129,7 @@ def test_wait_for_no_success_use_unexpected_exception():
     # Arrange
     call_count = 0
 
-    @wait_for_success(max_tries=5, sleep_time=0)
+    @wait_for_success(max_tries=5, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -152,7 +152,7 @@ def test_wait_for_no_success_with_retries():
     # Arrange
     call_count = 0
 
-    @wait_for_success(max_tries=5, sleep_time=0)
+    @wait_for_success(max_tries=5, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -175,7 +175,7 @@ def test_wait_for_no_success_with_retries_use_custom_expected_exception():
     # Arrange
     call_count = 0
 
-    @wait_for_success(LookupError, max_tries=5, sleep_time=0)
+    @wait_for_success(LookupError, max_tries=5, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
