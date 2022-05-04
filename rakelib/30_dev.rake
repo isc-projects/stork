@@ -456,7 +456,7 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the development'
     task :dev do
-        check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip", "entr",
-            "gem", "createdb", "psql", "dropdb", ENV['CHROME_BIN'])
+        check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr",
+            "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "gem")
     end
 end

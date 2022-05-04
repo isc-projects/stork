@@ -247,6 +247,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the build'
     task :build do
-        check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+        check_deps(__FILE__, "wget", "python3", "java", "unzip")
     end
 end
