@@ -183,7 +183,7 @@ class DockerCompose(object):
         list[str]
             The docker compose command parts
         """
-        docker_compose_cmd = ['docker-compose', '--no-ansi',
+        docker_compose_cmd = ['docker-compose', '--ansi', 'never',
                               "--project-directory", self._project_directory,
                               "--project-name", self._project_name]
         for file in self._compose_file_names:
