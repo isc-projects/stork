@@ -47,7 +47,7 @@ class Perfdhcp:
         """
         Generates the parameters set for perfdhcp. See perfdhcp documentation
         for details.
-        Warning! Perfdhcp is a little buggy. List of notices issues:
+        Warning! Perfdhcp is a little buggy. List of noticed issues:
             - duid value isn't recognized by the Kea class selector.
         """
 

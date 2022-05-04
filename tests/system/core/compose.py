@@ -428,7 +428,8 @@ class DockerCompose(object):
             return False
         return status == "running" and (health is None or health == "healthy")
 
-    @wait_for_success(ContainerNotRunningException)
+    @wait_for_success(ContainerNotRunningException,
+                      wait_msg="Waiting to be operational...")
     def wait_for_operational(self, service_name):
         """
         Waits for the running and healthy (if the HEALTHCHECK is specified)

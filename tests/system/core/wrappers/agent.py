@@ -40,7 +40,7 @@ class Agent(ComposeServiceWrapper):
         stdout, _ = self._compose.logs()
         return "machine registered" in stdout
 
-    @wait_for_success()
+    @wait_for_success(wait_msg="Waiting to be registered...")
     def wait_for_registration(self):
         """Block the execution until registration passes."""
         if not self.is_registered():
