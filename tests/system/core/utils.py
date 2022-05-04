@@ -3,7 +3,7 @@ import functools
 import logging
 import time
 import traceback
-from typing import Any, Callable, Hashable
+from typing import Any, Callable, Dict, Hashable
 
 
 def setup_logger(name):
@@ -32,7 +32,7 @@ def memoize(func: Callable):
     -----
     Source: https://stackoverflow.com/a/815160
     """
-    memo: dict[Hashable, Any] = {}
+    memo: Dict[Hashable, Any] = {}
 
     def wrapper(*args):
         if args in memo:

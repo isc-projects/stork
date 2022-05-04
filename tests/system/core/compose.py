@@ -299,7 +299,7 @@ class DockerCompose(object):
             check=check
         )
 
-    def inspect(self, service_name, *properties: str) -> list[str]:
+    def inspect(self, service_name, *properties: str) -> List[str]:
         """
         Returns the low-level information on Docker containers.
 
