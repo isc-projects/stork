@@ -322,17 +322,14 @@ end
 
 
 namespace :db do
-    desc 'Migrate (and create) database to the newest version
+    desc 'Setup the database environment variables
         DB_NAME - database name - default: env:POSTGRES_DB or storktest
         DB_HOST - database host - default: env:POSTGRES_ADDR or localhost
         DB_PORT - database port - default: 5432
         DB_USER - database user - default: env:POSTGRES_USER or storktest
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
-        DB_TRACE - trace SQL queries - default: false
-        DB_MAINTENANCE_NAME - maintanance DB name used to create the provided DB - default: postgres
-        SUPPRESS_DB_MAINTENANCE - dont run creation DB operation - default: false
-    '
-    task :migrate => [TOOL_BINARY_FILE] do
+        DB_TRACE - trace SQL queries - default: false'
+    task :setup_envvars do
         dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
         dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
         dbport = ENV["DB_PORT"] || "5432"
@@ -356,7 +353,13 @@ namespace :db do
         end
         
         ENV['PGPASSWORD'] = dbpass
-        
+    end
+
+    desc 'Migrate (and create) database to the newest version
+        DB_MAINTENANCE_NAME - maintanance DB name used to create the provided DB - default: postgres
+        SUPPRESS_DB_MAINTENANCE - dont run creation DB operation - default: false
+        See db:setup_envvars task for more options.'
+    task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
             stdout, stderr, status = Open3.capture3 "psql",
                 "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
@@ -388,30 +391,13 @@ namespace :db do
     end
 
     desc "Remove remaing test databases and users
-        DB_NAME - database name - default: env:POSTGRES_DB or storktest
-        DB_HOST - database host - default: env:POSTGRES_ADDR or localhost
-        DB_PORT - database port - default: 5432
-        DB_USER - database user - default: env:POSTGRES_USER or storktest
-        DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
-        SUPPRESS_DB_MAINTENANCE - dont run this stage (no removing) - default: false"
-    task :remove_remaining do
+        SUPPRESS_DB_MAINTENANCE - dont run this stage (no removing) - default: false
+        See db:setup_envvars task for more options."
+    task :remove_remaining => [:setup_envvars] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] == "true"
             puts "DB maintenance suppressed (removing)"
             next
         end
-
-        dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-        dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
-        dbport = ENV["DB_PORT"] || "5432"
-        dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
-        dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
-        dbmaintenance = ENV["DB_MAINTENANCE"] || "postgres"
-
-        if dbhost.include? ':'
-            dbhost, dbport = dbhost.split(':')
-        end
-
-        ENV['PGPASSWORD'] = dbpass
 
         psql_access_opts = [
             "-h", dbhost,

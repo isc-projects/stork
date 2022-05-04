@@ -217,7 +217,7 @@ end
 namespace :run do
     desc 'Run local server with Docker database
     DB_TRACE - trace SQL queries - default: false'
-    task :server => [:pre_docker_db] do |t|
+    task :server_db => [:pre_docker_db] do |t|
         Rake::MultiTask.new(:stub, t.application)
         .enhance([:server, "demo:up:postgres"])
         .invoke()
