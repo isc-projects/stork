@@ -198,12 +198,9 @@ system_testing:
   allow_failure: true
   rules:
     - when: on_success
-  image: stork-tests-ubuntu-20.04-x86_64
   tags:
     - libvirt
     - amd64
-  needs:
-    - debs_and_rpms
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
