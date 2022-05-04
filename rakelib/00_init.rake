@@ -516,7 +516,7 @@ end
 
 PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
-    sh PYTHON, "-m", "ensurepip", "--default-pip"
+    sh PYTHON, "-m", "ensurepip", "-U", "--default-pip"
 end
 
 SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
