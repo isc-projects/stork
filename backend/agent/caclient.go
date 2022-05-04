@@ -83,7 +83,7 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with creating POST request to %s", url)
+		err = errors.Wrapf(err, "problem creating POST request to %s", url)
 
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, er
 
 	rsp, err := c.client.Do(req)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with sending POST to %s", url)
+		err = errors.Wrapf(err, "problem sending POST to %s", url)
 	}
 	return rsp, err
 }

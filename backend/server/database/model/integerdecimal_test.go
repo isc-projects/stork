@@ -22,7 +22,7 @@ func TestConstructIntegerDecimal(t *testing.T) {
 	require.EqualValues(t, big.NewInt(0), &zeroIntegerDecimal.Int)
 }
 
-// Test that the zero big interger is serialized to bytes.
+// Test that the zero big integer is serialized to bytes.
 func TestAppendValueBigIntZero(t *testing.T) {
 	// Arrange
 	integerDecimal := newIntegerDecimalZero()
@@ -35,7 +35,7 @@ func TestAppendValueBigIntZero(t *testing.T) {
 	require.EqualValues(t, []byte("0"), bytes)
 }
 
-// Test that the zero big interger is serialized to bytes with quotes.
+// Test that the zero big integer is serialized to bytes with quotes.
 func TestAppendValueBigIntZeroWithQuotes(t *testing.T) {
 	// Arrange
 	integerDecimal := newIntegerDecimalZero()
@@ -48,7 +48,7 @@ func TestAppendValueBigIntZeroWithQuotes(t *testing.T) {
 	require.EqualValues(t, []byte(`'0'`), bytes)
 }
 
-// Test that the very big interger is serialized to bytes.
+// Test that the very big integer is serialized to bytes.
 func TestAppendValueVeryBigInt(t *testing.T) {
 	// Arrange
 	str := "1234567801234567801234567890123456789012345678901234567801234567890"
@@ -63,7 +63,7 @@ func TestAppendValueVeryBigInt(t *testing.T) {
 	require.EqualValues(t, []byte(str), bytes)
 }
 
-// Test that the negative big interger is serialized to bytes.
+// Test that the negative big integer is serialized to bytes.
 func TestAppendValueNegativeBigInt(t *testing.T) {
 	// Arrange
 	integerDecimal := newIntegerDecimal(big.NewInt(-1))

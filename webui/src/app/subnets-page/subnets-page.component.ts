@@ -180,7 +180,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     tooltipCount(count) {
         if (count === '?') {
-            return 'not data collected yet'
+            return 'No data collected yet'
         }
         return count.toLocaleString('en-US')
     }

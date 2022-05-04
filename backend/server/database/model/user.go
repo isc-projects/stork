@@ -123,7 +123,7 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	if err == nil {
 		if result.RowsAffected() <= 0 {
 			conflict = true
-			err = pkgerrors.Wrapf(ErrNotExists, "user with id %s does not exist", user.Identity())
+			err = pkgerrors.Wrapf(ErrNotExists, "user with ID %s does not exist", user.Identity())
 			return
 		}
 		// Delete existing associations of the user with groups.
@@ -159,10 +159,10 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 
 	result, err := db.Model(&user).Column("password_hash").WherePK().Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
+		err = pkgerrors.Wrapf(err, "database operation error while trying to set new password for user ID %d",
 			id)
 	} else if result.RowsAffected() == 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "failed to update password for non existing user with id %d", id)
+		err = pkgerrors.Wrapf(ErrNotExists, "failed to update password for non-existent user with ID %d", id)
 	}
 
 	return err
@@ -178,7 +178,7 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
 			oldPassword, id).Exists()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
+		err = pkgerrors.Wrapf(err, "database operation error while trying to change password of user with ID %d", id)
 		return false, err
 	}
 
@@ -255,7 +255,7 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 		if errors.Is(err, pg.ErrNoRows) {
 			return []SystemUser{}, 0, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with fetching a list of users from the database")
+		err = pkgerrors.Wrapf(err, "problem fetching a list of users from the database")
 	}
 
 	return users, int64(total), err
@@ -270,7 +270,7 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with fetching user %v from the database", id)
+		return nil, pkgerrors.Wrapf(err, "problem fetching user %v from the database", id)
 	}
 	return user, err
 }
@@ -285,7 +285,7 @@ func (user *SystemUser) AddToGroupByID(db *dbops.PgDB, group *SystemGroup) (adde
 
 		return res.RowsAffected() > 0, err
 	}
-	err = pkgerrors.Errorf("unable to add user to the unknown group")
+	err = pkgerrors.Errorf("unable to add user to an unknown group")
 	return false, err
 }
 

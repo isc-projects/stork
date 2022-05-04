@@ -52,7 +52,7 @@ func Toss(db *PgDB) error {
 func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error) {
 	if len(args) > 0 && args[0] == "up" && !Initialized(db) {
 		if oldVersion, newVersion, err = migrations.Run(db, "init"); err != nil {
-			return oldVersion, newVersion, errors.Wrapf(err, "problem with initiating database")
+			return oldVersion, newVersion, errors.Wrapf(err, "problem initiating database")
 		}
 	}
 
@@ -63,7 +63,7 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 	if len(args) > 1 && args[0] == "down" {
 		var oldVer int64
 		if oldVer, _, err = migrations.Run(db, "version"); err != nil {
-			return oldVer, oldVer, errors.Wrapf(err, "problem with checking database version")
+			return oldVer, oldVer, errors.Wrapf(err, "problem checking database version")
 		}
 		toVer, err := strconv.ParseInt(args[1], 10, 64)
 		if err != nil {
@@ -71,13 +71,13 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 		}
 
 		if toVer >= oldVer {
-			return oldVer, oldVer, errors.New(fmt.Sprintf("Can't migrate down, current version %d, want to migrate to %d", oldVer, toVer))
+			return oldVer, oldVer, errors.New(fmt.Sprintf("can't migrate down, current version %d, want to migrate to %d", oldVer, toVer))
 		}
 		startVer := oldVer
 		var newVer int64 = 0
 		for i := oldVer; i > toVer; i-- {
 			if oldVer, newVer, err = migrations.Run(db, "down"); err != nil {
-				return oldVer, oldVer, errors.Wrapf(err, "problem with checking database version")
+				return oldVer, oldVer, errors.Wrapf(err, "problem checking database version")
 			}
 		}
 		return startVer, newVer, nil
@@ -85,7 +85,7 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 
 	oldVersion, newVersion, err = migrations.Run(db, args...)
 	if err != nil {
-		return oldVersion, newVersion, errors.Wrapf(err, "problem with migrating database")
+		return oldVersion, newVersion, errors.Wrapf(err, "problem migrating database")
 	}
 	return oldVersion, newVersion, nil
 }
@@ -121,7 +121,7 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	if force {
 		// Drop an existing database if it exists.
 		if _, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
-			err = errors.Wrapf(err, `problem with dropping the database "%s"`, dbName)
+			err = errors.Wrapf(err, `problem dropping the database "%s"`, dbName)
 			return
 		}
 	}
@@ -129,7 +129,7 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	// be done in a transaction.
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
 	if err != nil {
-		err = errors.Wrapf(err, `problem with creating the database "%s"`, dbName)
+		err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
 		return
 	}
 
@@ -138,24 +138,24 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 		if force {
 			// Drop an existing user if it exists.
 			if _, err = tx.Exec(fmt.Sprintf("DROP USER IF EXISTS %s;", userName)); err != nil {
-				err = errors.Wrapf(err, `problem with dropping the user "%s"`, userName)
+				err = errors.Wrapf(err, `problem dropping the user "%s"`, userName)
 				return
 			}
 		}
 		// Re-create the user.
 		if _, err = tx.Exec(fmt.Sprintf("CREATE USER %s;", userName)); err != nil {
-			err = errors.Wrapf(err, `problem with creating the user "%s"`, userName)
+			err = errors.Wrapf(err, `problem creating the user "%s"`, userName)
 			return
 		}
 		// Grant the user full control over the database.
 		if _, err = tx.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s;", dbName, userName)); err != nil {
-			err = errors.Wrapf(err, `problem with granting privileges on database "%s" to user "%s"`, dbName, userName)
+			err = errors.Wrapf(err, `problem granting privileges on database "%s" to user "%s"`, dbName, userName)
 			return
 		}
 		// If the password has been generated assign it to the user.
 		if password != "" {
 			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, password)); err != nil {
-				err = errors.Wrapf(err, `problem with setting generated password for user "%s"`, userName)
+				err = errors.Wrapf(err, `problem setting generated password for user "%s"`, userName)
 				return
 			}
 		}
@@ -167,7 +167,7 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 // Creates a database extension if it does not exist yet.
 func CreateExtension(db *PgDB, extension string) (err error) {
 	if _, err = db.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extension)); err != nil {
-		err = errors.Wrapf(err, `problem with creating database extension "%s"`, extension)
+		err = errors.Wrapf(err, `problem creating database extension "%s"`, extension)
 	}
 	return
 }

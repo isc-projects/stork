@@ -114,7 +114,7 @@ func addDaemonToService(tx *pg.Tx, serviceID int64, daemon *Daemon) error {
 	service.Daemons = append(service.Daemons, daemon)
 	err := addServiceDaemons(tx, service)
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating a daemon having id %d with service %d",
+		err = pkgerrors.Wrapf(err, "problem associating the daemon with ID %d with service %d",
 			daemon.ID, serviceID)
 	}
 	return err
@@ -142,7 +142,7 @@ func DeleteDaemonFromService(dbi dbops.DBI, serviceID, daemonID int64) (bool, er
 	}
 	rows, err := dbi.Model(as).WherePK().Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
+		err = pkgerrors.Wrapf(err, "problem deleting the daemon with ID %d from the service %d",
 			daemonID, serviceID)
 		return false, err
 	}
@@ -155,14 +155,14 @@ func addService(tx *pg.Tx, service *Service) error {
 	// Insert generic information into the service table.
 	_, err := tx.Model(service).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with adding new service")
+		err = pkgerrors.Wrapf(err, "Problem adding new service")
 		return err
 	}
 
 	// Add associations of the daemons with the service.
 	err = addServiceDaemons(tx, &service.BaseService)
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating daemons with a new service")
+		err = pkgerrors.Wrapf(err, "problem associating daemons with a new service")
 		return err
 	}
 
@@ -196,7 +196,7 @@ func AddHAService(dbi dbops.DBI, serviceID int64, haService *BaseHAService) erro
 	haService.ServiceID = serviceID
 	_, err := dbi.Model(haService).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with adding new HA service to the database")
+		err = pkgerrors.Wrapf(err, "problem adding new HA service to the database")
 	}
 	return err
 }
@@ -206,9 +206,9 @@ func AddHAService(dbi dbops.DBI, serviceID int64, haService *BaseHAService) erro
 func UpdateBaseService(dbi dbops.DBI, service *BaseService) error {
 	result, err := dbi.Model(service).WherePK().Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating base service with id %d", service.ID)
+		err = pkgerrors.Wrapf(err, "problem updating base service with ID %d", service.ID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ID)
+		err = pkgerrors.Wrapf(ErrNotExists, "service with ID %d does not exist", service.ID)
 	}
 	return err
 }
@@ -218,11 +218,11 @@ func UpdateBaseService(dbi dbops.DBI, service *BaseService) error {
 func UpdateBaseHAService(dbi dbops.DBI, service *BaseHAService) error {
 	result, err := dbi.Model(service).WherePK().Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating the HA information for service with id %d",
+		err = pkgerrors.Wrapf(err, "problem updating HA information for service with ID %d",
 			service.ServiceID)
 		return err
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ServiceID)
+		err = pkgerrors.Wrapf(ErrNotExists, "service with ID %d does not exist", service.ServiceID)
 	}
 	return err
 }
@@ -272,7 +272,7 @@ func GetDetailedService(dbi dbops.DBI, serviceID int64) (*Service, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting a service with id %d", serviceID)
+		err = pkgerrors.Wrapf(err, "problem getting the service with ID %d", serviceID)
 		return nil, err
 	}
 	return service, err
@@ -295,7 +295,7 @@ func GetDetailedServicesByAppID(dbi dbops.DBI, appID int64) ([]Service, error) {
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with getting services for app id %d", appID)
+		err = pkgerrors.Wrapf(err, "problem getting services for app ID %d", appID)
 		return services, err
 	}
 
@@ -314,7 +314,7 @@ func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with getting all services")
+		err = pkgerrors.Wrapf(err, "problem getting all services")
 		return services, err
 	}
 	return services, nil
@@ -330,9 +330,9 @@ func DeleteService(dbi dbops.DBI, serviceID int64) error {
 	}
 	result, err := dbi.Model(service).WherePK().Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
+		err = pkgerrors.Wrapf(err, "problem deleting the service having ID %d", serviceID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", serviceID)
+		err = pkgerrors.Wrapf(ErrNotExists, "service with ID %d does not exist", serviceID)
 	}
 	return err
 }
@@ -348,14 +348,14 @@ func commitServicesIntoDB(tx *pg.Tx, services []Service, daemon *Daemon) error {
 			err = UpdateService(tx, &services[i])
 		}
 		if err != nil {
-			err = pkgerrors.WithMessagef(err, "problem with committing services into the database")
+			err = pkgerrors.WithMessagef(err, "problem committing services into the database")
 			return err
 		}
 		// Try to associate the app with the service. If the association already
 		// exists this is no-op.
 		err = AddDaemonToService(tx, services[i].ID, daemon)
 		if err != nil {
-			err = pkgerrors.WithMessagef(err, "problem with associating detected service %d with daemon having id %d",
+			err = pkgerrors.WithMessagef(err, "problem associating detected service %d with daemon of ID %d",
 				services[i].ID, daemon.ID)
 			return err
 		}

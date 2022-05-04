@@ -62,12 +62,12 @@ func (puller *StatePuller) pullData() error {
 		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
-			log.Errorf("error occurred while getting info from machine %d: %s", dbM2.ID, errStr)
+			log.Errorf("Error occurred while getting info from machine %d: %s", dbM2.ID, errStr)
 		} else {
 			okCnt++
 		}
 	}
-	log.Printf("completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
+	log.Printf("Completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
 	return lastErr
 }
 
@@ -94,7 +94,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.Error = m.Error
 	err := dbmodel.UpdateMachine(db, dbMachine)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating machine %+v", dbMachine)
+		return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
 	}
 	return nil
 }
@@ -141,7 +141,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 	oldAppsList, err := dbmodel.GetAppsByMachine(db, dbMachine.ID)
 	if err != nil {
 		log.Error(err)
-		return nil, "cannot get machine's apps from db"
+		return nil, "Cannot get machine's apps from db"
 	}
 
 	// count old apps
@@ -241,11 +241,11 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	state, err := agents.GetState(ctx2, dbMachine.Address, dbMachine.AgentPort)
 	if err != nil {
 		log.Warn(err)
-		dbMachine.Error = "cannot get state of machine"
+		dbMachine.Error = "Cannot get state of machine"
 		err = dbmodel.UpdateMachine(db, dbMachine)
 		if err != nil {
 			log.Error(err)
-			return "problem with updating record in database"
+			return "Problem updating record in database"
 		}
 		return ""
 	}
@@ -254,7 +254,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	err = updateMachineFields(db, dbMachine, state)
 	if err != nil {
 		log.Error(err)
-		return "cannot update machine in db"
+		return "Cannot update machine in db"
 	}
 
 	// take old apps from db and new apps fetched from the machine
@@ -284,8 +284,8 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		}
 
 		if err != nil {
-			log.Errorf("cannot store application state: %+v", err)
-			return "problem with storing application state in the database"
+			log.Errorf("Cannot store application state: %+v", err)
+			return "Problem storing application state in the database"
 		}
 	}
 

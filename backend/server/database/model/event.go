@@ -38,7 +38,7 @@ type Event struct {
 func AddEvent(db *pg.DB, event *Event) error {
 	_, err := db.Model(event).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with inserting event %+v", event)
+		err = pkgerrors.Wrapf(err, "problem inserting event %+v", event)
 	}
 	return err
 }
@@ -92,7 +92,7 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonTy
 		if errors.Is(err, pg.ErrNoRows) {
 			return []Event{}, 0, nil
 		}
-		return nil, 0, pkgerrors.Wrapf(err, "problem with getting events")
+		return nil, 0, pkgerrors.Wrapf(err, "problem getting events")
 	}
 	return events, int64(total), nil
 }

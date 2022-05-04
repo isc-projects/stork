@@ -289,7 +289,7 @@ func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 // identifier, or hostname matching a lease. The server contacts
 // all Kea servers, which may potentially have the lease. If
 // multiple servers have the same lease (e.g. in HA configuration),
-// it returns all that lease instances. The  Kea servers which
+// it returns all those lease instances. The Kea servers that
 // returned an error response are returned in the second value.
 // Such failures do not preclude the function from returning
 // leases found on other servers, but the caller becomes aware
@@ -404,8 +404,8 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 // and DUID empty. Thus, this function sends lease4-get-by-hw-address and
 // lease6-get-by-duid with empty hw-address and empty duid parameters
 // respectively. Next, it removes the leases which are not in the declined
-// state from the result. The  Kea servers which returned an error response
-// are returned in second value. Such failures do not preclude the function
+// state from the result. The Kea servers that returned an error response
+// are returned in the second value. Such failures do not preclude the function
 // from returning leases found on other servers, but the caller becomes
 // aware that some leases may not be included due to the communication
 // errors with some servers. The third returned value indicates a general
@@ -521,7 +521,7 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 	// apps to find leases.
 	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
 	if err != nil {
-		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases for host id %d", hostID)
+		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases for host ID %d", hostID)
 		return leases, conflicts, erredApps, err
 	}
 

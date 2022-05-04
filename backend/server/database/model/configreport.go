@@ -68,14 +68,14 @@ func addConfigReport(tx *pg.Tx, configReport *ConfigReport) error {
 		// The error message is formatted differently depending on whether we
 		// have one or more daemons associated with the config report.
 		if len(configReport.RefDaemons) == 1 {
-			err = pkgerrors.Wrapf(err, "problem with inserting the configuration report for daemon %d",
+			err = pkgerrors.Wrapf(err, "problem inserting the configuration report for daemon %d",
 				configReport.RefDaemons[0].ID)
 		} else {
 			var daemonIds []string
 			for _, d := range configReport.RefDaemons {
 				daemonIds = append(daemonIds, fmt.Sprintf("%d", d.ID))
 			}
-			err = pkgerrors.Wrapf(err, "problem with inserting the configuration report for daemons %s",
+			err = pkgerrors.Wrapf(err, "problem inserting the configuration report for daemons %s",
 				strings.Join(daemonIds, ", "))
 		}
 		return err
@@ -121,7 +121,7 @@ func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64) 
 	total, err := q.SelectAndCount()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with selecting config reports for daemon %d", daemonID)
+		err = pkgerrors.Wrapf(err, "problem selecting config reports for daemon %d", daemonID)
 		return configReports, 0, err
 	}
 	return configReports, int64(total), nil
@@ -134,7 +134,7 @@ func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
 		Delete()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with deleting config reports for daemon %d", daemonID)
+		err = pkgerrors.Wrapf(err, "problem deleting config reports for daemon %d", daemonID)
 	}
 
 	return err

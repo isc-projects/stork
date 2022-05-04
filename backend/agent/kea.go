@@ -64,22 +64,22 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 // DetectAllowedLogs when the agent is started.
 func collectKeaAllowedLogs(response *keactrl.Response) []string {
 	if response.Result > 0 {
-		log.Warn("skipped refreshing viewable log files because config-get returned non success result")
+		log.Warn("Skipped refreshing viewable log files because config-get returned unsuccessful result")
 		return nil
 	}
 	if response.Arguments == nil {
-		log.Warn("skipped refreshing viewable log files because config-get response has no arguments")
+		log.Warn("Skipped refreshing viewable log files because config-get response has no arguments")
 		return nil
 	}
 	cfg := keaconfig.New(response.Arguments)
 	if cfg == nil {
-		log.Warn("skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
+		log.Warn("Skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
 		return nil
 	}
 
 	loggers := cfg.GetLoggers()
 	if len(loggers) == 0 {
-		log.Info("no loggers found in the returned configuration while trying to refresh the viewable log files")
+		log.Info("No loggers found in the returned configuration while trying to refresh the viewable log files")
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// because this response neither contains logging configuration nor
 	// sockets configurations.
 	if responses[0].Result != 0 {
-		return nil, errors.Errorf("non success response %d received from Kea CA to config-get command sent to %s:%d", responses[0].Result, ap.Address, ap.Port)
+		return nil, errors.Errorf("unsuccessful response %d received from Kea CA to config-get command sent to %s:%d", responses[0].Result, ap.Address, ap.Port)
 	}
 
 	// Allow the log files used by the CA.
@@ -178,20 +178,20 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 func getCtrlTargetFromKeaConfig(path string) (address string, port int64, useSecureProtocol bool) {
 	text, err := storkutil.ReadFileWithIncludes(path)
 	if err != nil {
-		log.Warnf("cannot read Kea config file: %+v", err)
+		log.Warnf("Cannot read Kea config file: %+v", err)
 		return
 	}
 
 	config, err := keaconfig.NewFromJSON(text)
 	if err != nil {
-		log.Warnf("cannot parse Kea Control Agent config file: %+v", err)
+		log.Warnf("Cannot parse Kea Control Agent config file: %+v", err)
 		return
 	}
 
 	// Port
 	port, ok := config.GetHTTPPort()
 	if !ok {
-		log.Warn("cannot parse the port")
+		log.Warn("Cannot parse the port")
 		return
 	}
 
@@ -205,7 +205,7 @@ func getCtrlTargetFromKeaConfig(path string) (address string, port int64, useSec
 
 func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 	if len(match) < 3 {
-		log.Warnf("problem with parsing Kea cmdline: %s", match[0])
+		log.Warnf("Problem parsing Kea cmdline: %s", match[0])
 		return nil
 	}
 	keaConfPath := match[2]

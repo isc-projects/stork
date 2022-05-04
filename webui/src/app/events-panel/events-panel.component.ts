@@ -7,8 +7,8 @@ import { AuthService } from '../auth.service'
 import { Subscription } from 'rxjs'
 
 /**
- * A component that presents events list. Each event has its own row.
- * Event's text is rendered by EventTextComponent.
+ * A component that presents the events list. Each event has its own row.
+ * The event's text is rendered by EventTextComponent.
  */
 @Component({
     selector: 'app-events-panel',
@@ -141,7 +141,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      * and users from the server. The users and machines are used to initialize
      * drop down controls which can be used to modify the filtering rules,
      * e.g. select events pertaining to the particular machine. The list of
-     * users is only fetched when the logged in user is a super admin.
+     * users is only fetched when the logged-in user is a super admin.
      */
     ngOnInit(): void {
         // Indicate that the component was initialized and future calls
@@ -254,7 +254,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get events',
-                    detail: 'Getting events erred: ' + msg,
+                    detail: 'Error getting events: ' + msg,
                     life: 10000,
                 })
             })

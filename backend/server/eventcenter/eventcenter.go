@@ -93,7 +93,7 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 				details = s
 			}
 		} else {
-			log.Warnf("unknown object passed to CreateEvent: %v", obj)
+			log.Warnf("Unknown object passed to CreateEvent: %v", obj)
 		}
 	}
 	e := &dbmodel.Event{
@@ -139,7 +139,7 @@ func (ec *eventCenter) mainLoop() {
 		case event := <-ec.events:
 			err := dbmodel.AddEvent(ec.db, event)
 			if err != nil {
-				log.Errorf("problem with adding event to db: %+v", err)
+				log.Errorf("Problem adding event to db: %+v", err)
 				continue
 			}
 			ec.sseBroker.dispatchEvent(event)

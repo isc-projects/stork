@@ -666,7 +666,7 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
-	// Get hosts for the first deamon.
+	// Get hosts for the first daemon.
 	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
@@ -675,7 +675,7 @@ func TestGetHostsByDaemonID(t *testing.T) {
 		(returned[0].ID == hosts[0].ID && returned[1].ID == hosts[1].ID) ||
 			(returned[0].ID == hosts[1].ID && returned[1].ID == hosts[0].ID))
 
-	// Get hosts for the second deamon.
+	// Get hosts for the second daemon.
 	returned, total, err = GetHostsByDaemonID(db, apps[1].Daemons[0].ID, "")
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)

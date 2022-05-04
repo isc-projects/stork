@@ -71,7 +71,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.IsType(t, &services.GetMachineStateDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineStateDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot find machine with ID 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -270,7 +270,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
+	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
 	// empty request, variant 2 - should raise an error
 	params = services.CreateMachineParams{
@@ -280,7 +280,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
+	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
 	// prepare request arguments
 	addr := "1.2.3.4"
@@ -306,7 +306,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot parse address", *defaultRsp.Payload.Message)
 
 	// bad port
 	params = services.CreateMachineParams{
@@ -322,7 +322,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "bad port", *defaultRsp.Payload.Message)
+	require.Equal(t, "Bad port", *defaultRsp.Payload.Message)
 
 	// missing server cert in db so there will be server internal error
 	params = services.CreateMachineParams{
@@ -338,7 +338,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "server internal problem - server token is empty", *defaultRsp.Payload.Message)
+	require.Equal(t, "Server internal problem - server token is empty", *defaultRsp.Payload.Message)
 
 	// add server cert to db
 	caCertPEM1, serverCertPEM1, serverKeyPEM1, err := certs.SetupServerCerts(db)
@@ -371,7 +371,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "provided server token is wrong", *defaultRsp.Payload.Message)
+	require.Equal(t, "Provided server token is wrong", *defaultRsp.Payload.Message)
 
 	// bad agent CSR
 	badAgentCSR := "abc"
@@ -388,7 +388,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "problem with agent CSR", *defaultRsp.Payload.Message)
+	require.Equal(t, "Problem with agent CSR", *defaultRsp.Payload.Message)
 
 	// bad (empty) agent token
 	emptyAgentToken := ""
@@ -405,7 +405,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "agent token cannot be empty", *defaultRsp.Payload.Message)
+	require.Equal(t, "Agent token cannot be empty", *defaultRsp.Payload.Message)
 
 	// all ok
 	params = services.CreateMachineParams{
@@ -607,7 +607,7 @@ func TestGetMachine(t *testing.T) {
 	require.IsType(t, &services.GetMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot find machine with ID 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -679,7 +679,7 @@ func TestUpdateMachine(t *testing.T) {
 	defaultRsp := rsp.(*services.UpdateMachineDefault)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
+	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
 	// empty request, variant 2 - should raise an error
 	params = services.UpdateMachineParams{
@@ -689,7 +689,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
+	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
 	// update non-existing machine
 	addr := "localhost"
@@ -704,7 +704,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot find machine with ID 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -775,7 +775,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "machine with address localhost:8080 already exists", *defaultRsp.Payload.Message)
+	require.Equal(t, "Machine with address localhost:8080 already exists", *defaultRsp.Payload.Message)
 
 	// update second machine with bad address
 	addr = "aaa:"
@@ -790,7 +790,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot parse address", *defaultRsp.Payload.Message)
 }
 
 func TestDeleteMachine(t *testing.T) {
@@ -866,7 +866,7 @@ func TestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot find app with ID 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -920,7 +920,7 @@ func TestRestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot find app with ID 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1810,7 +1810,7 @@ func TestServerToken(t *testing.T) {
 	rsp := rapi.GetMachinesServerToken(ctx2, params)
 	require.IsType(t, &services.GetMachinesServerTokenDefault{}, rsp)
 	errRsp := rsp.(*services.GetMachinesServerTokenDefault)
-	require.EqualValues(t, "server internal problem - server token is empty", *errRsp.Payload.Message)
+	require.EqualValues(t, "Server internal problem - server token is empty", *errRsp.Payload.Message)
 
 	// generate server token
 	serverToken, err := certs.GenerateServerToken(db)

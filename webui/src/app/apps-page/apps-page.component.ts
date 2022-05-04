@@ -83,7 +83,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         if (this.appType === 'bind9') {
             return 'BIND 9 Apps'
         } else {
-            return ' Kea Apps'
+            return 'Kea Apps'
         }
     }
 
@@ -290,8 +290,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Getting app state erred',
-                    detail: 'Getting state of app erred: ' + msg,
+                    summary: 'Error getting app state',
+                    detail: 'Error getting state of app: ' + msg,
                     life: 10000,
                 })
             }

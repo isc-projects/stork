@@ -167,7 +167,7 @@ export class ServerDataService {
                 switchMap((_) => {
                     return this.servicesApi.getDaemonConfig(daemonId).pipe(
                         // use subpipe to not complete source due to error
-                        catchError((err) => of(err)) // in case of error continue with it to prevent to broke pipe
+                        catchError((err) => of(err)) // in case of error continue with it to prevent broken pipe
                     )
                 }),
                 shareReplay(1) // cache the response for all subscribers

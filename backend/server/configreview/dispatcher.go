@@ -150,7 +150,7 @@ func getDispatchGroupSelectors(daemonName string) DispatchGroupSelectors {
 	}
 	log.WithFields(log.Fields{
 		"daemon_name": daemonName,
-	}).Warn("Config review dispatcher was unable to recognize the daemon by name and assign any suitable dispatch groups. Please consult this issue with the ISC Stork Development Team.")
+	}).Warn("Config review dispatcher was unable to recognize the daemon by name and assign any suitable dispatch groups. Please notify the ISC Stork Development Team about this issue.")
 
 	return DispatchGroupSelectors{}
 }
@@ -273,7 +273,7 @@ func (d *dispatcherImpl) awaitReports() {
 				// be inserted into the database.
 				err := d.populateReports(ctx)
 				if err != nil {
-					log.Errorf("problem with populating configuration review reports to the database for daemon %d: %+v",
+					log.Errorf("Problem populating configuration review reports to the database for daemon %d: %+v",
 						ctx.subjectDaemon.ID, err)
 				} else {
 					log.WithFields(log.Fields{
@@ -305,7 +305,7 @@ func (d *dispatcherImpl) awaitReports() {
 						// Next outstanding review finished.
 						err := d.populateReports(ctx)
 						if err != nil {
-							log.Errorf("problem with populating configuration review reports to the database for daemon %d: %+v",
+							log.Errorf("Problem populating configuration review reports to the database for daemon %d: %+v",
 								ctx.subjectDaemon.ID, err)
 						} else {
 							log.WithFields(log.Fields{
@@ -364,7 +364,7 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 			for i := range group.checkers {
 				report, err := group.checkers[i].checkFn(ctx)
 				if err != nil {
-					log.Errorf("malformed report created by the config review checker %s: %+v",
+					log.Errorf("Malformed report created by the config review checker %s: %+v",
 						group.checkers[i].name, err)
 				}
 				if report != nil {
@@ -478,7 +478,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 
 	// Ensure that all daemons were in the database.
 	if len(dbDaemons) != len(daemons) {
-		err = pkgerrors.New("some daemons with reviewed configuration are missing in the database")
+		err = pkgerrors.New("some daemons with reviewed configuration are missing from the database")
 		return
 	}
 
@@ -537,7 +537,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 
 	// Add configuration review summary.
 	// todo: add config review summary for BIND9. Currently we don't because
-	// BIND9 does not include a config hash.
+	// BIND 9 does not include a config hash.
 	if ctx.subjectDaemon.KeaDaemon != nil {
 		configReview := &dbmodel.ConfigReview{
 			ConfigHash: ctx.subjectDaemon.KeaDaemon.ConfigHash,

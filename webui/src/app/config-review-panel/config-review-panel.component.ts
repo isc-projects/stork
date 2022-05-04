@@ -32,7 +32,7 @@ import { concatMap, delay, map, retryWhen, take, tap } from 'rxjs/operators'
 })
 export class ConfigReviewPanelComponent implements OnInit {
     /**
-     * ID of a daemon for which reports are listed.
+     * ID of the daemon for which reports are listed.
      */
     @Input() daemonId: number
 
@@ -42,7 +42,7 @@ export class ConfigReviewPanelComponent implements OnInit {
     start = 0
 
     /**
-     * A number of reports per page.
+     * The number of reports per page.
      */
     limit = 5
 
@@ -64,7 +64,7 @@ export class ConfigReviewPanelComponent implements OnInit {
     review: any = null
 
     /**
-     * Boolean flag indicating that the communication with the
+     * Boolean flag indicating that communication with the
      * server is in progress.
      *
      * It is used to disable action buttons when the communication is
@@ -247,8 +247,8 @@ export class ConfigReviewPanelComponent implements OnInit {
                 }
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'Getting review reports erred',
-                    detail: 'Getting review reports erred: ' + msg,
+                    summary: 'Error getting review reports',
+                    detail: 'Error getting review reports: ' + msg,
                     life: 10000,
                 })
                 this._resetDefaults()
@@ -315,8 +315,8 @@ export class ConfigReviewPanelComponent implements OnInit {
                 }
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'Running new review erred',
-                    detail: 'Running new review erred: ' + msg,
+                    summary: 'Error running new review',
+                    detail: 'Error running new review: ' + msg,
                     life: 10000,
                 })
                 this.busy = false

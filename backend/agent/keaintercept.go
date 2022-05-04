@@ -80,7 +80,7 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 	// Parse the request to get the command name and service.
 	command, err := keactrl.NewCommandFromJSON(request.Request)
 	if err != nil {
-		log.Errorf("failed parse Kea command while invoking asynchronous handlers: %+v", err)
+		log.Errorf("Failed to parse Kea command while invoking asynchronous handlers: %+v", err)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 	var parsedResponse keactrl.ResponseList
 	err = keactrl.UnmarshalResponseList(command, response, &parsedResponse)
 	if err != nil {
-		log.Errorf("failed to parse Kea responses while invoking asynchronous handlers for command %s: %+v",
+		log.Errorf("Failed to parse Kea responses while invoking asynchronous handlers for command %s: %+v",
 			command.Command, err)
 		return
 	}
@@ -127,7 +127,7 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 				if callback != nil {
 					err = callback(agent, &parsedResponse[j])
 					if err != nil {
-						log.Warnf("asynchronous callback returned an error for command %s: %+v",
+						log.Warnf("Asynchronous callback returned an error for command %s: %+v",
 							command.Command, err)
 					}
 				}

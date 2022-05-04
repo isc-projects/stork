@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-             -- Create a table of shared networks. Multiple subnets may belong
+             -- This creates a table of shared networks. Multiple subnets may belong
              -- to a single shared network. The shared network groups the subnets
              -- together.
              CREATE TABLE IF NOT EXISTS shared_network (
@@ -17,7 +17,7 @@ func init() {
                  CONSTRAINT shared_network_pkey PRIMARY KEY (id)
              );
 
-             -- Create a table of subnets. It holds both IPv4 and IPv6 subnets.
+             -- This creates a table of subnets. It holds both IPv4 and IPv6 subnets.
              -- A subnet may belong to a shared network. If it doesn't, the
              -- shared_network_id is set to null.
              CREATE TABLE IF NOT EXISTS subnet (
@@ -32,12 +32,12 @@ func init() {
                          ON DELETE SET NULL
              );
 
-             -- It is common to select subnet by prefix.
+             -- It is common to select a subnet by prefix.
              CREATE INDEX subnet_prefix_idx ON subnet(prefix);
 
-             -- Create a table of pools. A pool always belongs to a subnet. The pool
+             -- This creates a table of pools. A pool always belongs to a subnet. The pool
              -- specification consists of a lower_bound and upper_bound address, which
-             -- designates the first and the last address belonging to the pool.
+             -- designates the first and last address belonging to the pool.
              CREATE TABLE IF NOT EXISTS address_pool (
                  id bigserial NOT NULL,
                  created TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -54,9 +54,9 @@ func init() {
                  CONSTRAINT address_pool_lower_upper_check CHECK (lower_bound <= upper_bound)
              );
 
-             -- Create a table with pools of delegated prefixes. The prefix pool always
-             -- belongs to an IPv6 subnet. The delegated_prefix designates the length of
-             -- the prefix returned to the client as a result of prefix delegation request.
+             -- This creates a table with pools of delegated prefixes. The prefix pool always
+             -- belongs to an IPv6 subnet. The delegated_prefix variable designates the length of
+             -- the prefix returned to the client as a result of a prefix delegation request.
              CREATE TABLE IF NOT EXISTS prefix_pool (
                  id bigserial NOT NULL,
                  created TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -73,10 +73,9 @@ func init() {
                  CONSTRAINT prefix_pool_ipv6_only_check CHECK (family(prefix::inet) = 6)
              );
 
-             -- Create table which holds information about the subnet local to one of the
+             -- This creates a table which holds information about the subnet local to one of the
              -- applications serving this subnet. Currently this local information is
-             -- merely a local subnet id used by this application. In the future it will
-             -- also include statistics for the subnet returned by this app.
+             -- merely a local subnet ID used by this application.
              CREATE TABLE IF NOT EXISTS local_subnet (
                  app_id bigint NOT NULL,
                  subnet_id bigint NOT NULL,

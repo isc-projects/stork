@@ -69,7 +69,7 @@ type MachineTag interface {
 func AddMachine(db *pg.DB, machine *Machine) error {
 	_, err := db.Model(machine).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with inserting machine %+v", machine)
+		err = pkgerrors.Wrapf(err, "problem inserting machine %+v", machine)
 	}
 	return err
 }
@@ -78,9 +78,9 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 func UpdateMachine(db *pg.DB, machine *Machine) error {
 	result, err := db.Model(machine).WherePK().Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating machine %+v", machine)
+		err = pkgerrors.Wrapf(err, "problem updating machine %+v", machine)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "machine with id %d does not exist", machine.ID)
+		err = pkgerrors.Wrapf(ErrNotExists, "machine with ID %d does not exist", machine.ID)
 	}
 	return err
 }
@@ -96,7 +96,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting machine %s:%d", address, agentPort)
+		return nil, pkgerrors.Wrapf(err, "problem getting machine %s:%d", address, agentPort)
 	}
 	return &machine, nil
 }
@@ -129,7 +129,7 @@ func getMachineByID(db *pg.DB, id int64, relations []string) (*Machine, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting machine %v", id)
+		return nil, pkgerrors.Wrapf(err, "problem getting machine %v", id)
 	}
 
 	return &machine, nil
@@ -142,7 +142,7 @@ func RefreshMachineFromDB(db *pg.DB, machine *Machine) error {
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with getting machine %v", machine.ID)
+		return pkgerrors.Wrapf(err, "problem getting machine %v", machine.ID)
 	}
 
 	return nil
@@ -215,7 +215,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 		if errors.Is(err, pg.ErrNoRows) {
 			return []Machine{}, 0, nil
 		}
-		return nil, 0, pkgerrors.Wrapf(err, "problem with getting machines")
+		return nil, 0, pkgerrors.Wrapf(err, "problem getting machines")
 	}
 
 	return machines, int64(total), nil
@@ -237,7 +237,7 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 
 	err := q.Select()
 	if err != nil && errors.Is(err, pg.ErrNoRows) {
-		return nil, pkgerrors.Wrapf(err, "problem with getting machines")
+		return nil, pkgerrors.Wrapf(err, "problem getting machines")
 	}
 
 	return machines, nil
@@ -247,9 +247,9 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 func DeleteMachine(db *pg.DB, machine *Machine) error {
 	result, err := db.Model(machine).WherePK().Delete()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with deleting machine %v", machine.ID)
+		return pkgerrors.Wrapf(err, "problem deleting machine %v", machine.ID)
 	} else if result.RowsAffected() <= 0 {
-		return pkgerrors.Wrapf(ErrNotExists, "machine with id %d does not exist", machine.ID)
+		return pkgerrors.Wrapf(ErrNotExists, "machine with ID %d does not exist", machine.ID)
 	}
 	return nil
 }

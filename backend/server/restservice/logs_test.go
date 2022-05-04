@@ -139,7 +139,7 @@ func TestLogTailBadParams(t *testing.T) {
 	require.IsType(t, &services.GetLogTailDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetLogTailDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, fmt.Sprintf("log file with id %d does not exist", params.ID),
+	require.Equal(t, fmt.Sprintf("Log file with ID %d does not exist", params.ID),
 		*defaultRsp.Payload.Message)
 
 	// Make sure that an attempt to view the log from the targets other than file
@@ -152,7 +152,7 @@ func TestLogTailBadParams(t *testing.T) {
 		require.IsType(t, &services.GetLogTailDefault{}, rsp)
 		defaultRsp = rsp.(*services.GetLogTailDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-		require.Equal(t, fmt.Sprintf("viewing log from %s is not supported", a.Daemons[0].LogTargets[i].Output),
+		require.Equal(t, fmt.Sprintf("Viewing log from %s is not supported", a.Daemons[0].LogTargets[i].Output),
 			*defaultRsp.Payload.Message)
 	}
 }

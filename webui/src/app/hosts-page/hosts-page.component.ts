@@ -248,7 +248,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Cannot get host reservation',
-                        detail: 'Getting host reservation with ID ' + id + ' erred: ' + msg,
+                        detail: 'Error getting host reservation with ID ' + id + ': ' + msg,
                         life: 10000,
                     })
                 }
@@ -323,7 +323,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot get host reservations list',
-                    detail: 'Getting host reservations list erred: ' + msg,
+                    detail: 'Error getting host reservations list: ' + msg,
                     life: 10000,
                 })
             })
@@ -384,9 +384,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     hostDataSourceTooltip(dataSource): string {
         switch (dataSource) {
             case 'config':
-                return 'The server has this host specified in the configuration file.'
+                return "This host is specified in the server's configuration file."
             case 'api':
-                return 'The server has this host specified in the host database.'
+                return "This host is specified in the server's host database."
             default:
                 break
         }

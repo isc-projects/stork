@@ -51,7 +51,7 @@ func InitializeStats(db *pg.DB) error {
 	// Check if there are new statistics vs existing ones. Add new ones to DB.
 	_, err := db.Model(&statsList).OnConflict("DO NOTHING").Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting default statistics")
+		err = errors.Wrapf(err, "problem inserting default statistics")
 	}
 	return err
 }
@@ -62,7 +62,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 	q := db.Model(&statsList)
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting all statistics")
+		return nil, errors.Wrapf(err, "problem getting all statistics")
 	}
 
 	statsMap := make(map[string]*big.Int)
@@ -89,7 +89,7 @@ func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	_, err := q.Update()
 	if err != nil {
 		log.Printf("SET STATS ERR: %+v", err)
-		return errors.Wrapf(err, "problem with setting statistics")
+		return errors.Wrapf(err, "problem setting statistics")
 	}
 	return nil
 }

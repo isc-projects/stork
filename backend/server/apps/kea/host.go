@@ -106,7 +106,7 @@ func (puller *HostsPuller) pull() error {
 		"success_count": successCount,
 		"skipped_count": skippedCount,
 		"erred_count":   erredCount,
-	}).Info("completed pulling hosts from Kea daemons")
+	}).Info("Completed pulling hosts from Kea daemons")
 
 	return nil
 }
@@ -122,7 +122,7 @@ func (puller *HostsPuller) pullFromApp(app *dbmodel.App) (successCount, skippedC
 		pulled, err := puller.pullFromDaemon(app, daemon)
 		if err != nil {
 			erredCount++
-			log.Errorf("problem with pulling Kea hosts from daemon %d: %+v", daemon.ID, err)
+			log.Errorf("Problem pulling Kea hosts from daemon %d: %+v", daemon.ID, err)
 			continue
 		}
 		if !pulled {
@@ -150,7 +150,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 	)
 
 	if !daemon.Active {
-		log.Infof("skip pulling host reservations for inactive daemon %d", daemon.ID)
+		log.Infof("Skip pulling host reservations for inactive daemon %d", daemon.ID)
 		return false, nil
 	}
 
@@ -163,7 +163,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 	// we're unable to get the hosts from this daemon.
 	config := daemon.KeaDaemon.Config
 	if _, _, ok := config.GetHooksLibrary("libdhcp_host_cmds"); !ok {
-		log.Infof("skip pulling host reservations for daemon %d because it lacks host_cmds hook", daemon.ID)
+		log.Infof("Skip pulling host reservations for daemon %d because it lacks host_cmds hook", daemon.ID)
 		return false, nil
 	}
 
@@ -196,7 +196,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 		// Begin new transaction.
 		if tx == nil {
 			if tx, err = puller.DB.Begin(); err != nil {
-				err = errors.Wrapf(err, "problem with starting transaction for adding hosts from host_cmds hooks library for daemon %d", daemon.ID)
+				err = errors.Wrapf(err, "problem starting transaction to add hosts from host_cmds hooks library for daemon %d", daemon.ID)
 				return true, err
 			}
 			defer dbops.RollbackOnError(tx, &err)
@@ -229,7 +229,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 	// detected host changes.
 	if tx != nil {
 		if err = tx.Commit(); err != nil {
-			err = errors.Wrapf(err, "problem with committing transaction adding new hosts from host_cmds hooks library for daemon %d", daemon.ID)
+			err = errors.Wrapf(err, "problem committing transaction to add new hosts from host_cmds hooks library for daemon %d", daemon.ID)
 			return true, err
 		}
 		_ = puller.ReviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
@@ -461,7 +461,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 	if len(iterator.subnets) == 0 {
 		iterator.subnets, err = dbmodel.GetSubnetsByDaemonID(iterator.db, iterator.daemon.ID)
 		if err != nil {
-			return hosts, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
+			return hosts, done, errors.WithMessagef(err, "problem getting Kea subnets upon an attempt to detect host reservations over the host_cmds hook library")
 		}
 	}
 
@@ -472,7 +472,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 		var result int
 		hosts, result, err = iterator.sendReservationGetPage()
 		if err != nil {
-			err = errors.WithMessagef(err, "problem with sending reservation-get-page command upon attempt to detect host reservations over the host_cmds hooks library")
+			err = errors.WithMessagef(err, "problem sending reservation-get-page command upon attempt to detect host reservations over the host_cmds hook library")
 			return hosts, done, err
 		}
 
@@ -517,7 +517,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	for _, reservation := range reservations {
 		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation)
 		if err != nil {
-			log.Warnf("failed to parse the host reservation: %s", err)
+			log.Warnf("Failed to parse the host reservation: %s", err)
 			continue
 		}
 		if subnet != nil {
@@ -580,7 +580,7 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 	// Get the hosts from the Stork database for this subnet.
 	existingHosts, err := dbmodel.GetHostsBySubnetID(dbi, subnetID)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with merging hosts for subnet %d", subnetID)
+		err = errors.WithMessagef(err, "problem merging hosts for subnet %d", subnetID)
 		return
 	}
 	// Merge each new host into the existing hosts.
@@ -645,7 +645,7 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 				// Parse the reservation.
 				host, err := dbmodel.NewHostFromKea(&reservationMap)
 				if err != nil {
-					log.Warnf("skipping invalid host reservation: %v", reservationMap)
+					log.Warnf("Skipping invalid host reservation: %v", reservationMap)
 					return hosts, err
 				}
 				hosts = append(hosts, *host)

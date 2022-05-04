@@ -156,7 +156,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 			pkgsDir := path.Join(staticFilesDir, "assets/pkgs")
 			files, err := os.ReadDir(pkgsDir)
 			if err != nil {
-				msg := fmt.Sprintf("problem with reading '%s' directory with packages: %s\n", pkgsDir, err)
+				msg := fmt.Sprintf("Problem reading '%s' directory with packages: %s\n", pkgsDir, err)
 				log.Errorf(msg)
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprint(w, msg)
@@ -178,9 +178,9 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 			if debFile == "" || rpmFile == "" {
 				var msg string
 				if debFile == "" {
-					msg = fmt.Sprintf("cannot find agent deb file in '%s' directory\n", pkgsDir)
+					msg = fmt.Sprintf("Cannot find agent deb file in '%s' directory\n", pkgsDir)
 				} else {
-					msg = fmt.Sprintf("cannot find agent rpm file in '%s' directory\n", pkgsDir)
+					msg = fmt.Sprintf("Cannot find agent rpm file in '%s' directory\n", pkgsDir)
 				}
 				log.Errorf(msg)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -196,7 +196,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 			t := template.Must(template.New("script").Parse(agentInstallerScript))
 			err = t.Execute(w, data)
 			if err != nil {
-				msg := fmt.Sprintf("problem with preparing install script: %s\n", err)
+				msg := fmt.Sprintf("Problem preparing install script: %s\n", err)
 				log.Errorf(msg)
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprint(w, msg)

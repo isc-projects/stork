@@ -7,10 +7,10 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- Remove no longer used update_seq column.
+            -- This removes the no-longer-used update_seq column.
             ALTER TABLE local_host DROP COLUMN update_seq;
 
-            -- Also remove the unused sequence.
+            -- This removes the unused sequence.
             DROP SEQUENCE IF EXISTS bulk_update_seq;
         `)
 		return err

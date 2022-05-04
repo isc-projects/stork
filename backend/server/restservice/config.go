@@ -20,14 +20,14 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
-		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
 		rsp := services.NewGetDaemonConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbDaemon == nil {
-		msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+		msg := fmt.Sprintf("Cannot find daemon with ID %d", params.ID)
 		rsp := services.NewGetDaemonConfigDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -35,14 +35,14 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	}
 
 	if dbDaemon.KeaDaemon == nil {
-		msg := fmt.Sprintf("daemon with id %d isn't Kea daemon", params.ID)
+		msg := fmt.Sprintf("Daemon with ID %d is not a Kea daemon", params.ID)
 		rsp := services.NewGetDaemonConfigDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbDaemon.KeaDaemon.Config == nil {
-		msg := fmt.Sprintf("config not assigned for daemon with id %d", params.ID)
+		msg := fmt.Sprintf("Config not assigned for daemon with ID %d", params.ID)
 		rsp := services.NewGetDaemonConfigDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -80,7 +80,7 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	review, err := dbmodel.GetConfigReviewByDaemonID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
-		msg := fmt.Sprintf("cannot get configuration review for daemon with id %d from db", params.ID)
+		msg := fmt.Sprintf("Cannot get configuration review for daemon with ID %d from db", params.ID)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -107,7 +107,7 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID)
 	if err != nil {
 		log.Error(err)
-		msg := fmt.Sprintf("cannot get configuration review reports for daemon with id %d from db", params.ID)
+		msg := fmt.Sprintf("Cannot get configuration review reports for daemon with ID %d from db", params.ID)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -143,7 +143,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
-		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
 		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -152,7 +152,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	// If the daemon doesn't exist there is nothing to do. Return the
 	// HTTP Bad Request status.
 	if daemon == nil {
-		msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+		msg := fmt.Sprintf("Cannot find daemon with ID %d", params.ID)
 		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -160,7 +160,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	}
 	// Config review is currently only supported for Kea.
 	if daemon.KeaDaemon == nil {
-		msg := fmt.Sprintf("daemon with id %d is not a Kea daemon", params.ID)
+		msg := fmt.Sprintf("Daemon with ID %d is not a Kea daemon", params.ID)
 		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -168,7 +168,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	}
 	// Config must be present to perform the review.
 	if daemon.KeaDaemon.Config == nil {
-		msg := fmt.Sprintf("configuration not found for daemon with id %d", params.ID)
+		msg := fmt.Sprintf("Configuration not found for daemon with ID %d", params.ID)
 		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})

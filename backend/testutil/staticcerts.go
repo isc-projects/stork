@@ -1,6 +1,6 @@
 package testutil
 
-// This function always return the same content. It is intended
+// This function always returns the same content. It is intended
 // to avoid breaking IDE syntax highlighting (problem occurs on vscode).
 func GetCACertPEMContent() []byte {
 	return []byte(`-----BEGIN CERTIFICATE-----

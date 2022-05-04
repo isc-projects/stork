@@ -22,7 +22,7 @@ func GetAllRpsIntervals(db *pg.DB) ([]*RpsInterval, error) {
 	q = q.Order("kea_daemon_id", "start_time")
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting all RPS intervals")
+		return nil, errors.Wrapf(err, "problem getting all RPS intervals")
 	}
 
 	return rpsIntervals, nil
@@ -45,7 +45,7 @@ func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime ti
 
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting RPS interval for daemon: %d", daemonID)
+		return nil, errors.Wrapf(err, "problem getting RPS interval for daemon: %d", daemonID)
 	}
 
 	return rpsTotals, nil
@@ -55,7 +55,7 @@ func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime ti
 func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
 	_, err := db.Model(rpsInterval).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting rpsInterval %+v", rpsInterval)
+		err = errors.Wrapf(err, "problem inserting rpsInterval %+v", rpsInterval)
 	}
 	return err
 }
@@ -66,7 +66,7 @@ func AgeOffRpsInterval(db *pg.DB, startTime time.Time) error {
 	_, err := db.Model(&RpsInterval{}).Where("start_time < ?", startTime).Delete()
 
 	if err == nil {
-		err = errors.Wrapf(err, "problem with deleting from rpsInterval")
+		err = errors.Wrapf(err, "problem deleting from rpsInterval")
 	}
 	return err
 }

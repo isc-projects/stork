@@ -3,12 +3,12 @@
 # This is the branch name (e.g. 29-something or master)
 BRANCH=`git branch | grep '^\*' | cut -b3-`
 
-# This is the beginning of the branch name (e.g. 29 for branch being named 29-something).
-# It's supposed to start with a issue number.
+# This is the beginning of the branch name (e.g. 29 for branch named 29-something).
+# It's supposed to start with an issue number.
 ISSUE=`git branch | grep -o '^\* [0-9]*' | cut -b3-`
 
 # This is trying to get issue (e.g. 29) from the existing commit message.
-# This may be return "" if there commit message doesn't start with [#123]
+# This may return "" if the commit message doesn't start with [#123]
 ISSUEINMSG=`head -n 1 $1 | grep -o '^\[#[0-9]*' | cut -b3-`
 
 # This is for debugging purposes only.

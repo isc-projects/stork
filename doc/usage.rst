@@ -624,7 +624,7 @@ configuration fetched using the Kea ``config-get`` command.
    differ (sometimes significantly) from the configuration file contents.
 
 The nodes with complex data types can be individually expanded and
-collapsed. All nodes can also be expanded  or collapsed by toggling
+collapsed. All nodes can also be expanded or collapsed by toggling
 the ``Expand`` button. When expanding nodes
 with many sub-nodes, they may be paginated to avoid degrading browser
 performance.

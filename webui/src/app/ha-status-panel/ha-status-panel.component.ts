@@ -2,11 +2,11 @@ import { Component, Input } from '@angular/core'
 import { datetimeToLocal } from '../utils'
 
 /**
- * Enumeration indicating a kind of a server's HA state.
+ * Enumeration indicating the server's HA state.
  *
  * It is used to distinguish between the situations when the server is
  * performing normal operation (ok), when the server is in a state which
- * it may require administrator's attention (not ok) or the state hasn't
+ * may require administrator's attention (not ok), or when the state hasn't
  * been fetched yet (pending).
  */
 enum HAStateKind {
@@ -119,9 +119,9 @@ export class HaStatusPanelComponent {
             return ''
         }
         if (this.serverStatus.inTouch) {
-            return 'Server responds to the commands over the control channel.'
+            return 'Server responds to commands over the control channel.'
         }
-        return 'Server does not respond to the commands over the control channel. It may be down!'
+        return 'Server does not respond to commands over the control channel. It may be down!'
     }
 
     /**
@@ -137,32 +137,32 @@ export class HaStatusPanelComponent {
                 return 'Normal operation.'
             case 'partner-down':
                 return (
-                    'This server now responds to all DHCP queries because it detected ' +
-                    'that partner server is not functional!'
+                    'This server is now responding to all DHCP queries because it detected ' +
+                    'that its partner server is not functional!'
                 )
             case 'passive-backup':
                 return (
-                    'The server has no active partner like in load-balancing or hot-standby ' +
+                    'The server has no active partner, unlike in load-balancing or hot-standby ' +
                     'mode. This server may be configured to send lease updates to the ' +
                     'backup servers, but there is no automatic failover triggered in case ' +
                     'of failure.'
                 )
             case 'waiting':
-                return 'This server is apparently booting up and will try to synchronize its lease database.'
+                return 'This server is booting up and will try to synchronize its lease database.'
             case 'syncing':
-                return 'This server is synchronizing its database after failure.'
+                return 'This server is synchronizing its database after a failure.'
             case 'ready':
                 return 'This server synchronized its lease database and will start normal operation shortly.'
             case 'terminated':
-                return 'This server no longer participates in the HA setup because of the too high clock skew.'
+                return 'This server no longer participates in the HA setup because of too-high clock skew.'
             case 'maintained':
                 return 'This server is under maintenance.'
             case 'partner-maintained':
-                return 'This server responds to all DHCP queries for the partner being in maintenance.'
+                return 'This server is responding to all DHCP queries while its partner is in maintenance.'
             case 'unavailable':
                 return 'Communication with the server failed. It may have crashed or have been shut down.'
             default:
-                return 'Refer to Kea manual for details.'
+                return 'Refer to the Kea ARM for details.'
         }
         return ''
     }
@@ -185,16 +185,16 @@ export class HaStatusPanelComponent {
      */
     scopesHelptip(): string {
         return (
-            'This is a list of HA scopes being presently served by this ' +
+            'This is a list of HA scopes currently being served by this ' +
             'server. If the server is responding to the DHCP queries as a ' +
             'primary or secondary in the load-balancing mode or as a ' +
             'primary in the hot-standby mode, it is typically a single scope shown. ' +
-            'There may be two scopes shown if a load balancing server is presently ' +
-            'serving  all DHCP clients when his partner is down. There may be no scopes ' +
+            'There may be two scopes shown if a load-balancing server is currently ' +
+            'serving all DHCP clients when its partner is down. There may be no scopes ' +
             'shown when it is a standby server in the hot-standby mode, because such ' +
-            'server is not responding to any DHCP queries, but passively receiving ' +
+            'a server is not responding to any DHCP queries, but passively receiving ' +
             'lease updates from the primary. The standby server will start serving ' +
-            'primary server scope in case of primary failure.'
+            'the primary server scope in the event of primary failure.'
         )
     }
 
@@ -211,7 +211,7 @@ export class HaStatusPanelComponent {
             'typically delayed by 10 to 30 seconds because it is cached by the Kea ' +
             'servers and the Stork backend. Caching minimizes the performance ' +
             'impact on the DHCP servers reporting their states over the control ' +
-            'channels.'
+            'channel.'
         )
     }
 
@@ -222,12 +222,12 @@ export class HaStatusPanelComponent {
      */
     collectedHelptip(): string {
         return (
-            'This is the duration between the "Status Time" and now, i.e. informs ' +
+            'This is the duration between the "Status Time" and now, i.e. this indicates ' +
             'how long ago the ' +
             this.serverName +
-            ' server reported its state. The long duration ' +
+            ' server reported its state. A long duration ' +
             'indicates that there is a communication problem with the server. The ' +
-            'typical duration is within the range between 10 and 30 seconds.'
+            'typical duration is between 10 and 30 seconds.'
         )
     }
 
@@ -236,18 +236,18 @@ export class HaStatusPanelComponent {
      */
     heartbeatStatusHelptip(): string {
         if (!this.serverStatus.commInterrupted || this.serverStatus.commInterrupted < 0) {
-            return 'Status of the heartbeat communication with the ' + this.serverName + ' server is unknown.'
+            return 'The status of the heartbeat communication with the ' + this.serverName + ' server is unknown.'
         } else if (this.serverStatus.commInterrupted > 0) {
             return (
                 'Heartbeat communication with the ' +
                 this.serverName +
                 ' server ' +
-                ' is interrupted. It means that the server has been failing to ' +
-                ' respond to the ha-heartbeat commands longer than the configured ' +
+                ' is interrupted. It means that the server failed to ' +
+                ' respond to ha-heartbeat commands longer than the configured ' +
                 ' value of max-response-delay.'
             )
         }
-        return 'The server responds to the ha-heartbeat commands sent by the ' + ' partner.'
+        return 'The server responds to ha-heartbeat commands sent by the ' + ' partner.'
     }
 
     /**
@@ -256,11 +256,11 @@ export class HaStatusPanelComponent {
     unackedClientsHelptip(): string {
         return (
             'This is the number of clients considered unacked by the partner. ' +
-            'This value is only set when the partner lost heartbeat communication ' +
-            'with this server and started the failover procedure by monitoring ' +
-            'whether the server is responding to the DHCP traffic. The unacked ' +
-            'is the client which has been trying to get a lease from this server ' +
-            'longer than the time specified with the max-ack-delay configuration ' +
+            'This value is only set when the partner has lost heartbeat communication ' +
+            'with this server and has started the failover procedure, by monitoring ' +
+            'whether the server is responding to DHCP traffic. The unacked ' +
+            'number indicates clients that have been trying to get leases from this server ' +
+            'longer than the time specified by the max-ack-delay configuration ' +
             'parameter.'
         )
     }
@@ -272,10 +272,10 @@ export class HaStatusPanelComponent {
      */
     connectingClientsHelptip(): string {
         return (
-            'This is the total number of clients trying to get new lease ' +
+            'This is the total number of clients trying to get new leases ' +
             'from the server with which the partner server is unable to ' +
-            'communicate via heartbeat. It includes both unacked clients ' +
-            'and the clients which secs field or elapsed time option is ' +
+            'communicate via ha-heartbeat. It includes both unacked clients ' +
+            'and the clients for which the secs field or elapsed time option is ' +
             'below the max-ack-delay.'
         )
     }
@@ -287,10 +287,10 @@ export class HaStatusPanelComponent {
     analyzedPacketsHelptip(): string {
         return (
             'This is the total number of packets directed to the server ' +
-            'with which the partner is unable to communicate via heartbeat. ' +
+            'with which the partner is unable to communicate via ha-heartbeat. ' +
             'This may include several packets from the same client which ' +
-            'retried to send DHCPDISCOVER or Solicit when the server failed to ' +
-            'respond to the previous queries.'
+            'tried to resend a DHCPDISCOVER or Solicit after the server failed to ' +
+            'respond to previous queries.'
         )
     }
 
@@ -383,12 +383,12 @@ export class HaStatusPanelComponent {
     }
 
     /**
-     * Returns a comma separated list of HA scopes served by the server.
+     * Returns a comma-separated list of HA scopes served by the server.
      *
      * This string is printed in the UI in the local server status box.
      *
-     * @returns string containing comma separated list of scopes, the word
-     *          none or none (standby server).
+     * @returns string containing a comma-separated list of scopes, the word
+     *          none, or none (standby server).
      */
     formattedLocalScopes(): string {
         let scopes: string

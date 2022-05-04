@@ -11,7 +11,7 @@ import { ServicesService } from '../backend/api/api'
  * severities of the log messages are highlighted for each message.
  *
  * Currently, the log viewer is not following the changes in the file.
- * Though, the refresh button is provided which sends a request to
+ * However, a refresh button is provided which sends a request to
  * get the updated log tail.
  */
 @Component({
@@ -34,7 +34,7 @@ export class LogViewPageComponent implements OnInit {
     /**
      * Indicates if the new request for data has been sent and the
      * response is under way. When set to false, the spinner is
-     * activated to indicate that the data are loading.
+     * activated to indicate that the data is loading.
      */
     loaded = false
     loadingError = null
@@ -137,7 +137,7 @@ export class LogViewPageComponent implements OnInit {
      * Decreases the size of the log to be fetched and re-fetches the log.
      *
      * This action is triggered when the plus button is clicked. The action is
-     * no-op if the max length is already equal or less than 4000 bytes.
+     * no-op if the max length is already equal to or less than 4000 bytes.
      */
     fetchLessLog() {
         if (!this.loaded) {

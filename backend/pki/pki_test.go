@@ -119,7 +119,7 @@ func TestGenCSRUsingKey(t *testing.T) {
 
 	// empty DNS names and IP addresses
 	_, _, err = GenCSRUsingKey(name, nil, nil, privKeyPEM)
-	require.EqualError(t, err, "DNS names and IP addresses both cannot be empty")
+	require.EqualError(t, err, "both DNS names and IP addresses cannot be empty")
 
 	// empty private key
 	_, _, err = GenCSRUsingKey(name, dnsNames, ipAddresses, nil)
@@ -151,7 +151,7 @@ func TestGenKeyAndCSR(t *testing.T) {
 	privKeyPEM, csrPEM, _, err := GenKeyAndCSR(name, nil, nil)
 	require.Nil(t, privKeyPEM)
 	require.Nil(t, csrPEM)
-	require.EqualError(t, err, "DNS names and IP addresses both cannot be empty")
+	require.EqualError(t, err, "both DNS names and IP addresses cannot be empty")
 
 	// it should be ok
 	privKeyPEM, csrPEM, fingerprint, err := GenKeyAndCSR(name, dnsNames, ipAddresses)

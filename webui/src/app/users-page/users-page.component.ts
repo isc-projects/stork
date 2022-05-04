@@ -14,9 +14,9 @@ import { Subscription } from 'rxjs'
  *
  * Currently supported types are:
  * - list: including a list of users
- * - new user: including a form for creating new user account
- * - edited user: including a form for editing user account
- * - user: including read only information about the user
+ * - new user: including a form for creating a new user account
+ * - edited user: including a form for editing a user account
+ * - user: including read-only information about the user
  */
 export enum UserTabType {
     List = 1,
@@ -463,7 +463,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
-                    detail: 'Adding new user account succeeded',
+                    detail: 'Adding new user account succeeded.',
                 })
                 this.closeActiveTab()
             })
@@ -474,7 +474,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Creating new user account failed',
+                    summary: 'Failed to create new user account',
                     detail: 'Creating new user account failed: ' + msg,
                     sticky: true,
                 })
@@ -505,7 +505,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
-                    detail: 'Updating user account succeeded',
+                    detail: 'Updating user account succeeded.',
                 })
                 this.closeActiveTab()
             })
@@ -517,7 +517,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Updating user account failed',
+                    summary: 'Failed to update user account',
                     detail: 'Updating user account failed: ' + msg,
                     sticky: true,
                 })

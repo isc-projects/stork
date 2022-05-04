@@ -190,8 +190,8 @@ export class LeaseSearchPageComponent implements OnInit {
                     }
                     this.msgService.add({
                         severity: 'error',
-                        summary: 'Leases search erred',
-                        detail: 'Leases search by ' + searchText + ' erred: ' + msg,
+                        summary: 'Error searching leases',
+                        detail: 'Error searching leases by ' + searchText + ' : ' + msg,
                         life: 10000,
                     })
 

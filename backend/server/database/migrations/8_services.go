@@ -9,14 +9,14 @@ func init() {
 		_, err := db.Exec(`
              -- Service type is an enum which is used in the service
              -- table to indicate the type of the functionality that
-             -- a group applications provide, e.g. DHCP High Availability
-             -- service. Based on this value it is possible to determine
-             -- where to find (in what SQL tables) any additional
+             -- a group of applications provides, e.g. DHCP High Availability
+             -- service. Based on this value, it is possible to determine
+             -- where (in which SQL tables) to find any additional
              -- information about the service.
              CREATE TYPE SERVICETYPE AS ENUM
                  ('ha_dhcp');
 
-             -- This enum is used in the ha_service table to indicate if
+             -- This enum is used in the ha_service table to indicate whether
              -- the given service is the DHCPv4 or DHCPv6 High Availability
              -- service.
              DO $$ BEGIN
@@ -25,7 +25,7 @@ func init() {
                  WHEN duplicate_object THEN null;
              END $$;
 
-             -- Trigger function generating a default name for a new service.
+             -- This trigger function generates a default name for a new service.
              -- The name is only generated if the name specified by the
              -- user is blank.
              CREATE OR REPLACE FUNCTION service_name_gen()
@@ -33,7 +33,7 @@ func init() {
                  LANGUAGE 'plpgsql'
                  AS $function$
              BEGIN
-                 -- Remove all of the whitespaces.
+                 -- This removes all whitespaces.
                  IF NEW.name IS NOT NULL THEN
 	                 NEW.name = TRIM(NEW.name);
                  END IF;
@@ -45,10 +45,10 @@ func init() {
              $function$;
 
              -- This table holds general information about services. A service
-             -- groups multiple cooperating applications running on distinct
-             -- machines and providing some desired function from the
-             -- system administrator's perspective. Application to service is
-             -- a many-to-many relationship where app_to_service table provides
+             -- groups multiple cooperating applications, running on distinct
+             -- machines, and providing some desired function from the
+             -- system administrator's perspective. Application-to-service is
+             -- a many-to-many relationship where the app_to_service table describes
              -- this relationship.
              CREATE TABLE IF NOT EXISTS service (
                  id BIGSERIAL NOT NULL,
@@ -60,7 +60,7 @@ func init() {
                  CONSTRAINT service_name_not_blank CHECK (name IS NOT NULL AND btrim(name) <> ''::text)
              );
 
-             -- Generate a name for an inserted service if it is blank.
+             -- This generates a name for an inserted service if it is blank.
              DO $$ BEGIN
                  CREATE TRIGGER service_before_insert
                      BEFORE INSERT OR UPDATE ON service
@@ -69,7 +69,7 @@ func init() {
                  WHEN duplicate_object THEN null;
              END $$;
 
-             -- This table includes a details about the DHCP High Availability
+             -- This table includes details about the DHCP High Availability
              -- service. This table is in 1:1 relationship with the service table.
              -- A new entry should be created in this table if the type in the
              -- service table is set to ha_dhcp.
@@ -100,8 +100,8 @@ func init() {
                       ON UPDATE CASCADE
                       ON DELETE CASCADE);
 
-              -- Automatically set service_type to ha_dhcp if inserting the
-              -- new entry or updating existing entry in the ha_service.
+              -- This automatically sets the service_type to ha_dhcp if inserting a
+              -- new entry or updating an existing entry in the ha_service.
               CREATE OR REPLACE FUNCTION ha_service_type_set()
                   RETURNS trigger
                   LANGUAGE 'plpgsql'
@@ -120,7 +120,7 @@ func init() {
                  WHEN duplicate_object THEN null;
              END $$;
 
-              -- Provides M:M relationship between app and service tables.
+              -- This describes the M:M relationship between the app and service tables.
               CREATE TABLE IF NOT EXISTS app_to_service (
                   app_id BIGINT NOT NULL,
                   service_id bigint NOT NULL,
@@ -135,7 +135,7 @@ func init() {
                       ON DELETE CASCADE
                );
 
-               -- Create index for searching apps using control address and port.
+               -- This creates an index for searching apps using control address and port.
                CREATE INDEX app_ctrl_address_port_idx ON app (ctrl_address, ctrl_port);
            `)
 		return err

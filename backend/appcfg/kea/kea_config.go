@@ -143,7 +143,7 @@ func NewFromJSON(rawCfg string) (*Map, error) {
 	var cfg Map
 	err := jsonc.Unmarshal([]byte(rawCfg), &cfg)
 	if err != nil {
-		err := errors.Wrapf(err, "problem with parsing JSON text: %s", rawCfg)
+		err := errors.Wrapf(err, "problem parsing JSON text: %s", rawCfg)
 		return nil, err
 	}
 	return &cfg, nil

@@ -211,7 +211,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 			log.WithFields(log.Fields{
 				"agent": addrPort,
 				"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
-			}).Warnf("failed to send the following rndc command: %s", command)
+			}).Warnf("Failed to send the following rndc command: %s", command)
 		}
 		agents.EventCenter.AddErrorEvent("cannot connect to agent on {machine}", app.GetMachineTag())
 		return nil, err
@@ -242,7 +242,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 		} else {
 			errStr = fmt.Sprintf("%s", result.Error)
 		}
-		agents.EventCenter.AddErrorEvent("communication with {app} failed", errStr, app)
+		agents.EventCenter.AddErrorEvent("Communication with {app} failed", errStr, app)
 	}
 
 	// Start updating error statistics for this agent and the BIND9 app we've
@@ -266,14 +266,14 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 			// This is not the first tie the BIND9 RNDC is not responding, so let's
 			// print the brief message.
 			if bind9CommStats.CurrentErrorsRNDC > 1 {
-				result.Error = errors.Errorf("failed to send rndc command via the agent %s, BIND9 is still not responding",
+				result.Error = errors.Errorf("failed to send rndc command via the agent %s, BIND 9 is still not responding",
 					agent.Address)
 				err = result.Error
 				// Log the commands that failed.
 				log.WithFields(log.Fields{
 					"agent": addrPort,
 					"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
-				}).Warnf("failed to send the following rndc command: %s", command)
+				}).Warnf("Failed to send the following rndc command: %s", command)
 			}
 		} else {
 			bind9CommStats.CurrentErrorsRNDC = 0
@@ -320,7 +320,7 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 			log.WithFields(log.Fields{
 				"agent":     addrPort,
 				"stats URL": statsURL,
-			}).Warnf("failed to send the following named statistics command: %+v", storkReq.NamedStatsRequest)
+			}).Warnf("Failed to send the following named statistics command: %+v", storkReq.NamedStatsRequest)
 		}
 		return err
 	}
@@ -359,13 +359,13 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 			// This is not the first tie the BIND9 stats is not responding, so let's
 			// print the brief message.
 			if bind9CommStats.CurrentErrorsStats > 1 {
-				err = errors.Errorf("failed to send named stats command via the agent %s, BIND9 is still not responding",
+				err = errors.Errorf("failed to send named stats command via the agent %s, BIND 9 is still not responding",
 					agent.Address)
 				// Log the commands that failed.
 				log.WithFields(log.Fields{
 					"agent":     addrPort,
 					"stats URL": statsURL,
-				}).Warnf("failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
+				}).Warnf("Failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
 			}
 		} else {
 			bind9CommStats.CurrentErrorsStats = 0
@@ -455,7 +455,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			// If this is the first time we failed to communicate with the
 			// agent, let's print the stack trace for debugging purposes.
 			err = errors.WithStack(err)
-			agents.EventCenter.AddErrorEvent("cannot connect to agent on {machine}", err.Error(), app.GetMachineTag())
+			agents.EventCenter.AddErrorEvent("Cannot connect to agent on {machine}", err.Error(), app.GetMachineTag())
 		} else {
 			// This is not the first time we can't communicate with the
 			// agent. Let's be brief and say that the communication is
@@ -469,13 +469,13 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 		log.WithFields(log.Fields{
 			"agent": addrPort,
 			"kea":   caURL,
-		}).Warnf("failed to send the following commands: %+v", fdReq.KeaRequests)
+		}).Warnf("Failed to send the following commands: %+v", fdReq.KeaRequests)
 		return nil, err
 	}
 
 	agent.Stats.CurrentErrors = 0
 	if prevAgentErrorsCnt > 0 {
-		agents.EventCenter.AddWarningEvent("communication with stork agent on {machine} resumed", app.GetMachineTag())
+		agents.EventCenter.AddWarningEvent("Communication with stork agent on {machine} resumed", app.GetMachineTag())
 	}
 
 	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
@@ -525,7 +525,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			caErrorsCount++
 			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
 			if err2 := zr.Close(); err2 != nil {
-				log.Errorf("error while closing gzip reader: %s", err2)
+				log.Errorf("Error while closing gzip reader: %s", err2)
 			}
 			continue
 		}
@@ -552,7 +552,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 		// The response should be a list.
 		cmdRespList := reflect.ValueOf(cmdResp).Elem()
 		if cmdRespList.Kind() != reflect.Slice {
-			err = errors.Wrapf(err, "not well formatted response from Kea CA %s, response was: %s", caURL, rsp)
+			err = errors.Wrapf(err, "no well-formatted response from Kea CA %s, response was: %s", caURL, rsp)
 			result.CmdsErrors = append(result.CmdsErrors, err)
 			// Issues with parsing the response count as issues with communication.
 			caErrorsCount++
@@ -566,13 +566,13 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			cmdRespItem := cmdRespList.Index(i)
 			daemonField := cmdRespItem.FieldByName("Daemon")
 			if !daemonField.IsValid() {
-				log.Warnf("missing Daemon field in response from Kea CA")
+				log.Warnf("Missing Daemon field in response from Kea CA")
 				continue
 			}
 			// The response should contain the result.
 			resultField := cmdRespItem.FieldByName("Result")
 			if !resultField.IsValid() {
-				log.Warnf("missing Result field in response from Kea CA")
+				log.Warnf("Missing Result field in response from Kea CA")
 				continue
 			}
 			daemonName := daemonField.String()
@@ -634,9 +634,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, app)
+				agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, app)
 			} else {
-				agents.EventCenter.AddErrorEvent("communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), app)
+				agents.EventCenter.AddErrorEvent("Communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), app)
 			}
 		}
 	} else {
@@ -646,9 +646,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 		if prevErrorsCA > 0 {
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddWarningEvent("communication with {daemon} of {app} resumed", &dmn, app)
+				agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", &dmn, app)
 			} else {
-				agents.EventCenter.AddWarningEvent("communication with CA daemon of {app} resumed", app)
+				agents.EventCenter.AddWarningEvent("Communication with CA daemon of {app} resumed", app)
 			}
 		}
 	}
@@ -670,9 +670,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			for _, dmn := range app.GetDaemonTags() {
 				if dmn.GetName() == dmnName {
 					if currentErrors == 0 {
-						agents.EventCenter.AddWarningEvent("communication with {daemon} of {app} resumed", dmn, app)
+						agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", dmn, app)
 					} else {
-						agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", dmn, app)
+						agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", dmn, app)
 					}
 					break
 				}
@@ -698,7 +698,7 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddres
 		log.WithFields(log.Fields{
 			"agent": addrPort,
 			"file":  path,
-		}).Warnf("failed to fetch text file contents")
+		}).Warnf("Failed to fetch text file contents")
 
 		return nil, errors.Wrapf(err, "failed to fetch text file contents: %s", path)
 	}

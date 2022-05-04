@@ -2,7 +2,7 @@ package metrics
 
 // Functions to manage the Prometheus metrics.
 //
-// To add new statistic you should:
+// To add a new statistic you should:
 // 1. Update the metrics structure.
 // 2. Prepare the metric instance in the newMetrics function.
 // 3. Update SQL query (if needed) in the database/model/metrics.go file.
@@ -71,19 +71,19 @@ func newMetrics(db *pg.DB) *metrics {
 			Namespace: namespace,
 			Name:      "pd_utilization",
 			Subsystem: "subnet",
-			Help:      "Subnet delegated prefix utilization",
+			Help:      "Subnet delegated-prefix utilization",
 		}, []string{"subnet"}),
 		SharedNetworkAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "address_utilization",
 			Subsystem: "shared_network",
-			Help:      "Shared network address utilization",
+			Help:      "Shared-network address utilization",
 		}, []string{"name"}),
 		SharedNetworkPdUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "pd_utilization",
 			Subsystem: "shared_network",
-			Help:      "Shared network delegated prefix utilization",
+			Help:      "Shared-network delegated-prefix utilization",
 		}, []string{"name"}),
 	}
 

@@ -105,7 +105,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 	// get hosts from db
 	hosts, err := r.getHosts(start, limit, appID, params.SubnetID, params.Text, params.Global, "", dbmodel.SortDirAny)
 	if err != nil {
-		msg := "problem with fetching hosts from the database"
+		msg := "Problem fetching hosts from the database"
 		log.Error(err)
 		rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -124,7 +124,7 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 	dbHost, err := dbmodel.GetHost(r.DB, params.ID)
 	if err != nil {
 		// Error while communicating with the database.
-		msg := fmt.Sprintf("problem with fetching host reservation with id %d from db", params.ID)
+		msg := fmt.Sprintf("Problem fetching host reservation with ID %d from db", params.ID)
 		log.Error(err)
 		rsp := dhcp.NewGetHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -133,7 +133,7 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 	}
 	if dbHost == nil {
 		// Host not found.
-		msg := fmt.Sprintf("cannot find host reservation with id %d", params.ID)
+		msg := fmt.Sprintf("Cannot find host reservation with ID %d", params.ID)
 		rsp := dhcp.NewGetHostDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})

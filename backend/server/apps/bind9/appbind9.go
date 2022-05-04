@@ -40,7 +40,7 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 	// prepare URL to named
 	statsChannel, err := dbApp.GetAccessPoint(dbmodel.AccessPointStatistics)
 	if err != nil {
-		log.Warnf("problem with getting named statistics-channel access point: %s", err)
+		log.Warnf("Problem getting named statistics-channel access point: %s", err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 	statsOutput := NamedStatsGetResponse{}
 	err = agents.ForwardToNamedStats(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
 	if err != nil {
-		log.Warnf("problem with retrieving stats from named: %s", err)
+		log.Warnf("Problem retrieving stats from named: %s", err)
 	}
 
 	namedStats := &dbmodel.Bind9NamedStats{}
@@ -95,7 +95,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	command := "status"
 	out, err := agents.ForwardRndcCommand(ctx2, dbApp, command)
 	if err != nil {
-		log.Warnf("problem with getting BIND 9 status: %s", err)
+		log.Warnf("Problem getting BIND 9 status: %s", err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	if match != nil {
 		bind9Daemon.Version = match[1]
 	} else {
-		log.Warnf("cannot get BIND 9 version: unable to find version in output")
+		log.Warnf("Cannot get BIND 9 version: unable to find version in output")
 	}
 
 	// Is the named daemon running?
@@ -123,13 +123,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	if match != nil {
 		bootTime, err := time.Parse(namedLongDateFormat, match[1])
 		if err != nil {
-			log.Warnf("cannot get BIND 9 up time: %s", err.Error())
+			log.Warnf("Cannot get BIND 9 uptime: %s", err.Error())
 		}
 		now := time.Now()
 		elapsed := now.Sub(bootTime)
 		bind9Daemon.Uptime = int64(elapsed.Seconds())
 	} else {
-		log.Warnf("cannot get BIND 9 up time: unable to find boot time in output")
+		log.Warnf("Cannot get BIND 9 uptime: unable to find boot time in output")
 	}
 
 	// Reloaded at
@@ -138,11 +138,11 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	if match != nil {
 		reloadTime, err := time.Parse(namedLongDateFormat, match[1])
 		if err != nil {
-			log.Warnf("cannot get BIND 9 reload time: %s", err.Error())
+			log.Warnf("Cannot get BIND 9 reload time: %s", err.Error())
 		}
 		bind9Daemon.ReloadedAt = reloadTime
 	} else {
-		log.Warnf("cannot get BIND 9 reload time: unable to find last configured in output")
+		log.Warnf("Cannot get BIND 9 reload time: unable to find last configured time in output")
 	}
 
 	// Number of zones
@@ -151,16 +151,16 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	if match != nil {
 		count, err := strconv.Atoi(match[1])
 		if err != nil {
-			log.Warnf("cannot get BIND 9 number of zones: %s", err.Error())
+			log.Warnf("Cannot get BIND 9 number of zones: %s", err.Error())
 		}
 		autoCount, err := strconv.Atoi(match[2])
 		if err != nil {
-			log.Warnf("cannot get BIND 9 number of automatic zones: %s", err.Error())
+			log.Warnf("Cannot get BIND 9 number of automatic zones: %s", err.Error())
 		}
 		bind9Daemon.Bind9Daemon.Stats.ZoneCount = int64(count - autoCount)
 		bind9Daemon.Bind9Daemon.Stats.AutomaticZoneCount = int64(autoCount)
 	} else {
-		log.Warnf("cannot get BIND 9 number of zones: unable to find number of zones in output")
+		log.Warnf("Cannot get BIND 9 number of zones: unable to find number of zones in output")
 	}
 
 	// Save status

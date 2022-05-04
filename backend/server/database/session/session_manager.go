@@ -18,7 +18,7 @@ import (
 )
 
 // Provides session management mechanisms for Stork. It wraps the scs.SessionManager
-// structure with Stork specific implementation of sessions.
+// structure with Stork-specific implementation of sessions.
 type SessionMgr struct {
 	scsSessionMgr *scs.SessionManager
 }

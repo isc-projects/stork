@@ -13,7 +13,7 @@ import (
 func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 	if _, _, present := config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
-		r, err := NewReport(ctx, "The Kea Statistics Commands library (libdhcp_stat_cmds) provides commands for retrieving accurate DHCP lease statistics for Kea DHCP servers. Stork sends these commands to fetch lease statistics displayed in the dashboard, subnet, and shared network views. Stork found that {daemon} is not using this hook library. Some statistics will not be available until the library is loaded.").
+		r, err := NewReport(ctx, "The Kea Statistics Commands library (libdhcp_stat_cmds) provides commands for retrieving accurate DHCP lease statistics for Kea DHCP servers. Stork sends these commands to fetch lease statistics displayed in the dashboard, subnet, and shared-network views. Stork found that {daemon} is not using this hook library. Some statistics will not be available until the library is loaded.").
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -28,7 +28,7 @@ func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	if _, _, present := config.GetHooksLibrary("libdhcp_host_cmds"); !present {
 		databases := config.GetAllDatabases()
 		if len(databases.Hosts) > 0 {
-			r, err := NewReport(ctx, "Kea can be configured to store host reservations in a database. Stork can access these reservations using the commands implemented in the Host Commands hook library and make them available in the Host Reservations view. It appears that the libdhcp_host_cmds hooks library is not loaded on {daemon}. Host reservations from the database will not be visible in Stork until this library is enabled.").
+			r, err := NewReport(ctx, "Kea can be configured to store host reservations in a database. Stork can access these reservations using the commands implemented in the Host Commands hook library and make them available in the Host Reservations view. It appears that the libdhcp_host_cmds hook library is not loaded on {daemon}. Host reservations from the database will not be visible in Stork until this library is enabled.").
 				referencingDaemon(ctx.subjectDaemon).
 				create()
 			return r, err
@@ -95,7 +95,7 @@ func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 			details += storkutil.FormatNoun(singleCount, "shared network", "s")
 			details += " with only a single subnet"
 		}
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s. Shared networks create an overhead for a Kea server configuration and DHCP message processing, affecting its performance. It is recommended to remove the shared networks haing none or a single subnet and specify these subnets at the global configuration level.", details)).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s. Shared networks create overhead for a Kea server configuration and DHCP message processing, affecting their performance. It is recommended to remove any shared networks having none or a single subnet and specify these subnets at the global configuration level.", details)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -377,7 +377,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Get global host reservation mode settings.
 	globalModes := config.GetGlobalReservationModes()
 	if globalModes == nil {
-		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
+		return nil, errors.New("problem getting global reservation modes from Kea configuration")
 	}
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
@@ -431,7 +431,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 				}
 			}
 			// Didn't find in-pool reservations in the configuration file and in
-			// the host daabase.
+			// the host database.
 			if ipResrvExist && !inPool {
 				// No in-pool reservation.
 				oopSubnetsCount++
@@ -440,7 +440,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host reservation mode. Reservations specified for these subnets are outside the dynamic address pools. Using out-of-pool reservation mode prevents Kea from checking host reservation existence when allocating in-pool addresses, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host-reservation mode. Reservations specified for these subnets are outside the dynamic address pools. Using out-of-pool reservation mode prevents Kea from checking host-reservation existence when allocating in-pool addresses, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -507,7 +507,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Get global host reservation mode settings.
 	globalModes := config.GetGlobalReservationModes()
 	if globalModes == nil {
-		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
+		return nil, errors.New("problem getting global reservation modes from Kea configuration")
 	}
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
@@ -563,7 +563,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 				}
 			}
 			// Didn't find in-pool reservations in the configuration file and in
-			// the host daabase.
+			// the host database.
 			if ipResrvExist && !inPool {
 				// No in-pool reservation.
 				oopSubnetsCount++
@@ -572,7 +572,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host reservation mode. Reservations specified for these subnets appear outside the dynamic address and/or prefix delegation pools. Using out-of-pool reservation mode prevents Kea from checking host reservation existence when allocating in-pool addresses and delegated prefixes, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host-reservation mode. Reservations specified for these subnets appear outside the dynamic-address and/or prefix-delegation pools. Using out-of-pool reservation mode prevents Kea from checking host-reservation existence when allocating in-pool addresses and delegated prefixes, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err

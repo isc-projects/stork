@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- Add name column to app table.
+            -- Adds the name column to the app table.
             ALTER TABLE app ADD COLUMN name TEXT;
 
              -- For each app in this table, generate a name. The basic name has the
@@ -17,8 +17,8 @@ func init() {
              FROM machine
              WHERE app.machine_id = machine.id;
 
-             -- For each machine running multiple instances of the same app, we need
-             -- to add a postfixes to some apps' names to make them unique. One of
+             -- For each machine running multiple instances of the same app,
+             -- postfixes must be added to some apps' names to make them unique. One of
              -- the apps can be left without a postfix. The other apps running on the
             -- same machine will have the following format:
             -- [app-type]@[machine-address]%[app-id].
@@ -28,7 +28,7 @@ func init() {
                  last_name TEXT;
             BEGIN
                 FOR r IN
-                    -- This query finds all records which have duplicated name entries.
+                    -- This query finds all records which have duplicate name entries.
                     WITH apps AS (
                         SELECT a.*, count(*) OVER (PARTITION BY name) AS count
                         FROM app AS a
@@ -36,7 +36,7 @@ func init() {
                     )
                      SELECT * FROM apps WHERE count > 1
                 LOOP
-                    -- Append postfix only if this is next occurrence of the same name.
+                    -- This appends a postfix only if this is next occurrence of the same name.
                     IF (last_name = name) THEN
                          UPDATE app SET name = CONCAT(name, '%', id::TEXT) WHERE id = r.id;
                     ELSE
@@ -45,22 +45,22 @@ func init() {
                 END LOOP;
             END $$;
 
-            -- Trigger function creating default app name when new app is added or an
+            -- This trigger function creates a default app name when a new app is added or an
             -- app is updated and the name is not specified.
             CREATE OR REPLACE FUNCTION create_default_app_name()
                 RETURNS trigger
                 LANGUAGE 'plpgsql'
                 AS $function$
             BEGIN
-                -- Trim whitespace before and after the actual name.
+                -- Trims whitespace before and after the actual name.
                 SELECT REGEXP_REPLACE(NEW.name, '\s+$', '') INTO NEW.name;
                 SELECT REGEXP_REPLACE(NEW.name, '^\s+', '') INTO NEW.name;
 
                 IF NEW.name IS NULL OR NEW.name = '' THEN
-                    -- Create base name without a postfix.
+                    -- Creates a base name without a postfix.
                     NEW.name = CONCAT(NEW.type, '@', (SELECT address FROM machine WHERE id = NEW.machine_id));
-                    -- Check if the postfix is needed. It is the case when the name without the postfix
-                    -- already exists.
+                    -- Checks whether the postfix is needed. It is necessary when the name already exists
+                    -- without the postfix.
                     IF ((SELECT COUNT(*) FROM app WHERE name = NEW.name) > 0) THEN
                         NEW.name = CONCAT(NEW.name, '%', NEW.id::TEXT);
                     END IF;
@@ -69,16 +69,16 @@ func init() {
             END;
             $function$;
 
-            -- Create a trigger checking if the record lacks a name. If it does, generate one.
+            -- Creates a trigger checking whether the record lacks a name. If it does, generate one.
             DO $$ BEGIN
                 CREATE TRIGGER trigger_create_default_app_name
                     BEFORE INSERT OR UPDATE ON app
                          FOR EACH ROW EXECUTE PROCEDURE create_default_app_name();
             END $$;
 
-            -- Trigger function verifying that an app name is valid. If the app name has the following
+            -- This trigger function verifies that an app name is valid. If the app name has the following
             -- pattern [text]@[machine-address][%id], it checks that the machine with the given name
-            -- exists. The special format [text]@@[machine-address] can be used to avoid such check.
+            -- exists. The special format [text]@@[machine-address] can be used to avoid this check.
             CREATE OR REPLACE FUNCTION validate_app_name()
                 RETURNS trigger
                 LANGUAGE 'plpgsql'
@@ -96,23 +96,23 @@ func init() {
             END;
             $function$;
 
-            -- Create trigger validating the app name.
+            -- Creates a trigger validating the app name.
             DO $$ BEGIN
                 CREATE TRIGGER trigger_validate_app_name
                     BEFORE INSERT OR UPDATE ON app
                         FOR EACH ROW EXECUTE PROCEDURE validate_app_name();
             END $$;
 
-            -- Trigger function invoked when a machine's address is updated. It updates all
+            -- This trigger function is invoked when a machine's address is updated. It updates all
             -- app names derived from the previous machine name to a new machine name.
             CREATE OR REPLACE FUNCTION replace_app_name()
                 RETURNS trigger
                 LANGUAGE 'plpgsql'
                 AS $function$
             BEGIN
-                -- Update the app name only if the machine name was changed.
+                -- Updates the app name only if the machine name was changed.
                 IF NEW.address != OLD.address THEN
-                    -- For each app following the pattern [text]@[machine-address], update the
+                    -- For each app following the pattern [text]@[machine-address], updates the
                     -- app name.
                     UPDATE app
                          SET name = REGEXP_REPLACE(name, CONCAT('@', OLD.address, '((\%\d+){0,1})$'), CONCAT('@', NEW.address, '\2'))
@@ -122,7 +122,7 @@ func init() {
             END;
             $function$;
 
-            -- Create the trigger to update the app names as a result of a machine address change.
+            -- Creates the trigger to update the app names as a result of a machine address change.
             DO $$ BEGIN
                 CREATE TRIGGER trigger_replace_app_name
                     AFTER UPDATE ON machine

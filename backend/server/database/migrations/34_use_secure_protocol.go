@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- Add use secure protocol column to store the TLS status of the Kea CA
+            -- Adds a use-secure-protocol column to store the TLS status of the Kea CA.
             ALTER TABLE access_point ADD COLUMN use_secure_protocol BOOLEAN DEFAULT false;
         `)
 		return err

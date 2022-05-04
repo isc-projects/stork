@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- Create a table holding configuration review results.
+            -- Creates a table holding configuration review results.
             CREATE TABLE IF NOT EXISTS config_report (
                 id BIGSERIAL PRIMARY KEY,
                 created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -20,7 +20,7 @@ func init() {
                     ON DELETE NO ACTION
             );
 
-            -- Create a table mapping the configuration review results to the daemons
+            -- Creates a table mapping the configuration review results to the daemons
             -- for which the review was conducted.
             CREATE TABLE IF NOT EXISTS daemon_to_config_report (
                 daemon_id BIGINT NOT NULL,
@@ -37,10 +37,10 @@ func init() {
                     ON DELETE CASCADE
             );
 
-            -- Delete all configuration reports associated with a deleted daemon.
-            -- We can't use a cascade action for this operation, because not only
-            -- do we want to remove associations between the config reports and the
-            -- deleted daemon but also all reports from the config_report table.
+            -- Deletes all configuration reports associated with a deleted daemon.
+            -- A cascade action cannot be used for this operation, because not only
+            -- should the associations between the config reports and the
+            -- deleted daemon be removed, but also all reports from the config_report table.
             CREATE OR REPLACE FUNCTION delete_daemon_config_reports()
                 RETURNS trigger
                 LANGUAGE 'plpgsql'
@@ -52,10 +52,10 @@ func init() {
             END;
             $function$;
 
-            -- Create a trigger fired when a daemon is deleted. This trigger removes
+            -- Creates a trigger fired when a daemon is deleted. This trigger removes
             -- all configuration review reports associated with the daemon. Once
             -- a report is deleted, the cascade action on the daemon_to_config_report
-            -- will delete all associations with this report.
+            -- deletes all associations with this report.
             DO $$ BEGIN
                 CREATE TRIGGER trigger_delete_daemon_config_reports
                     AFTER DELETE ON daemon

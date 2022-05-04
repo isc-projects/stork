@@ -52,11 +52,11 @@ func setupRootKeyAndCert(db *pg.DB) (*ecdsa.PrivateKey, *x509.Certificate, []byt
 	// check root key and root cert, if missing then generate them
 	rootKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCAKey)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "problem with getting CA key from database")
+		return nil, nil, nil, errors.Wrapf(err, "problem getting CA key from database")
 	}
 	rootCertPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCACert)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "problem with getting CA cert from database")
+		return nil, nil, nil, errors.Wrapf(err, "problem getting CA cert from database")
 	}
 
 	var rootKey *ecdsa.PrivateKey
@@ -80,7 +80,7 @@ func setupRootKeyAndCert(db *pg.DB) (*ecdsa.PrivateKey, *x509.Certificate, []byt
 		if err != nil {
 			return nil, nil, nil, errors.Wrapf(err, "cannot store root CA key in database")
 		}
-		log.Printf("generated root CA key and cert")
+		log.Printf("Generated root CA key and cert")
 	} else {
 		// key and cert present in db so just check them
 		rootKeyPEMBlock, _ := pem.Decode(rootKeyPEM)
@@ -95,7 +95,7 @@ func setupRootKeyAndCert(db *pg.DB) (*ecdsa.PrivateKey, *x509.Certificate, []byt
 		if err != nil {
 			return nil, nil, nil, errors.Wrapf(err, "cannot parse root CA cert")
 		}
-		log.Printf("root CA key and cert ok")
+		log.Printf("Root CA key and cert OK")
 	}
 
 	return rootKey, rootCert, rootCertPEM, nil
@@ -154,7 +154,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "cannot store server cert in database")
 		}
-		log.Printf("generated server key and cert")
+		log.Printf("Generated server key and cert")
 	} else {
 		// key and cert present in db so just check them
 		serverKeyPEMBlock, _ := pem.Decode(serverKeyPEM)
@@ -168,7 +168,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "cannot parse server cert")
 		}
-		log.Printf("server key and cert ok")
+		log.Printf("Server key and cert OK")
 	}
 
 	return serverKeyPEM, serverCertPEM, nil
@@ -179,7 +179,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 // store in the database. In the end return root CA cert, server key
 // and cert, all in PEM format.
 func SetupServerCerts(db *pg.DB) ([]byte, []byte, []byte, error) {
-	log.Printf("preparing certs, it may take up to several minutes")
+	log.Printf("Preparing certs, it may take several minutes")
 
 	// setup root CA key and cert
 	rootKey, rootCert, rootCertPEM, err := setupRootKeyAndCert(db)
@@ -228,7 +228,7 @@ func ExportSecret(db *pg.DB, object string, filename string) error {
 
 	content, err := dbmodel.GetSecret(db, object)
 	if err != nil {
-		return errors.Wrapf(err, "problem with getting '%s' from database", objDisplayName)
+		return errors.Wrapf(err, "problem getting '%s' from database", objDisplayName)
 	}
 	if filename != "" {
 		err := os.WriteFile(filename, content, 0600)
@@ -270,7 +270,7 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 		}
 		log.Printf("%s loaded from %s file, length %d", objDisplayName, filename, len(content))
 	} else {
-		log.Printf("reading %s from stdin", objDisplayName)
+		log.Printf("Reading %s from stdin", objDisplayName)
 		content, err = io.ReadAll(os.Stdin)
 		if err != nil {
 			return err
@@ -295,7 +295,7 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 	case dbmodel.SecretServerToken:
 		objDisplayName = SecretTypeSrvToken
 		if len(content) != 32 {
-			return errors.Errorf("server token has to be exactly 32 bytes long, provided is %d bytes", len(content))
+			return errors.Errorf("server token must be exactly 32 bytes long, token provided is %d bytes", len(content))
 		}
 	default:
 		return errors.Errorf("unsupported object: %s", object)
@@ -308,7 +308,7 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 	// The value looks reasonable. Let's set it in the DB
 	err = dbmodel.SetSecret(db, object, content)
 	if err != nil {
-		return errors.Wrapf(err, "problem with setting '%s' in database", objDisplayName)
+		return errors.Wrapf(err, "problem setting '%s' in database", objDisplayName)
 	}
 
 	return nil

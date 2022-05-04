@@ -5,7 +5,7 @@ import { Component, Input, OnInit } from '@angular/core'
  * a string format.
  *
  * Identifiers are used to associate host reservations and leases
- * with clients.   Typical lease identifiers are MAC address and
+ * with clients. Typical lease identifiers are MAC address and
  * client-id. Host reservations have more identifier types:
  * e.g., circuit-id, flex-id. All identifiers can be represented
  * using strings of hexadecimal digits. Some identifiers (typically
@@ -34,7 +34,7 @@ export class IdentifierComponent implements OnInit {
     /**
      * Identifier in the hex format.
      *
-     * It can contain colons and spaces. It must have even number
+     * It can contain colons and spaces. It must have an even number
      * of hexadecimal digits.
      */
     @Input() hexValue = ''
@@ -57,8 +57,8 @@ export class IdentifierComponent implements OnInit {
      * a string of hexadecimal digits, even if it is convertible to
      * a textual format.
      *
-     * The identifiers like hw-address should typically be displayed
-     * in the hex format rather than textual. Setting this value to
+     * Identifiers like hw-address should typically be displayed
+     * in hex format rather than textual. Setting this value to
      * true does not preclude on-demand conversion to the textual form
      * using the button if the identifier is convertible.
      */

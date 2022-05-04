@@ -33,12 +33,12 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s := newSubscriber(req.URL)
 
 	if err := s.applyFiltersFromQuery(sb.db); err != nil {
-		log.Errorf("failed to accept new SSE connection because query parameters are invalid: %+v", err)
+		log.Errorf("Failed to accept new SSE connection because query parameters are invalid: %+v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("new SSE subscriber from %s", req.RemoteAddr)
+	log.Printf("New SSE subscriber from %s", req.RemoteAddr)
 
 	// prepare proper HTTP headers for SSE response
 	h := w.Header()
@@ -72,7 +72,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		case <-req.Context().Done():
 			// connection is closed so unsubscribe subscriber
-			log.Printf("connection with %p closed", s)
+			log.Printf("Connection with %p closed", s)
 			sb.subscribersMutex.Lock()
 			delete(sb.subscribers, ch)
 			sb.subscribersMutex.Unlock()
@@ -88,7 +88,7 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 
 	evJSON, err := json.Marshal(event)
 	if err != nil {
-		log.Errorf("problem with serializing event to json: %+v", err)
+		log.Errorf("Problem serializing event to json: %+v", err)
 		return
 	}
 

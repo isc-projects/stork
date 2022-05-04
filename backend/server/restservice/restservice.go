@@ -32,25 +32,25 @@ import (
 )
 
 type RestAPISettings struct {
-	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"grace period for which to wait before killing idle connections" default:"10s"`
-	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"grace period for which to wait before shutting down the server" default:"15s"`
-	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"controls the maximum number of bytes the server will read parsing the request header's keys and values, including the request line. It does not limit the size of the request body." default:"1MiB"`
+	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"the waiting period before killing idle connections" default:"10s"`
+	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"the waiting period before shutting down the server" default:"15s"`
+	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line. It does not limit the size of the request body." default:"1MiB"`
 
 	Host         string        `long:"rest-host" description:"the IP to listen on" default:"" env:"STORK_REST_HOST"`
 	Port         int           `long:"rest-port" description:"the port to listen on for connections" default:"8080" env:"STORK_REST_PORT"`
-	ListenLimit  int           `long:"rest-listen-limit" description:"limit the number of outstanding requests"`
-	KeepAlive    time.Duration `long:"rest-keep-alive" description:"set the TCP keep-alive timeouts on accepted connections. It prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
-	ReadTimeout  time.Duration `long:"rest-read-timeout" description:"maximum duration before timing out read of the request" default:"30s"`
-	WriteTimeout time.Duration `long:"rest-write-timeout" description:"maximum duration before timing out write of the response" default:"60s"`
+	ListenLimit  int           `long:"rest-listen-limit" description:"limits the number of outstanding requests"`
+	KeepAlive    time.Duration `long:"rest-keep-alive" description:"sets the TCP keep-alive timeouts on accepted connections. It prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
+	ReadTimeout  time.Duration `long:"rest-read-timeout" description:"the maximum duration before timing out reading the request" default:"30s"`
+	WriteTimeout time.Duration `long:"rest-write-timeout" description:"the maximum duration before timing out writing the response" default:"60s"`
 
 	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"the certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
 	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"the private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"the certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
-	StaticFilesDir string `long:"rest-static-files-dir" description:"Directory with static files for UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
+	StaticFilesDir string `long:"rest-static-files-dir" description:"the directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 }
 
-// Runtime information and settings for ReST API service.
+// Runtime information and settings for RestAPI service.
 type RestAPI struct {
 	Settings         *RestAPISettings
 	DBSettings       *dbops.DatabaseSettings
@@ -217,7 +217,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		httpServer.TLSConfig.Certificates = make([]tls.Certificate, 1)
 		httpServer.TLSConfig.Certificates[0], err = tls.LoadX509KeyPair(string(s.TLSCertificate), string(s.TLSCertificateKey))
 		if err != nil {
-			return pkgerrors.Wrap(err, "problem with setting up certificates")
+			return pkgerrors.Wrap(err, "problem setting up certificates")
 		}
 	}
 
@@ -225,7 +225,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		// include specified CA certificate
 		caCert, caCertErr := os.ReadFile(string(s.TLSCACertificate))
 		if caCertErr != nil {
-			return pkgerrors.Wrap(caCertErr, "problem with setting up certificates")
+			return pkgerrors.Wrap(caCertErr, "problem setting up certificates")
 		}
 		caCertPool := x509.NewCertPool()
 		ok := caCertPool.AppendCertsFromPEM(caCert)
@@ -240,15 +240,15 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		// after standard and custom config are passed, this ends up with no certificate
 		if s.TLSCertificate == "" {
 			if s.TLSCertificateKey == "" {
-				log.Fatalf("the required flags `--tls-certificate` and `--tls-key` were not specified")
+				log.Fatalf("The required flags `--tls-certificate` and `--tls-key` were not specified")
 			}
-			log.Fatalf("the required flag `--tls-certificate` was not specified")
+			log.Fatalf("The required flag `--tls-certificate` was not specified")
 		}
 		if s.TLSCertificateKey == "" {
-			log.Fatalf("the required flag `--tls-key` was not specified")
+			log.Fatalf("The required flag `--tls-key` was not specified")
 		}
 		// this happens with a wrong custom TLS configurator
-		log.Fatalf("no certificate was configured for TLS")
+		log.Fatalf("No certificate was configured for TLS")
 	}
 
 	// must have at least one certificate or panics
@@ -281,7 +281,7 @@ func (r *RestAPI) Serve() (err error) {
 		},
 	})
 	if err != nil {
-		return pkgerrors.Wrap(err, "cannot setup ReST API handler")
+		return pkgerrors.Wrap(err, "cannot setup RESTful API handler")
 	}
 	r.handler = h
 
@@ -294,7 +294,7 @@ func (r *RestAPI) Serve() (err error) {
 	// set default handler, if none is set
 	if r.handler == nil {
 		if r.api == nil {
-			return pkgerrors.New("can't create the default handler, as no API is set")
+			return pkgerrors.New("cannot create the default handler, as no API is set")
 		}
 
 		r.handler = r.api.Serve(nil)
@@ -341,9 +341,9 @@ func (r *RestAPI) Serve() (err error) {
 		"address": scheme + lstnr.Addr().String(),
 	}).Infof("started serving Stork Server")
 	if err := httpServer.Serve(lstnr); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return pkgerrors.Wrap(err, "problem with serving")
+		return pkgerrors.Wrap(err, "problem serving")
 	}
-	log.Info("stopped serving Stork Server")
+	log.Info("Stopped serving Stork Server")
 
 	return nil
 }
@@ -366,7 +366,7 @@ func (r *RestAPI) Listen() error {
 		// TLS disabled
 		listener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return pkgerrors.Wrap(err, "problem occurred while starting to listen using ReST API")
+			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}
 
 		h, p, err := swag.SplitHostPort(listener.Addr().String())
@@ -381,7 +381,7 @@ func (r *RestAPI) Listen() error {
 
 		tlsListener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return pkgerrors.Wrap(err, "problem occurred while starting to listen using ReST API")
+			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}
 
 		sh, sp, err := swag.SplitHostPort(tlsListener.Addr().String())
@@ -398,15 +398,15 @@ func (r *RestAPI) Listen() error {
 }
 
 func (r *RestAPI) Shutdown() {
-	log.Printf("Stopping ReST API Service")
+	log.Printf("Stopping RESTful API Service")
 	if r.HTTPServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		r.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := r.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shutdown the server: %v\n", err)
+			log.Warnf("Could not gracefully shut down the server: %v\n", err)
 		}
 	}
-	log.Printf("Stopped ReST API Service")
+	log.Printf("Stopped RESTful API Service")
 }

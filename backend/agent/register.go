@@ -49,7 +49,7 @@ func promptUserForServerToken() (string, error) {
 func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, error) {
 	if agentAddr == "" {
 		agentAddrTip, err := fqdn.FqdnHostname()
-		msg := ">>>> IP address or FQDN of the host with Stork Agent (the Stork Server will use it to connect to the Stork Agent)"
+		msg := ">>>> IP address or FQDN of the host with Stork Agent (for the Stork Server connection)"
 		if err != nil {
 			agentAddrTip = ""
 			msg += ": "
@@ -65,7 +65,7 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 	}
 
 	if agentPort == "" {
-		fmt.Printf(">>>> Port number that Stork Agent will use to listen on [8080]: ")
+		fmt.Printf(">>>> Port number that Stork Agent will listen on [8080]: ")
 		fmt.Scanln(&agentPort)
 		agentPort = strings.TrimSpace(agentPort)
 		if agentPort == "" {
@@ -143,12 +143,12 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 
 		err = writeAgentFile(AgentTokenFile, agentToken)
 		if err != nil {
-			log.Errorf("problem with storing agent token in %s: %s", AgentTokenFile, err)
+			log.Errorf("Problem storing agent token in %s: %s", AgentTokenFile, err)
 			return nil, "", err
 		}
 
-		log.Printf("agent token stored in %s", AgentTokenFile)
-		log.Printf("agent key, agent token and CSR (re)generated")
+		log.Printf("Agent token stored in %s", AgentTokenFile)
+		log.Printf("Agent key, agent token, and CSR (re)generated")
 	} else {
 		// generate CSR using existing private key and agent token
 		privKeyPEM, err = os.ReadFile(KeyPEMFile)
@@ -166,7 +166,7 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
-		log.Printf("loaded existing agent key and generated CSR")
+		log.Printf("Loaded existing agent key and generated CSR")
 	}
 
 	// convert fingerprint to hex string
@@ -203,7 +203,7 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 	for {
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url.String(), reqPayload)
 		if err != nil {
-			return 0, "", "", errors.Wrapf(err, "problem with preparing registering request")
+			return 0, "", "", errors.Wrapf(err, "problem preparing registering request")
 		}
 		req.Header.Add("Content-Type", "application/json")
 		resp, err = client.Do(req)
@@ -217,16 +217,16 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		// In case of server token based registration this method is invoked manually so
 		// it should fail immediately if there is no connection to the server.
 		if retry && strings.Contains(err.Error(), "connection refused") {
-			log.Println("sleeping for 10 seconds before next registration attempt")
+			log.Println("Sleeping for 10 seconds before next registration attempt")
 			time.Sleep(10 * time.Second)
 		} else {
-			return 0, "", "", errors.Wrapf(err, "problem with registering machine")
+			return 0, "", "", errors.Wrapf(err, "problem registering machine")
 		}
 	}
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return 0, "", "", errors.Wrapf(err, "problem with reading server's response while registering the machine")
+		return 0, "", "", errors.Wrapf(err, "problem reading server's response while registering the machine")
 	}
 
 	// Special case - the agent is already registered
@@ -246,14 +246,14 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return 0, "", "", errors.Wrapf(err, "problem with parsing server's response while registering the machine: %v", result)
+		return 0, "", "", errors.Wrapf(err, "problem parsing server's response while registering the machine: %v", result)
 	}
 	errTxt := result["error"]
 	if errTxt != nil {
-		msg := "problem with registering machine"
+		msg := "Problem registering machine"
 		errTxtStr, ok := errTxt.(string)
 		if ok {
-			msg = fmt.Sprintf("problem with registering machine: %s", errTxtStr)
+			msg = fmt.Sprintf("problem registering machine: %s", errTxtStr)
 		}
 		return 0, "", "", errors.New(msg)
 	}
@@ -263,12 +263,12 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		if errTxt != nil {
 			errTxtStr, ok := errTxt.(string)
 			if ok {
-				msg = fmt.Sprintf("problem with registering machine: %s", errTxtStr)
+				msg = fmt.Sprintf("problem registering machine: %s", errTxtStr)
 			} else {
-				msg = "problem with registering machine"
+				msg = "problem registering machine"
 			}
 		} else {
-			msg = fmt.Sprintf("problem with registering machine: http status code %d", resp.StatusCode)
+			msg = fmt.Sprintf("problem registering machine: http status code %d", resp.StatusCode)
 		}
 		return 0, "", "", errors.New(msg)
 	}
@@ -298,7 +298,7 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		return 0, "", "", errors.New("bad agentCert in response from server for registration request")
 	}
 	// all ok
-	log.Printf("machine registered")
+	log.Printf("Machine registered")
 	return int64(machineID), serverCACert, agentCert, nil
 }
 
@@ -323,7 +323,7 @@ func checkAndStoreCerts(serverCACert, agentCert string) error {
 	if err != nil {
 		return errors.Wrapf(err, "cannot write server CA cert")
 	}
-	log.Printf("stored agent signed cert and CA cert")
+	log.Printf("Stored agent-signed cert and CA cert")
 	return nil
 }
 
@@ -333,7 +333,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 	urlSuffix := fmt.Sprintf("api/machines/%d/ping", machineID)
 	url, err := baseSrvURL.Parse(urlSuffix)
 	if err != nil {
-		return errors.Wrapf(err, "problem with preparing url %s + %s", baseSrvURL.String(), urlSuffix)
+		return errors.Wrapf(err, "problem preparing url %s + %s", baseSrvURL.String(), urlSuffix)
 	}
 	req := map[string]interface{}{
 		"serverToken": serverToken,
@@ -342,29 +342,29 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 	jsonReq, _ := json.Marshal(req)
 	httpReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url.String(), bytes.NewBuffer(jsonReq))
 	if err != nil {
-		return errors.Wrapf(err, "problem with preparing http request")
+		return errors.Wrapf(err, "problem preparing http request")
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return errors.Wrapf(err, "problem with pinging machine")
+		return errors.Wrapf(err, "problem pinging machine")
 	}
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return errors.Wrapf(err, "problem with reading server's response while pinging machine")
+		return errors.Wrapf(err, "problem reading server's response while pinging machine")
 	}
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
-	// normally the response is empty so unmarshaling is failing, if it didn't fail it means
+	// normally the response is empty so unmarshalling is failing, if it didn't fail it means
 	// that there could be some error information
 	if err == nil {
 		errTxt := result["error"]
 		if errTxt != nil {
-			msg := "problem with pinging machine"
+			msg := "Problem pinging machine"
 			errTxtStr, ok := errTxt.(string)
 			if ok {
-				msg = fmt.Sprintf("problem with pinging machine: %s", errTxtStr)
+				msg = fmt.Sprintf("problem pinging machine: %s", errTxtStr)
 			}
 			return errors.New(msg)
 		}
@@ -376,17 +376,17 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 			if errTxt != nil {
 				errTxtStr, ok := errTxt.(string)
 				if ok {
-					msg = fmt.Sprintf("problem with pinging machine: %s", errTxtStr)
+					msg = fmt.Sprintf("problem pinging machine: %s", errTxtStr)
 				}
 			}
 		}
 		if msg == "" {
-			msg = fmt.Sprintf("problem with pinging machine: http status code %d", resp.StatusCode)
+			msg = fmt.Sprintf("problem pinging machine: http status code %d", resp.StatusCode)
 		}
 		return errors.New(msg)
 	}
 
-	log.Printf("machine ping over TLS: OK")
+	log.Printf("Machine ping over TLS: OK")
 
 	return nil
 }
@@ -407,7 +407,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil || baseSrvURL.String() == "" {
-		log.Errorf("cannot parse server URL: %s: %s", serverURL, err)
+		log.Errorf("Cannot parse server URL: %s: %s", serverURL, err)
 		return false
 	}
 
@@ -417,7 +417,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	if serverToken == "" && regenCerts {
 		serverToken2, err = promptUserForServerToken()
 		if err != nil {
-			log.Errorf("problem with getting server token: %s", err)
+			log.Errorf("Problem getting server token: %s", err)
 			return false
 		}
 	}
@@ -430,7 +430,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, agentToken, err := generateCerts(agentAddr, regenCerts)
 	if err != nil {
-		log.Errorf("problem with generating certs: %s", err)
+		log.Errorf("Problem generating certs: %s", err)
 		return false
 	}
 
@@ -441,12 +441,12 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	log.Println("=============================================================================")
 
 	if serverToken2 == "" {
-		log.Println("authorize the machine in the Stork web UI")
+		log.Println("Authorize the machine in the Stork web UI")
 	} else {
-		log.Println("machine will be automatically registered using the server token")
-		log.Println("agent token is printed above for informational purposes only")
-		log.Println("the user does not need to copy or verify the agent token during the registration using the server token")
-		log.Println("it will be sent to the server but it is not directly used in this type of the machine registration")
+		log.Println("Machine will be automatically registered using the server token")
+		log.Println("Agent token is printed above for informational purposes only")
+		log.Println("User does not need to copy or verify the agent token during registration via the server token")
+		log.Println("It will be sent to the server but it is not directly used in this type of machine registration")
 	}
 
 	// prepare http client to connect to Stork Server
@@ -458,7 +458,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		log.Errorln(err.Error())
 		return false
 	}
-	log.Println("try to register agent in Stork Server")
+	log.Println("Try to register agent in Stork Server")
 	machineID, serverCACert, agentCert, err := registerAgentInServer(client, baseSrvURL, reqPayload, retry)
 	if err != nil {
 		log.Errorln(err.Error())
@@ -470,7 +470,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	if serverCACert != "" && agentCert != "" {
 		err = checkAndStoreCerts(serverCACert, agentCert)
 		if err != nil {
-			log.Errorf("problem with certs: %s", err)
+			log.Errorf("Problem with certs: %s", err)
 			return false
 		}
 	}
@@ -483,12 +483,12 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 				break
 			}
 			if i < 3 {
-				log.Errorf("retrying ping %d/3 due to error: %s", i, err)
+				log.Errorf("Retrying ping %d/3 due to error: %s", i, err)
 				time.Sleep(2 * time.Duration(i) * time.Second)
 			}
 		}
 		if err != nil {
-			log.Errorf("cannot ping machine: %s", err)
+			log.Errorf("Cannot ping machine: %s", err)
 			return false
 		}
 	}

@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core'
 
 /**
  * A component that presents event text. It takes raw text, looks there for entities
- * in form of tags like <app id="123" type="kea"> and translates this into text parts
+ * in the form of tags like <app id="123" type="kea">, and translates this into text parts
  * that are rendered accordingly by template: either plain text or event-link is used
  * for given text part.
  */

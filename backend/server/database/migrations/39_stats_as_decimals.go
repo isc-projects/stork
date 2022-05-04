@@ -3,7 +3,7 @@ package dbmigs
 import "github.com/go-pg/migrations/v8"
 
 func init() {
-	// Stork shouldn't exceed the 60 decimal places in any statistic, even if fully loaded.
+	// Stork shouldn't exceed 60 decimal places in any statistic, even if fully loaded.
 	// See comments and calculations in backend/server/database/model/stats.go.
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
@@ -13,7 +13,7 @@ func init() {
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
 		ALTER TABLE statistic ALTER COLUMN "value" TYPE BIGINT
-			-- Clamp the values to bigint bounds.
+			-- This clamps the values to bigint bounds.
 			USING
 				CASE WHEN value IS NULL THEN NULL
 				ELSE

@@ -10,10 +10,10 @@ import (
 
 // This module provides global settings that can be used anywhere in the code.
 // All settings with their default values are defined in defaultSettings table,
-// in InitializeSettings function. There is a few functions for getting and
+// in InitializeSettings function. There are a few functions for getting and
 // setting these settings. Generally setters are used in API function
 // so users can set these settings. Getters are used around the code
-// where given setting is needed.
+// where a given setting is needed.
 
 // TODO: add caching to avoid trips to database; candidate caching libs:
 // https://allegro.tech/2016/03/writing-fast-cache-service-in-go.html
@@ -82,7 +82,7 @@ func InitializeSettings(db *pg.DB) error {
 	// Check if there are new settings vs existing ones. Add new ones to DB.
 	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with inserting default settings")
+		err = pkgerrors.Wrapf(err, "problem inserting default settings")
 	}
 	return err
 }
@@ -95,7 +95,7 @@ func GetSetting(db *pg.DB, name string) (*Setting, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, pkgerrors.Wrapf(err, "setting %s is missing", name)
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting setting %s", name)
+		return nil, pkgerrors.Wrapf(err, "problem getting setting %s", name)
 	}
 	return &setting, nil
 }
@@ -107,7 +107,7 @@ func getAndCheckSetting(db *pg.DB, name string, expValType int64) (*Setting, err
 		return nil, err
 	}
 	if s.ValType != expValType {
-		return nil, pkgerrors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, expValType)
+		return nil, pkgerrors.Errorf("no matching setting type of %s (%d vs %d expected)", name, s.ValType, expValType)
 	}
 	return s, nil
 }
@@ -162,7 +162,7 @@ func GetAllSettings(db *pg.DB) (map[string]interface{}, error) {
 	q := db.Model(&settings)
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting all settings")
+		return nil, pkgerrors.Wrapf(err, "problem getting all settings")
 	}
 
 	settingsMap := make(map[string]interface{})
@@ -172,13 +172,13 @@ func GetAllSettings(db *pg.DB) (map[string]interface{}, error) {
 		case SettingValTypeInt:
 			val, err := strconv.ParseInt(s.Value, 10, 64)
 			if err != nil {
-				return nil, pkgerrors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+				return nil, pkgerrors.Wrapf(err, "problem getting setting value of %s", s.Name)
 			}
 			settingsMap[s.Name] = val
 		case SettingValTypeBool:
 			val, err := strconv.ParseBool(s.Value)
 			if err != nil {
-				return nil, pkgerrors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+				return nil, pkgerrors.Wrapf(err, "problem getting setting value of %s", s.Name)
 			}
 			settingsMap[s.Name] = val
 		case SettingValTypeStr:
@@ -200,7 +200,7 @@ func SetSettingInt(db *pg.DB, name string, value int64) error {
 	s.Value = strconv.FormatInt(value, 10)
 	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem updating setting %s", name)
 	} else if result.RowsAffected() <= 0 {
 		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
@@ -216,7 +216,7 @@ func SetSettingBool(db *pg.DB, name string, value bool) error {
 	s.Value = strconv.FormatBool(value)
 	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem updating setting %s", name)
 	} else if result.RowsAffected() <= 0 {
 		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
@@ -232,7 +232,7 @@ func SetSettingStr(db *pg.DB, name string, value string) error {
 	s.Value = value
 	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem updating setting %s", name)
 	} else if result.RowsAffected() <= 0 {
 		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
@@ -248,7 +248,7 @@ func SetSettingPasswd(db *pg.DB, name string, value string) error {
 	s.Value = value
 	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem updating setting %s", name)
 	} else if result.RowsAffected() <= 0 {
 		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}

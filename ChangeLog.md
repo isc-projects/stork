@@ -807,7 +807,7 @@ Stork 0.10.0 released on 2020-08-13.
 
     Fixed an issue with refreshing log displayed within the log viewer.
     The issue was triggered by the periodic updates of the information
-    about monitored apps. As a result of the  updates the log file
+    about monitored apps. As a result of the updates the log file
     identifiers were changing which resulted in an error message
     informing that the viewed file no longer exists.
     (Gitlab #364)

@@ -20,7 +20,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	// of the file from the database.
 	dbLogTarget, err := dbmodel.GetLogTargetByID(r.DB, params.ID)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get information about the log file with id %d from the database", params.ID)
+		msg := fmt.Sprintf("Cannot get information about log file with ID %d from the database", params.ID)
 		log.Error(msg)
 		rsp := services.NewGetLogTailDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -30,7 +30,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 
 	// Handle the case when referencing the non-existing file.
 	if dbLogTarget == nil {
-		msg := fmt.Sprintf("log file with id %d does not exist", params.ID)
+		msg := fmt.Sprintf("Log file with ID %d does not exist", params.ID)
 		log.Warn(msg)
 		rsp := services.NewGetLogTailDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
@@ -41,7 +41,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	// Currently we only support viewing log files.
 	if dbLogTarget.Output == "stdout" || dbLogTarget.Output == "stderr" ||
 		strings.HasPrefix(dbLogTarget.Output, "syslog") {
-		msg := fmt.Sprintf("viewing log from %s is not supported", dbLogTarget.Output)
+		msg := fmt.Sprintf("Viewing log from %s is not supported", dbLogTarget.Output)
 		log.Warn(msg)
 		rsp := services.NewGetLogTailDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,

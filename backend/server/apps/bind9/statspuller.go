@@ -22,7 +22,7 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eve
 	statsPuller := &StatsPuller{
 		EventCenter: eventCenter,
 	}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "BIND 9 Stats puller", "bind9_stats_puller_interval",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "BIND 9 stats puller", "bind9_stats_puller_interval",
 		statsPuller.pullStats)
 	if err != nil {
 		return nil, err
@@ -53,12 +53,12 @@ func (statsPuller *StatsPuller) pullStats() error {
 		err := statsPuller.getStatsFromApp(&dbApp2)
 		if err != nil {
 			lastErr = err
-			log.Errorf("error occurred while getting stats from app %+v: %+v", dbApp, err)
+			log.Errorf("Error occurred while getting stats from app %+v: %+v", dbApp, err)
 		} else {
 			appsOkCnt++
 		}
 	}
-	log.Printf("completed pulling stats from BIND 9 apps: %d/%d succeeded", appsOkCnt, len(dbApps))
+	log.Printf("Completed pulling stats from BIND 9 apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 	return lastErr
 }
 

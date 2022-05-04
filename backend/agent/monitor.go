@@ -166,7 +166,7 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 	}
 	// if found print new or updated apps
 	if len(newUpdatedApps) > 0 {
-		log.Printf("new or updated apps detected:")
+		log.Printf("New or updated apps detected:")
 		for _, app := range newUpdatedApps {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
@@ -200,12 +200,12 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		if procName == keaProcName || procName == namedProcName {
 			cmdline, err = p.Cmdline()
 			if err != nil {
-				log.Warnf("cannot get process command line: %+v", err)
+				log.Warnf("Cannot get process command line: %+v", err)
 				continue
 			}
 			cwd, err = p.Cwd()
 			if err != nil {
-				log.Warnf("cannot get process current working directory: %+v", err)
+				log.Warnf("Cannot get process current working directory: %+v", err)
 				cwd = ""
 			}
 		}
@@ -257,7 +257,7 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 		paths, err := app.DetectAllowedLogs()
 		if err != nil {
 			ap := app.GetBaseApp().AccessPoints[0]
-			err = errors.WithMessagef(err, "failed to detect log files for Kea")
+			err = errors.WithMessagef(err, "Failed to detect log files for Kea")
 			log.WithFields(
 				log.Fields{
 					"address": ap.Address,

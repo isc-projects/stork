@@ -56,7 +56,7 @@ export class PasswordChangePageComponent implements OnInit {
             this.msgSrv.add({
                 severity: 'warn',
                 summary: 'Password not updated',
-                detail: 'New password must be different than the current password.',
+                detail: 'New password must be different from the current password.',
                 sticky: false,
             })
             return

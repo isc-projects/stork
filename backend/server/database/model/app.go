@@ -62,7 +62,7 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 			q = q.Where("type NOT IN (?)", pg.In(types))
 			_, err = q.Delete()
 			if err != nil {
-				return pkgerrors.Wrapf(err, "problem with removing access points from app %d", app.ID)
+				return pkgerrors.Wrapf(err, "problem removing access points from app %d", app.ID)
 			}
 		}
 	}
@@ -78,7 +78,7 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 			_, err = tx.Model(point).Insert()
 		}
 		if err != nil {
-			return pkgerrors.Wrapf(err, "problem with adding access point to app %d: %v", app.ID, point)
+			return pkgerrors.Wrapf(err, "problem adding access point to app %d: %v", app.ID, point)
 		}
 	}
 	return nil
@@ -107,7 +107,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 	var deletedDaemons []*Daemon
 	_, err := q.Returning("*").Delete(&deletedDaemons)
 	if err != nil {
-		return nil, nil, pkgerrors.Wrapf(err, "problem with deleting daemons for an updated app %d", app.ID)
+		return nil, nil, pkgerrors.Wrapf(err, "problem deleting daemons for an updated app %d", app.ID)
 	}
 
 	// Add updated daemons.
@@ -122,14 +122,14 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			_, err = tx.Model(daemon).Insert()
 			addedDaemons = append(addedDaemons, daemon)
 			if err != nil {
-				return nil, nil, pkgerrors.Wrapf(err, "problem with inserting daemon to app %d: %v", app.ID, daemon)
+				return nil, nil, pkgerrors.Wrapf(err, "problem inserting daemon in app %d: %v", app.ID, daemon)
 			}
 		} else {
 			result, err := tx.Model(daemon).WherePK().Update()
 			if err != nil {
-				return nil, nil, pkgerrors.Wrapf(err, "problem with updating daemon in app %d: %v", app.ID, daemon)
+				return nil, nil, pkgerrors.Wrapf(err, "problem updating daemon in app %d: %v", app.ID, daemon)
 			} else if result.RowsAffected() <= 0 {
-				return nil, nil, pkgerrors.Wrapf(ErrNotExists, "daemon with id %d does not exist", daemon.ID)
+				return nil, nil, pkgerrors.Wrapf(ErrNotExists, "daemon with ID %d does not exist", daemon.ID)
 			}
 		}
 
@@ -138,7 +138,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			daemon.KeaDaemon.DaemonID = daemon.ID
 			err = upsertInTransaction(tx, daemon.KeaDaemon.ID, daemon.KeaDaemon)
 			if err != nil {
-				return nil, nil, pkgerrors.Wrapf(err, "problem with upserting Kea daemon to app %d: %v",
+				return nil, nil, pkgerrors.Wrapf(err, "problem upserting Kea daemon to app %d: %v",
 					app.ID, daemon.KeaDaemon)
 			}
 
@@ -147,7 +147,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 				daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
 				err = upsertInTransaction(tx, daemon.KeaDaemon.KeaDHCPDaemon.ID, daemon.KeaDaemon.KeaDHCPDaemon)
 				if err != nil {
-					return nil, nil, pkgerrors.Wrapf(err, "problem with upserting Kea DHCP daemon to app %d: %v",
+					return nil, nil, pkgerrors.Wrapf(err, "problem upserting Kea DHCP daemon to app %d: %v",
 						app.ID, daemon.KeaDaemon.KeaDHCPDaemon)
 				}
 			}
@@ -156,7 +156,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			daemon.Bind9Daemon.DaemonID = daemon.ID
 			err = upsertInTransaction(tx, daemon.Bind9Daemon.ID, daemon.Bind9Daemon)
 			if err != nil {
-				return nil, nil, pkgerrors.Wrapf(err, "problem with upserting BIND9 daemon to app %d: %v",
+				return nil, nil, pkgerrors.Wrapf(err, "problem upserting BIND 9 daemon to app %d: %v",
 					app.ID, daemon.Bind9Daemon)
 			}
 		}
@@ -175,7 +175,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 		}
 		_, err := q.Delete()
 		if err != nil {
-			return nil, nil, pkgerrors.Wrapf(err, "problem with deleting log targets for updated daemon %d",
+			return nil, nil, pkgerrors.Wrapf(err, "problem deleting log targets for updated daemon %d",
 				daemon.ID)
 		}
 
@@ -190,16 +190,16 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 				daemon.LogTargets[i].DaemonID = daemon.ID
 				_, err = tx.Model(daemon.LogTargets[i]).Insert()
 				if err != nil {
-					return nil, nil, pkgerrors.Wrapf(err, "problem with inserting log target %s to daemon %d: %v",
+					return nil, nil, pkgerrors.Wrapf(err, "problem inserting log target %s to daemon %d: %v",
 						daemon.LogTargets[i].Output, daemon.ID, daemon)
 				}
 			} else {
 				result, err := tx.Model(daemon.LogTargets[i]).WherePK().Update()
 				if err != nil {
-					return nil, nil, pkgerrors.Wrapf(err, "problem with updating log target %s in daemon %d: %v",
+					return nil, nil, pkgerrors.Wrapf(err, "problem updating log target %s in daemon %d: %v",
 						daemon.LogTargets[i].Output, daemon.ID, daemon)
 				} else if result.RowsAffected() <= 0 {
-					return nil, nil, pkgerrors.Wrapf(ErrNotExists, "log target with id %d does not exist",
+					return nil, nil, pkgerrors.Wrapf(ErrNotExists, "log target with ID %d does not exist",
 						daemon.LogTargets[i].ID)
 				}
 			}
@@ -212,19 +212,19 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 func addApp(tx *pg.Tx, app *App) ([]*Daemon, error) {
 	_, err := tx.Model(app).Insert()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with inserting app %v", app)
+		return nil, pkgerrors.Wrapf(err, "Problem inserting app %v", app)
 	}
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return nil, pkgerrors.WithMessage(err, "problem with inserting daemons for a new app")
+		return nil, pkgerrors.WithMessage(err, "problem inserting daemons for a new app")
 	}
 	if len(deletedDaemons) > 0 {
-		return nil, pkgerrors.Errorf("problem with deleting daemons for a new app")
+		return nil, pkgerrors.Errorf("problem deleting daemons for a new app")
 	}
 	// Add access points.
 	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
-		return nil, pkgerrors.WithMessagef(err, "problem with adding access points to app: %+v", app)
+		return nil, pkgerrors.WithMessagef(err, "problem adding access points to app: %+v", app)
 	}
 	return addedDaemons, nil
 }
@@ -248,19 +248,19 @@ func AddApp(dbi dbops.DBI, app *App) (addedDaemons []*Daemon, err error) {
 func updateApp(tx *pg.Tx, app *App) (addedDaemons []*Daemon, deletedDaemons []*Daemon, err error) {
 	result, err := tx.Model(app).WherePK().Update()
 	if err != nil {
-		return nil, nil, pkgerrors.Wrapf(err, "problem with updating app %v", app)
+		return nil, nil, pkgerrors.Wrapf(err, "problem updating app %v", app)
 	} else if result.RowsAffected() <= 0 {
-		return nil, nil, pkgerrors.Wrapf(ErrNotExists, "app with id %d does not exist", app.ID)
+		return nil, nil, pkgerrors.Wrapf(ErrNotExists, "app with ID %d does not exist", app.ID)
 	}
 	addedDaemons, deletedDaemons, err = updateAppDaemons(tx, app)
 	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
+		err = pkgerrors.WithMessagef(err, "problem updating daemons for app %d", app.ID)
 		return
 	}
 	// Update access points.
 	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with updating access points to app: %+v", app)
+		err = pkgerrors.WithMessagef(err, "problem updating access points to app: %+v", app)
 	}
 	return
 }
@@ -309,7 +309,7 @@ func RenameApp(dbi dbops.DBI, id int64, newName string) (*App, error) {
 		WherePK().
 		Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with renaming an app %d to %s", app.ID, newName)
+		return nil, pkgerrors.Wrapf(err, "problem renaming app %d to %s", app.ID, newName)
 	}
 
 	return app, nil
@@ -328,7 +328,7 @@ func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting app %v", id)
+		return nil, pkgerrors.Wrapf(err, "problem getting app %v", id)
 	}
 	return &app, nil
 }
@@ -346,7 +346,7 @@ func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting apps")
+		return nil, pkgerrors.Wrapf(err, "problem getting apps")
 	}
 	return apps, nil
 }
@@ -372,7 +372,7 @@ func GetAppsByType(dbi dbops.DBI, appType string) ([]App, error) {
 	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting %s apps from database", appType)
+		return nil, pkgerrors.Wrapf(err, "problem getting %s apps from database", appType)
 	}
 	return apps, nil
 }
@@ -423,7 +423,7 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 		if errors.Is(err, pg.ErrNoRows) {
 			return []App{}, 0, nil
 		}
-		return nil, 0, pkgerrors.Wrapf(err, "problem with getting apps")
+		return nil, 0, pkgerrors.Wrapf(err, "problem getting apps")
 	}
 	return apps, int64(total), nil
 }
@@ -450,7 +450,7 @@ func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
 	// retrieve apps from db
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting apps")
+		return nil, pkgerrors.Wrapf(err, "problem getting apps")
 	}
 	return apps, nil
 }
@@ -458,9 +458,9 @@ func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
 func DeleteApp(dbi dbops.DBI, app *App) error {
 	result, err := dbi.Model(app).WherePK().Delete()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with deleting app %v", app.ID)
+		return pkgerrors.Wrapf(err, "problem deleting app %v", app.ID)
 	} else if result.RowsAffected() <= 0 {
-		return pkgerrors.Wrapf(ErrNotExists, "app with id %d does not exist", app.ID)
+		return pkgerrors.Wrapf(ErrNotExists, "app with ID %d does not exist", app.ID)
 	}
 	return nil
 }
@@ -498,7 +498,7 @@ func (app *App) GetAccessPoint(accessPointType string) (ap *AccessPoint, err err
 			return point, nil
 		}
 	}
-	return nil, pkgerrors.Errorf("no access point of type %s found for app id %d", accessPointType, app.ID)
+	return nil, pkgerrors.Errorf("no access point of type %s found for app ID %d", accessPointType, app.ID)
 }
 
 // AppTag implemenation.

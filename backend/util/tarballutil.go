@@ -22,7 +22,7 @@ type WalkCallback = func(header *tar.Header, read func() ([]byte, error)) bool
 func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 	gzipReader, err := gzip.NewReader(tarball)
 	if err != nil {
-		return pkgerrors.Wrap(err, "invalid tarball")
+		return pkgerrors.Wrap(err, "Invalid tarball")
 	}
 	defer gzipReader.Close()
 
@@ -35,7 +35,7 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 		}
 
 		if err != nil {
-			return pkgerrors.Wrap(err, "problem with reading next header")
+			return pkgerrors.Wrap(err, "problem reading next header")
 		}
 
 		switch header.Typeflag {

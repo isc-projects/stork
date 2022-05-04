@@ -34,7 +34,7 @@ type IPReservation struct {
 	HostID  int64
 }
 
-// Checks if reservation is a delagated prefix.
+// Checks if reservation is a delegated prefix.
 func (r *IPReservation) IsPrefix() bool {
 	ip := storkutil.ParseIP(r.Address)
 	if ip == nil {
@@ -88,7 +88,7 @@ func addHostIdentifiers(tx *pg.Tx, host *Host) error {
 			Set("value = EXCLUDED.value").
 			Insert()
 		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem with adding host identifier with type %s for host with id %d",
+			err = pkgerrors.Wrapf(err, "problem adding host identifier with type %s for host with ID %d",
 				identifier.Type, host.ID)
 			return err
 		}
@@ -106,7 +106,7 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 			OnConflict("DO NOTHING").
 			Insert()
 		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem with adding IP reservation %s for host with id %d",
+			err = pkgerrors.Wrapf(err, "problem adding IP reservation %s for host with ID %d",
 				reservation.Address, host.ID)
 			return err
 		}
@@ -121,7 +121,7 @@ func addHost(tx *pg.Tx, host *Host) error {
 	// Add the host and fetch its id.
 	_, err := tx.Model(host).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with adding new host")
+		err = pkgerrors.Wrapf(err, "problem adding new host")
 		return err
 	}
 	// Associate the host with the given id with its identifiers.
@@ -167,13 +167,13 @@ func updateHost(tx *pg.Tx, host *Host) error {
 	}
 	_, err := q.Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem deleting host identifiers for host %d", host.ID)
 		return err
 	}
 	// Add or update host identifiers.
 	err = addHostIdentifiers(tx, host)
 	if err != nil {
-		return pkgerrors.WithMessagef(err, "problem with updating host with id %d", host.ID)
+		return pkgerrors.WithMessagef(err, "problem updating host with ID %d", host.ID)
 	}
 
 	// Collect updated identifiers.
@@ -192,21 +192,21 @@ func updateHost(tx *pg.Tx, host *Host) error {
 	_, err = q.Delete()
 
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting IP reservations for host %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem deleting IP reservations for host %d", host.ID)
 		return err
 	}
 	// Add or update host reservations.
 	err = addIPReservations(tx, host)
 	if err != nil {
-		return pkgerrors.WithMessagef(err, "problem with updating host with id %d", host.ID)
+		return pkgerrors.WithMessagef(err, "problem updating host with ID %d", host.ID)
 	}
 
 	// Update the host information.
 	result, err := tx.Model(host).WherePK().Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating host with id %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem updating host with ID %d", host.ID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "host with id %d does not exist", host.ID)
+		err = pkgerrors.Wrapf(ErrNotExists, "host with ID %d does not exist", host.ID)
 	}
 	return err
 }
@@ -239,7 +239,7 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting a host with id %d", hostID)
+		err = pkgerrors.Wrapf(err, "problem getting host with ID %d", hostID)
 		return nil, err
 	}
 	return host, err
@@ -274,7 +274,7 @@ func GetAllHosts(dbi dbops.DBI, family int) ([]Host, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting all hosts for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem getting all hosts for family %d", family)
 		return nil, err
 	}
 	return hosts, err
@@ -311,7 +311,7 @@ func GetHostsBySubnetID(dbi dbops.DBI, subnetID int64) ([]Host, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting hosts by subnet ID %d", subnetID)
+		err = pkgerrors.Wrapf(err, "problem getting hosts by subnet ID %d", subnetID)
 		return nil, err
 	}
 	return hosts, err
@@ -344,7 +344,7 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Hos
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting hosts for daemon %d", daemonID)
+		err = pkgerrors.Wrapf(err, "problem getting hosts for daemon %d", daemonID)
 	}
 	return hosts, int64(total), err
 }
@@ -445,7 +445,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting hosts by page")
+		err = pkgerrors.Wrapf(err, "problem getting hosts by page")
 	}
 	return hosts, int64(total), err
 }
@@ -457,9 +457,9 @@ func DeleteHost(dbi dbops.DBI, hostID int64) error {
 	}
 	result, err := dbi.Model(host).WherePK().Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting a host with id %d", hostID)
+		err = pkgerrors.Wrapf(err, "problem deleting the host with ID %d", hostID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "host with id %d does not exist", hostID)
+		err = pkgerrors.Wrapf(ErrNotExists, "host with ID %d does not exist", hostID)
 	}
 	return err
 }
@@ -483,7 +483,7 @@ func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string) error
 
 	_, err := q.Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the daemon %d with the host %d",
+		err = pkgerrors.Wrapf(err, "problem associating the daemon %d with the host %d",
 			daemonID, host.ID)
 	}
 	return err
@@ -515,7 +515,7 @@ func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource string) (in
 
 	result, err := q.Delete()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with deleting a daemon %d from hosts", daemonID)
+		err = pkgerrors.Wrapf(err, "problem deleting the daemon %d from hosts", daemonID)
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
@@ -532,7 +532,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 		Where("(?) IS NULL", subquery).
 		Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting orphaned hosts")
+		err = pkgerrors.Wrapf(err, "problem deleting orphaned hosts")
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
@@ -560,7 +560,7 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daem
 		if newHost || hosts[i].UpdateOnCommit {
 			err = AddDaemonToHost(dbi, &hosts[i], daemon.ID, source)
 			if err != nil {
-				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having id %d",
+				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having ID %d",
 					daemon.ID)
 				return err
 			}
@@ -791,7 +791,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		// We need to exclude address reservations. We take into account
 		// only IPv6 reservations (as only IPv6 has prefix concept) and
 		// non single IPv6 hosts - entries with mask length less then 128 (128 mask length
-		// implies that is's IPv6 address).
+		// implies that they are IPv6 addresses).
 		Where("family(ip_reservation.address) = 6").
 		Where("masklen(ip_reservation.address) != 128").
 		// Is it out of all pools? - Is it not in any pool?

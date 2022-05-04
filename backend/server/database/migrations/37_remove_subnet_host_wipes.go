@@ -7,47 +7,47 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- Add a missing foreign key to host table.
+            -- This adds a missing foreign-key-to-host table.
             ALTER TABLE local_host
                 ADD CONSTRAINT local_host_to_host_id FOREIGN KEY (host_id)
                     REFERENCES host (id) MATCH SIMPLE
                         ON UPDATE CASCADE
                         ON DELETE CASCADE;
 
-             -- We no longer want to automatically delete the subnets or hosts
-             -- which aren't associated with any app. Such subnets and hosts can
+             -- The subnets or hosts that are not associated with any app should
+             -- no longer be automatically deleted. Such subnets and hosts can
              -- be explicitly deleted by the Stork Server.
              DROP TRIGGER IF EXISTS trigger_wipe_dangling_subnet ON local_subnet;
              DROP FUNCTION IF EXISTS wipe_dangling_subnet;
              DROP TRIGGER IF EXISTS trigger_wipe_dangling_host ON local_host;
              DROP FUNCTION IF EXISTS wipe_dangling_host;
 
-             -- Delete subnet, host and shared_network entries from the database.
-             -- We will need to add a new column daemon_id to local_host and
-             -- local_subnet but it is quite difficult to retrieve the daemon_id
-             -- from the data currently held in the database. Therefore, we delete
-             -- the existing data and let the Stork Server fetch them again
+             -- This deletes subnet, host, and shared_network entries from the database.
+             -- A new column daemon_id to local_host and local_subnet needs
+             -- to be added, but it is quite difficult to retrieve the daemon_id
+             -- from the data currently held in the database. It is easier to delete
+             -- the existing data and let the Stork Server fetch it again,
              -- ensuring the correctness of the new daemon_id value.
              DELETE FROM subnet;
              DELETE FROM host;
              DELETE FROM shared_network;
 
-             -- Force the Kea server to gather Kea server configurations and
-             --  recreate subnets, hosts and shared networks.
+             -- This forces the Kea server to gather Kea server configurations and
+             --  recreate subnets, hosts, and shared networks.
              UPDATE kea_daemon SET config_hash = NULL;
 
-             -- Add new columns that link the local_subnet and local_host entries
-             -- with the daemons. Previously we used app_id but it doesn't work
-             -- in cases when we want to update local_subnet and/or local_host for
+             -- This adds new columns that link the local_subnet and local_host entries
+             -- with the daemons. Previously app_id was used, but it does not work
+             -- in cases when local_subnet and/or local_host should be updated for
              -- one daemon but not for the other daemon belonging to the same app.
              ALTER TABLE local_subnet ADD COLUMN daemon_id BIGINT NOT NULL;
              ALTER TABLE local_host ADD COLUMN daemon_id BIGINT NOT NULL;
 
-             -- Create indexes on the new columns.
+             -- This creates indexes on the new columns.
              CREATE INDEX local_subnet_daemon_id_idx ON local_subnet(daemon_id);
              CREATE INDEX local_host_daemon_id_idx ON local_host(daemon_id);
 
-            -- Add foreign keys for the new columns.
+            -- This adds foreign keys for the new columns.
             ALTER TABLE local_subnet
                 ADD CONSTRAINT local_subnet_to_daemon_id FOREIGN KEY (daemon_id)
                     REFERENCES daemon (id) MATCH SIMPLE

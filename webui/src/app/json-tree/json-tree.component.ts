@@ -313,7 +313,7 @@ export class JsonTreeComponent {
         // Page may come from a user input. Ensure it is not a floating point value.
         page = Math.round(page)
 
-        // Check integer overflow. User may  to provide any number.
+        // Check integer overflow. User may provide any number.
         const maxPage = Math.max(0, Math.ceil(childCount / rows) - 1)
 
         if (page > maxPage) {

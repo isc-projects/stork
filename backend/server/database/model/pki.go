@@ -38,7 +38,7 @@ func GetSecret(db *pg.DB, name string) ([]byte, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting secret by name: %s", name)
+		return nil, pkgerrors.Wrapf(err, "problem getting secret by name: %s", name)
 	}
 	return []byte(secret.Content), nil
 }

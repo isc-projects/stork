@@ -241,6 +241,6 @@ describe('SubnetBarComponent', () => {
         }
 
         fixture.detectChanges()
-        expect(component.tooltip).toContain('Data are unreliable')
+        expect(component.tooltip).toContain('Data is unreliable')
     })
 })

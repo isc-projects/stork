@@ -178,7 +178,7 @@ func addSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
 		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem with adding an address pool %s-%s for subnet with id %d",
+			err = pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
 				pool.LowerBound, pool.UpperBound, subnet.ID)
 			return err
 		}
@@ -190,7 +190,7 @@ func addSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
 		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem with adding a prefix pool %s for subnet with id %d",
+			err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
 				pool.Prefix, subnet.ID)
 			return err
 		}
@@ -205,7 +205,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
 	// Add the subnet first.
 	_, err := tx.Model(subnet).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with adding new subnet with prefix %s", subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem adding new subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 	// Add the pools.
@@ -247,7 +247,7 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting a subnet with id %d", subnetID)
+		err = pkgerrors.Wrapf(err, "problem getting the subnet with ID %d", subnetID)
 		return nil, err
 	}
 	return subnet, err
@@ -274,7 +274,7 @@ func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting subnets by daemon id %d", daemonID)
+		err = pkgerrors.Wrapf(err, "problem getting subnets by daemon ID %d", daemonID)
 		return nil, err
 	}
 	return subnets, err
@@ -298,7 +298,7 @@ func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting subnets with prefix %s", prefix)
+		err = pkgerrors.Wrapf(err, "problem getting subnets with prefix %s", prefix)
 		return nil, err
 	}
 	return subnets, err
@@ -329,7 +329,7 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting all subnets for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem getting all subnets for family %d", family)
 		return nil, err
 	}
 	return subnets, err
@@ -360,7 +360,7 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting global (top level) subnets for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem getting global (top-level) subnets for family %d", family)
 		return nil, err
 	}
 	return subnets, nil
@@ -440,7 +440,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterT
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting subnets by page")
+		err = pkgerrors.Wrapf(err, "problem getting subnets by page")
 	}
 	return subnets, int64(total), err
 }
@@ -459,7 +459,7 @@ func GetSubnetsWithLocalSubnets(dbi dbops.DBI) ([]*Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrap(err, "problem with getting all subnets")
+		err = pkgerrors.Wrap(err, "problem getting all subnets")
 		return nil, err
 	}
 	return subnets, nil
@@ -494,7 +494,7 @@ func addDaemonToSubnet(tx *pg.Tx, subnet *Subnet, daemon *Daemon) error {
 		Set("local_subnet_id = EXCLUDED.local_subnet_id").
 		Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the daemon %d with the subnet %s",
+		err = pkgerrors.Wrapf(err, "problem associating the daemon %d with the subnet %s",
 			daemon.ID, subnet.Prefix)
 	}
 	return err
@@ -522,7 +522,7 @@ func DeleteDaemonFromSubnet(dbi dbops.DBI, subnetID int64, daemonID int64) (bool
 	}
 	rows, err := dbi.Model(localSubnet).WherePK().Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the subnet with %d",
+		err = pkgerrors.Wrapf(err, "problem deleting the daemon with ID %d from the subnet with %d",
 			daemonID, subnetID)
 		return false, err
 	}
@@ -536,7 +536,7 @@ func DeleteDaemonFromSubnets(dbi dbops.DBI, daemonID int64) (int64, error) {
 		Where("daemon_id = ?", daemonID).
 		Delete()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with deleting a daemon %d from subnets", daemonID)
+		err = pkgerrors.Wrapf(err, "problem deleting daemon %d from subnets", daemonID)
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
@@ -571,7 +571,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 		}
 		err = AddDaemonToSubnet(tx, subnet, daemon)
 		if err != nil {
-			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea daemon having id %d", subnet.Prefix, daemon.ID)
+			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea daemon of ID %d", subnet.Prefix, daemon.ID)
 			return nil, err
 		}
 
@@ -654,7 +654,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting all local subnets for app %d", appID)
+		err = pkgerrors.Wrapf(err, "problem getting all local subnets for app %d", appID)
 		return nil, err
 	}
 	return subnets, nil
@@ -669,7 +669,7 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats LocalSubnetStats) error
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating stats in local subnet: [daemon:%d, subnet:%d, local subnet:%d]",
+		err = pkgerrors.Wrapf(err, "problem updating stats in local subnet: [daemon:%d, subnet:%d, local subnet:%d]",
 			lsn.DaemonID, lsn.SubnetID, lsn.LocalSubnetID)
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "local subnet: [daemon:%d, subnet:%d, local subnet:%d] does not exist",
@@ -687,10 +687,10 @@ func (s *Subnet) UpdateUtilization(dbi dbops.DBI, addrUtilization, pdUtilization
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating utilization in the subnet: %d",
+		err = pkgerrors.Wrapf(err, "problem updating utilization in the subnet: %d",
 			s.ID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "subnet with id %d does not exist", s.ID)
+		err = pkgerrors.Wrapf(ErrNotExists, "subnet with ID %d does not exist", s.ID)
 	}
 	return err
 }
@@ -706,7 +706,7 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 		Where("(?) IS NULL", subquery).
 		Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting orphaned subnets")
+		err = pkgerrors.Wrapf(err, "problem deleting orphaned subnets")
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil

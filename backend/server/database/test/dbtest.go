@@ -46,7 +46,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	if !ok {
 		b, ok = (testArg).(*testing.B)
 		if !ok {
-			panic("specified test parameter must have *testing.T or *testing.B type")
+			panic("Specified test parameter must have type *testing.T or *testing.B")
 		}
 	}
 
@@ -73,7 +73,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	pgConnOptions.Database = "postgres"
 	db, err := dbops.NewPgDBConn(pgConnOptions, false)
 	if db == nil {
-		log.Fatalf("unable to create database instance: %+v", err)
+		log.Fatalf("Unable to create database instance: %+v", err)
 	}
 	if t != nil {
 		require.NoError(t, err)
@@ -111,7 +111,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	db, err = dbops.NewPgDBConn(pgConnOptions, false)
 	if db == nil {
-		log.Fatalf("unable to create database instance: %+v", err)
+		log.Fatalf("Unable to create database instance: %+v", err)
 	}
 	if t != nil {
 		require.NoError(t, err)

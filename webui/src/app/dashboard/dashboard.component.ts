@@ -81,7 +81,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     this.msgSrv.add({
                         severity: 'error',
                         summary: 'Cannot get applications statistics',
-                        detail: 'Getting applications statistics erred: ' + msg,
+                        detail: 'Error getting applications statistics: ' + msg,
                         life: 10000,
                     })
                 }
@@ -154,7 +154,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get DHCP overview',
-                    detail: 'Getting DHCP overview erred: ' + msg,
+                    detail: 'Error getting DHCP overview: ' + msg,
                     life: 10000,
                 })
             })

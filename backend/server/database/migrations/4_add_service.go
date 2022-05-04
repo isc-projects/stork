@@ -30,7 +30,7 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             -- Remove table with apps.
+             -- Removes table with apps.
              DROP TABLE public.app;
            `)
 		return err

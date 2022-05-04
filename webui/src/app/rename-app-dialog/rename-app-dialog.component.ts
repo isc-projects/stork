@@ -6,7 +6,7 @@ import { Component, OnInit, Input, OnChanges, SimpleChanges, Output, EventEmitte
  * This component provides a dialog box with a single input to rename
  * an app. The component validates the new app name during typing.
  * It verifies that the app name is unique and it doesn't reference
- * a non-existing machine address. For example, the app name
+ * a non-existing machine address. For example, if the app name
  * "kea@machine3" references "machine3", the machine with the address
  * "machine3" must exist in the system. The list of existing apps and
  * machines is provided as input to the component. The "Rename" button
@@ -173,7 +173,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
             // a different app id.
             const existingAppId = this.existingApps.get(this.appName)
             if (existingAppId && existingAppId !== this.appId) {
-                this.signalError('App with this name already exists.')
+                this.signalError('An app with this name already exists.')
                 return
             }
         }
@@ -196,13 +196,13 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
             }
             // The app name before @ character(s) must not be empty.
             if (regexpMatch[1].length === 0) {
-                this.signalError('App name preceding the @ character must not be empty.')
+                this.signalError('An app name preceding the @ character must not be empty.')
                 return
             }
         }
         // Ensure that the app name does not consist of whitespaces only.
         if (this.appName.trim().length === 0) {
-            this.signalError('App name must not be empty.')
+            this.signalError('An app name must not be empty.')
             return
         }
 

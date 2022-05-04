@@ -44,44 +44,44 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 	// get list of subnets
 	subnets, err := r.getSubnets(0, 5, 0, 0, &text, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get subnets from the db")
+		return handleSearchError(err, "Cannot get subnets from the db")
 	}
 
 	// get list of shared networks
 	sharedNetworks, err := r.getSharedNetworks(0, 5, 0, 0, &text, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get shared networks from the db")
+		return handleSearchError(err, "Cannot get shared networks from the db")
 	}
 
 	// get list of hosts
 	hosts, err := r.getHosts(0, 5, 0, nil, &text, nil, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get hosts from the db")
+		return handleSearchError(err, "Cannot get hosts from the db")
 	}
 
 	// get list of machines
 	authorized := true
 	machines, err := r.getMachines(0, 5, &text, &authorized, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get machines from the db")
+		return handleSearchError(err, "Cannot get machines from the db")
 	}
 
 	// get list of apps
 	apps, err := r.getApps(0, 5, &text, "", "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get apps from the db")
+		return handleSearchError(err, "Cannot get apps from the db")
 	}
 
 	// get list of users
 	users, err := r.getUsers(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get users from the db")
+		return handleSearchError(err, "Cannot get users from the db")
 	}
 
 	// get list of groups
 	groups, err := r.getGroups(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "cannot get groups from the db")
+		return handleSearchError(err, "Cannot get groups from the db")
 	}
 
 	// combine gathered information

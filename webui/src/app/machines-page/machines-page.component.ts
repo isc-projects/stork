@@ -207,7 +207,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                                 this.msgSrv.add({
                                     severity: 'error',
                                     summary: 'Cannot get machine',
-                                    detail: 'Getting machine with ID ' + machineId + ' erred: ' + msg,
+                                    detail: 'Failed to get machine with ID ' + machineId + ': ' + msg,
                                     life: 10000,
                                 })
                                 this.router.navigate(['/machines/all'])
@@ -318,8 +318,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 if (data.error) {
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Getting machine state erred',
-                        detail: 'Getting state of machine erred: ' + data.error,
+                        summary: 'Error getting machine state',
+                        detail: 'Error getting state of machine: ' + data.error,
                         life: 10000,
                     })
                 } else {
@@ -359,8 +359,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Getting machine state erred',
-                    detail: 'Getting state of machine erred: ' + msg,
+                    summary: 'Error getting machine state',
+                    detail: 'Error getting state of machine: ' + msg,
                     life: 10000,
                 })
             }
@@ -528,7 +528,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Machine address update failed',
-                    detail: 'Updating machine address erred: ' + msg,
+                    detail: 'Error updating machine address: ' + msg,
                     life: 10000,
                 })
             }
@@ -557,7 +557,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get server token',
-                    detail: 'Getting server token for registering machines erred: ' + msg,
+                    detail: 'Error getting server token to register machines: ' + msg,
                     life: 10000,
                 })
             }
@@ -588,7 +588,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot regenerate server token',
-                    detail: 'Regenerating server token for registering machines erred: ' + msg,
+                    detail: 'Error regenerating server token to register machines: ' + msg,
                     life: 10000,
                 })
             }
@@ -596,7 +596,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Return base URL of stork server website.
+     * Return base URL of Stork server website.
      * It is then put into agent installation instructions.
      */
     getBaseUrl() {

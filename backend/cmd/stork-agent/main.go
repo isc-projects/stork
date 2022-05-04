@@ -26,7 +26,7 @@ func runAgent(settings *cli.Context) {
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
 		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
-			log.Fatalf("problem with agent registration in Stork Server, exiting")
+			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
 
@@ -81,24 +81,24 @@ func runRegister(cfg *cli.Context) {
 	if cfg.String("agent-host") != "" {
 		agentAddr, agentPort, err = net.SplitHostPort(cfg.String("agent-host"))
 		if err != nil {
-			log.Fatalf("problem with parsing agent host: %s\n", err)
+			log.Fatalf("Problem parsing agent host: %s\n", err)
 		}
 	}
 
 	// check current user - it should be root or stork-agent
 	user, err := user.Current()
 	if err != nil {
-		log.Fatalf("cannot get info about current user: %s", err)
+		log.Fatalf("Cannot get info about current user: %s", err)
 	}
 	if user.Username != "root" && user.Username != "stork-agent" {
-		log.Fatalf("agent registration should be run by `root` or `stork-agent` user")
+		log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
 	}
 
 	// run Register
 	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false) {
-		log.Println("registration completed successfully")
+		log.Println("Registration completed successfully")
 	} else {
-		log.Fatalf("registration failed")
+		log.Fatalf("Registration failed")
 	}
 }
 
@@ -109,93 +109,93 @@ func setupApp() *cli.App {
 	}
 	app := &cli.App{
 		Name:     "Stork Agent",
-		Usage:    "A component required on a machine to be monitored by the Stork Server",
+		Usage:    "This component is required on each machine to be monitored by the Stork Server",
 		Version:  stork.Version,
 		HelpName: "stork-agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "host",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Stork Server connection",
+				Usage:   "The IP or hostname to listen on for incoming Stork Server connections",
 				EnvVars: []string{"STORK_AGENT_HOST"},
 			},
 			&cli.IntFlag{
 				Name:    "port",
 				Value:   8080,
-				Usage:   "the TCP port to listen on for incoming Stork Server connection",
+				Usage:   "The TCP port to listen on for incoming Stork Server connections",
 				EnvVars: []string{"STORK_AGENT_PORT"},
 			},
 			&cli.BoolFlag{
 				Name:    "listen-prometheus-only",
-				Usage:   "listen for Prometheus requests only, but not for commands from the Stork Server",
+				Usage:   "Listen for Prometheus requests only, but not for commands from the Stork Server",
 				EnvVars: []string{"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"},
 			},
 			&cli.BoolFlag{
 				Name:    "listen-stork-only",
-				Usage:   "listen for commands from the Stork Server only, but not for Prometheus requests",
+				Usage:   "Listen for commands from the Stork Server only, but not for Prometheus requests",
 				EnvVars: []string{"STORK_AGENT_LISTEN_STORK_ONLY"},
 			},
 			// Prometheus Kea exporter settings
 			&cli.StringFlag{
 				Name:    "prometheus-kea-exporter-address",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Prometheus connection",
+				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-kea-exporter-port",
 				Value:   9547,
-				Usage:   "the port to listen on for incoming Prometheus connection",
+				Usage:   "The port to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-kea-exporter-interval",
 				Value:   10,
-				Usage:   "specifies how often the agent collects stats from Kea, in seconds",
+				Usage:   "How often the Stork Agent collects stats from Kea, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"},
 			},
 			&cli.BoolFlag{
 				Name:    "prometheus-kea-exporter-per-subnet-stats",
 				Value:   true,
-				Usage:   "enable or disable collecting per subnet stats from Kea",
+				Usage:   "Enable or disable collecting per-subnet stats from Kea",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"},
 			},
 			// Prometheus Bind 9 exporter settings
 			&cli.StringFlag{
 				Name:    "prometheus-bind9-exporter-address",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Prometheus connection",
+				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-bind9-exporter-port",
 				Value:   9119,
-				Usage:   "the port to listen on for incoming Prometheus connection",
+				Usage:   "The port to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-bind9-exporter-interval",
 				Value:   10,
-				Usage:   "specifies how often the agent collects stats from BIND 9, in seconds",
+				Usage:   "How often the Stork Agent collects stats from BIND 9, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"},
 			},
 			&cli.BoolFlag{
 				Name:    "skip-tls-cert-verification",
 				Value:   false,
-				Usage:   "skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates",
+				Usage:   "Skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates",
 				EnvVars: []string{"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"},
 			},
 			// Registration related settings
 			&cli.StringFlag{
 				Name:    "server-url",
-				Usage:   "URL of Stork Server, used in agent token based registration (optional, alternative to server token based registration)",
+				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
 		},
 		Action: func(c *cli.Context) error {
 			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
-				log.Errorf("registration in Stork Server cannot be made because agent host address is not provided")
-				log.Fatalf("use --host option or STORK_AGENT_HOST environment variable")
+				log.Errorf("Registration in Stork Server cannot be made because agent host address is not provided")
+				log.Fatalf("Use --host option or the STORK_AGENT_HOST environment variable")
 			}
 
 			runAgent(c)
@@ -204,13 +204,13 @@ func setupApp() *cli.App {
 		Commands: []*cli.Command{
 			{
 				Name:      "register",
-				Usage:     "register this machine in Stork Server indicated by <server-url>",
+				Usage:     "Register this machine in the Stork Server indicated by <server-url>",
 				UsageText: "stork-agent register [options]",
-				Description: `Register current agent in Stork Server using provided server URL.
+				Description: `Register the current agent in the Stork Server using provided server URL.
 
-If server access token is provided using --server-token then the agent is automatically
-authorized (server token based registration). Otherwise, the agent requires explicit
-authorization in the server using either UI or ReST API (agent token based registration).`,
+If server access token is provided using --server-token, then the agent is automatically
+authorized (server-token-based registration). Otherwise, the agent requires explicit
+authorization in the server using either the UI or the ReST API (agent-token-based registration).`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "server-url",
@@ -220,13 +220,13 @@ authorization in the server using either UI or ReST API (agent token based regis
 					},
 					&cli.StringFlag{
 						Name:    "server-token",
-						Usage:   "access token from Stork Server",
+						Usage:   "Access token from Stork Server",
 						Aliases: []string{"t"},
 						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
 					},
 					&cli.StringFlag{
 						Name:    "agent-host",
-						Usage:   "IP address or DNS name with port of current agent host, eg: 10.11.12.13:8080",
+						Usage:   "IP address or DNS name with port of current agent host, e.g.: 10.11.12.13:8080",
 						Aliases: []string{"a"},
 						EnvVars: []string{"STORK_AGENT_HOST"},
 					},

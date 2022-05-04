@@ -46,9 +46,9 @@ func init() {
                  WHEN duplicate_object THEN null;
              END $$;
 
-             -- This table holds a mapping of one or more identifiers into a host.
+             -- This table holds a mapping of one or more identifiers to a host.
              -- For example, a single host may be identified by both MAC address
-             -- and circuit id.
+             -- and circuit ID.
              CREATE TABLE IF NOT EXISTS host_identifier (
                  id bigserial NOT NULL,
                  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -63,7 +63,7 @@ func init() {
                          ON DELETE CASCADE
              );
 
-             -- An enum listing types of the host data sources. In Kea case, there are
+             -- This enum lists types of the host data sources. In Kea's case, there are
              -- two sources of information about host reservations: configuration file
              -- and API (via host_cmds).
              DO $$ BEGIN
@@ -77,7 +77,7 @@ func init() {
              -- It also holds additional information about the host reservation
              -- specific to the apps. In particular, it records whether the host
              -- information was fetched from the configuration file or from the
-             -- hosts database (via host commands hooks library).
+             -- hosts database (via the host commands hook library).
              CREATE TABLE IF NOT EXISTS local_host (
                  app_id bigint NOT NULL,
                  host_id bigint NOT NULL,

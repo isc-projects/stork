@@ -92,7 +92,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	// get subnets from db
 	subnets, err := r.getSubnets(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
-		msg := "cannot get subnets from db"
+		msg := "Cannot get subnets from db"
 		log.Error(err)
 		rsp := dhcp.NewGetSubnetsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -166,7 +166,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	// get shared networks from db
 	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
-		msg := "cannot get shared network from db"
+		msg := "Cannot get shared network from db"
 		log.Error(err)
 		rsp := dhcp.NewGetSharedNetworksDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,

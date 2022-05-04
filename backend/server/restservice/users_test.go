@@ -54,7 +54,7 @@ func TestCreateUser(t *testing.T) {
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
 	defaultRsp := rsp.(*users.CreateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to create new user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
 
 	// Try empty request, variant 2 - it should raise an error
 	params = users.CreateUserParams{
@@ -64,7 +64,7 @@ func TestCreateUser(t *testing.T) {
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.CreateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to create new user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
 
 	// Try empty request, variant 3 - it should raise an error
 	params = users.CreateUserParams{
@@ -76,7 +76,7 @@ func TestCreateUser(t *testing.T) {
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.CreateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to create new user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
 
 	// Create the user and verify the response.
 	su := dbmodel.SystemUser{
@@ -140,7 +140,7 @@ func TestUpdateUser(t *testing.T) {
 	require.IsType(t, &users.UpdateUserDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to update user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
 
 	// Try empty request, variant 2 - it should raise an error
 	params = users.UpdateUserParams{
@@ -150,7 +150,7 @@ func TestUpdateUser(t *testing.T) {
 	require.IsType(t, &users.UpdateUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.UpdateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to update user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
 
 	// Try empty request, variant 3 - it should raise an error
 	params = users.UpdateUserParams{
@@ -162,7 +162,7 @@ func TestUpdateUser(t *testing.T) {
 	require.IsType(t, &users.UpdateUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.UpdateUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to update user account: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
 
 	// Modify some values and update the user.
 	su.Lastname = "Born"
@@ -249,7 +249,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp = rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "failed to update password for user: missing data", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to update password for user: missing data", *defaultRsp.Payload.Message)
 }
 
 // Tests that multiple groups can be fetched from the database.

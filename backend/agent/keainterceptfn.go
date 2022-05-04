@@ -5,7 +5,7 @@ import (
 )
 
 // Intercept callback function for config-get. It records log files
-// found in the daemon's configuration  making them accessible by the
+// found in the daemon's configuration, making them accessible by the
 // log viewer.
 func icptConfigGetLoggers(agent *StorkAgent, response *keactrl.Response) error {
 	paths := collectKeaAllowedLogs(response)

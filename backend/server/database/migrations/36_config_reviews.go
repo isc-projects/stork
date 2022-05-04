@@ -8,11 +8,11 @@ func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
             -- There was an issue in this trigger introduced with the previous
-            -- migration. It was fired AFTER delete instead of BEFORE delete.
+            -- migration: it was fired AFTER delete instead of BEFORE delete.
             -- It must be fired BEFORE delete to avoid constraint errors.
             DROP TRIGGER IF EXISTS trigger_delete_daemon_config_reports on daemon;
 
-            -- There was also an issue with this function which did not return the
+            -- There was also an issue with this function in which it did not return the
             -- OLD value.
             CREATE OR REPLACE FUNCTION delete_daemon_config_reports()
                 RETURNS trigger
@@ -25,12 +25,12 @@ func init() {
             END;
             $function$;
 
-            -- Recreate the trigger but fire it BEFORE delete.
+            -- Recreates the trigger but fires it BEFORE delete.
             CREATE TRIGGER trigger_delete_daemon_config_reports
                 BEFORE DELETE ON daemon
                     FOR EACH ROW EXECUTE PROCEDURE delete_daemon_config_reports();
 
-            -- Finally, create the new config_review table.
+            -- Finally, this creates the new config_review table.
             CREATE TABLE IF NOT EXISTS config_review (
                 id BIGSERIAL PRIMARY KEY,
                 daemon_id BIGINT UNIQUE,

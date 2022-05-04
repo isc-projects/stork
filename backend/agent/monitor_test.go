@@ -309,7 +309,7 @@ func makeKeaConfFile() (*os.File, error) {
 	// prepare kea conf file
 	file, err := os.CreateTemp(os.TempDir(), "prefix-")
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "Cannot create temporary file")
+		return nil, pkgerrors.Wrap(err, "cannot create temporary file")
 	}
 
 	text := []byte(`{ "Control-agent": {
@@ -317,10 +317,10 @@ func makeKeaConfFile() (*os.File, error) {
 		"http-port": 45634
 	} }`)
 	if _, err = file.Write(text); err != nil {
-		return nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
+		return nil, pkgerrors.Wrap(err, "failed to write to temporary file")
 	}
 	if err := file.Close(); err != nil {
-		return nil, pkgerrors.Wrap(err, "Failed to close a temporary file")
+		return nil, pkgerrors.Wrap(err, "failed to close a temporary file")
 	}
 
 	return file, nil
@@ -334,12 +334,12 @@ func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, 
 	parentConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
 
 	if err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for parent config")
+		return nil, nil, pkgerrors.Wrap(err, "cannot create temporary file for parent config")
 	}
 
 	childConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
 	if err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for child config")
+		return nil, nil, pkgerrors.Wrap(err, "cannot create temporary file for child config")
 	}
 
 	text := []byte(`{
@@ -348,18 +348,18 @@ func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, 
 	}`)
 
 	if _, err = childConfig.Write(text); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
+		return nil, nil, pkgerrors.Wrap(err, "failed to write to temporary file")
 	}
 	if err := childConfig.Close(); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Failed to close to temporary file")
+		return nil, nil, pkgerrors.Wrap(err, "failed to close to temporary file")
 	}
 
 	text = []byte(fmt.Sprintf("{ \"Control-agent\": <?include \"%s\"?> }", childConfig.Name()))
 	if _, err = parentConfig.Write(text); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
+		return nil, nil, pkgerrors.Wrap(err, "failed to write to temporary file")
 	}
 	if err := parentConfig.Close(); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "Failed to close to temporary file")
+		return nil, nil, pkgerrors.Wrap(err, "failed to close to temporary file")
 	}
 
 	return parentConfig, childConfig, nil

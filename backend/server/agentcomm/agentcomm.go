@@ -25,7 +25,7 @@ type AgentsSettings struct {
 // Holds runtime communication statistics with Kea daemons via
 // a given agent.
 type AgentKeaCommStats struct {
-	CurrentErrorsCA      int64            // generall errors in communication to/via CA
+	CurrentErrorsCA      int64            // general errors in communication to/via CA
 	CurrentErrorsDaemons map[string]int64 // errors returned by particular daemon (including CA)
 }
 
@@ -71,7 +71,7 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 
 	// Append the client certificates from the CA
 	if ok := certPool.AppendCertsFromPEM(caCertPEM); !ok {
-		return nil, errors.New("failed to append ca certs")
+		return nil, errors.New("failed to append CA certs")
 	}
 
 	// Prepare structure for advanced TLS with custom agent verification.
@@ -113,7 +113,7 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 	// Prepare TLS credentials
 	creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
 	if err != nil {
-		return errors.WithMessagef(err, "problem with preparing TLS credentials")
+		return errors.WithMessagef(err, "problem preparing TLS credentials")
 	}
 
 	// Setup new connection
@@ -194,7 +194,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	if ok {
 		log.WithFields(log.Fields{
 			"address": address,
-		}).Info("connecting to existing agent")
+		}).Info("Connecting to existing agent")
 		return agent, nil
 	}
 
@@ -212,7 +212,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	agents.AgentsMap[address] = agent
 	log.WithFields(log.Fields{
 		"address": address,
-	}).Info("connecting to new agent")
+	}).Info("Connecting to new agent")
 
 	return agent, nil
 }

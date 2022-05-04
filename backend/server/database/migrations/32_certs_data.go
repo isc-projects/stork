@@ -7,17 +7,17 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-             -- Sequence returning serial numbers used in PKI certificates.
+             -- This sequence returns serial numbers used in PKI certificates.
              CREATE SEQUENCE IF NOT EXISTS certs_serial_number_seq;
 
-             -- Table for storing PKI certificates and keys
+             -- This table stores PKI certificates and keys.
              CREATE TABLE IF NOT EXISTS secret (
                  name TEXT NOT NULL,
                  content TEXT NOT NULL,
                  CONSTRAINT secret_pkey PRIMARY KEY (name)
              );
 
-             -- Add new columns in machine table that are used in agent authentication
+             -- This adds new columns in the machine table that are used in agent authentication
              -- and authorization.
              ALTER TABLE machine ADD COLUMN IF NOT EXISTS agent_token TEXT;
              ALTER TABLE machine ADD COLUMN IF NOT EXISTS cert_fingerprint BYTEA;

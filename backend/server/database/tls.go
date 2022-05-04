@@ -131,7 +131,7 @@ func setClientCertificates(tlsConfig *tls.Config, sslCert, sslKey string) error 
 			return pkgerrors.Wrapf(err, "problem with the key file %s", sslKey)
 		}
 		if sslKeyInfo.Mode().Perm()&0077 != 0 {
-			return pkgerrors.Errorf("key file %s has too large permissions; please use 0600 permissions", sslKey)
+			return pkgerrors.Errorf("key file %s has too-broad permissions; please use 0600 permissions", sslKey)
 		}
 	}
 

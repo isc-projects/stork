@@ -209,7 +209,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	for _, vRsp := range versionGetResp {
 		dmn, ok := daemonsMap[vRsp.Daemon]
 		if !ok {
-			log.Warnf("unrecognized daemon in version-get response: %v", vRsp)
+			log.Warnf("Unrecognized daemon in version-get response: %v", vRsp)
 			continue
 		}
 		if vRsp.Result != 0 {
@@ -235,7 +235,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	for _, sRsp := range statusGetResp {
 		dmn, ok := daemonsMap[sRsp.Daemon]
 		if !ok {
-			log.Warnf("unrecognized daemon in status-get response: %v", sRsp)
+			log.Warnf("Unrecognized daemon in status-get response: %v", sRsp)
 			continue
 		}
 		if sRsp.Result != 0 {
@@ -261,7 +261,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	for _, cRsp := range configGetResp {
 		dmn, ok := daemonsMap[cRsp.Daemon]
 		if !ok {
-			log.Warnf("unrecognized daemon in config-get response: %v", cRsp)
+			log.Warnf("Unrecognized daemon in config-get response: %v", cRsp)
 			continue
 		}
 		if cRsp.Result != 0 {
@@ -299,13 +299,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	daemonsErrors := map[string]string{}
 	allDaemons, dhcpDaemons, err := getStateFromCA(ctx2, agents, dbApp, daemonsMap, daemonsErrors)
 	if err != nil {
-		log.Warnf("problem with getting state from Kea CA: %s", err)
+		log.Warnf("Problem getting state from Kea CA: %s", err)
 	}
 
 	// if no problems then now get state from the rest of Kea daemons
 	err = getStateFromDaemons(ctx2, agents, dbApp, daemonsMap, allDaemons, dhcpDaemons, daemonsErrors)
 	if err != nil {
-		log.Warnf("problem with getting state from Kea daemons: %s", err)
+		log.Warnf("Problem getting state from Kea daemons: %s", err)
 	}
 
 	// If this is new app let's set its active/inactive state based on the
@@ -467,7 +467,7 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 			// Daemons configuration seems to be the same since previous update. Let's
 			// make a note of it so we don't unnecessarily process its configuration.
 			sameConfigDaemons[daemon.Name] = true
-			log.Infof("configuration of Kea: id %d, daemon: %s has not changed since last fetch; skipping database update for that daemon", dbApp.ID, daemon.Name)
+			log.Infof("Configuration of Kea: id %d, daemon: %s has not changed since last fetch; skipping database update for that daemon", dbApp.ID, daemon.Name)
 		}
 	}
 
@@ -483,7 +483,7 @@ func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Eve
 		}
 		// Raise this event only if we're certain that the configuration has
 		// changed based on the comparison of the hash values.
-		text := "configuration change detected for {daemon}"
+		text := "Configuration change detected for {daemon}"
 		ev := eventcenter.CreateEvent(dbmodel.EvInfo, text, daemon)
 		*events = append(*events, ev)
 	}
@@ -616,7 +616,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			// returned here.
 			networks[daemon.Name], subnets[daemon.Name], err = detectDaemonNetworks(tx, daemon)
 			if err != nil {
-				err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
+				err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with ID %d", daemon.Name, app.ID)
 				return err
 			}
 
@@ -685,5 +685,5 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		err = deleteEmptyAndOrphanedObjects(tx)
 		return err
 	})
-	return errors.Wrapf(err, "problem with committing updates for app %d", app.ID)
+	return errors.Wrapf(err, "problem committing updates for app %d", app.ID)
 }

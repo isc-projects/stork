@@ -47,12 +47,12 @@ export class SubnetBarComponent {
             const stats = this._subnet.localSubnets[0].stats
             const lines = []
             if (util > 100) {
-                lines.push('Warning! Utilization is greater than 100%. Data are unreliable.')
+                lines.push('Warning! Utilization is greater than 100%. Data is unreliable.')
                 lines.push(
-                    'Problem is caused by Kea limitation - addresses/NAs/PDs in out of pool host reservations are reported as assigned but excluded from the total counters.'
+                    'This problem is caused by a Kea limitation - addresses/NAs/PDs in out-of-pool host reservations are reported as assigned but excluded from the total counters.'
                 )
                 lines.push(
-                    "You should manually check that your pool has free addresses and follow up on Kea and Stork updates.  We're on it."
+                    'Please manually check that the pool has free addresses and make sure that Kea and Stork are up-to-date.'
                 )
                 lines.push('')
             }

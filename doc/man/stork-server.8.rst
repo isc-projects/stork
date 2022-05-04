@@ -59,7 +59,7 @@ Arguments
    ``require``
    Uses secure communication but does not verify the server's identity, unless the
    root certificate location is specified and that certificate exists.
-   If the root certificate exists, the behavior is the same as  in case of ``verify-ca``
+   If the root certificate exists, the behavior is the same as in ``verify-ca``
    mode.
 
    ``verify-ca``

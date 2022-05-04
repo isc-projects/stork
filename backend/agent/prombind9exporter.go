@@ -244,7 +244,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	// resolver_cache_rrsets
 	viewStatsDesc["cache"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "cache_rrsets"),
-		"Number of RRSets in Cache database.",
+		"Number of RRsets in cache database.",
 		[]string{"view", "type"}, nil)
 	// resolver_query_hit_ratio
 	viewStatsDesc["QueryHitRatio"] = prometheus.NewDesc(
@@ -270,7 +270,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	// resolver_dnssec_validation_success_total
 	viewStatsDesc["ValSuccess"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "dnssec_validation_success_total"),
-		"Number of DNSSEC validation attempts succeeded.",
+		"Number of successful DNSSEC validation attempts.",
 		[]string{"view", "result"}, nil)
 
 	// resolver_queries_total
@@ -295,7 +295,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	// resolver_query_errors_total
 	viewStatsDesc["ResolverQueryErrors"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "query_errors_total"),
-		"Number of resolver queries failed.",
+		"Number of failed resolver queries.",
 		[]string{"view", "error"}, nil)
 	// resolver_query_retries_total
 	viewStatsDesc["Retry"] = prometheus.NewDesc(
@@ -338,7 +338,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	// up
 	serverStatsDesc["up"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
-		"Was the Bind instance query successful?",
+		"Was the BIND instance query successful?",
 		nil, nil)
 	// worker_threads
 	serverStatsDesc["worker-threads"] = prometheus.NewDesc(
@@ -562,7 +562,7 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(pbe.serverStatsDesc["up"], prometheus.GaugeValue, float64(pbe.up))
 
 	if err != nil {
-		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
+		log.Errorf("Some errors were encountered while collecting stats from BIND 9: %+v", err)
 	}
 
 	// if not up or error encountered, don't bother collecting.
@@ -800,7 +800,7 @@ func (pbe *PromBind9Exporter) Start() {
 	var err error
 	pbe.procID, err = pbe.collectStats()
 	if err != nil {
-		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
+		log.Errorf("Some errors were encountered while collecting stats from BIND 9: %+v", err)
 	}
 
 	// register collectors
@@ -825,7 +825,7 @@ func (pbe *PromBind9Exporter) Start() {
 	go func() {
 		err := pbe.HTTPServer.ListenAndServe()
 		if err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("problem with serving Prometheus BIND 9 Exporter: %s", err.Error())
+			log.Errorf("Problem serving Prometheus BIND 9 Exporter: %s", err.Error())
 		}
 	}()
 }
@@ -841,7 +841,7 @@ func (pbe *PromBind9Exporter) Shutdown() {
 
 		pbe.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := pbe.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shutdown the BIND 9 exporter: %v\n", err)
+			log.Warnf("Could not gracefully shut down the BIND 9 exporter: %v\n", err)
 		}
 	}
 
@@ -858,7 +858,7 @@ func (pbe *PromBind9Exporter) Shutdown() {
 func getStat(statMap map[string]interface{}, statName string) interface{} {
 	value, ok := statMap[statName]
 	if !ok {
-		log.Infof("no '%s' in response:", statName)
+		log.Infof("No '%s' in response:", statName)
 		return nil
 	}
 	return value
@@ -872,7 +872,7 @@ func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, s
 	if statIfc != nil {
 		stats, ok := statIfc.(map[string]interface{})
 		if !ok {
-			return nil, pkgerrors.Errorf("problem with casting '%s' interface", statName)
+			return nil, pkgerrors.Errorf("problem casting '%s' interface", statName)
 		}
 		for labelName, labelValueIfc := range stats {
 			// get value
@@ -896,21 +896,21 @@ func (pbe *PromBind9Exporter) scrapeTimeStats(statMap map[string]interface{}) (e
 	timeStr = getStat(statMap, "boot-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.BootTime = timeVal
 	// config_time_seconds
 	timeStr = getStat(statMap, "config-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.ConfigTime = timeVal
 	// current_time_seconds
 	timeStr = getStat(statMap, "current-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.CurrentTime = timeVal
 
@@ -922,31 +922,31 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 
 	viewStats, ok := viewStatsIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting viewStatsIfc: %+v", viewStatsIfc)
+		log.Errorf("Problem casting viewStatsIfc: %+v", viewStatsIfc)
 		return
 	}
 
 	// Parse resolver.
 	resolverIfc, ok := viewStats["resolver"]
 	if !ok {
-		log.Infof("no 'resolver' in viewStats: %+v", viewStats)
+		log.Infof("No 'resolver' in viewStats: %+v", viewStats)
 		return
 	}
 	resolver, ok := resolverIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting resolverIfc: %+v", resolverIfc)
+		log.Errorf("Problem casting resolverIfc: %+v", resolverIfc)
 		return
 	}
 
 	// Parse stats.
 	statsIfc, ok := resolver["stats"]
 	if !ok {
-		log.Infof("no 'stats' in resolver: %+v", resolver)
+		log.Infof("No 'stats' in resolver: %+v", resolver)
 		return
 	}
 	resolverStats, ok := statsIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting statsIfc: %+v", statsIfc)
+		log.Errorf("Problem casting statsIfc: %+v", statsIfc)
 		return
 	}
 
@@ -956,7 +956,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 		// get stat value
 		statValue, ok := statValueIfc.(float64)
 		if !ok {
-			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			log.Errorf("Problem casting statValue: %+v", statValueIfc)
 			continue
 		}
 		// store stat value
@@ -966,12 +966,12 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse qtypes.
 	qtypesIfc, ok := resolver["qtypes"]
 	if !ok {
-		log.Infof("no 'qtypes' in resolver: %+v", resolver)
+		log.Infof("No 'qtypes' in resolver: %+v", resolver)
 		return
 	}
 	qtypes, ok := qtypesIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting qtypesIfc: %+v", qtypesIfc)
+		log.Errorf("Problem casting qtypesIfc: %+v", qtypesIfc)
 		return
 	}
 
@@ -980,7 +980,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 		// get stat value
 		statValue, ok := statValueIfc.(float64)
 		if !ok {
-			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			log.Errorf("Problem casting statValue: %+v", statValueIfc)
 			continue
 		}
 		// store stat value
@@ -990,12 +990,12 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse cache.
 	cacheIfc, ok := resolver["cache"]
 	if !ok {
-		log.Infof("no 'cachestats' in resolver: %+v", resolver)
+		log.Infof("No 'cachestats' in resolver: %+v", resolver)
 		return
 	}
 	cacheRRsets, ok := cacheIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting cacheIfc: %+v", cacheIfc)
+		log.Errorf("Problem casting cacheIfc: %+v", cacheIfc)
 		return
 	}
 
@@ -1004,7 +1004,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 		// get stat value
 		statValue, ok := statValueIfc.(float64)
 		if !ok {
-			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			log.Errorf("Problem casting statValue: %+v", statValueIfc)
 			continue
 		}
 		// store stat value
@@ -1014,12 +1014,12 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse cachestats.
 	cachestatsIfc, ok := resolver["cachestats"]
 	if !ok {
-		log.Infof("no 'cachestats' in resolver: %+v", resolver)
+		log.Infof("No 'cachestats' in resolver: %+v", resolver)
 		return
 	}
 	cachestats, ok := cachestatsIfc.(map[string]interface{})
 	if !ok {
-		log.Errorf("problem with casting cachestatsIfc: %+v", cachestatsIfc)
+		log.Errorf("Problem casting cachestatsIfc: %+v", cachestatsIfc)
 		return
 	}
 
@@ -1037,7 +1037,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 		// get stat value
 		statValue, ok := statValueIfc.(float64)
 		if !ok {
-			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			log.Errorf("Problem casting statValue: %+v", statValueIfc)
 			continue
 		}
 		switch statName {
@@ -1069,7 +1069,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	rsp, ok := rspIfc.(map[string]interface{})
 	if !ok {
-		return pkgerrors.Errorf("problem with casting rspIfc: %+v", rspIfc)
+		return pkgerrors.Errorf("problem casting rspIfc: %+v", rspIfc)
 	}
 
 	// boot_time_seconds
@@ -1083,12 +1083,12 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// incoming_queries_total
 	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(rsp, "qtypes")
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing 'qtypes': %+v", err)
+		return pkgerrors.Errorf("problem parsing 'qtypes': %+v", err)
 	}
 	// incoming_requests_total
 	pbe.stats.IncomingRequests, err = pbe.scrapeServerStat(rsp, "opcodes")
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing 'opcodes': %+v", err)
+		return pkgerrors.Errorf("problem parsing 'opcodes': %+v", err)
 	}
 
 	// query_duplicates_total
@@ -1100,31 +1100,31 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// zone_transfer_success_total
 	pbe.stats.NsStats, err = pbe.scrapeServerStat(rsp, "nsstats")
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing 'nsstats': %+v", err)
+		return pkgerrors.Errorf("problem parsing 'nsstats': %+v", err)
 	}
 
 	// tasks_running
 	// worker_threads
 	pbe.stats.TaskMgr, err = pbe.scrapeServerStat(rsp, "taskmgr")
 	if err != nil {
-		return pkgerrors.Errorf("problem with parsing 'nsstats': %+v", err)
+		return pkgerrors.Errorf("problem parsing 'nsstats': %+v", err)
 	}
 
 	// Parse traffic stats.
 	trafficIfc, ok := rsp["traffic"]
 	if !ok {
-		return pkgerrors.Errorf("no 'traffic' in response: %+v", rsp)
+		return pkgerrors.Errorf("No 'traffic' in response: %+v", rsp)
 	}
 	traffic, ok := trafficIfc.(map[string]interface{})
 	if !ok {
-		return pkgerrors.Errorf("problem with casting trafficIfc: %+v", trafficIfc)
+		return pkgerrors.Errorf("problem casting trafficIfc: %+v", trafficIfc)
 	}
 	trafficMap := make(map[string]PromBind9TrafficStats)
 	for trafficName, trafficStatsIfc := range traffic {
 		sizeCounts := make(map[string]float64)
 		trafficStats, ok := trafficStatsIfc.(map[string]interface{})
 		if !ok {
-			return pkgerrors.Errorf("problem with casting '%s' interface", trafficName)
+			return pkgerrors.Errorf("problem casting '%s' interface", trafficName)
 		}
 		for labelName, labelValueIfc := range trafficStats {
 			// get value
@@ -1149,7 +1149,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 
 	views := viewsIfc.(map[string]interface{})
 	if !ok {
-		return pkgerrors.Errorf("problem with casting viewsIfc: %+v", viewsIfc)
+		return pkgerrors.Errorf("problem casting viewsIfc: %+v", viewsIfc)
 	}
 
 	for viewName, viewStatsIfc := range views {
@@ -1178,7 +1178,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		sap, err := getAccessPoint(app, AccessPointStatistics)
 		if err != nil {
 			lastErr = err
-			log.Errorf("problem with getting stats from BIND 9, bad access statistics point: %+v", err)
+			log.Errorf("Problem getting stats from BIND 9, bad access statistics point: %+v", err)
 			continue
 		}
 		address := storkutil.HostWithPortURL(sap.Address, sap.Port, sap.UseSecureProtocol)
@@ -1187,14 +1187,14 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		httpRsp, err := pbe.HTTPClient.Call(url, bytes.NewBuffer([]byte(request)))
 		if err != nil {
 			lastErr = err
-			log.Errorf("problem with getting stats from BIND 9: %+v", err)
+			log.Errorf("Problem getting stats from BIND 9: %+v", err)
 			continue
 		}
 		body, err := io.ReadAll(httpRsp.Body)
 		httpRsp.Body.Close()
 		if err != nil {
 			lastErr = err
-			log.Errorf("problem with reading stats response from BIND 9: %+v", err)
+			log.Errorf("Problem reading stats response from BIND 9: %+v", err)
 			continue
 		}
 
@@ -1204,14 +1204,14 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		err = json.Unmarshal([]byte(response), &rspIfc)
 		if err != nil {
 			lastErr = err
-			log.Errorf("failed to parse responses from BIND 9: %s", err)
+			log.Errorf("Failed to parse responses from BIND 9: %s", err)
 			continue
 		}
 
 		err = pbe.setDaemonStats(rspIfc)
 		if err != nil {
 			lastErr = err
-			log.Errorf("cannot get stat from daemon: %+v", err)
+			log.Errorf("Cannot get stat from daemon: %+v", err)
 		}
 
 		pbe.up = 1

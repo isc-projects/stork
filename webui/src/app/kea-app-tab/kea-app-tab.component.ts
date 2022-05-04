@@ -257,7 +257,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 daemon.monitored = dmn.monitored
             },
             (err) => {
-                console.warn('failed to update monitoring flag in daemon')
+                console.warn('Failed to update monitoring flag in daemon')
             }
         )
     }
@@ -310,8 +310,8 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 }
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'App renaming erred',
-                    detail: 'App renaming to ' + event + ' erred: ' + msg,
+                    summary: 'Error renaming app',
+                    detail: 'Error renaming app to ' + event + ': ' + msg,
                     life: 10000,
                 })
             }
@@ -363,8 +363,8 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
             (err) => {
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'Fetching apps and machines failed',
-                    detail: 'Fetching apps and machines list from the server failed',
+                    summary: 'Failed to fetch apps and machines',
+                    detail: 'Failed to fetch apps and machines list from the server',
                     life: 10000,
                 })
                 this.showRenameDialogClicked = false

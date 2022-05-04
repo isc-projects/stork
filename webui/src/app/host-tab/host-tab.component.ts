@@ -176,8 +176,8 @@ export class HostTabComponent {
                 }
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'Searching leases for the host erred',
-                    detail: 'Leases search by host id ' + hostId + ' erred: ' + msg,
+                    summary: 'Error searching leases for the host',
+                    detail: 'Error searching by host ID ' + hostId + ': ' + msg,
                     life: 10000,
                 })
             }
@@ -237,7 +237,7 @@ export class HostTabComponent {
                     break
             }
         }
-        // If the usage haven't been set yet, or the new usage overrides the current
+        // If the usage hasn't been set yet, or the new usage overrides the current
         // usage, update the usage information. The usage values in the enum are ordered
         // by importance: conflicted, declined, expired, used. Even if one of the leases
         // is used, but the other one is conflicted, we mark the usage as conflicted.
@@ -312,8 +312,8 @@ export class HostTabComponent {
                     ' lease' +
                     (m ? 's' : '') +
                     ' for this reservation' +
-                    (m ? '. They include a lease' : '') +
-                    ' which expired at ' +
+                    (m ? '. This includes a lease' : '') +
+                    ' that expired at ' +
                     epochToLocal(expirationTime)
 
                 if (expirationDuration) {
@@ -328,7 +328,7 @@ export class HostTabComponent {
                     ' lease' +
                     (m ? 's' : '') +
                     ' for this reservation' +
-                    (m ? '. They include a declined lease with' : ' which is declined and has') +
+                    (m ? '. This includes a declined lease with' : ' which is declined and has an') +
                     ' expiration time at ' +
                     epochToLocal(leaseInfo.culprit.cltt + leaseInfo.culprit.validLifetime) +
                     '.'
@@ -345,7 +345,7 @@ export class HostTabComponent {
                     identifier = 'client-id=' + leaseInfo.culprit.clientId
                 }
                 summary =
-                    'Found a lease with expiration time at ' +
+                    'Found a lease with an expiration time at ' +
                     epochToLocal(leaseInfo.culprit.cltt + leaseInfo.culprit.validLifetime) +
                     ' assigned to the client with ' +
                     identifier +

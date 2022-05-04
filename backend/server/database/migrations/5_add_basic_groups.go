@@ -53,7 +53,7 @@ func init() {
 		// Create admin group.
 		_, err = db.Model(&systemGroup{
 			Name:        "admin",
-			Description: "This group of users can do everything except managing user accounts.",
+			Description: "This group of users can do everything except manage user accounts.",
 		}).Insert()
 		if err != nil {
 			return err

@@ -58,7 +58,7 @@ export class SettingsPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get settings',
-                    detail: 'Getting settings erred: ' + msg,
+                    detail: 'Error getting settings: ' + msg,
                     life: 10000,
                 })
             }
@@ -87,7 +87,7 @@ export class SettingsPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get settings',
-                    detail: 'Getting settings erred: ' + msg,
+                    detail: 'Error getting settings: ' + msg,
                     life: 10000,
                 })
             }

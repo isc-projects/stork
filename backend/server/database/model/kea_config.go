@@ -41,11 +41,11 @@ type KeaConfig struct {
 }
 
 // KeaConfig doesn't implement a custom JSON marshaler but only calls
-// the marshaling on the internal keaconfig.Map.
+// the marshalling on the internal keaconfig.Map.
 var _ json.Marshaler = (*KeaConfig)(nil)
 
 // KeaConfig doesn't implement a custom JSON unmarshaler but only calls
-// the unmarshaling on the internal keaconfig.Map.
+// the unmarshalling on the internal keaconfig.Map.
 var _ json.Unmarshaler = (*KeaConfig)(nil)
 
 // The database serializer that workarounds the bufpool.
@@ -189,7 +189,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 
 // Creates new shared network instance from the pointer to the map of interfaces.
 // The family designates if the shared network contains IPv4 (if 4) or IPv6 (if 6)
-// subnets. If any of the subnets doesn't match this value, an error is returned.
+// subnets. If none of the subnets match this value, an error is returned.
 func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*SharedNetwork, error) {
 	var parsedSharedNetwork KeaConfigSharedNetwork
 	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
@@ -204,7 +204,7 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*S
 			subnet, err := convertSubnetFromKea(&keaSubnet)
 			if err == nil {
 				if subnet.GetFamily() != family {
-					return nil, errors.Errorf("non matching family of the subnet %s with the shared network %s",
+					return nil, errors.Errorf("no matching family of the subnet %s with the shared network %s",
 						subnet.Prefix, newSharedNetwork.Name)
 				}
 				newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)

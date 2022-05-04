@@ -181,12 +181,12 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]int
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := errors.Errorf("missing Arguments from RPS response %+v", statsResp)
+		err := errors.Errorf("missing arguments from RPS response %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := errors.Errorf("missing Samples from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -206,12 +206,12 @@ func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]int
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := errors.Errorf("missing Arguments from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing arguments from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := errors.Errorf("missing Samples from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -231,7 +231,7 @@ func (rpsWorker *RpsWorker) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, sam
 	daemonID := daemon.KeaDaemon.DaemonID
 	if value < 0 {
 		// Shouldn't happen but if it does, we'll record a 0.
-		log.Warnf("discarding response value: %d returned from KeaDaemonID: %d", value, daemonID)
+		log.Warnf("Discarding response value: %d returned from KeaDaemonID: %d", value, daemonID)
 		value = int64(0)
 	}
 
@@ -335,7 +335,7 @@ func getFirstSample(samples []interface{}) (int64, time.Time, error) {
 
 	row, ok := samples[0].([]interface{})
 	if !ok {
-		return 0, sampledAt, errors.Errorf("problem with casting sample row: %+v", samples[0])
+		return 0, sampledAt, errors.Errorf("problem casting sample row: %+v", samples[0])
 	}
 
 	if len(row) != 2 {

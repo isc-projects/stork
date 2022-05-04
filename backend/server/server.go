@@ -52,8 +52,8 @@ type StorkServer struct {
 
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
-	Version               bool `short:"v" long:"version" description:"show software version"`
-	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
+	Version               bool `short:"v" long:"version" description:"Show software version"`
+	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
 }
 
 // Parse the command line arguments into GO structures.
@@ -63,7 +63,7 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	var serverSettings Settings
 	parser := flags.NewParser(&serverSettings, flags.Default)
 	parser.ShortDescription = "Stork Server"
-	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
+	parser.LongDescription = "Stork Server is a Kea and BIND 9 dashboard"
 
 	// Process Database specific args.
 	_, err = parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)
@@ -143,7 +143,7 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	// setup connected agents
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings, ss.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM)
 	// TODO: if any operation below fails then this Shutdown here causes segfault.
-	// I do not know why and do not how to fix this. Commenting out for now.
+	// I do not know why and do not know how to fix this. Commenting out for now.
 	// defer func() {
 	// 	if err != nil {
 	// 		ss.Agents.Shutdown()
@@ -198,9 +198,9 @@ func (ss *StorkServer) Bootstrap() (err error) {
 		if err != nil {
 			return err
 		}
-		log.Info("the metrics endpoint is enabled (ensure that it is properly secured)")
+		log.Info("The metrics endpoint is enabled (ensure that it is properly secured)")
 	} else {
-		log.Warn("the metric endpoint is disabled (it can be enabled with the -m flag)")
+		log.Warn("The metric endpoint is disabled (it can be enabled with the -m flag)")
 	}
 
 	// setup ReST API service

@@ -35,7 +35,7 @@ func mockRndc(command []string) ([]byte, error) {
 	var output string
 
 	if len(command) > 0 && command[len(command)-1] == "status" {
-		output = "server is up and running"
+		output = "Server is up and running"
 		return []byte(output), nil
 	}
 
@@ -452,7 +452,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
 	require.Empty(t, rsp.Status.Message)
 	// Check expected output.
-	require.Equal(t, rsp.RndcResponse.Response, "server is up and running")
+	require.Equal(t, rsp.RndcResponse.Response, "Server is up and running")
 
 	// Empty request.
 	cmd = &agentapi.RndcRequest{Request: ""}

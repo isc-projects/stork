@@ -179,7 +179,7 @@ func ReadFileWithIncludes(path string) (string, error) {
 func readFileWithIncludes(path string, parentPaths map[string]bool) (string, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		log.Warnf("cannot read file: %+v", err)
+		log.Warnf("Cannot read file: %+v", err)
 		err = errors.Wrap(err, "cannot read file")
 		return "", err
 	}

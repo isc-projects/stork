@@ -109,6 +109,7 @@ func TestMachineDumpExecute(t *testing.T) {
 	// Act
 	err := dump.Execute()
 	machine, ok := extractMachineFromDump(dump)
+	require.True(t, ok)
 
 	// Assert
 	require.NoError(t, err)
@@ -141,7 +142,8 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 
 	// Act
 	_ = dump.Execute()
-	machine, _ := extractMachineFromDump(dump)
+	machine, ok := extractMachineFromDump(dump)
+	require.True(t, ok)
 
 	// Assert
 	app := machine.Apps[0]

@@ -211,21 +211,19 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	data := `
 		// This is a basic configuration for the Kea Control Agent.
 		//
-		// This is just a very basic configuration. Kea comes with large suite (over 30)
-		// of configuration examples and extensive Kea User's Guide. Please refer to
-		// those materials to get better understanding of what this software is able to
-		// do. Comments in this configuration file sometimes refer to sections for more
-		// details. These are section numbers in Kea User's Guide. The version matching
-		// your software should come with your Kea package, but it is also available
-		// in ISC's Knowledgebase (https://kea.readthedocs.io; the direct link for
-		// the stable version is https://kea.readthedocs.io/).
+		// Kea comes with a large suite of more than 30 configuration examples
+		// and an extensive Kea Administrator Reference Manual (ARM). Please refer to
+		// those materials to get a better understanding of what this software is able to
+		// do. Comments in this configuration file sometimes indicate sections of
+		// the Kea ARM where more details are available. The ARM comes with
+		// each Kea download, but it is also available at
+		// https://kea.readthedocs.io.
 		//
-		// This configuration file contains only Control Agent's configuration.
-		// If configurations for other Kea services are also included in this file they
-		// are ignored by the Control Agent.
+		// This file contains only the Control Agent configuration.
+		// The Control Agent ignores the configurations for any other Kea services that may
+		// also be included in this file.
 		{
 		
-		// This is a basic configuration for the Kea Control Agent.
 		// RESTful interface to be available at http://127.0.0.1:8000/
 		"Control-agent": {
 			"authentication": {
@@ -245,9 +243,9 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 			"key-file": "/home/user/stork-certs/kea.key",
 			"cert-required": false,
 		
-			// Specify location of the files to which the Control Agent
-			// should connect to forward commands to the DHCPv4, DHCPv6
-			// and D2 servers via unix domain sockets.
+			// Specify the location of the files to which the Control Agent
+			// should connect to forward commands to the DHCPv4, DHCPv6,
+			// and D2 servers via UNIX domain sockets.
 			"control-sockets": {
 				"dhcp4": {
 					"socket-type": "unix",
@@ -263,11 +261,11 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 				}
 			},
 		
-			// Specify hooks libraries that are attached to the Control Agent.
-			// Such hooks libraries should support 'control_command_receive'
-			// hook point. This is currently commented out because it has to
-			// point to the existing hooks library. Otherwise the Control
-			// Agent will fail to start.
+			// Specify the hook libraries that are attached to the Control Agent.
+			// Such hook libraries should support the 'control_command_receive'
+			// hook point. This is currently commented out, since it has to
+			// point to the existing hook library; otherwise the Control
+			// Agent will not start.
 			"hooks-libraries": [
 		//  {
 		//      "library": "/usr/lib/kea/hooks/control-agent-commands.so",
@@ -278,7 +276,8 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 			],
 		
 		// Logging configuration starts here. Kea uses different loggers to log various
-		// activities. For details (e.g. names of loggers), see Chapter 18.
+		// activities. For details (e.g. names of loggers), see
+		// https://kea.readthedocs.io/en/latest/arm/logging.html.
 			"loggers": [
 			{
 				// This specifies the logging for Control Agent daemon.
@@ -294,8 +293,8 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 						// Any other value is considered a name of the file
 						"output": "/var/log/kea-ctrl-agent.log"
 		
-						// Shorter log pattern suitable for use with systemd,
-						// avoids redundant information
+						// This shorter log pattern is suitable for use with systemd,
+						// and avoids redundant information.
 						// "pattern": "%-5p %m\n"
 		
 						// This governs whether the log output is flushed to disk after
@@ -311,11 +310,11 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 					}
 				],
 				// This specifies the severity of log messages to keep. Supported values
-				// are: FATAL, ERROR, WARN, INFO, DEBUG
+				// are: FATAL, ERROR, WARN, INFO, DEBUG.
 				"severity": "INFO",
 		
 				// If DEBUG level is specified, this value is used. 0 is least verbose,
-				// 99 is most verbose. Be cautious, Kea can generate lots and lots
+				// 99 is most verbose. Be cautious: Kea can generate lots and lots
 				// of logs if told to do so.
 				"debuglevel": 0
 			},

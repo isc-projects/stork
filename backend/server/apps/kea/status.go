@@ -230,7 +230,7 @@ func (puller *HAStatusPuller) commitHAServicesStatus(appID int64, services []dbm
 		// Update the information about the HA service in the database.
 		err := dbmodel.UpdateBaseHAService(puller.DB, services[i].HAService)
 		if err != nil {
-			log.Errorf("error occurred while updating HA services status for Kea app %d: %+v", appID, err)
+			log.Errorf("Error occurred while updating HA services status for Kea app %d: %+v", appID, err)
 
 			continue
 		}
@@ -259,7 +259,7 @@ func (puller *HAStatusPuller) pullData() error {
 			appsOkCnt++
 		}
 	}
-	log.Printf("completed pulling DHCP status from Kea apps: %d/%d succeeded", appsOkCnt, appsCnt)
+	log.Printf("Completed pulling DHCP status from Kea apps: %d/%d succeeded", appsOkCnt, appsCnt)
 
 	return lastErr
 }
@@ -272,7 +272,7 @@ func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
 	// the app belongs to.
 	dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.DB, app.ID)
 	if err != nil {
-		log.Errorf("error while getting services for Kea app %d: %+v", app.ID, err)
+		log.Errorf("Error while getting services for Kea app %d: %+v", app.ID, err)
 		return false, false
 	}
 	// No services for this app, so nothing to do.
@@ -308,7 +308,7 @@ func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
 	// Send the status-get command to both DHCPv4 and DHCPv6 servers.
 	appStatus, err := getDHCPStatus(ctx, puller.Agents, app)
 	if err != nil {
-		log.Errorf("error occurred while getting Kea app %d status: %+v", app.ID, err)
+		log.Errorf("Error occurred while getting Kea app %d status: %+v", app.ID, err)
 
 		return true, false
 	}

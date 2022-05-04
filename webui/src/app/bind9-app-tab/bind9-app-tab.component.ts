@@ -270,8 +270,8 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                 }
                 this.msgService.add({
                     severity: 'error',
-                    summary: 'App renaming erred',
-                    detail: 'App renaming to ' + event + ' erred: ' + msg,
+                    summary: 'Error renaming app',
+                    detail: 'Error renaming app to ' + event + msg,
                     life: 10000,
                 })
             }

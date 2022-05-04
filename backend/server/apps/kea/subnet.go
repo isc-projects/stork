@@ -74,7 +74,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 		// Parse the configured network.
 		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family)
 		if err != nil {
-			log.Warnf("skipping invalid shared network: %v", err)
+			log.Warnf("Skipping invalid shared network: %v", err)
 			continue
 		}
 		dbNetwork, err := sharedNetworkExists(dbi, network, dbNetworks)
@@ -86,7 +86,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 			// matching new subnets with them.
 			indexedSubnets := dbmodel.NewIndexedSubnets(dbNetwork.Subnets)
 			if ok := indexedSubnets.Populate(); !ok {
-				log.Warnf("skipping shared network %s because building indexes failed due to duplicates", dbNetwork.Name)
+				log.Warnf("Skipping shared network %s; building indexes failed due to duplicates", dbNetwork.Name)
 
 				continue
 			}
@@ -105,7 +105,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 					// merge the hosts from the new subnet into the existing subnet.
 					hosts, err := mergeSubnetHosts(dbi, existingSubnet, &subnet)
 					if err != nil {
-						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+						log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 							subnet.Prefix, err)
 						continue
 					}
@@ -158,7 +158,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (subnet
 			// Parse the configured subnet.
 			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap)
 			if err != nil {
-				log.Warnf("skipping invalid subnet: %v", err)
+				log.Warnf("Skipping invalid subnet: %v", err)
 				continue
 			}
 			existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
@@ -168,7 +168,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (subnet
 				// merge the hosts from the new subnet into the existing subnet.
 				hosts, err := mergeSubnetHosts(dbi, existingSubnet, subnet)
 				if err != nil {
-					log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+					log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 						subnet.Prefix, err)
 					continue
 				}

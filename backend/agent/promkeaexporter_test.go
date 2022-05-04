@@ -156,7 +156,7 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 		},
 		{
 			"result": 1,
-			"text": "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline"
+			"text": "Unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline"
 		}
 	]`
 

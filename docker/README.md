@@ -1,4 +1,4 @@
-#### Example on how to build and push image to Gitlab
+#### Example of how to build and push image to GitLab
 
 ```console
 $ docker login registry.gitlab.isc.org

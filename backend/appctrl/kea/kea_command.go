@@ -154,13 +154,13 @@ func UnmarshalResponseList(request SerializableCommand, response []byte, parsed 
 	}
 
 	// Start computing hashes from the arguments received in the response.
-	// We may consider optimizing it to hash while unmarshaling the response. This,
+	// We may consider optimizing it to hash while unmarshalling the response. This,
 	// however, would require having a dedicated structure for arguments and custom
 	// unmarshaller to be implemented for it. While this makes sense, it gives
 	// significantly less flexibility on the caller side to use different structures
 	// into which the responses are unmarshalled. Hopefully, several milliseconds more
-	// for hashing the response doesn't matter for user experience, especially that
-	// it is conducted in background.
+	// for hashing the response doesn't matter for user experience, especially since
+	// it is conducted in the background.
 	hashers := []hasher{}
 	for i := 0; i < parsedList.Len(); i++ {
 		// First, we have to check if the response contains ArgumentsHash field.

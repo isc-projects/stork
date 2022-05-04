@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(
-			`-- Create table holding logging targets for daemons. The logging
+			`-- This creates a table holding logging targets for daemons. The logging
              -- target specifies where the logs are stored by the daemon.
              CREATE TABLE IF NOT EXISTS log_target (
                  id bigserial NOT NULL PRIMARY KEY,
@@ -22,7 +22,7 @@ func init() {
                      ON DELETE CASCADE
              );
 
-             -- Function converting logging severity to lower case.
+             -- This function converts logging severity to lowercase.
              CREATE OR REPLACE FUNCTION log_target_lower_severity()
                  RETURNS trigger
                  LANGUAGE  plpgsql
@@ -33,8 +33,8 @@ func init() {
              END;
              $function$;
 
-             -- Trigger invoked before insert or update on the log_target table
-             -- which turns severity to lower case.
+             -- This trigger is invoked before insert or update on the log_target table,
+             -- which turns severity to lowercase.
              CREATE TRIGGER log_target_before_insert_update
              BEFORE INSERT OR UPDATE ON log_target
                  FOR EACH ROW EXECUTE PROCEDURE log_target_lower_severity();

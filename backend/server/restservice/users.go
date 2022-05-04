@@ -124,9 +124,9 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 		log.WithFields(log.Fields{
 			"start": start,
 			"limit": limit,
-		}).Errorf("failed to get users from the database with error: %s", err.Error())
+		}).Errorf("Failed to get users from the database with error: %s", err.Error())
 
-		msg := "failed to get users from the database"
+		msg := "Failed to get users from the database"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -145,17 +145,17 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
-		}).Errorf("failed to fetch user with id %v from the database with error: %s", id,
+		}).Errorf("Failed to fetch user with ID %v from the database with error: %s", id,
 			err.Error())
 
-		msg := "failed to fetch user with id %v from the database"
+		msg := "Failed to fetch user with ID %v from the database"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		rsp := users.NewGetUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	} else if su == nil {
-		msg := fmt.Sprintf("failed to find user with id %v in the database", id)
+		msg := fmt.Sprintf("Failed to find user with ID %v in the database", id)
 		log.WithFields(log.Fields{
 			"userid": id,
 		}).Error(msg)
@@ -174,9 +174,9 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 // Creates new user account in the database.
 func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams) middleware.Responder {
 	if params.Account == nil {
-		log.Warnf("failed to create new user account: missing data")
+		log.Warnf("Failed to create new user account: missing data")
 
-		msg := "failed to create new user account: missing data"
+		msg := "Failed to create new user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -186,9 +186,9 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	p := params.Account.Password
 
 	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
-		log.Warnf("failed to create new user account: missing data")
+		log.Warnf("Failed to create new user account: missing data")
 
-		msg := "failed to create new user account: missing data"
+		msg := "Failed to create new user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -213,17 +213,17 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 			log.WithFields(log.Fields{
 				"login": *u.Login,
 				"email": *u.Email,
-			}).Infof("failed to create conflicting user account for user %s: %s", su.Identity(), err.Error())
+			}).Infof("Failed to create conflicting user account for user %s: %s", su.Identity(), err.Error())
 
-			msg := "user account with provided login/email already exists"
+			msg := "User account with provided login/email already exists"
 			rspErr := models.APIError{
 				Message: &msg,
 			}
 			return users.NewCreateUserDefault(http.StatusConflict).WithPayload(&rspErr)
 		}
-		log.Errorf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
+		log.Errorf("Failed to create new user account for user %s: %s", su.Identity(), err.Error())
 
-		msg := fmt.Sprintf("failed to create new user account for user %s", su.Identity())
+		msg := fmt.Sprintf("Failed to create new user account for user %s", su.Identity())
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -237,9 +237,9 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 // Updates existing user account in the database.
 func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams) middleware.Responder {
 	if params.Account == nil {
-		log.Warnf("failed to update user account: missing data")
+		log.Warnf("Failed to update user account: missing data")
 
-		msg := "failed to update user account: missing data"
+		msg := "Failed to update user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -249,9 +249,9 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	p := params.Account.Password
 
 	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
-		log.Warnf("failed to update user account: missing data")
+		log.Warnf("Failed to update user account: missing data")
 
-		msg := "failed to update user account: missing data"
+		msg := "Failed to update user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -275,9 +275,9 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	if con {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
-		}).Infof("failed to update user account for user %s: %s", su.Identity(), err.Error())
+		}).Infof("Failed to update user account for user %s: %s", su.Identity(), err.Error())
 
-		msg := "user account with provided login/email already exists"
+		msg := "User account with provided login/email already exists"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -288,10 +288,10 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 			"userid": *u.ID,
 			"login":  *u.Login,
 			"email":  *u.Email,
-		}).Errorf("failed to update user account for user %s: %s",
+		}).Errorf("Failed to update user account for user %s: %s",
 			su.Identity(), err.Error())
 
-		msg := fmt.Sprintf("failed to update user account for user %s", su.Identity())
+		msg := fmt.Sprintf("Failed to update user account for user %s", su.Identity())
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -307,9 +307,9 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	id := int(params.ID)
 	passwords := params.Passwords
 	if passwords == nil {
-		log.Warnf("failed to update password for user id %d: missing data", id)
+		log.Warnf("Failed to update password for user ID %d: missing data", id)
 
-		msg := "failed to update password for user: missing data"
+		msg := "Failed to update password for user: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -327,20 +327,20 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	// or something similar. The error is not returned when the current password
 	// is not matching.
 	if err != nil {
-		err = errors.Wrapf(err, "failed to update password for user id %d", id)
+		err = errors.Wrapf(err, "failed to update password for user ID %d", id)
 		log.Error(err)
 
-		msg := "database error while trying to update user password"
+		msg := "Database error while trying to update user password"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	} else if !auth {
-		log.Infof("specified current password is invalid while trying to update existing password for user id %d",
+		log.Infof("Specified invalid current password while trying to update existing password for user ID %d",
 			id)
 
-		msg := "invalid current password specified"
+		msg := "Invalid current password specified"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -381,9 +381,9 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 
 	groups, err := r.getGroups(start, limit, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
-		log.Errorf("failed to get groups from the database with error: %s", err.Error())
+		log.Errorf("Failed to get groups from the database with error: %s", err.Error())
 
-		msg := "failed to get groups from the database"
+		msg := "Failed to get groups from the database"
 		rspErr := models.APIError{
 			Message: &msg,
 		}

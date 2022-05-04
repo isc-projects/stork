@@ -63,17 +63,17 @@ func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc
 	periodicExecutor.wg.Add(1)
 	go periodicExecutor.executorLoop()
 
-	log.Printf("started %s", periodicExecutor.name)
+	log.Printf("Started %s", periodicExecutor.name)
 	return periodicExecutor, nil
 }
 
 // Terminates the executor, i.e. the executor no longer triggers the
 // user defined function.
 func (executor *PeriodicExecutor) Shutdown() {
-	log.Printf("stopping %s", executor.name)
+	log.Printf("Stopping %s", executor.name)
 	executor.done <- true
 	executor.wg.Wait()
-	log.Printf("stopped %s", executor.name)
+	log.Printf("Stopped %s", executor.name)
 }
 
 // Temporarily stops the timer triggering the executor action. This function
@@ -166,7 +166,7 @@ func (executor *PeriodicExecutor) executorLoop() {
 				err := executor.executorFunc()
 				executor.Unpause()
 				if err != nil {
-					log.Errorf("errors were encountered while pulling data from apps: %+v", err)
+					log.Errorf("Errors were encountered while pulling data from apps: %+v", err)
 				}
 			}
 		// wait for done signal from shutdown function
@@ -179,7 +179,7 @@ func (executor *PeriodicExecutor) executorLoop() {
 		// Check if the interval has changed. If so, recreate the ticker.
 		interval, err := executor.getIntervalFunc()
 		if err != nil {
-			log.Errorf("problem with getting interval: %+v", err)
+			log.Errorf("Problem getting interval: %+v", err)
 			return
 		}
 

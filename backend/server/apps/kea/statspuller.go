@@ -61,12 +61,12 @@ func (statsPuller *StatsPuller) pullStats() error {
 		err := statsPuller.getStatsFromApp(&dbApp2)
 		if err != nil {
 			lastErr = err
-			log.Errorf("error occurred while getting stats from app %d: %+v", dbApp.ID, err)
+			log.Errorf("Error occurred while getting stats from app %d: %+v", dbApp.ID, err)
 		} else {
 			appsOkCnt++
 		}
 	}
-	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
+	log.Printf("Completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 
 	// estimate addresses utilization for subnets
 	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.DB)
@@ -119,7 +119,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 		if err != nil {
 			lastErr = err
-			log.Errorf("cannot update utilization (%.3f, %.3f) in subnet %d: %s",
+			log.Errorf("Cannot update utilization (%.3f, %.3f) in subnet %d: %s",
 				su.getAddressUtilization(), su.getDelegatedPrefixUtilization(), sn.ID, err)
 			continue
 		}
@@ -133,7 +133,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 		if err != nil {
 			lastErr = err
-			log.Errorf("cannot update utilization (%.3f, %.3f) in shared network %d: %s",
+			log.Errorf("Cannot update utilization (%.3f, %.3f) in shared network %d: %s",
 				u.getAddressUtilization(), u.getDelegatedPrefixUtilization(), sharedNetworkID, err)
 			continue
 		}
@@ -200,7 +200,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	if sr[0].Arguments == nil {
-		return errors.Errorf("missing Arguments from Lease Stats response %+v", sr[0])
+		return errors.Errorf("missing arguments from Lease Stats response %+v", sr[0])
 	}
 
 	resultSet := &sr[0].Arguments.ResultSet
@@ -233,13 +233,13 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 			}
 		}
 		if sn == nil {
-			lastErr = errors.Errorf("cannot find LocalSubnet for app: %d, local subnet id: %d, family: %d", dbApp.ID, lsnID, family)
+			lastErr = errors.Errorf("cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d", dbApp.ID, lsnID, family)
 			log.Error(lastErr.Error())
 			continue
 		}
 		err := sn.UpdateStats(statsPuller.DB, stats)
 		if err != nil {
-			log.Errorf("problem with updating Kea stats for local subnet id %d, app id %d: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
+			log.Errorf("problem updating Kea stats for local subnet ID %d, app ID %d: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
 			lastErr = err
 		}
 	}
@@ -354,13 +354,13 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 			case "stat-lease4-get":
 				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 4)
 				if err != nil {
-					log.Errorf("error handling stat-lease4-get response: %+v", err)
+					log.Errorf("Error handling stat-lease4-get response: %+v", err)
 					lastErr = err
 				}
 			case "statistic-get":
 				err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
-					log.Errorf("error handling statistic-get (v4) response: %+v", err)
+					log.Errorf("Error handling statistic-get (v4) response: %+v", err)
 					lastErr = err
 				}
 			}
@@ -370,13 +370,13 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 			case "stat-lease6-get":
 				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 6)
 				if err != nil {
-					log.Errorf("error handling stat-lease6-get response: %+v", err)
+					log.Errorf("Error handling stat-lease6-get response: %+v", err)
 					lastErr = err
 				}
 			case "statistic-get":
 				err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
-					log.Errorf("error handling statistic-get (v6) response: %+v", err)
+					log.Errorf("Error handling statistic-get (v6) response: %+v", err)
 					lastErr = err
 				}
 			}

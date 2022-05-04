@@ -20,8 +20,8 @@ func init() {
                      ON DELETE SET NULL;
 
              -- The following columns were created with the TIME type instead
-             -- of the TIMESTAMP type. Since TIME doesn't cast to TIMESTAMP the
-             -- columns must be dropped and then re-created with appropriate
+             -- of the TIMESTAMP type. Since TIME does not cast to TIMESTAMP, the
+             -- columns must be dropped and then re-created with the appropriate
              -- type.
              ALTER TABLE ha_service DROP COLUMN IF EXISTS primary_status_collected_at;
              ALTER TABLE ha_service DROP COLUMN IF EXISTS secondary_status_collected_at;
@@ -35,7 +35,7 @@ func init() {
              ALTER TABLE ha_service ADD COLUMN primary_last_scopes TEXT[];
              ALTER TABLE ha_service ADD COLUMN secondary_last_scopes TEXT[];
 
-             -- Add new columns indicating if the servers are reachable via the
+             -- Add new columns indicating whether the servers are reachable via the
              -- control channel.
              ALTER TABLE ha_service ADD COLUMN primary_reachable boolean DEFAULT FALSE;
              ALTER TABLE ha_service ADD COLUMN secondary_reachable boolean DEFAULT FALSE;

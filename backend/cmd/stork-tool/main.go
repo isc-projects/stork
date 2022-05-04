@@ -51,13 +51,13 @@ func getAdminDBConn(settings *cli.Context) *dbops.PgDB {
 
 	db, err := dbops.NewPgDBConn(opts, settings.String("db-trace-queries") != "")
 	if err != nil {
-		log.Fatalf("unexpected error: %+v", err)
+		log.Fatalf("Unexpected error: %+v", err)
 	}
 
 	// Theoretically, it should not happen but let's make sure in case someone
 	// modifies the NewPgDB function.
 	if db == nil {
-		log.Fatal("unable to create database instance")
+		log.Fatal("Unable to create database instance")
 	}
 	return db
 }
@@ -71,7 +71,7 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 	if dbURL != "" {
 		opts, err = dbops.ParseURL(dbURL)
 		if err != nil {
-			log.Fatalf("cannot parse db URL: %+v", err)
+			log.Fatalf("Cannot parse database URL: %+v", err)
 		}
 		opts.TLSConfig = nil // ParseURL sets it automatically but we do not use TLS so reset it
 	} else {
@@ -107,13 +107,13 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 
 	db, err := dbops.NewPgDBConn(opts, settings.String("db-trace-queries") != "")
 	if err != nil {
-		log.Fatalf("unexpected error: %+v", err)
+		log.Fatalf("Unexpected error: %+v", err)
 	}
 
 	// Theoretically, it should not happen but let's make sure in case someone
 	// modifies the NewPgDB function.
 	if db == nil {
-		log.Fatal("unable to create database instance")
+		log.Fatal("Unable to create database instance")
 	}
 	return db
 }
@@ -136,7 +136,7 @@ func runDBCreate(settings *cli.Context) {
 	if len(password) == 0 {
 		password, err = storkutil.Base64Random(passwordGenRandomLength)
 		if err != nil {
-			log.Fatalf("failed to generate random database password: %s", err)
+			log.Fatalf("Failed to generate random database password: %s", err)
 		}
 		// Only log the password if it has been generated. Otherwise, the
 		// user should know the password.
@@ -168,7 +168,7 @@ func runDBCreate(settings *cli.Context) {
 	}
 
 	// Database setup successful.
-	log.WithFields(logFields).Info("created database and user for the server with the following credentials")
+	log.WithFields(logFields).Info("Created database and user for the server with the following credentials")
 }
 
 // Execute db-password-gen command. It generates random password that can be
@@ -176,11 +176,11 @@ func runDBCreate(settings *cli.Context) {
 func runDBPasswordGen() {
 	password, err := storkutil.Base64Random(passwordGenRandomLength)
 	if err != nil {
-		log.Fatalf("failed to generate random database password: %s", err)
+		log.Fatalf("Failed to generate random database password: %s", err)
 	}
 	log.WithFields(log.Fields{
 		"password": password,
-	}).Info("generated new database password")
+	}).Info("Generated new database password")
 }
 
 // Execute DB migration command.
@@ -191,15 +191,15 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 	args = append(args, command)
 	if command == "up" && len(version) > 0 {
 		args = append(args, version)
-		log.Infof("Requested migrating up to version %s", version)
+		log.Infof("Requested migration up to version %s", version)
 	}
 	if command == "down" && len(version) > 0 {
 		args = append(args, version)
-		log.Infof("Requested migrating down to version %s", version)
+		log.Infof("Requested migration down to version %s", version)
 	}
 	if command == "set_version" {
 		if version == "" {
-			log.Fatal("flag --version/-t is missing but required")
+			log.Fatal("Flag --version/-t is missing but required")
 		}
 		args = append(args, version)
 		log.Infof("Requested setting version to %s", version)
@@ -223,7 +223,7 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 	} else {
 		availVersion := dbops.AvailableVersion()
 		if availVersion == oldVersion {
-			log.Infof("Database version is %d (up to date)\n", oldVersion)
+			log.Infof("Database version is %d (up-to-date)\n", oldVersion)
 		} else {
 			log.Infof("Database version is %d (new version %d available)\n", oldVersion, availVersion)
 		}
@@ -253,7 +253,7 @@ func setupApp() *cli.App {
 	dbTLSFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-sslmode",
-			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full).",
+			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca, or verify-full).",
 			Value:   "disable",
 			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
 		},
@@ -283,19 +283,19 @@ func setupApp() *cli.App {
 	dbFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-url",
-			Usage:   "The URL to locate Stork PostgreSQL database.",
+			Usage:   "The URL to locate the Stork PostgreSQL database.",
 			EnvVars: []string{"STORK_DATABASE_URL"},
 		},
 		&cli.StringFlag{
 			Name:    "db-user",
-			Usage:   "The user name to be used for database connections.",
+			Usage:   "The user name for database connections.",
 			Aliases: []string{"u"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-password",
-			Usage:   "The database password to be used for database connections.",
+			Usage:   "The database password for database connections.",
 			EnvVars: []string{"STORK_DATABASE_PASSWORD"},
 		},
 		&cli.StringFlag{
@@ -357,7 +357,7 @@ func setupApp() *cli.App {
 		},
 		&cli.StringFlag{
 			Name:    "db-name",
-			Usage:   "The name of the database to create.",
+			Usage:   "The name of the database to be created.",
 			Aliases: []string{"d"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_NAME"},
@@ -393,14 +393,14 @@ func setupApp() *cli.App {
 	certExportFlags := append(dbFlags,
 		&cli.StringFlag{
 			Name:     "object",
-			Usage:    "The object to dump, it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
+			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
 			Required: true,
 			Aliases:  []string{"f"},
 			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location where the object should be saved. If not provided then object is printed to stdout.",
+			Usage:   "The file location where the object should be saved. If not provided, then object is printed to stdout.",
 			Aliases: []string{"o"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
@@ -408,33 +408,33 @@ func setupApp() *cli.App {
 	certImportFlags := append(dbFlags,
 		&cli.StringFlag{
 			Name:     "object",
-			Usage:    "The object to dump, it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
+			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
 			Required: true,
 			Aliases:  []string{"f"},
 			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location from which the object will be read. If not provided then the object is read from stdin.",
+			Usage:   "The file location from which the object will be read. If not provided, then the object is read from stdin.",
 			Aliases: []string{"i"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
 
 	app := &cli.App{
 		Name: "Stork Tool",
-		Usage: `A tool for managing Stork Server
+		Usage: `A tool for managing Stork Server.
 
    The tool operates in three areas:
 
-   - Certificates Management - it allows for exporting Stork Server keys, certificates
-     and token that are used for securing communication between Stork Server
-     and Stork Agents
+   - Certificate Management - it allows for exporting Stork Server keys, certificates,
+     and tokens that are used to secure communication between the Stork Server
+     and Stork Agents;
 
    - Database Creation - it facilitates creating a new database for the Stork Server,
-     and a user that can access this database with a generated password
+     and a user that can access this database with a generated password;
 
    - Database Migration - it allows for performing database schema migrations,
-     overwriting db schema version and getting its current value`,
+     overwriting the db schema version and getting its current value.`,
 		Version:  stork.Version,
 		HelpName: "stork-tool",
 		Commands: []*cli.Command{

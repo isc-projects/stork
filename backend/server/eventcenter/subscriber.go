@@ -126,7 +126,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 		}
 		machineApps, err := dbmodel.GetAppsByMachine(db, f.MachineID)
 		if err != nil {
-			return errors.WithMessagef(err, "problem with getting machine by id %d while applying sse filters: %s",
+			return errors.WithMessagef(err, "problem getting machine by ID %d while applying sse filters: %s",
 				f.MachineID, s.serverURL)
 		}
 

@@ -7,7 +7,7 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-            -- A table holding generic information about daemons.
+            -- This table holds generic information about daemons.
             CREATE TABLE IF NOT EXISTS daemon (
                 id bigserial NOT NULL,
                 app_id bigint NOT NULL,
@@ -26,7 +26,7 @@ func init() {
                     ON DELETE CASCADE
             );
 
-            -- A table holding common information for all Kea daemons, e.g. configuration.
+            -- This table holds common information for all Kea daemons, e.g. configuration.
             CREATE TABLE IF NOT EXISTS kea_daemon (
                 id bigserial NOT NULL,
                 daemon_id bigint NOT NULL,
@@ -39,7 +39,7 @@ func init() {
                     ON DELETE CASCADE
             );
 
-            -- A table holding Kea DHCP daemon specific information.
+            -- This table holds Kea DHCP daemon-specific information.
             CREATE TABLE IF NOT EXISTS kea_dhcp_daemon (
                 id bigserial NOT NULL,
                 kea_daemon_id bigint NOT NULL,
@@ -52,7 +52,7 @@ func init() {
                     ON DELETE CASCADE
             );
 
-            -- A table holding BIND9 daemon specific information.
+            -- This table holds BIND 9 daemon-specific information.
             CREATE TABLE IF NOT EXISTS bind9_daemon (
                 id bigserial NOT NULL,
                 daemon_id bigint NOT NULL,

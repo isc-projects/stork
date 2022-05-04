@@ -72,7 +72,7 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		db.AddQueryHook(DBLogger{})
 	}
 
-	log.Printf("checking connection to database")
+	log.Printf("Checking connection to database")
 	// Test connection to database.
 	var err error
 	for tries := 0; tries < 10; tries++ {
@@ -87,7 +87,7 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		if errors.As(err, &pgError) && pgError.Field('S') == "FATAL" {
 			break
 		}
-		log.Printf("problem with connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
+		log.Printf("Problem connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
@@ -109,8 +109,8 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		currentMinor := (version / 100) % 100
 		currentMajnor := version / (100 * 100)
 
-		log.Warnf("unsupported database server version: got %d.%d.%d, required at least %d.%d.%d, "+
-			"please consider upgrading Postgres server because Stork may not work correctly with this version",
+		log.Warnf("Unsupported database server version: got %d.%d.%d, required at least %d.%d.%d, "+
+			"Please consider upgrading Postgres server; Stork may not work correctly with this version",
 			currentMajnor, currentMinor, currentPatch,
 			minSupportedDatabaseServerVersionMajnor,
 			minSupportedDatabaseServerVersionMinor,
@@ -144,7 +144,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 		log.WithFields(log.Fields{
 			"old-version": oldVer,
 			"new-version": newVer,
-		}).Info("successfully migrated database schema")
+		}).Info("Successfully migrated database schema")
 	}
 
 	// Enable tracing here, if we were told to enable only at run-time
@@ -152,7 +152,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 		db.AddQueryHook(DBLogger{})
 	}
 
-	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
+	log.Infof("Connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
 	return db, nil
 }
 

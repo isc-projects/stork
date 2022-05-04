@@ -20,7 +20,7 @@ func init() {
                  UNIQUE (address, agent_port)
              );
 
-             -- Machine should be deleted after creation.
+             -- This machine should be deleted after creation.
              ALTER TABLE public.machine
                ADD CONSTRAINT machine_created_deleted_check CHECK (
                  (deleted > created)
@@ -30,7 +30,7 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(
-			`-- Remove table with machines.
+			`-- This removes the table with machines.
              DROP TABLE public.machine;`)
 		return err
 	})

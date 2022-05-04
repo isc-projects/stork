@@ -447,7 +447,7 @@ describe('HostTabComponent', () => {
         }
         summary = component.getLeaseSummary(leaseInfo)
         expect(summary).toMatch(
-            /Found 1 lease for this reservation which expired at \d{4}-\d{2}-\d{2}\s\d{2}\:\d{2}\:\d{2} \(\d{2} s ago\)/
+            /Found 1 lease for this reservation that expired at \d{4}-\d{2}-\d{2}\s\d{2}\:\d{2}\:\d{2} \(\d{2} s ago\)/
         )
 
         // Two expired leases.
@@ -472,7 +472,7 @@ describe('HostTabComponent', () => {
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
-        expect(summary).toContain('Found 2 leases for this reservation. They include a lease which expired at')
+        expect(summary).toContain('Found 2 leases for this reservation. This includes a lease that expired at')
 
         // Single declined lease.
         leaseInfo = {
@@ -491,7 +491,7 @@ describe('HostTabComponent', () => {
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
-        expect(summary).toContain('Found 1 lease for this reservation which is declined and has expiration time at')
+        expect(summary).toContain('Found 1 lease for this reservation which is declined and has an expiration time at')
 
         // Two declined leases.
         leaseInfo = {
@@ -516,7 +516,7 @@ describe('HostTabComponent', () => {
         }
         summary = component.getLeaseSummary(leaseInfo)
         expect(summary).toContain(
-            'Found 2 leases for this reservation. They include a declined lease with expiration time at'
+            'Found 2 leases for this reservation. This includes a declined lease with expiration time at'
         )
 
         // Single conflicted lease with MAC address.
@@ -541,7 +541,7 @@ describe('HostTabComponent', () => {
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
-        expect(summary).toContain('Found a lease with expiration time at')
+        expect(summary).toContain('Found a lease with an expiration time at')
         expect(summary).toContain(
             'assigned to the client with MAC address=1a:1b:1c:1d:1e:1f, for which it was not reserved.'
         )
@@ -563,7 +563,7 @@ describe('HostTabComponent', () => {
             ],
         }
         summary = component.getLeaseSummary(leaseInfo2)
-        expect(summary).toContain('Found a lease with expiration time at')
+        expect(summary).toContain('Found a lease with an expiration time at')
         expect(summary).toContain('assigned to the client with DUID=11:12:13, for which it was not reserved.')
 
         // Conflicted lease with client-id.
@@ -583,7 +583,7 @@ describe('HostTabComponent', () => {
             ],
         }
         summary = component.getLeaseSummary(leaseInfo3)
-        expect(summary).toContain('Found a lease with expiration time at')
+        expect(summary).toContain('Found a lease with an expiration time at')
         expect(summary).toContain('assigned to the client with client-id=11:12:13, for which it was not reserved.')
     })
 })

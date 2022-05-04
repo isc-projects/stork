@@ -43,13 +43,13 @@ func genECDSAKey() (*ecdsa.PrivateKey, []byte, error) {
 	// because it is the most popular currently.
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		log.Fatalf("cannot generate ECDSA key: %v", err)
+		log.Fatalf("Cannot generate ECDSA key: %v", err)
 		return nil, nil, err
 	}
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		log.Fatalf("unable to marshal private key: %v", err)
+		log.Fatalf("Unable to marshal private key: %v", err)
 		return nil, nil, err
 	}
 
@@ -107,11 +107,11 @@ func GenCAKeyCert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certific
 
 	privKey, privKeyPEM, err := genECDSAKey()
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "problem with generating ECDSA key")
+		return nil, nil, nil, nil, errors.Wrapf(err, "problem generating ECDSA key")
 	}
 	rootCert, rootPEM, err := createCert(&rootTemplate, &rootTemplate, &privKey.PublicKey, privKey)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "problem with generating certificate")
+		return nil, nil, nil, nil, errors.Wrapf(err, "problem generating certificate")
 	}
 	return privKey, privKeyPEM, rootCert, rootPEM, nil
 }
@@ -185,7 +185,7 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 	case len(ipAddresses) > 0:
 		commonName = ipAddresses[0].String()
 	default:
-		return nil, fingerprint, errors.New("DNS names and IP addresses both cannot be empty")
+		return nil, fingerprint, errors.New("both DNS names and IP addresses cannot be empty")
 	}
 	// parse priv key
 	privKey, err := ParsePrivateKey(privKeyPEM)

@@ -62,7 +62,7 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, &dhcpLabelsJSONs)
 	// Parse JSON content
 	if err != nil {
-		return pkgerrors.Wrap(err, "problem with parsing DHCP4 labels from kea")
+		return pkgerrors.Wrap(err, "problem parsing DHCP4 labels from Kea")
 	}
 
 	if len(dhcpLabelsJSONs) == 0 {
@@ -81,7 +81,7 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 		if dhcpLabelsJSON.Text != nil {
 			reason = *dhcpLabelsJSON.Text
 		}
-		return pkgerrors.Errorf("problem with content of DHCP labels response from kea: %s", reason)
+		return pkgerrors.Errorf("problem with content of DHCP labels response from Kea: %s", reason)
 	}
 
 	// Result is OK, parse the mapping content
@@ -144,7 +144,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 			if item.Text != nil {
 				text := *item.Text
 				if strings.Contains(text, "server is likely to be offline") || strings.Contains(text, "forwarding socket is not configured for the server type") {
-					log.Warnf("problem with connecting to dhcp daemon: %s", text)
+					log.Warnf("Problem connecting to dhcp daemon: %s", text)
 					continue
 				}
 				return pkgerrors.Errorf("response result from Kea != 0: %d, text: %s", item.Result, text)
@@ -169,19 +169,19 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 
 		for statName, statValueOutterList := range *item.Arguments {
 			if len(statValueOutterList) == 0 {
-				log.Errorf("empty list of stat values")
+				log.Errorf("Empty list of stat values")
 				continue
 			}
 			statValueInnerList := statValueOutterList[0]
 
 			if len(statValueInnerList) == 0 {
-				log.Errorf("empty list of stat values")
+				log.Errorf("Empty list of stat values")
 				continue
 			}
 
 			statValue, ok := statValueInnerList[0].(float64)
 			if !ok {
-				log.Errorf("problem with casting statValueInnerList[0]: %+v", statValueInnerList[0])
+				log.Errorf("Problem casting statValueInnerList[0]: %+v", statValueInnerList[0])
 				continue
 			}
 
@@ -275,7 +275,7 @@ func (l *lazySubnetNameLookup) fetchAndCacheNames() SubnetList {
 	if err == nil {
 		err = json.Unmarshal(response, &target)
 		if err != nil {
-			log.Errorf("problem with parsing DHCPv%d labels from kea: %+v", l.family, err)
+			log.Errorf("Problem parsing DHCPv%d labels from Kea: %+v", l.family, err)
 		}
 	}
 
@@ -383,13 +383,13 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_sent_dhcp4_total",
-		Help:      "DHCPv4-over-DHCPv6 Packets received",
+		Help:      "DHCPv4-over-DHCPv6 packets received",
 	}, []string{"operation"})
 	packets4o6ReceivedTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_received_dhcp4_total",
-		Help:      "DHCPv4-over-DHCPv6 Packets received",
+		Help:      "DHCPv4-over-DHCPv6 packets received",
 	}, []string{"operation"})
 
 	pktStatsMap := make(map[string]statDescr)
@@ -565,7 +565,7 @@ func (pke *PromKeaExporter) Start() {
 	go func() {
 		err := pke.HTTPServer.ListenAndServe()
 		if err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("problem with serving Prometheus Kea Exporter: %s", err.Error())
+			log.Errorf("Problem serving Prometheus Kea Exporter: %s", err.Error())
 		}
 	}()
 
@@ -589,7 +589,7 @@ func (pke *PromKeaExporter) Shutdown() {
 
 		pke.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := pke.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shutdown the kea exporter: %v\n", err)
+			log.Warnf("Could not gracefully shut down the Kea exporter: %v\n", err)
 		}
 	}
 
@@ -626,7 +626,7 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 		case <-pke.Ticker.C:
 			err := pke.collectStats()
 			if err != nil {
-				log.Errorf("some errors were encountered while collecting stats from kea: %+v", err)
+				log.Errorf("Some errors were encountered while collecting stats from Kea: %+v", err)
 			}
 		// wait for done signal from shutdown function
 		case <-pke.DoneCollector:
@@ -651,7 +651,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			if ok {
 				statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statEntry.Value)
 			} else {
-				log.Printf("encountered unsupported stat: %s", statName)
+				log.Printf("Encountered unsupported stat: %s", statName)
 			}
 		case strings.HasPrefix(statName, "subnet["):
 			// Check if collecting the per-subnet metrics is enabled.
@@ -677,10 +677,10 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			if stat, ok := (*dhcpStatMap)[metricName]; ok {
 				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statEntry.Value)
 			} else {
-				log.Printf("encountered unsupported stat: %s", metricName)
+				log.Printf("Encountered unsupported stat: %s", metricName)
 			}
 		default:
-			log.Printf("encountered unsupported stat: %s", statName)
+			log.Printf("Encountered unsupported stat: %s", statName)
 		}
 	}
 }
@@ -716,14 +716,14 @@ func (pke *PromKeaExporter) collectStats() error {
 		ctrl, err := getAccessPoint(app, AccessPointControl)
 		if err != nil {
 			lastErr = err
-			log.Errorf("problem with getting stats from kea, bad Kea access control point: %+v", err)
+			log.Errorf("Problem getting stats from Kea, bad Kea access control point: %+v", err)
 			continue
 		}
 
 		// Fetching statistics
 		responseData, err := pke.sendCommandToKeaCA(ctrl, requestData)
 		if err != nil {
-			log.Errorf("problem with fetching stats from kea: %+v", err)
+			log.Errorf("Problem fetching stats from Kea: %+v", err)
 			continue
 		}
 
@@ -732,7 +732,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		err = json.Unmarshal(responseData, &response)
 		if err != nil {
 			lastErr = err
-			log.Errorf("failed to parse responses from Kea: %s", err)
+			log.Errorf("Failed to parse responses from Kea: %s", err)
 			continue
 		}
 
@@ -760,12 +760,12 @@ func (pke *PromKeaExporter) sendCommandToKeaCA(ctrl *AccessPoint, request string
 	caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
 	httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "problem with getting stats from kea")
+		return nil, pkgerrors.Wrap(err, "problem getting stats from Kea")
 	}
 	body, err := io.ReadAll(httpRsp.Body)
 	httpRsp.Body.Close()
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "problem with reading stats response from kea")
+		return nil, pkgerrors.Wrap(err, "problem reading stats response from Kea")
 	}
 	return body, nil
 }

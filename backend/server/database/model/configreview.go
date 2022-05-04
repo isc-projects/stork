@@ -39,7 +39,7 @@ func AddConfigReview(dbi dbops.DBI, configReview *ConfigReview) error {
 		Set("signature = EXCLUDED.signature").
 		Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with upserting the configuration review entry for daemon %d",
+		err = pkgerrors.Wrapf(err, "problem upserting the configuration review entry for daemon %d",
 			configReview.DaemonID)
 	}
 	return err
@@ -57,7 +57,7 @@ func GetConfigReviewByDaemonID(dbi dbops.DBI, daemonID int64) (*ConfigReview, er
 			// The review entry doesn't exist for the daemon, which is fine.
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with selecting the config review for daemon %d", daemonID)
+		err = pkgerrors.Wrapf(err, "problem selecting the config review for daemon %d", daemonID)
 		return nil, err
 	}
 	return configReview, nil

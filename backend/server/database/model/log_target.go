@@ -30,7 +30,7 @@ func GetLogTargetByID(db *pg.DB, id int64) (*LogTarget, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with getting log target with id %d", id)
+		return nil, pkgerrors.Wrapf(err, "problem getting log target with ID %d", id)
 	}
 	return &logTarget, nil
 }

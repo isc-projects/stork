@@ -20,7 +20,7 @@ type IndexedSubnets struct {
 // global subnets and builds appropriate indexes.
 func NewIndexedSubnets(config TopConfig) *IndexedSubnets {
 	if storkutil.IsNilPtr(config) {
-		panic("provided DHCP configuration must not be nil when indexing subnets")
+		panic("Provided DHCP configuration must not be nil when indexing subnets")
 	}
 
 	return &IndexedSubnets{
@@ -46,7 +46,7 @@ func (is *IndexedSubnets) Populate() error {
 	case RootNameDHCPv6:
 		subnetParamName = "subnet6"
 	default:
-		return errors.New("failed to index subnets because given configuration is not DHCP configuration")
+		return errors.New("failed to index subnets because given configuration is not a DHCP configuration")
 	}
 
 	// Create empty indexes.
@@ -78,10 +78,10 @@ func (is *IndexedSubnets) Populate() error {
 		}
 		prefix, ok := subnet["subnet"].(string)
 		if !ok {
-			return errors.New("failed to index subnets because subnet definition lacks prefix")
+			return errors.New("failed to index subnets because the subnet definition lacks a prefix")
 		}
 		if _, ok = byPrefix[prefix]; ok {
-			return errors.Errorf("failed to index subnets because duplicate entry was found for %s", prefix)
+			return errors.Errorf("failed to index subnets because a duplicate entry was found for %s", prefix)
 		}
 		byPrefix[prefix] = subnet
 	}

@@ -35,7 +35,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		hostID = *params.HostID
 	}
 	if len(text) > 0 && hostID > 0 {
-		msg := "text and host identifier are mutually exclusive when searching for leases"
+		msg := "Text and host identifier are mutually exclusive when searching for leases"
 		log.Error(msg)
 		rsp := dhcp.NewGetLeasesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -67,7 +67,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		keaLeases, conflicts, erredApps, err = kea.FindLeasesByHostID(r.DB, r.Agents, hostID)
 	}
 	if err != nil {
-		msg := "problem with searching leases on the Kea servers due to Stork database errors"
+		msg := "Problem searching leases on Kea servers due to Stork database errors"
 		log.Error(err)
 		rsp := dhcp.NewGetLeasesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,

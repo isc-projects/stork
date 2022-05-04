@@ -349,7 +349,7 @@ func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	msg := fmt.Sprintf("config not assigned for daemon with id %d", params.ID)
+	msg := fmt.Sprintf("Config not assigned for daemon with ID %d", params.ID)
 	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }
 
@@ -405,7 +405,7 @@ func TestGetDaemonConfigForBind9Daemon(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	msg := fmt.Sprintf("daemon with id %d isn't Kea daemon", params.ID)
+	msg := fmt.Sprintf("Daemon with ID %d is not a Kea daemon", params.ID)
 	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }
 
@@ -456,7 +456,7 @@ func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+	msg := fmt.Sprintf("Cannot find daemon with ID %d", params.ID)
 	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }
 
@@ -509,7 +509,7 @@ func TestGetDaemonConfigForDatabaseError(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+	msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
 	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }
 
@@ -706,7 +706,7 @@ func TestGetDaemonConfigReportsDatabaseError(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigReportsDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigReportsDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot get configuration review for daemon with id 1 from db",
+	require.Equal(t, "Cannot get configuration review for daemon with ID 1 from db",
 		*defaultRsp.Payload.Message)
 }
 
@@ -772,7 +772,7 @@ func TestPutDaemonConfigReview(t *testing.T) {
 	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "cannot find daemon with id")
+	require.Contains(t, *defaultRsp.Payload.Message, "Cannot find daemon with ID")
 }
 
 // Test that HTTP internal server error is returned when the database
@@ -797,7 +797,7 @@ func TestPutDaemonConfigReviewDatabaseError(t *testing.T) {
 	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot get daemon with id 1 from db", *defaultRsp.Payload.Message)
+	require.Equal(t, "Cannot get daemon with ID 1 from db", *defaultRsp.Payload.Message)
 }
 
 // Test that HTTP Bad Request status is returned as a result of requesting
@@ -844,7 +844,7 @@ func TestPutDaemonConfigReviewNotKeaDaemon(t *testing.T) {
 	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, fmt.Sprintf("daemon with id %d is not a Kea daemon", daemons[0].ID),
+	require.Equal(t, fmt.Sprintf("Daemon with ID %d is not a Kea daemon", daemons[0].ID),
 		*defaultRsp.Payload.Message)
 }
 
@@ -892,6 +892,6 @@ func TestPutDaemonConfigReviewNoConfig(t *testing.T) {
 	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, fmt.Sprintf("configuration not found for daemon with id %d", daemons[0].ID),
+	require.Equal(t, fmt.Sprintf("Configuration not found for daemon with ID %d", daemons[0].ID),
 		*defaultRsp.Payload.Message)
 }

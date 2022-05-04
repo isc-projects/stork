@@ -20,7 +20,7 @@ func main() {
 	// Initialize global state of Stork Server
 	storkServer, command, err := server.NewStorkServer()
 	if err != nil {
-		log.Fatalf("unexpected error: %+v", err)
+		log.Fatalf("Unexpected error: %+v", err)
 	}
 
 	switch command {

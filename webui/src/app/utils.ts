@@ -284,63 +284,63 @@ export function daemonStatusIconColor(daemon) {
  */
 export function daemonStatusIconTooltip(daemon) {
     if (!daemon.monitored) {
-        return 'Monitoring of this daemon has been disabled. You can enable it on the daemon tab on the Kea app page.'
+        return 'Monitoring of this daemon has been disabled. It can be enabled on the daemon tab on the Kea Apps page.'
     }
     if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
         return (
             'Communication with the Stork Agent on this machine ' +
-            'is broken. Last ' +
+            'is broken. The last ' +
             daemon.agentCommErrors +
             ' attempt(s) to ' +
             'communicate with the agent failed. Please make sure ' +
             'that the agent is up on this machine and that the firewall ' +
-            'settings permit to communicate with the agent.'
+            'settings permit communication with the agent.'
         )
     }
     if (daemon.caCommErrors && daemon.caCommErrors > 0) {
         return (
             'Communication with the Kea Control Agent on this machine ' +
-            'is broken. The Stork Agent appears to work fine but the ' +
-            'Kea CA is down or returns errors. Last ' +
+            'is broken. The Stork Agent appears to be working, but the ' +
+            'Kea CA is down or returns errors. The last ' +
             daemon.caCommErrors +
-            ' attempt(s) to communicate with Kea CA failed. Please ' +
-            'make sure that Kea CA is up and the firewall settings permit ' +
-            'for the communication between the Stork Agent and Kea CA running ' +
-            'on that machine.'
+            ' attempt(s) to communicate with the Kea CA failed. Please ' +
+            'make sure that Kea CA is up and that the firewall settings permit ' +
+            'communication between the Stork Agent and Kea CA running ' +
+            'on this machine.'
         )
     }
     if (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) {
         return (
             'Communication with the daemon on this machine ' +
             'is broken. The Stork Agent and Kea Control Agent appear to ' +
-            'work fine, but the daemon behind Kea CA does not respond or ' +
-            'responds with errors. Last ' +
+            'be working, but the daemon behind Kea CA is not responding or ' +
+            'responds with errors. The last ' +
             daemon.daemonCommErrors +
             ' attempt(s) to communicate with the daemon failed. Please ' +
             'make sure that the daemon is up and is reachable from the ' +
-            'Kea Control Agent over the control channel (unix domain socket).'
+            'Kea Control Agent over the control channel (UNIX domain socket).'
         )
     }
     if (daemon.rndcCommErrors && daemon.rndcCommErrors > 0) {
         return (
-            'Communication with the BIND9 daemon over RNDC is broken. The ' +
-            'Stork Agent appears to work fine, but the BIND9 daemon may ' +
-            'be down or responds with errors. Last ' +
+            'Communication with the BIND 9 daemon over RNDC is broken. The ' +
+            'Stork Agent appears to be working, but the BIND 9 daemon appears ' +
+            'to be down or is responding with errors. The last ' +
             daemon.rndcCommErrors +
-            ' attempt(s) to communicate with BIND9 daemon failed.'
+            ' attempt(s) to communicate with the BIND 9 daemon failed.'
         )
     }
     if (daemon.statsCommErrors && daemon.statsCommErrors > 0) {
         return (
-            'Communication with BIND9 statistics endpoint is broken. The ' +
-            'Stork Agent appears to work fine, but the BIND9 statistics channel ' +
-            'seems to be unreachable or responds with errors. Last ' +
+            'Communication with the BIND 9 statistics endpoint is broken. The ' +
+            'Stork Agent appears to be working, but the BIND 9 statistics channel ' +
+            'seems to be unreachable or is responding with errors. The last ' +
             daemon.statsCommErrors +
-            ' attempt(s) to communicate with the BIND9 daemon over ' +
+            ' attempt(s) to communicate with the BIND 9 daemon over ' +
             'the statistics channel failed.'
         )
     }
-    return 'Communication with the daemon is ok.'
+    return 'Communication with the daemon is OK.'
 }
 
 /**

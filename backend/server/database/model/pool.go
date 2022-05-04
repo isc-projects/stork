@@ -67,7 +67,7 @@ func NewPrefixPool(prefix string, delegatedLen int) (*PrefixPool, error) {
 // Adds address pool to the database.
 func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 	if pool.SubnetID == 0 && pool.Subnet == nil {
-		err := errors.Errorf("subnet must be specified while adding new pool %s-%s into the database",
+		err := errors.Errorf("subnet must be specified when adding new pool %s-%s into the database",
 			pool.LowerBound, pool.UpperBound)
 		return err
 	}
@@ -80,7 +80,7 @@ func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 
 	_, err := db.Model(pool).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new address pool %s-%s into the database for subnet %d",
+		err = errors.Wrapf(err, "problem adding new address pool %s-%s into the database for subnet %d",
 			pool.LowerBound, pool.UpperBound, pool.SubnetID)
 	}
 	return err
@@ -89,7 +89,7 @@ func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 // Adds prefix pool to the database.
 func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
 	if pool.Subnet.ID == 0 && pool.Subnet == nil {
-		err := errors.Errorf("subnet must be specified while adding new prefix pool %s into the database",
+		err := errors.Errorf("subnet must be specified when adding new prefix pool %s into the database",
 			pool.Prefix)
 		return err
 	}
@@ -102,7 +102,7 @@ func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
 
 	_, err := db.Model(pool).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new prefix pool %s into the database for subnet %d",
+		err = errors.Wrapf(err, "problem adding new prefix pool %s into the database for subnet %d",
 			pool.Prefix, pool.SubnetID)
 	}
 	return err
@@ -115,9 +115,9 @@ func DeleteAddressPool(db *dbops.PgDB, poolID int64) error {
 	}
 	result, err := db.Model(pool).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting the address pool with id %d", poolID)
+		err = errors.Wrapf(err, "problem deleting the address pool with ID %d", poolID)
 	} else if result.RowsAffected() <= 0 {
-		err = errors.Wrapf(ErrNotExists, "pool with id %d does not exist", poolID)
+		err = errors.Wrapf(ErrNotExists, "pool with ID %d does not exist", poolID)
 	}
 	return err
 }
@@ -129,9 +129,9 @@ func DeletePrefixPool(db *dbops.PgDB, poolID int64) error {
 	}
 	result, err := db.Model(pool).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting the prefix pool with id %d", poolID)
+		err = errors.Wrapf(err, "problem deleting the prefix pool with ID %d", poolID)
 	} else if result.RowsAffected() <= 0 {
-		err = errors.Wrapf(ErrNotExists, "pool with id %d does not exist", poolID)
+		err = errors.Wrapf(ErrNotExists, "pool with ID %d does not exist", poolID)
 	}
 	return err
 }

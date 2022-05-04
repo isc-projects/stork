@@ -146,7 +146,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                 }
             })
             .catch((err) => {
-                console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
+                console.warn('Failed to fetch the HA status for Kea application ID ' + this.appId)
                 this._receivedStatus = null
             })
     }
@@ -224,7 +224,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
         const remoteFailoverProgress = this.serverFailoverProgress(this.remoteServer())
 
         if (localFailoverProgress >= 0 && remoteFailoverProgress >= 0) {
-            return 'Both servers started failover procedure failing to see each other:'
+            return 'Each server failed to see the other and started failover procedure:'
         }
 
         if (localFailoverProgress >= 0) {
@@ -242,25 +242,25 @@ export class HaStatusComponent implements OnInit, OnDestroy {
         // The local server serves no clients, so the remote serves all of them.
         // It may be a hot-standby case or partner-down case.
         if (this.localServerScopes().length === 0 && this.remoteServerScopes().length > 0) {
-            return 'The remote server responds to the entire DHCP traffic.'
+            return 'The remote server is responding to all DHCP traffic.'
         }
 
         // The remote server serves no clients, so the local serves all of them.
         // It may be a hot-standby case or partner-down case.
         if (this.remoteServerScopes().length === 0 && this.localServerScopes().length > 0) {
-            return 'The local server responds to the entire DHCP traffic.'
+            return 'The local server is responding to all DHCP traffic.'
         }
 
         // This is the load-balancing case when both servers respond to some
         // DHCP traffic.
         if (this.remoteServerScopes().length > 0 && this.localServerScopes().length > 0) {
-            return 'Both servers respond to the DHCP traffic.'
+            return 'Both servers are responding to DHCP traffic.'
         }
 
         // If the HA service is being started, the servers synchronize their
         // databases and do not respond to any traffic.
         if (this.remoteServerScopes().length === 0 && this.localServerScopes().length === 0) {
-            return 'No servers respond to the DHCP traffic.'
+            return 'No servers are responding to DHCP traffic.'
         }
     }
 }

@@ -21,7 +21,7 @@ export class SettingService {
                         this.settingsBS.next(data)
                     },
                     (err) => {
-                        console.info('problem with getting settings', err)
+                        console.info('Problem getting settings', err)
                     }
                 )
             }

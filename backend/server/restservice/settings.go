@@ -16,7 +16,7 @@ import (
 func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsParams) middleware.Responder {
 	dbSettingsMap, err := dbmodel.GetAllSettings(r.DB)
 	if err != nil {
-		msg := "cannot get global settings"
+		msg := "Cannot get global settings"
 		log.Error(err)
 		rsp := settings.NewGetSettingsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -43,7 +43,7 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSettingsParams) middleware.Responder {
 	s := params.Settings
 	if s == nil {
-		msg := "missing settings"
+		msg := "Missing settings"
 		log.Error(msg)
 		rsp := settings.NewGetSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
@@ -51,7 +51,7 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		return rsp
 	}
 
-	msg := "problem with updating settings"
+	msg := "Problem updating settings"
 	errRsp := settings.NewGetSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 		Message: &msg,
 	})
