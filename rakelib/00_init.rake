@@ -288,10 +288,10 @@ directory ruby_tools_bin_dir
 ruby_tools_bin_bundle_dir = File.join(ruby_tools_dir, "bin_bundle")
 directory ruby_tools_bin_bundle_dir
 
-$python_tools_dir = File.join(tools_dir, "python")
-directory $python_tools_dir
+python_tools_dir = File.join(tools_dir, "python")
+directory python_tools_dir
 
-$pythonpath = File.join($python_tools_dir, "lib")
+$pythonpath = File.join(python_tools_dir, "lib")
 directory $pythonpath
 
 # Automatically created directories by tools
@@ -508,76 +508,29 @@ file GDLV => [GO] do
     end
 end
 
-sphinx_path = File.expand_path("tools/python/bin/sphinx-build")
-if ENV["OLD_CI"] == "yes"
-    python_location = which("python3")
-    python_bin_dir = File.dirname(python_location)
-    sphinx_path = File.join(python_bin_dir, "sphinx-build")
+PYTHON = File.join(python_tools_dir, "bin", "python")
+file PYTHON => [python_tools_dir]
+file PYTHON do
+    sh "python3", "-m", "venv", python_tools_dir
 end
+
+PIP = File.join(python_tools_dir, "bin", "pip")
+file PIP => [PYTHON] do
+    sh PYTHON, "-m", "ensurepip", "--default-pip"
+end
+
+SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
-SPHINX_BUILD = sphinx_path
-file SPHINX_BUILD => [$python_tools_dir, sphinx_requirements_file] do
-    if ENV["OLD_CI"] == "yes"
-        sh "touch", "-c", SPHINX_BUILD
-        next
-    end
-    pip_install(sphinx_requirements_file)
+file SPHINX_BUILD => [PIP, python_tools_dir, sphinx_requirements_file] do
+    sh PIP, "install", "-r", sphinx_requirements_file
     sh SPHINX_BUILD, "--version"
 end
 
-pytests_path = File.expand_path("tools/python/bin/pytest")
-pytests_requirements_file = File.expand_path("init_debs/pytest.txt", __dir__)
-PYTEST = pytests_path
-file PYTEST => [$python_tools_dir, pytests_requirements_file] do
-    pip_install(pytests_requirements_file)
+PYTEST = File.expand_path("tools/python/bin/pytest")
+pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
+file PYTEST => [PIP, python_tools_dir, pytests_requirements_file] do
+    sh PIP, "install", "-r", pytests_requirements_file
     sh PYTEST, "--version"
-end
-
-######################
-### Internal tasks ###
-######################
-
-# Install Python dependencies from requirements.txt file
-def pip_install(requirements_file)
-    Rake::FileTask[$python_tools_dir].invoke()
-    Rake::FileTask[$pythonpath].invoke()
-
-    ci_opts = []
-    if ENV["CI"] == "true"
-        ci_opts += ["--no-cache-dir"]
-    end
-    # Fix for Keyring error with pip. https://github.com/pypa/pip/issues/7883
-    ENV["PYTHON_KEYRING_BACKEND"] = "keyring.backends.null.Keyring"
-    sh "pip3", "install",
-            *ci_opts,
-            "--force-reinstall",
-            "--upgrade",
-            "--no-input",
-            "--no-deps",
-            # In Python 3.9 ang higher the target option can be used
-            "--prefix", $python_tools_dir,
-            "--ignore-installed",
-            # "--target", $python_tools_dir
-            "-r", requirements_file
-
-    # pip install "--target" option doesn't include bin
-    # directory for Python < 3.9 version.
-    # To workaround this problem, the "--prefix" option
-    # is used, but it causes the library path to contain
-    # the Python version.
-    python_version_out = `python3 --version`
-    python_version = (python_version_out.split)[1]
-    python_major_minor = python_version.split(".")[0,2].join(".")
-    site_packages_dir = File.join($python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
-    if !Dir.exists? site_packages_dir
-        # It seems that something changed in Python 3.10
-        site_packages_dir = File.join($python_tools_dir, "local", "lib", "python" + python_major_minor, "dist-packages")
-        bin_dir = File.join($python_tools_dir, "local", "bin")
-        sh "cp", "-a", bin_dir, File.join($pythonpath, "..")
-        sh "rm", "-rf", bin_dir
-    end
-    sh "cp", "-a", site_packages_dir + "/.", $pythonpath
-    sh "rm", "-rf", site_packages_dir
 end
 
 #############

@@ -49,7 +49,7 @@ agent_dist_man_dir = "dist/agent/man/man8"
 directory agent_dist_man_dir
 agent_dist_man_file = File.join(agent_dist_man_dir, "stork-agent.8")
 file agent_dist_man_file => [agent_dist_man_dir, AGENT_MAN_FILE] do
-    sh "cp", "-a",  AGENT_MAN_FILE, agent_dist_man_file
+    sh "cp", "-a", AGENT_MAN_FILE, agent_dist_man_file
 end
 
 agent_dist_system_dir = "dist/agent/lib/systemd/system/"
@@ -94,7 +94,7 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
             "-t", pkg_type,
             "-v", "#{version}.#{TIMESTAMP}",
             "--after-install", "../../etc/isc-stork-agent.postinst",
-            "--after-remove",  "../../etc/isc-stork-agent.postrm",
+            "--after-remove", "../../etc/isc-stork-agent.postrm",
             "--before-remove", "../../etc/isc-stork-agent.prerm",
             "--config-files", "etc/stork/agent.env",
             "--config-files", "etc/stork/agent-credentials.json.template",
@@ -205,7 +205,7 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, server_dist_dir, pkgs_dir] + server_hooks
             "-t", pkg_type,
             "-v", "#{version}.#{TIMESTAMP}",
             "--after-install", "../../etc/isc-stork-server.postinst",
-            "--after-remove",  "../../etc/isc-stork-server.postrm",
+            "--after-remove", "../../etc/isc-stork-server.postrm",
             "--before-remove", "../../etc/isc-stork-server.prerm",
             "--config-files", "etc/stork/server.env",
             "--description", "ISC Stork Server",
