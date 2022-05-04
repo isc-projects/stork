@@ -214,6 +214,7 @@ class DockerCompose(object):
         self._call_command(cmd=pull_cmd, capture_output=False)
 
     def up(self, *service_names):
+        """Up the docker compose services."""
         up_cmd = self.docker_compose_command() + ['up', '-d', *service_names]
         self._call_command(cmd=up_cmd, capture_output=False)
 
