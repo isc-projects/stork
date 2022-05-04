@@ -1,3 +1,8 @@
+* 203 [doc] sgoldlust
+
+    Editorial and grammatical corrections in docs, logs, and code comments.
+    (Gitlab #718)
+
 * 202 [func] slawek
 
     Refactored the Rakefile responsible for building, installing, and testing
