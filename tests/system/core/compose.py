@@ -26,7 +26,7 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 
 import os
-from typing import List
+from typing import List, Tuple
 import subprocess
 
 from core.utils import setup_logger, memoize, wait_for_success
@@ -58,7 +58,7 @@ _INSPECT_NONE_MARK = "<@NONE@>"
 
 
 @memoize
-def _construct_inspect_format(properties: tuple[str, ...]) -> str:
+def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
     """3
     Prepares the format string in Docker (Go Templates) format.
     The properties with question mark at the end are optional. It means
