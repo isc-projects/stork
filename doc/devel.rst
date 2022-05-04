@@ -695,11 +695,11 @@ The following ``Rake`` tasks start these containers.
 
 The Kea and Bind9 containers connect to the Stork Server container by default.
 It can be useful for developers to connect them to the locally running server.
-You can specify the target server using the SERVER environment variable with the value:
+You can specify the target server using the SERVER_MODE environment variable with the value:
 
-- local - Do not run the server in Docker, instead use the local one (which must be run separately)
-- ui - Run server in Docker with UI
-- no-ui - Run server in Docker without UI
+- host - Do not run the server in Docker, instead use the local one (which must be run separately on host)
+- with-ui - Run server in Docker with UI
+- without-ui - Run server in Docker without UI
 - default - Use default service configuration from the compose file (default)
 
 For example, to connect the agent from the Docker container to the locally
@@ -711,11 +711,11 @@ running Stork Server, you should:
 
     $ rake run:server
 
-2. Run a specific agent service with the SERVER parameter set to ``local``:
+2. Run a specific agent service with the SERVER_MODE parameter set to ``host``:
 
 .. code-block:: console
 
-    $ rake demo:up:kea SERVER=local
+    $ rake demo:up:kea SERVER_MODE=host
 
 3. Check the unauthorized machines page for a new machine
 

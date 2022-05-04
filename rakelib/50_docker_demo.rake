@@ -9,17 +9,17 @@ namespace :demo do
     
     # Produces the arguments for docker-compose.
     # Parameters:
-    # Server - server service mode, possible values:
-    #     - local (doesn't start server container, but uses locally running one)
-    #     - ui (run server and webui)
-    #     - no-ui (run server but no webui)
-    #     - none (no server and no webui)
+    # Server_mode - server service mode, possible values:
+    #     - host (doesn't start server container, but uses locally running one on host)
+    #     - with-ui (run server and webui)
+    #     - without-ui (run server but no webui)
+    #     - no-server (no server and no webui)
     #     - default
     # Cache - doesn't rebuild the container
     # Services - list of service names; if empty then all services are used
     # Environment variables:
     # CS_REPO_ACCESS_TOKEN - CloudSmith repo token, required for premium services
-    def get_docker_opts(server, cache, services)
+    def get_docker_opts(server_mode, cache, services)
         opts = [
             "--project-directory", ".",
             "-f", "docker/docker-compose.yaml"
@@ -41,7 +41,7 @@ namespace :demo do
         ]
         additional_services = []
         
-        if server == "local"
+        if server_mode == "host"
             if OS == "macos"
                 fail "dns-proxy-server doesn't support macOS"
             end
@@ -51,23 +51,23 @@ namespace :demo do
             host_server_address = "http://172.20.0.1:8080"
             ENV["STORK_SERVER_URL"] = host_server_address
             up_opts += ["--scale", "server=0", "--scale", "webui=0"]
-        elsif server == "ui"
+        elsif server_mode == "with-ui"
             if !services.empty?
                 additional_services.append "webui"
             end
-        elsif server == "no-ui"
+        elsif server_mode == "without-ui"
             if !services.empty?
                 additional_services.append "server"
             end
             up_opts += ["--scale", "webui=0"]
-        elsif server == "none"
+        elsif server_mode == "no-server"
             up_opts += ["--scale", "server=0", "--scale", "webui=0"]
             # Prevents the Stork Agent from the registration
-            ENV["STORK_SERVER_URL"] = ""
-        elsif server == "default" || server == nil
+            ENV["STORK_SERVER_MODE_URL"] = ""
+        elsif server_mode == "default" || server_mode == nil
             # Nothing
         else
-            puts "Invalid server option. Valid values: 'local', 'ui', 'no-ui', 'none', or empty (keep default). Got: ", server
+            puts "Invalid server mode option. Valid values: 'host', 'with-ui', 'without-ui', 'no-server', or empty (keep default). Got: ", server
             fail
         end
         
@@ -80,15 +80,15 @@ namespace :demo do
     
     # Calls docker-compose up command for the given services, uses all services
     # if the input list is empty
-    # SERVER - server mode - choice: local, ui, no-ui, none, default
+    # SERVER_MODE - server mode - choice: host, with-ui, without-ui, no-server, default
     # CACHE - doesn't rebuild the containers if present - default: true
     def docker_up_services(*services)
         # Read arguments from the environment variables
-        server = ENV["SERVER"]
+        server_mode = ENV["SERVER_MODE"]
         cache = ENV["CACHE"] != "false"
         
         # Prepare the docker-compose flags
-        opts, build_opts, up_opts, additional_services = get_docker_opts(server, cache, services)
+        opts, build_opts, up_opts, additional_services = get_docker_opts(server_mode, cache, services)
         
         # We don't use the BuildKit features in our Dockerfiles (yet).
         # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
@@ -105,10 +105,11 @@ namespace :demo do
     ##################
     
     desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.
-    SERVER - Server mode - choice: local, ui, no-ui, default, default: default
-    local - Do not run the server in Docker, instead use the local one (which must be run separately)
-    ui - Run server in Docker with UI
-    no-ui - Run server in Docker without UI
+    SERVER_MODE - Server mode - choice: host, with-ui, without-ui, no-server, default, default: default
+    host - Do not run the server in Docker, instead use the local one (which must be run separately on host)
+    with-ui - Run server in Docker with UI
+    without-ui - Run server in Docker without UI
+    no-server - Suppress running the server service
     default - Use default service configuration from the compose file (default)
     CACHE - Use the Docker cache - default: true
     '
