@@ -28,6 +28,7 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 import os
 from typing import List, Tuple
 import subprocess
+import sys
 
 from core.utils import setup_logger, memoize, wait_for_success
 
@@ -466,8 +467,16 @@ class DockerCompose(object):
             env.update(env_vars)
         env["PWD"] = self._project_directory
 
+        opts = {}
+        if sys.version_info >= (3, 7):
+            opts["capture_output"] = capture_output
+        elif capture_output:
+            # Python 3.6 doesn't support capture output parameter
+            opts["stdout"] = subprocess.PIPE
+            opts["stderr"] = subprocess.PIPE
+
         result = subprocess.run(cmd, check=check, cwd=self._project_directory,
-                                capture_output=capture_output, env=env)
+                                env=env, **opts)
         stdout = result.stdout
         stderr = result.stderr
         if capture_output:
