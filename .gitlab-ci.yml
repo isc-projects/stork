@@ -203,8 +203,6 @@ system_testing:
     - docker:dind
   rules:
     - when: on_success
-  before_script:
-    - apt-get install -y docker-compose
   script:
     # - rake system_tests_ui
     - docker info
