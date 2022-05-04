@@ -215,7 +215,7 @@ system_testing:
     when: always
 
 docker:
-  stage: deploy
+  stage: build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
@@ -234,6 +234,7 @@ docker:
     - docker:dind
   before_script:
     - ip -6 route del default
+  script:
     - docker info
 
 ### upload release notes and tarball to repo.isc.org ###
