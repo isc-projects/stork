@@ -18,7 +18,7 @@ go_dev_codebase = go_codebase + [GO_SERVER_API_MOCK]
 
 flask_requirements_file = "tests/sim/requirements.txt"
 flask = File.expand_path("tools/python/bin/flask")
-file flask => [flask_requirements_file] do
+file flask => [PIP, flask_requirements_file] do
     sh PIP, "install", "-r", flask_requirements_file
 end
 

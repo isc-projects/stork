@@ -288,17 +288,13 @@ directory ruby_tools_bin_dir
 ruby_tools_bin_bundle_dir = File.join(ruby_tools_dir, "bin_bundle")
 directory ruby_tools_bin_bundle_dir
 
-python_tools_dir = File.join(tools_dir, "python")
-directory python_tools_dir
-
-$pythonpath = File.join(python_tools_dir, "lib")
-directory $pythonpath
-
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 node_bin_dir = File.join(node_dir, "bin")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
+python_tools_dir = File.join(tools_dir, "python")
+pythonpath = File.join(python_tools_dir, "lib")
 
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
@@ -308,7 +304,7 @@ ENV["GOROOT"] = goroot
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
-ENV["PYTHONPATH"] = $pythonpath
+ENV["PYTHONPATH"] = pythonpath
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
@@ -509,26 +505,27 @@ file GDLV => [GO] do
 end
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
-file PYTHON => [python_tools_dir]
 file PYTHON do
     sh "python3", "-m", "venv", python_tools_dir
+    sh PYTHON, "--version"
 end
 
 PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
     sh PYTHON, "-m", "ensurepip", "-U", "--default-pip"
+    sh PIP, "--version"
 end
 
 SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
-file SPHINX_BUILD => [PIP, python_tools_dir, sphinx_requirements_file] do
+file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
     sh PIP, "install", "-r", sphinx_requirements_file
     sh SPHINX_BUILD, "--version"
 end
 
 PYTEST = File.expand_path("tools/python/bin/pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
-file PYTEST => [PIP, python_tools_dir, pytests_requirements_file] do
+file PYTEST => [PIP, pytests_requirements_file] do
     sh PIP, "install", "-r", pytests_requirements_file
     sh PYTEST, "--version"
 end

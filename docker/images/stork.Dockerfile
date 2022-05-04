@@ -35,7 +35,7 @@ RUN apt-get update \
                 unzip=6.0-* \
                 ruby-dev=1:2.7+* \
                 python3.9=3.9.* \
-                python3-pip=20.3.* \
+                python3-venv=3.9.* \
                 make=4.3-* \
                 gcc=4:10.2.* \
                 xz-utils=5.2.* \
