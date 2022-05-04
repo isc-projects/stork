@@ -219,7 +219,7 @@ namespace :run do
     DB_TRACE - trace SQL queries - default: false'
     task :server_db => [:pre_docker_db] do |t|
         Rake::MultiTask.new(:stub, t.application)
-        .enhance([:server, "demo:up:postgres"])
+        .enhance(["run:server", "demo:up:postgres"])
         .invoke()
     end
 end
@@ -229,7 +229,7 @@ namespace :unittest do
     DB_TRACE - trace SQL queries - default: false'
     task :backend_db => [:pre_docker_db] do |t|
         Rake::MultiTask.new(:stub, t.application)
-        .enhance([:backend, "demo:up:postgres"])
+        .enhance(["unittest:backend", "demo:up:postgres"])
         .invoke()
     end
 end

@@ -347,6 +347,7 @@ namespace :db do
         ENV["STORK_DATABASE_USER_NAME"] = dbuser
         ENV["STORK_DATABASE_PASSWORD"] = dbpass
         ENV["STORK_DATABASE_NAME"] = dbname
+        ENV["DB_MAINTENANCE_NAME"] = dbmaintenance
 
         if dbtrace == "true"
             ENV["STORK_DATABASE_TRACE"] = "run"
@@ -360,6 +361,13 @@ namespace :db do
         SUPPRESS_DB_MAINTENANCE - dont run creation DB operation - default: false
         See db:setup_envvars task for more options.'
     task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
+        dbhost = ENV["STORK_DATABASE_HOST"]
+        dbport = ENV["STORK_DATABASE_PORT"]
+        dbuser = ENV["STORK_DATABASE_USER_NAME"]
+        dbpass = ENV["STORK_DATABASE_PASSWORD"]
+        dbname = ENV["STORK_DATABASE_NAME"]
+        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
+
         if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
             stdout, stderr, status = Open3.capture3 "psql",
                 "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
@@ -383,11 +391,7 @@ namespace :db do
             puts "DB maintenance suppressed (creating)"
         end
 
-        sh TOOL_BINARY_FILE, "db-up",
-            "-d", dbname,
-            "-u", dbuser,
-            "--db-host", dbhost,
-            "-p", dbport
+        sh TOOL_BINARY_FILE, "db-up"
     end
 
     desc "Remove remaing test databases and users
@@ -398,6 +402,13 @@ namespace :db do
             puts "DB maintenance suppressed (removing)"
             next
         end
+
+        dbhost = ENV["STORK_DATABASE_HOST"]
+        dbport = ENV["STORK_DATABASE_PORT"]
+        dbuser = ENV["STORK_DATABASE_USER_NAME"]
+        dbpass = ENV["STORK_DATABASE_PASSWORD"]
+        dbname = ENV["STORK_DATABASE_NAME"]
+        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
 
         psql_access_opts = [
             "-h", dbhost,
