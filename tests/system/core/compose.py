@@ -60,7 +60,7 @@ _INSPECT_NONE_MARK = "<@NONE@>"
 
 @memoize
 def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
-    """3
+    """
     Prepares the format string in Docker (Go Templates) format.
     The properties with question mark at the end are optional. It means
     that Docker inspect will not raise exception if they are missing.

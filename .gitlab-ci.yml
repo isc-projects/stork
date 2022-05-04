@@ -197,10 +197,18 @@ system_testing:
   extends: .base_build_debian
   stage: build
   allow_failure: false
+  tags:
+    - docker
+  services:
+    - docker:dind
   rules:
     - when: on_success
+  before_script:
+    - apt-get install -y docker-compose
   script:
     # - rake system_tests_ui
+    - docker info
+    - docker-compose version
     - rake system_tests
   artifacts:
     paths:
