@@ -569,6 +569,13 @@ def pip_install(requirements_file)
     python_version = (python_version_out.split)[1]
     python_major_minor = python_version.split(".")[0,2].join(".")
     site_packages_dir = File.join($python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
+    if !Dir.exists? site_packages_dir
+        # It seems that something changed in Python 3.10
+        site_packages_dir = File.join($python_tools_dir, "local", "lib", "python" + python_major_minor, "dist-packages")
+        bin_dir = File.join($python_tools_dir, "local", "bin")
+        sh "cp", "-a", bin_dir, File.join($pythonpath, "..")
+        sh "rm", "-rf", bin_dir
+    end
     sh "cp", "-a", site_packages_dir + "/.", $pythonpath
     sh "rm", "-rf", site_packages_dir
 end
