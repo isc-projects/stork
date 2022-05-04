@@ -194,8 +194,9 @@ debs_and_rpms:
 ### system testing ###
 
 system_testing:
+  extends: .base_build_debian
   stage: test
-  allow_failure: true
+  allow_failure: false
   rules:
     - when: on_success
   tags:
