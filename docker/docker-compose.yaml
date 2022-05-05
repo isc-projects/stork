@@ -231,8 +231,7 @@ services:
       STORK_AGENT_HOST: agent-kea-many-subnets
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
-      - ./docker/config/agent-kea-many-subnets/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-many-subnets:/etc/kea
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
