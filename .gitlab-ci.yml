@@ -243,8 +243,6 @@ docker:
     - docker
     - amd64
     - ssd
-  needs:
-    - danger
   services:
     - docker:dind
   before_script:
