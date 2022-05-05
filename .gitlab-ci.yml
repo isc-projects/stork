@@ -222,6 +222,8 @@ system_testing:
   artifacts:
     paths:
       - test-results/**/*.log
+      - tests/test-results/**/*.log
+      - tests/system/test-results/**/*.log
     expire_in: 1 week
     when: always
 
