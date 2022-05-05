@@ -1,3 +1,9 @@
+* 206 [bug] marcin
+
+    Disable escaping special characters in the machine dumps. It improves
+    the dumps readability.
+    (Gitlab #665)
+
 * 205 [func] marcin
 
     It is now possible to create host reservations in Kea using a
