@@ -210,15 +210,17 @@ system_testing:
     - ip -6 route del default
     - apk update
     - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
-  script:
-    # - rake system_tests_ui
-    - docker info
-    - docker-compose version
+  variables:
     # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
     # binary fetched by the Rake script. Additionally, the binaries for alpine
     # are missing on the NodeJS page. We cannot use the image based on Debian
     # because it is out-of-date.
-    - USE_SYSTEM_NODEJS=true rake system_tests
+    USE_SYSTEM_NODEJS: "true"
+  script:
+    # - rake system_tests_ui
+    - docker info
+    - docker-compose version
+    - rake system_tests
   artifacts:
     paths:
       - test-results/**/*.log
