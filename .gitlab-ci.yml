@@ -194,20 +194,31 @@ debs_and_rpms:
 ### system testing ###
 
 system_testing:
-  extends: .base_build_debian
   stage: build
   allow_failure: false
   tags:
+    - linux
     - docker
+    - amd64
+    - ssd
   services:
     - docker:dind
   rules:
     - when: on_success
+  image: docker/compose:1.29.2
+  before_script:
+    - ip -6 route del default
+    - apk update
+    - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
   script:
     # - rake system_tests_ui
     - docker info
     - docker-compose version
-    - rake system_tests
+    # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
+    # binary fetched by the Rake script. Additionally, the binaries for alpine
+    # are missing on the NodeJS page. We cannot use the image based on Debian
+    # because it is out-of-date.
+    - USE_SYSTEM_NODEJS=true rake system_tests
   artifacts:
     paths:
       - test-results/**/*.log

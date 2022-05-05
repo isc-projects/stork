@@ -290,11 +290,16 @@ directory ruby_tools_bin_bundle_dir
 
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
-node_bin_dir = File.join(node_dir, "bin")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
+
+node_bin_dir = File.join(node_dir, "bin")
+use_system_nodejs = ENV["USE_SYSTEM_NODEJS"] == "true"
+if use_system_nodejs
+    node_bin_dir = "/usr/bin"
+end
 
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
@@ -347,6 +352,10 @@ end
 
 NPM = File.join(node_bin_dir, "npm")
 file NPM => [node_dir] do
+    if use_system_nodejs
+        fail "missing system NPM"
+    end
+
     Dir.chdir(node_dir) do
         sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
         sh "tar", "-Jxf", "node.tar.xz", "--strip-components=1"
@@ -357,6 +366,10 @@ end
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
+    if use_system_nodejs
+        fail "missing system NPX"
+    end
+
     sh NPX, "--version"
 end
 
