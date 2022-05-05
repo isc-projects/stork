@@ -171,17 +171,17 @@ wget = ["wget"]
 
 if status == 0
     # BusyBox doesn't support these parameters
-    wget.append ["--tries=inf", "--waitretry=3"]
+    wget.append "--tries=inf", "--waitretry=3"
     wget_version = stdout.split("\n")[0]
     wget_version = wget_version[/[0-9]+\.[0-9]+/]
     # versions prior to 1.19 lack support for --retry-on-http-error
     if wget_version.empty? or wget_version >= "1.19"
-        wget.append ["--retry-on-http-error=429,500,503,504"]
+        wget.append "--retry-on-http-error=429,500,503,504"
     end
 end
 
 if ENV["CI"] == "true"
-    wget = wget + ["-q"]
+    wget.append "-q"
 end
 WGET = wget
 
