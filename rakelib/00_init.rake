@@ -162,15 +162,22 @@ case uname.rstrip
   end
 
 ### Detect wget
-if system("wget --version > /dev/null").nil?
+if which("wget").nil?
     abort("wget is not installed on this system")
 end
 # extract wget version
-wget_version = `wget --version | head -n 1 | sed -E 's/[^0-9]*([0-9]*\.[0-9]*)[^0-9]+.*/\1/g'`
-# versions prior to 1.19 lack support for --retry-on-http-error
-wget = ["wget", "--tries=inf", "--waitretry=3"]
-if wget_version.empty? or wget_version >= "1.19"
-    wget = wget + ["--retry-on-http-error=429,500,503,504"]
+stdout, _, status = Open3.capture3("wget", "--version")
+wget = ["wget"]
+
+if status == 0
+    # BusyBox doesn't support these parameters
+    wget.append ["--tries=inf", "--waitretry=3"]
+    wget_version = stdout.split("\n")[0]
+    wget_version = wget_version[/[0-9]+\.[0-9]+/]
+    # versions prior to 1.19 lack support for --retry-on-http-error
+    if wget_version.empty? or wget_version >= "1.19"
+        wget.append ["--retry-on-http-error=429,500,503,504"]
+    end
 end
 
 if ENV["CI"] == "true"
