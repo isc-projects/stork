@@ -86,7 +86,16 @@ func flatStructureWithTimestampNamingConvention(dumpObj dump.Dump, artifact dump
 	return filename
 }
 
-// Serialize Go struct to pretty indent JSON.
-func indentJSONSerializer(v interface{}) ([]byte, error) {
-	return json.MarshalIndent(v, "", "    ")
+// Serialize a Go struct to pretty indented JSON without escaping characters
+// problematic for HTML.
+func indentJSONSerializer(v interface{}) (output []byte, err error) {
+	var buffer bytes.Buffer
+	encoder := json.NewEncoder(&buffer)
+	encoder.SetIndent("", "    ")
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(v)
+	if err == nil {
+		output = buffer.Bytes()
+	}
+	return
 }

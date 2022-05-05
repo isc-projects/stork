@@ -143,3 +143,13 @@ func TestDumpMachineReturnsProperContent(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, filenames, 4)
 }
+
+// Test that the JSON serializer does not escape characters problematic for HTML.
+func TestIndentJSONSerializerNoEscape(t *testing.T) {
+	jsonInput := `{
+        "abc": "<a string with escaped characters>"
+    }`
+	jsonOutput, err := indentJSONSerializer(jsonInput)
+	require.NoError(t, err)
+	require.Contains(t, string(jsonOutput), "<a string with escaped characters>")
+}
