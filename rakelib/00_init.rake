@@ -317,6 +317,7 @@ ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
+ENV["VIRTUAL_ENV"] = python_tools_dir
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
