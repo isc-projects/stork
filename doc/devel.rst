@@ -693,17 +693,18 @@ The following ``Rake`` tasks start these containers.
 
     A restart may be required for the change to take effect.
 
-The Kea and Bind9 containers connect to the Stork Server container by default.
+The Kea and BIND 9 containers connect to the Stork Server container by default.
 It can be useful for developers to connect them to the locally running server.
-You can specify the target server using the SERVER_MODE environment variable with the value:
+You can specify the target server using the SERVER_MODE environment variable with one of the values:
 
-- host - Do not run the server in Docker, instead use the local one (which must be run separately on host)
-- with-ui - Run server in Docker with UI
-- without-ui - Run server in Docker without UI
-- default - Use default service configuration from the compose file (default)
+- host - Do not run the server in Docker. Use the local one instead (it must be run separately on the host).
+- no-server - Do not run the server.
+- with-ui - Run the server in Docker with UI.
+- without-ui - Run the server in Docker without UI.
+- default - Use the default service configuration from the Docker compose file (default).
 
 For example, to connect the agent from the Docker container to the locally
-running Stork Server, you should:
+running Stork Server:
 
 1. Run the Stork Server locally:
 
