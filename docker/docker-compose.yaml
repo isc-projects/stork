@@ -75,13 +75,13 @@ services:
       subnet-02:
         ipv4_address: 172.102.0.100
     expose:
-      - "8080"  # stork server to agent
-      - "9100"  # node_exporter for prometheus
-      - "9547"  # kea_exporter for prometheus
+      - "8888" # stork server to agent
+      - "9100" # node_exporter for prometheus
+      - "9547" # kea_exporter for prometheus
     ports:
       # publish ports for development purposes
-      - "8888:8080"  # port to agent
-      - "9001:9001"  # port to supervisor xml-rpc
+      - "8888:8888" # port to agent
+      - "9001:9001" # port to supervisor xml-rpc
     environment:
       DB_TYPE: mysql
       DB_HOST: mariadb
@@ -92,6 +92,7 @@ services:
       DB_NAME: agent_kea
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
+      STORK_AGENT_PORT: "8888"
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -127,11 +128,11 @@ services:
       subnet6-01:
         ipv6_address: 3001:db8:1::100
     expose:
-      - "8080"  # stork server to agent
-      - "9547"  # kea_exporter for prometheus
+      - "8887" # stork server to agent
+      - "9547" # kea_exporter for prometheus
     ports:
       # publish ports for development purposes
-      - "8886:8080"  # port to agent
+      - "8887:8887" # port to agent
     environment:
       DB_TYPE: pgsql
       DB_NAME: agent_kea6
@@ -142,6 +143,7 @@ services:
       DB_ROOT_PASSWORD: stork
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea6
+      STORK_AGENT_PORT: "8887"
     volumes:
       - ./docker/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
@@ -164,14 +166,15 @@ services:
       storknet:
         ipv4_address: 172.20.0.101
     expose:
-      - "8001"
-      - "9547"  # kea_exporter for prometheus
+      - "8886"
+      - "9547" # kea_exporter for prometheus
     ports:
-      - "8881:8080"  # publish ports for development purposes
+      - "8886:8886" # publish ports for development purposes
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
+      STORK_AGENT_PORT: "8886"
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -193,13 +196,14 @@ services:
       storknet:
         ipv4_address: 172.20.0.110
     expose:
-      - "8080"
+      - "8885"
     ports:
-      - "8110:8080"  # publish ports for development purposes
+      - "8885:8885" # publish ports for development purposes
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
+      STORK_AGENT_PORT: "8885"
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -221,14 +225,15 @@ services:
       storknet:
         ipv4_address: 172.20.0.102
     expose:
-      - "8002"
-      - "9547"  # kea_exporter for prometheus
+      - "8884"
+      - "9547" # kea_exporter for prometheus
     ports:
-      - "8882:8080"  # publish ports for development purposes
+      - "8884:8884" # publish ports for development purposes
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-many-subnets
+      STORK_AGENT_PORT: "8884"
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
       - ./docker/config/agent-kea-many-subnets:/etc/kea
@@ -248,16 +253,19 @@ services:
       target: bind
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
     hostname: agent-bind9
+    ports:
+      - "8883:8883"
     networks:
       storknet:
         ipv4_address: 172.20.0.53
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-bind9
+      STORK_AGENT_PORT: "8883"
     expose:
-      - "8080"
-      - "9100"  # node_exporter for prometheus
-      - "9119"  # bind_exporter for prometheus
+      - "8883"
+      - "9100" # node_exporter for prometheus
+      - "9119" # bind_exporter for prometheus
     volumes:
       - ./docker/config/agent-bind9/db.test:/etc/bind/db.test
       - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
@@ -283,10 +291,13 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-bind9-2
+      STORK_AGENT_PORT: "8882"
     expose:
-      - "8080"
-      - "9100"  # node_exporter for prometheus
-      - "9119"  # bind_exporter for prometheus
+      - "8882"
+      - "9100" # node_exporter for prometheus
+      - "9119" # bind_exporter for prometheus
+    ports:
+      - "8882:8882"
     volumes:
       - ./docker/config/agent-bind9/db.test:/etc/bind/db.test
       - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
@@ -345,7 +356,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-       - ./docker/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana:8.3.7
@@ -354,12 +365,12 @@ services:
     ports:
       - "3000:3000"
     volumes:
-       - ./docker/config/grafana/grafana.ini:/etc/grafana/grafana.ini
-       - ./docker/config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
-       - ./docker/config/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
-       - ./grafana/kea-dhcp4.json:/var/lib/grafana/dashboards/kea-dhcp4.json
-       - ./grafana/kea-dhcp6.json:/var/lib/grafana/dashboards/kea-dhcp6.json
-       - ./grafana/bind9-resolver.json:/var/lib/grafana/dashboards/bind9-resolver.json
+      - ./docker/config/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./docker/config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./docker/config/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana/kea-dhcp4.json:/var/lib/grafana/dashboards/kea-dhcp4.json
+      - ./grafana/kea-dhcp6.json:/var/lib/grafana/dashboards/kea-dhcp6.json
+      - ./grafana/bind9-resolver.json:/var/lib/grafana/dashboards/bind9-resolver.json
     depends_on:
       - prometheus
 

@@ -1,11 +1,9 @@
 version: '2.1'
 
 services:
-  dns-proxy-server:
-    image: defreitas/dns-proxy-server:2.19.0
-    ports:
-      - 5380:5380
+  etchosts:
+    restart: always
+    image: costela/docker-etchosts:0.1.5
     volumes:
+      - /etc/hosts:/etc/hosts
       - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/resolv.conf:/etc/resolv.conf
-    network_mode: bridge

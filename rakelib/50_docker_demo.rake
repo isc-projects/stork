@@ -42,13 +42,13 @@ namespace :demo do
         additional_services = []
         
         if server_mode == "host"
-            if OS == "macos"
-                fail "dns-proxy-server doesn't support macOS"
-            end
             if !services.empty?
-                additional_services.append "dns-proxy-server"
+                additional_services.append "etchosts"
             end
-            host_server_address = "http://172.20.0.1:8080"
+            host_server_address = "http://host.docker.internal:8080"
+            if OS == "linux"
+                host_server_address = "http://172.20.0.1:8080"
+            end
             ENV["STORK_SERVER_URL"] = host_server_address
             up_opts += ["--scale", "server=0", "--scale", "webui=0"]
         elsif server_mode == "with-ui"
@@ -71,7 +71,7 @@ namespace :demo do
             fail
         end
         
-        if (services + additional_services).include? "dns-proxy-server"
+        if (services + additional_services).include? "etchosts"
             opts += ["-f", "docker/docker-compose-dev.yaml"]
         end
         
