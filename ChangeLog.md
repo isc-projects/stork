@@ -1,3 +1,8 @@
+* 204 [build] kpfleming
+
+    Enable automatic Stork services restart with systemd on failure.
+    (Gitlab #721)
+
 * 203 [doc] sgoldlust
 
     Editorial and grammatical corrections in docs, logs, and code comments.

@@ -24,3 +24,5 @@ We have received the following contributions:
    - 2019-09: Grafana template
  - Yannick Martin (OVHCloud)
    - 2021-05: Fix for Stork agent not honoring the listen-only flags
+ - Kevin Fleming
+   - 2022-03: Automatic Stork services restart on failure
