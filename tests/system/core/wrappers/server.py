@@ -37,9 +37,9 @@ class Server(ComposeServiceWrapper):
             The name of the docker-compose service
         """
         super().__init__(compose, service_name)
-        port = 8080
-        address = self.get_ip_address("storknet")
-        url = "http://%s:%s/api" % (address, port)
+        internal_port = 8080
+        mapped = self._compose.port(service_name, internal_port)
+        url = "http://%s:%d/api" % mapped
         configuration = openapi_client.Configuration(host=url)
         self._api_client = openapi_client.ApiClient(configuration)
 

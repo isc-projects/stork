@@ -20,6 +20,8 @@ services:
       - storknet
     expose:
       - "8080"
+    ports:
+      - "42080:8080"
     environment:
       STORK_DATABASE_HOST: postgres
       STORK_DATABASE_PORT: 5432
@@ -231,7 +233,6 @@ services:
 networks:
   storknet:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
         - subnet: 172.20.42.0/24

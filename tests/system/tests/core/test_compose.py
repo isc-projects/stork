@@ -411,7 +411,7 @@ def test_port_calls_proper_command():
     assert " ".join(cmd).startswith(" ".join(base_cmd))
     assert cmd[-2] == "service"
     assert cmd[-1] == "80"
-    assert tuple(result) == ("0.0.0.0", "1234")
+    assert tuple(result) == ("0.0.0.0", 1234)
 
 
 def test_get_service_ip_address_uses_proper_network_name():

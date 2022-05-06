@@ -333,7 +333,7 @@ class DockerCompose(object):
         return [i if i != _INSPECT_NONE_MARK else None
                 for i in stdout.split(_INSPECT_DELIMITER)]
 
-    def port(self, service_name, port):
+    def port(self, service_name, port) -> Tuple[str, int]:
         """
         Returns the mapped host and the mapped port for one of the services.
 
@@ -356,11 +356,15 @@ class DockerCompose(object):
         if len(result) == 1:
             raise NoSuchPortExposed("Port {} was not exposed for service {}"
                                     .format(port, service_name))
-        return result
+        mapped_host, mapped_port = result
+        mapped_port = int(mapped_port)
+        return mapped_host, mapped_port
 
     def get_service_ip_address(self, service_name, network_name):
         """
         Returns the assigned IP address for one of the services.
+        It is an internal Docker IP address and it shouldn't be used
+        to communicate with the service from the host.
 
         Parameters
         ----------
