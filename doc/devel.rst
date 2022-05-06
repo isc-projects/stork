@@ -720,6 +720,15 @@ running Stork Server:
 
 3. Check the unauthorized machines page for a new machine
 
+The Stork Agent containers use the Docker hostnames during communication with
+Stork Server.  If you use the server running locally, located on the Docker
+host, it cannot resolve the Docker hostnames. You need to explicitly provide
+the hostname mapping in your ``/etc/hosts`` file to fix it.
+You can use the ``rake demo:check_etchosts`` command to check your actual
+``/etc/hosts`` and generate the content that needs to be appended.
+This task will automatically run if you use ``SERVER_MODE=host`` then you don't
+need to call it manually. It's mainly for diagnostic purposes.
+
 Packaging
 =========
 
