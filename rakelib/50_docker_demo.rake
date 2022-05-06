@@ -36,7 +36,7 @@ namespace :demo do
         # List all unknown hostnames
         unknown_hostnames = []
         hostnames.each do |h|
-            _, _, status = Open3.capture3 "nslookup", h
+            _, _, status = Open3.capture3 "ping", "-c", "1", h
             if status != 0
                 unknown_hostnames.append h
             end
