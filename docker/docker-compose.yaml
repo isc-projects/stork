@@ -34,6 +34,7 @@ services:
       - postgres
 
   webui:
+    restart: always
     build:
       context: .
       dockerfile: docker/images/stork.Dockerfile
@@ -315,6 +316,7 @@ services:
       - ./docker/config/agent-kea-many-subnets:/etc/kea
 
   simulator:
+    restart: always
     build:
       context: .
       dockerfile: docker/images/simulator.Dockerfile
@@ -350,6 +352,7 @@ services:
       - server
 
   prometheus:
+    restart: always
     image: prom/prometheus:v2.32.1
     networks:
       - storknet
@@ -359,6 +362,7 @@ services:
       - ./docker/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
+    restart: always
     image: grafana/grafana:8.3.7
     networks:
       - storknet
@@ -375,6 +379,7 @@ services:
       - prometheus
 
   postgres:
+    restart: always
     image: postgres:11
     networks:
       storknet:
@@ -391,9 +396,10 @@ services:
     ports:
       - "5678:5432"
     healthcheck:
-      test: ["CMD", "pg_isready"]
+      test: [ "CMD", "pg_isready" ]
 
   mariadb:
+    restart: always
     image: mariadb:10.7
     networks:
       - storknet
