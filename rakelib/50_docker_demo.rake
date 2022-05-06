@@ -6,6 +6,57 @@ namespace :demo do
     #################
     ### Functions ###
     #################
+
+    # Displays the hint message with recommended content of the /etc/hosts file
+    # to handle the Docker hostname resolving correctly.
+    # Returns False if any hostname is unknown.
+    def check_hosts_and_print_hint()
+        require "yaml"
+        # List of all docker-compose files
+        compose_files = FileList["docker/docker-compose*.yaml"]
+        # List all hostnames of the services that contain Stork Agent.
+        hostnames = []
+        compose_files.each do |f|
+            compose = YAML.load_file(f)
+            compose["services"].each do |name, service|
+                # Ignore non-agent services
+                if !name.start_with? "agent"
+                    next
+                end
+                # Default hostname
+                hostname = name
+                # Custom hostname
+                if service.key? "hostname"
+                    hostname = service["hostname"]
+                end
+                hostnames.append hostname
+            end
+        end
+
+        # List all unknown hostnames
+        unknown_hostnames = []
+        hostnames.each do |h|
+            _, _, status = Open3.capture3 "nslookup", h
+            if status != 0
+                unknown_hostnames.append h
+            end
+        end
+
+        # Print message
+        if !unknown_hostnames.empty?
+            puts "Some Docker hostnames cannot be resolved."
+            puts "You need to append the below entries to your /etc/hosts file."
+            puts "They redirect to localhost because the main docker-compose network uses the bridge mode."
+            puts "--- Start /etc/hosts content ---"
+            unknown_hostnames.each do |h|
+                print "127.0.0.1", "\t", h, "\n"
+            end
+            puts "--- End /etc/hosts content ---"
+        end
+
+        # OK - all hostnames are known
+        return unknown_hostnames.empty?
+    end
     
     # Produces the arguments for docker-compose.
     # Parameters:
@@ -42,8 +93,8 @@ namespace :demo do
         additional_services = []
         
         if server_mode == "host"
-            if !services.empty?
-                additional_services.append "etchosts"
+            if !check_hosts_and_print_hint()
+                fail "Update the /etc/hosts file"
             end
             host_server_address = "http://host.docker.internal:8080"
             if OS == "linux"
@@ -69,10 +120,6 @@ namespace :demo do
         else
             puts "Invalid server mode option. Valid values: 'host', 'with-ui', 'without-ui', 'no-server', or empty (keep default). Got: ", server
             fail
-        end
-        
-        if (services + additional_services).include? "etchosts"
-            opts += ["-f", "docker/docker-compose-dev.yaml"]
         end
         
         return opts, cache_opts, up_opts, additional_services
@@ -178,6 +225,11 @@ namespace :demo do
         "--volumes",
         "--remove-orphans",
         "--rmi", "local"
+    end
+
+    desc 'Checks the /etc/hosts file content'
+    task :check_etchosts do
+        check_hosts_and_print_hint()
     end
     
     #######################

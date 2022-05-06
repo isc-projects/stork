@@ -1,9 +1,0 @@
-version: '2.1'
-
-services:
-  etchosts:
-    restart: always
-    image: costela/docker-etchosts:0.1.5
-    volumes:
-      - /etc/hosts:/etc/hosts
-      - /var/run/docker.sock:/var/run/docker.sock
