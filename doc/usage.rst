@@ -437,6 +437,48 @@ Stork interface.
    The list of host reservations must be manually refreshed by reloading the
    browser page to see the most recent updates fetched from the Kea servers.
 
+Creating Host Reservations
+--------------------------
+
+Above the list of the host reservations, there is the ``New Host`` button
+that opens a tab where a user can specify a new host reservation in one or
+more Kea servers. These Kea servers must be configured to use the ``host_cmds``
+hooks library, and only these servers are available for selection in
+the ``DHCP Servers`` dropdown.
+
+A user has a choice between a subnet-level or global host reservation.
+Selecting a subnet using the ``Subnet`` dropdown is required for a
+subnet-level reservation. If the desired subnet is not displayed in the
+dropdown, it is possible that the selected DHCP servers do not include this
+subnet in their configuration. Setting the ``Global reservation`` option
+disables subnet selection.
+
+To associate the new host reservation with a DHCP client, the user can select
+one of the identifier types supported by Kea. Available identifiers differ
+depending on whether the user selected DHCPv4 or DHCPv6 servers. The identifier
+can be specified using ``hex`` or ``text`` format. For example, the ``hw-address``
+is typically specified as a string of hexadecimal digits: ``ab:76:54:c6:45:31``.
+In that case, select ``hex`` option. Some identifiers, e.g. ``circuit-id``, are
+often specified using "printable characters", e.g. ``circuit-no-1``. In that case,
+select ``text`` option. Please refer to
+`Host Reservations in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html?#host-reservations-in-dhcpv4>`_
+and `Host Reservations in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservations-in-dhcpv6>`_
+for more details regarding allowed DHCP identifiers and their formats.
+
+Further in the form, the user can specify the actual reservations. It is possible
+to specify at most one IPv4 address. In the case of the DHCPv6 servers, it is
+possible to specify multiple IPv6 addresses and delegated prefixes.
+
+``Hostname`` is currently the only supported non-IP reservation type. Submitting
+the host reservation is possible after specifying at least one IP reservation or
+a hostname.
+
+.. note::
+
+   Kea configuration with Stork is a new feature under development. Thus, it lacks
+   many configuration capabilities, e.g., DHCP options, client classes, etc. Stay
+   tuned for these capabilities in the subsequent Stork releases.
+
 Leases Search
 ~~~~~~~~~~~~~
 

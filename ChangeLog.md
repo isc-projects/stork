@@ -1,3 +1,8 @@
+* 208 [doc] marcin
+
+    Added "Creating Host Reservations" section in the ARM.
+    (Gitlab #729)
+
 * 207 [func] slawek
 
     Refactored the Rakefile responsible for running the Stork demo. The demo
