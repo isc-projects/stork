@@ -440,7 +440,7 @@ def test_get_service_ip_address_uses_proper_network_name():
     mock.return_value = ["123.45.67.89", ]
     compose.inspect = mock
     # Act
-    ip = compose.get_service_ip_address("service", "network")
+    ip = compose.get_service_ip_address("service", "network", family=4)
     # Assert
     service, fmt = mock.call_args.args
     assert ip == "123.45.67.89"
