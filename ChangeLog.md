@@ -1,3 +1,5 @@
+Stork 1.3.0 released on 2022-05-11.
+
 * 208 [doc] marcin
 
     Added "Creating Host Reservations" section in the ARM.
