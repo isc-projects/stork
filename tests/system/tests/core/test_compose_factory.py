@@ -1,7 +1,8 @@
-import os.path
-from unittest.mock import MagicMock, patch
+import os
+from unittest.mock import patch
 
 from core.compose_factory import create_docker_compose
+from tests.core.commons import subprocess_result_mock
 
 
 def test_create_compose():
@@ -44,3 +45,28 @@ def test_create_compose_uses_environment_variables(patch):
     patch.assert_called_once()
     target_env_vars = patch.call_args.kwargs["env"]
     assert source_env_vars.items() <= target_env_vars.items()
+
+
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"0.0.0.0:42080", b""))
+def test_port_uses_localhost_instead_of_zero_host(patch):
+    compose = create_docker_compose()
+    address, _ = compose.port("server", 8080)
+    patch.assert_called_once()
+    assert address == "localhost"
+
+
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"foobar:42080", b""))
+def test_port_preserves_custom_address(patch):
+    compose = create_docker_compose()
+    address, _ = compose.port("server", 8080)
+    patch.assert_called_once()
+    assert address == "foobar"
+
+
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"0.0.0.0:42080", b""))
+def test_port_uses_default_address_from_environment_variable(patch):
+    os.environ["DEFAULT_MAPPED_ADDRESS"] = "foobar"
+    compose = create_docker_compose()
+    address, _ = compose.port("server", 8080)
+    patch.assert_called_once()
+    assert address == "foobar"

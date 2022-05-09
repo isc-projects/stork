@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from core.compose import ContainerExitedException, ContainerUnhealthyException, DockerCompose
+from tests.core.commons import subprocess_result_mock
 
 
 def test_command_contains_project_directory():
@@ -414,6 +415,24 @@ def test_port_calls_proper_command():
     assert tuple(result) == ("0.0.0.0", 1234)
 
 
+def test_port_replaces_default_address():
+    # Arrange
+    compose = DockerCompose("project-dir", default_mapped_hostname="foobar")
+    mock = MagicMock()
+    mock.return_value = (0, "0.0.0.0:1234", "")
+    compose._call_command = mock
+    base_cmd = compose.docker_compose_command()
+    # Act
+    result = compose.port("service", 80)
+    # Assert
+    mock.assert_called_once()
+    cmd = mock.call_args.kwargs["cmd"]
+    assert " ".join(cmd).startswith(" ".join(base_cmd))
+    assert cmd[-2] == "service"
+    assert cmd[-1] == "80"
+    assert tuple(result) == ("foobar", 1234)
+
+
 def test_get_service_ip_address_uses_proper_network_name():
     # Assert
     compose = DockerCompose("project-dir", project_name="prefix")
@@ -624,15 +643,7 @@ def test_call_command_adds_env_vars(patch: MagicMock):
     assert len(env) > 3
 
 
-def _subprocess_result_mock(status, stdout, stderr):
-    mock = MagicMock()
-    mock.returncode = status
-    mock.stdout = stdout
-    mock.stderr = stderr
-    return mock
-
-
-@patch("subprocess.run", return_value=_subprocess_result_mock(0, b"foo\n", b"bar\n"))
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
 def test_call_command_captures_output_by_default(patch: MagicMock):
     compose = DockerCompose("project-dir")
     status, stdout, stderr = compose._call_command([])
@@ -644,7 +655,7 @@ def test_call_command_captures_output_by_default(patch: MagicMock):
     assert stderr == "bar"
 
 
-@patch("subprocess.run", return_value=_subprocess_result_mock(0, b"foo\n", b"bar\n"))
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
 def test_call_command_suppreses_capturing_output(patch: MagicMock):
     compose = DockerCompose("project-dir")
     status, stdout, stderr = compose._call_command([], capture_output=False)
