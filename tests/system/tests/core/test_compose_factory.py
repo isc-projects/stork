@@ -49,6 +49,7 @@ def test_create_compose_uses_environment_variables(patch):
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"0.0.0.0:42080", b""))
 def test_port_uses_localhost_instead_of_zero_host(patch):
+    del os.environ["DEFAULT_MAPPED_ADDRESS"]
     compose = create_docker_compose()
     address, _ = compose.port("server", 8080)
     patch.assert_called_once()
