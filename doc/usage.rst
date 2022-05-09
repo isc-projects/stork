@@ -479,6 +479,10 @@ a hostname.
    many configuration capabilities, e.g., DHCP options, client classes, etc. Stay
    tuned for these capabilities in the subsequent Stork releases.
 
+Submitted host reservations may appear in Stork's host reservations list with some
+delay. Please allow some time for the reservations to propagate to the Kea DHCP
+servers and refresh the list.
+
 Leases Search
 ~~~~~~~~~~~~~
 
