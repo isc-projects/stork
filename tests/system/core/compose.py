@@ -26,7 +26,7 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 
 import os
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import subprocess
 import sys
 
@@ -147,19 +147,23 @@ class DockerCompose(object):
         The docker compose project name. The current working directory is
         used by default.
     use_build_kit: bool
-        Wheret to build images using a BuiltKit mode
+        Builds images using a BuiltKit mode
+    default_mapped_address: str
+        If provided, then the port command's default address (0.0.0.0) will be
+        replaced with this value.
     """
 
     def __init__(
             self,
-            project_directory,
+            project_directory:str,
             compose_file_name="docker-compose.yml",
             pull=False,
             build=False,
-            env_file=None,
-            env_vars=None,
-            project_name=None,
-            use_build_kit=True):
+            env_file:str=None,
+            env_vars:Dict[str,str]=None,
+            project_name:str=None,
+            use_build_kit=True,
+            default_mapped_hostname:str=None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -169,6 +173,7 @@ class DockerCompose(object):
         self._env_file = env_file
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
+        self._default_mapped_hostname = default_mapped_hostname
 
         if project_name is None:
             # Mimics the docker-compose convention
@@ -358,6 +363,8 @@ class DockerCompose(object):
                                     .format(port, service_name))
         mapped_host, mapped_port = result
         mapped_port = int(mapped_port)
+        if self._default_mapped_hostname is not None and mapped_host == "0.0.0.0":
+            mapped_host = self._default_mapped_hostname
         return mapped_host, mapped_port
 
     def get_service_ip_address(self, service_name, network_name):

@@ -11,5 +11,6 @@ def create_docker_compose(env_vars=None) -> DockerCompose:
             docker_compose_dir, "docker-compose.yaml"),
         project_name="stork_tests",
         env_vars=env_vars,
-        build=True
+        build=True,
+        default_mapped_hostname=os.environ.get("DEFAULT_MAPPED_ADDRESS", "localhost")
     )

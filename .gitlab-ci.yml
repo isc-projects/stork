@@ -194,7 +194,7 @@ debs_and_rpms:
 ### system testing ###
 
 system_testing:
-  stage: build
+  stage: test
   allow_failure: false
   tags:
     - linux
@@ -206,6 +206,10 @@ system_testing:
   rules:
     - when: on_success
   image: docker/compose:1.29.2
+  cache:
+    key: system-tests-key-1
+    paths:
+    - tools/
   before_script:
     - ip -6 route del default
     - apk update
@@ -216,39 +220,16 @@ system_testing:
     # are missing on the NodeJS page. We cannot use the image based on Debian
     # because it is out-of-date.
     USE_SYSTEM_NODEJS: "true"
+    # It must be an alias of the docker:dind service.
+    DEFAULT_MAPPED_ADDRESS: "docker"
   script:
     # - rake system_tests_ui
-    - docker info
-    - docker-compose version
     - rake system_tests
   artifacts:
     paths:
-      - test-results/**/*.log
-      - tests/test-results/**/*.log
       - tests/system/test-results/**/*.log
     expire_in: 1 week
     when: always
-
-docker:
-  stage: build
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-  allow_failure: true
-  image: docker:latest
-  tags:
-    - linux
-    - docker
-    - amd64
-    - ssd
-  services:
-    - docker:dind
-  before_script:
-    - ip -6 route del default
-  script:
-    - docker info
 
 ### upload release notes and tarball to repo.isc.org ###
 
