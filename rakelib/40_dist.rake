@@ -282,7 +282,7 @@ end
 
 namespace :install do
     desc "Install agent
-        DEST - destionation directory - default: /"
+        DEST - destination directory - default: /"
     task :agent => [agent_dist_dir] do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"
@@ -292,7 +292,7 @@ namespace :install do
     end
 
     desc "Install server
-        DEST - destionation directory - default: /"
+        DEST - destination directory - default: /"
     task :server => [server_dist_dir] do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"

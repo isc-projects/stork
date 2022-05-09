@@ -834,7 +834,7 @@ func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
 	return app
 }
 
-// Converts App structure to REST API formnat, with the data specific to
+// Converts App structure to REST API format, with the data specific to
 // an app type (including daemons).
 func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := baseAppToRestAPI(dbApp)

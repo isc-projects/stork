@@ -216,8 +216,7 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    ``require``
    Uses secure communication but does not verify the server's identity, unless the
    root certificate location is specified and that certificate exists.
-   If the root certificate exists, the behavior is the same as  in case of ``verify-ca``
-   mode.
+   If the root certificate exists, the behavior is the same as in the case of ``verify-ca``.
 
    ``verify-ca``
    Uses secure communication and verifies the server's identity by checking it

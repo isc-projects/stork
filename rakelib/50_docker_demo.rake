@@ -277,7 +277,7 @@ namespace :run do
 end
 
 namespace :unittest do
-    desc 'Run local unittests with Docker database
+    desc 'Run local unit tests with Docker database
     DB_TRACE - trace SQL queries - default: false'
     task :backend_db => [:pre_docker_db] do |t|
         Rake::MultiTask.new(:stub, t.application)

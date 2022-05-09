@@ -501,7 +501,7 @@ func (app *App) GetAccessPoint(accessPointType string) (ap *AccessPoint, err err
 	return nil, pkgerrors.Errorf("no access point of type %s found for app ID %d", accessPointType, app.ID)
 }
 
-// AppTag implemenation.
+// AppTag implementation.
 
 // Returns app ID.
 func (app App) GetID() int64 {

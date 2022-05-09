@@ -80,7 +80,7 @@ namespace :unittest do
         SCOPE - Scope of the tests - default: all files
         TEST - Test name pattern to run - default: empty
         BENCHMARK - Execute benchmarks - default: false
-        SHORT - Run short test rountine - default: false
+        SHORT - Run short test routine - default: false
         HEADLESS - Run in headless mode - default: false
         See "db:migrate" task for the database-related parameters
     '
@@ -357,8 +357,8 @@ namespace :db do
     end
 
     desc 'Migrate (and create) database to the newest version
-        DB_MAINTENANCE_NAME - maintanance DB name used to create the provided DB - default: postgres
-        SUPPRESS_DB_MAINTENANCE - dont run creation DB operation - default: false
+        DB_MAINTENANCE_NAME - maintenance DB name used to create the provided DB - default: postgres
+        SUPPRESS_DB_MAINTENANCE - do not run creation DB operation - default: false
         See db:setup_envvars task for more options.'
     task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
         dbhost = ENV["STORK_DATABASE_HOST"]
@@ -394,8 +394,8 @@ namespace :db do
         sh TOOL_BINARY_FILE, "db-up"
     end
 
-    desc "Remove remaing test databases and users
-        SUPPRESS_DB_MAINTENANCE - dont run this stage (no removing) - default: false
+    desc "Remove remaining test databases and users
+        SUPPRESS_DB_MAINTENANCE - do not run this stage (no removing) - default: false
         See db:setup_envvars task for more options."
     task :remove_remaining => [:setup_envvars] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] == "true"
@@ -422,7 +422,7 @@ namespace :db do
             "-X",
         ]
 
-        # Don't destroy the maintanance database
+        # Don't destroy the maintenance database
         dbname_pattern = "#{dbname}.*"
         if dbname == dbmaintenance
             dbname_pattern = "#{dbname}.+"

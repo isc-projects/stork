@@ -383,7 +383,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 	require.Len(t, agents.RecordedCommands, 1)
 }
 
-// Test schedulding config changes in the database, retrieving and committing it.
+// Test scheduling config changes in the database, retrieving and committing it.
 func TestCommitScheduledHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

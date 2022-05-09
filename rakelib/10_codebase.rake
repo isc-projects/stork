@@ -7,7 +7,7 @@
 # It installs the source code dependencies too.
 
 # Ruby has a built-in solution for handling CLEAN and CLOBBER arrays and
-# deleting unecessary files. But loading the 'rake' module significantly reduces
+# deleting unnecessary files. But loading the 'rake' module significantly reduces
 # the performance. For these reason we implement the clean and clobber tasks
 # ourselves.
 #
