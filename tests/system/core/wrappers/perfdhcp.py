@@ -52,10 +52,16 @@ class Perfdhcp:
         """
 
         flags = [
+            # IP family
             "-%d" % family,
+            # Ratio
             "-r", "1",
+            # Range
             "-R", "10",
-            "-p", "10"
+            # Test period
+            "-p", "10",
+            # Exit wait time
+            "-W", "10"
         ]
 
         if mac_prefix is not None:

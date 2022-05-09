@@ -46,10 +46,10 @@ class ComposeServiceWrapper:
         """Checks if the wrapped service is operational."""
         return self._compose.is_operational(self._service_name)
 
-    def get_internal_ip_address(self, subnet_name: str):
+    def get_internal_ip_address(self, subnet_name: str, family: int):
         """
-        Returns an internal Docker-network IP address assigned to the
-        service in a given subnet.
+        Returns an internal Docker-network IP address from a given IP family
+        assigned to the service in a given subnet.
         """
         return self._compose.get_service_ip_address(self._service_name,
-                                                    subnet_name)
+                                                    subnet_name, family=family)

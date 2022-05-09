@@ -367,7 +367,7 @@ class DockerCompose(object):
             mapped_host = self._default_mapped_hostname
         return mapped_host, mapped_port
 
-    def get_service_ip_address(self, service_name, network_name):
+    def get_service_ip_address(self, service_name, network_name, family):
         """
         Returns the assigned IP address for one of the services.
         It is an internal Docker IP address and it shouldn't be used
@@ -379,16 +379,19 @@ class DockerCompose(object):
             Name of the docker compose service
         network_name: str
             Name of the network
+        family: int
+            For family equals to 4 returns IPv4 address. Otherwise IPv6.
 
         Returns
         -------
         str:
             The IP address for the service in a given network
         """
+        ip_property = "IPAddress" if family == 4 else "GlobalIPv6Address"
         prefixed_network_name = "%s_%s" % (self._project_name, network_name)
         return self.inspect(service_name,
-                            ".NetworkSettings.Networks.%s.IPAddress"
-                            % prefixed_network_name)[0]
+                            ".NetworkSettings.Networks.%s.%s"
+                            % (prefixed_network_name, ip_property))[0]
 
     def get_container_id(self, service_name):
         """
