@@ -95,6 +95,13 @@ end
 
 namespace :system_tests do
 
+    desc 'List the test cases'
+    task :list do
+        Dir.chdir(system_tests_dir) do
+            sh PYTEST, "--collect-only"
+        end
+    end
+
     desc 'Build the containers used in the system tests'
     task :build do
         Rake::Task["system_tests:sh"].invoke("build")

@@ -320,265 +320,159 @@ failing tests.
 System Tests
 ============
 
-.. warning::
-    The system tests are currently under construction and are unavailable in
-    this Stork version. They will be restored in the next releases.
+System tests for Stork are designed to test the Stork in a real environment.
+They run the Stork Server and the Kea or Bind daemons with the Stork Agents
+to be tested in one test case, inside Docker containers.
+The framework enables experimentation in containers, so custom Kea, Bind,
+or Stork Agent configurations can be deployed or only a specific set of
+applications can be running.
 
-System tests for Stork are designed to test the software in a distributed environment.
-They allow several Stork servers and agents running at the same time
-to be tested in one test case, inside ``LXD`` containers. It is possible to set up
-Kea services along with Stork agents. The framework enables experimentation
-in containers, so custom Kea configurations can be deployed or specific Kea daemons
-can be stopped.
-
-The tests can use the Stork server RESTful API directly or the Stork web UI via Selenium.
+The tests use the Stork server RESTful API.
 
 Dependencies
 ------------
 System tests require:
 
-- Linux operating system (preferably Ubuntu or Fedora)
-- Python 3
-- ``LXD`` containers (https://linuxcontainers.org/lxd/introduction)
+- Linux or MacOS operating system (Windows and BSD were not tested)
+- Python >= 3.18
+- Rake (as a launcher)
+- Docker
+- docker-compose >= 1.28
 
-LXD Installation
-----------------
+Initial steps
+-------------
 
-The easiest way to install ``LXD`` is to use ``snap``. First, install ``snap``.
+The user must be a member of the ``docker`` group  to use the system tests.
 
-On Fedora:
+1. Create the docker group.
 
-.. code-block:: console
+.. code:: console
 
-                $ sudo dnf install snapd
+    $ sudo groupadd docker
 
-On Ubuntu:
+2. Add your user to the ``docker`` group.
 
-.. code-block:: console
+.. code:: console
 
-                $ sudo apt install snapd
+    $ sudo usermod -aG docker $USER
 
-Then install ``LXD``:
-
-.. code-block:: console
-
-                $ sudo snap install lxd
-
-And then add the user to the ``lxd`` group:
-
-.. code-block:: console
-
-                $ sudo usermod -a -G lxd $USER
-
-Log in again to make the user's presence in the ``lxd`` group visible in the shell session.
-
-After installing ``LXD``, initialize it by running:
-
-.. code-block:: console
-
-                $ lxd init
-
-and then for each question press **Enter**, i.e., use the default values::
-
-   Would you like to use LXD clustering? (yes/no) [default=no]: **Enter**
-   Do you want to configure a new storage pool? (yes/no) [default=yes]: **Enter**
-   Name of the new storage pool [default=default]: **Enter**
-   Name of the storage backend to use (dir, btrfs) [default=btrfs]: **Enter**
-   Would you like to create a new btrfs subvolume under /var/snap/lxd/common/lxd? (yes/no) [default=yes]: **Enter**
-   Would you like to connect to a MAAS server? (yes/no) [default=no]: **Enter**
-   Would you like to create a new local network bridge? (yes/no) [default=yes]: **Enter**
-   What should the new bridge be called? [default=lxdbr0]: **Enter**
-   What IPv4 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]: **Enter**
-   What IPv6 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]: **Enter**
-   Would you like LXD to be available over the network? (yes/no) [default=no]: **Enter**
-   Would you like stale cached images to be updated automatically? (yes/no) [default=yes] **Enter**
-   Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]: **Enter**
-
-More details can be found at: https://linuxcontainers.org/lxd/getting-started-cli/
-
-The subvolume is stored in ``/var/snap/lxd/common/lxd``, and
-is used to store images and containers. If the space is exhausted,
-it is not possible to create new containers. This is not connected with total disk
-space but rather with the space in this subvolume. To free space, remove stale images
-or stopped containers. Basic usage of ``LXD`` is explained at:
-https://linuxcontainers.org/lxd/getting-started-cli/#lxd-client
-
-LXD Troubleshooting on Arch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Problem**: After running ``lxd init``, an error message is returned:
-
-.. code-block:: console
-
-    Error: Failed to connect to local LXD: Get "http://unix.socket/1.0": dial unix /var/lib/lxd/unix.socket: connect: no such file or directory
-
-**Solution**: Restart the ``lxd`` daemon:
-
-.. code-block:: console
-
-    sudo systemctl restart lxd
-
---------------
-
-**Problem**: After running ``rake system_tests``, a message is displayed that ends in:
-
-.. code-block:: console
-
-    ************ START   tests.py::test_users_management[ubuntu/18.04-centos/7] **************************************************************
-
-    stork-agent-ubuntu-18-04-gw0: {'fg': 'yellow', 'style': ''}
-    stork-server-centos-7-gw0: {'fg': 'red', 'style': 'bold'}
-
-But nothing else happens, and CPU and RAM usage by ``lxd`` are ~0%.
-
-**Solution**: `See this original post <https://discuss.linuxcontainers.org/t/solved-arch-linux-containers-only-run-when-security-privileged-true/4006/5>`_
-
-1. Create an ``/etc/subuid`` file with content:
-
-.. code-block:: console
-
-    root:1000000:65536
-
-1. Create ``/etc/subgid`` with the same content.
-2. Add these lines to ``/etc/default/lxc``:
-
-.. code-block:: console
-
-    lxc.idmap = u 0 100000 65536
-    lxc.idmap = g 0 100000 65536
-
+3. Log out and log back in so that your group membership is re-evaluated.
 
 Running System Tests
 --------------------
 
-After preparing all the dependencies, the tests can be started;
-however, the RPM and deb Stork packages need to be prepared first. This can
-be done with this Rake task:
+After preparing all the dependencies, the tests can be started.
+The tests can be invoked by the following Rake task:
 
 .. code-block:: console
 
-                $ rake build_pkgs_in_docker
+    $ rake system_tests
 
-When using packages, the tests can be invoked by the following Rake task:
-
-.. code-block:: console
-
-                $ rake system_tests
-
-This command first prepares the Python virtual environment (``venv``)
-where ``pytest`` and other Python dependencies are installed. ``pytest`` is a Python testing
-framework that is used in Stork system tests.
+This command first prepares all necessary toolkits (except these listed above)
+and some configuration files. Next it calls ``pytest``. ``pytest``
+is a Python testing framework that is used in Stork system tests.
 
 At the end of the logs are listed test cases with their result status.
 
-The tests can be invoked directly using ``pytest``, but first the directory
-must be changed to ``tests/system``:
+The tests shouldn't be invoked directly without ``rake`` because it generates
+the configuration files that aren't included in the repository or have a short
+lifetime.
+
+To run a particular test case, set TEST key-value pair:
 
 .. code-block:: console
 
-                $ cd tests/system
-                $ ./venv/bin/pytest --tb=long -l -r ap -s tests.py
-
-The switches passed to ``pytest`` are:
-
-- ``--tb=long``: in case of failures, present the traceback in long format
-- ``-l``: show values of local variables in tracebacks
-- ``-r ap``: at the end of execution, print a report that includes (p)assed and (a)ll except passed (p)
-
-To run a particular test case, add it just after ``test.py``:
-
-.. code-block:: console
-
-                $ ./venv/bin/pytest --tb=long -l -r ap -s tests.py::test_users_management[centos/7-ubuntu/18.04]
+    $ rake system_tests test_users_management
 
 To get a list of tests without actually running them, the following command can be used:
 
 .. code-block:: console
 
-    $ ./venv/bin/pytest --collect-only tests.py
+    $ rake system_tests:list
 
 The names of all available tests are printed as ``<Function name_of_the_test>``.
 
-A single test case can be run using a ``rake`` task with the test variable set to the test name:
 
-.. code-block:: console
+System Tests Framework Structure
+--------------------------------
 
-                $ rake system_tests test=tests.py::test_users_management[centos/7-ubuntu/18.04]
+System tests framework is located in the ``tests/system`` directory.
+The directory structure is:
 
-
-Developing System Tests
------------------------
-
-System tests are defined in ``tests.py`` and other files that start with ``test_``.
-There are two other files that define the framework for Stork system tests:
-
+- ``config`` - the configuration files for a specific docker-compose services
+- ``core`` - implements the system tests logic, docker-compose controller,
+             wrappers for interact with the services, and intergation with ``pytest``
+- ``openapi_client`` - autogenerated client of the Stork Server API
+- ``test-results`` - logs from the last running
+- ``tests`` - the test cases (in files prefixed with ``test_``)
 - ``conftest.py`` - defines hooks for ``pytests``
-- ``containers.py`` - handles LXD containers: starting/stopping; communication, such as
-  invoking commands; uploading/downloading files; and installing and preparing the Stork
-  agent/server and Kea and other dependencies that they require.
+- ``docker-compose.yaml`` - the docker-compose services and networking
+
+Basic system tests
+------------------
 
 Most tests are constructed as follows:
 
 .. code-block:: python
+    from core.wrappers import Server, Kea
 
-    @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
-    def test_machines(agent, server):
-        # login to stork server
-        r = server.api_post('/sessions',
-                            json=dict(useremail='admin', userpassword='admin'),
-                            expected_status=200)
-        assert r.json()['login'] == 'admin'
+    def test_search_leases(kea_service: Kea, server_service: Server):
+        server_service.log_in_as_admin()
+        server_service.authorize_all_machines()
 
-        # add machine
-        machine = dict(
-            address=agent.mgmt_ip,
-            agentPort=8080)
-        r = server.api_post('/machines', json=machine, expected_status=200)
-        assert r.json()['address'] == agent.mgmt_ip
-
-        # wait for application discovery by Stork Agent
-        for i in range(20):
-            r = server.api_get('/machines')
-            data = r.json()
-            if len(data['items']) == 1 and \
-               len(data['items'][0]['apps'][0]['details']['daemons']) > 1:
-                break
-            time.sleep(2)
-
-        # check discovered application by Stork Agent
-        m = data['items'][0]
-        assert m['apps'][0]['version'] == '1.7.3'
+        data = server_service.list_leases('192.0.2.1')
+        assert data['items'][0]['ipAddress'] == '192.0.2.1'
 
 It may be useful to explain each part of this code.
 
 .. code-block:: python
 
-    @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
+    from core.wrappers import Server, Kea
 
-This indicates that the test is parameterized: there will be one or more
-instances of this test in execution for each set of parameters.
-
-The constant ``SUPPORTED_DISTROS`` defines two sets of operating systems
-for testing:
-
-.. code-block:: python
-
-    SUPPORTED_DISTROS = [
-        ('ubuntu/18.04', 'centos/7'),
-        ('centos/7', 'ubuntu/18.04')
-    ]
-
-The first set indicates that for the Stork agent, ``Ubuntu 18.04`` should be used
-in the LXD container, and for the Stork server, ``CentOS 7``. The second set is the opposite
-of the first one.
+The system tests framework runs in the background and maintains the
+docker-compose services that contain different applications. It provides the
+wrappers that allow interacting with them using a domain language. They are the
+high-level API and encapsulate the internals of the docker-compose and other
+applications.
+The above line imports the typings for these wrappers. It isn't necessary to
+run the test case, but it only enables the hints in IDE, which is very convenient
+and helpful.
 
 The next line:
 
 .. code-block:: python
 
-    def test_machines(agent, server):
+    def test_search_leases(kea_service: Kea, server_service: Server):
 
-defines the test function. Normally, the agent and server argument would get the text values
+defines the test function. It uses the arguments that are handled by the ``pytest``
+fixtures. There are four fixtures:
+
+- ``kea_service`` - it starts the container with Kea daemon(s) and Stork Agent.
+                    If not fixture argument was used (see later), it runs also
+                    the Stork Server containers and Agent registers.
+                    The default configuration is described by the ``agent-kea``
+                    service in the ``docker-compose`` file.
+- ``server_service`` - it starts the container with Stork Server. The default
+                    configuration is described by the ``server`` service in the
+                    ``docker-compose`` file.
+- ``bind_service`` - it starts the container with Kea daemon(s) and Stork Agent.
+                    If not fixture argument was used (see later), it runs also
+                    the Stork Server containers and Agent registers.
+                    The default configuration is described by the ``agent-kea``
+                    service in the ``docker-compose`` file.
+- ``perfdhcp_service`` - it provides the containe with Perfdhcp utility. The
+                    default configuration is described by the ``perfdhcp``
+                    service in the ``docker-compose`` file.
+
+If the fixture is required, the specified container is automatically built and run.
+The test case is executed only when the service is operational - it means it is
+started and healthy (the health check defined in the Docker image passes).
+The containers are stopped and removed after the test and logs are fetched.
+
+You can have only one container of a given kind running simultaneously in the
+current version of the system tests framework.
+
+ Normally, the agent and server argument would get the text values
 ``'ubuntu/18.04'`` and ``'centos/7'``, but a hook exists in the ``pytest_pyfunc_call()`` function
 of ``conftest.py`` that intercepts these arguments and
 uses them to spin up LXD containers with the indicated operating systems. This hook
