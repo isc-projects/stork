@@ -99,15 +99,14 @@ func TestAddEvent(t *testing.T) {
 	var events []dbmodel.Event
 	var total int64
 	var err error
-	for i := 1; i <= 10; i++ {
-		time.Sleep(10 * time.Millisecond)
+
+	require.Eventually(t, func() bool {
 		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, 0, nil, nil, nil, nil, "", dbmodel.SortDirAny)
-		if total == 3 {
-			break
-		}
-	}
+		return total >= 3
+	}, time.Second, 10*time.Millisecond)
+
 	require.NoError(t, err)
-	require.EqualValues(t, total, 3)
+	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
 	require.EqualValues(t, "some text", events[0].Text)
 }
