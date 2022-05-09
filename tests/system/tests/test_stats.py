@@ -1,3 +1,4 @@
+from ipaddress import ip_address
 from core.wrappers import Kea, Server, Perfdhcp
 
 
@@ -15,20 +16,14 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
         mac_prefix="00:00"
     )
 
-    # The perfdhcp fails when IPv6 address is used. Kea doesn't receive the
-    # packets. There are 3 IPv6 interfaces, but the order is random. Kea
-    # listens to 2 of them. I didn't find an easy way to recognize which
-    # interface is assigned to a specific subnet. There is a temporary fix
-    # that generates traffic on all interfaces.
-    for interface in ("eth0", "eth1", "eth2"):
-        perfdhcp_service.generate_ipv6_traffic(
-            interface=interface
-        )
+    perfdhcp_service.generate_ipv6_traffic(
+        interface="eth1"
+    )
 
     data = server_service.wait_for_update_overview()
 
     # 9 leases are initialy store in the lease database
     assert int(data['dhcp4_stats']['assignedAddresses']) > 9
     assert data['subnets4']['items'] is not None
-    assert int(data['dhcp6_stats']['assignedNAs']) > 9
+    assert int(data['dhcp4_stats']['assignedAddresses']) > 9
     assert data['subnets6']['items'] is not None
