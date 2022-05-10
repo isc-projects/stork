@@ -414,6 +414,7 @@ Basic system tests
 Most tests are constructed as follows:
 
 .. code-block:: python
+
     from core.wrappers import Server, Kea
 
     def test_search_leases(kea_service: Kea, server_service: Server):
@@ -472,7 +473,7 @@ The containers are stopped and removed after the test and logs are fetched.
 You can have only one container of a given kind running simultaneously in the
 current version of the system tests framework.
 
- Normally, the agent and server argument would get the text values
+Normally, the agent and server argument would get the text values
 ``'ubuntu/18.04'`` and ``'centos/7'``, but a hook exists in the ``pytest_pyfunc_call()`` function
 of ``conftest.py`` that intercepts these arguments and
 uses them to spin up LXD containers with the indicated operating systems. This hook
