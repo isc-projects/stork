@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -19,21 +18,49 @@ import (
 // returns pointer to the teardown function. The specified argument
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
-	// Default Postgres server password.
-	pgPass := "storktest"
-	// Check if user wants to use a different one.
-	if envPass, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
-		pgPass = envPass
+	// Read the DB credentials from the environment variables.
+	dbUser := "storktest"
+	if envDbUser, ok := os.LookupEnv("STORK_DATABASE_USER_NAME"); ok {
+		dbUser = envDbUser
 	}
+
+	dbPassword := "storktest"
+	if envPass, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
+		dbPassword = envPass
+	}
+
+	mainDbName := "storktest"
+	if envMainDbName, ok := os.LookupEnv("STORK_DATABASE_NAME"); ok {
+		mainDbName = envMainDbName
+	}
+
+	dbHost := "localhost"
+	if envDbHost, ok := os.LookupEnv("STORK_DATABASE_HOST"); ok {
+		dbHost = envDbHost
+	}
+
+	dbPort := 5432
+	if envDbPortRaw, ok := os.LookupEnv("STORK_DATABASE_PORT"); ok {
+		envDbPort, err := strconv.ParseInt(envDbPortRaw, 10, 32)
+		if err == nil {
+			dbPort = int(envDbPort)
+		}
+	}
+
+	dbMaintenanceName := "postgres"
+	if envDbMaintenanceName, ok := os.LookupEnv("DB_MAINTENANCE_NAME"); ok {
+		dbMaintenanceName = envDbMaintenanceName
+	}
+
 	// Common set of database connection options which may be converted to a string
 	// of space separated options used by SQL drivers.
 	genericConnOptions := dbops.DatabaseSettings{
 		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DBName:   "storktest",
-			User:     "storktest",
-			Password: pgPass,
-			Host:     "localhost",
-			Port:     5432,
+			DBName:   dbMaintenanceName,
+			User:     dbUser,
+			Password: dbPassword,
+			Host:     dbHost,
+			Port:     dbPort,
 		},
 	}
 
@@ -53,24 +80,8 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// Convert generic options to go-pg options.
 	pgConnOptions, _ := genericConnOptions.PgParams()
 
-	// Check if we're running tests in Gitlab CI. If so, the host
-	// running the database should be set to "postgres".
-	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
-	if addr, ok := os.LookupEnv("POSTGRES_ADDR"); ok {
-		splitAddr := strings.Split(addr, ":")
-		if len(splitAddr) > 0 {
-			genericConnOptions.Host = splitAddr[0]
-		}
-		if len(splitAddr) > 1 {
-			if p, err := strconv.Atoi(splitAddr[1]); err == nil {
-				genericConnOptions.Port = p
-			}
-		}
-		pgConnOptions.Addr = addr
-	}
-
-	// Connect to base `postgres` database to be able to create test database.
-	pgConnOptions.Database = "postgres"
+	// Connect to maintenance database to be able to create test database.
+	pgConnOptions.Database = dbMaintenanceName
 	db, err := dbops.NewPgDBConn(pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("Unable to create database instance: %+v", err)
@@ -85,7 +96,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// Test database name is storktest + big random number e.g.: storktest9817239871871478571.
 	rand.Seed(time.Now().UnixNano())
 	//nolint:gosec
-	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+	dbName := fmt.Sprintf("%s%d", mainDbName, rand.Int63())
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
 	_, err = db.Exec(cmd)
@@ -95,7 +106,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		b.Fatalf("%s", err)
 	}
 
-	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE storktest;`, dbName)
+	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, mainDbName)
 	_, err = db.Exec(cmd)
 	if t != nil {
 		require.NoError(t, err)

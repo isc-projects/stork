@@ -68,9 +68,10 @@ namespace :demo do
     #     - default
     # Cache - doesn't rebuild the container
     # Services - list of service names; if empty then all services are used
+    # Detach - run services in the detach mode
     # Environment variables:
     # CS_REPO_ACCESS_TOKEN - CloudSmith repo token, required for premium services
-    def get_docker_opts(server_mode, cache, services)
+    def get_docker_opts(server_mode, cache, detach, services)
         opts = [
             "--project-directory", ".",
             "-f", "docker/docker-compose.yaml"
@@ -85,11 +86,14 @@ namespace :demo do
             cache_opts.append "--no-cache"
         end
         
-        up_opts = [
-            "--attach-dependencies",
-            "--remove-orphans",
+        up_opts = []
+        if detach
+            up_opts.append "-d"
+        else
             # Warning! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers. 
-        ]
+            up_opts.append "--attach-dependencies", "--remove-orphans"
+        end
+
         additional_services = []
         
         if server_mode == "host"
@@ -129,13 +133,15 @@ namespace :demo do
     # if the input list is empty
     # SERVER_MODE - server mode - choice: host, with-ui, without-ui, no-server, default
     # CACHE - doesn't rebuild the containers if present - default: true
+    # DETACH - run services in detach mode - default: false
     def docker_up_services(*services)
         # Read arguments from the environment variables
         server_mode = ENV["SERVER_MODE"]
         cache = ENV["CACHE"] != "false"
+        detach = ENV["DETACH"] == "true"
         
         # Prepare the docker-compose flags
-        opts, build_opts, up_opts, additional_services = get_docker_opts(server_mode, cache, services)
+        opts, build_opts, up_opts, additional_services = get_docker_opts(server_mode, cache, detach, services)
         
         # We don't use the BuildKit features in our Dockerfiles (yet).
         # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
@@ -220,7 +226,7 @@ namespace :demo do
     desc 'Down all containers and remove all volumes'
     task :down do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
-        opts, _, _, _ = get_docker_opts(nil, false, [])
+        opts, _, _, _ = get_docker_opts(nil, false, false, [])
         sh "docker-compose", *opts, "down",
         "--volumes",
         "--remove-orphans",
@@ -258,30 +264,78 @@ task :pre_docker_db do
         ENV["STORK_DATABASE_TRACE"] = "run"
     end
     
-    ENV["STORK_DATABASE_HOST"] = "172.20.0.234"
-    ENV["STORK_DATABASE_PORT"] = "5432"
+    # Uses exposed port
+    ENV["STORK_DATABASE_HOST"] = "localhost"
+    ENV["STORK_DATABASE_PORT"] = "5678"
     ENV["STORK_DATABASE_USER_NAME"] = "stork"
     ENV["STORK_DATABASE_PASSWORD"] = "stork"
-    ENV["STORK_DATABASE_NAME"] = "stork"
+    ENV["STORK_DATABASE_NAME"] = ENV["STORK_DATABASE_NAME"] || "stork"
     ENV['PGPASSWORD'] = "stork"
+    ENV['DB_MAINTENANCE_NAME'] = "stork"
 end
+
+# Waits for a given docker-compose service be operational (Up and Healthy status)
+def wait_to_be_operational(service)
+    opts, _, _, _ = get_docker_opts(nil, false, false, [service])
+    contener_id, _, status = Open3.capture3("docker-compose", *opts, "ps", "-q")
+    if status != 0
+        fail "Unknown container"
+    end
+    container_id = contener_id.rstrip
+    wait_time = 2
+    retries = 10
+    attempt = 0
+
+    loop do
+        status_text, _, _ = Open3.capture3(
+            "docker", "ps", "--format", "{{ .Status }}",
+            "-f", "id=" + container_id
+        )
+        status_text = status_text.rstrip
+        is_operational = status_text.start_with?("Up") && status_text.include?("healthy")
+        break if is_operational
+        break if attempt == retries
+
+        sleep wait_time
+        attempt += 1
+        print "Wait for ", service, " to be operational... ", attempt, "/", retries, "\n"
+    end
+
+    if attempt == retries
+        fail "Maximum number of retries exceed."
+    end
+end
+
 
 namespace :run do
     desc 'Run local server with Docker database
     DB_TRACE - trace SQL queries - default: false'
-    task :server_db => [:pre_docker_db] do |t|
-        Rake::MultiTask.new(:stub, t.application)
-        .enhance(["run:server", "demo:up:postgres"])
-        .invoke()
+    task :server_db => [:pre_docker_db] do
+        at_exit {
+            Rake::Task["demo:down"].invoke()
+        }
+
+        ENV["DETACH"] = "true"
+        Rake::Task["demo:up:postgres"].invoke()
+        wait_to_be_operational("postgres")
+        Rake::Task["run:server"].invoke()
     end
 end
 
 namespace :unittest do
     desc 'Run local unit tests with Docker database
     DB_TRACE - trace SQL queries - default: false'
-    task :backend_db => [:pre_docker_db] do |t|
-        Rake::MultiTask.new(:stub, t.application)
-        .enhance(["unittest:backend", "demo:up:postgres"])
-        .invoke()
+    task :backend_db do
+        ENV["STORK_DATABASE_NAME"] = "storktest"
+        Rake::Task[:pre_docker_db].invoke()
+
+        at_exit {
+            Rake::Task["demo:down"].invoke()
+        }
+
+        ENV["DETACH"] = "true"
+        Rake::Task["demo:up:postgres"].invoke()
+        wait_to_be_operational("postgres")
+        Rake::Task["unittest:backend"].invoke()
     end
 end

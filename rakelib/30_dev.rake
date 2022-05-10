@@ -330,11 +330,11 @@ namespace :db do
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
         DB_TRACE - trace SQL queries - default: false'
     task :setup_envvars do
-        dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-        dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
-        dbport = ENV["DB_PORT"] || "5432"
-        dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
-        dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
+        dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
+        dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
+        dbport = ENV["STORK_DATABASE_PORT"] || ENV["DB_PORT"] || "5432"
+        dbuser = ENV["STORK_DATABASE_USER_NAME"] || ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
+        dbpass = ENV["STORK_DATABASE_PASSWORD"] || ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
         dbtrace = ENV["DB_TRACE"] || "false"
         dbmaintenance = ENV["DB_MAINTENANCE_NAME"] || "postgres"
 
@@ -349,10 +349,10 @@ namespace :db do
         ENV["STORK_DATABASE_NAME"] = dbname
         ENV["DB_MAINTENANCE_NAME"] = dbmaintenance
 
-        if dbtrace == "true"
+        if ENV["STORK_DATABASE_TRACE"].nil? && dbtrace == "true"
             ENV["STORK_DATABASE_TRACE"] = "run"
         end
-        
+
         ENV['PGPASSWORD'] = dbpass
     end
 

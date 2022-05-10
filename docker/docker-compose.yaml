@@ -383,6 +383,11 @@ services:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork
       POSTGRES_DB: stork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U stork" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5678:5432"
 
