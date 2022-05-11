@@ -1,3 +1,9 @@
+* 209 [bug] slawek
+
+    Fixed the rake tasks that ran the database in a Docker container but were
+    connecting to the database on localhost.
+    (#733)
+
 Stork 1.3.0 released on 2022-05-11.
 
 * 208 [doc] marcin
