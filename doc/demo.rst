@@ -65,6 +65,17 @@ customers should feel free to open a ticket for assistance if needed.
 
    $ rake demo:up CS_REPO_ACCESS_TOKEN=<access token>
 
+Detach mode
+~~~~~~~~~~~
+
+It is possible to start the demo in detach mode. It will no longer depend on
+the terminal and run in the background until the call ``rake demo:down``.
+To enable the detach mode use the DETACH variable with a ``true`` value.
+
+.. code-block:: console
+
+   $ rake demo:up DETACH=true
+
 Demo Containers
 ---------------
 
