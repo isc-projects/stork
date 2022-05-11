@@ -18,38 +18,33 @@ import (
 // returns pointer to the teardown function. The specified argument
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
-	// Read the DB credentials from the environment variables.
+	// Default configuration
 	dbUser := "storktest"
-	if envDbUser, ok := os.LookupEnv("STORK_DATABASE_USER_NAME"); ok {
-		dbUser = envDbUser
-	}
-
-	dbPassword := "storktest"
-	if envPass, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
-		dbPassword = envPass
-	}
-
-	mainDbName := "storktest"
-	if envMainDbName, ok := os.LookupEnv("STORK_DATABASE_NAME"); ok {
-		mainDbName = envMainDbName
-	}
-
+	dbPassword := dbUser
+	mainDBName := dbUser
 	dbHost := "localhost"
-	if envDbHost, ok := os.LookupEnv("STORK_DATABASE_HOST"); ok {
-		dbHost = envDbHost
+	dbPortRaw := "5432"
+	dbMaintenanceName := "postgres"
+
+	// Read the DB credentials from the environment variables.
+	envMapping := map[string]*string{
+		"STORK_DATABASE_USER_NAME": &dbUser,
+		"STORK_DATABASE_PASSWORD":  &dbPassword,
+		"STORK_DATABASE_NAME":      &mainDBName,
+		"STORK_DATABASE_HOST":      &dbHost,
+		"STORK_DATABASE_PORT":      &dbPortRaw,
+		"DB_MAINTENANCE_NAME":      &dbMaintenanceName,
 	}
 
-	dbPort := 5432
-	if envDbPortRaw, ok := os.LookupEnv("STORK_DATABASE_PORT"); ok {
-		envDbPort, err := strconv.ParseInt(envDbPortRaw, 10, 32)
-		if err == nil {
-			dbPort = int(envDbPort)
+	for key, value := range envMapping {
+		if envValue, ok := os.LookupEnv(key); ok {
+			*value = envValue
 		}
 	}
 
-	dbMaintenanceName := "postgres"
-	if envDbMaintenanceName, ok := os.LookupEnv("DB_MAINTENANCE_NAME"); ok {
-		dbMaintenanceName = envDbMaintenanceName
+	dbPort := 0
+	if parsedDBPort, err := strconv.ParseInt(dbPortRaw, 10, 32); err == nil {
+		dbPort = int(parsedDBPort)
 	}
 
 	// Common set of database connection options which may be converted to a string
@@ -96,7 +91,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// Test database name is storktest + big random number e.g.: storktest9817239871871478571.
 	rand.Seed(time.Now().UnixNano())
 	//nolint:gosec
-	dbName := fmt.Sprintf("%s%d", mainDbName, rand.Int63())
+	dbName := fmt.Sprintf("%s%d", mainDBName, rand.Int63())
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
 	_, err = db.Exec(cmd)
@@ -106,7 +101,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		b.Fatalf("%s", err)
 	}
 
-	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, mainDbName)
+	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, mainDBName)
 	_, err = db.Exec(cmd)
 	if t != nil {
 		require.NoError(t, err)
