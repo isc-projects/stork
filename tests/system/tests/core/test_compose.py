@@ -171,7 +171,7 @@ def test_start_calls_only_up_by_default():
     up_mock.assert_called_once()
 
 
-def test_start_can_call_build():
+def test_start_calls_build():
     # Arrange
     compose = DockerCompose("project-dir", build=True)
     pull_mock = MagicMock()
@@ -188,7 +188,7 @@ def test_start_can_call_build():
     up_mock.assert_called_once()
 
 
-def test_start_can_call_pull():
+def test_start_calls_pull():
     # Arrange
     compose = DockerCompose("project-dir", pull=True)
     pull_mock = MagicMock()
