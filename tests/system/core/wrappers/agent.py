@@ -32,20 +32,6 @@ class Agent(ComposeServiceWrapper):
         registration was suppresses then it returns None."""
         return self._server_service
 
-    def is_registered(self):
-        """True if an agent was successfuly registered. Otherwise False."""
-        if self._server_service is None:
-            return False
-        # ToDo: Using logs is a little dangerous. They can contain a bloat data.
-        stdout, _ = self._compose.logs()
-        return "machine registered" in stdout
-
-    @wait_for_success(wait_msg="Waiting to be registered...")
-    def wait_for_registration(self):
-        """Block the execution until registration passes."""
-        if not self.is_registered():
-            raise NoSuccessException()
-
     def hash_cert_files(self):
         """Calculates the hashes of the TLS credentials used by the agent."""
         cert_paths = [
