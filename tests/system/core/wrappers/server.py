@@ -378,7 +378,7 @@ class Server(ComposeServiceWrapper):
         unauthorized server (if needed)."""
         def condition(ev: Event):
             text = ev["text"]
-            if not text.startswith("communication with CA daemon of"):
+            if not text.startswith("Communication with CA daemon of"):
                 return False
             if not text.endswith("failed"):
                 return False
