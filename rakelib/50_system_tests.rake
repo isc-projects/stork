@@ -165,7 +165,7 @@ namespace :system_tests do
     end
 
     desc 'Down all running services, removes networks and volumes'
-    task :down_all do
+    task :down do
         Rake::Task["system_tests:sh"].invoke("down", "--volumes", "--remove-orphans")
     end
 

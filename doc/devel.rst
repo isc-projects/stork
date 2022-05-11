@@ -382,7 +382,7 @@ To run a particular test case, set TEST key-value pair:
 
 .. code-block:: console
 
-    $ rake system_tests test_users_management
+    $ rake system_tests TEST=test_users_management
 
 To get a list of tests without actually running them, the following command can be used:
 
@@ -583,6 +583,96 @@ started, and the Stork Agent doesn't try to register.
     @kea_parametrize(suppress_registration=True)
     def test_kea_only_fixture(kea_service: Kea):
         pass
+
+.. note::
+
+    There is no possibility to test the Stork with different Kea or Bind
+    versions. This feature is under construction.
+
+Use perfdhcp to generate traffic
+--------------------------------
+
+The ``agent-kea`` service runs with an initialized lease database. It should be
+enough for most test cases. If you need to generate real traffic, you can use
+``perfdhcp_service``.
+
+.. code-block:: python
+
+    from core.wrappers import Kea, Perfdhcp
+    def test_get_kea_stats(kea_service: Kea, perfdhcp_service: Perfdhcp):
+        perfdhcp_service.generate_ipv4_traffic(
+            ip_address=kea_service.get_internal_ip_address("subnet_00", family=4),
+            mac_prefix="00:00"
+        )
+
+        perfdhcp_service.generate_ipv6_traffic(
+            interface="eth1"
+        )
+
+Please, notice that the IPv4 traffic uses the IPv4 address, but IPv6 traffic
+uses the interface name. There is no easy method to recognize which Docker
+network is connected to which the container interface.
+We use the ``priority`` property to ensure that the networks will be assigned
+to the next interfaces in order.
+
+.. code-block:: yaml
+
+    networks:
+      storknet:
+        ipv4_address: 172.20.42.200
+        priority: 1000
+      subnet_00:
+        ipv4_address: 172.100.42.200
+        priority: 500
+
+The above configuration means that the ``storknet`` network should be assigned
+to ``eth0`` (the first) interface and the ``subnet_00`` network to the ``eth1``
+interface. It looks like it works stable.
+
+System test commands
+--------------------
+
+There are some commands that help with troubleshooting the system tests:
+
+.. table:: Rake tasks for system testing
+   :class: longtable
+   :widths: 26 74
+
+    +--------------------------------+----------------------------------------------+
+    | Rake Tasks                     | Description                                  |
+    +================================+==============================================+
+    | ``rake system_tests``          | Runs the system tests. Use TEST variable to  |
+    |                                | specify the test name to run.                |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:build``    | Build the system test containers             |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:down``     | Stops all system test containers and removes |
+    |                                | them, all networks, and volumes              |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:gen``      | Generates the OpenAPI client and some        |
+    |                                | configurations                               |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:logs``     | Display the container logs. Use SERVICE      |
+    |                                | variable to get the logs only for a specific |
+    |                                | service.                                     |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:perfdhcp`` | Low-level access to the perfdhcp command in  |
+    |                                | a container. You need to provide arguments   |
+    |                                | in a Rake style that will be passed to the   |
+    |                                | perfdhcp. E.g.:                              |
+    |                                | ``rake system_tests:perfdhcp[-6,-l,eth1]``   |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:regen      | Re-generates the files from                  |
+    |                                | ``rake system_tests:gen``                    |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:sh``       | Low-level access to the docker-compose with  |
+    |                                | all necessary parameters. Use Rake-style     |
+    |                                | arguments. E.g. ``rake system_tests:sh[ps]`` |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:shell``    | Attaches to a shell in a container with      |
+    |                                | provided name by SERVICE variable.           |
+    +--------------------------------+----------------------------------------------+
+
 
 .. _docker_containers_for_development:
 
