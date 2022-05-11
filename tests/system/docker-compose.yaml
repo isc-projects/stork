@@ -99,11 +99,6 @@ services:
 
   agent-kea-many-subnets:
     extends: agent-kea
-    networks:
-      storknet:
-        ipv4_address: 172.20.42.102
-    environment:
-      STORK_AGENT_HOST: 172.20.42.102
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
