@@ -635,8 +635,8 @@ System test commands
 There are some commands that help with troubleshooting the system tests:
 
 .. table:: Rake tasks for system testing
-   :class: longtable
-   :widths: 26 74
+    :class: longtable
+    :widths: 26 74
 
     +--------------------------------+----------------------------------------------+
     | Rake Tasks                     | Description                                  |
@@ -662,7 +662,7 @@ There are some commands that help with troubleshooting the system tests:
     |                                | perfdhcp. E.g.:                              |
     |                                | ``rake system_tests:perfdhcp[-6,-l,eth1]``   |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:regen      | Re-generates the files from                  |
+    | ``rake system_tests:regen``    | Re-generates the files from                  |
     |                                | ``rake system_tests:gen``                    |
     +--------------------------------+----------------------------------------------+
     | ``rake system_tests:sh``       | Low-level access to the docker-compose with  |
