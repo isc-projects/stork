@@ -55,12 +55,7 @@ logger = setup_logger(__file__)
 
 def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
                      max_tries=120, sleep_time: timedelta = timedelta(seconds=1)):
-    """
-    Wait until function throws no error.
-    Max wait is configured by config. Default is 120 sec.
-    Polling interval is 1 sec.
-    :return:
-    """
+    """Wait until function throws no error."""
 
     transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
 

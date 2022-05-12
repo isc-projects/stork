@@ -374,7 +374,7 @@ is a Python testing framework that is used in Stork system tests.
 
 At the end of the logs are listed test cases with their result status.
 
-The tests shouldn't be invoked directly without ``rake`` because it generates
+The tests shouldn't be invoked directly without ``rake`` because the task generates
 the configuration files that aren't included in the repository or have a short
 lifetime.
 
@@ -562,7 +562,7 @@ To run your test case with specific services, you should use the special helpers
 2. ``kea_parametrize``
 3. ``bind_parametrize``
 
-They accepts as a first argument the name of the docker-compose service to use:
+They accept as a first argument the name of the docker-compose service to use:
 
 .. code-block:: python
 
@@ -651,6 +651,8 @@ There are some commands that help with troubleshooting the system tests:
     +--------------------------------+----------------------------------------------+
     | ``rake system_tests:gen``      | Generates the OpenAPI client and some        |
     |                                | configurations                               |
+    +--------------------------------+----------------------------------------------+
+    | ``rake system_tests:list``     | Lists the test cases                         |
     +--------------------------------+----------------------------------------------+
     | ``rake system_tests:logs``     | Display the container logs. Use SERVICE      |
     |                                | variable to get the logs only for a specific |

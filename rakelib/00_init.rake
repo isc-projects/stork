@@ -169,8 +169,9 @@ end
 stdout, _, status = Open3.capture3("wget", "--version")
 wget = ["wget"]
 
+# BusyBox edition has no version switch
 if status == 0
-    # BusyBox doesn't support these parameters
+    # BusyBox edition doesn't support below parameters
     wget.append "--tries=inf", "--waitretry=3"
     wget_version = stdout.split("\n")[0]
     wget_version = wget_version[/[0-9]+\.[0-9]+/]

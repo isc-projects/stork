@@ -117,12 +117,11 @@ namespace :system_tests do
     desc 'Display docker-compose logs
         SERVICE - name of the docker-compose service - optional'
     task :logs do
-        service_name = ENV["SERVICE"]
-        if service_name.nil?
-            Rake::Task["system_tests:sh"].invoke("logs")
-        else 
-            Rake::Task["system_tests:sh"].invoke("logs", service_name)
+        service_name = []
+        if !ENV["SERVICE"].nil?
+            service_name.append ENV["SERVICE"]
         end
+        Rake::Task["system_tests:sh"].invoke("logs", *service_name)
     end
 
     desc 'Run perfdhcp docker-compose service'
@@ -171,13 +170,17 @@ namespace :system_tests do
 
 end
 
-desc 'Install the external dependencies related to the system tests'
-task :prepare_env_system_tests do
-    find_and_prepare_deps(__FILE__)
+namespace :prepare do
+    desc 'Install the external dependencies related to the system tests'
+    task :system_tests do
+        find_and_prepare_deps(__FILE__)
+    end
 end
 
-desc 'Check the external dependencies related to the system tests'
-task :check_env_system_tests do
-    check_deps(__FILE__, "python3", "docker", "docker-compose",
-        "openssl", "java")
+namespace :check do
+    desc 'Check the external dependencies related to the system tests'
+    task :system_tests do
+        check_deps(__FILE__, "python3", "docker", "docker-compose",
+            "openssl", "java")
+    end
 end

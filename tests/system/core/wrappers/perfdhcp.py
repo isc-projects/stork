@@ -47,8 +47,11 @@ class Perfdhcp:
         """
         Generates the parameters set for perfdhcp. See perfdhcp documentation
         for details.
-        Warning! Perfdhcp is a little buggy. List of noticed issues:
+        Warning! There is a list of noticed issues with Perfdhcp:
             - duid value isn't recognized by the Kea class selector.
+            - cannot use IPv6 addresses, Kea doesn't respond; it's related to
+              Docker networking and unicast/multicast addresses on which Kea
+              listens; a lot of time wasted here
         """
 
         flags = [
