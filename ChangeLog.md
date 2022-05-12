@@ -1,3 +1,9 @@
+* 219 [func] slawek
+
+    Refactored the system tests framework.  It bases now on the docker-compose
+    instead of LXD. The system tests are stabler, more straightforward,
+    readable, faster, and require less space.
+    (Gitlab #709)
 
 * 218 [bug] slawek
 
