@@ -46,3 +46,9 @@ class Agent(ComposeServiceWrapper):
             hash_ = self._hash_file(cert_path)
             hashes[cert_path] = hash_
         return hashes
+
+    def restart_stork_agent(self):
+        """
+        Restarts the Stork Agent and waits to recover an operational status.
+        """
+        self._restart_supervisor_service('stork-agent')

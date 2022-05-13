@@ -8,6 +8,7 @@ from openapi_client.api.users_api import UsersApi, User, Users, Groups, UserAcco
 from openapi_client.api.services_api import ServicesApi, Machine, Machines, ConfigReports
 from openapi_client.api.dhcp_api import DHCPApi, Subnets, Leases, Hosts, DhcpOverview
 from openapi_client.api.events_api import EventsApi, Events
+from openapi_client.api.general_api import GeneralApi, Version
 from openapi_client.model.event import Event
 from openapi_client.model.subnet import Subnet
 from openapi_client.model.local_subnet import LocalSubnet
@@ -257,6 +258,11 @@ class Server(ComposeServiceWrapper):
         """
         api_instance = ServicesApi(self._api_client)
         return api_instance.get_machine_state(id=machine_id)
+
+    def read_version(self) -> Version:
+        "Read the server version."
+        api_instance = GeneralApi(self._api_client)
+        return api_instance.get_version()
 
     # Update
 

@@ -47,12 +47,6 @@ class Kea(Agent):
         stdout = self._read_file(path)
         return csv.DictReader(io.StringIO(stdout))
 
-    def restart_stork_agent(self):
-        """
-        Restarts the Stork Agent and waits to recover an operational status.
-        """
-        self._restart_supervisor_service('stork-agent')
-
     def has_failed_TLS_handshake_log_entry(self):
         """Checks if any TLS handshake fail occurs."""
         stdout, _ = self._compose.logs(self._service_name)

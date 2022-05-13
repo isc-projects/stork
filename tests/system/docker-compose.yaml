@@ -13,6 +13,7 @@ services:
       - "8080"
     ports:
       - "42080:8080"
+    hostname: server
     environment:
       STORK_DATABASE_HOST: postgres
       STORK_DATABASE_PORT: 5432
@@ -198,6 +199,39 @@ services:
         priority: 400
     healthcheck:
       disable: true
+
+  packages:
+    build:
+      context: .
+      dockerfile: $PWD/docker/images/stork.Dockerfile
+      target: external-packages
+      args:
+        STORK_CS_VER: ${STORK_CLOUDSMITH_VERSION-1.2}*
+    ports:
+      - "42080:8080"
+    networks:
+      - storknet
+    hostname: server
+    environment:
+      STORK_DATABASE_HOST: postgres
+      STORK_DATABASE_PORT: 5432
+      STORK_DATABASE_USER_NAME: stork
+      STORK_DATABASE_PASSWORD: stork
+      STORK_DATABASE_NAME: stork
+      STORK_SERVER_ENABLE_METRICS: 1
+      STORK_AGENT_SERVER_URL: http://127.0.0.1:8080
+      STORK_AGENT_HOST: 127.0.0.1
+    healthcheck:
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 0s
+    volumes:
+      - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - $PWD/docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:11

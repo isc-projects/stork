@@ -245,6 +245,24 @@ namespace :utils do
     task :print_pkg_type do
         puts get_pkg_type()
     end
+
+    desc "Remove the suffix from the last created package"
+    task :remove_last_package_suffix do
+        packages = Dir.glob(
+            File.join(pkgs_dir, "isc-stork-*")
+        ).sort_by {|filename| File.mtime(filename) }
+
+        if packages.empty?
+            fail "Missing packages"
+        end
+
+        last_package = packages[-1]
+
+        prefix = last_package[/^.*isc-stork-[a-z]+/]
+        _, dot, extension = last_package.rpartition(".")
+        renamed_package = prefix + dot + extension
+        File.rename(last_package, renamed_package)
+    end
 end
 
 namespace :build do
@@ -259,13 +277,6 @@ namespace :build do
 
     desc "Build server distribution directory"
     task :server_dist => [server_dist_dir]
-
-    desc "Build server distribution directory without WebUI, doc and tool"
-    task :server_only_dist => server_dist_dir_server_part
-
-    desc "Build server distribution directory only with WebUI (without server, doc and tool)"
-    task :ui_only_dist => server_dist_dir_webui_part
-
 end
 
 namespace :rebuild do

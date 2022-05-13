@@ -93,6 +93,12 @@ def server_parametrize(service_name="server"):
         "service_name": service_name
     }], indirect=True)
 
+def external_parametrize(version="1.2"):
+    """Sets the version of packages to install from the external repository."""
+    return pytest.mark.parametrize("external_service", [{
+        "version": version
+    }], indirect=True)
+
 
 @pytest.fixture
 def server_service(request):
@@ -249,6 +255,29 @@ def perfdhcp_service():
     wrapper = wrappers.Perfdhcp(compose, service_name)
     return wrapper
 
+@pytest.fixture
+def external_service(request):
+    """
+    A fixture that setup the Strok Server and Stork Agent services installed
+    from the external repository and guarantees that they are operational.
+    """
+    param = {
+        "version": "1.2"
+    }
+
+    if hasattr(request, "param"):
+        param.update(request.param)
+
+    env_vars = {
+        "STORK_CLOUDSMITH_VERSION": param["version"]
+    }
+
+    compose = create_docker_compose(env_vars)
+    service_name = "packages"
+    compose.start(service_name)
+    compose.wait_for_operational(service_name)
+    wrapper = wrappers.ExternalPackages(compose, service_name)
+    return wrapper
 
 @pytest.fixture(autouse=True)
 def finish(request):

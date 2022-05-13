@@ -103,10 +103,7 @@ COPY webui .
 
 # Build the Stork binaries
 FROM codebase AS server-builder
-RUN rake build:server_only_dist
-
-FROM codebase AS webui-builder
-RUN rake build:ui_only_dist
+RUN rake build:server_dist
 
 FROM codebase AS agent-builder
 RUN rake build:agent_dist
@@ -132,7 +129,7 @@ HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/ver
 # Web UI container
 FROM nginx:1.21-alpine AS webui
 ENV CI=true
-COPY --from=webui-builder /app/dist/server/ /
+COPY --from=server-builder /app/dist/server/usr/ /usr/
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 ENV DOLLAR=$
 ENV API_HOST localhost
@@ -145,7 +142,6 @@ HEALTHCHECK CMD ["curl", "--fail", "http://localhost:80"]
 # Server with webui container
 FROM debian-base AS server-webui
 COPY --from=server-builder /app/dist/server /
-COPY --from=webui-builder /app/dist/server /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
@@ -292,3 +288,38 @@ HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Stork Agent: /etc/stork
 # Bind9 config: /etc/bind/named.conf
 # Bind9 database: /etc/bind/db.test
+
+#################
+### Packaging ###
+#################
+
+FROM server-builder AS server_package_builder
+RUN rake build:server_pkg && rake utils:remove_last_package_suffix
+
+FROM agent-builder AS agent_package_builder
+RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
+
+FROM debian-base AS external-packages
+RUN apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                supervisor=4.2.* \
+                curl=7.74.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+ARG STORK_CS_VER
+RUN wget -q -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
+        && apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                isc-stork-agent=${STORK_CS_VER} \
+                isc-stork-server=${STORK_CS_VER} \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb
+COPY --from=agent_package_builder /app/dist/pkgs/isc-stork-agent.deb /app/dist/pkgs/isc-stork-agent.deb
+ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+HEALTHCHECK CMD [ "supervisorctl", "status " ]
+EXPOSE 8080
