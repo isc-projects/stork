@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import re
 from time import time
 from typing import Callable, List
+from contextlib import contextmanager
 
 import openapi_client
 from openapi_client.api.users_api import UsersApi, User, Users, Groups, UserAccount
@@ -100,6 +101,26 @@ class Server(ComposeServiceWrapper):
             params.update(_check_return_type=False)
         return params
 
+    @staticmethod
+    def _parse_date(date):
+        """
+        Parses the GO timestamp if it is a string otherwise, lefts it as is.
+        """
+        if type(date) == str:
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date = date.replace(tzinfo=timezone.utc)
+        return date
+
+    @staticmethod
+    def _is_before(first_date, second_date):
+        """
+        Checks if the first date is before the second. The dates can be Go
+        timestamps or Python datetime objects.
+        """
+        first_date = Server._parse_date(first_date)
+        second_date = Server._parse_date(second_date)
+        return first_date < second_date
+
     # Authentication
 
     def log_in(self, username: str, password: str) -> User:
@@ -130,9 +151,7 @@ class Server(ComposeServiceWrapper):
 
     def list_machines(self, authorized=None, limit=10, start=0) -> Machines:
         """Lists the machines."""
-        params = dict(start=start, limit=limit,
-                      # This endpoint doesn't contain the applications.
-                      **self._no_validate_kwargs())
+        params = dict(start=start, limit=limit)
         if authorized is not None:
             params["authorized"] = authorized
         api_instance = ServicesApi(self._api_client)
@@ -309,7 +328,7 @@ class Server(ComposeServiceWrapper):
             for event in reversed(events["items"]):
                 # Skip older events
                 timestamp = event["created_at"]
-                if timestamp < fetch_timestamp:
+                if Server._is_before(timestamp, fetch_timestamp):
                     continue
                 fetch_timestamp = timestamp
 
@@ -331,7 +350,7 @@ class Server(ComposeServiceWrapper):
         def worker():
             state = self.read_machine_state(machine_id)
             last_visited = state["last_visited_at"]
-            if last_visited < start:
+            if Server._is_before(last_visited, start):
                 raise NoSuccessException("the state not fetched")
             if len(state["apps"]) == 0:
                 raise NoSuccessException("the apps are missing")
@@ -418,11 +437,60 @@ class Server(ComposeServiceWrapper):
             for subnet in subnets:
                 local_subnet: LocalSubnet
                 for local_subnet in subnet["localSubnets"]:
-                    collected_at_raw: str = local_subnet["statsCollectedAt"]
-                    collected_at = datetime.strptime(
-                        collected_at_raw, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    collected_at = collected_at.replace(tzinfo=timezone.utc)
-                    if collected_at >= start:
+                    collected_at = local_subnet["statsCollectedAt"]
+                    if not Server._is_before(collected_at, start):
                         return overview
             raise NoSuccessException("some data are out-of-date")
         return worker()
+
+    @contextmanager
+    def no_validate(self):
+        """
+        Prepares a context where the validation and parsing of the API values
+        are disabled. It allows suppressing the errors related to
+        non-compliance with the contract Swagger contract.
+
+        Returns
+        -------
+        This wrapper with disabled input parsing and output validation.
+
+        Examples
+        --------
+        > server = Server()
+        > with server.no_validate() as legacy:
+        >     legacy.list_machines()
+
+        Notes
+        -----
+        It disables the input validation. It causes the parameter names to use
+        camelCase instead of snake_case, and timestamps are string instead of
+        the Python datetime objects.
+        """
+        # Suppresses the output validation
+        original_validation_rules = self._api_client.configuration.disabled_client_side_validations
+        self._api_client.configuration.disabled_client_side_validations = ",".join([
+            "multipleOf", "maximum", "exclusiveMaximum", "minimum",
+            "exclusiveMinimum", "maxLength", "minLength", "pattern",
+            "maxItems", "minItems"
+        ])
+
+        original_discard_unknown_types = self._api_client.configuration.discard_unknown_keys
+        self._api_client.configuration.discard_unknown_keys = True
+
+        # Suppresses the input parsing and validation - a little hack
+        original_call = self._api_client.call_api
+        params = dict(_check_type=False)
+
+        def injector(*args, **kwargs):
+            kwargs.update(params)
+            return original_call(*args, **kwargs)
+
+        self._api_client.call_api = injector
+
+        # Returns the patched wrapper
+        yield self
+        
+        # Restores the standard behaviour
+        self._api_client.call_api = original_call
+        self._api_client.configuration.discard_unknown_keys = original_discard_unknown_types
+        self._api_client.configuration.disabled_client_side_validations = original_validation_rules

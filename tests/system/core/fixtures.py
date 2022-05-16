@@ -93,6 +93,7 @@ def server_parametrize(service_name="server"):
         "service_name": service_name
     }], indirect=True)
 
+
 def external_parametrize(version="1.2"):
     """Sets the version of packages to install from the external repository."""
     return pytest.mark.parametrize("external_service", [{
@@ -190,6 +191,10 @@ def kea_service(request):
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service)
+
+    if not param['suppress_registration']:
+        wrapper.wait_for_registration()
+
     return wrapper
 
 
@@ -236,6 +241,10 @@ def bind9_service(request):
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Bind9(compose, service_name, server_service)
+
+    if not param['suppress_registration']:
+        wrapper.wait_for_registration()
+
     return wrapper
 
 
@@ -254,6 +263,7 @@ def perfdhcp_service():
     compose.build(service_name)
     wrapper = wrappers.Perfdhcp(compose, service_name)
     return wrapper
+
 
 @pytest.fixture
 def external_service(request):
@@ -277,7 +287,9 @@ def external_service(request):
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.ExternalPackages(compose, service_name)
+    wrapper.wait_for_registration()
     return wrapper
+
 
 @pytest.fixture(autouse=True)
 def finish(request):

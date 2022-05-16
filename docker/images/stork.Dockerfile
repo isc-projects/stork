@@ -307,7 +307,12 @@ RUN apt-get update \
                 supervisor=4.2.* \
                 curl=7.74.* \
         && apt-get clean \
-        && rm -rf /var/lib/apt/lists/*
+        && rm -rf /var/lib/apt/lists/* \
+        # The post-install hooks of the packages call the systemctl command
+        # and fail if it doesn't exist. The empty script is a simple
+        # workaround for this missing command.
+        && touch /usr/bin/systemctl \
+        && chmod a+x /usr/bin/systemctl
 ARG STORK_CS_VER
 RUN wget -q -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \

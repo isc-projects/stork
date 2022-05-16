@@ -303,7 +303,7 @@ class DockerCompose(object):
         _, stdout, _ = self._call_command(cmd=ps_cmd)
         return stdout
 
-    def exec(self, service_name, command, check=True):
+    def exec(self, service_name, command, check=True, capture_output=True):
         """
         Executes a command in the container of one of the services.
 
@@ -323,7 +323,8 @@ class DockerCompose(object):
         ) + ['exec', '-T', service_name] + command
         return self._call_command(
             cmd=exec_cmd,
-            check=check
+            check=check,
+            capture_output=capture_output
         )
 
     def inspect(self, service_name, *properties: str) -> List[str]:
@@ -537,8 +538,8 @@ class DockerCompose(object):
 
         result = subprocess.run(cmd, check=check, cwd=self._project_directory,
                                 env=env, **opts)
-        stdout = result.stdout
-        stderr = result.stderr
+        stdout: bytes = result.stdout
+        stderr: bytes = result.stderr
         if capture_output:
             stdout: str = stdout.decode("utf-8").rstrip()
             stderr: str = stderr.decode("utf-8").rstrip()

@@ -14,7 +14,7 @@ def test_agent_reregistration_after_restart(server_service: Server, kea_service:
     machine_after = server_service.list_machines()['items'][0]
     hashes_after = kea_service.hash_cert_files()
 
-    assert machine_before["agentToken"] == machine_after['agentToken']
+    assert machine_before["agent_token"] == machine_after['agent_token']
     assert hashes_before == hashes_after
 
 

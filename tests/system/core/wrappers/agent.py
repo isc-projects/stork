@@ -52,3 +52,19 @@ class Agent(ComposeServiceWrapper):
         Restarts the Stork Agent and waits to recover an operational status.
         """
         self._restart_supervisor_service('stork-agent')
+
+
+    def is_registered(self):
+        """True if an agent was successfuly registered. Otherwise False."""
+        if self._server_service is None:
+            return False
+        # ToDo: Using logs is a little dangerous. They can contain a bloat data.
+        stdout, _ = self._compose.logs()
+        return "machine registered" in stdout.lower()
+
+    @wait_for_success(wait_msg="Waiting to be registered...")
+    def wait_for_registration(self):
+        """Block the execution until registration passes."""
+        if not self.is_registered():
+            raise NoSuccessException()
+

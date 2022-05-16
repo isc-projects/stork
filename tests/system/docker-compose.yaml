@@ -221,6 +221,7 @@ services:
       STORK_SERVER_ENABLE_METRICS: 1
       STORK_AGENT_SERVER_URL: http://127.0.0.1:8080
       STORK_AGENT_HOST: 127.0.0.1
+      STORK_AGENT_PORT: 8888
     healthcheck:
       interval: 2s
       timeout: 10s
