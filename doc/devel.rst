@@ -578,6 +578,27 @@ started, and the Stork Agent does not try to register.
    It is not supported to test Stork with different Kea or Bind9 versions.
    This feature is under construction.
 
+Update packages in system tests
+-------------------------------
+A specialized ``external_service`` docker-compose service is dedicated to
+performing system tests related to updating the packages. The service contains
+the Stork Server and Stork Agent (without any Kea or Bind daemons) installed
+from the CloudSmith packages (instead of the source code).
+
+The installed version can be customized using an ``external_parametrize``
+decorator. If not provided, then the latest version will be installed. You
+should notice that using many versions harms the performance.
+
+Additionally, the OpenAPI client is generated from the current Stork version
+and maybe not be compatible with the older ones. You can use the ``no_validate``
+context to suppress some compatibility errors.
+
+.. code-block:: python
+
+    with external_service.no_validate() as legacy_service:
+        pass
+
+
 Using perfdhcp to Generate Traffic
 ----------------------------------
 

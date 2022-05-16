@@ -94,7 +94,7 @@ def server_parametrize(service_name="server"):
     }], indirect=True)
 
 
-def external_parametrize(version=""):
+def external_parametrize(version):
     """
     Sets the version of packages to install from the external repository.
     Empty version means the latest available.

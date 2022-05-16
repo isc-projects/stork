@@ -1,3 +1,9 @@
+* 231 [func] slawek
+
+    Added the system test checks correctness of the updating the Stork
+    installed from the latest CloudSmith packages to the current version.
+    (Gitalb #746)
+
 * 230 [bug] slawek
 
     Fixed a problem with running the demo by shell script on macOS.
