@@ -204,7 +204,7 @@ class DockerCompose(object):
         logger.info("Begin build containers")
 
         build_cmd = self.docker_compose_command() + \
-            ['build', *service_names]
+            ['build', "--progress", "plain", *service_names]
 
         env = None
         if self._use_build_kit:

@@ -14,8 +14,7 @@ func TestNewPeriodicPuller(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
-	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
+	_ = dbmodel.InitializeSettings(db, 1)
 	agents := NewConnectedAgents(nil, nil, nil, nil, nil)
 	defer agents.Shutdown()
 
@@ -36,8 +35,7 @@ func TestReadIntervalFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
-	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
+	_ = dbmodel.InitializeSettings(db, 1)
 
 	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
 		func() error { return nil })

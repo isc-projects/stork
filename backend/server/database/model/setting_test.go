@@ -21,7 +21,7 @@ func TestInitializeSettings(t *testing.T) {
 	require.Empty(t, settings)
 
 	// initialize settings
-	err = InitializeSettings(db)
+	err = InitializeSettings(db, 0)
 	require.NoError(t, err)
 
 	// check if any settings were added to db
@@ -49,12 +49,16 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 30, val)
 
+	val, err = GetSettingInt(db, "metrics_collector_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 10, val)
+
 	// change the setting
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
 	require.NoError(t, err)
 
 	// reinitialize settings, nothing should change
-	err = InitializeSettings(db)
+	err = InitializeSettings(db, 0)
 	require.NoError(t, err)
 	require.Len(t, settings, count)
 
@@ -68,6 +72,63 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 123, settingsMap["kea_stats_puller_interval"])
 	require.Len(t, settingsMap, count)
+}
+
+// Check if settings initialization uses the interval value.
+func TestInitializeSettingsWithInterval(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var settings []Setting
+
+	// check if settings are empty
+	q := db.Model(&settings)
+	err := q.Select()
+	require.NoError(t, err)
+	require.Empty(t, settings)
+
+	// initialize settings
+	err = InitializeSettings(db, 42)
+	require.NoError(t, err)
+
+	// check if given setting exists in db and has some default value
+	val, err := GetSettingInt(db, "bind9_stats_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 42, val)
+
+	val, err = GetSettingInt(db, "kea_stats_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 42, val)
+
+	val, err = GetSettingInt(db, "kea_hosts_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 42, val)
+
+	val, err = GetSettingInt(db, "kea_status_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 42, val)
+
+	val, err = GetSettingInt(db, "metrics_collector_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 42, val)
+
+	// change the setting
+	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
+	require.NoError(t, err)
+
+	// reinitialize settings, nothing should change
+	err = InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// this changed setting should not be reset
+	val, err = GetSettingInt(db, "kea_stats_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 123, val)
+
+	// get all settings
+	settingsMap, err := GetAllSettings(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 123, settingsMap["kea_stats_puller_interval"])
 }
 
 // Check getting and setting settings.

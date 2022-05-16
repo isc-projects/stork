@@ -119,6 +119,7 @@ func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorize
 	}
 	machines := &models.Machines{
 		Total: total,
+		Items: []*models.Machine{},
 	}
 
 	for _, dbM := range dbMachines {
