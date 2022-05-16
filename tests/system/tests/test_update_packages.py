@@ -1,21 +1,31 @@
 from core.wrappers import ExternalPackages
-from core.fixtures import external_parametrize
-from core.version import get_version
+import core.version as version
 
 
-@external_parametrize(version="1.2")
-def test_update_stork(external_service: ExternalPackages):
+def test_update_stork_from_the_latest_released_version(external_service: ExternalPackages):
+    """
+    Initializes the Stork Server with the packages from the CloudSmith and
+    next install the current packages.
+    """
+    expected_version_info = version.get_version_info()
+
     with external_service.no_validate() as legacy_service:
         legacy_service.log_in_as_admin()
         legacy_service.authorize_all_machines()
         state = legacy_service.wait_for_next_machine_states()[0]
-        assert state["agent_version"] == "1.2.0"
-        assert legacy_service.read_version()["version"] == "1.2.0"
+        agent_version = version.parse_version_info(state["agent_version"])
+        server_version = version.parse_version_info(legacy_service.read_version()["version"])
+        # We change the version in the release phase.
+        # During the development the latest CloudSmith version equals to the
+        # version in the GO files but during the release it is greater.
+        assert agent_version <= expected_version_info
+        assert server_version <= expected_version_info
 
     external_service.update_agent_to_latest_version()
     external_service.update_server_to_latest_version()
 
     state = external_service.wait_for_next_machine_states()[0]
-    expected_version = get_version()
-    assert state["agent_version"] == expected_version
-    assert external_service.read_version()["version"] == expected_version
+    agent_version = version.parse_version_info(state["agent_version"])
+    server_version = version.parse_version_info(external_service.read_version()["version"])
+    assert agent_version == expected_version_info
+    assert server_version == expected_version_info

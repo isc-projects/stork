@@ -1,3 +1,4 @@
+from ast import parse
 import re
 import os.path
 
@@ -16,4 +17,13 @@ def get_version():
             if match is None:
                 continue
             return match.group(1)
-        
+
+
+def parse_version_info(version):
+    """Parses the version string to version tuple."""
+    return tuple(int(x) for x in version.split("."))
+
+
+def get_version_info():
+    """Returns the current Stork version tuple from the GO file."""
+    return parse_version_info(get_version())

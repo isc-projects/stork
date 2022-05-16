@@ -94,8 +94,11 @@ def server_parametrize(service_name="server"):
     }], indirect=True)
 
 
-def external_parametrize(version="1.2"):
-    """Sets the version of packages to install from the external repository."""
+def external_parametrize(version=""):
+    """
+    Sets the version of packages to install from the external repository.
+    Empty version means the latest available.
+    """
     return pytest.mark.parametrize("external_service", [{
         "version": version
     }], indirect=True)
@@ -272,7 +275,7 @@ def external_service(request):
     from the external repository and guarantees that they are operational.
     """
     param = {
-        "version": "1.2"
+        "version": ""
     }
 
     if hasattr(request, "param"):

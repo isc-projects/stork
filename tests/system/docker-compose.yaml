@@ -207,7 +207,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: external-packages
       args:
-        STORK_CS_VER: ${STORK_CLOUDSMITH_VERSION-1.2}*
+        STORK_CS_VER: ${STORK_CLOUDSMITH_VERSION}*
     ports:
       - "42080:8080"
     networks:
