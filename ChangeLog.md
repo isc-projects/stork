@@ -1,8 +1,13 @@
-* 209 [bug] slawek
+* 210 [bug] slawek
 
     Fixed the rake tasks that ran the database in a Docker container but were
     connecting to the database on localhost.
     (#733)
+
+* 209 [func] slawek
+
+    Added a log message when no monitored application is detected.
+    (Gitalab #713)
 
 Stork 1.3.0 released on 2022-05-11.
 
