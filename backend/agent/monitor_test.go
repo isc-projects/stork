@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	pkgerrors "github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
@@ -519,4 +521,20 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 	var oldApps []App
 
 	printNewOrUpdatedApps(newApps, oldApps)
+}
+
+func TestPrintNewOrUpdatedAppsNoAppDetected(t *testing.T) {
+	// Arrange
+	output := logrus.StandardLogger().Out
+	defer func() {
+		logrus.SetOutput(output)
+	}()
+	var buffer bytes.Buffer
+	logrus.SetOutput(&buffer)
+
+	// Act
+	printNewOrUpdatedApps([]App{}, []App{})
+
+	// Assert
+	require.Contains(t, buffer.String(), "None app detected")
 }
