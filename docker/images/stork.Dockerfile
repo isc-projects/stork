@@ -103,7 +103,10 @@ COPY webui .
 
 # Build the Stork binaries
 FROM codebase AS server-builder
-RUN rake build:server_dist
+RUN rake build:server_only_dist
+
+FROM codebase AS webui-builder
+RUN rake build:ui_only_dist
 
 FROM codebase AS agent-builder
 RUN rake build:agent_dist
@@ -129,7 +132,7 @@ HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/ver
 # Web UI container
 FROM nginx:1.21-alpine AS webui
 ENV CI=true
-COPY --from=server-builder /app/dist/server/usr/ /usr/
+COPY --from=webui-builder /app/dist/server/ /
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 ENV DOLLAR=$
 ENV API_HOST localhost
@@ -142,6 +145,7 @@ HEALTHCHECK CMD ["curl", "--fail", "http://localhost:80"]
 # Server with webui container
 FROM debian-base AS server-webui
 COPY --from=server-builder /app/dist/server /
+COPY --from=webui-builder /app/dist/server /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]

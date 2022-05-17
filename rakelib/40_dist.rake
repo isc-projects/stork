@@ -277,6 +277,13 @@ namespace :build do
 
     desc "Build server distribution directory"
     task :server_dist => [server_dist_dir]
+
+    desc "Build server distribution directory without WebUI, doc and tool"
+    task :server_only_dist => server_dist_dir_server_part
+
+    desc "Build server distribution directory only with WebUI (without server, doc and tool)"
+    task :ui_only_dist => server_dist_dir_webui_part
+
 end
 
 namespace :rebuild do
