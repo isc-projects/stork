@@ -176,6 +176,11 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
 		}
+	} else if len(newUpdatedApps) == 0 && len(oldApps) == 0 {
+		// There is an initial phase of an agent, but no app is detected.
+		// Usually, the agent is installed with at least one monitored app.
+		// The below message is printed for easier troubleshooting.
+		log.Warnf("None app detected; please check the status of monitored applications (such as Bind9 or Kea Control Agent service)")
 	}
 }
 
