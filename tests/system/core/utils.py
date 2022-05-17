@@ -48,36 +48,19 @@ class NoSuccessException(Exception):
     pass
 
 
+# Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
+TRANSIENT_EXCEPTIONS = (TimeoutError, ConnectionError, NoSuccessException)
 logger = setup_logger(__file__)
 
 
-def elapsed_time(f):
-    """Prints the elapsed time while executing a decorated function."""
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        logger.debug("TIC >>>")
-        try:
-            return f(*args, **kwargs)
-        finally:
-            end = time.time()
-            elapsed = end - start
-            logger.debug(f"TOC <<< {elapsed}s")
-    return wrapper
-            
-
-# Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
-TRANSIENT_EXCEPTIONS = (TimeoutError, ConnectionError, NoSuccessException)
-
 def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
-                     max_tries=480, sleep_time: timedelta = timedelta(milliseconds=250)):
+                     max_tries=120, sleep_time: timedelta = timedelta(seconds=1)):
     """Wait until function throws no error."""
 
     transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
 
     def outer_wrapper(f):
         @functools.wraps(f)
-        @elapsed_time
         def inner_wrapper(*args, **kwargs):
             exception = None
             logger.info(wait_msg)

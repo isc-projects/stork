@@ -15,7 +15,7 @@ func TestSettingsDumpExecute(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.InitializeSettings(db)
 	_, _ = db.Model(&[]dbmodel.Setting{
 		{
 			Name:    "foo",

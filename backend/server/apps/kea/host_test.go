@@ -1270,7 +1270,7 @@ func TestFetchHostsFromHostCmds(t *testing.T) {
 	fd := &storktest.FakeDispatcher{}
 
 	// The puller requires fetch interval to be present in the database.
-	err = dbmodel.InitializeSettings(db, 0)
+	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	// Create the puller.
@@ -1317,7 +1317,7 @@ func TestNewHostsPuller(t *testing.T) {
 	defer teardown()
 
 	// The puller requires fetch interval to be present in the database.
-	err := dbmodel.InitializeSettings(db, 0)
+	err := dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	fd := &storktest.FakeDispatcher{}
@@ -1380,7 +1380,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
 	// The puller requires fetch interval to be present in the database.
-	err = dbmodel.InitializeSettings(db, 0)
+	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	// Create the puller. It is configured to fetch the data every 60 seconds
@@ -1465,7 +1465,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPageReduceHosts, nil)
 
 	// The puller requires fetch interval to be present in the database.
-	err = dbmodel.InitializeSettings(db, 0)
+	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	// Create the puller instance.
@@ -1546,7 +1546,7 @@ func TestPartialHostsChange(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPagePartialChange, nil)
 
 	// The puller requires fetch interval to be present in the database.
-	err = dbmodel.InitializeSettings(db, 0)
+	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	// Create the puller instance.
@@ -1643,7 +1643,7 @@ func TestSkipPullingHostsIntoDB(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
 	// The puller requires fetch interval to be present in the database.
-	err = dbmodel.InitializeSettings(db, 0)
+	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
 	fd := &storktest.FakeDispatcher{}

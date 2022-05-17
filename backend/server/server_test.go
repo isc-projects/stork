@@ -31,7 +31,7 @@ func getExpectedSwitches() []string {
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-interval",
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir",
 	}
 }
 
@@ -56,7 +56,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.EqualValues(t, HelpCommand, command)
 	require.NoError(t, err)
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-server -h output"))
+	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-agent -h output"))
 }
 
 // This test checks if all expected command-line switches are documented.
@@ -68,7 +68,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
-	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-server.8.rst"))
+	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-agent.8.rst"))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.
@@ -98,7 +98,6 @@ func TestNewStorkServer(t *testing.T) {
 	os.Args = make([]string, 0)
 	os.Args = append(os.Args, "stork-server",
 		"-m",
-		"--initial-interval", "42",
 		"-d", "dbname",
 		"-u", "dbuser",
 		"--db-host", "dbhost",
@@ -131,7 +130,6 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, RunCommand, command)
 
 	require.True(t, ss.EnableMetricsEndpoint)
-	require.EqualValues(t, 42, ss.InitialPullerInterval)
 	require.EqualValues(t, "dbname", ss.DBSettings.DBName)
 	require.EqualValues(t, "dbuser", ss.DBSettings.User)
 	require.EqualValues(t, "dbhost", ss.DBSettings.Host)

@@ -44,7 +44,6 @@ type StorkServer struct {
 	Pullers *apps.Pullers
 
 	EnableMetricsEndpoint bool
-	InitialPullerInterval int64
 	MetricsCollector      metrics.Collector
 
 	EventCenter eventcenter.EventCenter
@@ -56,9 +55,8 @@ type StorkServer struct {
 
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
-	Version               bool  `short:"v" long:"version" description:"Show software version"`
-	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
-	InitialPullerInterval int64 `long:"initial-interval" description:"Override the initial puller intervals (seconds)" env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
+	Version               bool `short:"v" long:"version" description:"Show software version"`
+	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
 }
 
 // Parse the command line arguments into GO structures.
@@ -100,7 +98,6 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	}
 
 	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
-	ss.InitialPullerInterval = serverSettings.InitialPullerInterval
 
 	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
@@ -131,7 +128,7 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	}
 
 	// initialize stork settings
-	err = dbmodel.InitializeSettings(ss.DB, ss.InitialPullerInterval)
+	err = dbmodel.InitializeSettings(ss.DB)
 	if err != nil {
 		return err
 	}

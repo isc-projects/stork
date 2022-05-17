@@ -93,8 +93,6 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
-	require.NotNil(t, okRsp.Payload.Apps)
-	require.Len(t, okRsp.Payload.Apps, 0)
 }
 
 func mockGetAppsState(callNo int, cmdResponses []interface{}) {
@@ -536,30 +534,6 @@ func TestGetMachines(t *testing.T) {
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
 	require.EqualValues(t, ms.Total, 2)
-}
-
-func TestGetMachinesEmptyList(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
-	require.NoError(t, err)
-	ctx := context.Background()
-
-	var start, limit int64 = 0, 10
-	params := services.GetMachinesParams{
-		Start: &start,
-		Limit: &limit,
-	}
-
-	rsp := rapi.GetMachines(ctx, params)
-	ms := rsp.(*services.GetMachinesOK).Payload
-	require.EqualValues(t, ms.Total, 0)
-	require.NotNil(t, ms.Items)
 }
 
 // Test that a list of machines' ids and addresses/names is returned
@@ -2127,7 +2101,7 @@ func TestGetMachineDumpOK(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.InitializeSettings(db)
 	m := &dbmodel.Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
@@ -2162,7 +2136,7 @@ func TestGetMachineDumpReturnsTarball(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.InitializeSettings(db)
 	m := &dbmodel.Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
@@ -2199,7 +2173,7 @@ func TestGetMachineDumpNotExists(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.InitializeSettings(db)
 	// REST init
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -2231,7 +2205,7 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.InitializeSettings(db)
 	m := &dbmodel.Machine{
 		ID:        42,
 		Address:   "localhost",

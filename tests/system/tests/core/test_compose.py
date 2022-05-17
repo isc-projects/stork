@@ -53,8 +53,8 @@ def test_build_uses_proper_command():
     # Assert
     mock.assert_called_once()
     build_cmd = mock.call_args.kwargs["cmd"]
-    assert " ".join(build_cmd).startswith(" ".join(base_cmd))
-    assert "build" in build_cmd
+    assert " ".join(build_cmd[:-1]) == " ".join(base_cmd)
+    assert build_cmd[-1] == "build"
 
 
 def test_build_uses_build_kit_by_default():
@@ -90,7 +90,7 @@ def test_build_uses_service_names():
     compose.build("foo", "bar")
     # Assert
     build_cmd = mock.call_args.kwargs["cmd"]
-    assert "build" in build_cmd
+    assert build_cmd[-3] == "build"
     assert build_cmd[-2] == "foo"
     assert build_cmd[-1] == "bar"
 
