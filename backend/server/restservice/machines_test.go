@@ -95,7 +95,6 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
 	require.NotNil(t, okRsp.Payload.Apps)
 	require.Len(t, okRsp.Payload.Apps, 0)
-
 }
 
 func mockGetAppsState(callNo int, cmdResponses []interface{}) {
