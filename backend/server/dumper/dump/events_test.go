@@ -34,7 +34,7 @@ func TestEventsDumpExecute(t *testing.T) {
 	_ = dbmodel.AddEvent(db, &dbmodel.Event{
 		CreatedAt: time.Time{},
 		Text:      "bar",
-		// Info level event - it shouldn't be in the dump.
+		// Info level event - it shouldn be in the dump too.
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
 			MachineID: m.ID,
@@ -55,7 +55,38 @@ func TestEventsDumpExecute(t *testing.T) {
 	events, ok := artifactContent.([]dbmodel.Event)
 	require.True(t, ok)
 
-	require.Len(t, events, 1)
+	require.Len(t, events, 2)
 	event := events[0]
+	require.EqualValues(t, "bar", event.Text)
+	event = events[1]
 	require.EqualValues(t, "foo", event.Text)
+}
+
+// Test that the dump contains an empty list if there is no event.
+func TestEventsDumpExecuteNoEvents(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:         0,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	dump := dumppkg.NewEventsDump(db, m)
+
+	// Act
+	err := dump.Execute()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, dump.GetArtifactsNumber())
+	artifact := dump.GetArtifact(0).(dumppkg.StructArtifact)
+	artifactContent := artifact.GetStruct()
+	require.NotNil(t, artifactContent)
+	events, ok := artifactContent.([]dbmodel.Event)
+	require.True(t, ok)
+	require.Len(t, events, 0)
 }

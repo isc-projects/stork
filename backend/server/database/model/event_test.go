@@ -158,4 +158,12 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvWarning, events[0].Level)
 	require.EqualValues(t, u, events[0].Relations.UserID)
 	require.EqualValues(t, "some warning event", events[0].Text)
+
+	// no events
+	unknownDaemonType := "unknownDaemonType"
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, &unknownDaemonType, nil, nil, &u, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
+	require.NotNil(t, events)
+	require.Empty(t, events)
 }

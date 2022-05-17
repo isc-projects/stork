@@ -27,8 +27,8 @@ func (d *EventsDump) Execute() error {
 		d.db,
 		// Limit and offset
 		0, 1000,
-		// Severity
-		1,
+		// Severity - accepts all events
+		0,
 		// Filters
 		nil, nil, &d.machineID, nil,
 		// Sorting

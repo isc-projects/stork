@@ -59,7 +59,7 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonTy
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
-	var events []Event
+	events := []Event{}
 
 	// prepare query
 	q := db.Model(&events)
