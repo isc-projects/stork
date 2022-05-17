@@ -17,7 +17,7 @@ def test_update_stork_from_the_latest_released_version(external_service: Externa
         server_version = version.parse_version_info(legacy_service.read_version()["version"])
         # We change the version in the release phase.
         # During the development the latest CloudSmith version equals to the
-        # version in the GO files but during the release it is greater.
+        # version in the GO files but during the release it is lower.
         assert agent_version <= expected_version_info
         assert server_version <= expected_version_info
 
