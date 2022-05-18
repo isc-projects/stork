@@ -68,9 +68,10 @@ customers should feel free to open a ticket for assistance if needed.
 Detach mode
 ~~~~~~~~~~~
 
-It is possible to start the demo in detach mode. It will no longer depend on
-the terminal and run in the background until the call ``rake demo:down``.
-To enable the detach mode use the DETACH variable with a ``true`` value.
+It is possible to start the demo in detached mode. In that case, it
+does not depend on the terminal and runs in the background until the
+``rake demo:down`` call. To enable the detached mode, specify the
+DETACH variable set to ``true``.
 
 .. code-block:: console
 
