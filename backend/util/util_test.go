@@ -252,10 +252,13 @@ func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	filename := fmt.Sprintf("foo%s.ext", timestamp)
 
 	// Act
-	_, _, _, err := ParseTimestampFilename(filename)
+	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
+	require.Empty(t, prefix)
+	require.NotNil(t, timestampObj)
+	require.Empty(t, extension)
 }
 
 // Function for a invalid prefix should return error.
@@ -265,10 +268,13 @@ func TestParseTimestampFilenameErrorForInvalid(t *testing.T) {
 	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	_, _, _, err := ParseTimestampFilename(filename)
+	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
+	require.NotEmpty(t, prefix)
+	require.NotNil(t, timestampObj)
+	require.NotEmpty(t, extension)
 }
 
 // Function for too short prefix should return error.
@@ -278,10 +284,13 @@ func TestParseTimestampFilenameTooShort(t *testing.T) {
 	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	_, _, _, err := ParseTimestampFilename(filename)
+	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
+	require.EqualValues(t, "foo_", prefix)
+	require.NotNil(t, timestampObj)
+	require.EqualValues(t, ".ext", extension)
 }
 
 // Function for a valid prefix should return rest of filename.

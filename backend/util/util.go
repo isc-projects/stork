@@ -283,7 +283,7 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 		err = errors.New("missing prefix delimiter")
 		return
 	}
-	timestampStart += 1
+	timestampStart++
 	prefix = filename[:timestampStart]
 
 	timestampEnd := strings.Index(filename[timestampStart:], ".")
