@@ -6,7 +6,7 @@
 
 * 209 [func] slawek
 
-    Added a log message when no monitored application is detected.
+    Log a warning message when no monitored application is detected.
     (Gitalab #713)
 
 Stork 1.3.0 released on 2022-05-11.
