@@ -63,7 +63,7 @@ func (s *executionSummary) getSuccessfulDumps() []dump.Dump {
 
 // simplify the execution summary to the serializable form.
 func (s *executionSummary) simplify() *executionSummarySimplified {
-	var steps []*executionSummaryStepSimplified
+	steps := []*executionSummaryStepSimplified{}
 
 	for _, source := range s.Steps {
 		steps = append(steps, source.simplify())
@@ -111,7 +111,7 @@ func (s *executionSummaryStep) isSuccess() bool {
 
 // simplify the execution summary step to the serializable form.
 func (s *executionSummaryStep) simplify() *executionSummaryStepSimplified {
-	var artifactNames []string
+	artifactNames := []string{}
 	for i := 0; i < s.Dump.GetArtifactsNumber(); i++ {
 		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).GetName())
 	}

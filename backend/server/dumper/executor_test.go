@@ -119,6 +119,22 @@ func TestSimplifySuccessExecutionStep(t *testing.T) {
 	require.EqualValues(t, "SUCCESS", simplify.Status)
 }
 
+// Test that the execution step with an empty dump is simplified as expected.
+func TestSimplifyExecutionStepWithEmptyDump(t *testing.T) {
+	// Arrange
+	step := newExecutionSummaryStep(dump.NewBasicDump("foo"), nil)
+
+	// Act
+	simplify := step.simplify()
+
+	// Assert
+	require.EqualValues(t, "foo", simplify.Name)
+	require.NoError(t, simplify.Error)
+	require.EqualValues(t, "SUCCESS", simplify.Status)
+	require.NotNil(t, simplify.Artifacts)
+	require.Len(t, simplify.Artifacts, 0)
+}
+
 // Test that the execution step with an error is simplified as expected.
 func TestSimplifyFailedExecutionStep(t *testing.T) {
 	// Arrange
@@ -164,6 +180,23 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	timeDelta := summary.Timestamp.Sub(actualTimestamp)
 	require.LessOrEqual(t, timeDelta.Seconds(), float64(1))
 	require.Len(t, simplified.Steps, 1)
+}
+
+// Test that the empty execution summary is simplified properly.
+func TestSimplifyEmptyExecutionSummary(t *testing.T) {
+	// Arrange
+	summary := newExecutionSummary()
+
+	// Act
+	simplified := summary.simplify()
+	actualTimestamp, err := time.Parse(time.RFC3339, simplified.Timestamp)
+
+	// Assert
+	require.NoError(t, err)
+	timeDelta := summary.Timestamp.Sub(actualTimestamp)
+	require.LessOrEqual(t, timeDelta.Seconds(), float64(1))
+	require.NotNil(t, simplified.Steps)
+	require.Len(t, simplified.Steps, 0)
 }
 
 // Test that the dumps are executed properly.
