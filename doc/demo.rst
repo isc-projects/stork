@@ -65,7 +65,7 @@ customers should feel free to open a ticket for assistance if needed.
 
    $ rake demo:up CS_REPO_ACCESS_TOKEN=<access token>
 
-Detached mode
+Detached Mode
 ~~~~~~~~~~~~~
 
 It is possible to start the demo in detached mode. In that case, it
