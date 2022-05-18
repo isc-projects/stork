@@ -293,8 +293,8 @@ func TestParseTimestampFilenameTooShort(t *testing.T) {
 	require.EqualValues(t, ".ext", extension)
 }
 
-// Function for a valid prefix should return rest of filename.
-func TestParseTimestampFilenameRestOfFilenameForValid(t *testing.T) {
+// Function for a valid timestamp should return prefix and extension of filename.
+func TestParseTimestampFilenamePrefixOfFilenameForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
