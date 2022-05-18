@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -2238,9 +2237,9 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	// Assert
 	require.Len(t, submatches, 2)
 	filename := submatches[1]
-	timestamp, rest, err := storkutil.ParseTimestampPrefix(filename)
+	rest, timestamp, extension, err := storkutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
 	require.Contains(t, rest, "machine-42")
-	require.True(t, strings.HasSuffix(filename, ".tar.gz"))
+	require.EqualValues(t, extension, ".tar.gz")
 	require.LessOrEqual(t, time.Now().UTC().Sub(timestamp).Seconds(), float64(10))
 }

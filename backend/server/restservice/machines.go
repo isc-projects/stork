@@ -723,9 +723,9 @@ func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachine
 	}
 
 	dispositionHeaderValue := fmt.Sprintf(
-		"attachment; filename=\"%s_stork-machine-%d-dump.tar.gz\"",
-		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
+		"attachment; filename=\"stork-machine-%d-dump_%s.tar.gz\"",
 		params.ID,
+		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
 	)
 
 	rsp := services.

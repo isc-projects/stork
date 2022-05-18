@@ -2,7 +2,6 @@ package dumper
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,9 +25,9 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	_, _, err := storkutil.ParseTimestampPrefix(filename)
+	_, _, extension, err := storkutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
-	require.True(t, strings.HasSuffix(filename, ".json"))
+	require.EqualValues(t, extension, ".json")
 	require.Contains(t, filename, dump.GetName())
 	require.Contains(t, filename, artifact.GetName())
 }
@@ -44,9 +43,9 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	_, _, err := storkutil.ParseTimestampPrefix(filename)
+	_, _, extension, err := storkutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
-	require.False(t, strings.HasSuffix(filename, ".json"))
+	require.Empty(t, extension)
 	require.Contains(t, filename, dump.GetName())
 	require.Contains(t, filename, artifact.GetName())
 }

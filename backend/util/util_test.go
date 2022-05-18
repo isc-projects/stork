@@ -228,85 +228,107 @@ func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 }
 
 // Function for a valid prefix should return no error.
-func TestParseTimestampPrefixNoErrorForValid(t *testing.T) {
+func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	_, _, err := ParseTimestampPrefix(filename)
+	prefix, parsedTimestamp, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.NoError(t, err)
+	require.EqualValues(t, time.Time{}, parsedTimestamp)
+	require.EqualValues(t, "foo_", prefix)
+	require.EqualValues(t, ".ext", extension)
 }
 
 // Function for a missing delimiter in prefix should return error.
-func TestParseTimestampPrefixErrorForNoDelimiter(t *testing.T) {
+func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("%sfoo.ext", timestamp)
+	filename := fmt.Sprintf("foo%s.ext", timestamp)
 
 	// Act
-	_, _, err := ParseTimestampPrefix(filename)
+	_, _, _, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
 }
 
 // Function for a invalid prefix should return error.
-func TestParseTimestampPrefixErrorForInvalid(t *testing.T) {
+func TestParseTimestampFilenameErrorForInvalid(t *testing.T) {
 	// Arrange
 	timestamp := "bar"
-	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	_, _, err := ParseTimestampPrefix(filename)
+	_, _, _, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
 }
 
 // Function for too short prefix should return error.
-func TestParseTimestampPrefixTooShort(t *testing.T) {
+func TestParseTimestampFilenameTooShort(t *testing.T) {
 	// Arrange
 	timestamp := "2021-11-15T12:00:00"
-	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	_, _, err := ParseTimestampPrefix(filename)
+	_, _, _, err := ParseTimestampFilename(filename)
 
 	// Assert
 	require.Error(t, err)
 }
 
 // Function for a valid prefix should return rest of filename.
-func TestParseTimestampPrefixRestOfFilenameForValid(t *testing.T) {
+func TestParseTimestampFilenameRestOfFilenameForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("%s_foo-bar.ext", timestamp)
+	filename := fmt.Sprintf("foo-bar_%s.ext", timestamp)
 
 	// Act
-	_, prefix, _ := ParseTimestampPrefix(filename)
+	prefix, _, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
-	require.EqualValues(t, "_foo-bar.ext", prefix)
+	require.NoError(t, err)
+	require.EqualValues(t, "foo-bar_", prefix)
+	require.EqualValues(t, ".ext", extension)
 }
 
 // Function for a valid prefix should return the parsed timestamp.
-func TestParseTimestampPrefixTimestampForValid(t *testing.T) {
+func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
 	// Act
-	timestampObj, _, _ := ParseTimestampPrefix(filename)
+	_, timestampObj, extension, err := ParseTimestampFilename(filename)
 
 	// Assert
+	require.NoError(t, err)
 	require.EqualValues(t, time.Time{}, timestampObj)
+	require.EqualValues(t, ".ext", extension)
+}
+
+// Function for a duble extension should return a full extension.
+func TestParseTimestampFilenameDoubleExtension(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp = strings.ReplaceAll(timestamp, ":", "-")
+	filename := fmt.Sprintf("foo_%s.bar.baz", timestamp)
+
+	// Act
+	_, _, extension, err := ParseTimestampFilename(filename)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, ".bar.baz", extension)
 }
 
 // Test that function returns true for proper filename.

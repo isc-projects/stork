@@ -275,22 +275,36 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 	return text, nil
 }
 
-// Check if the filename has a conventional timestamp prefix.
+// Check if the filename has a conventional timestamp suffix.
 // Returns a parsed timestamp, rest of filename and error (if failed).
-func ParseTimestampPrefix(filename string) (time.Time, string, error) {
-	timestampEnd := strings.Index(filename, "_")
-	if timestampEnd <= 0 {
-		return time.Time{}, "", errors.New("missing prefix delimiter")
+func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time, extension string, err error) {
+	timestampStart := strings.LastIndex(filename, "_")
+	if timestampStart <= 0 {
+		err = errors.New("missing prefix delimiter")
+		return
 	}
-	if timestampEnd < len(time.RFC3339)-5 { // Timezone is optional
-		return time.Time{}, "", errors.New("timestamp is too short")
+	timestampStart += 1
+	prefix = filename[:timestampStart]
+
+	timestampEnd := strings.Index(filename[timestampStart:], ".")
+	if timestampEnd >= 0 {
+		timestampEnd += timestampStart
+		extension = filename[timestampEnd:]
+	} else {
+		timestampEnd = len(filename)
 	}
 
-	raw := filename[:timestampEnd]
+	if timestampEnd-timestampStart < len(time.RFC3339)-5 { // Timezone is optional
+		err = errors.New("timestamp is too short")
+		return
+	}
+
+	raw := filename[timestampStart:timestampEnd]
 	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
 
-	timestamp, err := time.Parse(time.RFC3339, raw)
-	return timestamp, filename[len(raw):], err
+	timestamp, err = time.Parse(time.RFC3339, raw)
+	err = errors.Wrapf(err, "cannot parse a timestamp: %s", raw)
+	return
 }
 
 // Check if it is possible to create a file
