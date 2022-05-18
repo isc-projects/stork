@@ -34,7 +34,7 @@ func TestEventsDumpExecute(t *testing.T) {
 	_ = dbmodel.AddEvent(db, &dbmodel.Event{
 		CreatedAt: time.Time{},
 		Text:      "bar",
-		// Info level event - it shouldn be in the dump too.
+		// Info level event - it should be in the dump too.
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
 			MachineID: m.ID,
