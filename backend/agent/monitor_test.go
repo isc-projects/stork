@@ -523,7 +523,11 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 	printNewOrUpdatedApps(newApps, oldApps)
 }
 
-func TestPrintNewOrUpdatedAppsNoAppDetected(t *testing.T) {
+// The monitor periodically searches for the Kea/Bind9 instances. Usually, at
+// least one application should be available. If no monitored app is found,
+// the Stork prints the warning message to indicate that something unexpected
+// happened.
+func TestPrintNewOrUpdatedAppsNoAppDetectedWarning(t *testing.T) {
 	// Arrange
 	output := logrus.StandardLogger().Out
 	defer func() {
@@ -536,5 +540,5 @@ func TestPrintNewOrUpdatedAppsNoAppDetected(t *testing.T) {
 	printNewOrUpdatedApps([]App{}, []App{})
 
 	// Assert
-	require.Contains(t, buffer.String(), "None app detected")
+	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
 }
