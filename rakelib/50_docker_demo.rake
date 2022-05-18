@@ -68,7 +68,7 @@ namespace :demo do
     #     - default
     # Cache - doesn't rebuild the container
     # Services - list of service names; if empty then all services are used
-    # Detach - run services in the detach mode
+    # Detach - run services in the detached mode
     # Environment variables:
     # CS_REPO_ACCESS_TOKEN - CloudSmith repo token, required for premium services
     def get_docker_opts(server_mode, cache, detach, services)
@@ -133,7 +133,7 @@ namespace :demo do
     # if the input list is empty
     # SERVER_MODE - server mode - choice: host, with-ui, without-ui, no-server, default
     # CACHE - doesn't rebuild the containers if present - default: true
-    # DETACH - run services in detach mode - default: false
+    # DETACH - run services in detached mode - default: false
     def docker_up_services(*services)
         # Read arguments from the environment variables
         server_mode = ENV["SERVER_MODE"]

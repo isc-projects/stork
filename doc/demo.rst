@@ -65,8 +65,8 @@ customers should feel free to open a ticket for assistance if needed.
 
    $ rake demo:up CS_REPO_ACCESS_TOKEN=<access token>
 
-Detach mode
-~~~~~~~~~~~
+Detached mode
+~~~~~~~~~~~~~
 
 It is possible to start the demo in detached mode. In that case, it
 does not depend on the terminal and runs in the background until the
