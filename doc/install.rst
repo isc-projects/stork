@@ -461,15 +461,19 @@ rules will be applied:
 * Otherwise
    ANSI colors are enabled if TTY is used.
 
+..
+   The above rules are defined in the ``isColored()`` method in the
+   ``TextFormatter`` class of the ``logrus`` package.
+
 For example, to disable the output colorization, you should use:
 
 .. code-block:: console
 
    rake run:server CLICOLOR=0
 
-..
-   The above rules are defined in the ``isColored()`` method in the
-   ``TextFormatter`` class of the ``logrus`` package.
+.. note::
+
+   You can also use the ``true`` and ``false`` values instead of ``1`` and ``0``.
 
 .. _secure-server-agent:
 

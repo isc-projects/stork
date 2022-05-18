@@ -108,6 +108,19 @@ func IsHexIdentifier(text string) bool {
 }
 
 func SetupLogging() {
+	// Normalizes the color environment variables from the standard Stork
+	// convention.
+	variables := []string{"CLICOLOR_FORCE", "CLICOLOR"}
+	for _, variable := range variables {
+		if value, ok := os.LookupEnv(variable); ok {
+			if strings.ToLower(value) == "true" {
+				os.Setenv(variable, "1")
+			} else if strings.ToLower(value) == "false" {
+				os.Setenv(variable, "0")
+			}
+		}
+	}
+
 	log.SetLevel(log.InfoLevel)
 	log.SetOutput(os.Stdout)
 	log.SetReportCaller(true)
