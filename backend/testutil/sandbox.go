@@ -1,9 +1,10 @@
 package testutil
 
 import (
-	"log"
 	"os"
 	"path"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Sandbox is an object that creates a sandbox for files or directories

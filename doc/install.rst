@@ -448,6 +448,29 @@ using an agent token:
    that the ``STORK_AGENT_HOST`` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
 
+To control the logging colorization, Stork supports the ``CLICOLOR`` and
+``CLICOLOR_FORCE``standard UNIX environment variables. When set, the following
+rules will be applied:
+
+* ``CLICOLOR_FORCE`` != ``0``
+   ANSI colors should be enabled no matter what.
+* ``CLICOLOR_FORCE`` == ``0``
+   Don't output ANSI color escape codes.
+* ``CLICOLOR_FORCE`` is unset and ``CLICOLOR`` == ``0``
+   Don't output ANSI color escape codes.
+* Otherwise
+   ANSI colors are enabled if TTY is used.
+
+For example, to disable the output colorization, you should use:
+
+.. code-block:: console
+
+   rake run:server CLICOLOR=0
+
+..
+   The above rules are defined in the ``isColored()`` method in the
+   ``TextFormatter`` class of the ``logrus`` package.
+
 .. _secure-server-agent:
 
 Securing Connections Between the Stork Server and a Stork Agent

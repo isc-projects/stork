@@ -2,13 +2,13 @@ package dbtest
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 )
