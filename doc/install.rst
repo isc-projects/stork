@@ -449,7 +449,7 @@ using an agent token:
    address, or a non-link-local IPv6 address.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
-``CLICOLOR_FORCE``standard UNIX environment variables. When set, the following
+``CLICOLOR_FORCE`` standard UNIX environment variables. When set, the following
 rules will be applied:
 
 * ``CLICOLOR_FORCE`` != ``0``
