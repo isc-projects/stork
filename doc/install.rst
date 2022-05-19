@@ -280,7 +280,12 @@ Next, install the Stork server package:
 
 .. code-block:: console
 
-   $ apk add isc-stork-server
+   $ apk add --allow-untrusted isc-stork-server
+
+.. warning::
+
+   You must to use the ``--allow-untrusted`` flag. The FPM packaging tool we use to prepare
+   the package doesn't support the signatures for the APK package type.
 
 Setup
 ~~~~~
