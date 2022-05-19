@@ -267,6 +267,10 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 
    $ sudo yum install isc-stork-server
 
+..
+   
+   ToDo: There should be a section about Alpine but we don't have the shell script on CloudSmith yet.
+
 Setup
 ~~~~~
 
