@@ -201,6 +201,11 @@ build_apks:
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
+    - cp dist/pkgs/*.apk ./
+  artifacts:
+    paths:
+      - isc-stork-*.apk
+    expire_in: 1 hour
 
 packages:
   stage: build
