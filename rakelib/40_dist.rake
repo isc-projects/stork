@@ -7,26 +7,38 @@
 ##############
 
 def get_pkg_type()
-    begin
-        _, _, status = Open3.capture3("rpm", "-q", "-a")
-        if status.success?
-            return "rpm"
-        end
-    rescue Exception
-        # Command not exist
+    # Read environment variable
+    if !ENV["PKG_TYPE"].nil?
+        return ENV["PKG_TYPE"]
     end
 
-    begin
-        _, _, status = Open3.capture3("dpkg", "-l")
-        if status.success?
-            return "deb"
+    # Mapping between the package type and a command to check if it's supported.
+    supported_type_checks = {
+        "rpm" => ["rpm", "-q", "-a"],
+        "deb" => ["dpkg", "-l"],
+        "apk" => ["apk", "--version"]
+    }
+
+    supported_types = []
+
+    supported_type_checks.each do |type, check|
+        begin
+            _, _, status = Open3.capture3(*check)
+            if status.success?
+                supported_types.append(type)
+            end
+        rescue Exception
+            # Command not exist
         end
-    rescue Exception
-        # Command not exist
     end
 
-    puts "Unknown package type for current OS."
-    fail
+    if supported_types.empty?
+        fail "Unknown package type for current OS."
+    elsif supported_types.length != 1
+        fail "Ambiguous package type for current OS: #{supported_types}. Use PKG_TYPE to specify one of them"
+    end
+
+    return supported_types[0]
 end
 
 pkgs_dir = "dist/pkgs"
@@ -333,6 +345,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
     task :dist do
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem")
+        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc")
     end
 end

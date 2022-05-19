@@ -27,6 +27,16 @@ def which(cmd)
     nil
 end
 
+# Returns true if the libc-musl variant of the libc library is used. Otherwise,
+# returns false (the standard variant is used).
+def detect_libc_musl()
+    platform = Gem::Platform.local
+    if platform.version.nil?
+        return false
+    end
+    return platform.version == "musl"
+end
+
 # Searches for the tasks in the provided file
 def find_tasks(file)
     tasks = []
@@ -102,18 +112,54 @@ def find_and_prepare_deps(file)
     end
 end
 
+# The below list contains the prerequisites related to the libc library but
+# without official libc-musl variants. They cannot be installed using this Rake
+# script.
+$prerequisites_without_official_libc_musl_packages = []
+
 # Searches for the prerequisites from the init file in the provided file and
 # checks if they exist. It accepts the system-wide dependencies list and tests
 # if they are in PATH.
 def check_deps(file, *system_deps)
-    puts "Prerequisites:"
-    
     if file == __FILE__
         prerequisites_tasks = find_tasks(file)
     else
         prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
     end
 
+    if detect_libc_musl()
+        musl_prerequisites_tasks = []
+        prerequisites_tasks.each do |t|
+            if $prerequisites_without_official_libc_musl_packages.include? t.name
+                musl_prerequisites_tasks.append t
+            end
+        end
+
+        musl_prerequisites_tasks.each do |t|
+            prerequisites_tasks.delete t
+        end
+
+        puts "Prerequisites without an official libc-musl packages:"
+        musl_prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
+            if t.class != Rake::FileTask
+                next
+            end
+    
+            path = t.to_s
+            name = path
+            _, _, name = path.rpartition("/")
+    
+            status = "[ OK ]"
+            if !File.exist?(path)
+                status = "[MISS]"
+            end
+    
+            print status, " ", name, " (", path, ")\n"
+    
+        end
+    end
+
+    puts "Prerequisites:"
     prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
         if t.class != Rake::FileTask
             next
@@ -328,11 +374,27 @@ goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
-
 node_bin_dir = File.join(node_dir, "bin")
-use_system_nodejs = ENV["USE_SYSTEM_NODEJS"] == "true"
-if use_system_nodejs
+protoc_dir = go_tools_dir
+
+# Dependencies related to the `libc` library that don't have official
+# distributions with the `libc-musl` variant.
+# They must be installed out of the Rake if the `libc-musl` library is required.
+use_libc_musl = detect_libc_musl()
+
+if use_libc_musl
     node_bin_dir = "/usr/bin"
+    protoc_dir = "/usr/bin"
+
+    gobin = ENV["GOBIN"]
+    gopath = ENV["GOPATH"]
+    goroot = ENV["GOROOT"]
+    if gobin.nil?
+        gobin = which("go")
+        if !gobin.nil?
+            gobin = File.dirname gobin
+        end
+    end
 end
 
 # Environment variables
@@ -388,7 +450,7 @@ end
 
 NPM = File.join(node_bin_dir, "npm")
 file NPM => [node_dir] do
-    if use_system_nodejs
+    if use_libc_musl
         fail "missing system NPM"
     end
 
@@ -399,21 +461,22 @@ file NPM => [node_dir] do
         sh "rm", "node.tar.xz"
     end
     sh NPM, "--version"
-    sh "touch", "-c", NPM
 end
-if !use_system_nodejs
+if !use_libc_musl
     add_version_guard(NPM, node_ver)
 end
+$prerequisites_without_official_libc_musl_packages.append NPM
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
-    if use_system_nodejs
+    if use_libc_musl
         fail "missing system NPX"
     end
 
     sh NPX, "--version"
     sh "touch", "-c", NPX
 end
+$prerequisites_without_official_libc_musl_packages.append NPX
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
@@ -489,6 +552,7 @@ file GO => [go_tools_dir] do
     sh GO, "version"
 end
 add_version_guard(GO, go_ver)
+$prerequisites_without_official_libc_musl_packages.append GO
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [go_tools_dir] do
@@ -498,8 +562,12 @@ file GOSWAGGER => [go_tools_dir] do
 end
 add_version_guard(GOSWAGGER, goswagger_ver)
 
-PROTOC = File.join(go_tools_dir, "protoc")
+PROTOC = File.join(protoc_dir, "protoc")
 file PROTOC => [go_tools_dir] do
+    if use_libc_musl
+        fail "missing system PROTOC"
+    end
+
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
         sh "unzip", "-o", "-j", "protoc.zip", "bin/protoc"
@@ -509,6 +577,7 @@ file PROTOC => [go_tools_dir] do
     sh "touch", "-c", PROTOC
 end
 add_version_guard(PROTOC, protoc_ver)
+$prerequisites_without_official_libc_musl_packages.append PROTOC
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
 file PROTOC_GEN_GO => [GO] do
@@ -616,5 +685,5 @@ desc 'Check all system-level dependencies'
 task :check do
     check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr", "git",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
-        "docker", "openssl", "gem")
+        "docker", "openssl", "gem", "make", "gcc")
 end

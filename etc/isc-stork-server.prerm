@@ -1,4 +1,6 @@
 #!/bin/sh
 
-systemctl disable isc-stork-server
-systemctl stop isc-stork-server
+if [ -x "$(command -v systemctl)" ]; then
+    systemctl disable isc-stork-server
+    systemctl stop isc-stork-server
+fi

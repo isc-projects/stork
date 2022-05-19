@@ -9,6 +9,8 @@ if [ -e /etc/redhat-release ]; then
             # do nothing
             ;;
     esac
+elif [ -x "$(command -v busybox)" ]; then
+    deluser stork-agent >/dev/null || /bin/true
 else
     deluser --system stork-agent >/dev/null || /bin/true
 fi

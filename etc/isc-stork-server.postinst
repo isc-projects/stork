@@ -7,6 +7,9 @@ if [ -e /etc/redhat-release ]; then
     if [ ! $(getent passwd stork-server) ]; then
         useradd --system --home-dir /var/lib/ stork-server
     fi
+elif [ -x "$(command -v busybox)" ]; then
+    addgroup -S stork-server >/dev/null
+    adduser -h $home_dir -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
 else
     adduser --quiet --system --group --home /var/lib/ \
             --no-create-home --disabled-password --disabled-login \
