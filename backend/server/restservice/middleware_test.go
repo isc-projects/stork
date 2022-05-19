@@ -111,7 +111,8 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 	// prepare folders
 	os.Mkdir(path.Join(tmpDir, "assets"), 0o755)
-	os.Mkdir(path.Join(tmpDir, "assets/pkgs"), 0o755)
+	packagesDir := path.Join(tmpDir, "assets/pkgs")
+	os.Mkdir(packagesDir, 0o755)
 
 	// let do some request
 	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
@@ -119,7 +120,23 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	resp = w.Result()
 	resp.Body.Close()
-	require.EqualValues(t, 500, resp.StatusCode)
+	require.EqualValues(t, 404, resp.StatusCode)
+	require.False(t, requestReceived)
+
+	// create packages
+	for _, extension := range []string{".deb", ".apk", ".rpm"} {
+		f, err := os.Create(path.Join(packagesDir, "isc-stork-agent"+extension))
+		require.NoError(t, err)
+		f.Close()
+	}
+
+	// let do some request
+	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp = w.Result()
+	resp.Body.Close()
+	require.EqualValues(t, 200, resp.StatusCode)
 	require.False(t, requestReceived)
 
 	// let request something else, it should be forwarded to nextHandler

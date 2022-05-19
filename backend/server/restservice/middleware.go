@@ -132,11 +132,14 @@ func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Han
 	const agentInstallerScript = `#!/bin/bash
 set -e -x
 
-rm -f /tmp/isc-stork-agent.{deb,rpm}
+rm -f /tmp/isc-stork-agent.{deb,rpm,apk}
 
 if [ -e /etc/debian_version ]; then
     curl -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}{{.DebPath}}"
     DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold /tmp/isc-stork-agent.deb
+elif [ -e /etc/alpine-release ]; then
+	wget -O /tmp/isc-stork-agent.apk "{{.ServerAddress}}{{.ApkPath}}"
+	apk add --no-cache --no-network /tmp/isc-stork-agent.apk
 else
     curl -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}{{.RpmPath}}"
     yum install -y /tmp/isc-stork-agent.rpm
@@ -163,36 +166,44 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 				return
 			}
 
-			var debFile string
-			var rpmFile string
+			packageExtensions := []string{".deb", ".rpm", ".apk"}
+			packageFiles := map[string]string{}
 			for _, f := range files {
-				if strings.HasPrefix(f.Name(), "isc-stork-agent") {
-					if strings.HasSuffix(f.Name(), ".deb") {
-						debFile = f.Name()
-					} else if strings.HasSuffix(f.Name(), ".rpm") {
-						rpmFile = f.Name()
+				if !strings.HasPrefix(f.Name(), "isc-stork-agent") {
+					continue
+				}
+
+				for _, extension := range packageExtensions {
+					if strings.HasSuffix(f.Name(), extension) {
+						packageFiles[extension] = f.Name()
 					}
 				}
 			}
 
-			if debFile == "" || rpmFile == "" {
-				var msg string
-				if debFile == "" {
-					msg = fmt.Sprintf("Cannot find agent deb file in '%s' directory\n", pkgsDir)
-				} else {
-					msg = fmt.Sprintf("Cannot find agent rpm file in '%s' directory\n", pkgsDir)
+			if len(packageFiles) != len(packageExtensions) {
+				for _, extension := range packageExtensions {
+					if _, ok := packageFiles[extension]; ok {
+						continue
+					}
+
+					msg := fmt.Sprintf("Cannot find agent %s file in '%s' directory\n", extension, pkgsDir)
+					log.Errorf(msg)
+					w.WriteHeader(http.StatusNotFound)
+					fmt.Fprint(w, msg)
+					return
 				}
-				log.Errorf(msg)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, msg)
-				return
 			}
 
 			data := map[string]string{
 				"ServerAddress": r.Host,
-				"DebPath":       path.Join("/assets/pkgs", debFile),
-				"RpmPath":       path.Join("/assets/pkgs", rpmFile),
 			}
+
+			for extension, path := range packageFiles {
+				key := strings.TrimLeft(extension, ".")
+				key = strings.ToUpper(key[0:1]) + key[1:] + "Path"
+				data[key] = path
+			}
+
 			t := template.Must(template.New("script").Parse(agentInstallerScript))
 			err = t.Execute(w, data)
 			if err != nil {
