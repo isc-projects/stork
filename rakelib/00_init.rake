@@ -335,12 +335,6 @@ if use_system_nodejs
     node_bin_dir = "/usr/bin"
 end
 
-node_bin_dir = File.join(node_dir, "bin")
-use_system_nodejs = ENV["USE_SYSTEM_NODEJS"] == "true"
-if use_system_nodejs
-    node_bin_dir = "/usr/bin"
-end
-
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
 ENV["BUNDLE_PATH"] = ruby_tools_dir
