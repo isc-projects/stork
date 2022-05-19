@@ -1,3 +1,9 @@
+* 234 [build] slawek
+
+    Prepared scripts for building native APK packages with Stork Server and
+    Stork Agent. They are prepared for Alpine 3.15.
+    (#736)
+
 * 233 [func] slawek
 
     Added two Kea configuration checkers. The first one finds the overlapping

@@ -267,9 +267,20 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 
    $ sudo yum install isc-stork-server
 
-..
-   
-   ToDo: There should be a section about Alpine but we don't have the shell script on CloudSmith yet.
+Installing on Alpine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The first step for Alpine is:
+
+.. code-block:: console
+
+   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/setup.alpine.sh' | sh
+
+Next, install the Stork server package:
+
+.. code-block:: console
+
+   $ apk add isc-stork-server
 
 Setup
 ~~~~~
