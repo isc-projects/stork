@@ -12,7 +12,7 @@ def get_pkg_type()
         return ENV["PKG_TYPE"]
     end
 
-    # Mapping between the package type and a command to check if it's supported.
+    # Mapping between the package type and a command to check if the type is supported.
     supported_type_checks = {
         "rpm" => ["rpm", "-q", "-a"],
         "deb" => ["dpkg", "-l"],
@@ -345,6 +345,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
     task :dist do
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc")
+        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc", "tar")
     end
 end
