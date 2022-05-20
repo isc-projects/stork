@@ -266,6 +266,13 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// for dhcp4 and dhcp6 daemons.
 	for _, d := range dbApp.Daemons {
 		if d.KeaDaemon != nil && d.Active {
+			if d.KeaDaemon.Config != nil {
+				// Ignore the daemons without the statistic hook to avoid
+				// produce confusing error messages.
+				if _, _, present := d.KeaDaemon.Config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
+					continue
+				}
+			}
 			switch d.Name {
 			case dhcp4:
 				// Add daemon, cmd, and response for DHCP4 lease stats

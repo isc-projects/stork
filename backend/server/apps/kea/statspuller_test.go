@@ -502,3 +502,48 @@ func TestStatsPullerPullStatsKea16Format(t *testing.T) {
 func TestStatsPullerPullStatsKea18Format(t *testing.T) {
 	checkStatsPullerPullStats(t, "1.8")
 }
+
+// The Kea application without the stat_cmds hook should be ignored when
+// fetching the statistics and producing no error.
+func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbmodel.InitializeSettings(db)
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+
+	app := &dbmodel.App{
+		ID:   1,
+		Type: dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Active: true,
+				Name:   "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{},
+					}),
+				},
+			},
+			{
+				Active: true,
+				Name:   "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{},
+					}),
+				},
+			},
+		},
+	}
+
+	sp, _ := NewStatsPuller(db, fa)
+
+	// Act
+	err := sp.getStatsFromApp(app)
+
+	// Assert
+	require.NotZero(t, len(app.GetActiveDHCPDaemonNames()))
+	require.NoError(t, err)
+}

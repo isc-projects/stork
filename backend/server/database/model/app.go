@@ -469,14 +469,14 @@ func DeleteApp(dbi dbops.DBI, app *App) error {
 // creating commands to be send to active DHCP servers.
 func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
 	if app.Type != AppTypeKea {
-		return daemons
+		return
 	}
 	for _, d := range app.Daemons {
 		if d.Active && (d.Name == DaemonNameDHCPv4 || d.Name == DaemonNameDHCPv6) {
 			daemons = append(daemons, d.Name)
 		}
 	}
-	return daemons
+	return
 }
 
 // Finds daemon by name. If a daemon with this name doesn't exist,
