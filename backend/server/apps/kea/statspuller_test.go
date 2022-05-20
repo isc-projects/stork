@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -488,4 +489,19 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Zero(t, fa.CallNo)
+}
+
+func prepareHAEnvironment(t *testing.T, db *pg.DB) (service *dbmodel.Service, fa *agentcommtest.FakeAgents) {
+	return nil, nil
+}
+
+func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
+
+}
+
+func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
+
+}
+
+func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
 }
