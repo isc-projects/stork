@@ -243,6 +243,11 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	// prepare apps with subnets and local subnets
 	v4Config := `{
 					"Dhcp4": {
+						"hooks-libraries": [
+							{
+								"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+							}
+						],
 						"reservations": [
 							{
 								"hw-address": "01:bb:cc:dd:ee:ff",
@@ -287,6 +292,11 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 				}`
 	v6Config := `{
 					"Dhcp6": {
+						"hooks-libraries": [
+							{
+								"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+							}
+						],
 						"reservations": [
 							{
 								"hw-address": "03:bb:cc:dd:ee:ff",
