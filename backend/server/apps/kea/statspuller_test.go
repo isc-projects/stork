@@ -13,138 +13,95 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) {
+	return func(callNo int, cmdResponses []interface{}) {
+		// DHCPv4
+		daemons := []string{"dhcp4"}
+		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
+		keactrl.UnmarshalResponseList(command, []byte(jsons[0]), cmdResponses[0])
+
+		// DHCPv4 RSP response
+		rpsCmd := []*keactrl.Command{}
+		_ = RpsAddCmd4(&rpsCmd, daemons)
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(jsons[1]), cmdResponses[1])
+
+		// DHCPv6
+		daemons = []string{"dhcp6"}
+		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
+		keactrl.UnmarshalResponseList(command, []byte(jsons[2]), cmdResponses[2])
+
+		// DHCPv6 RSP response
+		rpsCmd = []*keactrl.Command{}
+		_ = RpsAddCmd6(&rpsCmd, daemons)
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(jsons[3]), cmdResponses[3])
+	}
+}
+
 // Check creating and shutting down StatsPuller.
 func TestStatsPullerBasic(t *testing.T) {
-	// prepare db
+	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	_, err := db.Model(&setting).Insert()
-	require.NoError(t, err)
-
-	// prepare fake agents
+	_ = dbmodel.InitializeSettings(db)
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 
-	sp, _ := NewStatsPuller(db, fa)
-	require.NotEmpty(t, sp.RpsWorker)
+	// Act
+	sp, err := NewStatsPuller(db, fa)
+	defer sp.Shutdown()
 
-	sp.Shutdown()
+	// Assert
+	require.NoError(t, err)
+	require.NotEmpty(t, sp.RpsWorker)
 }
 
 // Check if Kea response to stat-leaseX-get command is handled correctly when it is
 // empty or when stats hooks library is not loaded.  The RPS responses are valid,
 // they have their own unit tests in rps_test.go.
 func TestStatsPullerEmptyResponse(t *testing.T) {
+	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	_ = createAppWithSubnets(t, db, 0, "", "")
 
 	// prepare fake agents
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons := []string{"dhcp4"}
-		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
+	keaMock := createKeaMock([]string{
 		// simulate empty response
-		json := `[{
-                            "result": 0,
-                            "text": "Everything is fine",
-                            "arguments": {}
-                         }]`
-		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
-
-		// DHCPv4 RSP response
-		json = `[{ "result": 0, "text": "Everything is fine",
-                    "arguments": {
-                                "pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
-                }}]`
-
-		rpsCmd := []*keactrl.Command{}
-		_ = RpsAddCmd4(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[1])
-
-		// DHCPv6
-		daemons = []string{"dhcp6"}
-		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {}
+		}]`,
+		`[{
+			"result": 0, "text": "Everything is fine",
+			"arguments": {
+				"pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
 		// simulate not loaded stat plugin in kea
-		json = `[{
-                           "result": 2,
-                           "text": "'stat-lease6-get' command not supported."
-                        }]`
-		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[2])
+		`[{
+			"result": 2,
+			"text": "'stat-lease6-get' command not supported."
+		}]`,
+		`[{
+			"result": 0, "text": "Everything is fine",
+			"arguments": {
+				"pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
+	})
 
-		// DHCPv6 RSP response
-		json = `[{ "result": 0, "text": "Everything is fine",
-                    "arguments": {
-                                "pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
-                }}]`
-
-		rpsCmd = []*keactrl.Command{}
-		_ = RpsAddCmd6(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[3])
-	}
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
-	// add one machine with one kea app
-	m := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, m)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
-
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", 1234, true)
-	a := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Active: true,
-				Name:   "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-			{
-				Active: true,
-				Name:   "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, a)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, a.ID)
-
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	_, err = db.Model(&setting).Insert()
-	require.NoError(t, err)
-
 	// prepare stats puller
-	sp, err := NewStatsPuller(db, fa)
-	require.NoError(t, err)
-	// shutdown stats puller at the end
+	sp, _ := NewStatsPuller(db, fa)
 	defer sp.Shutdown()
 
+	// Act
 	// invoke pulling stats
-	err = sp.pullStats()
+	err := sp.pullStats()
+
+	// Assert
 	require.Error(t, err)
 }
 
@@ -154,6 +111,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 // Map of statistics fetched.  This is enough to demonstrate
 // that it is operational.
 func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
+	// Arrange
 	// 1.6 format
 	totalAddrs := "total-addreses"
 	assignedAddrs := "assigned-addreses"
@@ -166,202 +124,180 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	err := dbmodel.InitializeStats(db)
-	require.NoError(t, err)
-
-	// prepare fake agents
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons := []string{"dhcp4"}
-		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
-		json := fmt.Sprintf(`[{
-                            "result": 0,
-                            "text": "Everything is fine",
-                            "arguments": {
-                                "result-set": {
-                                    "columns": [ "subnet-id", "%s", "%s", "%s" ],
-                                    "rows": [
-                                        [ 10, 256, 111, 0 ],
-                                        [ 20, 4098, 2034, 4 ]
-                                    ],
-                                    "timestamp": "2018-05-04 15:03:37.000000"
-                                }
-                            }
-                         }]`, totalAddrs, assignedAddrs, declinedAddrs)
-		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
-
-		// Command and response for DHCP4 RPS statistic pull
-		rpsCmd := []*keactrl.Command{}
-		_ = RpsAddCmd4(&rpsCmd, daemons)
-		json = `[{
-                    "result": 0,
-                    "text": "Everything is fine",
-                    "arguments": {
-                        "pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
-                    }
-                }]`
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[1])
-
-		// DHCPv6
-		daemons = []string{"dhcp6"}
-		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
-		// Kea casts the unsigned int64 integers to signed int64. It means that the maximum
-		// value of unsigned int64 is -1 after casting.
-		json = `[{
-                           "result": 0,
-                           "text": "Everything is fine",
-                           "arguments": {
-                               "result-set": {
-                                   "columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
-                                   "rows": [
-                                       [ 30, 4096, 2400, 3, 0, 0],
-                                       [ 40, 0, 0, 0, 1048, 233 ],
-                                       [ 50, 256, 60, 0, 1048, 15 ],
-									   [ 60, -1, 9223372036854775807, 0, -2, -3 ]
-                                   ],
-                                   "timestamp": "2018-05-04 15:03:37.000000"
-                               }
-                           }
-                        }]`
-		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[2])
-
-		// Command and response for DHCP6 RPS statistic pull
-		rpsCmd = []*keactrl.Command{}
-		_ = RpsAddCmd4(&rpsCmd, daemons)
-		json = `[{
-                    "result": 0,
-                    "text": "Everything is fine",
-                    "arguments": {
-                        "pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
-                    }
-                }]`
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[3])
-	}
-	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeStats(db)
 
 	// prepare apps with subnets and local subnets
 	v4Config := `{
-					"Dhcp4": {
-						"hooks-libraries": [
-							{
-								"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-							}
-						],
-						"reservations": [
-							{
-								"hw-address": "01:bb:cc:dd:ee:ff",
-								"ip-address": "192.12.0.1"
-							},
-							{
-								"hw-address": "02:bb:cc:dd:ee:ff",
-								"ip-address": "192.12.0.2"
-							}
-						],
-						"subnet4": [
-							{
-								"id": 10,
-								"subnet": "192.0.2.0/24"
-							},
-							{
-								"id": 20,
-								"subnet": "192.0.3.0/24",
-								// 1 in-pool, 2 out-of-pool host reservations
-								"pools": [
-									{
-										"pool": "192.0.3.1 - 192.0.3.10"
-									}
-								],
-								"reservations": [
-									{
-										"hw-address": "00:00:00:00:00:21",
-										"ip-address": "192.0.3.2"
-									},
-									{
-										"hw-address": "00:00:00:00:00:22",
-										"ip-address": "192.0.2.22"
-									},
-									{
-										"hw-address": "00:00:00:00:00:23",
-										"ip-address": "192.0.2.23"
-									}
-								]
-							}
-						]
-					}
-				}`
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+				}
+			],
+			"reservations": [
+				{
+					"hw-address": "01:bb:cc:dd:ee:ff",
+					"ip-address": "192.12.0.1"
+				},
+				{
+					"hw-address": "02:bb:cc:dd:ee:ff",
+					"ip-address": "192.12.0.2"
+				}
+			],
+			"subnet4": [
+				{
+					"id": 10,
+					"subnet": "192.0.2.0/24"
+				},
+				{
+					"id": 20,
+					"subnet": "192.0.3.0/24",
+					// 1 in-pool, 2 out-of-pool host reservations
+					"pools": [
+						{
+							"pool": "192.0.3.1 - 192.0.3.10"
+						}
+					],
+					"reservations": [
+						{
+							"hw-address": "00:00:00:00:00:21",
+							"ip-address": "192.0.3.2"
+						},
+						{
+							"hw-address": "00:00:00:00:00:22",
+							"ip-address": "192.0.2.22"
+						},
+						{
+							"hw-address": "00:00:00:00:00:23",
+							"ip-address": "192.0.2.23"
+						}
+					]
+				}
+			]
+		}
+	}`
 	v6Config := `{
-					"Dhcp6": {
-						"hooks-libraries": [
-							{
-								"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-							}
-						],
-						"reservations": [
-							{
-								"hw-address": "03:bb:cc:dd:ee:ff",
-								"ip-address": "80:80::1"
-							},
-							{
-								"hw-address": "04:bb:cc:dd:ee:ff",
-								"ip-address": "80:90::/64"
-							}
-						],
-						"subnet6": [
-							{
-								"id": 30,
-								"subnet": "2001:db8:1::/64"
-							},
-							{
-								"id": 40,
-								"subnet": "2001:db8:2::/64"
-							},
-							{
-								"id": 50,
-								"subnet": "2001:db8:3::/64",
-								"pools": [
-									{
-										"pool": "2001:db8:3::100-2001:db8:3::ffff"
-									}
-								],
-								"pd-pools": [
-									{
-										"prefix": "2001:db8:3:8000::",
-										"prefix-len": 48,
-										"delegated-len": 64
-									}
-								],
-								// 2 out-of-pool, 1 in-pool host reservations
-								// 1 out-of-pool, 1 in-pool prefix reservations
-								"reservations": [
-									{
-										"hw-address": "00:00:00:00:01:23",
-										"ip-address": "2001:db8:3::101",
-										"prefixes": [ "2001:db8:3:8000::/64" ]
-									},
-									{
-										"hw-address": "00:00:00:00:01:22",
-										"ip-address": "2001:db8:3::21",
-										"prefixes": [ "2001:db8:2:abcd::/80" ]
-									},
-									{
-										"hw-address": "00:00:00:00:01:23",
-										"ip-address": "2001:db8:3::23"
-									}
-								]
-							},
-							{
-								"id": 60,
-								"subnet": "2001:db8:4::/64"
-							},
-							{
-								"id": 70,
-								"subnet": "2001:db8:5::/64"
-							}
-						]
-					}
-				}`
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+				}
+			],
+			"reservations": [
+				{
+					"hw-address": "03:bb:cc:dd:ee:ff",
+					"ip-address": "80:80::1"
+				},
+				{
+					"hw-address": "04:bb:cc:dd:ee:ff",
+					"ip-address": "80:90::/64"
+				}
+			],
+			"subnet6": [
+				{
+					"id": 30,
+					"subnet": "2001:db8:1::/64"
+				},
+				{
+					"id": 40,
+					"subnet": "2001:db8:2::/64"
+				},
+				{
+					"id": 50,
+					"subnet": "2001:db8:3::/64",
+					"pools": [
+						{
+							"pool": "2001:db8:3::100-2001:db8:3::ffff"
+						}
+					],
+					"pd-pools": [
+						{
+							"prefix": "2001:db8:3:8000::",
+							"prefix-len": 48,
+							"delegated-len": 64
+						}
+					],
+					// 2 out-of-pool, 1 in-pool host reservations
+					// 1 out-of-pool, 1 in-pool prefix reservations
+					"reservations": [
+						{
+							"hw-address": "00:00:00:00:01:23",
+							"ip-address": "2001:db8:3::101",
+							"prefixes": [ "2001:db8:3:8000::/64" ]
+						},
+						{
+							"hw-address": "00:00:00:00:01:22",
+							"ip-address": "2001:db8:3::21",
+							"prefixes": [ "2001:db8:2:abcd::/80" ]
+						},
+						{
+							"hw-address": "00:00:00:00:01:23",
+							"ip-address": "2001:db8:3::23"
+						}
+					]
+				},
+				{
+					"id": 60,
+					"subnet": "2001:db8:4::/64"
+				},
+				{
+					"id": 70,
+					"subnet": "2001:db8:5::/64"
+				}
+			]
+		}
+	}`
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
+
+	keaMock := createKeaMock([]string{
+		fmt.Sprintf(`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"result-set": {
+					"columns": [ "subnet-id", "%s", "%s", "%s" ],
+					"rows": [
+						[ 10, 256, 111, 0 ],
+						[ 20, 4098, 2034, 4 ]
+					],
+					"timestamp": "2018-05-04 15:03:37.000000"
+				}
+			}
+		}]`, totalAddrs, assignedAddrs, declinedAddrs),
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"result-set": {
+					"columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
+					"rows": [
+						[ 30, 4096, 2400, 3, 0, 0],
+						[ 40, 0, 0, 0, 1048, 233 ],
+						[ 50, 256, 60, 0, 1048, 15 ],
+						[ 60, -1, 9223372036854775807, 0, -2, -3 ]
+					],
+					"timestamp": "2018-05-04 15:03:37.000000"
+				}
+			}
+		}]`,
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
+	})
+
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	for i := range app.Daemons {
 		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
@@ -374,24 +310,15 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		require.NoError(t, err)
 	}
 
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	_, err = db.Model(&setting).Insert()
-	require.NoError(t, err)
-
 	// prepare stats puller
-	sp, err := NewStatsPuller(db, fa)
-	require.NoError(t, err)
-
-	// shutdown stats puller at the end
+	sp, _ := NewStatsPuller(db, fa)
 	defer sp.Shutdown()
 
+	// Act
 	// invoke pulling stats
-	err = sp.pullStats()
+	err := sp.pullStats()
+
+	// Assert
 	require.NoError(t, err)
 
 	// check collected stats
