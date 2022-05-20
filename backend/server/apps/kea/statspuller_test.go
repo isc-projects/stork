@@ -13,6 +13,11 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Prepares the Kea mock. It accepts list of serialized JSON responses in order:
+// 1. DHCPv4
+// 2. DHCPv4 RSP
+// 3. DHCPv6
+// 4. DHCPv6 RSP
 func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) {
 	return func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
