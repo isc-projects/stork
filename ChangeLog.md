@@ -1,3 +1,9 @@
+* 211 [bug] slawek
+
+    There is no longer periodically prompt about the unsupported
+    "stat-leaseX-get" command if the Kea daemon doesn't present the stat_cmd.
+    (#742)
+
 * 210 [bug] slawek
 
     Fixed the rake tasks that ran the database in a Docker container but were
