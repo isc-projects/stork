@@ -227,7 +227,7 @@ func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Function for a valid prefix should return no error.
+// Function for a valid timestamp suffix should return no error.
 func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
@@ -244,7 +244,7 @@ func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 	require.EqualValues(t, ".ext", extension)
 }
 
-// Function for a missing delimiter in prefix should return error.
+// Function for a missing delimiter in filename should return error.
 func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
@@ -261,7 +261,7 @@ func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	require.Empty(t, extension)
 }
 
-// Function for a invalid prefix should return error.
+// Function for a invalid timestamp should return error.
 func TestParseTimestampFilenameErrorForInvalid(t *testing.T) {
 	// Arrange
 	timestamp := "bar"
@@ -277,7 +277,7 @@ func TestParseTimestampFilenameErrorForInvalid(t *testing.T) {
 	require.NotEmpty(t, extension)
 }
 
-// Function for too short prefix should return error.
+// Function for too short timestamp should return error.
 func TestParseTimestampFilenameTooShort(t *testing.T) {
 	// Arrange
 	timestamp := "2021-11-15T12:00:00"
@@ -309,7 +309,7 @@ func TestParseTimestampFilenamePrefixOfFilenameForValid(t *testing.T) {
 	require.EqualValues(t, ".ext", extension)
 }
 
-// Function for a valid prefix should return the parsed timestamp.
+// Function for a valid filename should return the parsed timestamp.
 func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)
