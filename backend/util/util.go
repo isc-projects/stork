@@ -280,7 +280,7 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time, extension string, err error) {
 	timestampStart := strings.LastIndex(filename, "_")
 	if timestampStart <= 0 {
-		err = errors.New("missing prefix delimiter")
+		err = errors.Errorf("missing prefix delimiter: %s", filename)
 		return
 	}
 	timestampStart++
@@ -295,7 +295,7 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 	}
 
 	if timestampEnd-timestampStart < len(time.RFC3339)-5 { // Timezone is optional
-		err = errors.New("timestamp is too short")
+		err = errors.Errorf("timestamp is too short: %s", filename)
 		return
 	}
 
@@ -303,7 +303,7 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
 
 	timestamp, err = time.Parse(time.RFC3339, raw)
-	err = errors.Wrapf(err, "cannot parse a timestamp: %s", raw)
+	err = errors.Wrapf(err, "cannot parse a timestamp: %s for: %s", raw, filename)
 	return
 }
 
