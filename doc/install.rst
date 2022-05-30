@@ -465,7 +465,7 @@ rules will be applied:
    The above rules are defined in the ``isColored()`` method in the
    ``TextFormatter`` class of the ``logrus`` package.
 
-For example, to disable the output colorization, you should use:
+For example, to disable the output colorization:
 
 .. code-block:: console
 

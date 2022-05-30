@@ -82,8 +82,8 @@ Prometheus BIND 9 Exporter flags:
    Returns the list of available parameters.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
-``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE``to
-enable or disable the ANSI colors no matter what. Set ``CLICOLOR`` to ``0`` or
+``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
+enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
 
 Mailing Lists and Support
