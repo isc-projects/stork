@@ -12,6 +12,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/dumper/dump"
 	storktest "isc.org/stork/server/test/dbmodel"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -26,7 +27,7 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	_, _, extension, err := storkutil.ParseTimestampFilename(filename)
+	_, _, extension, err := testutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
 	require.EqualValues(t, extension, ".json")
 	require.Contains(t, filename, dump.GetName())
@@ -45,7 +46,7 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	_, _, extension, err := storkutil.ParseTimestampFilename(filename)
+	_, _, extension, err := testutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
 	require.EqualValues(t, extension, ".ext")
 	require.Contains(t, filename, dump.GetName())

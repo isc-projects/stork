@@ -275,38 +275,6 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 	return text, nil
 }
 
-// Parses the conventional filename with suffix.
-// Returns a prefix of filename, parsed timestamp, and error (if failed).
-func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time, extension string, err error) {
-	timestampStart := strings.LastIndex(filename, "_")
-	if timestampStart <= 0 {
-		err = errors.Errorf("missing prefix delimiter: %s", filename)
-		return
-	}
-	timestampStart++
-	prefix = filename[:timestampStart]
-
-	timestampEnd := strings.Index(filename[timestampStart:], ".")
-	if timestampEnd >= 0 {
-		timestampEnd += timestampStart
-		extension = filename[timestampEnd:]
-	} else {
-		timestampEnd = len(filename)
-	}
-
-	if timestampEnd-timestampStart < len(time.RFC3339)-5 { // Timezone is optional
-		err = errors.Errorf("timestamp is too short: %s", filename)
-		return
-	}
-
-	raw := filename[timestampStart:timestampEnd]
-	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
-
-	timestamp, err = time.Parse(time.RFC3339, raw)
-	err = errors.Wrapf(err, "cannot parse a timestamp: %s for: %s", raw, filename)
-	return
-}
-
 // Check if it is possible to create a file
 // with the provided filename.
 func IsValidFilename(filename string) bool {

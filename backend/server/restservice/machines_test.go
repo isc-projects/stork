@@ -27,6 +27,7 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storktest "isc.org/stork/server/test/dbmodel"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -2237,7 +2238,7 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	// Assert
 	require.Len(t, submatches, 2)
 	filename := submatches[1]
-	rest, timestamp, extension, err := storkutil.ParseTimestampFilename(filename)
+	rest, timestamp, extension, err := testutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
 	require.Contains(t, rest, "machine-42")
 	require.EqualValues(t, extension, ".tar.gz")

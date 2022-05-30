@@ -3,11 +3,8 @@ package storkutil
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -225,119 +222,6 @@ func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 	path := "configs/config-with-non-existing-includes.json"
 	_, err := ReadFileWithIncludes(path)
 	require.Error(t, err)
-}
-
-// Function for a valid timestamp suffix should return no error.
-func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
-	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
-	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("foo_%s.ext", timestamp)
-
-	// Act
-	prefix, parsedTimestamp, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, time.Time{}, parsedTimestamp)
-	require.EqualValues(t, "foo_", prefix)
-	require.EqualValues(t, ".ext", extension)
-}
-
-// Function for a missing delimiter in filename should return error.
-func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
-	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
-	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("foo%s.ext", timestamp)
-
-	// Act
-	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.Error(t, err)
-	require.Empty(t, prefix)
-	require.NotNil(t, timestampObj)
-	require.Empty(t, extension)
-}
-
-// Function for a invalid timestamp should return error.
-func TestParseTimestampFilenameErrorForInvalid(t *testing.T) {
-	// Arrange
-	timestamp := "bar"
-	filename := fmt.Sprintf("foo_%s.ext", timestamp)
-
-	// Act
-	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.Error(t, err)
-	require.NotEmpty(t, prefix)
-	require.NotNil(t, timestampObj)
-	require.NotEmpty(t, extension)
-}
-
-// Function for too short timestamp should return error.
-func TestParseTimestampFilenameTooShort(t *testing.T) {
-	// Arrange
-	timestamp := "2021-11-15T12:00:00"
-	filename := fmt.Sprintf("foo_%s.ext", timestamp)
-
-	// Act
-	prefix, timestampObj, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.Error(t, err)
-	require.EqualValues(t, "foo_", prefix)
-	require.NotNil(t, timestampObj)
-	require.EqualValues(t, ".ext", extension)
-}
-
-// Function for a valid timestamp should return prefix and extension of filename.
-func TestParseTimestampFilenamePrefixOfFilenameForValid(t *testing.T) {
-	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
-	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("foo-bar_%s.ext", timestamp)
-
-	// Act
-	prefix, _, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, "foo-bar_", prefix)
-	require.EqualValues(t, ".ext", extension)
-}
-
-// Function for a valid filename should return the parsed timestamp.
-func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
-	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
-	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("foo_%s.ext", timestamp)
-
-	// Act
-	_, timestampObj, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, time.Time{}, timestampObj)
-	require.EqualValues(t, ".ext", extension)
-}
-
-// Function for a duble extension should return a full extension.
-func TestParseTimestampFilenameDoubleExtension(t *testing.T) {
-	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
-	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	filename := fmt.Sprintf("foo_%s.bar.baz", timestamp)
-
-	// Act
-	_, _, extension, err := ParseTimestampFilename(filename)
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, ".bar.baz", extension)
 }
 
 // Test that function returns true for proper filename.
