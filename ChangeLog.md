@@ -1,3 +1,9 @@
+* 212 [bug] slawek
+
+    Corrected a bug, which resulted in returning a null value instead of a
+    list of events in a machine dump tarball.
+    (Gitlab #743)
+
 * 211 [bug] slawek
 
     The Stork server no longer sends statistics queries to the Kea
