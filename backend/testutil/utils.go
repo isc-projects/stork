@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	pkgerrors "github.com/pkg/errors"
+	errors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,12 +38,12 @@ func CaptureOutput(f func()) (stdout []byte, stderr []byte, err error) {
 	// Reads the stdout
 	stdout, err = io.ReadAll(rOut)
 	if err != nil {
-		err = pkgerrors.Wrap(err, "cannot read stdout")
+		err = errors.Wrap(err, "cannot read stdout")
 		return
 	}
 
 	stderr, err = io.ReadAll(rErr)
-	err = pkgerrors.Wrap(err, "cannot read stderr")
+	err = errors.Wrap(err, "cannot read stderr")
 	return stdout, stderr, err
 }
 
