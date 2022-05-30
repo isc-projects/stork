@@ -337,7 +337,7 @@ The Stork server can be configured to run behind an HTTP reverse proxy
 using ``Nginx`` or ``Apache``. The Stork server package contains an example
 configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.conf``.
 
-The output colorization can be configured in the same way as in Stork Agent: :ref:`colorization-settings`.
+The logging colorization is configured analogously to the :ref:`Stork Agent logging colorization <colorization-settings>`.
 
 Securing the Database Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
