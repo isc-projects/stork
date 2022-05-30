@@ -4,7 +4,7 @@
 
 Stork is an open source ISC project providing a monitoring application and dashboard for 
 ISC Kea DHCP and (eventually) ISC BIND 9. A limited configuration management for Kea
-is available and is currently under heavy development.
+is available and is expected to grow substantially in the near future.
 
 The project is currently in rapid development, with monthly releases rolling out new features.
 See [wiki pages](https://gitlab.isc.org/isc-projects/stork/-/wikis/home) for useful
