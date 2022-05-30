@@ -473,7 +473,7 @@ For example, to disable the output colorization:
 
 .. note::
 
-   You can also use the ``true`` and ``false`` values instead of ``1`` and ``0``.
+   The ``true`` and ``false`` values are also accepted instead of the ``1`` and ``0``.
 
 .. _secure-server-agent:
 
