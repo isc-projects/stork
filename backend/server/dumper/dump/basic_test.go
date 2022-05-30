@@ -21,17 +21,18 @@ func TestBasicDump(t *testing.T) {
 // Test that the basic artifact is constructed.
 func TestBasicArtifact(t *testing.T) {
 	// Act
-	artifact := dumppkg.NewBasicArtifact("foo")
+	artifact := dumppkg.NewBasicArtifact("foo", ".ext")
 
 	// Assert
 	require.EqualValues(t, "foo", artifact.GetName())
+	require.EqualValues(t, ".ext", artifact.GetExtension())
 }
 
 // Test that the basic dump with the artifacts is constructed.
 func TestBasicDumpWithArtifacts(t *testing.T) {
 	// Arrange
-	first := dumppkg.NewBasicArtifact("bar")
-	second := dumppkg.NewBasicArtifact("baz")
+	first := dumppkg.NewBasicArtifact("bar", ".ear")
+	second := dumppkg.NewBasicArtifact("baz", ".eaz")
 
 	// Act
 	dump := dumppkg.NewBasicDump("foo", first, second)
@@ -41,7 +42,9 @@ func TestBasicDumpWithArtifacts(t *testing.T) {
 	require.EqualValues(t, 2, dump.GetArtifactsNumber())
 	require.NoError(t, dump.Execute())
 	require.EqualValues(t, "bar", dump.GetArtifact(0).GetName())
+	require.EqualValues(t, ".ear", dump.GetArtifact(0).GetExtension())
 	require.EqualValues(t, "baz", dump.GetArtifact(1).GetName())
+	require.EqualValues(t, ".eaz", dump.GetArtifact(1).GetExtension())
 }
 
 // Test that the artifacts are appended.
@@ -50,13 +53,15 @@ func TestBasicDumpAppendArtifact(t *testing.T) {
 	dump := dumppkg.NewBasicDump("foo")
 
 	// Act
-	dump.AppendArtifact(dumppkg.NewBasicArtifact("bar"))
-	dump.AppendArtifact(dumppkg.NewBasicArtifact("baz"))
+	dump.AppendArtifact(dumppkg.NewBasicArtifact("bar", ".ear"))
+	dump.AppendArtifact(dumppkg.NewBasicArtifact("baz", ".eaz"))
 
 	// Assert
 	require.EqualValues(t, 2, dump.GetArtifactsNumber())
 	require.EqualValues(t, "bar", dump.GetArtifact(0).GetName())
+	require.EqualValues(t, ".ear", dump.GetArtifact(0).GetExtension())
 	require.EqualValues(t, "baz", dump.GetArtifact(1).GetName())
+	require.EqualValues(t, ".eaz", dump.GetArtifact(1).GetExtension())
 }
 
 // Test that the basic struct artifact contains the data.
@@ -88,9 +93,10 @@ func TestBasicStructArtifactSet(t *testing.T) {
 // Test that the basic binary artifact is constructed.
 func TestBasicBinaryArtifact(t *testing.T) {
 	// Act
-	artifact := dumppkg.NewBasicBinaryArtifact("foo", []byte("bar"))
+	artifact := dumppkg.NewBasicBinaryArtifact("foo", ".ext", []byte("bar"))
 
 	// Assert
 	require.EqualValues(t, "foo", artifact.GetName())
+	require.EqualValues(t, ".ext", artifact.GetExtension())
 	require.EqualValues(t, []byte("bar"), artifact.GetBinary())
 }

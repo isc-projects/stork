@@ -26,6 +26,8 @@ type Dump interface {
 type Artifact interface {
 	// Return the artifact number.
 	GetName() string
+	// Return an expected artifact extension.
+	GetExtension() string
 }
 
 // The artifact that contains pure (serializable)

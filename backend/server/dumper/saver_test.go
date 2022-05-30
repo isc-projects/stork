@@ -62,7 +62,7 @@ func TestSaverSaveFilledDumpList(t *testing.T) {
 		),
 		dump.NewBasicDump(
 			"baz",
-			dump.NewBasicBinaryArtifact("biz", []byte{42, 24}),
+			dump.NewBasicBinaryArtifact("biz", ".ext", []byte{42, 24}),
 			dump.NewBasicStructArtifact("boz", "buz"),
 		),
 	}
@@ -91,7 +91,7 @@ func TestSavedTarball(t *testing.T) {
 		),
 		dump.NewBasicDump(
 			"baz",
-			dump.NewBasicBinaryArtifact("biz", []byte{42, 24}),
+			dump.NewBasicBinaryArtifact("biz", ".ext", []byte{42, 24}),
 			dump.NewBasicStructArtifact("boz", "buz"),
 		),
 	}

@@ -113,7 +113,11 @@ func (s *executionSummaryStep) isSuccess() bool {
 func (s *executionSummaryStep) simplify() *executionSummaryStepSimplified {
 	artifactNames := []string{}
 	for i := 0; i < s.Dump.GetArtifactsNumber(); i++ {
-		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).GetName())
+		artifact := s.Dump.GetArtifact(i)
+		artifactNames = append(
+			artifactNames,
+			artifact.GetName()+artifact.GetExtension(),
+		)
 	}
 
 	status := "SUCCESS"

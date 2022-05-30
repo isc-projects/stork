@@ -66,20 +66,12 @@ func saveDumpsToAutoReleaseContainer(saver saver, dumps []dump.Dump) (io.ReadClo
 	return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
 }
 
-// Naming convention rules:
-// 1. Filename starts with a timestamp.
-// 2. Struct artifact ends with the JSON extension.
-//    The binary artifacts ends with the artifact name (it may contain extension).
-// 3. Naming convention doesn't use subfolders.
-// 4. Filename contains the dump name and artifact name.
+// Naming convention format: [DUMP_NAME]_[ARTIFACT_NAME]_[TIMESTAMP].[EXT]
 func flatStructureWithTimestampNamingConvention(dumpObj dump.Dump, artifact dump.Artifact) string {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
-	extension := ".json"
-	if _, ok := artifact.(dump.BinaryArtifact); ok {
-		extension = ""
-	}
-	filename := fmt.Sprintf("%s_%s_%s%s", dumpObj.GetName(), artifact.GetName(), timestamp, extension)
+	filename := fmt.Sprintf("%s_%s_%s%s", dumpObj.GetName(), artifact.GetName(),
+		timestamp, artifact.GetExtension())
 	// Remove the insane characters
 	filename = strings.ReplaceAll(filename, "/", "?")
 	filename = strings.ReplaceAll(filename, "*", "?")

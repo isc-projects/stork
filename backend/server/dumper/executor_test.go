@@ -102,9 +102,9 @@ func TestSimplifySuccessExecutionStep(t *testing.T) {
 	// Arrange
 	step := newExecutionSummaryStep(
 		dump.NewBasicDump("foo",
-			dump.NewBasicArtifact("alfa"),
-			dump.NewBasicArtifact("beta"),
-			dump.NewBasicArtifact("gamma"),
+			dump.NewBasicArtifact("alfa", ".a"),
+			dump.NewBasicArtifact("beta", ".b"),
+			dump.NewBasicArtifact("gamma", ".g"),
 		),
 		nil,
 	)
@@ -115,7 +115,7 @@ func TestSimplifySuccessExecutionStep(t *testing.T) {
 	// Assert
 	require.EqualValues(t, "foo", simplify.Name)
 	require.NoError(t, simplify.Error)
-	require.EqualValues(t, []string{"alfa", "beta", "gamma"}, simplify.Artifacts)
+	require.EqualValues(t, []string{"alfa.a", "beta.b", "gamma.g"}, simplify.Artifacts)
 	require.EqualValues(t, "SUCCESS", simplify.Status)
 }
 
@@ -140,9 +140,9 @@ func TestSimplifyFailedExecutionStep(t *testing.T) {
 	// Arrange
 	step := newExecutionSummaryStep(
 		dump.NewBasicDump("foo",
-			dump.NewBasicArtifact("alfa"),
-			dump.NewBasicArtifact("beta"),
-			dump.NewBasicArtifact("gamma"),
+			dump.NewBasicArtifact("alfa", ".a"),
+			dump.NewBasicArtifact("beta", ".b"),
+			dump.NewBasicArtifact("gamma", ".g"),
 		),
 		errors.New("foo"),
 	)
@@ -153,7 +153,7 @@ func TestSimplifyFailedExecutionStep(t *testing.T) {
 	// Assert
 	require.EqualValues(t, "foo", simplify.Name)
 	require.Error(t, simplify.Error)
-	require.EqualValues(t, []string{"alfa", "beta", "gamma"}, simplify.Artifacts)
+	require.EqualValues(t, []string{"alfa.a", "beta.b", "gamma.g"}, simplify.Artifacts)
 	require.EqualValues(t, "FAIL", simplify.Status)
 }
 
@@ -163,9 +163,9 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	summary := newExecutionSummary(
 		newExecutionSummaryStep(
 			dump.NewBasicDump("foo",
-				dump.NewBasicArtifact("alfa"),
-				dump.NewBasicArtifact("beta"),
-				dump.NewBasicArtifact("gamma"),
+				dump.NewBasicArtifact("alfa", ".a"),
+				dump.NewBasicArtifact("beta", ".b"),
+				dump.NewBasicArtifact("gamma", ".g"),
 			),
 			errors.New("foo"),
 		),
@@ -207,8 +207,9 @@ func TestExecuteDumps(t *testing.T) {
 
 	dumps := []dump.Dump{
 		successMock,
-		dump.NewBasicDump("bar", dump.NewBasicArtifact("bir")),
-		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz"), dump.NewBasicArtifact("bez")),
+		dump.NewBasicDump("bar", dump.NewBasicArtifact("bir", ".eir")),
+		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz", ".euz"),
+			dump.NewBasicArtifact("bez", ".eez")),
 		failedMock,
 	}
 
@@ -230,7 +231,8 @@ func TestExecuteDumps(t *testing.T) {
 func TestExecuteDumpProducesSummaryDump(t *testing.T) {
 	// Arrange
 	summary := executeDumps([]dump.Dump{
-		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz"), dump.NewBasicArtifact("bez")),
+		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz", ""),
+			dump.NewBasicArtifact("bez", "")),
 		storktest.NewMockDump("bar", errors.New("fail")),
 	})
 

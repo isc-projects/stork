@@ -54,18 +54,24 @@ func (d *BasicDump) Execute() error {
 // Base, abstract structure of the artifacts. It stores
 // the name of the artifact.
 type BasicArtifact struct {
-	name string
+	name      string
+	extension string
 }
 
 // Constructs the basic artifact. It shouldn't be used directly,
 // but in the child class constructors.
-func NewBasicArtifact(name string) *BasicArtifact {
-	return &BasicArtifact{name}
+func NewBasicArtifact(name, extension string) *BasicArtifact {
+	return &BasicArtifact{name, extension}
 }
 
 // Returns a name provided in the constructor.
 func (a *BasicArtifact) GetName() string {
 	return a.name
+}
+
+// Returns an extension provided in the constructor.
+func (a *BasicArtifact) GetExtension() string {
+	return a.extension
 }
 
 // Simple artifact-wrapper for a Go object. The content
@@ -79,7 +85,7 @@ type BasicStructArtifact struct {
 // The content must be serializable.
 func NewBasicStructArtifact(name string, content interface{}) *BasicStructArtifact {
 	return &BasicStructArtifact{
-		*NewBasicArtifact(name),
+		*NewBasicArtifact(name, ".json"),
 		content,
 	}
 }
@@ -102,9 +108,9 @@ type BasicBinaryArtifact struct {
 }
 
 // Constructs the artifact with binary data as content.
-func NewBasicBinaryArtifact(name string, content []byte) *BasicBinaryArtifact {
+func NewBasicBinaryArtifact(name, extension string, content []byte) *BasicBinaryArtifact {
 	return &BasicBinaryArtifact{
-		*NewBasicArtifact(name),
+		*NewBasicArtifact(name, extension),
 		content,
 	}
 }

@@ -2,6 +2,7 @@ package dumper
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,13 +31,14 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	require.EqualValues(t, extension, ".json")
 	require.Contains(t, filename, dump.GetName())
 	require.Contains(t, filename, artifact.GetName())
+	require.True(t, strings.HasSuffix(filename, ".json"))
 }
 
 // Test that the convention produces expected name
 // for a binary dump.
 func TestNamingConventionForBinaryDump(t *testing.T) {
 	// Arrange
-	artifact := dump.NewBasicBinaryArtifact("bar", nil)
+	artifact := dump.NewBasicBinaryArtifact("bar", ".ext", nil)
 	dump := dump.NewBasicDump("foo", artifact)
 
 	// Act
@@ -45,9 +47,10 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	// Assert
 	_, _, extension, err := storkutil.ParseTimestampFilename(filename)
 	require.NoError(t, err)
-	require.Empty(t, extension)
+	require.EqualValues(t, extension, ".ext")
 	require.Contains(t, filename, dump.GetName())
 	require.Contains(t, filename, artifact.GetName())
+	require.True(t, strings.HasSuffix(filename, artifact.GetExtension()))
 }
 
 // Test that the naming convention creates the filename without illegal characters.
@@ -57,16 +60,16 @@ func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 
 	cases := []dump.Dump{
 		dump.NewBasicDump("foo",
-			dump.NewBasicArtifact("bar"),
-			dump.NewBasicArtifact("BAZ"),
-			dump.NewBasicArtifact("42"),
+			dump.NewBasicArtifact("bar", ".ear"),
+			dump.NewBasicArtifact("BAZ", ".EAZ"),
+			dump.NewBasicArtifact("42", ".24"),
 		),
-		dump.NewBasicDump("123", dump.NewBasicArtifact("foobar")),
+		dump.NewBasicDump("123", dump.NewBasicArtifact("foobar", ".efb")),
 	}
 
 	for _, ch := range characters {
 		str := string(ch)
-		cases = append(cases, dump.NewBasicDump(str, dump.NewBasicArtifact(str)))
+		cases = append(cases, dump.NewBasicDump(str, dump.NewBasicArtifact(str, "."+str)))
 	}
 
 	// Act
