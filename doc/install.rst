@@ -204,6 +204,8 @@ is also supported by the ``Stork Server``.
    $ stork-tool db-down -t 0
    $ stork-tool db-up --db-trace-queries 2> stork-schema.txt
 
+The output colorization can be configured in the same way as in Stork Agent: :ref:`colorization-settings`.
+
 .. _install-pkgs:
 
 Installing From Packages
