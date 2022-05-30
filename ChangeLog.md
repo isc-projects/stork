@@ -1,7 +1,9 @@
 * 211 [bug] slawek
 
-    There is no longer periodically prompt about the unsupported
-    "stat-leaseX-get" command if the Kea daemon doesn't present the stat_cmd.
+    The Stork server no longer sends statistics queries to the Kea
+    servers not using the stat_cmds hooks library. Sending such
+    queries caused unnecessary commands processing by the Kea
+    servers and excessive error logs in Stork.
     (#742)
 
 * 210 [bug] slawek

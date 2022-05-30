@@ -513,8 +513,8 @@ func TestStatsPullerPullStatsKea18Format(t *testing.T) {
 	checkStatsPullerPullStats(t, "1.8")
 }
 
-// The Kea application without the stat_cmds hook should be ignored when
-// fetching the statistics and producing no error.
+// Stork should not attempt to get statistics from  the Kea application without the
+// stat_cmds hook library.
 func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
