@@ -102,7 +102,7 @@ func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.Empty(t, prefix)
-	require.EqualValues(t, time.Time{}, timestampObj)
+	require.Zero(t, timestampObj)
 	require.Empty(t, extension)
 }
 
@@ -157,7 +157,7 @@ func TestParseTimestampFilenamePrefixOfFilenameForValid(t *testing.T) {
 // Function for a valid filename should return the parsed timestamp.
 func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
 	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp := time.Date(2022, 5, 20, 12, 7, 0, 0, time.UTC).Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
 	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
@@ -166,7 +166,7 @@ func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, time.Time{}, timestampObj)
+	require.EqualValues(t, time.Date(2022, 5, 20, 12, 7, 0, 0, time.UTC), timestampObj)
 	require.EqualValues(t, ".ext", extension)
 }
 
