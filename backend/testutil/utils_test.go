@@ -75,7 +75,7 @@ func TestCaptureOutputReadLog(t *testing.T) {
 // Function for a valid timestamp suffix should return no error.
 func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp := time.Date(2022, 5, 20, 12, 7, 0, 0, time.UTC).Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
 	filename := fmt.Sprintf("foo_%s.ext", timestamp)
 
@@ -84,7 +84,7 @@ func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, time.Time{}, parsedTimestamp)
+	require.EqualValues(t, time.Date(2022, 5, 20, 12, 7, 0, 0, time.UTC), parsedTimestamp)
 	require.EqualValues(t, "foo_", prefix)
 	require.EqualValues(t, ".ext", extension)
 }
@@ -92,7 +92,7 @@ func TestParseTimestampFilenameNoErrorForValid(t *testing.T) {
 // Function for a missing delimiter in filename should return error.
 func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp := time.Date(2022, 5, 20, 12, 7, 0, 0, time.UTC).Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
 	filename := fmt.Sprintf("foo%s.ext", timestamp)
 
@@ -102,7 +102,7 @@ func TestParseTimestampFilenameErrorForNoDelimiter(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.Empty(t, prefix)
-	require.NotNil(t, timestampObj)
+	require.EqualValues(t, time.Time{}, timestampObj)
 	require.Empty(t, extension)
 }
 
