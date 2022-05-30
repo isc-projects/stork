@@ -554,6 +554,6 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	err := sp.getStatsFromApp(app)
 
 	// Assert
-	require.NotZero(t, len(app.GetActiveDHCPDaemonNames()))
 	require.NoError(t, err)
+	require.Zero(t, fa.CallNo)
 }
