@@ -275,7 +275,7 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 	return text, nil
 }
 
-// Check if the filename has a conventional timestamp suffix.
+// Parses the conventional filename with suffix.
 // Returns a prefix of filename, parsed timestamp, and error (if failed).
 func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time, extension string, err error) {
 	timestampStart := strings.LastIndex(filename, "_")
