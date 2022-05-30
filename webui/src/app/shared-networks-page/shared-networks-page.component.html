@@ -107,7 +107,11 @@
                         ></i>
                     </td>
                     <td>
-                        <app-subnet-bar class="utilization-bar" *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
+                        <app-subnet-bar
+                            class="utilization-bar"
+                            *ngFor="let sn of net.subnets"
+                            [subnet]="sn"
+                        ></app-subnet-bar>
                     </td>
                     <td>
                         <a *ngFor="let app of getApps(net)" routerLink="/apps/kea/{{ app.id }}">{{ app.name }}</a>
