@@ -335,6 +335,8 @@ The Stork server can be configured to run behind an HTTP reverse proxy
 using ``Nginx`` or ``Apache``. The Stork server package contains an example
 configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.conf``.
 
+The output colorization can be configured in the same way as in Stork Agent: :ref:`colorization-settings`.
+
 Securing the Database Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -448,6 +450,11 @@ using an agent token:
    that the ``STORK_AGENT_HOST`` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
 
+.. _colorization-settings:
+
+Colorization Settings
+~~~~~~~~~~~~~~~~~~~~~
+
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. When set, the following
 rules will be applied:
@@ -469,7 +476,7 @@ For example, to disable the output colorization:
 
 .. code-block:: console
 
-   rake run:server CLICOLOR=0
+   rake run:agent CLICOLOR=0
 
 .. note::
 
