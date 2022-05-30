@@ -491,12 +491,273 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	require.Zero(t, fa.CallNo)
 }
 
-func prepareHAEnvironment(t *testing.T, db *pg.DB) (service *dbmodel.Service, fa *agentcommtest.FakeAgents) {
-	return nil, nil
+func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Service, hotStandby *dbmodel.Service) {
+	// Initialize database
+	err := dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	err = dbmodel.InitializeStats(db)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{}
+
+	// Add machine and app for the primary server.
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "primary",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+	app := dbmodel.App{
+		MachineID: m.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:              dbmodel.AccessPointControl,
+				Address:           "192.0.2.33",
+				Port:              8000,
+				Key:               "",
+				UseSecureProtocol: true,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Active: true,
+				Name:   "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
+						"server1", "server2", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+			{
+				Active: true,
+				Name:   "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp6", "server1", "hot-standby",
+						"server1", "server2"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+
+	daemons = append(daemons, app.Daemons...)
+
+	// Add the secondary machine.
+	m = &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	app = dbmodel.App{
+		MachineID: m.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:              dbmodel.AccessPointControl,
+				Address:           "192.0.2.66",
+				Key:               "",
+				Port:              8000,
+				UseSecureProtocol: false,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Active: true,
+				Name:   "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
+						"server1", "server2", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+			{
+				Active: true,
+				Name:   "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp6", "server2", "hot-standby",
+						"server1", "server2"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+
+	daemons = append(daemons, app.Daemons...)
+
+	// Add machine and app for the DHCPv4 backup server.
+	m = &dbmodel.Machine{
+		ID:        0,
+		Address:   "backup1",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	app = dbmodel.App{
+		MachineID: m.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:              dbmodel.AccessPointControl,
+				Address:           "192.0.2.133",
+				Key:               "",
+				Port:              8000,
+				UseSecureProtocol: false,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp4", "server4", "load-balancing",
+						"server1", "server2", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+
+	daemons = append(daemons, app.Daemons...)
+
+	// Detect HA services
+	for _, daemon := range daemons {
+		services := DetectHAServices(db, daemon)
+		err = dbmodel.CommitServicesIntoDB(db, services, daemon)
+		require.NoError(t, err)
+	}
+
+	// There should be two services returned, one for DHCPv4 and one for DHCPv6.
+	services, err := dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+
+	for _, service := range services {
+		switch service.HAService.HAMode {
+		case "load-balancing":
+			loadBalancing = &service
+		case "hot-standby":
+			hotStandby = &service
+		}
+	}
+
+	require.NotNil(t, loadBalancing)
+	require.NotNil(t, hotStandby)
+
+	for _, daemon := range daemons {
+		nets, snets, err := detectDaemonNetworks(db, daemon)
+		require.NoError(t, err)
+		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, daemon)
+		require.NoError(t, err)
+		hosts, err := detectGlobalHostsFromConfig(db, daemon)
+		require.NoError(t, err)
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, daemon, "config")
+		require.NoError(t, err)
+	}
+
+	return
+}
+
+func TestPrepareHAEnvironment(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
+	keaMock := createKeaMock([]string{})
+
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+	sp, err := NewStatsPuller(db, fa)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, sp)
+	require.NotNil(t, loadBalancing)
+	require.NotNil(t, hotStandby)
 }
 
 func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
+	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
+
+	keaMock := createKeaMock([]string{
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"result-set": {
+					"columns": [ "subnet-id", "total-addreses", "assigned-addreses", "declined-addreses" ],
+					"rows": [
+						[ 10, 256, 111, 0 ],
+						[ 20, 4098, 2034, 4 ]
+					],
+					"timestamp": "2018-05-04 15:03:37.000000"
+				}
+			}
+		}]`,
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"result-set": {
+					"columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
+					"rows": [
+						[ 30, 4096, 2400, 3, 0, 0],
+						[ 40, 0, 0, 0, 1048, 233 ],
+						[ 50, 256, 60, 0, 1048, 15 ],
+						[ 60, -1, 9223372036854775807, 0, -2, -3 ]
+					],
+					"timestamp": "2018-05-04 15:03:37.000000"
+				}
+			}
+		}]`,
+		`[{
+			"result": 0,
+			"text": "Everything is fine",
+			"arguments": {
+				"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
+			}
+		}]`,
+	})
+
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+
+	// prepare stats puller
+	sp, err := NewStatsPuller(db, fa)
+	require.NoError(t, err)
+	defer sp.Shutdown()
+
+	// Act
+	err = sp.pullStats()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, loadBalancing)
+	require.NotNil(t, hotStandby)
 }
 
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
