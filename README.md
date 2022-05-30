@@ -40,15 +40,19 @@ This will also work, but this system is not monitored, so expect a delayed respo
 
 # Screenshots
 
-Stork screenshots are available on the [Screenshots gallery](https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots).
+An example front page of the dashboard looks like this:
+![Stork dashboard](https://gitlab.isc.org/isc-projects/stork/-/wikis/uploads/22cf367aedaaad3ac8e42d066595dd7b/dashboard-1.1.png)
+
+Many more Stork screenshots are available on the [Screenshots gallery](https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots).
 
 # Prometheus and Grafana
 
 Stork provides support for statistics export in Prometheus format, which can then easily be shown in Grafana.
-Here are some Kea and BIND 9 dashboards:
 
+An example of Kea dashboard in Grafana, displaying data exported with Stork: 
 ![grafana-kea4](https://gitlab.isc.org/isc-projects/stork/-/wikis/uploads/97468f53d07c1b6eda7035c30fbd4de3/grafana-kea4.png)
 
-![grafana-bind](https://gitlab.isc.org/isc-projects/stork/-/wikis/uploads/6a49fca880400b04ef2b84f196e4beaa/grafana-bind.png)
-
+BIND9 dashboard in Grafana, displaying data exported with Stork:
 ![grafana-bind2](https://gitlab.isc.org/isc-projects/stork/-/wikis/uploads/6673c0a19962c535bf7e47d9fd0f46e5/grafana-bind2.png)
+
+
