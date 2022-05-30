@@ -66,7 +66,7 @@ func saveDumpsToAutoReleaseContainer(saver saver, dumps []dump.Dump) (io.ReadClo
 	return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
 }
 
-// Naming convention format: [DUMP_NAME]_[ARTIFACT_NAME]_[TIMESTAMP].[EXT] .
+// Naming convention: [DUMP_NAME]_[ARTIFACT_NAME]_[TIMESTAMP].[EXT] .
 func flatStructureWithTimestampNamingConvention(dumpObj dump.Dump, artifact dump.Artifact) string {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
