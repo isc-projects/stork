@@ -1,3 +1,5 @@
+Stork 1.4.0 released on 2022-06-01.
+
 * 212 [bug] slawek
 
     Corrected a bug, which resulted in returning a null value instead of a
