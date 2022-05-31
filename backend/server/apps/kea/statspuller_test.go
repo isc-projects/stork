@@ -18,7 +18,7 @@ import (
 // 1. DHCPv4
 // 2. DHCPv4 RSP
 // 3. DHCPv6
-// 4. DHCPv6 RSP
+// 4. DHCPv6 RSP.
 func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) {
 	return func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
@@ -30,6 +30,10 @@ func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) 
 		rpsCmd := []*keactrl.Command{}
 		_ = RpsAddCmd4(&rpsCmd, daemons)
 		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(jsons[1]), cmdResponses[1])
+
+		if len(cmdResponses) < 4 {
+			return
+		}
 
 		// DHCPv6
 		daemons = []string{"dhcp6"}
@@ -43,8 +47,8 @@ func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) 
 	}
 }
 
-func createDhcpConfigs() (dhcp4, dhcp6 string) {
-	dhcp4 = `{
+func createDhcpConfigs() (string, string) {
+	dhcp4 := `{
 		"Dhcp4": {
 			"hooks-libraries": [
 				{
@@ -93,7 +97,7 @@ func createDhcpConfigs() (dhcp4, dhcp6 string) {
 			]
 		}
 	}`
-	dhcp6 = `{
+	dhcp6 := `{
 		"Dhcp6": {
 			"hooks-libraries": [
 				{
@@ -165,7 +169,7 @@ func createDhcpConfigs() (dhcp4, dhcp6 string) {
 		}
 	}`
 
-	return
+	return dhcp4, dhcp6
 }
 
 // Check creating and shutting down StatsPuller.
@@ -497,6 +501,31 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	require.Zero(t, fa.CallNo)
 }
 
+// Prepares the Kea configuration file with HA hook and some subnets.
+func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
+	haConfig := getHATestConfig(rootName, thisServerName, mode, peerNames...)
+
+	dhcp4, dhcp6 := createDhcpConfigs()
+	subnetsConfigRaw := dhcp4
+	if rootName == "Dhcp6" {
+		subnetsConfigRaw = dhcp6
+	}
+	subnetsConfig, _ := dbmodel.NewKeaConfigFromJSON(subnetsConfigRaw)
+
+	haHooks := (*haConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
+	subnetHooks := (*subnetsConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
+
+	subnetHooks = append(subnetHooks, haHooks...)
+
+	(*subnetsConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"] = subnetHooks
+
+	return subnetsConfig
+}
+
+// Prepares the HA service instances and loads them into database.
+// First instance is composed from 3 DHCPv4 daemons and is configured in load
+// balancing mode. Second instance is composed from 2 DHCPv6 daemons and is
+// configured in hot-standby mode.
 func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Service, hotStandby *dbmodel.Service) {
 	// Initialize database
 	err := dbmodel.InitializeSettings(db)
@@ -532,7 +561,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 				Active: true,
 				Name:   "dhcp4",
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
+					Config: getHATestConfigWithSubnets("Dhcp4", "server1", "load-balancing",
 						"server1", "server2", "server4"),
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
@@ -541,7 +570,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 				Active: true,
 				Name:   "dhcp6",
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp6", "server1", "hot-standby",
+					Config: getHATestConfigWithSubnets("Dhcp6", "server1", "hot-standby",
 						"server1", "server2"),
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
@@ -580,7 +609,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 				Active: true,
 				Name:   "dhcp4",
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
+					Config: getHATestConfigWithSubnets("Dhcp4", "server2", "load-balancing",
 						"server1", "server2", "server4"),
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
@@ -589,7 +618,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 				Active: true,
 				Name:   "dhcp6",
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp6", "server2", "hot-standby",
+					Config: getHATestConfigWithSubnets("Dhcp6", "server2", "hot-standby",
 						"server1", "server2"),
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
@@ -627,7 +656,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 				Name:   "dhcp4",
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server4", "load-balancing",
+					Config: getHATestConfigWithSubnets("Dhcp4", "server4", "load-balancing",
 						"server1", "server2", "server4"),
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
@@ -652,11 +681,12 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	require.Len(t, services, 2)
 
 	for _, service := range services {
+		innerService := service
 		switch service.HAService.HAMode {
 		case "load-balancing":
-			loadBalancing = &service
+			loadBalancing = &innerService
 		case "hot-standby":
-			hotStandby = &service
+			hotStandby = &innerService
 		}
 	}
 
@@ -674,7 +704,23 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 		require.NoError(t, err)
 	}
 
-	return
+	return loadBalancing, hotStandby
+}
+
+func TestGetHATestConfigWithSubnets(t *testing.T) {
+	// Act
+	config := getHATestConfigWithSubnets("Dhcp4", "server1", "hot-standby", "server2", "server4")
+
+	// Assert
+	require.NotNil(t, config)
+	path, params, ok := config.GetHAHooksLibrary()
+	require.True(t, ok)
+	require.NotEmpty(t, path)
+	require.Equal(t, "server1", *params.ThisServerName)
+	var subnets []interface{}
+	err := config.DecodeTopLevelSubnets(&subnets)
+	require.NoError(t, err)
+	require.NotEmpty(t, subnets)
 }
 
 func TestPrepareHAEnvironment(t *testing.T) {
@@ -767,8 +813,9 @@ func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
 }
 
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
-
+	// TBD
 }
 
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
+	// TBD
 }
