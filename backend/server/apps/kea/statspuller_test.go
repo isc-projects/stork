@@ -43,6 +43,131 @@ func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) 
 	}
 }
 
+func createDhcpConfigs() (dhcp4, dhcp6 string) {
+	dhcp4 = `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+				}
+			],
+			"reservations": [
+				{
+					"hw-address": "01:bb:cc:dd:ee:ff",
+					"ip-address": "192.12.0.1"
+				},
+				{
+					"hw-address": "02:bb:cc:dd:ee:ff",
+					"ip-address": "192.12.0.2"
+				}
+			],
+			"subnet4": [
+				{
+					"id": 10,
+					"subnet": "192.0.2.0/24"
+				},
+				{
+					"id": 20,
+					"subnet": "192.0.3.0/24",
+					// 1 in-pool, 2 out-of-pool host reservations
+					"pools": [
+						{
+							"pool": "192.0.3.1 - 192.0.3.10"
+						}
+					],
+					"reservations": [
+						{
+							"hw-address": "00:00:00:00:00:21",
+							"ip-address": "192.0.3.2"
+						},
+						{
+							"hw-address": "00:00:00:00:00:22",
+							"ip-address": "192.0.2.22"
+						},
+						{
+							"hw-address": "00:00:00:00:00:23",
+							"ip-address": "192.0.2.23"
+						}
+					]
+				}
+			]
+		}
+	}`
+	dhcp6 = `{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
+				}
+			],
+			"reservations": [
+				{
+					"hw-address": "03:bb:cc:dd:ee:ff",
+					"ip-address": "80:80::1"
+				},
+				{
+					"hw-address": "04:bb:cc:dd:ee:ff",
+					"ip-address": "80:90::/64"
+				}
+			],
+			"subnet6": [
+				{
+					"id": 30,
+					"subnet": "2001:db8:1::/64"
+				},
+				{
+					"id": 40,
+					"subnet": "2001:db8:2::/64"
+				},
+				{
+					"id": 50,
+					"subnet": "2001:db8:3::/64",
+					"pools": [
+						{
+							"pool": "2001:db8:3::100-2001:db8:3::ffff"
+						}
+					],
+					"pd-pools": [
+						{
+							"prefix": "2001:db8:3:8000::",
+							"prefix-len": 48,
+							"delegated-len": 64
+						}
+					],
+					// 2 out-of-pool, 1 in-pool host reservations
+					// 1 out-of-pool, 1 in-pool prefix reservations
+					"reservations": [
+						{
+							"hw-address": "00:00:00:00:01:23",
+							"ip-address": "2001:db8:3::101",
+							"prefixes": [ "2001:db8:3:8000::/64" ]
+						},
+						{
+							"hw-address": "00:00:00:00:01:22",
+							"ip-address": "2001:db8:3::21",
+							"prefixes": [ "2001:db8:2:abcd::/80" ]
+						},
+						{
+							"hw-address": "00:00:00:00:01:23",
+							"ip-address": "2001:db8:3::23"
+						}
+					]
+				},
+				{
+					"id": 60,
+					"subnet": "2001:db8:4::/64"
+				},
+				{
+					"id": 70,
+					"subnet": "2001:db8:5::/64"
+				}
+			]
+		}
+	}`
+
+	return
+}
+
 // Check creating and shutting down StatsPuller.
 func TestStatsPullerBasic(t *testing.T) {
 	// Arrange
@@ -134,126 +259,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	_ = dbmodel.InitializeStats(db)
 
 	// prepare apps with subnets and local subnets
-	v4Config := `{
-		"Dhcp4": {
-			"hooks-libraries": [
-				{
-					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-				}
-			],
-			"reservations": [
-				{
-					"hw-address": "01:bb:cc:dd:ee:ff",
-					"ip-address": "192.12.0.1"
-				},
-				{
-					"hw-address": "02:bb:cc:dd:ee:ff",
-					"ip-address": "192.12.0.2"
-				}
-			],
-			"subnet4": [
-				{
-					"id": 10,
-					"subnet": "192.0.2.0/24"
-				},
-				{
-					"id": 20,
-					"subnet": "192.0.3.0/24",
-					// 1 in-pool, 2 out-of-pool host reservations
-					"pools": [
-						{
-							"pool": "192.0.3.1 - 192.0.3.10"
-						}
-					],
-					"reservations": [
-						{
-							"hw-address": "00:00:00:00:00:21",
-							"ip-address": "192.0.3.2"
-						},
-						{
-							"hw-address": "00:00:00:00:00:22",
-							"ip-address": "192.0.2.22"
-						},
-						{
-							"hw-address": "00:00:00:00:00:23",
-							"ip-address": "192.0.2.23"
-						}
-					]
-				}
-			]
-		}
-	}`
-	v6Config := `{
-		"Dhcp6": {
-			"hooks-libraries": [
-				{
-					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-				}
-			],
-			"reservations": [
-				{
-					"hw-address": "03:bb:cc:dd:ee:ff",
-					"ip-address": "80:80::1"
-				},
-				{
-					"hw-address": "04:bb:cc:dd:ee:ff",
-					"ip-address": "80:90::/64"
-				}
-			],
-			"subnet6": [
-				{
-					"id": 30,
-					"subnet": "2001:db8:1::/64"
-				},
-				{
-					"id": 40,
-					"subnet": "2001:db8:2::/64"
-				},
-				{
-					"id": 50,
-					"subnet": "2001:db8:3::/64",
-					"pools": [
-						{
-							"pool": "2001:db8:3::100-2001:db8:3::ffff"
-						}
-					],
-					"pd-pools": [
-						{
-							"prefix": "2001:db8:3:8000::",
-							"prefix-len": 48,
-							"delegated-len": 64
-						}
-					],
-					// 2 out-of-pool, 1 in-pool host reservations
-					// 1 out-of-pool, 1 in-pool prefix reservations
-					"reservations": [
-						{
-							"hw-address": "00:00:00:00:01:23",
-							"ip-address": "2001:db8:3::101",
-							"prefixes": [ "2001:db8:3:8000::/64" ]
-						},
-						{
-							"hw-address": "00:00:00:00:01:22",
-							"ip-address": "2001:db8:3::21",
-							"prefixes": [ "2001:db8:2:abcd::/80" ]
-						},
-						{
-							"hw-address": "00:00:00:00:01:23",
-							"ip-address": "2001:db8:3::23"
-						}
-					]
-				},
-				{
-					"id": 60,
-					"subnet": "2001:db8:4::/64"
-				},
-				{
-					"id": 70,
-					"subnet": "2001:db8:5::/64"
-				}
-			]
-		}
-	}`
+	v4Config, v6Config := createDhcpConfigs()
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
 
 	keaMock := createKeaMock([]string{
