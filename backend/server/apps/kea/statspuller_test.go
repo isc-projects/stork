@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -19,8 +20,9 @@ import (
 // 2. DHCPv4 RSP
 // 3. DHCPv6
 // 4. DHCPv6 RSP.
-func createKeaMock(jsons []string) func(callNo int, cmdResponses []interface{}) {
+func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo int, cmdResponses []interface{}) {
 	return func(callNo int, cmdResponses []interface{}) {
+		jsons := jsonFactory(callNo)
 		// DHCPv4
 		daemons := []string{"dhcp4"}
 		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
@@ -200,30 +202,32 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	_ = createAppWithSubnets(t, db, 0, "", "")
 
 	// prepare fake agents
-	keaMock := createKeaMock([]string{
-		// simulate empty response
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {}
-		}]`,
-		`[{
-			"result": 0, "text": "Everything is fine",
-			"arguments": {
-				"pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
-		// simulate not loaded stat plugin in kea
-		`[{
-			"result": 2,
-			"text": "'stat-lease6-get' command not supported."
-		}]`,
-		`[{
-			"result": 0, "text": "Everything is fine",
-			"arguments": {
-				"pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
+	keaMock := createKeaMock(func(callNo int) (jsons []string) {
+		return []string{
+			// simulate empty response
+			`[{
+				"result": 0,
+				"text": "Everything is fine",
+				"arguments": {}
+			}]`,
+			`[{
+				"result": 0, "text": "Everything is fine",
+				"arguments": {
+					"pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
+				}
+			}]`,
+			// simulate not loaded stat plugin in kea
+			`[{
+				"result": 2,
+				"text": "'stat-lease6-get' command not supported."
+			}]`,
+			`[{
+				"result": 0, "text": "Everything is fine",
+				"arguments": {
+					"pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
+				}
+			}]`,
+		}
 	})
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
@@ -266,51 +270,53 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	v4Config, v6Config := createDhcpConfigs()
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
 
-	keaMock := createKeaMock([]string{
-		fmt.Sprintf(`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"result-set": {
-					"columns": [ "subnet-id", "%s", "%s", "%s" ],
-					"rows": [
-						[ 10, 256, 111, 0 ],
-						[ 20, 4098, 2034, 4 ]
-					],
-					"timestamp": "2018-05-04 15:03:37.000000"
+	keaMock := createKeaMock(func(callNo int) (jsons []string) {
+		return []string{
+			fmt.Sprintf(`[{
+				"result": 0,
+				"text": "Everything is fine",
+				"arguments": {
+					"result-set": {
+						"columns": [ "subnet-id", "%s", "%s", "%s" ],
+						"rows": [
+							[ 10, 256, 111, 0 ],
+							[ 20, 4098, 2034, 4 ]
+						],
+						"timestamp": "2018-05-04 15:03:37.000000"
+					}
 				}
-			}
-		}]`, totalAddrs, assignedAddrs, declinedAddrs),
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"result-set": {
-					"columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
-					"rows": [
-						[ 30, 4096, 2400, 3, 0, 0],
-						[ 40, 0, 0, 0, 1048, 233 ],
-						[ 50, 256, 60, 0, 1048, 15 ],
-						[ 60, -1, 9223372036854775807, 0, -2, -3 ]
-					],
-					"timestamp": "2018-05-04 15:03:37.000000"
+			}]`, totalAddrs, assignedAddrs, declinedAddrs),
+			`[{
+				"result": 0,
+				"text": "Everything is fine",
+				"arguments": {
+					"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
 				}
-			}
-		}]`,
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
+			}]`,
+			`[{
+				"result": 0,
+				"text": "Everything is fine",
+				"arguments": {
+					"result-set": {
+						"columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
+						"rows": [
+							[ 30, 4096, 2400, 3, 0, 0],
+							[ 40, 0, 0, 0, 1048, 233 ],
+							[ 50, 256, 60, 0, 1048, 15 ],
+							[ 60, -1, 9223372036854775807, 0, -2, -3 ]
+						],
+						"timestamp": "2018-05-04 15:03:37.000000"
+					}
+				}
+			}]`,
+			`[{
+				"result": 0,
+				"text": "Everything is fine",
+				"arguments": {
+					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
+				}
+			}]`,
+		}
 	})
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
@@ -730,7 +736,7 @@ func TestPrepareHAEnvironment(t *testing.T) {
 
 	// Act
 	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
-	keaMock := createKeaMock([]string{})
+	keaMock := createKeaMock(func(callNo int) (jsons []string) { return []string{} })
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 	sp, err := NewStatsPuller(db, fa)
@@ -749,51 +755,86 @@ func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
 
 	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
 
-	keaMock := createKeaMock([]string{
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"result-set": {
-					"columns": [ "subnet-id", "total-addreses", "assigned-addreses", "declined-addreses" ],
-					"rows": [
-						[ 10, 256, 111, 0 ],
-						[ 20, 4098, 2034, 4 ]
-					],
-					"timestamp": "2018-05-04 15:03:37.000000"
-				}
-			}
-		}]`,
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"result-set": {
-					"columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
-					"rows": [
-						[ 30, 4096, 2400, 3, 0, 0],
-						[ 40, 0, 0, 0, 1048, 233 ],
-						[ 50, 256, 60, 0, 1048, 15 ],
-						[ 60, -1, 9223372036854775807, 0, -2, -3 ]
-					],
-					"timestamp": "2018-05-04 15:03:37.000000"
-				}
-			}
-		}]`,
-		`[{
-			"result": 0,
-			"text": "Everything is fine",
-			"arguments": {
-				"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
-			}
-		}]`,
+	shiftFactor := 100
+
+	keaMock := createKeaMock(func(callNo int) []string {
+		shift := int64(callNo * shiftFactor)
+		totalShift := shift * 2
+		data := []interface{}{
+			[]StatLeaseGetResponse{
+				{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: 0,
+						Text:   "Everything is fine",
+					},
+					Arguments: &StatLeaseGetArgs{
+						ResultSet: ResultSetInStatLeaseGet{
+							Columns: []string{"subnet-id", "total-addreses", "assigned-addreses", "declined-addreses"},
+							Rows: [][]int64{
+								{10, 256 + totalShift, 111 + shift, 0 + shift},
+								{20, 4098 + totalShift, 2034 + shift, 4 + shift},
+							},
+						},
+						Timestamp: "2018-05-04 15:03:37.000000",
+					},
+				},
+			},
+			[]StatGetResponse4{
+				{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: 0,
+						Text:   "Everything is fine",
+					},
+					Arguments: &ResponseArguments4{
+						Samples: []interface{}{
+							[]interface{}{44, "2019-07-30 10:13:00.000000"},
+						},
+					},
+				},
+			},
+			[]StatLeaseGetResponse{
+				{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: 0,
+						Text:   "Everything is fine",
+					},
+					Arguments: &StatLeaseGetArgs{
+						ResultSet: ResultSetInStatLeaseGet{
+							Columns: []string{"subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds"},
+							Rows: [][]int64{
+								{30, 4096 + totalShift, 2400 + shift, 3 + shift, 0 + totalShift, 0 + shift},
+								{40, 0 + totalShift, 0 + shift, 0 + shift, 1048 + totalShift, 233 + shift},
+								{50, 256 + totalShift, 60 + shift, 0 + shift, 1048 + totalShift, 15 + shift},
+								{60, -1, 9223372036854775807, 0, -2, -3},
+							},
+						},
+						Timestamp: "2018-05-04 15:03:37.000000",
+					},
+				},
+			},
+			[]StatGetResponse6{
+				{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: 0,
+						Text:   "Everything is fine",
+					},
+					Arguments: &ResponseArguments6{
+						Samples: []interface{}{
+							[]interface{}{66, "2019-07-30 10:13:00.000000"},
+						},
+					},
+				},
+			},
+		}
+
+		var jsons []string
+
+		for _, item := range data {
+			j, _ := json.Marshal(item)
+			jsons = append(jsons, string(j))
+		}
+
+		return jsons
 	})
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
@@ -810,6 +851,110 @@ func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, loadBalancing)
 	require.NotNil(t, hotStandby)
+
+	// Check collected stats in the local subnets. There is no meaning if they
+	// are from the HA daemons.
+	localSubnets := []*dbmodel.LocalSubnet{}
+	q := db.Model(&localSubnets)
+	q = q.Relation("Daemon")
+	err = q.Select()
+	require.NoError(t, err)
+	snCnt := 0
+	for _, sn := range localSubnets {
+		shift := (sn.Daemon.AppID - 1) * int64(shiftFactor)
+		totalShift := shift * 2
+		switch sn.LocalSubnetID {
+		case 10:
+			require.Equal(t, uint64(111+shift), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(256+totalShift), sn.Stats["total-addresses"])
+			snCnt++
+		case 20:
+			require.Equal(t, uint64(2034+shift), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(4+shift), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(4098+totalShift), sn.Stats["total-addresses"])
+			snCnt++
+		case 30:
+			require.Equal(t, uint64(2400+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(3+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(4096+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(0+totalShift), sn.Stats["total-pds"])
+			snCnt++
+		case 40:
+			require.Equal(t, uint64(0+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(233+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(0+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
+			snCnt++
+		case 50:
+			require.Equal(t, uint64(60+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(15+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(256+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
+			snCnt++
+		case 60:
+			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
+			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats["total-pds"])
+			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats["assigned-pds"])
+			snCnt++
+		case 70:
+			require.Nil(t, sn.Stats)
+		}
+	}
+
+	// 3 DHCPv4 daemons with 2 local subnets.
+	// 2 DHCPv6 daemons with 4 local subnets.
+	require.Equal(t, 3*2+2*4, snCnt)
+
+	// Check the subnet utilizations.
+	subnets, err := dbmodel.GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Len(t, subnets, 7)
+
+	for _, sn := range subnets {
+		switch sn.Prefix {
+		case "192.0.2.0/24":
+			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case "192.0.3.0/26":
+			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case "2001:db8:1::/64":
+			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case "2001:db8:2::/64":
+			require.Zero(t, sn.AddrUtilization)
+			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+		case "2001:db8:3::/64":
+			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization)/1000.0, 0.001)
+		}
+	}
+
+	// Check global statistics
+	globals, err := dbmodel.GetAllStats(db)
+	require.NoError(t, err)
+	require.EqualValues(t, big.NewInt(4358), globals["total-addresses"])
+	require.EqualValues(t, big.NewInt(2145), globals["assigned-addresses"])
+	require.EqualValues(t, big.NewInt(4), globals["declined-addresses"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(4355), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["total-nas"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(2460), big.NewInt(math.MaxInt64),
+	), globals["assigned-nas"])
+	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(2097), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["total-pds"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["assigned-pds"])
 }
 
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
