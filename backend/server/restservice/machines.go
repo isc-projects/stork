@@ -1111,7 +1111,7 @@ func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStat
 			Daemon: ha.HAType,
 		}
 		secondaryRole := "secondary"
-		if ha.HAMode == "hot-standby" {
+		if ha.HAMode == dbmodel.HAModeHotStandby {
 			secondaryRole = "standby"
 		}
 		// Calculate age.

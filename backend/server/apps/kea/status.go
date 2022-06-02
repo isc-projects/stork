@@ -13,12 +13,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-const (
-	HAStatusUnavailable   = "unavailable"
-	HAStatusLoadBalancing = "load-balancing"
-	HAStatusHotStandby    = "hot-standby"
-)
-
 // === status-get response structs ================================================
 
 // Represents the status of the local server (the one that
@@ -128,8 +122,8 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 	now := storkutil.UTCNow()
 
 	var (
-		primaryLastState   string
-		secondaryLastState string
+		primaryLastState   dbmodel.HAState
+		secondaryLastState dbmodel.HAState
 	)
 	// Depending if this server is primary or secondary/standby, we will fill in
 	// different columns of the ha_service table.
@@ -143,7 +137,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		// The state of the secondary should have been returned as "remote"
 		// server's state.
 		secondaryLastState = status.Remote.LastState
-		if secondaryLastState != HAStatusUnavailable {
+		if secondaryLastState != dbmodel.HAStateUnavailable {
 			service.SecondaryStatusCollectedAt = now
 			if agePresent {
 				// If there is age, we have to shift the timestamp backwards by age.
@@ -159,7 +153,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 
 		// Failover procedure should only be monitored during normal operation.
 		switch primaryLastState {
-		case HAStatusLoadBalancing, HAStatusHotStandby:
+		case dbmodel.HAStateLoadBalancing, dbmodel.HAStateHotStandby:
 			service.SecondaryConnectingClients = status.Remote.ConnectingClients
 			service.SecondaryUnackedClients = status.Remote.UnackedClients
 			service.SecondaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
@@ -180,7 +174,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		// the primary's state is given as "remote" server's state.
 		primaryLastState = status.Remote.LastState
 
-		if primaryLastState != HAStatusUnavailable {
+		if primaryLastState != dbmodel.HAStateUnavailable {
 			service.PrimaryStatusCollectedAt = now
 			if agePresent {
 				// If there is age, we have to shift the timestamp backwards by age.
@@ -196,7 +190,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 
 		// Failover procedure should only be monitored during normal operation.
 		switch secondaryLastState {
-		case HAStatusLoadBalancing, HAStatusHotStandby:
+		case dbmodel.HAStateLoadBalancing, dbmodel.HAStateHotStandby:
 			service.PrimaryConnectingClients = status.Remote.ConnectingClients
 			service.PrimaryUnackedClients = status.Remote.UnackedClients
 			service.PrimaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
@@ -211,13 +205,13 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 	// Finally, if any of the server's is in the partner-down state we should
 	// record it as failover event.
 	if primaryLastState != service.PrimaryLastState {
-		if primaryLastState == "partner-down" {
+		if primaryLastState == dbmodel.HAStatePartnerDown {
 			service.PrimaryLastFailoverAt = service.PrimaryStatusCollectedAt
 		}
 		service.PrimaryLastState = primaryLastState
 	}
 	if secondaryLastState != service.SecondaryLastState {
-		if secondaryLastState == "partner-down" {
+		if secondaryLastState == dbmodel.HAStatePartnerDown {
 			service.SecondaryLastFailoverAt = service.SecondaryStatusCollectedAt
 		}
 		service.SecondaryLastState = secondaryLastState
@@ -292,11 +286,11 @@ func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
 		for _, d := range app.Daemons {
 			switch d.ID {
 			case dbServices[j].HAService.PrimaryID:
-				dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
+				dbServices[j].HAService.PrimaryLastState = dbmodel.HAStateUnavailable
 				dbServices[j].HAService.PrimaryLastScopes = []string{}
 				dbServices[j].HAService.PrimaryReachable = false
 			case dbServices[j].HAService.SecondaryID:
-				dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
+				dbServices[j].HAService.SecondaryLastState = dbmodel.HAStateUnavailable
 				dbServices[j].HAService.SecondaryLastScopes = []string{}
 				dbServices[j].HAService.SecondaryReachable = false
 			}

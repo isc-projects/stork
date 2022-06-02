@@ -693,6 +693,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 			loadBalancing = &innerService
 		case "hot-standby":
 			hotStandby = &innerService
+		default:
 		}
 	}
 

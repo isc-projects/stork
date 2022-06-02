@@ -36,6 +36,36 @@ type DaemonToService struct {
 	ServiceID int64 `pg:",pk"`
 }
 
+type HAMode = string
+
+type HAType = string
+
+type HAState = string
+
+const (
+	HAModeHotStandby    HAMode = "hot-standby"
+	HAModePassiveBackup HAMode = "passive-backup"
+	HAModeLoadBalancing HAMode = "load-balancing"
+
+	HATypeDhcp4 HAType = "dhcp4"
+	HATypeDhcp6 HAType = "dhcp6"
+
+	HAStateNone                  HAState = ""
+	HAStateBackup                HAState = "backup"
+	HAStateCommunicationRecovery HAState = "communication-recovery"
+	HAStateHotStandby            HAState = "hot-standby"
+	HAStateLoadBalancing         HAState = "load-balancing"
+	HAStateInMaintenance         HAState = "in-maintenance"
+	HAStatePartnerDown           HAState = "partner-down"
+	HAStatePartnerInMaintenance  HAState = "partner-in-maintenance"
+	HAStatePassiveBackup         HAState = "passive-backup"
+	HAStateReady                 HAState = "ready"
+	HAStateSyncing               HAState = "syncing"
+	HAStateTerminated            HAState = "terminated"
+	HAStateWaiting               HAState = "waiting"
+	HAStateUnavailable           HAState = "unavailable"
+)
+
 // A structure holding HA specific information about the service. It
 // reflects the ha_service table which extends the service table with
 // High Availability specific information. It is embedded in the
@@ -44,15 +74,15 @@ type BaseHAService struct {
 	tableName                   struct{} `pg:"ha_service"` //nolint:unused // ,structcheck // ToDo: restore nolint declaration. Structchecks temporary doesn't support Go 1.18.
 	ID                          int64
 	ServiceID                   int64
-	HAType                      string
-	HAMode                      string
+	HAType                      HAType
+	HAMode                      HAMode
 	PrimaryID                   int64
 	SecondaryID                 int64
 	BackupID                    []int64 `pg:",array"`
 	PrimaryStatusCollectedAt    time.Time
 	SecondaryStatusCollectedAt  time.Time
-	PrimaryLastState            string
-	SecondaryLastState          string
+	PrimaryLastState            HAState
+	SecondaryLastState          HAState
 	PrimaryLastScopes           []string `pg:",array"`
 	SecondaryLastScopes         []string `pg:",array"`
 	PrimaryReachable            bool
@@ -382,9 +412,9 @@ func (s Service) IsNew() bool {
 }
 
 // Returns the High Availability state for the given service and daemon.
-func (s Service) GetDaemonHAState(daemonID int64) string {
+func (s Service) GetDaemonHAState(daemonID int64) HAState {
 	if s.HAService == nil {
-		return ""
+		return HAStateNone
 	}
 	if s.HAService.PrimaryID == daemonID {
 		return s.HAService.PrimaryLastState
@@ -394,10 +424,10 @@ func (s Service) GetDaemonHAState(daemonID int64) string {
 	}
 	for _, id := range s.HAService.BackupID {
 		if id == daemonID {
-			return "backup"
+			return HAStateBackup
 		}
 	}
-	return ""
+	return HAStateNone
 }
 
 // Returns last failover time of the given daemon's partner, i.e. the
