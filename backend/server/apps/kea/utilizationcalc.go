@@ -152,6 +152,7 @@ type utilizationCalculator struct {
 	sharedNetworks     map[int64]*sharedNetworkStats
 	outOfPoolAddresses map[int64]uint64
 	outOfPoolPrefixes  map[int64]uint64
+	excludedDaemons    map[int64]bool
 }
 
 // Constructor of the utilization calculator.
@@ -180,6 +181,12 @@ func (c *utilizationCalculator) setOutOfPoolAddresses(outOfPoolAddressesPerSubne
 // ID mapping to the total out-of-pool prefixes for the subnet.
 func (c *utilizationCalculator) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet map[int64]uint64) {
 	c.outOfPoolPrefixes = outOfPoolPrefixesPerSubnet
+}
+
+// The subnet statistics from the specific daemons can be excluded from the
+// calculations. It allows for avoiding duplicating values from the HA servers.
+func (c *utilizationCalculator) setExcludedDaemons(daemons map[int64]bool) {
+	c.excludedDaemons = daemons
 }
 
 // Add the subnet statistics for the current calculator state.
@@ -216,9 +223,9 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 // that Kea does not include in its statistics.
 func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + outOfPool,
-		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses"),
-		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses"),
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses", c.excludedDaemons) + outOfPool,
+		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses", c.excludedDaemons),
+		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses", c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -236,11 +243,11 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool 
 // calculated similarly.
 func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolTotalAddresses),
-		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
-		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
-		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(outOfPoolDelegatedPrefixes),
-		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
+		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas", c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
+		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, "assigned-nas", c.excludedDaemons),
+		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, "declined-nas", c.excludedDaemons),
+		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, "total-pds", c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
+		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, "assigned-pds", c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -254,10 +261,15 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolT
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
 // It expects that the counting value may exceed uint64 range.
-func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
+// The local subnets that belong to excluded daemons will not be processed.
+func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string, excludedDaemons map[int64]bool) *storkutil.BigCounter {
 	sum := storkutil.NewBigCounter(0)
 	hasNegativeStatistic := false
 	for _, localSubnet := range subnet.LocalSubnets {
+		if _, ok := excludedDaemons[localSubnet.DaemonID]; ok {
+			continue
+		}
+
 		value, ok := localSubnet.Stats[statName]
 		if !ok {
 			continue
@@ -284,9 +296,14 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
 // It assumes that the counting value does not exceed uint64 range.
-func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string) uint64 {
+// The local subnets that belong to excluded daemons will not be processed.
+func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string, excludedDaemons map[int64]bool) uint64 {
 	sum := uint64(0)
 	for _, localSubnet := range subnet.LocalSubnets {
+		if _, ok := excludedDaemons[localSubnet.DaemonID]; ok {
+			continue
+		}
+
 		value, ok := localSubnet.Stats[statName]
 		if !ok {
 			continue

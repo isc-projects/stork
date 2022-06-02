@@ -634,3 +634,139 @@ func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 	require.InDelta(t, 7.0/18.0, sharedNetwork.getAddressUtilization(), 0.001)
 	require.EqualValues(t, 0.1, sharedNetwork.getDelegatedPrefixUtilization())
 }
+
+func TestCalculatorSkipExcludedDaemonsIPv4(t *testing.T) {
+	// Arrange
+	subnet := &dbmodel.Subnet{
+		SharedNetworkID: 0,
+		Prefix:          "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(100),
+					"assigned-addresses": uint64(10),
+					"declined-addresses": uint64(20),
+				},
+				DaemonID: 1,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(200),
+					"assigned-addresses": uint64(20),
+					"declined-addresses": uint64(40),
+				},
+				DaemonID: 1,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(5),
+					"assigned-addresses": uint64(3),
+					"declined-addresses": uint64(1),
+				},
+				DaemonID: 2,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(50),
+					"assigned-addresses": uint64(1),
+					"declined-addresses": uint64(2),
+				},
+				DaemonID: 3,
+			},
+		},
+	}
+
+	calculator := newUtilizationCalculator()
+	calculator.setExcludedDaemons(map[int64]bool{
+		2: true,
+		3: true,
+	})
+
+	// Act
+	utilization := calculator.add(subnet)
+
+	// Assert
+	require.InDelta(t, float64(0.1), utilization.getAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
+
+	require.EqualValues(t, 300, calculator.global.totalIPv4Addresses.ToInt64())
+	require.EqualValues(t, 30, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 60, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
+}
+
+func TestCalculatorSkipExcludedDaemonsIPv6(t *testing.T) {
+	// Arrange
+	subnet := &dbmodel.Subnet{
+		SharedNetworkID: 0,
+		Prefix:          "20::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(100),
+					"assigned-nas": uint64(10),
+					"declined-nas": uint64(20),
+					"total-pds":    uint64(40),
+					"assigned-pds": uint64(30),
+				},
+				DaemonID: 1,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(200),
+					"assigned-nas": uint64(20),
+					"declined-nas": uint64(40),
+					"total-pds":    uint64(100),
+					"assigned-pds": uint64(10),
+				},
+				DaemonID: 2,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(5),
+					"assigned-nas": uint64(3),
+					"declined-nas": uint64(1),
+					"total-pds":    uint64(3),
+					"assigned-pds": uint64(1),
+				},
+				DaemonID: 3,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(50),
+					"assigned-nas": uint64(1),
+					"declined-nas": uint64(2),
+					"total-pds":    uint64(100),
+					"assigned-pds": uint64(3),
+				},
+				DaemonID: 4,
+			},
+		},
+	}
+
+	calculator := newUtilizationCalculator()
+	calculator.setExcludedDaemons(map[int64]bool{
+		3: true,
+		4: true,
+	})
+
+	// Act
+	utilization := calculator.add(subnet)
+
+	// Assert
+	require.InDelta(t, float64(0.1), utilization.getAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(40.0/140.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
+
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 300, calculator.global.totalIPv6Addresses.ToInt64())
+	require.EqualValues(t, 30, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 60, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 140, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, 40, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
+}
