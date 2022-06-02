@@ -211,6 +211,8 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		BackupID:                    []int64{service2.Daemons[2].ID, service2.Daemons[3].ID},
 		PrimaryStatusCollectedAt:    time.Now(),
 		SecondaryStatusCollectedAt:  time.Now(),
+		PrimaryReachable:            true,
+		SecondaryReachable:          true,
 		PrimaryLastState:            "load-balancing",
 		SecondaryLastState:          "syncing",
 		PrimaryLastScopes:           []string{"server1", "server2"},
@@ -651,4 +653,75 @@ func TestGetPartnerHAFailureTime(t *testing.T) {
 	// the primary's failover time.
 	failureTime = service.GetPartnerHAFailureTime(2)
 	require.Equal(t, primaryFailoverAt, failureTime)
+}
+
+// Tests that non-leading HA daemons are selected properly when HA works correctly.
+func TestGetNonLeadingHADaemonIDs(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	haService := services[1]
+
+	// Act
+	daemons, err := GetNonLeadingHADaemonIDs(db)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, haService.HAService)
+	// 1 secondary, 2 backups
+	require.Len(t, daemons, 3)
+	require.Contains(t, daemons, haService.HAService.SecondaryID)
+	require.Contains(t, daemons, haService.HAService.BackupID[0])
+	require.Contains(t, daemons, haService.HAService.BackupID[1])
+}
+
+// Tests that non-leading HA daemons are selected properly when HA daemons are
+// unreachable.
+func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	haService := services[1]
+	haService.HAService.PrimaryReachable = false
+	haService.HAService.SecondaryReachable = false
+	_ = UpdateService(db, haService)
+
+	// Act
+	daemons, err := GetNonLeadingHADaemonIDs(db)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, haService.HAService)
+	// 1 primary, 1 secondary, 2 backups
+	require.Len(t, daemons, 4)
+}
+
+// Tests that non-leading HA daemons are selected properly when a primary
+// daemon isn't operational.
+func TestGetNonLeadingHADaemonIDsPrimaryIsNotOperational(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	haService := services[1]
+	haService.HAService.PrimaryLastState = HAStateSyncing
+	haService.HAService.SecondaryLastState = HAStateReady
+	_ = UpdateService(db, haService)
+
+	// Act
+	daemons, err := GetNonLeadingHADaemonIDs(db)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, haService.HAService)
+	// 1 primary, 2 backups
+	require.Len(t, daemons, 3)
+	require.Contains(t, daemons, haService.HAService.PrimaryID)
+	require.Contains(t, daemons, haService.HAService.BackupID[0])
+	require.Contains(t, daemons, haService.HAService.BackupID[1])
 }
