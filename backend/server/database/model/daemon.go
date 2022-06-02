@@ -630,3 +630,46 @@ func (d Daemon) GetAppType() (apptype string) {
 	}
 	return
 }
+
+// Returns the HA daemons that don't allocate leases independently (depend on
+// another server or don't allocate at all).
+func GetNonLeadingHADaemonIDs(db *pg.DB) ([]int64, error) {
+	services, err := GetDetailedAllServices(db)
+	if err != nil {
+		return nil, err
+	}
+
+	nonActiveHADaemons := make([]int64, 0)
+
+	for _, service := range services {
+		if service.HAService == nil {
+			continue
+		}
+
+		// Backups never actively allocate leases.
+		nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.BackupID...)
+
+		operationalStates := map[HAState]bool{
+			HAStateHotStandby:           true,
+			HAStateLoadBalancing:        true,
+			HAStatePartnerDown:          true,
+			HAStatePartnerInMaintenance: true,
+			HAStateReady:                true,
+		}
+
+		_, isPrimaryOperational := operationalStates[service.HAService.PrimaryLastState]
+		isPrimaryOperational = isPrimaryOperational && service.HAService.PrimaryReachable
+
+		_, isSecondaryOperational := operationalStates[service.HAService.SecondaryLastState]
+		isSecondaryOperational = isSecondaryOperational && service.HAService.SecondaryReachable
+
+		if !isPrimaryOperational {
+			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.PrimaryID)
+		}
+		if !isSecondaryOperational {
+			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.SecondaryID)
+		}
+	}
+
+	return nonActiveHADaemons, nil
+}
