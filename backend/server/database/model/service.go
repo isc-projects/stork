@@ -479,10 +479,12 @@ func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
 		_, isSecondaryOperational := operationalStates[service.HAService.SecondaryLastState]
 		isSecondaryOperational = isSecondaryOperational && service.HAService.SecondaryReachable
 
-		if !isPrimaryOperational {
+		if isPrimaryOperational {
+			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.SecondaryID)
+		} else if isSecondaryOperational {
 			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.PrimaryID)
-		}
-		if !isSecondaryOperational {
+		} else {
+			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.PrimaryID)
 			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.SecondaryID)
 		}
 	}

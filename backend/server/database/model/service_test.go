@@ -663,6 +663,9 @@ func TestGetNonLeadingHADaemonIDs(t *testing.T) {
 
 	services := addTestServices(t, db)
 	haService := services[1]
+	haService.HAService.PrimaryLastState = HAStateReady
+	haService.HAService.SecondaryLastState = HAStateReady
+	_ = UpdateService(db, haService)
 
 	// Act
 	daemons, err := GetNonLeadingHADaemonIDs(db)
