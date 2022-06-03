@@ -975,6 +975,8 @@ func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
 	verifyCountingStatisticsFromPrimary(t, db)
 }
 
+// The primary server is down, the secondary one is working.
+// The statistic puller should count only the secondary server statistics.
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1012,6 +1014,41 @@ func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
 	verifyCountingStatisticsFromSecondary(t, db)
 }
 
+// HA pair doesn't work.
+// The statistic puller should count only the primary server statistics.
 func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
-	// TBD
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
+	loadBalancing.HAService.PrimaryLastState = dbmodel.HAStateTerminated
+	loadBalancing.HAService.PrimaryReachable = false
+	loadBalancing.HAService.SecondaryLastState = dbmodel.HAStateTerminated
+	loadBalancing.HAService.SecondaryReachable = false
+	hotStandby.HAService.PrimaryLastState = dbmodel.HAStateTerminated
+	hotStandby.HAService.PrimaryReachable = false
+	hotStandby.HAService.SecondaryLastState = dbmodel.HAStateTerminated
+	hotStandby.HAService.SecondaryReachable = false
+	_ = dbmodel.UpdateService(db, loadBalancing)
+	_ = dbmodel.UpdateService(db, hotStandby)
+
+	keaMock := createStandardKeaMock(false)
+
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+
+	// prepare stats puller
+	sp, err := NewStatsPuller(db, fa)
+	require.NoError(t, err)
+	defer sp.Shutdown()
+
+	// Act
+	err = sp.pullStats()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, loadBalancing)
+	require.NotNil(t, hotStandby)
+
+	verifyCountingStatisticsFromPrimary(t, db)
 }
