@@ -1,3 +1,9 @@
+* 214 [bug] marcin
+
+    Fixed Stork binaries build date injection. Before this fix, the binaries
+    reported unset build date.
+    (Gitlab #744)
+
 * 213 [bug] marcin
 
     Fixed broken password strength indicators.
