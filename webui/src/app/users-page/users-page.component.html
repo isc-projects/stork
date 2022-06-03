@@ -187,7 +187,7 @@
                                             type="text"
                                             formControlName="userlogin"
                                             id="user-login"
-                                            style="width: 80%"
+                                            class="user-input"
                                             pattern="[a-zA-Z0-9_]*"
                                         />
                                     </div>
@@ -211,7 +211,7 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            style="width: 80%"
+                                            class="user-input"
                                             formControlName="useremail"
                                             id="usermail"
                                         />
@@ -239,7 +239,7 @@
                                             type="text"
                                             formControlName="userfirst"
                                             id="userfirst"
-                                            style="width: 80%"
+                                            class="user-input"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -266,7 +266,7 @@
                                             type="text"
                                             formControlName="userlast"
                                             id="userlast"
-                                            style="width: 80%"
+                                            class="user-input"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -313,14 +313,13 @@
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
-                                        <input
-                                            pPassword
-                                            type="password"
+                                        <p-password
                                             formControlName="userpassword"
-                                            id="userpassword"
-                                            style="width: 80%"
+                                            inputId="userpassword"
+                                            inputStyleClass="user-input"
+                                            styleClass="password-component"
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
-                                        />
+                                        ></p-password>
                                     </div>
                                     <div class="p-col-12">
                                         <p-message
@@ -340,15 +339,14 @@
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
-                                        <input
-                                            pPassword
+                                        <p-password
                                             [feedback]="false"
-                                            type="password"
                                             formControlName="userpassword2"
-                                            id="userpassword2"
-                                            style="width: 80%"
+                                            inputId="userpassword2"
+                                            inputStyleClass="user-input"
+                                            styleClass="password-component"
                                             pattern="{{ userform.controls['userpassword'].value }}"
-                                        />
+                                        ></p-password>
                                     </div>
                                     <div class="p-col-12">
                                         <p-message
