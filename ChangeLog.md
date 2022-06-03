@@ -1,3 +1,8 @@
+* 213 [bug] marcin
+
+    Fixed broken password strength indicators.
+    (Gitlab #740)
+
 Stork 1.4.0 released on 2022-06-01.
 
 * 212 [bug] slawek
