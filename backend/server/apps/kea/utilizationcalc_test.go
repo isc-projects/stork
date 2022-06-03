@@ -677,10 +677,7 @@ func TestCalculatorSkipExcludedDaemonsIPv4(t *testing.T) {
 	}
 
 	calculator := newUtilizationCalculator()
-	calculator.setExcludedDaemons(map[int64]bool{
-		2: true,
-		3: true,
-	})
+	calculator.setExcludedDaemons([]int64{2, 3})
 
 	// Act
 	utilization := calculator.add(subnet)
@@ -749,10 +746,7 @@ func TestCalculatorSkipExcludedDaemonsIPv6(t *testing.T) {
 	}
 
 	calculator := newUtilizationCalculator()
-	calculator.setExcludedDaemons(map[int64]bool{
-		3: true,
-		4: true,
-	})
+	calculator.setExcludedDaemons([]int64{3, 4})
 
 	// Act
 	utilization := calculator.add(subnet)

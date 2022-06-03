@@ -185,8 +185,11 @@ func (c *utilizationCalculator) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet 
 
 // The subnet statistics from the specific daemons can be excluded from the
 // calculations. It allows for avoiding duplicating values from the HA servers.
-func (c *utilizationCalculator) setExcludedDaemons(daemons map[int64]bool) {
-	c.excludedDaemons = daemons
+func (c *utilizationCalculator) setExcludedDaemons(daemons []int64) {
+	c.excludedDaemons = make(map[int64]bool, len(daemons))
+	for _, daemon := range daemons {
+		c.excludedDaemons[daemon] = true
+	}
 }
 
 // Add the subnet statistics for the current calculator state.

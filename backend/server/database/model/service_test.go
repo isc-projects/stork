@@ -699,8 +699,9 @@ func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, haService.HAService)
-	// 1 primary, 1 secondary, 2 backups
-	require.Len(t, daemons, 4)
+	// Both servers are non-operational. Fallback to primary.
+	// 1 secondary, 2 backups
+	require.Len(t, daemons, 3)
 }
 
 // Tests that non-leading HA daemons are selected properly when a primary

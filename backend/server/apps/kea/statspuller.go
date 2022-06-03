@@ -106,6 +106,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 	calculator.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
 	calculator.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
 
+	excludedDaemons, err := dbmodel.GetNonLeadingHADaemonIDs(statsPuller.DB)
+	if err != nil {
+		return err
+	}
+
+	calculator.setExcludedDaemons(excludedDaemons)
+
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
