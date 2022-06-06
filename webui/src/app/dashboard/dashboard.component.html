@@ -66,7 +66,9 @@
                     <table class="dashboard-section__data">
                         <tr *ngFor="let sn of overview.subnets4.items" class="utilization-row">
                             <td class="utilization-row__id">[{{ sn.id }}]</td>
-                            <td class="utilization-row__bar"><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
+                            <td class="utilization-row__bar">
+                                <app-subnet-bar [subnet]="sn"></app-subnet-bar>
+                            </td>
                             <td style="padding-left: 1em" class="utilization-row__value">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
@@ -198,7 +200,9 @@
                     <table class="dashboard-section__data">
                         <tr *ngFor="let sn of overview.subnets6.items" class="utilization-row">
                             <td class="utilization-row__id">[{{ sn.id }}]</td>
-                            <td class="utilization-row__bar"><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
+                            <td class="utilization-row__bar">
+                                <app-subnet-bar [subnet]="sn"></app-subnet-bar>
+                            </td>
                             <td class="utilization-row__value" style="padding-left: 1em">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
@@ -330,7 +334,6 @@
                         </td>
                         <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 }}</td>
                         <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 }}</td>
-                        <!-- <td>{{ d.addrUtilization }}</td> -->
                         <td>
                             <i
                                 class="pi pi-{{ haStateIcon(d) }}"

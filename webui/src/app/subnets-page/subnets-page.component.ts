@@ -9,6 +9,7 @@ import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } 
 import { SettingService } from '../setting.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { Subnet } from '../backend'
 
 /**
  * Component for presenting DHCP subnets.
@@ -190,15 +191,15 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnet an identifier of the subnet
      * @param machine an identifier of the machine the subnet is configured on
      */
-    getGrafanaTooltip(subnet, machine) {
+    getGrafanaTooltip(subnet: number, machine: string) {
         return getGrafanaSubnetTooltip(subnet, machine)
     }
 
     /**
      * Get total number of addresses in a subnet.
      */
-    getTotalAddresses(subnet) {
-        if (subnet.localSubnets[0].stats) {
+    getTotalAddresses(subnet: Subnet) {
+        if (subnet.stats) {
             return getTotalAddresses(subnet)
         } else {
             return '?'
@@ -208,8 +209,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     /**
      * Get assigned number of addresses in a subnet.
      */
-    getAssignedAddresses(subnet) {
-        if (subnet.localSubnets[0].stats) {
+    getAssignedAddresses(subnet: Subnet) {
+        if (subnet.stats) {
             return getAssignedAddresses(subnet)
         } else {
             return '?'

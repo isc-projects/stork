@@ -221,6 +221,11 @@ namespace :demo do
         task :dns_proxy_server do
             docker_up_services("dns-proxy-server")
         end
+
+        desc 'Build and run container with simulator'
+        task :simulator do
+            docker_up_services("simulator")
+        end
     end
     
     desc 'Down all containers and remove all volumes'

@@ -114,16 +114,16 @@ describe('DashboardComponent', () => {
                                 id: 1,
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
-                                stats: {
-                                    'total-addresses': '65530',
-                                    'assigned-addresses': '6553',
-                                    'declined-addresses': '100',
-                                },
-                                statsCollectedAt: '2022-01-19T12:10:22.513Z',
                             },
                         ],
                         pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
+                        stats: {
+                            'total-addresses': '65530',
+                            'assigned-addresses': '6553',
+                            'declined-addresses': '100',
+                        },
+                        statsCollectedAt: '2022-01-19T12:10:22.513Z',
                         addrUtilization: 10,
                     },
                 ],
@@ -141,16 +141,16 @@ describe('DashboardComponent', () => {
                                 id: 2,
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
-                                stats: {
-                                    'total-nas': '100',
-                                    'assigned-nas': '20',
-                                    'declined-nas': '10',
-                                    'total-pds': '2',
-                                    'assigned-pds': '1',
-                                },
-                                statsCollectedAt: '2022-01-19T12:10:22.513Z',
                             },
                         ],
+                        stats: {
+                            'total-nas': '100',
+                            'assigned-nas': '20',
+                            'declined-nas': '10',
+                            'total-pds': '2',
+                            'assigned-pds': '1',
+                        },
+                        statsCollectedAt: '2022-01-19T12:10:22.513Z',
                         pools: ['10.3::1-10.3::100'],
                         subnet: '10:3::/64',
                         addrUtilization: 20,
@@ -207,8 +207,8 @@ describe('DashboardComponent', () => {
 
     it('should parse integer statistics', async () => {
         await component.refreshDhcpOverview()
-        expect(component.overview.subnets4.items[0].localSubnets[0].stats['total-addresses']).toBe(BigInt(65530))
-        expect(component.overview.subnets6.items[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt(20))
+        expect(component.overview.subnets4.items[0].stats['total-addresses']).toBe(BigInt(65530))
+        expect(component.overview.subnets6.items[0].stats['assigned-nas']).toBe(BigInt(20))
     })
 
     it('should display utilizations', async () => {

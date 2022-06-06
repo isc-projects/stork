@@ -137,7 +137,7 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
  * @param subnet an identifier of the subnet
  * @param machine an identifier of the machine the subnet is configured on
  */
-export function getGrafanaSubnetTooltip(subnet, machine) {
+export function getGrafanaSubnetTooltip(subnet: number, machine: string) {
     return 'See statistics for subnet ' + subnet + ' on machine ' + machine + ' in Grafana.'
 }
 

@@ -20,11 +20,7 @@ describe('SubnetBarComponent', () => {
         fixture = TestBed.createComponent(SubnetBarComponent)
         component = fixture.componentInstance
         component.subnet = {
-            localSubnets: [
-                {
-                    stats: null,
-                },
-            ],
+            stats: null,
         }
         fixture.detectChanges()
     })
@@ -36,15 +32,11 @@ describe('SubnetBarComponent', () => {
     it('tooltip should be prepared for DHCPv4', () => {
         const subnet4 = {
             subnet: '192.168.0.0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-addresses': 4,
-                        'assigned-addresses': 2,
-                        'declined-addresses': 1,
-                    },
-                },
-            ],
+            stats: {
+                'total-addresses': 4,
+                'assigned-addresses': 2,
+                'declined-addresses': 1,
+            },
         }
 
         component.subnet = subnet4
@@ -57,15 +49,11 @@ describe('SubnetBarComponent', () => {
     it('tooltip should be prepared for DHCPv6', () => {
         const subnet6 = {
             subnet: '3000::0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-nas': 4,
-                        'assigned-nas': 2,
-                        'declined-nas': 1,
-                    },
-                },
-            ],
+            stats: {
+                'total-nas': 4,
+                'assigned-nas': 2,
+                'declined-nas': 1,
+            },
         }
 
         component.subnet = subnet6
@@ -78,17 +66,13 @@ describe('SubnetBarComponent', () => {
     it('tooltip should be prepared for DHCPv6 with PDs', () => {
         const subnet6 = {
             subnet: '3000::0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-nas': 4,
-                        'assigned-nas': 2,
-                        'declined-nas': 1,
-                        'total-pds': 6,
-                        'assigned-pds': 3,
-                    },
-                },
-            ],
+            stats: {
+                'total-nas': 4,
+                'assigned-nas': 2,
+                'declined-nas': 1,
+                'total-pds': 6,
+                'assigned-pds': 3,
+            },
         }
 
         component.subnet = subnet6
@@ -104,17 +88,13 @@ describe('SubnetBarComponent', () => {
                 return {
                     addrUtilization: utilization,
                     subnet: '3000::0/24',
-                    localSubnets: [
-                        {
-                            stats: {
-                                'total-nas': 100.0,
-                                'assigned-nas': (100.0 * utilization) / 100.0,
-                                'declined-nas': 0,
-                                'total-pds': 200.0,
-                                'assigned-pds': (200.0 * utilization) / 100.0,
-                            },
-                        },
-                    ],
+                    stats: {
+                        'total-nas': 100.0,
+                        'assigned-nas': (100.0 * utilization) / 100.0,
+                        'declined-nas': 0,
+                        'total-pds': 200.0,
+                        'assigned-pds': (200.0 * utilization) / 100.0,
+                    },
                 }
             }
 
@@ -162,17 +142,13 @@ describe('SubnetBarComponent', () => {
             return {
                 addrUtilization: utilization,
                 subnet: '3000::0/24',
-                localSubnets: [
-                    {
-                        stats: {
-                            'total-nas': 100.0,
-                            'assigned-nas': (100.0 * utilization) / 100.0,
-                            'declined-nas': 0,
-                            'total-pds': 200.0,
-                            'assigned-pds': (200.0 * utilization) / 100.0,
-                        },
-                    },
-                ],
+                stats: {
+                    'total-nas': 100.0,
+                    'assigned-nas': (100.0 * utilization) / 100.0,
+                    'declined-nas': 0,
+                    'total-pds': 200.0,
+                    'assigned-pds': (200.0 * utilization) / 100.0,
+                },
             }
         }
 
@@ -225,17 +201,13 @@ describe('SubnetBarComponent', () => {
         component.subnet = {
             addrUtilization: 101,
             subnet: '3000::0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-nas': 100.0,
-                        'assigned-nas': 101.0,
-                        'declined-nas': 0,
-                        'total-pds': 200.0,
-                        'assigned-pds': 202.0,
-                    },
-                },
-            ],
+            stats: {
+                'total-nas': 100.0,
+                'assigned-nas': 101.0,
+                'declined-nas': 0,
+                'total-pds': 200.0,
+                'assigned-pds': 202.0,
+            },
         }
 
         fixture.detectChanges()

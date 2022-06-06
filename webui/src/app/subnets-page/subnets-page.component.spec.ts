@@ -77,14 +77,6 @@ describe('SubnetsPageComponent', () => {
                                 id: 1,
                                 machineAddress: 'localhost',
                                 machineHostname: 'lv-pc',
-                                stats: {
-                                    'assigned-addresses':
-                                        '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
-                                    'total-addresses':
-                                        '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
-                                    'declined-addresses': '-2',
-                                },
-                                statsCollectedAt: '2022-01-19T12:10:22.513Z',
                             },
                             {
                                 appId: 28,
@@ -92,9 +84,16 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
-                                statsCollectedAt: '1970-01-01T12:00:00.0Z',
                             },
                         ],
+                        stats: {
+                            'assigned-addresses':
+                                '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                            'total-addresses':
+                                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                            'declined-addresses': '-2',
+                        },
+                        statsCollectedAt: '2022-01-19T12:10:22.513Z',
                         pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
                     },
@@ -113,9 +112,9 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
-                                statsCollectedAt: '1970-01-01T12:00:00.0Z',
                             },
                         ],
+                        statsCollectedAt: '1970-01-01T12:00:00.0Z',
                         pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
                     },
@@ -144,7 +143,7 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        const stats: { [key: string]: BigInt } = component.subnets[0].localSubnets[0].stats
+        const stats: { [key: string]: BigInt } = component.subnets[0].stats
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
@@ -162,7 +161,7 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        expect(component.subnets[0].localSubnets[0].stats).toBeUndefined()
+        expect(component.subnets[0].stats).toBeUndefined()
         // No throw
     })
 })

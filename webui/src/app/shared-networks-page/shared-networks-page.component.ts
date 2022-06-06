@@ -8,6 +8,7 @@ import { humanCount, extractKeyValsAndPrepareQueryParams } from '../utils'
 import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { SharedNetwork } from '../backend'
 
 /**
  * Component for presenting shared networks in a table.
@@ -36,7 +37,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         appId: null,
     }
 
-    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
+    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) { }
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
@@ -101,7 +102,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             .pipe(
                 map((sharedNetworks) => {
                     sharedNetworks.items.forEach((sharedNetwork) => {
-                        parseSubnetsStatisticValues(sharedNetwork.subnets)
+                        parseSubnetsStatisticValues([sharedNetwork])
                     })
                     return sharedNetworks
                 })
@@ -146,27 +147,15 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     /**
      * Get total of addresses in the network by summing up all subnets.
      */
-    getTotalAddresses(network): bigint {
-        let total = BigInt(0)
-        for (const sn of network.subnets) {
-            if (sn.localSubnets[0].stats) {
-                total += getTotalAddresses(sn)
-            }
-        }
-        return total
+    getTotalAddresses(network: SharedNetwork) {
+        return getTotalAddresses(network)
     }
 
     /**
      * Get assigned of addresses in the network by summing up all subnets.
      */
-    getAssignedAddresses(network): bigint {
-        let total = BigInt(0)
-        for (const sn of network.subnets) {
-            if (sn.localSubnets[0].stats) {
-                total += getAssignedAddresses(sn)
-            }
-        }
-        return total
+    getAssignedAddresses(network: SharedNetwork) {
+        return getAssignedAddresses(network)
     }
 
     /**
@@ -187,7 +176,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         return humanCount(count)
     }
 
-    getApps(net) {
+    getApps(net: SharedNetwork) {
         const apps = []
         const appIds = {}
 

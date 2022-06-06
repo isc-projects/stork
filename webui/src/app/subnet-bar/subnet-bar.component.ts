@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core'
+import { Subnet } from '../backend'
 
 import { clamp, datetimeToLocal } from '../utils'
 
@@ -12,14 +13,14 @@ import { clamp, datetimeToLocal } from '../utils'
     styleUrls: ['./subnet-bar.component.sass'],
 })
 export class SubnetBarComponent {
-    _subnet: any
+    _subnet: Subnet
     style: any
     tooltip = ''
 
     constructor() {}
 
     @Input()
-    set subnet(subnet) {
+    set subnet(subnet: Subnet) {
         this._subnet = subnet
 
         const util: number = subnet.addrUtilization ? subnet.addrUtilization : 0
@@ -43,8 +44,8 @@ export class SubnetBarComponent {
 
         this.style = style
 
-        if (this._subnet.localSubnets[0].stats) {
-            const stats = this._subnet.localSubnets[0].stats
+        if (this._subnet.stats) {
+            const stats = this._subnet.stats
             const lines = []
             if (util > 100) {
                 lines.push('Warning! Utilization is greater than 100%. Data is unreliable.')
@@ -89,7 +90,7 @@ export class SubnetBarComponent {
                     lines.push('Assigned PDs: ' + stats['assigned-pds'].toLocaleString('en-US'))
                 }
             }
-            lines.push('Collected at: ' + datetimeToLocal(this._subnet.localSubnets[0].statsCollectedAt))
+            lines.push('Collected at: ' + datetimeToLocal(this._subnet.statsCollectedAt))
             this.tooltip = lines.join('<br>')
         } else {
             this.tooltip = 'No stats yet'

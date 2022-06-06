@@ -19,6 +19,43 @@ import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
+import { DhcpOverview, LocalSubnet, Subnet, Subnets } from '../backend'
+import { ModifyDeep } from '../utiltypes'
+
+type DhcpOverviewParsed = ModifyDeep<
+    DhcpOverview,
+    {
+        subnets4: {
+            items: {
+                localSubnets: {
+                    stats: never
+                    statsCollectedAt: never
+                }[]
+                stats: Record<string, bigint>
+            }[]
+        }
+        subnets6: {
+            items: {
+                localSubnets: {
+                    stats: never
+                    statsCollectedAt: never
+                }[]
+                stats: Record<string, bigint>
+            }[]
+        }
+        dhcp4Stats: {
+            assignedAddresses: bigint | number
+            totalAddresses: bigint | number
+            declinedAddresses: bigint | number
+        }
+        dhcp6Stats: {
+            assignedNAs: bigint | number
+            totalNAs: bigint | number
+            assignedPDs: bigint | number
+            totalPDs: bigint | number
+        }
+    }
+>
 
 /**
  * Component presenting dashboard with DHCP and DNS overview.
@@ -32,7 +69,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
     loaded = false
     appsStats: AppsStats
-    overview: any
+    overview: DhcpOverviewParsed
     grafanaUrl: string
 
     constructor(
@@ -40,7 +77,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private dhcpApi: DHCPService,
         private msgSrv: MessageService,
         private settingSvc: SettingService
-    ) {}
+    ) { }
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
@@ -55,7 +92,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             sharedNetworks4: { total: 0, items: [] },
             sharedNetworks6: { total: 0, items: [] },
             dhcp4Stats: { assignedAddresses: 0, totalAddresses: 0, declinedAddresses: 0 },
-            dhcp6Stats: { assignedNAs: 0, totalNAs: 0, assignedPDs: 0, totalPDs: 0, declinedAddresses: 0 },
+            dhcp6Stats: { assignedNAs: 0, totalNAs: 0, assignedPDs: 0, totalPDs: 0 },
             dhcpDaemons: [],
         }
         this.appsStats = {
@@ -139,7 +176,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         parseSubnetsStatisticValues(v.subnets6.items)
                     }
 
-                    return v
+                    return v as DhcpOverviewParsed
                 })
             )
             .toPromise()

@@ -1,21 +1,36 @@
+import { SharedNetwork, Subnet } from './backend'
+
 /**
  * Get total number of addresses in a subnet.
  * It is taken from DHCPv4 or DHCPv6 stats respectively.
  * In DHCPv6 if total is -1 in stats then max safe int is returned.
  */
-export function getTotalAddresses(subnet) {
+export function getTotalAddresses(subnet: Subnet | SharedNetwork): number | bigint | null {
     // DHCPv4 or DHCPv6 stats
-    const statName = subnet.subnet.includes('.') ? 'total-addresses' : 'total-nas'
-    return subnet.localSubnets[0].stats[statName]
+    if (subnet.stats == null) {
+        return BigInt(0)
+    }
+    if ('total-addresses' in subnet.stats) {
+        return subnet.stats['total-addresses']
+    } else {
+        return subnet.stats['total-nas']
+    }
 }
 
 /**
  * Get assigned number of addresses in a subnet.
  * It is taken from DHCPv4 or DHCPv6 stats respectively.
  */
-export function getAssignedAddresses(subnet) {
-    const statName = subnet.subnet.includes('.') ? 'assigned-addresses' : 'assigned-nas'
-    return subnet.localSubnets[0].stats[statName]
+export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | bigint | null {
+    // DHCPv4 or DHCPv6 stats
+    if (subnet.stats == null) {
+        return BigInt(0)
+    }
+    if ('total-addresses' in subnet.stats) {
+        return subnet.stats['assigned-addresses']
+    } else {
+        return subnet.stats['assigned-nas']
+    }
 }
 
 /**
@@ -23,28 +38,21 @@ export function getAssignedAddresses(subnet) {
  * It is necessary because the statistics can store large numbers and standard
  * JSON parser converts them to double precision number. It causes losing precision.
  */
-export function parseSubnetsStatisticValues(subnets): void {
+export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[]): void {
     subnets.forEach((s) => {
-        if (s.localSubnets == null) {
+        if (s.stats == null) {
             return
         }
-        s.localSubnets.forEach((l) => {
-            if (l.stats == null) {
+        Object.keys(s.stats).forEach((k) => {
+            if (typeof s.stats[k] !== 'string') {
                 return
             }
-
-            Object.keys(l.stats).forEach((k) => {
-                if (typeof l.stats[k] !== 'string') {
-                    return
-                }
-                try {
-                    l.stats[k] = BigInt(l.stats[k])
-                } catch {
-                    // Non-integer string
-                    return
-                }
-            })
+            try {
+                s.stats[k] = BigInt(s.stats[k])
+            } catch {
+                // Non-integer string
+                return
+            }
         })
     })
-    return subnets
 }

@@ -1,21 +1,20 @@
 import { TestBed } from '@angular/core/testing'
+import { Subnet } from './backend'
 
 import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from './subnets'
 
 describe('subnets', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
 
+    type SubnetOnly = Partial<Omit<Subnet, 'localSubnets'>>
+
     it('stats funcs should work for DHCPv4', () => {
-        const subnet4 = {
+        const subnet4: SubnetOnly = {
             subnet: '192.168.0.0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-addresses': 4,
-                        'assigned-addresses': 2,
-                    },
-                },
-            ],
+            stats: {
+                'total-addresses': 4,
+                'assigned-addresses': 2,
+            },
         }
         const totalAddrs = getTotalAddresses(subnet4)
         expect(totalAddrs).toBe(4)
@@ -25,16 +24,12 @@ describe('subnets', () => {
     })
 
     it('stats funcs should work for DHCPv6', () => {
-        const subnet6 = {
+        const subnet6: SubnetOnly = {
             subnet: '3000::0/24',
-            localSubnets: [
-                {
-                    stats: {
-                        'total-nas': 4,
-                        'assigned-nas': BigInt('18446744073709551615'),
-                    },
-                },
-            ],
+            stats: {
+                'total-nas': 4,
+                'assigned-nas': BigInt('18446744073709551615'),
+            },
         }
         const totalAddrs = getTotalAddresses(subnet6)
         expect(totalAddrs).toBe(4)
@@ -45,18 +40,14 @@ describe('subnets', () => {
 
     it('parse stats from string to big int', () => {
         // Arrange
-        const subnets6 = [
+        const subnets6: SubnetOnly[] = [
             {
                 subnet: '3000::0/24',
-                localSubnets: [
-                    {
-                        stats: {
-                            'total-nas': '4',
-                            'assigned-nas': '18446744073709551615',
-                            'total-pds': '',
-                        },
-                    },
-                ],
+                stats: {
+                    'total-nas': '4',
+                    'assigned-nas': '18446744073709551615',
+                    'total-pds': '',
+                },
             },
         ]
 
@@ -64,27 +55,23 @@ describe('subnets', () => {
         parseSubnetsStatisticValues(subnets6)
 
         // Assert
-        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe(BigInt('4') as any)
-        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
-        expect(subnets6[0].localSubnets[0].stats['total-pds']).toBe(BigInt(0) as any)
+        expect(subnets6[0].stats['total-nas']).toBe(BigInt('4') as any)
+        expect(subnets6[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
+        expect(subnets6[0].stats['total-pds']).toBe(BigInt(0) as any)
     })
 
     it('parse stats from non-string to big int', () => {
         // Arrange
         const obj = new Date()
-        const subnets6 = [
+        const subnets6: SubnetOnly[] = [
             {
                 subnet: '3000::0/24',
-                localSubnets: [
-                    {
-                        stats: {
-                            'total-nas': true,
-                            'assigned-nas': 42,
-                            'declined-nas': obj,
-                            'assigned-pds': null,
-                        },
-                    },
-                ],
+                stats: {
+                    'total-nas': true,
+                    'assigned-nas': 42,
+                    'declined-nas': obj,
+                    'assigned-pds': null,
+                },
             },
         ]
 
@@ -92,25 +79,21 @@ describe('subnets', () => {
         parseSubnetsStatisticValues(subnets6)
 
         // Assert
-        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe(true)
-        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe(42)
-        expect(subnets6[0].localSubnets[0].stats['declined-nas']).toBe(obj)
-        expect(subnets6[0].localSubnets[0].stats['assigned-pds']).toBe(null)
+        expect(subnets6[0].stats['total-nas']).toBe(true)
+        expect(subnets6[0].stats['assigned-nas']).toBe(42)
+        expect(subnets6[0].stats['declined-nas']).toBe(obj)
+        expect(subnets6[0].stats['assigned-pds']).toBe(null)
     })
 
     it('parse stats from non-numeric string to big int', () => {
         // Arrange
-        const subnets6 = [
+        const subnets6: SubnetOnly[] = [
             {
                 subnet: '3000::0/24',
-                localSubnets: [
-                    {
-                        stats: {
-                            'total-nas': 'abc',
-                            'assigned-nas': 'FF',
-                        },
-                    },
-                ],
+                stats: {
+                    'total-nas': 'abc',
+                    'assigned-nas': 'FF',
+                },
             },
         ]
 
@@ -118,8 +101,8 @@ describe('subnets', () => {
         parseSubnetsStatisticValues(subnets6)
 
         // Assert
-        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe('abc')
-        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe('FF')
+        expect(subnets6[0].stats['total-nas']).toBe('abc')
+        expect(subnets6[0].stats['assigned-nas']).toBe('FF')
     })
 
     it('parse stats for missing local subnets', () => {
