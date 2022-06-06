@@ -18,9 +18,9 @@ import (
 )
 
 // Custom statistic type to redefine JSON marshalling.
-type LocalSubnetStats map[string]interface{}
+type SubnetStats map[string]interface{}
 
-// Local subnet statistics may contain the integer number from the int64
+// Subnet statistics may contain the integer number from the int64
 // (or uint64) range (max value is 2^63-1 (2^64-1)). The value returned by
 // the Kea and stored in the Postgres database is exact. But when the
 // frontend fetches this data, it deserializes it using the standard JSON.parse
@@ -32,7 +32,7 @@ type LocalSubnetStats map[string]interface{}
 //
 // It doesn't use the pointer to receiver type for compatibility with gopg serialization
 // during inserting to the database.
-func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
+func (s SubnetStats) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return json.Marshal(nil)
 	}
@@ -58,7 +58,7 @@ func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
 // that look like integers.
 // During the serialization we lost the original data type of the number.
 // We assume that strings with positive numbers are uint64 and negative numbers are int64.
-func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
+func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	toUnmarshal := make(map[string]interface{})
 	err := json.Unmarshal(data, &toUnmarshal)
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	if *s == nil {
-		*s = LocalSubnetStats{}
+		*s = SubnetStats{}
 	}
 
 	for k, v := range toUnmarshal {
@@ -105,6 +105,69 @@ func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Calculates the utilization of addresses and delegated prefixes based on the
+// statistics values. If the values are missing or zeros, then it returns zero.
+// Utilization is in 0 (0%) to 1 (100%) range.
+// For IPv6 networks, the address utilization should be based on NA statistics.
+// For IPv4 networks, the PD utilization should be zero.
+func (s *SubnetStats) Utilizations() (addressUtilization, prefixDelegationUtilization float64) {
+	if s == nil {
+		return
+	}
+
+	statisticNames := [][]string{
+		{"total-addresses", "assigned-addresses"},
+		{"total-nas", "assigned-nas"},
+		{"total-pds", "assigned-pds"},
+	}
+	utilizations := make([]*float64, len(statisticNames))
+
+	for i := 0; i < len(statisticNames); i++ {
+		counters := make([]*storkutil.BigCounter, len(statisticNames[i]))
+		for j := 0; j < len(statisticNames[i]); j++ {
+			statisticName := statisticNames[i][j]
+			value, ok := (*s)[statisticName]
+			if !ok {
+				break
+			}
+
+			valueUint, ok := value.(uint64)
+			if ok {
+				counters[j] = storkutil.NewBigCounter(valueUint)
+				continue
+			}
+
+			valueBigInt, ok := value.(*big.Int)
+			if ok {
+				counter, ok := storkutil.NewBigCounter(0).AddBigInt(valueBigInt)
+				if ok {
+					counters[j] = counter
+				}
+			}
+		}
+
+		total, assigned := counters[0], counters[1]
+		if total == nil || assigned == nil {
+			continue
+		}
+
+		utilization := assigned.DivideSafeBy(total)
+		utilizations[i] = &utilization
+	}
+
+	addressUtilization = 0.0
+	if utilizations[0] != nil {
+		addressUtilization = *utilizations[0]
+	} else if utilizations[1] != nil {
+		addressUtilization = *utilizations[1]
+	}
+
+	if utilizations[2] != nil {
+		prefixDelegationUtilization = *utilizations[2]
+	}
+	return addressUtilization, prefixDelegationUtilization
+}
+
 // This structure holds subnet information retrieved from an app. Multiple
 // DHCP server apps may be configured to serve leases in the same subnet.
 // For the same subnet configured on different DHCP server there will be
@@ -121,7 +184,7 @@ type LocalSubnet struct {
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
-	Stats            LocalSubnetStats
+	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
 
@@ -142,8 +205,10 @@ type Subnet struct {
 
 	Hosts []Host `pg:"rel:has-many"`
 
-	AddrUtilization int16
-	PdUtilization   int16
+	AddrUtilization  int16
+	PdUtilization    int16
+	Stats            SubnetStats
+	StatsCollectedAt time.Time
 }
 
 // Hook executed after inserting a subnet to the database. It updates subnet
@@ -662,7 +727,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 }
 
 // Update stats pulled for given local subnet.
-func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats LocalSubnetStats) error {
+func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 	lsn.Stats = stats
 	lsn.StatsCollectedAt = storkutil.UTCNow()
 	q := dbi.Model(lsn)
@@ -679,16 +744,19 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats LocalSubnetStats) error
 	return err
 }
 
-// Update utilization in Subnet.
-func (s *Subnet) UpdateUtilization(dbi dbops.DBI, addrUtilization, pdUtilization int16) error {
-	s.AddrUtilization = addrUtilization
-	s.PdUtilization = pdUtilization
+// Update statistics in Subnet.
+func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics SubnetStats) error {
+	addrUtilization, pdUtilization := statistics.Utilizations()
+	s.AddrUtilization = int16(addrUtilization * 1000)
+	s.PdUtilization = int16(pdUtilization * 1000)
+	s.Stats = statistics
+	s.StatsCollectedAt = time.Now().UTC()
 	q := dbi.Model(s)
-	q = q.Column("addr_utilization", "pd_utilization")
+	q = q.Column("addr_utilization", "pd_utilization", "stats", "stats_collected_at")
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem updating utilization in the subnet: %d",
+		err = pkgerrors.Wrapf(err, "problem updating statistics in the subnet: %d",
 			s.ID)
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "subnet with ID %d does not exist", s.ID)

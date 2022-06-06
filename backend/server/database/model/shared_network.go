@@ -22,8 +22,10 @@ type SharedNetwork struct {
 
 	Subnets []Subnet `pg:"rel:has-many"`
 
-	AddrUtilization int16
-	PdUtilization   int16
+	AddrUtilization  int16
+	PdUtilization    int16
+	Stats            SubnetStats
+	StatsCollectedAt time.Time
 }
 
 // Adds new shared network to the database in a transaction.
@@ -285,15 +287,18 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	return networks, int64(total), err
 }
 
-// Update utilization of addresses and delegated prefixes in a SharedNetwork.
-func UpdateUtilizationInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, addrUtilization, pdUtilization int16) error {
+// Update statistics in a SharedNetwork.
+func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, statistics SubnetStats) error {
+	addrUtilization, pdUtilization := statistics.Utilizations()
 	net := &SharedNetwork{
-		ID:              sharedNetworkID,
-		AddrUtilization: addrUtilization,
-		PdUtilization:   pdUtilization,
+		ID:               sharedNetworkID,
+		AddrUtilization:  int16(addrUtilization * 1000),
+		PdUtilization:    int16(pdUtilization * 1000),
+		Stats:            statistics,
+		StatsCollectedAt: time.Now().UTC(),
 	}
 	q := dbi.Model(net)
-	q = q.Column("addr_utilization", "pd_utilization")
+	q = q.Column("addr_utilization", "pd_utilization", "stats", "stats_collected_at")
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {

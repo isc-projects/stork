@@ -272,6 +272,24 @@ func TestBigCounterToBigInt(t *testing.T) {
 	require.EqualValues(t, big.NewInt(0).Add(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(1)), value2)
 }
 
+// Test the big counter can be converted to native type.
+func TestBigCounterToNativeType(t *testing.T) {
+	// Arrange
+	counterBase := NewBigCounter(42)
+	counterExtended := NewBigCounter(math.MaxUint64).AddUint64(1)
+
+	// Act
+	nativeBase := counterBase.ToNativeType()
+	nativeExtended := counterExtended.ToNativeType()
+
+	// Assert
+	require.EqualValues(t, uint64(42), nativeBase)
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(1),
+	), nativeExtended)
+}
+
 // Benchmarks.
 // The below benchmark measure the big counter performance.
 

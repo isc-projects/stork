@@ -56,6 +56,7 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 type leaseStats interface {
 	getAddressUtilization() float64
 	getDelegatedPrefixUtilization() float64
+	getStatistics() dbmodel.SubnetStats
 }
 
 // Sum of the subnet statistics from the single shared network.
@@ -86,6 +87,15 @@ func (s *sharedNetworkStats) getAddressUtilization() float64 {
 // Delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) getDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
+}
+
+func (s *sharedNetworkStats) getStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		"total-nas":    s.totalAddresses.ToNativeType(),
+		"assigned-nas": s.totalAssignedAddresses.ToNativeType(),
+		"total-pds":    s.totalDelegatedPrefixes.ToNativeType(),
+		"assigned-pds": s.totalAssignedDelegatedPrefixes.ToNativeType(),
+	}
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
@@ -124,6 +134,14 @@ func (s *subnetIPv4Stats) getDelegatedPrefixUtilization() float64 {
 	return 0.0
 }
 
+func (s *subnetIPv4Stats) getStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		"total-addresses":    s.totalAddresses,
+		"assigned-addresses": s.totalAssignedAddresses,
+		"declined-addresses": s.totalDeclinedAddresses,
+	}
+}
+
 // IPv6 statistics retrieved from the single subnet.
 type subnetIPv6Stats struct {
 	totalAddresses                 *storkutil.BigCounter
@@ -144,10 +162,19 @@ func (s *subnetIPv6Stats) getDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
-// Utilization calculator is a helper for calculating the global
-// IPv4 and IPv6 address, and delegated prefix statistic and utilization
-// per subnet and shared network.
-type utilizationCalculator struct {
+func (s *subnetIPv6Stats) getStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		"total-nas":    s.totalAddresses.ToNativeType(),
+		"assigned-nas": s.totalAssignedAddresses.ToNativeType(),
+		"declined-nas": s.totalDeclinedAddresses.ToNativeType(),
+		"total-pds":    s.totalDelegatedPrefixes.ToNativeType(),
+		"assigned-pds": s.totalAssignedDelegatedPrefixes.ToNativeType(),
+	}
+}
+
+// Statistics Counter is a helper for calculating the global IPv4 and IPv6
+// address, and delegated prefix statistics per subnet and shared network.
+type statisticsCounter struct {
 	global             *globalStats
 	sharedNetworks     map[int64]*sharedNetworkStats
 	outOfPoolAddresses map[int64]uint64
@@ -155,9 +182,9 @@ type utilizationCalculator struct {
 	excludedDaemons    map[int64]bool
 }
 
-// Constructor of the utilization calculator.
-func newUtilizationCalculator() *utilizationCalculator {
-	return &utilizationCalculator{
+// Constructor of the statistics counter.
+func newStatisticsCounter() *statisticsCounter {
+	return &statisticsCounter{
 		sharedNetworks:     make(map[int64]*sharedNetworkStats),
 		global:             newGlobalStats(),
 		outOfPoolAddresses: make(map[int64]uint64),
@@ -166,37 +193,37 @@ func newUtilizationCalculator() *utilizationCalculator {
 }
 
 // The total IPv4 and IPv6 addresses statistics returned by Kea exclude
-// out-of-pool reservations, yielding possibly incorrect utilization.
-// The utilization can be corrected by including the out-of-pool
+// out-of-pool reservations, yielding possibly incorrect calculations.
+// The values can be corrected by including the out-of-pool
 // reservation counts from the Stork database. The argument is a subnet
 // ID mapping to the total out-of-pool addresses for the subnet.
-func (c *utilizationCalculator) setOutOfPoolAddresses(outOfPoolAddressesPerSubnet map[int64]uint64) {
+func (c *statisticsCounter) setOutOfPoolAddresses(outOfPoolAddressesPerSubnet map[int64]uint64) {
 	c.outOfPoolAddresses = outOfPoolAddressesPerSubnet
 }
 
 // The total delegated prefixes statistics returned by Kea exclude
-// out-of-pool reservations, yielding possibly incorrect utilization.
-// The utilization can be corrected by including the out-of-pool
+// out-of-pool reservations, yielding possibly incorrect calculations.
+// The values can be corrected by including the out-of-pool
 // reservation counts from the Stork database. The argument is a subnet
 // ID mapping to the total out-of-pool prefixes for the subnet.
-func (c *utilizationCalculator) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet map[int64]uint64) {
+func (c *statisticsCounter) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet map[int64]uint64) {
 	c.outOfPoolPrefixes = outOfPoolPrefixesPerSubnet
 }
 
 // The subnet statistics from the specific daemons can be excluded from the
 // calculations. It allows for avoiding duplicating values from the HA servers.
-func (c *utilizationCalculator) setExcludedDaemons(daemons []int64) {
+func (c *statisticsCounter) setExcludedDaemons(daemons []int64) {
 	c.excludedDaemons = make(map[int64]bool, len(daemons))
 	for _, daemon := range daemons {
 		c.excludedDaemons[daemon] = true
 	}
 }
 
-// Add the subnet statistics for the current calculator state.
+// Add the subnet statistics for the current counter state.
 // The total counter (total addresses or NAs) will be increased by
 // outOfPool value.
-// It returns the utilization of this subnet.
-func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
+// It returns the statistics of this subnet.
+func (c *statisticsCounter) add(subnet *dbmodel.Subnet) leaseStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
@@ -224,7 +251,7 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 // The resulting addresses counter will be a sum of the addresses returned by Kea for this
 // subnet and the outOfPool counter holding the number of the out-of-pool reservations
 // that Kea does not include in its statistics.
-func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
+func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
 		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses", c.excludedDaemons) + outOfPool,
 		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses", c.excludedDaemons),
@@ -244,7 +271,7 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool 
 // subnet and the outOfPool counter holding the number of the out-of-pool reservations
 // that Kea does not include in its statistics. The delegated prefixes counter will be
 // calculated similarly.
-func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
+func (c *statisticsCounter) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
 		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas", c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
 		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, "assigned-nas", c.excludedDaemons),

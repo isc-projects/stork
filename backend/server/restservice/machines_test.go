@@ -1575,7 +1575,7 @@ func TestGetDhcpOverview(t *testing.T) {
 				Stats: nil,
 			},
 			{
-				Stats: dbmodel.LocalSubnetStats{
+				Stats: dbmodel.SubnetStats{
 					"total-addresses": 0,
 				},
 			},

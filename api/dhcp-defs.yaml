@@ -246,6 +246,11 @@
         type: string
       addrUtilization:
         type: number
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
       localSubnets:
         type: array
         items:
@@ -277,6 +282,11 @@
           $ref: '#/definitions/Subnet'
       addrUtilization:
         type: number
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
 
   SharedNetworks:
     type: object
@@ -345,8 +355,6 @@
         type: integer
       rps2:
         type: integer
-      addrUtilization:
-        type: number
       haEnabled:
         type: boolean
       haState:

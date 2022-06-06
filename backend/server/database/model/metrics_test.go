@@ -63,12 +63,12 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	_ = AddSubnet(db, &Subnet{
-		Prefix:          "192.168.0.1/32",
+		Prefix:          "3001:1::/64",
 		AddrUtilization: 10,
 		PdUtilization:   15,
 	})
 	_ = AddSubnet(db, &Subnet{
-		Prefix:          "192.168.1.1/32",
+		Prefix:          "3001:2::/64",
 		AddrUtilization: 20,
 		PdUtilization:   25,
 	})
@@ -83,11 +83,11 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, metrics.SubnetMetrics, 3)
 
-	require.EqualValues(t, "192.168.0.1/32", metrics.SubnetMetrics[0].Label)
+	require.EqualValues(t, "3001:1::/64", metrics.SubnetMetrics[0].Label)
 	require.EqualValues(t, 10, metrics.SubnetMetrics[0].AddrUtilization)
 	require.EqualValues(t, 15, metrics.SubnetMetrics[0].PdUtilization)
 
-	require.EqualValues(t, "192.168.1.1/32", metrics.SubnetMetrics[1].Label)
+	require.EqualValues(t, "3001:2::/64", metrics.SubnetMetrics[1].Label)
 	require.EqualValues(t, 20, metrics.SubnetMetrics[1].AddrUtilization)
 	require.EqualValues(t, 25, metrics.SubnetMetrics[1].PdUtilization)
 

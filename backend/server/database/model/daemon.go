@@ -28,10 +28,8 @@ const (
 // A structure reflecting Kea DHCP stats for daemon. It is stored
 // as a JSONB value in SQL and unmarshaled in this structure.
 type KeaDHCPDaemonStats struct {
-	RPS1            int `pg:"rps1"`
-	RPS2            int `pg:"rps2"`
-	AddrUtilization int16
-	PdUtilization   int16
+	RPS1 int `pg:"rps1"`
+	RPS2 int `pg:"rps2"`
 }
 
 // A structure holding Kea DHCP specific information about a daemon. It

@@ -762,18 +762,26 @@ func TestUpdateUtilization(t *testing.T) {
 	returnedSubnet, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.Zero(t, returnedSubnet.AddrUtilization)
-	require.Zero(t, returnedSubnet.PdUtilization)
+	require.Nil(t, returnedSubnet.Stats)
+	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateUtilization(db, 10, 20)
+	returnedSubnet.UpdateStatistics(db, SubnetStats{
+		"total-nas":    uint64(100),
+		"assigned-nas": uint64(1),
+		"total-pds":    uint64(100),
+		"assigned-pds": uint64(2),
+	})
 
 	// check if utilization was stored in db
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet2)
-	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
-	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
+	require.EqualValues(t, int16(10), returnedSubnet2.AddrUtilization)
+	require.EqualValues(t, int16(20), returnedSubnet2.PdUtilization)
+	require.EqualValues(t, int16(1), returnedSubnet2.Stats["assigned-nas"])
+	require.EqualValues(t, int16(2), returnedSubnet2.Stats["assigned-pds"])
+	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 
 // Test deleting subnets not assigned to any apps.
@@ -911,7 +919,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
-		Stats: LocalSubnetStats{
+		Stats: SubnetStats{
 			"maxInt64":             int64(math.MaxInt64),
 			"minInt64":             int64(math.MinInt64),
 			"maxUint64":            uint64(math.MaxUint64),
@@ -980,6 +988,100 @@ func TestSerializeLocalSubnetWithNoneStatsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	require.Nil(t, deserialized.Stats)
+}
+
+// Test that the the nil stats returns zero utilizations.
+func TestUtilizationsForNilStats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats(nil)
+
+	// Act
+	aU, pdU := stats.Utilizations()
+
+	// Assert
+	require.Zero(t, aU)
+	require.Zero(t, pdU)
+}
+
+// Test that the the IPv4 stats returns proper utilizations.
+func TestUtilizationsForIPv4Stats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats{
+		"assigned-addresses": uint64(5),
+		"total-addresses":    uint64(20),
+	}
+
+	// Act
+	aU, pdU := stats.Utilizations()
+
+	// Assert
+	require.EqualValues(t, 0.25, aU)
+	require.Zero(t, pdU)
+}
+
+// Test that the the IPv6 stats returns proper utilizations.
+func TestUtilizationsForIPv6Stats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats{
+		"assigned-nas": uint64(5),
+		"total-nas":    uint64(20),
+		"assigned-pds": uint64(10),
+		"total-pds":    uint64(100),
+	}
+
+	// Act
+	aU, pdU := stats.Utilizations()
+
+	// Assert
+	require.EqualValues(t, 0.25, aU)
+	require.EqualValues(t, 0.1, pdU)
+}
+
+// Test that the the stats returns zero if the total value is zero.
+func TestUtilizationsForZeroTotalStats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats{
+		"assigned-nas": uint64(5),
+		"total-nas":    uint64(0),
+	}
+
+	// Act
+	aU, _ := stats.Utilizations()
+
+	// Assert
+	require.Zero(t, aU)
+}
+
+// Test that the the stats returns zero if the any statistic is missing.
+func TestUtilizationsForMissingStats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats{
+		"total-nas": uint64(100),
+	}
+
+	// Act
+	aU, _ := stats.Utilizations()
+
+	// Assert
+	require.Zero(t, aU)
+}
+
+// Test that the the big.Int stats are supported..
+func TestUtilizationsForBigIntStats(t *testing.T) {
+	// Arrange
+	stats := SubnetStats{
+		"total-nas": big.NewInt(0).Add(
+			big.NewInt(0).SetUint64(math.MaxUint64),
+			big.NewInt(0).SetUint64(math.MaxUint64),
+		),
+		"assigned-nas": big.NewInt(0).SetUint64(math.MaxUint64),
+	}
+
+	// Act
+	aU, _ := stats.Utilizations()
+
+	// Assert
+	require.EqualValues(t, 0.5, aU)
 }
 
 // Benchmark measuring a time to add a single subnet.

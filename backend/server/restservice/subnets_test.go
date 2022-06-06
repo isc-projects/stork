@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -198,6 +199,10 @@ func TestGetSubnets(t *testing.T) {
 
 	v4subnet := dbmodel.Subnet{
 		Prefix: "192.118.0.0/24",
+		Stats: dbmodel.SubnetStats{
+			"bar": 24,
+		},
+		StatsCollectedAt: time.Time{}.Add(2 * time.Hour),
 		AddressPools: []dbmodel.AddressPool{
 			{
 				LowerBound: "192.118.0.1",
@@ -208,6 +213,10 @@ func TestGetSubnets(t *testing.T) {
 
 	v6subnet := dbmodel.Subnet{
 		Prefix: "3001:db8:1::/64",
+		Stats: dbmodel.SubnetStats{
+			"baz": 4224,
+		},
+		StatsCollectedAt: time.Time{}.Add(3 * time.Hour),
 		AddressPools: []dbmodel.AddressPool{
 			{
 				LowerBound: "3001:db8:1::",
@@ -253,6 +262,8 @@ func TestGetSubnets(t *testing.T) {
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	require.Equal(t, a4.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, dbmodel.SubnetStats(nil), okRsp.Payload.Items[0].Stats)
+	require.EqualValues(t, time.Time{}, okRsp.Payload.Items[0].StatsCollectedAt)
 
 	// get subnets from app a46
 	params = dhcp.GetSubnetsParams{
@@ -285,6 +296,8 @@ func TestGetSubnets(t *testing.T) {
 	require.True(t,
 		(okRsp.Payload.Items[0].LocalSubnets[0].ID == 1 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 3) ||
 			(okRsp.Payload.Items[0].LocalSubnets[0].ID == 3 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 1))
+	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(dbmodel.SubnetStats)["bar"])
+	require.EqualValues(t, time.Time{}.Add(2*time.Hour), okRsp.Payload.Items[1].StatsCollectedAt)
 
 	// get v6 subnets
 	dhcpVer = 6
@@ -303,6 +316,8 @@ func TestGetSubnets(t *testing.T) {
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
 			okRsp.Payload.Items[2].LocalSubnets[0].ID,
 		})
+	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.SubnetStats)["baz"])
+	require.EqualValues(t, time.Time{}.Add(3*time.Hour), okRsp.Payload.Items[2].StatsCollectedAt)
 
 	// get subnets by text '118.0.0/2'
 	text := "118.0.0/2"

@@ -155,6 +155,15 @@ func (n *BigCounter) ToBigInt() *big.Int {
 	return big.NewInt(0).SetUint64(n.base)
 }
 
+// Returns the counting value as uint64 if the value is in uint64 range.
+// Otherwise, returns big.Int.
+func (n *BigCounter) ToNativeType() interface{} {
+	if n.isExtended() {
+		return n.extended
+	}
+	return n.base
+}
+
 // Constructs a new big counter instance
 // and initializes it with the provided value.
 func NewBigCounter(val uint64) *BigCounter {

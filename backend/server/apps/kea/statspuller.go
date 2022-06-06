@@ -78,7 +78,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return lastErr
 	}
 
-	calculator := newUtilizationCalculator()
+	counter := newStatisticsCounter()
 
 	// The total IPv4 and IPv6 addresses statistics returned by Kea exclude
 	// out-of-pool reservations, yielding possibly incorrect utilization.
@@ -88,13 +88,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 	if err != nil {
 		return err
 	}
-	calculator.setOutOfPoolAddresses(outOfPoolCounters)
+	counter.setOutOfPoolAddresses(outOfPoolCounters)
 
 	outOfPoolCounters, err = dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-	calculator.setOutOfPoolPrefixes(outOfPoolCounters)
+	counter.setOutOfPoolPrefixes(outOfPoolCounters)
 
 	// Assume that all global reservations are out-of-pool for all subnets.
 	outOfPoolGlobalIPv4Addresses, outOfPoolGlobalIPv6Addresses, outOfPoolGlobalDelegatedPrefixes, err := dbmodel.CountGlobalReservations(statsPuller.DB)
@@ -102,26 +102,25 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return err
 	}
 
-	calculator.global.totalIPv4Addresses.AddUint64(outOfPoolGlobalIPv4Addresses)
-	calculator.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
-	calculator.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
+	counter.global.totalIPv4Addresses.AddUint64(outOfPoolGlobalIPv4Addresses)
+	counter.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
+	counter.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
 
 	excludedDaemons, err := dbmodel.GetNonLeadingHADaemonIDs(statsPuller.DB)
 	if err != nil {
 		return err
 	}
 
-	calculator.setExcludedDaemons(excludedDaemons)
+	counter.setExcludedDaemons(excludedDaemons)
 
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
 	for _, sn := range subnets {
-		su := calculator.add(sn)
-		err = sn.UpdateUtilization(
+		su := counter.add(sn)
+		err = sn.UpdateStatistics(
 			statsPuller.DB,
-			int16(1000*su.getAddressUtilization()),
-			int16(1000*su.getDelegatedPrefixUtilization()),
+			su.getStatistics(),
 		)
 
 		if err != nil {
@@ -133,10 +132,11 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// shared network utilization
-	for sharedNetworkID, u := range calculator.sharedNetworks {
-		err = dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.DB, sharedNetworkID,
-			int16(1000*u.getAddressUtilization()),
-			int16(1000*u.getDelegatedPrefixUtilization()))
+	for sharedNetworkID, u := range counter.sharedNetworks {
+		err = dbmodel.UpdateStatisticsInSharedNetwork(
+			statsPuller.DB, sharedNetworkID,
+			u.getStatistics(),
+		)
 
 		if err != nil {
 			lastErr = err
@@ -148,14 +148,14 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	// global stats to collect
 	statsMap := map[string]*big.Int{
-		"total-addresses":    calculator.global.totalIPv4Addresses.ToBigInt(),
-		"assigned-addresses": calculator.global.totalAssignedIPv4Addresses.ToBigInt(),
-		"declined-addresses": calculator.global.totalDeclinedIPv4Addresses.ToBigInt(),
-		"total-nas":          calculator.global.totalIPv6Addresses.ToBigInt(),
-		"assigned-nas":       calculator.global.totalAssignedIPv6Addresses.ToBigInt(),
-		"declined-nas":       calculator.global.totalDeclinedIPv6Addresses.ToBigInt(),
-		"assigned-pds":       calculator.global.totalAssignedDelegatedPrefixes.ToBigInt(),
-		"total-pds":          calculator.global.totalDelegatedPrefixes.ToBigInt(),
+		"total-addresses":    counter.global.totalIPv4Addresses.ToBigInt(),
+		"assigned-addresses": counter.global.totalAssignedIPv4Addresses.ToBigInt(),
+		"declined-addresses": counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
+		"total-nas":          counter.global.totalIPv6Addresses.ToBigInt(),
+		"assigned-nas":       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
+		"declined-nas":       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
+		"assigned-pds":       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
+		"total-pds":          counter.global.totalDelegatedPrefixes.ToBigInt(),
 	}
 
 	// update global statistics in db
@@ -216,7 +216,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	for _, row := range resultSet.Rows {
-		stats := dbmodel.LocalSubnetStats{}
+		stats := dbmodel.SubnetStats{}
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
 		for colIdx, val := range row {
