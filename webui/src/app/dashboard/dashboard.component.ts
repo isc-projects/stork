@@ -31,7 +31,7 @@ type DhcpOverviewParsed = ModifyDeep<
                     stats: never
                     statsCollectedAt: never
                 }[]
-                stats: Record<string, bigint>
+                stats: Record<string, bigint | number>
             }[]
         }
         subnets6: {
@@ -40,7 +40,7 @@ type DhcpOverviewParsed = ModifyDeep<
                     stats: never
                     statsCollectedAt: never
                 }[]
-                stats: Record<string, bigint>
+                stats: Record<string, bigint | number>
             }[]
         }
         dhcp4Stats: {

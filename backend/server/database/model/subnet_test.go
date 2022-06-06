@@ -777,10 +777,10 @@ func TestUpdateUtilization(t *testing.T) {
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet2)
-	require.EqualValues(t, int16(10), returnedSubnet2.AddrUtilization)
-	require.EqualValues(t, int16(20), returnedSubnet2.PdUtilization)
-	require.EqualValues(t, int16(1), returnedSubnet2.Stats["assigned-nas"])
-	require.EqualValues(t, int16(2), returnedSubnet2.Stats["assigned-pds"])
+	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
+	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
+	require.EqualValues(t, 1, returnedSubnet2.Stats["assigned-nas"])
+	require.EqualValues(t, 2, returnedSubnet2.Stats["assigned-pds"])
 	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 
@@ -1052,7 +1052,7 @@ func TestUtilizationsForZeroTotalStats(t *testing.T) {
 	require.Zero(t, aU)
 }
 
-// Test that the the stats returns zero if the any statistic is missing.
+// Test that the the stats returns zero if any statistic is missing.
 func TestUtilizationsForMissingStats(t *testing.T) {
 	// Arrange
 	stats := SubnetStats{
