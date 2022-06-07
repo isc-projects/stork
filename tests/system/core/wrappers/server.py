@@ -293,7 +293,7 @@ class Server(ComposeServiceWrapper):
         fetch_timestamp = datetime(1, 1, 1, tzinfo=timezone.utc)
 
         @wait_for_success(NoSuccessException,
-                          wait_msg="Waiting to event occurs...")
+                          wait_msg="Waiting for an event...")
         def worker():
             nonlocal fetch_timestamp
 
@@ -332,7 +332,7 @@ class Server(ComposeServiceWrapper):
 
     def wait_for_next_machine_states(self) -> List[Machine]:
         """
-        Waits for the next fetches of the machine states for all machines.
+        Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
         """
         start = datetime.now(timezone.utc)

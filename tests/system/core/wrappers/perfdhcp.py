@@ -14,7 +14,7 @@ class Perfdhcp:
     I didn't know how exactly this wrapper would be used. I imagine that there
     will be different traffic generation scenarios. We shouldn't specify the
     perfhcp parameters inside the system tests. Initially, there are only
-    simple generation functions.
+    simple traffic generation functions.
     """
 
     def __init__(self, compose: DockerCompose, service_name: str):

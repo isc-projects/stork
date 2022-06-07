@@ -3,7 +3,7 @@ from core.fixtures import kea_parametrize
 
 
 def test_agent_reregistration_after_restart(server_service: Server, kea_service: Kea):
-    """Check if after restart the agent isn't re-register.
+    """Check if the agent doesn't re-register after restart.
        It should use the same agent token and certs as before restart."""
     server_service.log_in_as_admin()
     machine_before = server_service.authorize_all_machines()['items'][0]

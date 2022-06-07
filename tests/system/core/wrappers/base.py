@@ -23,7 +23,7 @@ class ComposeServiceWrapper:
         self._service_name = service_name
 
     def _restart_supervisor_service(self, name: str):
-        """Restart a specific supervisor service and waits to recover
+        """Restart a specific supervisor service and wait to recover
         operational status."""
         cmd = ["supervisorctl", "restart", name]
         self._compose.exec(self._service_name, cmd)

@@ -29,7 +29,7 @@ class Agent(ComposeServiceWrapper):
     @property
     def server(self):
         """Returns a Server wrapper where this agent is registered. If the
-        registration was suppresses then it returns None."""
+        registration was suppressed then it returns None."""
         return self._server_service
 
     def hash_cert_files(self):

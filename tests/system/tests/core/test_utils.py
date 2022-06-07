@@ -3,7 +3,7 @@ from core.utils import memoize, wait_for_success, NoSuccessException
 
 
 def test_memoize():
-    """Memoized function should be executed only one for a specific arguments"""
+    """Memoized function should be executed only one for specific arguments"""
     # Arrange
     class Foo:
         def __init__(self, bar):
@@ -34,7 +34,7 @@ def test_memoize():
 
 
 def test_wait_for_instant_success():
-    """Waiting for a function that just return value. It should no thrown."""
+    """Waiting for a function that just returns value. It should not throw."""
     # Arrange
     call_count = 0
 

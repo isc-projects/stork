@@ -1,5 +1,5 @@
 # System tests
-# Run the system tests in docker-compose
+# Run the system tests using docker-compose
 
 #############
 ### Files ###

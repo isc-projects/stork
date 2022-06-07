@@ -15,7 +15,7 @@ logger = setup_logger(__name__)
 
 def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
     """
-    Helper for parametrize the agent fixtures.
+    Helper for parametrizing the agent fixtures.
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
 
 def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     """
-    Helper for parametrize the Kea fixture.
+    Helper for parametrizing the Kea fixture.
 
     Parameters
     ----------
@@ -97,7 +97,7 @@ def server_parametrize(service_name="server"):
 @pytest.fixture
 def server_service(request):
     """
-    A fixture that setup the Stork Server service and guarantees that it is
+    A fixture that sets up the Stork Server service and guarantees that it is
     operational.
 
     Parameters
@@ -112,7 +112,7 @@ def server_service(request):
 
     Notes
     -----
-    You can use the server_parametrize helper for configure the service.
+    You can use the server_parametrize helper for configuring the service.
     """
     param = {
         "service_name": "server",
@@ -190,7 +190,7 @@ def kea_service(request):
 @pytest.fixture
 def bind_service(request):
     """
-    A fixture that setup the Bind Server service and guarantees that it is
+    A fixture that sets up the Bind8 Server service and guarantees that it is
     operational.
 
     Parameters
@@ -205,7 +205,7 @@ def bind_service(request):
 
     Notes
     -----
-    You can use the bind_parametrize helper for configure the service.
+    You can use the bind_parametrize helper for configuring the service.
     """
     param = {
         "service_name": "agent-bind9",

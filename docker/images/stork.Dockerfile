@@ -276,7 +276,7 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         && chown root:bind /etc/bind/rndc.key \
         && chmod 640 /etc/bind/rndc.key \
-        # Puts empty database file to allow mount it as volume.
+        # Puts empty database file to allow mounting it as a volume.
         && touch /etc/bind/db.test
 # Install agent    
 COPY --from=agent-builder /app/dist/agent /
