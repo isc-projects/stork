@@ -79,11 +79,7 @@ CLOBBER.append "webui/.angular"
 AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
 file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-agent") do
-        # Run sh with a single argument because otherwise ldflags switch doesn't
-        # work. Per this documentation: https://www.rubydoc.info/gems/rake/FileUtils:sh,
-        # running sh with multiple arguments the command executes it without a shell.
-        # Perhaps it is the reason for the ldflags to not work.
-        sh "'#{GO}' build -ldflags=\"-X 'isc.org/stork.BuildDate=#{build_date}'\""
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
     end
     puts "Stork Agent build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
@@ -93,11 +89,7 @@ SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     sh "rm", "-f", GO_SERVER_API_MOCK
     Dir.chdir("backend/cmd/stork-server") do
-        # Run sh with a single argument because otherwise ldflags switch doesn't
-        # work. Per this documentation: https://www.rubydoc.info/gems/rake/FileUtils:sh,
-        # running sh with multiple arguments the command executes it without a shell.
-        # Perhaps it is the reason for the ldflags to not work.
-        sh "'#{GO}' build -ldflags=\"-X 'isc.org/stork.BuildDate=#{build_date}'\""
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
     end
     puts "Stork Server build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
@@ -106,11 +98,7 @@ CLEAN.append SERVER_BINARY_FILE
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-tool") do
-        # Run sh with a single argument because otherwise ldflags switch doesn't
-        # work. Per this documentation: https://www.rubydoc.info/gems/rake/FileUtils:sh,
-        # running sh with multiple arguments the command executes it without a shell.
-        # Perhaps it is the reason for the ldflags to not work.
-        sh "'#{GO}' build -ldflags=\"-X 'isc.org/stork.BuildDate=#{build_date}'\""
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
     end
     puts "Stork Tool build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
