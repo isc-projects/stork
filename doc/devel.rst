@@ -365,7 +365,7 @@ using the following command:
 
 .. code-block:: console
 
-    $ rake system_tests
+    $ rake systemtest
 
 This command first prepares all necessary toolkits (except these listed above)
 and configuration files. Next, it calls ``pytest``, a Python testing framework
@@ -381,13 +381,13 @@ To run a particular test case, specify its name in the TEST variable:
 
 .. code-block:: console
 
-    $ rake system_tests TEST=test_users_management
+    $ rake systemtest TEST=test_users_management
 
 To list available tests without actually running them, use the following command:
 
 .. code-block:: console
 
-    $ rake system_tests:list
+    $ rake systemtest:list
 
 
 
@@ -631,37 +631,37 @@ The following commands run the system tests and help with troubleshooting:
     +--------------------------------+----------------------------------------------+
     | Rake Tasks                     | Description                                  |
     +================================+==============================================+
-    | ``rake system_tests``          | Runs the system tests. Use TEST variable to  |
+    | ``rake systemtest``            | Runs the system tests. Use TEST variable to  |
     |                                | run a selected test.                         |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:build``    | Build the system test containers.            |
+    | ``rake systemtest:build``      | Build the system test containers.            |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:down``     | Stops all system test containers and removes |
+    | ``rake systemtest:down``       | Stops all system test containers and removes |
     |                                | them. It also removes all networks, and      |
     |                                | volumes.                                     |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:gen``      | Generates the OpenAPI client and             |
+    | ``rake systemtest:gen``        | Generates the OpenAPI client and             |
     |                                | configurations.                              |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:list``     | Lists the test cases.                        |
+    | ``rake systemtest:list``       | Lists the test cases.                        |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:logs``     | Displays the container logs. Use the SERVICE |
+    | ``rake systemtest:logs``       | Displays the container logs. Use the SERVICE |
     |                                | variable to get the logs only for a specific |
     |                                | service.                                     |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:perfdhcp`` | Low-level access to the perfdhcp command in  |
+    | ``rake systemtest:perfdhcp``   | Low-level access to the perfdhcp command in  |
     |                                | a container. The Rake-style arguments can be |
     |                                | specified to control ``perfdhcp``, e.g.:     |
-    |                                | ``rake system_tests:perfdhcp[-6,-l,eth1]``.  |
+    |                                | ``rake systemtest:perfdhcp[-6,-l,eth1]``.  |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:regen``    | Re-generates the files created by            |
-    |                                | ``rake system_tests:gen``.                   |
+    | ``rake systemtest:regen``      | Re-generates the files created by            |
+    |                                | ``rake systemtest:gen``.                   |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:sh``       | Low-level access to the docker-compose with  |
+    | ``rake systemtest:sh``         | Low-level access to the docker-compose with  |
     |                                | all necessary parameters. Use Rake-style     |
-    |                                | arguments, e.g. ``rake system_tests:sh[ps]`` |
+    |                                | arguments, e.g. ``rake systemtest:sh[ps]`` |
     +--------------------------------+----------------------------------------------+
-    | ``rake system_tests:shell``    | Attaches to a shell in a container with      |
+    | ``rake systemtest:shell``      | Attaches to a shell in a container with      |
     |                                | provided name by SERVICE variable.           |
     +--------------------------------+----------------------------------------------+
 

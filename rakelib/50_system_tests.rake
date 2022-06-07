@@ -81,7 +81,7 @@ CLEAN.append "test-results/", "tests/system/test-results/"
 
 desc 'Run system tests
     TEST - Name of the test to run - optional'
-task :system_tests => [PYTEST, open_api_generator_python_dir, *volume_files] do
+task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files] do
     opts = []
 
     if !ENV["TEST"].nil?
@@ -93,10 +93,10 @@ task :system_tests => [PYTEST, open_api_generator_python_dir, *volume_files] do
     end
 end
 
-namespace :system_tests do
+namespace :systemtest do
 
     desc 'List the test cases'
-    task :list do
+    task :list => [PYTEST, open_api_generator_python_dir] do
         Dir.chdir(system_tests_dir) do
             sh PYTEST, "--collect-only"
         end
@@ -104,13 +104,13 @@ namespace :system_tests do
 
     desc 'Build the containers used in the system tests'
     task :build do
-        Rake::Task["system_tests:sh"].invoke("build")
+        Rake::Task["systemtest:sh"].invoke("build")
     end
 
     desc 'Run shell in the docker-compose container
         SERVICE - name of the docker-compose service - required'
     task :shell do
-        Rake::Task["system_tests:sh"].invoke(
+        Rake::Task["systemtest:sh"].invoke(
             "exec", ENV["SERVICE"], "/bin/sh")
     end
 
@@ -121,12 +121,12 @@ namespace :system_tests do
         if !ENV["SERVICE"].nil?
             service_name.append ENV["SERVICE"]
         end
-        Rake::Task["system_tests:sh"].invoke("logs", *service_name)
+        Rake::Task["systemtest:sh"].invoke("logs", *service_name)
     end
 
     desc 'Run perfdhcp docker-compose service'
     task :perfdhcp do |t, args|
-        Rake::Task["system_tests:sh"].invoke("run", "perfdhcp", *args)
+        Rake::Task["systemtest:sh"].invoke("run", "perfdhcp", *args)
     end
 
     desc 'Run system tests docker-compose
@@ -160,26 +160,26 @@ namespace :system_tests do
             FileUtils.rm_rf(f)
         end
 
-        Rake::Task["system_tests:gen"].invoke()
+        Rake::Task["systemtest:gen"].invoke()
     end
 
     desc 'Down all running services, removes networks and volumes'
     task :down do
-        Rake::Task["system_tests:sh"].invoke("down", "--volumes", "--remove-orphans")
+        Rake::Task["systemtest:sh"].invoke("down", "--volumes", "--remove-orphans")
     end
 
 end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the system tests'
-    task :system_tests do
+    task :systemtest do
         find_and_prepare_deps(__FILE__)
     end
 end
 
 namespace :check do
     desc 'Check the external dependencies related to the system tests'
-    task :system_tests do
+    task :systemtest do
         check_deps(__FILE__, "python3", "docker", "docker-compose",
             "openssl", "java")
     end

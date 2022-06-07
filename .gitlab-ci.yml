@@ -224,7 +224,7 @@ system_testing:
     DEFAULT_MAPPED_ADDRESS: "docker"
   script:
     # - rake system_tests_ui
-    - rake system_tests
+    - rake systemtest
   artifacts:
     paths:
       - tests/system/test-results/**/*.log
