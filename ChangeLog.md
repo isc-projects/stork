@@ -1,3 +1,10 @@
+* 223 [bug] slawek
+
+    Fixed counting of the utilization statistics for the HA servers. The
+    statistics of addresses/NAs/PDs are no longer doubled. Only the leading
+    server is counted, and others are skipped. 
+    (Gitlab #710)
+
 * 222 [build] slawek
 
     Introduced golang 1.18 and upgraded go-related dependencies.
