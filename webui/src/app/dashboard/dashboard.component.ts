@@ -77,7 +77,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private dhcpApi: DHCPService,
         private msgSrv: MessageService,
         private settingSvc: SettingService
-    ) { }
+    ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()

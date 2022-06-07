@@ -37,7 +37,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         appId: null,
     }
 
-    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) { }
+    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
