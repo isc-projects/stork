@@ -11,7 +11,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Test that the utilization counter is properly constructed.
+// Test that the statistics counter is properly constructed.
 func TestCounterConstruction(t *testing.T) {
 	// Act
 	counter := newStatisticsCounter()

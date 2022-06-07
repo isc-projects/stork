@@ -6,10 +6,8 @@ import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } 
 describe('subnets', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
 
-    type SubnetOnly = Partial<Omit<Subnet, 'localSubnets'>>
-
     it('stats funcs should work for DHCPv4', () => {
-        const subnet4: SubnetOnly = {
+        const subnet4 = {
             subnet: '192.168.0.0/24',
             stats: {
                 'total-addresses': 4,
@@ -24,7 +22,7 @@ describe('subnets', () => {
     })
 
     it('stats funcs should work for DHCPv6', () => {
-        const subnet6: SubnetOnly = {
+        const subnet6 = {
             subnet: '3000::0/24',
             stats: {
                 'total-nas': 4,
@@ -40,7 +38,7 @@ describe('subnets', () => {
 
     it('parse stats from string to big int', () => {
         // Arrange
-        const subnets6: SubnetOnly[] = [
+        const subnets6 = [
             {
                 subnet: '3000::0/24',
                 stats: {
@@ -63,7 +61,7 @@ describe('subnets', () => {
     it('parse stats from non-string to big int', () => {
         // Arrange
         const obj = new Date()
-        const subnets6: SubnetOnly[] = [
+        const subnets6 = [
             {
                 subnet: '3000::0/24',
                 stats: {
@@ -87,7 +85,7 @@ describe('subnets', () => {
 
     it('parse stats from non-numeric string to big int', () => {
         // Arrange
-        const subnets6: SubnetOnly[] = [
+        const subnets6 = [
             {
                 subnet: '3000::0/24',
                 stats: {

@@ -287,7 +287,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	return networks, int64(total), err
 }
 
-// Update statistics in a SharedNetwork.
+// Update statistics and utilization of addresses and delegated prefixes in a SharedNetwork.
 func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, statistics SubnetStats) error {
 	addrUtilization, pdUtilization := statistics.Utilizations()
 	net := &SharedNetwork{

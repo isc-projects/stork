@@ -272,8 +272,7 @@ func createDhcpConfigs() (string, string) {
 // assumes that the DHCP configurations produced by the createDhcpConfigs
 // function and statistics responses from the createStandardKeaMock function
 // were used.
-// Accepts a number of expected DHCPv4 and DHCPv6 daemons.
-func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB, v4Daemons, v6Daemons int) {
+func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 	// Check collected stats in the local subnets. There is no meaning if they
 	// are from the HA daemons.
 	localSubnets := []*dbmodel.LocalSubnet{}
@@ -326,6 +325,20 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB, v4Daemons, v6
 			snCnt++
 		case 70:
 			require.Nil(t, sn.Stats)
+		}
+	}
+
+	daemons, _ := dbmodel.GetKeaDHCPDaemons(db)
+	v4Daemons := 0
+	v6Daemons := 0
+
+	for _, daemon := range daemons {
+		switch daemon.Name {
+		case dbmodel.DaemonNameDHCPv4:
+			v4Daemons++
+		case dbmodel.DaemonNameDHCPv6:
+			v6Daemons++
+		default:
 		}
 	}
 
@@ -445,7 +458,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	require.NoError(t, err)
 
 	// check collected stats
-	verifyStandardLocalSubnetsStatistics(t, db, 1, 1)
+	verifyStandardLocalSubnetsStatistics(t, db)
 
 	// We should have two rows in RpsWorker.PreviousRps map one for each daemon
 	require.Equal(t, 2, len(sp.RpsWorker.PreviousRps))
@@ -559,8 +572,10 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 
 // Prepares the Kea configuration file with HA hook and some subnets.
 func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
+	// Creates standard HA config.
 	haConfig := getHATestConfig(rootName, thisServerName, mode, peerNames...)
 
+	// Creates Kea configs with expected subnets.
 	dhcp4, dhcp6 := createDhcpConfigs()
 	subnetsConfigRaw := dhcp4
 	if rootName == "Dhcp6" {
@@ -568,6 +583,7 @@ func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames
 	}
 	subnetsConfig, _ := dbmodel.NewKeaConfigFromJSON(subnetsConfigRaw)
 
+	// Appends the HA configuration
 	haHooks := (*haConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
 	subnetHooks := (*subnetsConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
 
@@ -768,7 +784,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 func verifyCountingStatisticsFromPrimary(t *testing.T, db *pg.DB) {
 	// Check collected stats in the local subnets. There is no meaning if they
 	// are from the HA daemons.
-	verifyStandardLocalSubnetsStatistics(t, db, 3, 2)
+	verifyStandardLocalSubnetsStatistics(t, db)
 
 	// Check the subnet utilizations.
 	subnets, err := dbmodel.GetAllSubnets(db, 0)
@@ -820,7 +836,7 @@ func verifyCountingStatisticsFromPrimary(t *testing.T, db *pg.DB) {
 func verifyCountingStatisticsFromSecondary(t *testing.T, db *pg.DB) {
 	// Check collected stats in the local subnets. There is no meaning if they
 	// are from the HA daemons.
-	verifyStandardLocalSubnetsStatistics(t, db, 3, 2)
+	verifyStandardLocalSubnetsStatistics(t, db)
 
 	// Check the subnet utilizations.
 	subnets, err := dbmodel.GetAllSubnets(db, 0)

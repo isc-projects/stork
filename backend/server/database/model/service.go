@@ -465,6 +465,7 @@ func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
 		// Backups never actively allocate leases.
 		nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.BackupID...)
 
+		// Set of the operational states.
 		operationalStates := map[HAState]bool{
 			HAStateHotStandby:           true,
 			HAStateLoadBalancing:        true,
@@ -473,6 +474,7 @@ func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
 			HAStateReady:                true,
 		}
 
+		// The server is operational if it is reachable and has an operational state.
 		_, isPrimaryOperational := operationalStates[service.HAService.PrimaryLastState]
 		isPrimaryOperational = isPrimaryOperational && service.HAService.PrimaryReachable
 
