@@ -24,5 +24,5 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
     # 9 leases are initialy store in the lease database
     assert int(data['dhcp4_stats']['assignedAddresses']) > 9
     assert data['subnets4']['items'] is not None
-    assert int(data['dhcp4_stats']['assignedAddresses']) > 9
+    assert int(data['dhcp6_stats']['assignedNAs']) > 9
     assert data['subnets6']['items'] is not None

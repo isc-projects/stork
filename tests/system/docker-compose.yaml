@@ -21,10 +21,9 @@ services:
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
     healthcheck:
-      interval: 2s
-      timeout: 10s
-      retries: 5
-      start_period: 0s
+      interval: 250ms
+      timeout: 1s
+      retries: 40
 
   server:
     extends: server-base
@@ -79,10 +78,9 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.20.42.100
     healthcheck:
-      interval: 1s
-      timeout: 10s
-      retries: 5
-      start_period: 0s
+      interval: 250ms
+      timeout: 1s
+      retries: 40
     volumes:
       - $PWD/tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - $PWD/tests/system/config/kea/kea-ctrl-agent-tls.json:/etc/kea/kea-ctrl-agent-tls.json
@@ -213,9 +211,9 @@ services:
       POSTGRES_DB: stork
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U stork" ]
-      interval: 2s
-      timeout: 10s
-      retries: 5
+      interval: 250ms
+      timeout: 1s
+      retries: 40
 
 networks:
   storknet:

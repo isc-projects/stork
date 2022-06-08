@@ -8,7 +8,7 @@ services:
       dockerfile: docker/images/stork.Dockerfile
       target: kea
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-2-0-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-2-1-prv
         KEA_PREMIUM: "premium"
     image: registry.gitlab.isc.org/isc-private/stork/agent-kea-premium:latest
     hostname: agent-kea-premium

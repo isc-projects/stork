@@ -245,6 +245,7 @@ def perfdhcp_service():
     """
     service_name = "perfdhcp"
     compose = create_docker_compose()
+    compose.build(service_name)
     wrapper = wrappers.Perfdhcp(compose, service_name)
     return wrapper
 

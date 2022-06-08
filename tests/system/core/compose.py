@@ -155,15 +155,15 @@ class DockerCompose(object):
 
     def __init__(
             self,
-            project_directory:str,
+            project_directory: str,
             compose_file_name="docker-compose.yml",
             pull=False,
             build=False,
-            env_file:str=None,
-            env_vars:Dict[str,str]=None,
-            project_name:str=None,
+            env_file: str = None,
+            env_vars: Dict[str, str] = None,
+            project_name: str = None,
             use_build_kit=True,
-            default_mapped_hostname:str=None):
+            default_mapped_hostname: str = None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -201,6 +201,8 @@ class DockerCompose(object):
     def build(self, *service_names):
         """Builds the service containers. If no arguments are provided, it
         builds all containers. Supports BuildKit."""
+        logger.info("Begin build containers")
+
         build_cmd = self.docker_compose_command() + \
             ['build', *service_names]
 
@@ -213,6 +215,7 @@ class DockerCompose(object):
 
         self._call_command(cmd=build_cmd, env_vars=env,
                            capture_output=False)
+        logger.info("End build containers")
 
     def pull(self, *service_names):
         """Pull the images from a repository."""
@@ -233,9 +236,7 @@ class DockerCompose(object):
             self.pull(*service_names)
 
         if self._build:
-            logger.info("Begin build containers")
             self.build(*service_names)
-            logger.info("End build containers")
 
         self.up(*service_names)
 

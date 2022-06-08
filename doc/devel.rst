@@ -652,14 +652,14 @@ The following commands run the system tests and help with troubleshooting:
     | ``rake systemtest:perfdhcp``   | Low-level access to the perfdhcp command in  |
     |                                | a container. The Rake-style arguments can be |
     |                                | specified to control ``perfdhcp``, e.g.:     |
-    |                                | ``rake systemtest:perfdhcp[-6,-l,eth1]``.  |
+    |                                | ``rake systemtest:perfdhcp[-6,-l,eth1]``.    |
     +--------------------------------+----------------------------------------------+
     | ``rake systemtest:regen``      | Re-generates the files created by            |
-    |                                | ``rake systemtest:gen``.                   |
+    |                                | ``rake systemtest:gen``.                     |
     +--------------------------------+----------------------------------------------+
     | ``rake systemtest:sh``         | Low-level access to the docker-compose with  |
     |                                | all necessary parameters. Use Rake-style     |
-    |                                | arguments, e.g. ``rake systemtest:sh[ps]`` |
+    |                                | arguments, e.g. ``rake systemtest:sh[ps]``   |
     +--------------------------------+----------------------------------------------+
     | ``rake systemtest:shell``      | Attaches to a shell in a container with      |
     |                                | provided name by SERVICE variable.           |
