@@ -664,6 +664,27 @@ The following commands run the system tests and help with troubleshooting:
     |                                | provided name by SERVICE variable.           |
     +--------------------------------+----------------------------------------------+
 
+Alpine troubleshooting
+----------------------
+
+The system tests can be running on the Alpine operating system. Unfortunately, the
+Alpine uses the ``libc-musl`` instead of the standard ``libc``. This component
+isn't well supported by the external dependencies maintainers. It causes Rake
+scripts cannot install some dependencies and they need to be installed manually
+from the Alpine package manager ``apk``.
+
+To run the tests on Alpine system you need to install the ``nodejs`` package from the ``apk`` package manager:
+
+.. code-block:: console
+
+   $ apk add --no-cache nodejs
+
+and set the ``USE_SYSTEM_NODEJS`` environment variable to ``true``:
+
+.. code-block:: console
+
+   $ rake demo:up USE_SYSTEM_NODEJS=true
+
 
 .. _docker_containers_for_development:
 
