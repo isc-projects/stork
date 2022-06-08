@@ -336,6 +336,32 @@ def test_logs_uses_service_names():
     assert cmd[-1] == "bar"
 
 
+def test_ps_calls_proper_command():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    mock.return_value = (0, "stdout", "stderr")
+    compose._call_command = mock
+    base_cmd = compose.docker_compose_command()
+    # Act
+    stdout = compose.ps()
+    # Assert
+    mock.assert_called_once()
+    cmd = mock.call_args.kwargs["cmd"]
+    # Has proper docker-compose general part?
+    assert " ".join(cmd).startswith(" ".join(base_cmd))
+    # Calls the ps command?
+    assert cmd[len(base_cmd)] == "ps"
+    # Includes all services?
+    assert "--all" in cmd[len(base_cmd):]
+    # No more arguments
+    assert len(cmd) == len(base_cmd) + 2
+    # Checks output by default?
+    assert "check" not in mock.call_args.kwargs
+    # Has output?
+    assert stdout == "stdout"
+
+
 def test_exec_calls_proper_command():
     # Arrange
     compose = DockerCompose("project-dir")
@@ -395,6 +421,23 @@ def test_inspect_supports_none():
     result = compose.inspect("service", "foo", "bar?")
     # Assert
     assert tuple(result) == ("value-foo", None)
+
+
+def test_inspect_raw_calls_proper_command():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    mock.side_effect = [(0, "container-id", ""),
+                        (0, '{ "format": "json" }', "")]
+    compose._call_command = mock
+    # Act
+    result = compose.inspect_raw("service")
+    # Assert
+    mock.assert_called()
+    cmd = mock.call_args.kwargs["cmd"]
+    assert " ".join(cmd).startswith("docker inspect")
+    assert cmd[-1] == "container-id"
+    assert result == '{ "format": "json" }'
 
 
 def test_port_calls_proper_command():
@@ -554,6 +597,23 @@ def test_is_not_operational_for_unknown_container():
     compose.get_container_id = mock
     # Act & Assert
     assert not compose.is_operational("service")
+
+
+def test_get_created_services():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    call_command_mock = MagicMock()
+    call_command_mock.return_value = (0, "foo\nbar\nbaz", "")
+    compose._call_command = call_command_mock
+    get_container_id_mock = MagicMock()
+    get_container_id_mock.side_effect = ["1", None, "2"]
+    compose.get_container_id = get_container_id_mock
+
+    # Act
+    services = compose.get_created_services()
+
+    # Assert
+    assert tuple(services) == ("foo", "baz")
 
 
 def test_wait_for_operational_instant_success():

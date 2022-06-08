@@ -66,7 +66,9 @@ def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
             logger.info(wait_msg)
             for _ in range(max_tries):
                 try:
-                    return f(*args, **kwargs)
+                    result = f(*args, **kwargs)
+                    logger.info(wait_msg + " done")
+                    return result
                 except transient_exceptions as e:
                     logger.debug('container is not yet ready: %s',
                                  traceback.format_exc())

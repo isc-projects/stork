@@ -1,6 +1,8 @@
 import datetime
 import os
 import sys
+from pathlib import Path
+import shutil
 
 import pytest as _
 
@@ -41,8 +43,28 @@ def pytest_runtest_logreport(report):
         print(banner)
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    Making test result information available in fixtures
+    Source: https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+    """
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+
+    # set a report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+
+    setattr(item, "rep_" + rep.when, rep)
+
+
 def pytest_sessionstart(session):
     # Stop all the running containers. The containers are stopped by default
     # on the testing end if no interruption happened
     compose = create_docker_compose()
     compose.stop()
+    # Remove old test results
+    tests_dir = Path('test-results')
+    if tests_dir.exists():
+        shutil.rmtree(tests_dir)

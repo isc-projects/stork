@@ -255,14 +255,18 @@ def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__
 
-    def collect_logs_and_down_all():
-        logger.info('COLLECTING LOGS')
+    def collect_logs():
+        # Collect logs only for failed cases
+        if not request.node.rep_call.failed:
+            return
 
-        # Collect logs
         compose = create_docker_compose()
-        stdout, stderr = compose.logs()
+        service_names = compose.get_created_services()
+        # Collect logs only for docker-compose services
+        if len(service_names) == 0:
+            return
 
-        # prepare test directory for logs, etc
+         # prepare test directory for logs, etc
         tests_dir = Path('test-results')
         tests_dir.mkdir(exist_ok=True)
         test_name = function_name
@@ -274,6 +278,9 @@ def finish(request):
             shutil.rmtree(test_dir)
         test_dir.mkdir()
 
+        # Collect logs
+        stdout, stderr = compose.logs()
+
         # Write logs
         with open(test_dir / "stdout.log", 'wt') as f:
             f.write(stdout)
@@ -281,6 +288,25 @@ def finish(request):
         with open(test_dir / "stderr.log", 'wt') as f:
             f.write(stderr)
 
+        # Collect inspect for non-operational services
+        has_non_operational_service = False
+        for service_name in service_names:
+            if compose.is_operational(service_name):
+                continue
+            has_non_operational_service = True
+            inspect_stdout = compose.inspect_raw(service_name)
+            with open(test_dir / "inspect.json", "wt") as f:
+                f.write(inspect_stdout)
+
+        if has_non_operational_service:
+            # Collect service statuses
+            ps_stdout = compose.ps()
+            with open(test_dir / "ps.out", "wt") as f:
+                f.write(ps_stdout)
+
+    def collect_logs_and_down_all():
+        collect_logs()
         # Stop all containers
+        compose = create_docker_compose()
         compose.stop()
     request.addfinalizer(collect_logs_and_down_all)

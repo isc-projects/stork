@@ -283,6 +283,26 @@ class DockerCompose(object):
         _, stdout, stderr = self._call_command(cmd=logs_cmd)
         return stdout, stderr
 
+    def ps(self, *service_names: str):
+        """
+        Returns ps command output.
+
+        Parameters
+        ----------
+        service_names: str
+            Names of the service. If empty then all services are fetched.
+
+        Returns
+        -------
+        str
+            stdout
+        """
+        opts = ["ps", "--all", *service_names]
+
+        ps_cmd = self.docker_compose_command() + opts
+        _, stdout, _ = self._call_command(cmd=ps_cmd)
+        return stdout
+
     def exec(self, service_name, command, check=True):
         """
         Executes a command in the container of one of the services.
@@ -338,6 +358,16 @@ class DockerCompose(object):
         # Split the values and parse none's.
         return [i if i != _INSPECT_NONE_MARK else None
                 for i in stdout.split(_INSPECT_DELIMITER)]
+
+    def inspect_raw(self, service_name) -> str:
+        """Returns the low-level information on Docker containers as JSON."""
+        container_id = self.get_container_id(service_name)
+        if container_id is None:
+            raise LookupError(
+                "container of the %s service not found" % service_name)
+        cmd = ["docker", "inspect", container_id]
+        _, stdout, _ = self._call_command(cmd=cmd)
+        return stdout
 
     def port(self, service_name, port) -> Tuple[str, int]:
         """
@@ -445,6 +475,21 @@ class DockerCompose(object):
             return False
         return status == "running" and (health is None or health == "healthy")
 
+    def get_created_services(self):
+        """Return the list of names of services that were created (includes
+        operational and non-operational)"""
+        opts = ["ps", "--services"]
+        cmd = self.docker_compose_command() + opts
+
+        _, stdout, _ = self._call_command(cmd)
+        services = [line.strip() for line in stdout.split("\n")]
+        created_services = []
+        for service in services:
+            container_id = self.get_container_id(service)
+            if container_id is not None:
+                created_services.append(service)
+        return created_services
+
     @wait_for_success(ContainerNotRunningException,
                       wait_msg="Waiting to be operational...")
     def wait_for_operational(self, service_name):
@@ -495,7 +540,7 @@ class DockerCompose(object):
         stdout = result.stdout
         stderr = result.stderr
         if capture_output:
-            stdout = stdout.decode("utf-8").rstrip()
-            stderr = stderr.decode("utf-8").rstrip()
+            stdout: str = stdout.decode("utf-8").rstrip()
+            stderr: str = stderr.decode("utf-8").rstrip()
             return result.returncode, stdout, stderr
         return result.returncode, None, None
