@@ -9,7 +9,9 @@ class Perfdhcp:
     This service container is available only when the service is executed.
     It isn't continuously running.
 
-    It is a Kea service with a changed endpoint. It doesn't use the supervisor.
+    It is a Kea service that the Docker entry point (the command that is
+    running after a container starts) was changed to the perfdhcp executable.
+    It doesn't use the supervisor.
 
     I didn't know how exactly this wrapper would be used. I imagine that there
     will be different traffic generation scenarios. We shouldn't specify the
