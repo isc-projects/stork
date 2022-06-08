@@ -257,7 +257,9 @@ def finish(request):
 
     def collect_logs():
         # Collect logs only for failed cases
-        if not request.node.rep_call.failed:
+        # If the test fails due to non-assertion error then the call status is
+        # unavailable.
+        if hasattr(request.node, "rep_call") and not request.node.rep_call.failed:
             return
 
         compose = create_docker_compose()
@@ -295,7 +297,8 @@ def finish(request):
                 continue
             has_non_operational_service = True
             inspect_stdout = compose.inspect_raw(service_name)
-            with open(test_dir / "inspect.json", "wt") as f:
+            filename = "inspect-%s.json" % service_name
+            with open(test_dir / filename, "wt") as f:
                 f.write(inspect_stdout)
 
         if has_non_operational_service:
