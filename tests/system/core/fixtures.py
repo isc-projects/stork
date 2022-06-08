@@ -56,9 +56,9 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     return _agent_parametrize("kea_service", service_name, suppress_registration)
 
 
-def bind_parametrize(service_name="agent-bind9", suppress_registration=False):
+def bind9_parametrize(service_name="agent-bind9", suppress_registration=False):
     """
-    Helper for parametrize the Bind 9 fixture.
+    Helper for parametrize the Bind9 fixture.
 
     Parameters
     ----------
@@ -72,7 +72,7 @@ def bind_parametrize(service_name="agent-bind9", suppress_registration=False):
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("bind_service", service_name, suppress_registration)
+    return _agent_parametrize("bind9_service", service_name, suppress_registration)
 
 
 def server_parametrize(service_name="server"):
@@ -188,9 +188,9 @@ def kea_service(request):
 
 
 @pytest.fixture
-def bind_service(request):
+def bind9_service(request):
     """
-    A fixture that sets up the Bind8 Server service and guarantees that it is
+    A fixture that sets up the Bind9 Server service and guarantees that it is
     operational.
 
     Parameters
@@ -200,12 +200,12 @@ def bind_service(request):
 
     Returns
     -------
-    core.wrappers.Bind
-        Bind wrapper for the docker-compose service
+    core.wrappers.Bind9
+        Bind9 wrapper for the docker-compose service
 
     Notes
     -----
-    You can use the bind_parametrize helper for configuring the service.
+    You can use the bind9_parametrize helper for configuring the service.
     """
     param = {
         "service_name": "agent-bind9",
@@ -229,7 +229,7 @@ def bind_service(request):
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    wrapper = wrappers.Bind(compose, service_name, server_service)
+    wrapper = wrappers.Bind9(compose, service_name, server_service)
     return wrapper
 
 

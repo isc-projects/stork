@@ -452,7 +452,7 @@ fixtures. There are four fixtures:
 - ``server_service`` - it starts the container with Stork Server. The default
   configuration is described by the ``server`` service in the ``docker-compose``
   file.
-- ``bind_service`` - it starts the container with Kea daemon(s) and Stork Agent.
+- ``bind9_service`` - it starts the container with Kea daemon(s) and Stork Agent.
   If not fixture argument was used (see later), it runs also the Stork Server
   containers and Agent registers. The default configuration is described by
   the ``agent-kea`` service in the ``docker-compose`` file.
@@ -547,7 +547,7 @@ To run your test case with specific services, use the special helpers:
 
 1. ``server_parametrize``
 2. ``kea_parametrize``
-3. ``bind_parametrize``
+3. ``bind9_parametrize``
 
 They accept the name of the docker-compose service to use in the first argument:
 

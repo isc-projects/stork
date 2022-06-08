@@ -1,7 +1,7 @@
-from core.wrappers import Server, Bind
+from core.wrappers import Server, Bind9
 
 
-def test_bind9(server_service: Server, bind_service: Bind):
+def test_bind9(server_service: Server, bind9_service: Bind9):
     """Check if Stork Agent detects BIND 9."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
