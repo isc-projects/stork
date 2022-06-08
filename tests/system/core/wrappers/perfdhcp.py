@@ -33,7 +33,7 @@ class Perfdhcp:
         self._compose = compose
         self._service_name = service_name
 
-    def _call(self, parameters: List[str]):
+    def _run(self, parameters: List[str]):
         """Calls the perfdhcp application."""
         status, stdout, stderr = self._compose.run(
             self._service_name, *parameters, check=False)
@@ -106,7 +106,7 @@ class Perfdhcp:
             mac_prefix=mac_prefix,
             option=option
         )
-        self._call(flags)
+        self._run(flags)
 
     def generate_ipv6_traffic(self, interface: str, option=None,
                               duid_prefix=None):
@@ -127,4 +127,4 @@ class Perfdhcp:
             target=["-l", interface],
             option=option,
             duid_prefix=duid_prefix)
-        self._call(flags)
+        self._run(flags)
