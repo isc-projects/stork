@@ -189,10 +189,6 @@ richgo_ver='v0.3.10'
 mockery_ver='v1.0.0'
 mockgen_ver='v1.6.0'
 golangcilint_ver='1.33.0'
-fpm_ver='1.14.1'
-danger_ver='8.4.5'
-danger_linter_ver='0.0.7'
-danger_gitlab_ver='8.0.0'
 yamlinc_ver='0.1.10'
 node_ver='14.18.2'
 dlv_ver='v1.8.1'
@@ -298,22 +294,6 @@ ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 
 # Toolkits
-FPM = File.join(ruby_tools_bin_dir, "fpm")
-file FPM => [ruby_tools_dir, ruby_tools_bin_dir] do
-    sh "gem", "install",
-            "--minimal-deps",
-            "--no-document",
-            "--install-dir", ruby_tools_dir,
-            "fpm:#{fpm_ver}"
-
-    if !File.exists? FPM
-        # Workaround for old Ruby versions
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "fpm-#{fpm_ver}", "bin", "fpm"), FPM
-    end
-
-    sh FPM, "--version"
-end
-
 BUNDLER = File.join(ruby_tools_bin_dir, "bundler")
 file BUNDLER => [ruby_tools_dir, ruby_tools_bin_dir] do
     sh "gem", "install",
@@ -331,34 +311,26 @@ file BUNDLER => [ruby_tools_dir, ruby_tools_bin_dir] do
     sh BUNDLER, "--version"
 end
 
-danger_gitlab_dir = File.join(ruby_tools_gems_dir, "danger-gitlab-#{danger_gitlab_ver}")
-file danger_gitlab_dir => [ruby_tools_dir, ruby_tools_bin_dir] do
-    sh "gem", "install",
-        "--minimal-deps",
-        "--no-document",
-        "--install-dir", ruby_tools_dir,
-        "danger:#{danger_ver}",
-        "danger-gitlab:#{danger_gitlab_ver}"
-    sh "touch", danger_gitlab_dir
+BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
+file BUNDLE => [BUNDLER]
+
+fpm_gemfile = File.expand_path("init_debs/fpm.Gemfile", __dir__)
+FPM = File.join(ruby_tools_bin_dir, "fpm")
+file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_dir, fpm_gemfile] do
+    sh BUNDLE, "config", "set", "--local", "path", ruby_tools_dir
+    sh BUNDLE, "install",
+        "--gemfile", fpm_gemfile,
+        "--binstubs", ruby_tools_bin_dir
+    sh FPM, "--version"
 end
 
-danger_commit_linter_dir = File.join(ruby_tools_gems_dir, "danger-commit_lint-#{danger_linter_ver}")
-file danger_commit_linter_dir => [ruby_tools_dir] do
-    sh "gem", "install",
-        "--minimal-deps",
-        "--no-document",
-        "--install-dir", ruby_tools_dir,
-        "danger-commit_lint:#{danger_linter_ver}"
-    sh "touch", danger_commit_linter_dir
-end
-
+danger_gemfile = File.expand_path("init_debs/danger.Gemfile", __dir__)
 DANGER = File.join(ruby_tools_bin_dir, "danger")
-file DANGER => [ruby_tools_bin_dir, danger_gitlab_dir, danger_commit_linter_dir, BUNDLER] do
-    if !File.exists? DANGER
-        # Workaround for old Ruby versions
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "danger-#{danger_ver}", "bin", "danger"), DANGER
-    end
-
+file DANGER => [ruby_tools_bin_dir, ruby_tools_dir, danger_gemfile, BUNDLE] do
+    sh BUNDLE, "config", "set", "--local", "path", ruby_tools_dir
+    sh BUNDLE, "install",
+        "--gemfile", danger_gemfile,
+        "--binstubs", ruby_tools_bin_dir
     sh "touch", DANGER
     sh DANGER, "--version"
 end

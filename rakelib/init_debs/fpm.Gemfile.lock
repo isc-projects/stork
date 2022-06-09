@@ -37,7 +37,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  fpm
+  fpm (~> 1.14)
 
 BUNDLED WITH
    2.2.22
