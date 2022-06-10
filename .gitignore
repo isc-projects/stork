@@ -54,7 +54,7 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 /build-root
 /.pkgs-build
 /dist
-rakelib/init_debs/.bundle/
+**/.bundle/config
 
 # tests venv and pycache
 /tests/system/venv/

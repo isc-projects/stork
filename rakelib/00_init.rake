@@ -270,8 +270,23 @@ file go_tools_dir => [gopath]
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
+# We use the "bundle" gem to manage the dependencies. The "bundle" package is
+# installed using the "gem" executable in the tools/ruby/gems directory, and 
+# the link is created in the tools/ruby/bin directory. Next, Ruby dependencies
+# are installed using the "bundle". It creates the tools/ruby/ruby/[VERSION]/
+# directory with "bin" and "gems" subdirectories and uses these directories as
+# the location of the installations. We want to avoid using a variadic Ruby
+# version in the directory name. Therefore, we use the "binstubs" feature to
+# create the links to the executable. Unfortunately, if we use the
+# "tools/ruby/bin" directory as the target location then the "bundle"
+# executable will be overridden and stop working. To work around this problem,
+# we use two directories for Ruby binaries. The first contains the binaries
+# installed using the "gem" command, and the second is a target for the
+# "bundle" command.
 ruby_tools_bin_dir = File.join(ruby_tools_dir, "bin")
 directory ruby_tools_bin_dir
+ruby_tools_bin_bundle_dir = File.join(ruby_tools_dir, "bin_bundle")
+directory ruby_tools_bin_bundle_dir
 
 python_tools_dir = File.join(tools_dir, "python")
 directory python_tools_dir
@@ -294,42 +309,40 @@ ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 
 # Toolkits
-BUNDLER = File.join(ruby_tools_bin_dir, "bundler")
-file BUNDLER => [ruby_tools_dir, ruby_tools_bin_dir] do
+BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
+file BUNDLE => [ruby_tools_dir, ruby_tools_bin_dir] do
     sh "gem", "install",
             "--minimal-deps",
             "--no-document",
             "--install-dir", ruby_tools_dir,
             "bundler:#{bundler_ver}"
 
-    if !File.exists? BUNDLER
+    if !File.exists? BUNDLE
         # Workaround for old Ruby versions
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundler"), BUNDLER
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle"), File.join(ruby_tools_bin_dir, "bundle")
+        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundler"), File.join(ruby_tools_bin_dir, "bundler")
+        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle"), BUNDLE
     end
 
-    sh BUNDLER, "--version"
+    sh BUNDLE, "--version"
 end
 
-BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
-file BUNDLE => [BUNDLER]
-
 fpm_gemfile = File.expand_path("init_debs/fpm.Gemfile", __dir__)
-FPM = File.join(ruby_tools_bin_dir, "fpm")
-file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_dir, fpm_gemfile] do
-    sh BUNDLE, "config", "set", "--local", "path", ruby_tools_dir
+FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
+file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir, fpm_gemfile] do
     sh BUNDLE, "install",
         "--gemfile", fpm_gemfile,
-        "--binstubs", ruby_tools_bin_dir
+        "--path", ruby_tools_dir,
+        "--binstubs", ruby_tools_bin_bundle_dir
     sh FPM, "--version"
 end
 
 danger_gemfile = File.expand_path("init_debs/danger.Gemfile", __dir__)
-DANGER = File.join(ruby_tools_bin_dir, "danger")
-file DANGER => [ruby_tools_bin_dir, ruby_tools_dir, danger_gemfile, BUNDLE] do
-    sh BUNDLE, "config", "set", "--local", "path", ruby_tools_dir
+DANGER = File.join(ruby_tools_bin_bundle_dir, "danger")
+file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDLE] do
     sh BUNDLE, "install",
         "--gemfile", danger_gemfile,
+        "--path", ruby_tools_dir,
+        "--binstubs", ruby_tools_bin_bundle_dir
         "--binstubs", ruby_tools_bin_dir
     sh "touch", DANGER
     sh DANGER, "--version"
