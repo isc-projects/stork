@@ -1,3 +1,10 @@
+* 215 [doc] slawek
+
+    Changed the bikesheding font color to black, i.e. the same as all "normal"
+    text, to unify with other projects' documentation styles. This has best
+    contrast and is way less distracting than it used to be.
+    (Gitlab #782)
+
 * 214 [bug] marcin
 
     Fixed Stork binaries build date injection. Before this fix, the binaries
@@ -23,7 +30,7 @@ Stork 1.4.0 released on 2022-06-01.
     servers not using the stat_cmds hooks library. Sending such
     queries caused unnecessary commands processing by the Kea
     servers and excessive error logs in Stork.
-    (#742)
+    (Gitlab #742)
 
 * 210 [bug] slawek
 
