@@ -302,6 +302,8 @@ gobin = File.join(goroot, "bin")
 
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
+ENV["BUNDLE_PATH"] = ruby_tools_dir
+ENV["BUNDLE_BIN"] = ruby_tools_bin_bundle_dir
 ENV["GOROOT"] = goroot
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
