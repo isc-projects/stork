@@ -343,8 +343,7 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
         "--gemfile", danger_gemfile,
         "--path", ruby_tools_dir,
         "--binstubs", ruby_tools_bin_bundle_dir
-        "--binstubs", ruby_tools_bin_dir
-    sh "touch", DANGER
+    sh "touch", "--no-create", DANGER
     sh DANGER, "--version"
 end
 
@@ -375,7 +374,7 @@ file YAMLINC => [NPM] do
             *ci_opts,
             "--prefix", "#{node_dir}/node_modules",
             "yamlinc@#{yamlinc_ver}"
-    sh "touch", YAMLINC
+    sh "touch", "--no-create", YAMLINC
     sh YAMLINC, "--version"
 end
 
@@ -517,7 +516,7 @@ sphinx_requirements_file = File.expand_path("init_debs/sphinx.txt", __dir__)
 SPHINX_BUILD = sphinx_path
 file SPHINX_BUILD => [python_tools_dir, sphinx_requirements_file] do
     if ENV["OLD_CI"] == "yes"
-        sh "touch", "-c", SPHINX_BUILD
+        sh "touch", "--no-create", SPHINX_BUILD
         next
     end
     Rake::Task["pip_install"].invoke(sphinx_requirements_file)

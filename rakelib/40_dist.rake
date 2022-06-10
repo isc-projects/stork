@@ -67,7 +67,7 @@ file agent_dist_etc_dir => agent_etc_files do
     agent_etc_files.each do |file|
         FileUtils.cp(file, agent_dist_etc_dir)
     end
-    sh "touch", agent_dist_etc_dir
+    sh "touch", "--no-create", agent_dist_etc_dir
 end
 
 agent_dist_dir = "dist/agent"
@@ -151,7 +151,7 @@ file server_dist_etc_dir => server_etc_files do
     server_etc_files.each do |file|
         FileUtils.cp(file, server_dist_etc_dir)
     end
-    sh "touch", server_dist_etc_dir
+    sh "touch", "--no-create", server_dist_etc_dir
 end
 
 server_examples_dir = "dist/server/usr/share/stork/examples"
@@ -161,7 +161,7 @@ server_grafana_examples_dir = File.join(server_examples_dir, "grafana")
 file server_grafana_examples_dir => FileList["grafana/*.json"] do
     sh "mkdir", "-p", server_grafana_examples_dir
     sh "cp", "-a", *FileList["grafana/*.json"], server_grafana_examples_dir
-    sh "touch", server_grafana_examples_dir
+    sh "touch", "--no-create", server_grafana_examples_dir
 end
 
 server_nginx_example_file = File.join(server_examples_dir, "nginx-stork.conf")
@@ -173,7 +173,7 @@ server_www_dir = "dist/server/usr/share/stork/www"
 file server_www_dir => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY] do
     sh "mkdir", "-p", server_www_dir
     sh "cp", "-a", *FileList[File.join(WEBUI_DIST_DIRECTORY, "*")], server_www_dir
-    sh "touch", server_www_dir
+    sh "touch", "--no-create", server_www_dir
 end
 
 server_dist_dir_tool_part = [tool_dist_bin_file]
