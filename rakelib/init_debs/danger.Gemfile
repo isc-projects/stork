@@ -11,3 +11,5 @@ gem "multipart-post", "~> 2.2.0"
 gem "danger", "~> 8.6"
 
 gem "danger-gitlab", "~> 8.0"
+
+gem "danger-commit_lint", "~> 0.0.7"

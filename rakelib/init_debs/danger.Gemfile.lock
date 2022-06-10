@@ -24,9 +24,13 @@ GEM
       no_proxy_fix
       octokit (~> 4.7)
       terminal-table (>= 1, < 4)
+    danger-commit_lint (0.0.7)
+      danger-plugin-api (~> 1.0)
     danger-gitlab (8.0.0)
       danger
       gitlab (~> 4.2, >= 4.2.0)
+    danger-plugin-api (1.0.0)
+      danger (> 2.0)
     faraday (1.10.0)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
@@ -91,6 +95,7 @@ PLATFORMS
 
 DEPENDENCIES
   danger (~> 8.6)
+  danger-commit_lint (~> 0.0.7)
   danger-gitlab (~> 8.0)
   multipart-post (~> 2.2.0)
 
