@@ -1,3 +1,11 @@
+
+* 218 [bug] slawek
+
+    Ruby dependencies are now deeply frozen to ensure that the specific
+    versions are used in all environments and avoid problems with incompatible
+    packages.
+    (Gitlab #781)
+
 * 217 [bug] slawek
 
     Changed the permissions of the systemD service files used in DEB and RPM
