@@ -1,3 +1,9 @@
+* 217 [bug] slawek
+
+    Changed the permissions of the systemD service files. They are now more
+    restricted and don't produce the writable warning.
+    (Gitlab #783)
+
 * 216 [bug] slawek
 
     Fixed non-visible navbar menus on small resolutions.
@@ -41,12 +47,12 @@ Stork 1.4.0 released on 2022-06-01.
 
     Fixed the rake tasks that ran the database in a Docker container but were
     connecting to the database on localhost.
-    (#733)
+    (Gitlab #733)
 
 * 209 [func] slawek
 
     Log a warning message when no monitored application is detected.
-    (Gitalab #713)
+    (Gitlab #713)
 
 Stork 1.3.0 released on 2022-05-11.
 
