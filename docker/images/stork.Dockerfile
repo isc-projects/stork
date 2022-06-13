@@ -2,8 +2,8 @@
 ### Arguments ###
 #################
 
-ARG KEA_REPO=public/isc/kea-2-1
-ARG KEA_VER=2.1.6-*
+ARG KEA_REPO=public/isc/kea-2-0
+ARG KEA_VER=2.0.2-isc20220227221539
 # Indicate if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
