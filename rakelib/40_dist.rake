@@ -57,6 +57,7 @@ directory agent_dist_system_dir
 agent_dist_system_service_file = File.join(agent_dist_system_dir, "isc-stork-agent.service")
 file agent_dist_system_service_file => [agent_dist_system_dir, "etc/isc-stork-agent.service"] do
     sh "cp", "-a", "etc/isc-stork-agent.service", agent_dist_system_service_file
+    sh "chmod", "644", agent_dist_system_service_file
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
@@ -140,6 +141,7 @@ directory server_dist_system_dir
 server_dist_system_service_file = File.join(server_dist_system_dir, "isc-stork-server.service")
 file server_dist_system_service_file => [server_dist_system_dir, "etc/isc-stork-server.service"] do
     sh "cp", "-a", "etc/isc-stork-server.service", server_dist_system_service_file
+    sh "chmod", "644", server_dist_system_service_file
 end
 
 server_etc_files = FileList["etc/server.env"]
