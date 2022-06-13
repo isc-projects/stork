@@ -43,7 +43,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 // Convert db machine to rest structure.
 func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
-	var apps []*models.App
+	apps := []*models.App{}
 	for _, app := range dbMachine.Apps {
 		a := r.appToRestAPI(app)
 		apps = append(apps, a)

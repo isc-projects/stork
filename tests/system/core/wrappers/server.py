@@ -327,7 +327,7 @@ class Server(ComposeServiceWrapper):
             last_visited = state["last_visited_at"]
             if last_visited < start:
                 raise NoSuccessException("the state not fetched")
-            if state["apps"] is None:
+            if len(state["apps"]) == 0:
                 raise NoSuccessException("the apps are missing")
             return state
         return worker()
