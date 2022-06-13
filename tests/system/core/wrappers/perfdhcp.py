@@ -40,6 +40,8 @@ class Perfdhcp:
         if status not in (0, 3):
             raise subprocess.CalledProcessError(
                 status, "perfdhcp", stdout, stderr)
+        if status == 3:
+            print(stdout)
 
     def _generate_traffic_flags(self, family: int,
                                 target: Union[str, List[str]],
