@@ -321,10 +321,8 @@ deploy_demo:
     # Copy source code
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org rm -rf deploy/*
     - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
-    # Build Docker containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml build
-    # Start Docker containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml up -d
+    # Build & Start Docker containers
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN deploy/start-demo.sh --no-prompt
 
 ### deploy pkgs to cloudsmith.io ###
 
