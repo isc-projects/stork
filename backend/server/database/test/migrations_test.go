@@ -15,7 +15,7 @@ import (
 
 // Current schema version. This value must be bumped up every
 // time the schema is updated.
-const expectedSchemaVersion int64 = 41
+const expectedSchemaVersion int64 = 42
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {

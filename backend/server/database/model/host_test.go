@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // Convenience function checking if the slice of hosts returned from
@@ -1335,6 +1336,18 @@ func TestKeaConfigHostInterface(t *testing.T) {
 				Address: "2001:db8:1::4",
 			},
 		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID: 1,
+				DHCPOptionSet: []DHCPOption{
+					{
+						Code:        123,
+						Encapsulate: "dhcp4",
+						Universe:    storkutil.IPv4,
+					},
+				},
+			},
+		},
 	}
 	ids := host.GetHostIdentifiers()
 	require.Len(t, ids, 2)
@@ -1353,6 +1366,11 @@ func TestKeaConfigHostInterface(t *testing.T) {
 	require.EqualValues(t, 234, subnetID)
 	_, err = host.GetSubnetID(3)
 	require.Error(t, err)
+	options := host.GetDHCPOptions(1)
+	require.Len(t, options, 1)
+	require.EqualValues(t, 123, options[0].GetCode())
+	require.Equal(t, "dhcp4", options[0].GetEncapsulate())
+	require.Equal(t, storkutil.IPv4, options[0].GetUniverse())
 }
 
 // Test that GetSubnet() function returns zero when host reservation is

@@ -13,19 +13,21 @@ type Host interface {
 	GetIPReservations() []string
 	GetHostname() string
 	GetSubnetID(int64) (int64, error)
+	GetDHCPOptions(int64) []DHCPOption
 }
 
 // Represents host reservation within Kea configuration.
 type Reservation struct {
-	HWAddress   string   `mapstructure:"hw-address" json:"hw-address,omitempty"`
-	DUID        string   `mapstructure:"duid" json:"duid,omitempty"`
-	CircuitID   string   `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
-	ClientID    string   `mapstructure:"client-id" json:"client-id,omitempty"`
-	FlexID      string   `mapstructure:"flex-id" json:"flex-id,omitempty"`
-	IPAddress   string   `mapstructure:"ip-address" json:"ip-address,omitempty"`
-	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
-	Prefixes    []string `mapstructure:"prefixes" json:"prefixes,omitempty"`
-	Hostname    string   `mapstructure:"hostname" json:"hostname,omitempty"`
+	HWAddress   string             `mapstructure:"hw-address" json:"hw-address,omitempty"`
+	DUID        string             `mapstructure:"duid" json:"duid,omitempty"`
+	CircuitID   string             `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
+	ClientID    string             `mapstructure:"client-id" json:"client-id,omitempty"`
+	FlexID      string             `mapstructure:"flex-id" json:"flex-id,omitempty"`
+	IPAddress   string             `mapstructure:"ip-address" json:"ip-address,omitempty"`
+	IPAddresses []string           `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
+	Prefixes    []string           `mapstructure:"prefixes" json:"prefixes,omitempty"`
+	Hostname    string             `mapstructure:"hostname" json:"hostname,omitempty"`
+	OptionData  []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
 }
 
 // Represents host reservation returned and sent via Kea host commands hook library.
@@ -36,7 +38,7 @@ type HostCmdsReservation struct {
 
 // Converts a host representation in Stork to Kea host reservation format used
 // in Kea configuration.
-func CreateReservation(host Host) (*Reservation, error) {
+func CreateReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host Host) (*Reservation, error) {
 	reservation := &Reservation{
 		Hostname: host.GetHostname(),
 	}
@@ -68,6 +70,13 @@ func CreateReservation(host Host) (*Reservation, error) {
 			reservation.IPAddress = parsed.NetworkAddress
 		}
 	}
+	for _, option := range host.GetDHCPOptions(daemonID) {
+		optionData, err := CreateSingleOptionData(daemonID, lookup, option)
+		if err != nil {
+			return nil, err
+		}
+		reservation.OptionData = append(reservation.OptionData, *optionData)
+	}
 	return reservation, nil
 }
 
@@ -75,7 +84,7 @@ func CreateReservation(host Host) (*Reservation, error) {
 // in host_cmds hook library (includes subnet ID). The daemonID selects host
 // reservation data appropriate for a given daemon. Note that a host in Stork
 // can be shared by multiple daemons.
-func CreateHostCmdsReservation(daemonID int64, host Host) (reservation *HostCmdsReservation, err error) {
+func CreateHostCmdsReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host Host) (reservation *HostCmdsReservation, err error) {
 	var (
 		base     *Reservation
 		subnetID int64
@@ -83,7 +92,7 @@ func CreateHostCmdsReservation(daemonID int64, host Host) (reservation *HostCmds
 	if subnetID, err = host.GetSubnetID(daemonID); err != nil {
 		return
 	}
-	base, err = CreateReservation(host)
+	base, err = CreateReservation(daemonID, lookup, host)
 	if err != nil {
 		return
 	}

@@ -57,7 +57,10 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
-	var commands []interface{}
+	var (
+		commands []interface{}
+		lookup   dbmodel.DHCPOptionDefinitionLookup
+	)
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
@@ -66,7 +69,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
-		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, host)
+		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
 			return ctx, err
 		}

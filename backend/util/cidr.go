@@ -15,8 +15,8 @@ type IPType int
 
 // IP protocol type enum.
 const (
-	IPv4 IPType = iota
-	IPv6
+	IPv4 IPType = 4
+	IPv6 IPType = 6
 )
 
 // Structure returned by ParseIP function. It comprises the information about

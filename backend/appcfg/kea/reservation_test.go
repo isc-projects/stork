@@ -56,10 +56,37 @@ func (host TestHost) GetSubnetID(int64) (int64, error) {
 	return int64(123), nil
 }
 
+// Returns static DHCP options.
+func (host TestHost) GetDHCPOptions(int64) (options []DHCPOption) {
+	testOptions := []testDHCPOption{
+		{
+			code:        5,
+			encapsulate: "dhcp4",
+			fields: []testDHCPOptionField{
+				*newTestDHCPOptionField("ipv4-address", "192.0.2.1"),
+			},
+		},
+		{
+			code:        7,
+			encapsulate: "dhcp4",
+			fields: []testDHCPOptionField{
+				*newTestDHCPOptionField("ipv4-address", "10.0.0.1"),
+			},
+		},
+	}
+	for _, to := range testOptions {
+		options = append(options, to)
+	}
+	return
+}
+
 // Test conversion of the host to Kea reservation.
 func TestCreateReservation(t *testing.T) {
-	var host TestHost
-	reservation, err := CreateReservation(host)
+	var (
+		lookup testDHCPOptionDefinitionLookup
+		host   TestHost
+	)
+	reservation, err := CreateReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 	require.Equal(t, "010203040506", reservation.HWAddress)
@@ -75,13 +102,17 @@ func TestCreateReservation(t *testing.T) {
 	require.Equal(t, "3000::/16", reservation.Prefixes[0])
 	require.Equal(t, "3001::/16", reservation.Prefixes[1])
 	require.Equal(t, "hostname.example.org", reservation.Hostname)
+	require.Len(t, reservation.OptionData, 2)
 }
 
 // Test conversion of the host to Kea reservation that can be used
 // in host_cmds command.
 func TestCreateHostCmdsReservation(t *testing.T) {
-	var host TestHost
-	reservation, err := CreateHostCmdsReservation(1, host)
+	var (
+		lookup testDHCPOptionDefinitionLookup
+		host   TestHost
+	)
+	reservation, err := CreateHostCmdsReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 	require.Equal(t, "010203040506", reservation.HWAddress)

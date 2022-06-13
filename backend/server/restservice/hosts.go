@@ -66,7 +66,8 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 
 // Convert host reservation from the format used in REST API to a
 // database host representation.
-func convertToHost(restHost *models.Host) *dbmodel.Host {
+func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
+	var err error
 	host := &dbmodel.Host{
 		ID:       restHost.ID,
 		SubnetID: restHost.SubnetID,
@@ -93,9 +94,13 @@ func convertToHost(restHost *models.Host) *dbmodel.Host {
 			DaemonID:   lh.DaemonID,
 			DataSource: lh.DataSource,
 		}
+		localHost.DHCPOptionSet, err = flattenDHCPOptions("", lh.Options)
+		if err != nil {
+			return nil, err
+		}
 		host.LocalHosts = append(host.LocalHosts, localHost)
 	}
-	return host
+	return host, nil
 }
 
 // Fetches host reservations from the database and converts to the data formats
@@ -306,8 +311,16 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 		return rsp
 	}
 	// Convert host information from REST API to database format.
-	host := convertToHost(params.Host)
-	err := host.PopulateDaemons(r.DB)
+	host, err := convertToHost(params.Host)
+	if err != nil {
+		msg := "error parsing specified host reservation"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	err = host.PopulateDaemons(r.DB)
 	if err != nil {
 		msg := "specified host is associated with daemons that no longer exist"
 		log.Error(err)

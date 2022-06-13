@@ -11,6 +11,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -76,6 +77,9 @@ type LocalHost struct {
 	Daemon     *Daemon `pg:"rel:has-one"`
 	Host       *Host   `pg:"rel:has-one"`
 	DataSource string
+
+	DHCPOptionSet     []DHCPOption
+	DHCPOptionSetHash string
 }
 
 // Associates a host with DHCP with host identifiers.
@@ -873,6 +877,19 @@ func (host Host) GetIPReservations() (ips []string) {
 // Returns reserved hostname.
 func (host Host) GetHostname() string {
 	return host.Hostname
+}
+
+// Returns DHCP options associated with the host and for a specified
+// daemon ID.
+func (host Host) GetDHCPOptions(daemonID int64) (options []keaconfig.DHCPOption) {
+	for _, lh := range host.LocalHosts {
+		if lh.DaemonID == daemonID {
+			for _, o := range lh.DHCPOptionSet {
+				options = append(options, o)
+			}
+		}
+	}
+	return
 }
 
 // Returns local subnet ID for a specified daemon. It returns an error

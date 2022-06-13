@@ -1,3 +1,10 @@
+# Universe
+  Universe:
+    type: integer
+    enum: &UNIVERSE
+      - 4
+      - 6
+
 # Lease
 
   Lease:
@@ -80,6 +87,39 @@
       total:
         type: integer
 
+# Option
+
+  DHCPOptionField:
+    type: object
+    properties:
+      fieldType:
+        type: string
+      values:
+        type: array
+        items:
+          type: string
+
+  DHCPOption:
+    type: object
+    properties:
+      code:
+        type: integer
+      alwaysSend:
+        type: boolean
+      encapsulate:
+        type: string
+      fields:
+        type: array
+        items:
+          $ref: '#/definitions/DHCPOptionField'
+      options:
+        type: array
+        items:
+          $ref: '#/definitions/DHCPOption'
+      universe:
+        type: integer
+        enum: *UNIVERSE
+
 # Host
 
   HostIdentifier:
@@ -107,6 +147,10 @@
         type: string
       dataSource:
         type: string
+      options:
+        type: array
+        items:
+          $ref: '#/definitions/DHCPOption'
 
   Host:
     type: object
