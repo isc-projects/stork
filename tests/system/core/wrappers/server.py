@@ -327,6 +327,8 @@ class Server(ComposeServiceWrapper):
             last_visited = state["last_visited_at"]
             if last_visited < start:
                 raise NoSuccessException("the state not fetched")
+            if state["apps"] is None:
+                raise NoSuccessException("the apps are missing")
             return state
         return worker()
 
@@ -401,8 +403,13 @@ class Server(ComposeServiceWrapper):
         def worker():
             overview = self.overview()
 
-            subnet: Subnet
-            for subnet in [*overview["subnets4"]["items"], *overview["subnets6"]["items"]]:
+            subnets: List[Subnet] = []
+            if overview["subnets4"]["items"] is not None:
+                subnets += overview["subnets4"]["items"]
+            if overview["subnets6"]["items"] is not None:
+                subnets += overview["subnets4"]["items"]
+
+            for subnet in subnets:
                 local_subnet: LocalSubnet
                 for local_subnet in subnet["localSubnets"]:
                     collected_at_raw: str = local_subnet["statsCollectedAt"]
