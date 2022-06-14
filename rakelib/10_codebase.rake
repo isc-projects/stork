@@ -22,6 +22,9 @@ CLEAN = FileList[]
 # just unpacked state.
 CLOBBER = FileList[]
 
+# Ruby bundler local file
+CLOBBER.append "rakelib/init_debs/.bundle/config"
+
 ###############
 ### Swagger ###
 ###############
