@@ -1,7 +1,8 @@
 * 217 [bug] slawek
 
-    Changed the permissions of the systemD service files. They are now more
-    restricted and don't produce the writable warning.
+    Changed the permissions of the systemD service files used in DEB and RPM
+    packages. They are now more restricted and don't produce the writable
+    warning.
     (Gitlab #783)
 
 * 216 [bug] slawek
