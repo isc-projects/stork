@@ -11,8 +11,11 @@
   &:hover
     color: black
 
+:host ::ng-deep .stork-menubar.p-menubar.p-menubar-mobile-active .p-menubar-root-list > .p-menuitem > .p-menuitem-link
+  color: black
+
 :host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-link
-    color: black
+  color: black
 
 :host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-menuitem-text
   color: inherit
@@ -24,13 +27,15 @@
   &:hover
     color: inherit
 
+:host ::ng-deep .stork-menubar.p-menubar .p-menubar-button
+  color: white
+  background-color: #007ad9
 
 @keyframes p-progress-spinner-color
-    0%
-        stroke: #fff
-    100%
-        stroke: #fff
-
+  0%
+    stroke: #fff
+  100%
+    stroke: #fff
 
 // fix position and look of stork version tooltip
 ::ng-deep .stork-version-tooltip
@@ -48,7 +53,6 @@
 ::ng-deep body .p-tooltip.stork-version-tooltip .p-tooltip-text
   background-color: #c6c6c6
   color: #000
-
 
 // logo styling
 .logo
