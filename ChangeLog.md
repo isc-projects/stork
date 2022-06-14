@@ -1,3 +1,8 @@
+* 216 [bug] slawek
+
+    Fixed non-visible navbar menus on small resolutions.
+    (Gitlab #698)
+
 * 215 [doc] slawek
 
     Changed the bikesheding font color to black, i.e. the same as all "normal"
