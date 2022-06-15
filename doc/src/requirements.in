@@ -1,1 +1,1 @@
--r ../../rakelib/init_debs/sphinx.in
+-r ../../rakelib/init_deps/sphinx.in
