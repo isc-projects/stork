@@ -16,10 +16,10 @@ FROM debian:11.2-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        ca-certificates=20210119 \
-        wget=1.21-* \
+                -y \
+                --no-install-recommends \
+                ca-certificates=20210119 \
+                wget=1.21-* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
@@ -30,19 +30,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        unzip=6.0-* \
-        ruby-dev=1:2.7+* \
-        python3.9=3.9.* \
-        python3-pip=20.3.* \
-        make=4.3-* \
-        gcc=4:10.2.* \
-        xz-utils=5.2.* \
-        libc6-dev=2.31-* \
-        ruby-rubygems=3.2.* \
-        openjdk-11-jre-headless=11.0.* \
-        git=1:2.30.* \
+                -y \
+                --no-install-recommends \
+                unzip=6.0-* \
+                ruby-dev=1:2.7+* \
+                python3.9=3.9.* \
+                python3-pip=20.3.* \
+                make=4.3-* \
+                gcc=4:10.2.* \
+                xz-utils=5.2.* \
+                libc6-dev=2.31-* \
+                ruby-rubygems=3.2.* \
+                openjdk-11-jre-headless=11.0.* \
+                git=1:2.30.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -164,15 +164,15 @@ FROM debian-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        curl=7.74.* \
-        supervisor=4.2.* \
-        prometheus-node-exporter=1.1.* \
-        default-mysql-client=1.0.* \ 
-        postgresql-client=13+* \
-        apt-transport-https=2.2.* \
-        gnupg=2.2.* \
+                -y \
+                --no-install-recommends \
+                curl=7.74.* \
+                supervisor=4.2.* \
+                prometheus-node-exporter=1.1.* \
+                default-mysql-client=1.0.* \ 
+                postgresql-client=13+* \
+                apt-transport-https=2.2.* \
+                gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
@@ -182,13 +182,13 @@ ARG KEA_VER
 RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-kea-ctrl-agent=${KEA_VER} \
-        isc-kea-dhcp4-server=${KEA_VER} \
-        isc-kea-dhcp6-server=${KEA_VER} \
-        isc-kea-admin=${KEA_VER} \
-        isc-kea-common=${KEA_VER} \
+                --no-install-recommends \
+                -y \
+                isc-kea-ctrl-agent=${KEA_VER} \
+                isc-kea-dhcp4-server=${KEA_VER} \
+                isc-kea-dhcp6-server=${KEA_VER} \
+                isc-kea-admin=${KEA_VER} \
+                isc-kea-common=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/
@@ -204,14 +204,14 @@ ARG KEA_VER
 RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         apt-get update \
         && apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-kea-premium-host-cmds=${KEA_VER} \
-        isc-kea-premium-forensic-log=${KEA_VER} \
+                --no-install-recommends \
+                -y \
+                isc-kea-premium-host-cmds=${KEA_VER} \
+                isc-kea-premium-forensic-log=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
-        )
+)
 
 # Use the "kea-base" or "keapremium-base" image as a base image
 # for this stage.
@@ -249,22 +249,22 @@ FROM debian-base AS bind
 # Install Bind dependencies
 RUN apt-get update \
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        curl=7.74.* \
-        supervisor=4.2.* \
-        prometheus-node-exporter=1.1.* \
-        apt-transport-https=2.2.* \
-        gnupg=2.2.* \
+                -y \
+                --no-install-recommends \
+                curl=7.74.* \
+                supervisor=4.2.* \
+                prometheus-node-exporter=1.1.* \
+                apt-transport-https=2.2.* \
+                gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Bind
 ARG BIND_VER="1:9.16.*"
 RUN apt-get update \
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        bind9=${BIND_VER} \
+                -y \
+                --no-install-recommends \
+                bind9=${BIND_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && chown root:bind /etc/bind/rndc.key \
