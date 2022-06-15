@@ -454,7 +454,7 @@ fixtures. There are four fixtures:
 - ``server_service`` - it starts the container with Stork Server. The default
   configuration is described by the ``server`` service in the ``docker-compose``
   file.
-- ``bind9_service`` - it starts the container with Kea daemon(s) and Stork Agent.
+- ``bind9_service`` - it starts the container with the Bind9 daemon and Stork Agent.
   If not fixture argument was used (see later), it runs also the Stork Server
   containers and Agent registers. The default configuration is described by
   the ``agent-kea`` service in the ``docker-compose`` file.
