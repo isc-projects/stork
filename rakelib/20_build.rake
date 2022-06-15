@@ -26,14 +26,14 @@ end
 ARM_DIRECTORY = "doc/_build/html"
 file ARM_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
     sh SPHINX_BUILD, "-M", "html", "doc/", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
-    sh "touch", "--no-create", ARM_DIRECTORY
+    FileUtils.touch ARM_DIRECTORY, nocreate: true
 end
 CLEAN.append ARM_DIRECTORY
 
 TOOL_MAN_FILE = "doc/man/stork-tool.8"
 file TOOL_MAN_FILE => DOC_CODEBASE + [SPHINX_BUILD] do
     sh SPHINX_BUILD, "-M", "man", "doc/", "doc/", "-v", "-E", "-a", "-W", "-j", "2"
-    sh "touch", "--no-create", TOOL_MAN_FILE, AGENT_MAN_FILE, SERVER_MAN_FILE
+    FileUtils.touch TOOL_MAN_FILE, AGENT_MAN_FILE, SERVER_MAN_FILE, nocreate: true
 end
 
 AGENT_MAN_FILE = "doc/man/stork-agent.8"
@@ -59,7 +59,7 @@ end
 file WEBUI_DIST_ARM_DIRECTORY = "webui/dist/stork/assets/arm"
 file WEBUI_DIST_ARM_DIRECTORY => [ARM_DIRECTORY] do
     sh "cp", "-a", ARM_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY
-    sh "touch", "--no-create", WEBUI_DIST_ARM_DIRECTORY
+    FileUtils.touch WEBUI_DIST_ARM_DIRECTORY, nocreate: true
 end
 
 file WEBUI_DEBUG_DIRECTORY = "webui/dist/stork-debug"
@@ -188,31 +188,31 @@ task :build => ["build:backend", "build:doc", "build:ui"]
 namespace :rebuild do
     desc "Rebuild Stork documentation from sources"
     task :doc do
-        sh "touch", "--no-create", "doc"
+        FileUtils.touch "doc", nocreate: true
         Rake::Task["build:doc"].invoke()
     end
   
     desc "Rebuild Stork Server from sources"
     task :server do
-        sh "touch", "--no-create", "backend/cmd/stork-server"
+        FileUtils.touch "backend/cmd/stork-server", nocreate: true
         Rake::Task["build:server"].invoke()
     end
 
     desc "Rebuild Stork Agent from sources"
     task :agent do
-        sh "touch", "--no-create", "backend/cmd/stork-agent"
+        FileUtils.touch "backend/cmd/stork-agent", nocreate: true
         Rake::Task["build:agent"].invoke()
     end
 
     desc "Rebuild Stork Tool from sources"
     task :tool do
-        sh "touch", "--no-create", "backend/cmd/stork-tool"
+        FileUtils.touch "backend/cmd/stork-tool", nocreate: true
         Rake::Task["build:tool"].invoke()
     end
 
     desc "Rebuild Web UI (production mode)"
     task :ui do
-        sh "touch", "--no-create", "webui"
+        FileUtils.touch "webui", nocreate: true
         Rake::Task["build:ui"].invoke()
     end
 end

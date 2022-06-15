@@ -50,7 +50,7 @@ file swagger_server_dir => [swagger_file, GOSWAGGER] do
         "--spec", swagger_abs,
         "--template", "stratoscale"
     end
-    sh "touch", "--no-create", swagger_server_dir
+    FileUtils.touch swagger_server_dir, nocreate: true
 end
 CLEAN.append swagger_server_dir
 
@@ -120,7 +120,7 @@ file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
         sh GO, "generate", "-v", "./..."
     end
-    sh "touch", "--no-create", GO_SERVER_API_MOCK
+    FileUtils.touch GO_SERVER_API_MOCK, nocreate: true
 end
 CLEAN.append GO_SERVER_API_MOCK
     
@@ -146,7 +146,7 @@ file open_api_generator_webui_dir => [swagger_file, OPENAPI_GENERATOR] do
     "-g", "typescript-angular",
     "-o", open_api_generator_webui_dir,
     "--additional-properties", "snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"
-    sh "touch", "--no-create", open_api_generator_webui_dir
+    FileUtils.touch open_api_generator_webui_dir, nocreate: true
 end
 CLEAN.append open_api_generator_webui_dir
 
@@ -163,7 +163,7 @@ file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] d
                 "--prefer-offline",
                 *ci_opts
     end
-    sh "touch", "--no-create", node_module_dir
+    FileUtils.touch node_module_dir, nocreate: true
 end
 CLOBBER.append node_module_dir
 
