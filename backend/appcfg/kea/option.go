@@ -11,25 +11,31 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// DHCP option space (one of dhcp4 or dhcp6).
+type DHCPOptionSpace = string
+
 // Top level DHCP option spaces.
 const (
-	DHCPv4OptionSpace = "dhcp4"
-	DHCPv6OptionSpace = "dhcp6"
+	DHCPv4OptionSpace DHCPOptionSpace = "dhcp4"
+	DHCPv6OptionSpace DHCPOptionSpace = "dhcp6"
 )
 
-// Types of DHCP option fields.
+// Type of a DHCP option field.
+type DHCPOptionFieldType = string
+
+// Supported types of DHCP option fields.
 const (
-	HexBytesField    string = "hex-bytes"
-	StringField      string = "string"
-	BoolField        string = "bool"
-	Uint8Field       string = "uint8"
-	Uint16Field      string = "uint16"
-	Uint32Field      string = "uint32"
-	IPv4AddressField string = "ipv4-address"
-	IPv6AddressField string = "ipv6-address"
-	IPv6PrefixField  string = "ipv6-prefix"
-	PsidField        string = "psid"
-	FqdnField        string = "fqdn"
+	HexBytesField    DHCPOptionFieldType = "hex-bytes"
+	StringField      DHCPOptionFieldType = "string"
+	BoolField        DHCPOptionFieldType = "bool"
+	Uint8Field       DHCPOptionFieldType = "uint8"
+	Uint16Field      DHCPOptionFieldType = "uint16"
+	Uint32Field      DHCPOptionFieldType = "uint32"
+	IPv4AddressField DHCPOptionFieldType = "ipv4-address"
+	IPv6AddressField DHCPOptionFieldType = "ipv6-address"
+	IPv6PrefixField  DHCPOptionFieldType = "ipv6-prefix"
+	PsidField        DHCPOptionFieldType = "psid"
+	FqdnField        DHCPOptionFieldType = "fqdn"
 )
 
 // An interface to an option field. It returns an option field type
