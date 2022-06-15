@@ -309,6 +309,10 @@ func TestConvertHexBytesFieldMalformed(t *testing.T) {
 	// Not a string.
 	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, 525))
 	require.Error(t, err)
+
+	// Empty string.
+	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, ""))
+	require.Error(t, err)
 }
 
 // Test that a string option field is converted to a hex format.
@@ -337,6 +341,10 @@ func TestConvertStringFieldMalformed(t *testing.T) {
 
 	// Not a string.
 	_, err = convertStringField(*newTestDHCPOptionField(StringField, 123), false)
+	require.Error(t, err)
+
+	// Empty string.
+	_, err = convertHexBytesField(*newTestDHCPOptionField(StringField, ""))
 	require.Error(t, err)
 }
 
@@ -411,6 +419,10 @@ func TestUint8FieldMalformed(t *testing.T) {
 
 	// Not a number.
 	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, "111"), false)
+	require.Error(t, err)
+
+	// Floating point number.
+	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, 1.1), false)
 	require.Error(t, err)
 }
 
@@ -510,13 +522,20 @@ func TestIPv4AddressFieldToText(t *testing.T) {
 
 // Test that conversion of a malformed IPv4 option field yields an error.
 func TestIPv4AddressFieldMalformed(t *testing.T) {
+	// It must be a single value.
 	_, err := convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField, "192.0.2.1", "192.0.2.2"), false)
 	require.Error(t, err)
 
+	// No value.
 	_, err = convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField), false)
 	require.Error(t, err)
 
+	// IPv6 address.
 	_, err = convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField, "2001:db8:1::1"), false)
+	require.Error(t, err)
+
+	// Empty string.
+	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv4AddressField, ""))
 	require.Error(t, err)
 }
 
@@ -562,19 +581,28 @@ func TestIPv6PrefixFieldToText(t *testing.T) {
 
 // Test that conversion of a malformed IPv6 prefix option field yields an error.
 func TestIPv6PrefixFieldMalformed(t *testing.T) {
+	// No prefix length.
 	_, err := convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::"), false)
 	require.Error(t, err)
 
+	// No prefix.
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, 64), false)
 	require.Error(t, err)
 
+	// Too high prefix length.
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", 129), false)
 	require.Error(t, err)
 
+	// No value.
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField), false)
 	require.Error(t, err)
 
+	// IPv4 prefix.
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "192.0.2.1", 32), false)
+	require.Error(t, err)
+
+	// Empty prefix.
+	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv6PrefixField, "", 32))
 	require.Error(t, err)
 }
 
@@ -594,18 +622,23 @@ func TestPsidFieldToText(t *testing.T) {
 
 // Test that conversion of a malformed PSID option field yields an error.
 func TestPsidFieldMalformed(t *testing.T) {
+	// No PSID length.
 	_, err := convertPsidField(*newTestDHCPOptionField(PsidField, 1000), false)
 	require.Error(t, err)
 
+	// PSID is not a number.
 	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, "1000", 12), false)
 	require.Error(t, err)
 
+	// PSID length is not a number.
 	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1000, "12"), false)
 	require.Error(t, err)
 
+	// PSID length is too high.
 	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1000, 1200), false)
 	require.Error(t, err)
 
+	// PSID is too high.
 	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 165535, 12), false)
 	require.Error(t, err)
 }

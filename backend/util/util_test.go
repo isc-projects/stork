@@ -308,3 +308,24 @@ func TestIsNotNilPtr(t *testing.T) {
 	require.NotEqualValues(t, iface, nil)
 	require.False(t, IsNilPtr(iface))
 }
+
+// Test the function that checks if a specified value is a whole number.
+func TestIsWholeNumber(t *testing.T) {
+	// Signed integers.
+	require.True(t, IsWholeNumber(int8(100)))
+	require.True(t, IsWholeNumber(int16(100)))
+	require.True(t, IsWholeNumber(int32(100)))
+	require.True(t, IsWholeNumber(int(100)))
+	// Unsigned integers.
+	require.True(t, IsWholeNumber(uint8(100)))
+	require.True(t, IsWholeNumber(uint16(100)))
+	require.True(t, IsWholeNumber(uint32(100)))
+	require.True(t, IsWholeNumber(uint(100)))
+	// Not whole numbers.
+	require.False(t, IsWholeNumber(1.1))
+	require.False(t, IsWholeNumber("foo"))
+	require.False(t, IsWholeNumber(struct{}{}))
+	require.False(t, IsWholeNumber(interface{}(nil)))
+	u8 := uint8(123)
+	require.False(t, IsWholeNumber(&u8))
+}

@@ -324,3 +324,17 @@ func FormatNoun(count int64, noun, postfix string) string {
 func IsNilPtr(obj interface{}) bool {
 	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
 }
+
+// Checks if the specified value is a whole number.
+func IsWholeNumber(value interface{}) bool {
+	if value == nil {
+		return false
+	}
+	valueType := reflect.TypeOf(value)
+	switch valueType.Kind() {
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint:
+		return true
+	default:
+		return false
+	}
+}

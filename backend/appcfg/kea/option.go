@@ -153,17 +153,20 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 func convertHexBytesField(field DHCPOptionField) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in hex-bytes option field")
+		return "", errors.Errorf("require one value in hex-bytes option field, have %d", len(values))
 	}
 	output, ok := values[0].(string)
 	if !ok {
 		return "", errors.New("hex-bytes option field is not a string value")
 	}
+	if len(output) == 0 {
+		return "", errors.New("hex-bytes option field value must not be empty")
+	}
 	for _, sep := range []string{":", " "} {
 		output = strings.ReplaceAll(output, sep, "")
 	}
 	if _, err := hex.DecodeString(output); err != nil {
-		return "", errors.New("option field is not a valid string of hexadecimal digits")
+		return "", errors.Wrap(err, "option field is not a valid string of hexadecimal digits")
 	}
 	return output, nil
 }
@@ -175,11 +178,14 @@ func convertHexBytesField(field DHCPOptionField) (string, error) {
 func convertStringField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in string option field")
+		return "", errors.Errorf("require one value in string option field, have %d", len(values))
 	}
 	output, ok := values[0].(string)
 	if !ok {
 		return "", errors.New("string option field is not a string value")
+	}
+	if len(output) == 0 {
+		return "", errors.New("string option field value must not be empty")
 	}
 	if textFormat {
 		return output, nil
@@ -194,7 +200,7 @@ func convertStringField(field DHCPOptionField, textFormat bool) (string, error) 
 func convertBoolField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in the bool option field")
+		return "", errors.Errorf("require one value in bool option field, have %d", len(values))
 	}
 	b, ok := values[0].(bool)
 	if !ok {
@@ -216,12 +222,12 @@ func convertBoolField(field DHCPOptionField, textFormat bool) (string, error) {
 func convertUintField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in the uint option field")
+		return "", errors.Errorf("require one value in uint option field, have %d", len(values))
 	}
-	value := reflect.ValueOf(values[0])
-	if !value.CanConvert(reflect.TypeOf((*uint64)(nil)).Elem()) {
+	if !storkutil.IsWholeNumber(values[0]) {
 		return "", errors.New("uint option field value is not a valid number")
 	}
+	value := reflect.ValueOf(values[0])
 	ivalue := value.Convert(reflect.TypeOf((*uint64)(nil)).Elem())
 	switch field.GetFieldType() {
 	case Uint8Field:
@@ -256,7 +262,7 @@ func convertUintField(field DHCPOptionField, textFormat bool) (string, error) {
 func convertIPv4AddressField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in the IPv4 address option field")
+		return "", errors.Errorf("require one value in IPv4 address option field, have %d", len(values))
 	}
 	ip, ok := values[0].(string)
 	if !ok {
@@ -279,7 +285,7 @@ func convertIPv4AddressField(field DHCPOptionField, textFormat bool) (string, er
 func convertIPv6AddressField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in the IPv6 address option field")
+		return "", errors.Errorf("require one value in IPv6 address option field, have %d", len(values))
 	}
 	ip, ok := values[0].(string)
 	if !ok {
@@ -303,17 +309,17 @@ func convertIPv6AddressField(field DHCPOptionField, textFormat bool) (string, er
 func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 2 {
-		return "", errors.New("IPv6 prefix option field must contain two values")
+		return "", errors.Errorf("IPv6 prefix option field must contain two values, it has %d", len(values))
 	}
 	ip, ok := values[0].(string)
 	if !ok {
 		return "", errors.New("IPv6 prefix in the option field is not a string value")
 	}
-	if !reflect.TypeOf(values[1]).ConvertibleTo(reflect.TypeOf((*uint64)(nil)).Elem()) {
+	if !storkutil.IsWholeNumber(values[1]) {
 		return "", errors.New("IPv6 prefix length in the option field is not a number")
 	}
-	len := reflect.ValueOf(values[1])
-	if len.Int() > 128 {
+	prefixLen := reflect.ValueOf(values[1])
+	if prefixLen.Int() > 128 {
 		return "", errors.New("IPv6 prefix length must not be greater than 128")
 	}
 	parsed := storkutil.ParseIP(ip)
@@ -323,7 +329,7 @@ func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, err
 	if textFormat {
 		return fmt.Sprintf("%s/%d", values[0], values[1]), nil
 	}
-	return fmt.Sprintf("%s%02X", storkutil.BytesToHex(parsed.IP), len.Int()), nil
+	return fmt.Sprintf("%s%02X", storkutil.BytesToHex(parsed.IP), prefixLen.Int()), nil
 }
 
 // Converts a PSID option field from Stork to Kea format. It expects that
@@ -335,25 +341,25 @@ func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, err
 func convertPsidField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 2 {
-		return "", errors.New("psid option field must contain two values")
+		return "", errors.Errorf("psid option field must contain two values, it has %d", len(values))
 	}
 	for _, v := range values {
-		if !reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf((*uint64)(nil)).Elem()) {
+		if !storkutil.IsWholeNumber(v) {
 			return "", errors.New("values in the psid option field must be numbers")
 		}
 	}
-	psid := reflect.ValueOf(values[0]).Convert(reflect.TypeOf((*uint64)(nil)).Elem())
-	if psid.Uint() > math.MaxUint16 {
+	psid := reflect.ValueOf(values[0]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
+	if psid.Int() > math.MaxUint16 {
 		return "", errors.Errorf("psid value must not be greater than %d", math.MaxUint16)
 	}
-	psidLength := reflect.ValueOf(values[1]).Convert(reflect.TypeOf((*uint64)(nil)).Elem())
-	if psidLength.Uint() > math.MaxUint8 {
+	psidLength := reflect.ValueOf(values[1]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
+	if psidLength.Int() > math.MaxUint8 {
 		return "", errors.Errorf("psid length value must not be greater than %d", math.MaxUint8)
 	}
 	if textFormat {
 		return fmt.Sprintf("%d/%d", values[0], values[1]), nil
 	}
-	return fmt.Sprintf("%04X%02X", psid.Uint(), psidLength.Uint()), nil
+	return fmt.Sprintf("%04X%02X", psid.Int(), psidLength.Int()), nil
 }
 
 // Converts an FQDN option field from Stork to Kea format. It expects that
@@ -365,7 +371,7 @@ func convertPsidField(field DHCPOptionField, textFormat bool) (string, error) {
 func convertFqdnField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.New("multiple values in the FQDN option field")
+		return "", errors.Errorf("require one value in FQDN option field, have %d", len(values))
 	}
 	value, ok := values[0].(string)
 	if !ok {
