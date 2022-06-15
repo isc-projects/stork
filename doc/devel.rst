@@ -373,9 +373,11 @@ used in Stork for executing the system tests.
 
 Test results for individual test cases are shown at the end of the tests execution.
 
-Users should not attempt to run the system tests by directly calling pytest
-because it would bypass the step to generate the necessary configuration files.
-This step is conducted by the rake tasks.
+.. warning::
+
+    Users should not attempt to run the system tests by directly calling pytest
+    because it would bypass the step to generate the necessary configuration files.
+    This step is conducted by the rake tasks.
 
 To run a particular test case, specify its name in the TEST variable:
 
