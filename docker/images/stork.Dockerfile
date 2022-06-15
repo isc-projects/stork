@@ -150,9 +150,9 @@ ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
-################################
-### Kea / Bind + Stork Agent ###
-################################
+#################################
+### Kea / Bind9 + Stork Agent ###
+#################################
 
 # Kea config generator
 FROM base AS kea-config-generator
@@ -251,9 +251,9 @@ HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Kea Control Agent: /etc/kea/kea-ctrl-agent.conf
 # Stork Agent files: /etc/stork
 
-# Bind with Stork Agent container
+# Bind9 with Stork Agent container
 FROM debian-base AS bind
-# Install Bind dependencies
+# Install Bind9 dependencies
 RUN apt-get update \
         && apt-get install \
                 -y \
