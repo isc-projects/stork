@@ -277,7 +277,7 @@ func TestCommitHostAdd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Committing the host should result in sending control commands to Kea servers.
-	_, err = module.commitHostAdd(ctx)
+	_, err = module.Commit(ctx)
 	require.NoError(t, err)
 
 	// Make sure that the commands were sent to appropriate servers.
@@ -376,7 +376,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 	ctx, err := module.ApplyHostAdd(ctx, host)
 	require.NoError(t, err)
 
-	_, err = module.commitHostAdd(ctx)
+	_, err = module.Commit(ctx)
 	require.ErrorContains(t, err, "reservation-add command to kea@192.0.2.1 failed: error status (1) returned by Kea dhcp4 daemon with text: 'error is error'")
 
 	// The second command should not be sent in this case.
@@ -455,7 +455,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	require.NotNil(t, ctx)
 
 	// Try to send the command to Kea server.
-	_, err = module.commitHostAdd(ctx)
+	_, err = module.Commit(ctx)
 	require.NoError(t, err)
 
 	// Make sure it was sent to appropriate server.
@@ -476,6 +476,314 @@ func TestCommitScheduledHostAdd(t *testing.T) {
                      "hw-address": "010203040506",
                      "hostname": "cool.example.org"
                  }
+             }
+         }`,
+		marshalled)
+}
+
+// Test first stage of deleting a host.
+func TestBeginHostDelete(t *testing.T) {
+	module := NewConfigModule(nil)
+	require.NotNil(t, module)
+
+	ctx1 := context.Background()
+	ctx2, err := module.BeginHostDelete(ctx1)
+	require.NoError(t, err)
+	require.Equal(t, ctx1, ctx2)
+}
+
+// Test second stage of deleting a host.
+func TestApplyHostDelete(t *testing.T) {
+	module := NewConfigModule(nil)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	// Simulate submitting new host entry. The host is associated with
+	// two different daemons/apps.
+	host := &dbmodel.Host{
+		ID:       1,
+		Hostname: "cool.example.org",
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err := module.ApplyHostDelete(ctx, host)
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	state, ok := config.GetTransactionState(ctx)
+	require.True(t, ok)
+	require.False(t, state.Scheduled)
+
+	require.Len(t, state.Updates, 1)
+	update := state.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, "kea", update.Target)
+	require.Equal(t, "host_delete", update.Operation)
+	require.NotNil(t, update.Recipe)
+	require.Contains(t, update.Recipe, "commands")
+
+	// There should be two commands ready to send.
+	commands := update.Recipe["commands"].([]interface{})
+	require.Len(t, commands, 2)
+
+	// Validate the first command and associated app.
+	command, ok := commands[0].(map[string]interface{})["command"].(*keactrl.Command)
+	require.True(t, ok)
+	marshalled := command.Marshal()
+	require.JSONEq(t,
+		`{
+             "command": "reservation-del",
+             "service": [ "dhcp4" ],
+             "arguments": {
+                 "subnet-id": 0,
+                 "identifier-type": "hw-address",
+                 "identifier": "010203040506"
+             }
+         }`,
+		marshalled)
+
+	app, ok := commands[0].(map[string]interface{})["app"].(*dbmodel.App)
+	require.True(t, ok)
+	require.Equal(t, app, host.LocalHosts[0].Daemon.App)
+
+	// Validate the second command and associated app.
+	command, ok = commands[1].(map[string]interface{})["command"].(*keactrl.Command)
+	require.True(t, ok)
+	marshalled = command.Marshal()
+	require.JSONEq(t,
+		`{
+             "command": "reservation-del",
+             "service": [ "dhcp4" ],
+             "arguments": {
+                 "subnet-id": 0,
+                 "identifier-type": "hw-address",
+                 "identifier": "010203040506"
+             }
+         }`,
+		marshalled)
+
+	app, ok = commands[1].(map[string]interface{})["app"].(*dbmodel.App)
+	require.True(t, ok)
+	require.Equal(t, app, host.LocalHosts[1].Daemon.App)
+}
+
+// Test committing added host, i.e. actually sending control commands to Kea.
+func TestCommitHostDelete(t *testing.T) {
+	// Create the config manager instance "connected to" fake agents.
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(nil, agents)
+
+	// Create Kea config module.
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	// Create new host reservation and store it in the context.
+	host := &dbmodel.Host{
+		ID:       1,
+		Hostname: "cool.example.org",
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err := module.ApplyHostDelete(ctx, host)
+	require.NoError(t, err)
+
+	// Committing the host should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the commands were sent to appropriate servers.
+	require.Len(t, agents.RecordedURLs, 2)
+	require.Equal(t, "http://192.0.2.1:1234/", agents.RecordedURLs[0])
+	require.Equal(t, "http://192.0.2.2:2345/", agents.RecordedURLs[1])
+
+	// Validate the sent commands.
+	require.Len(t, agents.RecordedCommands, 2)
+	for _, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		require.JSONEq(t,
+			`{
+                 "command": "reservation-del",
+                 "service": [ "dhcp4" ],
+                 "arguments": {
+                     "subnet-id": 0,
+                     "identifier-type": "hw-address",
+                     "identifier": "010203040506"
+                  }
+             }`,
+			marshalled)
+	}
+}
+
+// Test scheduling deleting a host reservation, retrieving the scheduled operation
+// from the database and performing it.
+func TestCommitScheduledHostDelete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(db, agents)
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// User is required to associate the config change with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+		Password: "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	// Prepare the context.
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+
+	// Create the host and store it in the context.
+	host := &dbmodel.Host{
+		ID: 1,
+		Subnet: &dbmodel.Subnet{
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID:      1,
+					LocalSubnetID: 123,
+				},
+			},
+		},
+		Hostname: "cool.example.org",
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err = module.ApplyHostDelete(ctx, host)
+	require.NoError(t, err)
+
+	// Simulate scheduling the config change and retrieving it from the database.
+	// The context will hold re-created transaction state.
+	ctx = manager.scheduleAndGetChange(ctx, t)
+	require.NotNil(t, ctx)
+
+	// Try to send the command to Kea server.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure it was sent to appropriate server.
+	require.Len(t, agents.RecordedURLs, 1)
+	require.Equal(t, "http://192.0.2.1:1234/", agents.RecordedURLs[0])
+
+	// Ensure the command has appropriate structure.
+	require.Len(t, agents.RecordedCommands, 1)
+	command := agents.RecordedCommands[0]
+	marshalled := command.Marshal()
+	require.JSONEq(t,
+		`{
+             "command": "reservation-del",
+             "service": [ "dhcp4" ],
+             "arguments": {
+                 "subnet-id": 123,
+                 "identifier-type": "hw-address",
+                 "identifier": "010203040506"
              }
          }`,
 		marshalled)

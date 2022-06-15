@@ -35,6 +35,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 		switch pu.Operation {
 		case "host_add":
 			ctx, err = module.commitHostAdd(ctx)
+		case "host_delete":
+			ctx, err = module.commitHostDelete(ctx)
 		default:
 			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
@@ -78,7 +80,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 		arguments["reservation"] = reservation
 		// Associate the command with an app receiving this command.
 		appCommand := make(map[string]interface{})
-		appCommand["command"] = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, &arguments)
+		appCommand["command"] = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, arguments)
 		appCommand["app"] = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
@@ -95,8 +97,9 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 	return ctx, nil
 }
 
-// Create the host reservation in the Kea servers.
-func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
+// Generic function used to commit host changes (i.e., delete or add host reservation)
+// using the data stored in the context.
+func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
@@ -159,4 +162,60 @@ func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context,
 		}
 	}
 	return ctx, nil
+}
+
+// Create the host reservation in the Kea servers.
+func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
+	return module.commitHostChanges(ctx)
+}
+
+// Begins deleting a host reservation. Currently it is no-op but may evolve
+// in the future.
+func (module *ConfigModule) BeginHostDelete(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+// Creates requests to delete host reservation. It prepares necessary commands to be sent
+// to Kea upon commit.
+func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
+	if len(host.LocalHosts) == 0 {
+		return ctx, pkgerrors.Errorf("deleted host %d is not associated with any daemon", host.ID)
+	}
+	var commands []interface{}
+	for _, lh := range host.LocalHosts {
+		if lh.Daemon == nil {
+			return ctx, pkgerrors.Errorf("deleted host %d is associated with nil daemon", host.ID)
+		}
+		if lh.Daemon.App == nil {
+			return ctx, pkgerrors.Errorf("deleted host %d is associated with nil app", host.ID)
+		}
+		// Convert the host information to Kea reservation.
+		reservation, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, host)
+		if err != nil {
+			return ctx, err
+		}
+		// Create command arguments.
+		arguments := reservation
+		// Associate the command with an app receiving this command.
+		appCommand := make(map[string]interface{})
+		appCommand["command"] = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, arguments)
+		appCommand["app"] = lh.Daemon.App
+		commands = append(commands, appCommand)
+	}
+	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
+	// Create config update to be stored in the transaction state.
+	update := config.NewUpdate("kea", "host_delete", daemonIDs...)
+	update.Recipe["commands"] = commands
+	state := config.TransactionState{
+		Updates: []*config.Update{
+			update,
+		},
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, state)
+	return ctx, nil
+}
+
+// Delete host reservation from the Kea servers.
+func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Context, error) {
+	return module.commitHostChanges(ctx)
 }
