@@ -4,6 +4,7 @@ from core.wrappers import Server, Kea
 def test_search_leases(kea_service: Kea, server_service: Server):
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
 
     # Search by IPv4 address..
     data = server_service.list_leases('192.0.2.1')
