@@ -3,57 +3,81 @@ package keaconfig
 import (
 	"testing"
 
+	"github.com/pkg/errors"
 	require "github.com/stretchr/testify/require"
 )
 
 // Test host returning static values and implementing Host interface.
-type TestHost struct{}
-
-// Returns static host identifiers.
-func (host TestHost) GetHostIdentifiers() []struct {
-	Type  string
-	Value []byte
-} {
-	return []struct {
+type testHost struct {
+	identifiers []struct {
 		Type  string
 		Value []byte
-	}{
-		{
-			Type:  "hw-address",
-			Value: []byte{1, 2, 3, 4, 5, 6},
+	}
+	subnetIDTuple struct {
+		id  int64
+		err error
+	}
+}
+
+// Creates a test host with default values.
+func createDefaultTestHost() *testHost {
+	return &testHost{
+		identifiers: []struct {
+			Type  string
+			Value []byte
+		}{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+			{
+				Type:  "duid",
+				Value: []byte{2, 2, 2, 2, 2, 2},
+			},
+			{
+				Type:  "circuit-id",
+				Value: []byte{1, 1, 1, 1, 1, 1},
+			},
+			{
+				Type:  "client-id",
+				Value: []byte{1, 2, 3, 4},
+			},
+			{
+				Type:  "flex-id",
+				Value: []byte{9, 9, 9, 9},
+			},
 		},
-		{
-			Type:  "duid",
-			Value: []byte{2, 2, 2, 2, 2, 2},
-		},
-		{
-			Type:  "circuit-id",
-			Value: []byte{1, 1, 1, 1, 1, 1},
-		},
-		{
-			Type:  "client-id",
-			Value: []byte{1, 2, 3, 4},
-		},
-		{
-			Type:  "flex-id",
-			Value: []byte{9, 9, 9, 9},
+		subnetIDTuple: struct {
+			id  int64
+			err error
+		}{
+			id:  123,
+			err: nil,
 		},
 	}
 }
 
+// Returns static host identifiers.
+func (host testHost) GetHostIdentifiers() []struct {
+	Type  string
+	Value []byte
+} {
+	return host.identifiers
+}
+
 // Returns static IP reservation of various kinds.
-func (host TestHost) GetIPReservations() []string {
+func (host testHost) GetIPReservations() []string {
 	return []string{"2001:db8:1::1", "3000::/16", "2001:db8:2::2", "3001::/16", "192.0.2.1", "10.0.0.1"}
 }
 
 // Returns static hostname.
-func (host TestHost) GetHostname() string {
+func (host testHost) GetHostname() string {
 	return "hostname.example.org"
 }
 
 // Returns static subnet ID.
-func (host TestHost) GetSubnetID(int64) (int64, error) {
-	return int64(123), nil
+func (host testHost) GetSubnetID(int64) (int64, error) {
+	return host.subnetIDTuple.id, host.subnetIDTuple.err
 }
 
 // Returns static DHCP options.
@@ -82,10 +106,9 @@ func (host TestHost) GetDHCPOptions(int64) (options []DHCPOption) {
 
 // Test conversion of the host to Kea reservation.
 func TestCreateReservation(t *testing.T) {
-	var (
-		lookup testDHCPOptionDefinitionLookup
-		host   TestHost
-	)
+	host := createDefaultTestHost()
+	var lookup testDHCPOptionDefinitionLookup
+
 	reservation, err := CreateReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
@@ -108,10 +131,9 @@ func TestCreateReservation(t *testing.T) {
 // Test conversion of the host to Kea reservation that can be used
 // in host_cmds command.
 func TestCreateHostCmdsReservation(t *testing.T) {
-	var (
-		lookup testDHCPOptionDefinitionLookup
-		host   TestHost
-	)
+	host := createDefaultTestHost()
+	var lookup testDHCPOptionDefinitionLookup
+
 	reservation, err := CreateHostCmdsReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
@@ -125,4 +147,41 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 	require.Equal(t, "3001::/16", reservation.Prefixes[1])
 	require.Equal(t, "hostname.example.org", reservation.Hostname)
 	require.EqualValues(t, 123, reservation.SubnetID)
+}
+
+// Test conversion of the host to a structure used when deleting the
+// reservation from Kea.
+func TestCreateHostCmdsDeletedReservation(t *testing.T) {
+	host := createDefaultTestHost()
+	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	require.NoError(t, err)
+	require.NotNil(t, reservation)
+
+	// Use the first identifier to delete the reservation.
+	require.Equal(t, "hw-address", reservation.IdentifierType)
+	require.Equal(t, "010203040506", reservation.Identifier)
+	require.EqualValues(t, 123, reservation.SubnetID)
+}
+
+// Test that conversion error is returned when the host has no
+// identifiers.
+func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
+	host := createDefaultTestHost()
+	host.identifiers = []struct {
+		Type  string
+		Value []byte
+	}{}
+	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	require.Error(t, err)
+	require.Nil(t, reservation)
+}
+
+// Test that conversion error is returned when getting a subnet
+// ID fails.
+func TestCreateHostCmdsDeletedReservationSubnetIDError(t *testing.T) {
+	host := createDefaultTestHost()
+	host.subnetIDTuple.err = errors.New("error getting subnet ID")
+	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	require.Error(t, err)
+	require.Nil(t, reservation)
 }

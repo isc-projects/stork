@@ -1,6 +1,7 @@
 package keaconfig
 
 import (
+	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
 )
 
@@ -34,6 +35,14 @@ type Reservation struct {
 type HostCmdsReservation struct {
 	Reservation
 	SubnetID int64 `json:"subnet-id"`
+}
+
+// Represents deleted host reservation. It includes the fields required by
+// Kea to find the reservation and delete it.
+type HostCmdsDeletedReservation struct {
+	IdentifierType string `mapstructure:"identifier-type" json:"identifier-type,omitempty"`
+	Identifier     string `mapstructure:"identifier" json:"identifier,omitempty"`
+	SubnetID       int64  `mapstructure:"subnet-id" json:"subnet-id"`
 }
 
 // Converts a host representation in Stork to Kea host reservation format used
@@ -99,6 +108,28 @@ func CreateHostCmdsReservation(daemonID int64, lookup DHCPOptionDefinitionLookup
 	reservation = &HostCmdsReservation{
 		Reservation: *base,
 		SubnetID:    subnetID,
+	}
+	return
+}
+
+// Converts a host representation in Stork to a structure accepted by the
+// reservation-del command in Kea. This structure comprises a DHCP identifier
+// type, DHCP identifier value and a subnet ID.
+func CreateHostCmdsDeletedReservation(daemonID int64, host Host) (reservation *HostCmdsDeletedReservation, err error) {
+	var subnetID int64
+	if subnetID, err = host.GetSubnetID(daemonID); err != nil {
+		return
+	}
+	ids := host.GetHostIdentifiers()
+	if len(ids) == 0 {
+		err = errors.New("no DHCP identifiers found for the host")
+		return
+	}
+	// Create the reservation using the first found identifier.
+	reservation = &HostCmdsDeletedReservation{
+		IdentifierType: ids[0].Type,
+		Identifier:     storkutil.BytesToHex(ids[0].Value),
+		SubnetID:       subnetID,
 	}
 	return
 }
