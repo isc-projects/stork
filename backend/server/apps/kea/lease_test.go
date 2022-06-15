@@ -683,8 +683,8 @@ func TestGetLeases4Empty(t *testing.T) {
 	// Ensure that MAC address was converted to the format expected by Kea.
 	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
-	require.Contains(t, *arguments, "hw-address")
-	require.Equal(t, "00:00:00:00:00:00", (*arguments)["hw-address"])
+	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
+	require.Equal(t, "00:00:00:00:00:00", (arguments.(map[string]interface{}))["hw-address"])
 }
 
 // Test the scenario in sending lease6-get-by-hostname command to Kea when
@@ -940,8 +940,8 @@ func TestFindLeases(t *testing.T) {
 	// expected by Kea.
 	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
-	require.Contains(t, *arguments, "hw-address")
-	require.Equal(t, "01:02:03:04:05:06", (*arguments)["hw-address"])
+	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
+	require.Equal(t, "01:02:03:04:05:06", (arguments.(map[string]interface{}))["hw-address"])
 
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
@@ -1048,14 +1048,14 @@ func TestFindDeclinedLeases(t *testing.T) {
 	// Ensure that the hw-address sent in the first command is empty.
 	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
-	require.Contains(t, *arguments, "hw-address")
-	require.Empty(t, (*arguments)["hw-address"])
+	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
+	require.Empty(t, (arguments.(map[string]interface{}))["hw-address"])
 
 	// Ensure that the DUID sent in the second command is empty.
 	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
-	require.Contains(t, *arguments, "duid")
-	require.Equal(t, "0", (*arguments)["duid"])
+	require.Contains(t, arguments.(map[string]interface{}), "duid")
+	require.Equal(t, "0", (arguments.(map[string]interface{}))["duid"])
 
 	// Simulate an error in the first response. The app returning an error should
 	// be recorded, but the DHCPv6 lease should still be returned.

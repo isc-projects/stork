@@ -70,7 +70,7 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 	arguments := map[string]interface{}{
 		"ip-address": ipaddress,
 	}
-	command := keactrl.NewCommand("lease4-get", daemons, &arguments)
+	command := keactrl.NewCommand("lease4-get", daemons, arguments)
 	response := make([]Lease4GetResponse, 1)
 	ctx := context.Background()
 	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &response)
@@ -105,7 +105,7 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		"ip-address": ipaddress,
 		"type":       leaseType,
 	}
-	command := keactrl.NewCommand("lease6-get", daemons, &arguments)
+	command := keactrl.NewCommand("lease6-get", daemons, arguments)
 	response := make([]Lease6GetResponse, 1)
 	ctx := context.Background()
 	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &response)
@@ -185,7 +185,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 		arguments := map[string]interface{}{
 			propertyName: sentPropertyValue,
 		}
-		command := keactrl.NewCommand(commandName, daemons, &arguments)
+		command := keactrl.NewCommand(commandName, daemons, arguments)
 		commands = append(commands, command)
 	}
 

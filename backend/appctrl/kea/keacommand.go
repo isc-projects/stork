@@ -27,9 +27,9 @@ type SerializableCommand interface {
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
 type Command struct {
-	Command   string                  `json:"command"`
-	Daemons   []string                `json:"service,omitempty" mapstructure:"service"`
-	Arguments *map[string]interface{} `json:"arguments,omitempty"`
+	Command   string      `json:"command"`
+	Daemons   []string    `json:"service,omitempty" mapstructure:"service"`
+	Arguments interface{} `json:"arguments,omitempty"`
 }
 
 // Common fields in each received Kea response.
@@ -86,9 +86,16 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 }
 
 // Creates new Kea command from specified command name, daemons list and arguments.
-func NewCommand(command string, daemons []string, arguments *map[string]interface{}) *Command {
+// The arguments are required to be a map or struct.
+func NewCommand(command string, daemons []string, arguments interface{}) *Command {
 	if len(command) == 0 {
 		return nil
+	}
+	if arguments != nil {
+		argsType := reflect.TypeOf(arguments)
+		if argsType.Kind() != reflect.Map && (argsType.Kind() != reflect.Ptr || argsType.Elem().Kind() != reflect.Struct) && argsType.Kind() != reflect.Struct {
+			return nil
+		}
 	}
 	sort.Strings(daemons)
 	cmd := &Command{

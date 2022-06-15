@@ -10,7 +10,7 @@ import (
 // Test successful creation of the Kea command with daemons and arguments.
 func TestNewCommand(t *testing.T) {
 	cmd := NewCommand("values-set", []string{"dhcp4", "dhcp6"},
-		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
+		map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
 
 	require.NotNil(t, cmd)
 	require.NotNil(t, cmd.Daemons)
@@ -20,15 +20,64 @@ func TestNewCommand(t *testing.T) {
 	require.Len(t, cmd.Daemons, 2)
 	require.Contains(t, cmd.Daemons, "dhcp4")
 	require.Contains(t, cmd.Daemons, "dhcp6")
-	require.Contains(t, *cmd.Arguments, "value-a")
-	require.Contains(t, *cmd.Arguments, "value-b")
-	require.Contains(t, *cmd.Arguments, "value-c")
-	require.NotContains(t, *cmd.Arguments, "value-d")
+	require.Contains(t, cmd.Arguments.(map[string]interface{}), "value-a")
+	require.Contains(t, cmd.Arguments.(map[string]interface{}), "value-b")
+	require.Contains(t, cmd.Arguments.(map[string]interface{}), "value-c")
+	require.NotContains(t, cmd.Arguments.(map[string]interface{}), "value-d")
+}
+
+// Test successful creation of the Kea command with arguments specified as a structure.
+func TestNewCommandWithStructArgs(t *testing.T) {
+	type argsType struct {
+		ValueA int
+		ValueB int
+		ValueC []int
+	}
+	args := argsType{
+		ValueA: 2,
+		ValueB: 3,
+		ValueC: []int{5, 6, 7},
+	}
+	cmd := NewCommand("values-set", []string{"dhcp4"}, args)
+	require.NotNil(t, cmd)
+	require.NotNil(t, cmd.Daemons)
+	require.NotNil(t, cmd.Arguments)
+	require.Equal(t, "values-set", cmd.Command)
+	require.Len(t, cmd.Daemons, 1)
+	require.Contains(t, cmd.Daemons, "dhcp4")
+	require.Equal(t, args, cmd.Arguments)
+}
+
+// Test successful creation of the Kea command with arguments specified as a pointer
+// to a structure.
+func TestNewCommandWithStructPtrArgs(t *testing.T) {
+	type argsType struct {
+		ValueA int
+	}
+	args := argsType{
+		ValueA: 2,
+	}
+	cmd := NewCommand("values-set", []string{"dhcp4"}, &args)
+	require.NotNil(t, cmd)
+	require.NotNil(t, cmd.Daemons)
+	require.NotNil(t, cmd.Arguments)
+	require.Equal(t, "values-set", cmd.Command)
+	require.Len(t, cmd.Daemons, 1)
+	require.Contains(t, cmd.Daemons, "dhcp4")
+	require.Equal(t, &args, cmd.Arguments)
+}
+
+// Test that the command is not created when the arguments have an invalid type.
+func TestNewCommandWithInvalidArgTypes(t *testing.T) {
+	require.Nil(t, NewCommand("values-set", []string{"dhcp4"}, 123))
+	require.Nil(t, NewCommand("values-set", []string{"dhcp4"}, []int{123, 345}))
+	m := make(map[string]interface{})
+	require.Nil(t, NewCommand("values-set", []string{"dhcp4"}, &m))
 }
 
 // Test that command name must be non-empty.
 func TestNewCommandEmptyName(t *testing.T) {
-	cmd := NewCommand("", []string{"dhcp4"}, &map[string]interface{}{"value-a": 1})
+	cmd := NewCommand("", []string{"dhcp4"}, map[string]interface{}{"value-a": 1})
 	require.Nil(t, cmd)
 }
 
@@ -44,8 +93,8 @@ func TestNewCommandFromJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "subnet4-get", command.Command)
 	require.NotNil(t, command.Arguments)
-	require.Contains(t, *command.Arguments, "subnet-id")
-	require.EqualValues(t, 10, (*command.Arguments)["subnet-id"])
+	require.Contains(t, command.Arguments, "subnet-id")
+	require.EqualValues(t, 10, (command.Arguments.(map[string]interface{}))["subnet-id"])
 	require.NotNil(t, command.Daemons)
 	require.Contains(t, command.Daemons, "dhcp4")
 	require.Contains(t, command.Daemons, "dhcp6")
@@ -62,8 +111,8 @@ func TestNewCommandFromJSONNoService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "subnet4-get", command.Command)
 	require.NotNil(t, command.Arguments)
-	require.Contains(t, *command.Arguments, "subnet-id")
-	require.EqualValues(t, 11, (*command.Arguments)["subnet-id"])
+	require.Contains(t, command.Arguments, "subnet-id")
+	require.EqualValues(t, 11, (command.Arguments.(map[string]interface{}))["subnet-id"])
 	require.Nil(t, command.Daemons)
 }
 
@@ -71,7 +120,7 @@ func TestNewCommandFromJSONNoService(t *testing.T) {
 // both daemon name (service in Kea terms) and arguments are present.
 func TestKeaCommandMarshal(t *testing.T) {
 	cmd := NewCommand("values-set", []string{"dhcp4"},
-		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
+		map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
 	require.NotNil(t, cmd)
 
 	marshaled := cmd.Marshal()
@@ -88,9 +137,39 @@ func TestKeaCommandMarshal(t *testing.T) {
 		marshaled)
 }
 
+// Test that JSON representation of the command is created correctly when
+// arguments are specified in a structure.
+func TestKeaCommandMarshalWithStructArgs(t *testing.T) {
+	type argsType struct {
+		ValueA int   `json:"value-a"`
+		ValueB int   `json:"value-b"`
+		ValueC []int `json:"value-c"`
+	}
+	args := argsType{
+		ValueA: 222,
+		ValueB: 333,
+		ValueC: []int{123, 234},
+	}
+	cmd := NewCommand("values-set", []string{"dhcp4"}, &args)
+	require.NotNil(t, cmd)
+
+	marshaled := cmd.Marshal()
+	require.JSONEq(t,
+		`{
+             "command":"values-set",
+             "service":["dhcp4"],
+             "arguments": {
+                 "value-a":222,
+                 "value-b":333,
+                 "value-c": [123,234]
+             }
+         }`,
+		marshaled)
+}
+
 // Test that no service list is included when daemons list is empty.
 func TestKeaCommandMarshalEmptyDaemonsArguments(t *testing.T) {
-	cmd := NewCommand("values-set", []string{}, &map[string]interface{}{})
+	cmd := NewCommand("values-set", []string{}, map[string]interface{}{})
 	require.NotNil(t, cmd)
 
 	marshaled := cmd.Marshal()
