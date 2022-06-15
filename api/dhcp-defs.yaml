@@ -1,7 +1,7 @@
-# Universe
-  Universe:
+# DHCP Universe differentiating between DHCPv4 and DHCPv6 cases.
+  DHCPUniverse:
     type: integer
-    enum: &UNIVERSE
+    enum: &DHCPUNIVERSE
       - 4
       - 6
 
@@ -118,7 +118,7 @@
           $ref: '#/definitions/DHCPOption'
       universe:
         type: integer
-        enum: *UNIVERSE
+        enum: *DHCPUNIVERSE
 
 # Host
 
