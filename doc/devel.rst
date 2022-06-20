@@ -669,13 +669,10 @@ The following commands run the system tests and help with troubleshooting:
 Alpine troubleshooting
 ----------------------
 
-The system tests can be running on the Alpine operating system. Unfortunately, the
-Alpine uses the ``libc-musl`` instead of the standard ``libc``. This component
-isn't well supported by the external dependencies maintainers. It causes Rake
-scripts cannot install some dependencies and they need to be installed manually
-from the Alpine package manager ``apk``.
-
-To run the tests on Alpine system you need to install the ``nodejs`` package from the ``apk`` package manager:
+Running system tests on Alpine Linux requires additional setup steps.
+Alpine uses ``libc-musl`` instead of ``libc``, which causes issues with
+the `npm` dependency in Stork build scripts. Installing ``nodejs``
+manually using the package manager solves this problem:
 
 .. code-block:: console
 
