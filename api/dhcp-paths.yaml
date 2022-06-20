@@ -96,6 +96,25 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete host by ID.
+      description: Delete host reservation from the DHCP servers.
+      operationId: deleteHost
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Host ID.
+      responses:
+        200:
+          description: Host reservation successfully deleted.
+        default:
+          description: generic error respone
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /hosts/new/transaction:
     post:

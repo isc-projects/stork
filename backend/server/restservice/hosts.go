@@ -391,3 +391,73 @@ func (r *RestAPI) CreateHostDelete(ctx context.Context, params dhcp.CreateHostDe
 	rsp := dhcp.NewCreateHostDeleteOK()
 	return rsp
 }
+
+// Implements the DELETE call for a host reservation (hosts/{id}). It sends suitable commands
+// to the Kea servers owning the reservation. Deleting host reservation is not transactional.
+// It could be implemented as a transaction with first REST API call ensuring that the host
+// reservation still exists in Stork database and locking configuration changes for the daemons
+// owning the reservation. However, it seems to be too much overhead with little gain. If the
+// reservation doesn't exist this call will return an error anyway.
+func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) middleware.Responder {
+	dbHost, err := dbmodel.GetHost(r.DB, params.ID)
+	if err != nil {
+		// Error while communicating with the database.
+		msg := fmt.Sprintf("Problem fetching host reservation with ID %d from db", params.ID)
+		log.Error(err)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbHost == nil {
+		// Host not found.
+		msg := fmt.Sprintf("Cannot find host reservation with ID %d", params.ID)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Get the logged user's ID.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "unable to begin transaction because user is not logged in"
+		log.Error("problem with creating transaction context because user has no session")
+		rsp := dhcp.NewDeleteHostDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create configuration context.
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "problem with creating transaction context"
+		log.Error(err)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create Kea commands to delete host reservation.
+	cctx, err = r.ConfigManager.GetKeaModule().ApplyHostDelete(cctx, dbHost)
+	if err != nil {
+		msg := "problem with preparing commands for deleting host reservation"
+		log.Error(err)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send the commands to Kea servers.
+	_, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := fmt.Sprintf("problem with deleting host reservation: %s", err)
+		log.Error(err)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusConflict).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send OK to the client.
+	rsp := dhcp.NewDeleteHostOK()
+	return rsp
+}

@@ -235,8 +235,9 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("Subnet").
-		Relation("LocalHosts.Daemon.App").
+		Relation("Subnet.LocalSubnets").
+		Relation("LocalHosts.Daemon.App.Machine").
+		Relation("LocalHosts.Daemon.App.AccessPoints").
 		Where("host.id = ?", hostID).
 		Select()
 	if err != nil {

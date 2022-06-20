@@ -817,3 +817,139 @@ func TestCreateHostDeleteError(t *testing.T) {
 		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }
+
+// Test successfully deleting host reservation.
+func TestDeleteHost(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-del commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Add test hosts and associate them with the daemons.
+	hosts, apps := addTestHosts(t, db)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	require.NoError(t, err)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	require.NoError(t, err)
+
+	// Attempt to delete the first host.
+	params := dhcp.DeleteHostParams{
+		ID: hosts[0].ID,
+	}
+	rsp := rapi.DeleteHost(ctx, params)
+	require.IsType(t, &dhcp.DeleteHostOK{}, rsp)
+
+	// The reservation-del commands should be sent to two Kea servers.
+	require.Len(t, fa.RecordedCommands, 2)
+
+	for _, c := range fa.RecordedCommands {
+		require.JSONEq(t, `{
+            "command": "reservation-del",
+            "service": ["dhcp4"],
+            "arguments": {
+                "identifier": "010203040506",
+                "identifier-type": "hw-address",
+                "subnet-id": 111
+            }
+        }`, c.Marshal())
+	}
+}
+
+// Test error cases for deleting a host reservation.
+func TestDeleteHostError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Setup fake agents that return an error in response to reservation-del
+	// command.
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("reservation-del", cmdResponses)
+	}, nil)
+	require.NotNil(t, fa)
+
+	// Create config manager.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Start session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create a user and simulate logging in.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	hosts, apps := addTestHosts(t, db)
+
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	require.NoError(t, err)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	require.NoError(t, err)
+
+	// Submit transaction with non-matching host ID.
+	t.Run("wrong host id", func(t *testing.T) {
+		params := dhcp.DeleteHostParams{
+			ID: 19809865,
+		}
+		rsp := rapi.DeleteHost(ctx, params)
+		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID but expect the agent to return an
+	// error code. This is considered a conflict with the state of the
+	// Kea servers.
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.DeleteHostParams{
+			ID: hosts[0].ID,
+		}
+		rsp := rapi.DeleteHost(ctx, params)
+		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID but the user has no session.
+	t.Run("no user session", func(t *testing.T) {
+		err = rapi.SessionManager.LogoutHandler(ctx)
+		require.NoError(t, err)
+
+		params := dhcp.DeleteHostParams{
+			ID: hosts[0].ID,
+		}
+		rsp := rapi.DeleteHost(ctx, params)
+		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
+		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	})
+}
