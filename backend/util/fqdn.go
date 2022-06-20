@@ -2,7 +2,6 @@ package storkutil
 
 import (
 	"bytes"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -67,23 +66,31 @@ func ParseFqdn(fqdn string) (*Fqdn, error) {
 		}
 	}
 	// Validate the labels.
-	var lastLabelRegexp *regexp.Regexp
-	if full {
-		lastLabelRegexp = regexp.MustCompile("^[A-Za-z]{2,63}$")
-	}
-	middleLabelRegexp := regexp.MustCompile("^[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]$")
 	for i, label := range labels {
 		// Last label in the full FQDN must only contain letters and must be
 		// at least two characters long.
 		if full && i == len(labels)-1 {
-			if matched := lastLabelRegexp.MatchString(label); !matched {
-				return nil, errors.Errorf("last label in the full FQDN %s must only contain letters and must be at least two characters long", fqdn)
+			if len(label) < 2 {
+				return nil, errors.Errorf("last label of the full FQDN %s must be at least two characters long", fqdn)
 			}
-		}
-		// Other labels may contain digits, letters and hyphens but the hyphens
-		// must not be at the start or an end of the label.
-		if matched := middleLabelRegexp.MatchString(label); !matched {
-			return nil, errors.Errorf("first and middle labels in the FQDN %s may only contain digits, letters and hyphens but hyphens must not be at the start and the end of the FQDN", fqdn)
+			for _, c := range label {
+				if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') {
+					return nil, errors.Errorf("last label of the full FQDN %s must only contain letters and must be at least two characters long", fqdn)
+				}
+			}
+		} else {
+			// Other labels must not be empty, may contain digits, letters and hyphens
+			// but the hyphens must not be at the start nor at the end of the label.
+			if len(label) == 0 {
+				return nil, errors.Errorf("empty label found in the FQDN %s", fqdn)
+			}
+			for i, c := range label {
+				if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') &&
+					(c < '0' || c > '9') &&
+					(i == 0 || i == len(label)-1 || c != '-') {
+					return nil, errors.Errorf("first and middle labels in the FQDN %s may only contain digits, letters and hyphens but hyphens must not be at the start and the end of the FQDN", fqdn)
+				}
+			}
 		}
 	}
 	// Everything good. Create the FQDN instance.

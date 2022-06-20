@@ -39,10 +39,12 @@ func TestParseInvalidFqdn(t *testing.T) {
 		"-foo.example.org.",
 		"foo.exa&ple.org.",
 		"foo. example.org.",
+		"foo.example.or1.",
+		"foo.example.o.",
 	}
 	for _, fqdn := range invalidFqdns {
 		parsed, err := ParseFqdn(fqdn)
-		require.Error(t, err)
+		require.Error(t, err, "FQDN parsing did not fail for %s", fqdn)
 		require.Nil(t, parsed)
 	}
 }
