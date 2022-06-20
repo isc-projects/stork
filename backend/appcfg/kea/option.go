@@ -93,6 +93,8 @@ type SingleOptionData struct {
 // converts the option fields to a hex form and sets the csv-format to
 // false. The lookup interface must not be nil.
 func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, option DHCPOption) (*SingleOptionData, error) {
+	// Create Kea representation of the option. Set csv-format to
+	// true for all options for which the definitions are known.
 	data := &SingleOptionData{
 		AlwaysSend: option.IsAlwaysSend(),
 		Code:       option.GetCode(),
