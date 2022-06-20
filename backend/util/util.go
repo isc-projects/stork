@@ -332,7 +332,7 @@ func IsWholeNumber(value interface{}) bool {
 	}
 	valueType := reflect.TypeOf(value)
 	switch valueType.Kind() {
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint:
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		return true
 	default:
 		return false

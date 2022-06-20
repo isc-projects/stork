@@ -315,11 +315,13 @@ func TestIsWholeNumber(t *testing.T) {
 	require.True(t, IsWholeNumber(int8(100)))
 	require.True(t, IsWholeNumber(int16(100)))
 	require.True(t, IsWholeNumber(int32(100)))
+	require.True(t, IsWholeNumber(int64(100)))
 	require.True(t, IsWholeNumber(int(100)))
 	// Unsigned integers.
 	require.True(t, IsWholeNumber(uint8(100)))
 	require.True(t, IsWholeNumber(uint16(100)))
 	require.True(t, IsWholeNumber(uint32(100)))
+	require.True(t, IsWholeNumber(uint64(100)))
 	require.True(t, IsWholeNumber(uint(100)))
 	// Not whole numbers.
 	require.False(t, IsWholeNumber(1.1))
