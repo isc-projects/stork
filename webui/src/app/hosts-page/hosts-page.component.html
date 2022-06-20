@@ -107,6 +107,7 @@
             [paginator]="true"
             [rows]="10"
             [lazy]="true"
+            [loading]="hostsLoading"
             (onLazyLoad)="loadHosts($event)"
             [totalRecords]="totalHosts"
             [rowsPerPageOptions]="[10, 30, 100]"
@@ -174,7 +175,11 @@
 
 <ng-template #openedTabBlock>
     <div [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
-        <app-host-tab *ngSwitchCase="HostTabType.Host" [host]="openedTabs[activeTabIndex - 1].host"></app-host-tab>
+        <app-host-tab
+            *ngSwitchCase="HostTabType.Host"
+            [host]="openedTabs[activeTabIndex - 1].host"
+            (hostDelete)="onHostDelete(openedTabs[activeTabIndex - 1].host)"
+        ></app-host-tab>
         <app-host-form
             [form]="openedTabs[activeTabIndex - 1].form"
             (formDestroy)="onHostFormDestroy($event)"

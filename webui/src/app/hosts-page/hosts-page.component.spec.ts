@@ -3,7 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
@@ -27,7 +27,9 @@ import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HostFormComponent } from '../host-form/host-form.component'
+import { Hosts } from '../backend/model/hosts'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -49,7 +51,7 @@ describe('HostsPageComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [DHCPService, FormBuilder, MessageService],
+                providers: [DHCPService, FormBuilder, ConfirmationService, MessageService],
                 imports: [
                     FormsModule,
                     TableModule,
@@ -80,6 +82,7 @@ describe('HostsPageComponent', () => {
                     FieldsetModule,
                     MultiSelectModule,
                     ReactiveFormsModule,
+                    ConfirmDialogModule,
                 ],
                 declarations: [
                     EntityLinkComponent,
@@ -553,4 +556,103 @@ describe('HostsPageComponent', () => {
 
         expect(dhcpApi.createHostDelete).toHaveBeenCalled()
     }))
+
+    it('should close a tab after deleting a host', () => {
+        // Create a list with two hosts.
+        component.hosts = [
+            {
+                id: 1,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '01:02:03:04',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 1,
+                        appName: 'frog',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 2,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '11:12:13:14',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 2,
+                        appName: 'mouse',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // Open tab with host with id 1.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Open tab with host with id 2.
+        paramMapSubject.next(convertToParamMap({ id: 2 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(3)
+        expect(component.activeTabIndex).toBe(2)
+
+        // Ensure that the component reloads hosts after deleting one of them
+        // and switching to the hosts list.
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        // Delete an existing host. The tab should be closed and the tab for
+        // the other host should remain open.
+        component.onHostDelete({ id: 2 })
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(dhcpApi.getHosts).toHaveBeenCalledTimes(0)
+
+        // Closing a host without specifying its ID should not throw.
+        expect(() => {
+            component.onHostDelete({})
+        }).not.toThrow()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(dhcpApi.getHosts).toHaveBeenCalledTimes(0)
+
+        // Closing a host with invalid ID should not throw too.
+        expect(() => {
+            component.onHostDelete({ id: 5 })
+        }).not.toThrow()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(dhcpApi.getHosts).toHaveBeenCalledTimes(0)
+
+        // Closing the existing host should result in closing its tab.
+        // It should select the first tab and reload the hosts.
+        component.onHostDelete({ id: 1 })
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(dhcpApi.getHosts).toHaveBeenCalledTimes(1)
+    })
 })

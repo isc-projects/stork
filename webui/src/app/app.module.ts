@@ -18,7 +18,7 @@ import { ProgressBarModule } from 'primeng/progressbar'
 import { DialogModule } from 'primeng/dialog'
 import { InputTextModule } from 'primeng/inputtext'
 import { DropdownModule } from 'primeng/dropdown'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { MessageModule } from 'primeng/message'
 import { MessagesModule } from 'primeng/messages'
@@ -41,6 +41,7 @@ import { TagModule } from 'primeng/tag'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { CheckboxModule } from 'primeng/checkbox'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -187,6 +188,7 @@ export function cfgFactory() {
         ToggleButtonModule,
         MultiSelectModule,
         CheckboxModule,
+        ConfirmDialogModule,
     ],
     providers: [
         {
@@ -198,6 +200,7 @@ export function cfgFactory() {
             provide: BASE_PATH,
             useValue: environment.apiUrl,
         },
+        ConfirmationService,
         MessageService,
     ],
     bootstrap: [AppComponent],

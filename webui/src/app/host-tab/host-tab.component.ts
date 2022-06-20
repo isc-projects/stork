@@ -1,6 +1,6 @@
-import { Component, Input } from '@angular/core'
+import { Component, EventEmitter, Input, Output } from '@angular/core'
 
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
 import { durationToString, epochToLocal } from '../utils'
@@ -35,6 +35,8 @@ enum HostReservationUsage {
     styleUrls: ['./host-tab.component.sass'],
 })
 export class HostTabComponent {
+    @Output() hostDelete = new EventEmitter<any>()
+
     Usage = HostReservationUsage
 
     /**
@@ -82,6 +84,8 @@ export class HostTabComponent {
         },
     ]
 
+    hostDeleted = false
+
     /**
      * Component constructor.
      *
@@ -89,7 +93,11 @@ export class HostTabComponent {
      *                   error with the server.
      * @param dhcpApi service used to communicate with the server over REST API.
      */
-    constructor(private dhcpApi: DHCPService, private msgService: MessageService) {}
+    constructor(
+        private dhcpApi: DHCPService,
+        private confirmService: ConfirmationService,
+        private msgService: MessageService
+    ) {}
 
     /**
      * Returns information about currently selected host.
@@ -383,5 +391,59 @@ export class HostTabComponent {
      */
     refreshLeases() {
         this._fetchLeases(this.host.id)
+    }
+
+    /*
+     * Displays a dialog to confirm host deletion.
+     */
+    confirmDeleteHost() {
+        this.confirmService.confirm({
+            message: 'Are you sure that you want to permanently delete this host reservation?',
+            header: 'Delete Host',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.deleteHost()
+            },
+        })
+    }
+
+    /**
+     * Sends a request to the server to delete the host reservation.
+     */
+    deleteHost() {
+        // Disable the button for deleting the host to prevent pressing the
+        // button multiple times and sending multiple requests.
+        this.hostDeleted = true
+        this.dhcpApi
+            .deleteHost(this.host.id)
+            .toPromise()
+            .then((data) => {
+                // Re-enable the delete button.
+                this.hostDeleted = false
+                this.msgService.add({
+                    severity: 'success',
+                    summary: 'Host reservation successfully deleted',
+                })
+                // Notify the parent that the host was deleted and the tab can be closed.
+                this.hostDelete.emit(this.host)
+            })
+            .catch((err) => {
+                // Re-enable the delete button.
+                this.hostDeleted = false
+                // Issues with deleting the host.
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                if (!msg) {
+                    msg = `status: ${err.status}`
+                }
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Cannot delete the host',
+                    detail: 'Failed to delete the host host: ' + msg,
+                    life: 10000,
+                })
+            })
     }
 }

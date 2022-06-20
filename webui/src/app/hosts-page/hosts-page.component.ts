@@ -62,9 +62,20 @@ export class HostsPageComponent implements OnInit, OnDestroy {
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
 
-    // hosts
+    /**
+     * Holds all currently displayed host reservations.
+     */
     hosts: any[]
+
+    /**
+     * Holds the counter of all hosts.
+     */
     totalHosts = 0
+
+    /**
+     * Indicates if the hosts are beging fetched from the server.
+     */
+    hostsLoading = false
 
     // filters
     filterText = ''
@@ -150,11 +161,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             this.route.queryParamMap.subscribe(
                 (params) => {
                     this.updateQueryParams(params)
-                    let event = { first: 0, rows: 10 }
-                    if (this.hostsTable) {
-                        event = this.hostsTable.createLazyLoadMetadata()
-                    }
-                    this.loadHosts(event)
+                    this.loadHosts()
                 },
                 (error) => {
                     // ToDo: Fix silent error catching
@@ -365,17 +372,26 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * Loads hosts from the database into the component.
      *
      * @param event Event object containing an index if the first row, maximum
-     *              number of rows to be returned and a text for hosts filtering.
+     * number of rows to be returned and a text for hosts filtering. If it is
+     * not specified, the current values are used when available.
      */
-    loadHosts(event) {
+    loadHosts(event?) {
         const params = this.queryParams
-
+        if (typeof event === 'undefined') {
+            event = { first: 0, rows: 10 }
+            if (this.hostsTable) {
+                event = this.hostsTable.createLazyLoadMetadata()
+            }
+        }
+        // Indicate that hosts refresh is in progress.
+        this.hostsLoading = true
         this.dhcpApi
             .getHosts(event.first, event.rows, params.appId, null, params.text, params.global)
             .toPromise()
             .then((data) => {
                 this.hosts = data.items
                 this.totalHosts = data.total
+                this.hostsLoading = false
             })
             .catch((err) => {
                 let msg = err.statusText
@@ -388,6 +404,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     detail: 'Error getting host reservations list: ' + msg,
                     life: 10000,
                 })
+                this.hostsLoading = false
             })
     }
 
@@ -488,6 +505,21 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         const index = this.openedTabs.findIndex((t) => t.form && t.form.transactionId === event.transactionId)
         if (index >= 0) {
             this.openedTabs[index].submitted = true
+            this.closeHostTab(null, index + 1)
+        }
+    }
+
+    /**
+     * Event handler triggered when a host was deleted using a delete
+     * button on one of the tabs.
+     *
+     * @param host pointer to the deleted host.
+     */
+    onHostDelete(host): void {
+        // Try to find a suitable tab by host id.
+        const index = this.openedTabs.findIndex((t) => t.host && t.host.id === host.id)
+        if (index >= 0) {
+            // Close the tab.
             this.closeHostTab(null, index + 1)
         }
     }

@@ -1,12 +1,13 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 import { FieldsetModule } from 'primeng/fieldset'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 import { of, throwError } from 'rxjs'
 
@@ -22,12 +23,14 @@ describe('HostTabComponent', () => {
     let fixture: ComponentFixture<HostTabComponent>
     let dhcpApi: DHCPService
     let msgService: MessageService
+    let confirmService: ConfirmationService
 
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [DHCPService, MessageService],
+                providers: [DHCPService, ConfirmationService, MessageService],
                 imports: [
+                    ConfirmDialogModule,
                     FieldsetModule,
                     FormsModule,
                     HttpClientTestingModule,
@@ -46,6 +49,7 @@ describe('HostTabComponent', () => {
         fixture = TestBed.createComponent(HostTabComponent)
         component = fixture.componentInstance
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
+        confirmService = fixture.debugElement.injector.get(ConfirmationService)
         msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
@@ -585,5 +589,106 @@ describe('HostTabComponent', () => {
         summary = component.getLeaseSummary(leaseInfo3)
         expect(summary).toContain('Found a lease with an expiration time at')
         expect(summary).toContain('assigned to the client with client-id=11:12:13, for which it was not reserved.')
+    })
+
+    it('should display host delete button for host reservation received over host_cmds', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: 'mouse.example.org',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+        const deleteBtn = fixture.debugElement.query(By.css('[label=Delete]'))
+        expect(deleteBtn).toBeTruthy()
+
+        // Simulate clicking on the button and make sure that the confirm dialog
+        // has been displayed.
+        spyOn(confirmService, 'confirm')
+        deleteBtn.nativeElement.click()
+        expect(confirmService.confirm).toHaveBeenCalled()
+    })
+
+    it('should emit an event indicating successful host deletion', fakeAsync(() => {
+        const successResp: any = {}
+        spyOn(dhcpApi, 'deleteHost').and.returnValue(of(successResp))
+        spyOn(msgService, 'add')
+        spyOn(component.hostDelete, 'emit')
+
+        // Delete the host.
+        component.host = {
+            id: 1,
+        }
+        component.deleteHost()
+        tick()
+        // Success message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // An event should be called.
+        expect(component.hostDelete.emit).toHaveBeenCalledWith(component.host)
+        // This flag should be cleared.
+        expect(component.hostDeleted).toBeFalse()
+    }))
+
+    it('should not emit an event when host deletion fails', fakeAsync(() => {
+        spyOn(dhcpApi, 'deleteHost').and.returnValue(throwError({ status: 404 }))
+        spyOn(msgService, 'add')
+        spyOn(component.hostDelete, 'emit')
+
+        // Delete the host and receive an error.
+        component.host = {
+            id: 1,
+        }
+        component.deleteHost()
+        tick()
+        // Error message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // The event shouldn't be emitted on error.
+        expect(component.hostDelete.emit).not.toHaveBeenCalledWith(component.host)
+        // This flag should be cleared.
+        expect(component.hostDeleted).toBeFalse()
+    }))
+
+    it('should not display host delete button for host reservation from the config file', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: 'mouse.example.org',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    appName: 'frog',
+                    dataSource: 'config',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+        // Unable to delete hosts specified in the config file.
+        expect(fixture.debugElement.query(By.css('[label=Delete]'))).toBeFalsy()
     })
 })
