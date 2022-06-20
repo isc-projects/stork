@@ -41,7 +41,7 @@ func TestDHCPv4SuboptionDefinition(t *testing.T) {
 func TestStandardDHCPv4OptionDefinitionNotExists(t *testing.T) {
 	lookup := &DHCPOptionDefinitionLookup{}
 
-	nonExistingCodes := []uint16{106, 165, 180, 215, 224}
+	nonExistingCodes := []uint16{0, 106, 165, 180, 215, 224}
 	for _, code := range nonExistingCodes {
 		option := DHCPOption{
 			Code:     code,
@@ -70,12 +70,15 @@ func TestStandardDHCPv6OptionDefinitionExists(t *testing.T) {
 func TestStandardDHCPv6OptionDefinitionNotExists(t *testing.T) {
 	lookup := &DHCPOptionDefinitionLookup{}
 
-	option := DHCPOption{
-		Code:     145,
-		Space:    "dhcp6",
-		Universe: storkutil.IPv6,
+	nonExistingCodes := []uint16{0, 145}
+	for _, code := range nonExistingCodes {
+		option := DHCPOption{
+			Code:     code,
+			Space:    "dhcp6",
+			Universe: storkutil.IPv6,
+		}
+		require.False(t, lookup.DefinitionExists(1, option))
 	}
-	require.False(t, lookup.DefinitionExists(1, option))
 }
 
 // Test that the option definition lookup indicates that the DHCPv6

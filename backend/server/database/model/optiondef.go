@@ -23,13 +23,13 @@ func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option
 	switch option.GetUniverse() {
 	case storkutil.IPv4:
 		return option.GetSpace() == "dhcp4" &&
-			(option.GetCode() < 101 ||
-				(option.GetCode() > 107 && option.GetCode() < 162) ||
-				(option.GetCode() > 174 && option.GetCode() < 178) ||
-				(option.GetCode() > 207 && option.GetCode() < 214) ||
-				(option.GetCode() > 219 && option.GetCode() < 222))
+			((option.GetCode() >= 1 && option.GetCode() <= 100) ||
+				(option.GetCode() >= 108 && option.GetCode() <= 161) ||
+				(option.GetCode() >= 175 && option.GetCode() <= 177) ||
+				(option.GetCode() >= 208 && option.GetCode() <= 213) ||
+				(option.GetCode() >= 220 && option.GetCode() <= 221))
 	case storkutil.IPv6:
-		return option.GetSpace() == "dhcp6" && option.GetCode() < 144
+		return option.GetSpace() == "dhcp6" && option.GetCode() >= 1 && option.GetCode() <= 143
 	}
 	return false
 }
