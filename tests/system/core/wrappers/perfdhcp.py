@@ -9,7 +9,7 @@ class Perfdhcp:
     This service container is available only when the service is executed.
     It isn't continuously running.
 
-    The perfdhcp service is built on top of the Kea service. It swaps the
+    The perfdhcp service is built on top of the Kea image. It swaps the
     entry point with the perfdhcp executable and doesn't use the supervisor
     daemon.
 
