@@ -1,9 +1,9 @@
 
 * 218 [bug] slawek
 
-    Ruby dependencies and their structure are now exactly specified to ensure
-    that the identical versions are used in all environments to avoid problems
-    with incompatible packages.
+    Ruby dependencies and their structure are now explicitly specified to
+    ensure that identical versions are used in all environments to avoid
+    problems with incompatible packages.
     (Gitlab #781)
 
 * 217 [bug] slawek
