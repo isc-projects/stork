@@ -561,7 +561,7 @@ They accept the name of the docker-compose service to use in the first argument:
     def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
         pass
 
-The Kea and Bind helpers additionally accept the ``suppress_registration``
+The Kea and Bind9 helpers additionally accept the ``suppress_registration``
 parameter. If it is set to ``True`` the server service is not automatically
 started, and the Stork Agent does not try to register.
 
