@@ -91,7 +91,7 @@ type SingleOptionData struct {
 // option has a definition, it uses the Kea's csv-format setting and
 // specifies the option value as a comma separated list. Otherwise, it
 // converts the option fields to a hex form and sets the csv-format to
-// false.
+// false. The lookup interface must not be nil.
 func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, option DHCPOption) (*SingleOptionData, error) {
 	data := &SingleOptionData{
 		AlwaysSend: option.IsAlwaysSend(),

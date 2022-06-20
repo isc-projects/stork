@@ -37,7 +37,7 @@ type HostCmdsReservation struct {
 }
 
 // Converts a host representation in Stork to Kea host reservation format used
-// in Kea configuration.
+// in Kea configuration. The lookup interface must not be nil.
 func CreateReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host Host) (*Reservation, error) {
 	reservation := &Reservation{
 		Hostname: host.GetHostname(),
@@ -83,7 +83,7 @@ func CreateReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host H
 // Converts a host representation in Stork to Kea host reservation format used
 // in host_cmds hook library (includes subnet ID). The daemonID selects host
 // reservation data appropriate for a given daemon. Note that a host in Stork
-// can be shared by multiple daemons.
+// can be shared by multiple daemons. The lookup interface must not be nil.
 func CreateHostCmdsReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host Host) (reservation *HostCmdsReservation, err error) {
 	var (
 		base     *Reservation
