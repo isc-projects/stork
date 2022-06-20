@@ -377,9 +377,9 @@ func convertFqdnField(field DHCPOptionField, textFormat bool) (string, error) {
 	if !ok {
 		return "", errors.New("FQDN option field is not a string value")
 	}
-	fqdn := storkutil.ParseFqdn(value)
-	if fqdn == nil {
-		return "", errors.New("FQDN option field contains an invalid value")
+	fqdn, err := storkutil.ParseFqdn(value)
+	if err != nil {
+		return "", err
 	}
 	if textFormat {
 		return value, nil

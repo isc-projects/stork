@@ -8,7 +8,8 @@ import (
 
 // Test parsing a full FQDN.
 func TestParseFullFqdn(t *testing.T) {
-	fqdn := ParseFqdn("foo.example.org.")
+	fqdn, err := ParseFqdn("foo.example.org.")
+	require.NoError(t, err)
 	require.NotNil(t, fqdn)
 	require.False(t, fqdn.IsPartial())
 	fqdnBytes, err := fqdn.ToBytes()
@@ -18,7 +19,8 @@ func TestParseFullFqdn(t *testing.T) {
 
 // Testing parsing a partial FQDN.
 func TestParsePartialFqdn(t *testing.T) {
-	fqdn := ParseFqdn("foo.exa-mple")
+	fqdn, err := ParseFqdn("foo.exa-mple")
+	require.NoError(t, err)
 	require.NotNil(t, fqdn)
 	require.True(t, fqdn.IsPartial())
 	fqdnBytes, err := fqdn.ToBytes()
@@ -28,12 +30,19 @@ func TestParsePartialFqdn(t *testing.T) {
 
 // Test that parsing an invalid FQDN yields an error.
 func TestParseInvalidFqdn(t *testing.T) {
-	require.Nil(t, ParseFqdn(""))
-	require.Nil(t, ParseFqdn("foo..example.org"))
-	require.Nil(t, ParseFqdn("foo."))
-	require.Nil(t, ParseFqdn("foo-.example.org."))
-	require.Nil(t, ParseFqdn("foo.example.or-g."))
-	require.Nil(t, ParseFqdn("-foo.example.org."))
-	require.Nil(t, ParseFqdn("foo.exa&ple.org."))
-	require.Nil(t, ParseFqdn("foo. example.org."))
+	invalidFqdns := []string{
+		"",
+		"foo..example.org",
+		"foo.",
+		"foo-.example.org.",
+		"foo.example.or-g.",
+		"-foo.example.org.",
+		"foo.exa&ple.org.",
+		"foo. example.org.",
+	}
+	for _, fqdn := range invalidFqdns {
+		parsed, err := ParseFqdn(fqdn)
+		require.Error(t, err)
+		require.Nil(t, parsed)
+	}
 }

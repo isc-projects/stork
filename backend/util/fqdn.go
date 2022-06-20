@@ -48,12 +48,12 @@ func (fqdn Fqdn) ToBytes() (buf []byte, err error) {
 }
 
 // Parses an FQDN string. If the string does not contain a valid FQDN,
-// it returns nil.
-func ParseFqdn(fqdn string) *Fqdn {
+// it returns nil and an error.
+func ParseFqdn(fqdn string) (*Fqdn, error) {
 	// Remove leading and trailing whitespace.
 	fqdn = strings.TrimSpace(fqdn)
 	if len(fqdn) == 0 {
-		return nil
+		return nil, errors.New("failed to parse an empty FQDN")
 	}
 	// Full FQDN has a terminating dot.
 	full := fqdn[len(fqdn)-1] == '.'
@@ -63,7 +63,7 @@ func ParseFqdn(fqdn string) *Fqdn {
 		labels = labels[:len(labels)-1]
 		// Expect that full FQDN has at least 3 labels.
 		if len(labels) < 3 {
-			return nil
+			return nil, errors.Errorf("full FQDN %s must contain at least three labels", fqdn)
 		}
 	}
 	// Validate the labels.
@@ -77,13 +77,13 @@ func ParseFqdn(fqdn string) *Fqdn {
 		// at least two characters long.
 		if full && i == len(labels)-1 {
 			if matched := lastLabelRegexp.MatchString(label); !matched {
-				return nil
+				return nil, errors.Errorf("last label in the full FQDN %s must only contain letters and must be at least two characters long", fqdn)
 			}
 		}
 		// Other labels may contain digits, letters and hyphens but the hyphens
 		// must not be at the start or an end of the label.
 		if matched := middleLabelRegexp.MatchString(label); !matched {
-			return nil
+			return nil, errors.Errorf("first and middle labels in the FQDN %s may only contain digits, letters and hyphens but hyphens must not be at the start and the end of the FQDN", fqdn)
 		}
 	}
 	// Everything good. Create the FQDN instance.
@@ -91,5 +91,5 @@ func ParseFqdn(fqdn string) *Fqdn {
 		labels:  labels,
 		partial: !full,
 	}
-	return parsed
+	return parsed, nil
 }
