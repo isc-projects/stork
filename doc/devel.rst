@@ -666,8 +666,8 @@ The following commands run the system tests and help with troubleshooting:
     |                                | provided name by SERVICE variable.           |
     +--------------------------------+----------------------------------------------+
 
-Alpine troubleshooting
-----------------------
+Running Tests Alpine Linux
+--------------------------
 
 Running system tests on Alpine Linux requires additional setup steps.
 Alpine uses ``libc-musl`` instead of ``libc``, which causes issues with
