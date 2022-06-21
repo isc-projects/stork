@@ -1,3 +1,8 @@
+* 221 [func] marcin
+
+    Added an ability to specify DHCP options in the host reservations.
+    (Gitlab #725)
+
 * 220 [func] marcin
 
     Enabled deleting host reservations from the Kea servers running host_cmds
