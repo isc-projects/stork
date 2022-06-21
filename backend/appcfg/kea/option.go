@@ -320,9 +320,9 @@ func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, err
 	if !storkutil.IsWholeNumber(values[1]) {
 		return "", errors.New("IPv6 prefix length in the option field is not a number")
 	}
-	prefixLen := reflect.ValueOf(values[1])
-	if prefixLen.Int() > 128 {
-		return "", errors.New("IPv6 prefix length must not be greater than 128")
+	prefixLen := reflect.ValueOf(values[1]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
+	if prefixLen.Int() <= 0 || prefixLen.Int() > 128 {
+		return "", errors.New("IPv6 prefix length must be a positive number not greater than 128")
 	}
 	parsed := storkutil.ParseIP(ip)
 	if parsed == nil || parsed.Protocol != storkutil.IPv6 {
@@ -351,12 +351,12 @@ func convertPsidField(field DHCPOptionField, textFormat bool) (string, error) {
 		}
 	}
 	psid := reflect.ValueOf(values[0]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
-	if psid.Int() > math.MaxUint16 {
-		return "", errors.Errorf("psid value must not be greater than %d", math.MaxUint16)
+	if psid.Int() <= 0 || psid.Int() > math.MaxUint16 {
+		return "", errors.Errorf("psid value must be a positive number not greater than %d", math.MaxUint16)
 	}
 	psidLength := reflect.ValueOf(values[1]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
-	if psidLength.Int() > math.MaxUint8 {
-		return "", errors.Errorf("psid length value must not be greater than %d", math.MaxUint8)
+	if psidLength.Int() <= 0 || psidLength.Int() > math.MaxUint8 {
+		return "", errors.Errorf("psid length must be a positive number must not be greater than %d", math.MaxUint8)
 	}
 	if textFormat {
 		return fmt.Sprintf("%d/%d", values[0], values[1]), nil

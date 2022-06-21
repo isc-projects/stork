@@ -593,6 +593,10 @@ func TestIPv6PrefixFieldMalformed(t *testing.T) {
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", 129), false)
 	require.Error(t, err)
 
+	// Negative prefix length.
+	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", -1), false)
+	require.Error(t, err)
+
 	// No value.
 	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField), false)
 	require.Error(t, err)
@@ -640,6 +644,14 @@ func TestPsidFieldMalformed(t *testing.T) {
 
 	// PSID is too high.
 	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 165535, 12), false)
+	require.Error(t, err)
+
+	// PSID is negative.
+	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, -1, 12), false)
+	require.Error(t, err)
+
+	// PSID length is negative.
+	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1, -2), false)
 	require.Error(t, err)
 }
 
