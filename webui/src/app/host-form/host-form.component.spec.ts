@@ -13,6 +13,11 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { MessagesModule } from 'primeng/messages'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { HostFormComponent } from './host-form.component'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { SplitButtonModule } from 'primeng/splitbutton'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DHCPService } from '../backend'
 
 describe('HostFormComponent', () => {
@@ -20,6 +25,7 @@ describe('HostFormComponent', () => {
     let fixture: ComponentFixture<HostFormComponent>
     let dhcpApi: DHCPService
     let messageService: MessageService
+    let formBuilder: FormBuilder = new FormBuilder()
 
     let cannedResponseBegin: any = {
         id: 123,
@@ -116,12 +122,15 @@ describe('HostFormComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 HttpClientTestingModule,
+                InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 ReactiveFormsModule,
+                SplitButtonModule,
+                ToggleButtonModule,
             ],
-            declarations: [HostFormComponent],
+            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HostFormComponent],
         }).compileComponents()
     })
 
@@ -471,40 +480,6 @@ describe('HostFormComponent', () => {
         expect(component.ipGroups.at(0).get('inputPD').valid).toBeFalse()
     }))
 
-    it('should expect at least one reservation', fakeAsync(() => {
-        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        component.formGroup.get('selectedDaemons').setValue([1])
-        component.onDaemonsChange()
-        fixture.detectChanges()
-
-        component.formGroup.get('selectedSubnet').setValue(1)
-        fixture.detectChanges()
-
-        component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
-        fixture.detectChanges()
-
-        expect(component.formGroup.valid).toBeFalse()
-
-        component.ipGroups.at(0).get('inputIPv4').setValue('10.0.0.1')
-        fixture.detectChanges()
-
-        expect(component.formGroup.valid).toBeTrue()
-
-        component.deleteIPInput(0)
-        fixture.detectChanges()
-
-        expect(component.formGroup.valid).toBeFalse()
-
-        component.formGroup.get('hostname').setValue('example.org')
-        fixture.detectChanges()
-
-        expect(component.formGroup.valid).toBeTrue()
-    }))
-
     it('should present an error message when begin transaction fails', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValues(throwError({ status: 404 }), of(cannedResponseBegin))
         component.ngOnInit()
@@ -537,10 +512,23 @@ describe('HostFormComponent', () => {
         fixture.detectChanges()
 
         component.formGroup.get('selectedDaemons').setValue([1])
+        component.onDaemonsChange()
         component.formGroup.get('selectedSubnet').setValue(1)
         component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
         component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
         component.formGroup.get('hostname').setValue(' example.org ')
+        component.optionsArray.push(
+            formBuilder.group({
+                optionCode: [5],
+                alwaysSend: true,
+                optionFields: formBuilder.array([
+                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
+                        control: formBuilder.control('192.0.2.1'),
+                    }),
+                ]),
+                suboptions: formBuilder.array([]),
+            })
+        )
         fixture.detectChanges()
 
         expect(component.formGroup.valid).toBeTrue()
@@ -574,6 +562,68 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 5,
+                            encapsulate: '',
+                            fields: [
+                                {
+                                    fieldType: 'ipv4-address',
+                                    values: ['192.0.2.1'],
+                                },
+                            ],
+                            options: [],
+                            universe: 4,
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should submit new dhcpv4 host with no reservations', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.formGroup.get('selectedSubnet').setValue(1)
+        component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
+        fixture.detectChanges()
+
+        expect(component.formGroup.valid).toBeTrue()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createHostSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const host: any = {
+            subnetId: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'hw-address',
+                    idHexValue: '01:02:03:04:05:06',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            localHosts: [
+                {
+                    daemonId: 1,
+                    dataSource: 'api',
+                    options: [],
                 },
             ],
         }
@@ -639,11 +689,100 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 5,
                     dataSource: 'api',
+                    options: [],
                 },
             ],
         }
         expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should submit new dhcpv6 host with no reservations', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([5])
+        component.formGroup.get('selectedSubnet').setValue(4)
+        component.onDaemonsChange()
+        fixture.detectChanges()
+
+        component.formGroup.get('hostIdGroup.idType').setValue('flex-id')
+        component.formGroup.get('hostIdGroup.idFormat').setValue('text')
+        component.formGroup.get('hostIdGroup.idInputText').setValue(' foobar ')
+
+        expect(component.formGroup.valid).toBeTrue()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createHostSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const host: any = {
+            subnetId: 4,
+            hostIdentifiers: [
+                {
+                    idType: 'flex-id',
+                    idHexValue: '66:6f:6f:62:61:72',
+                },
+            ],
+            hostname: '',
+            addressReservations: [],
+            prefixReservations: [],
+            localHosts: [
+                {
+                    daemonId: 5,
+                    dataSource: 'api',
+                    options: [],
+                },
+            ],
+        }
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should present an error message when processing options fails', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.formGroup.get('selectedSubnet').setValue(1)
+        component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
+        component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
+        component.optionsArray.push(
+            formBuilder.group({
+                optionCode: [],
+                alwaysSend: false,
+                optionFields: formBuilder.array([
+                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
+                        control: formBuilder.control('192.0.2.1'),
+                    }),
+                ]),
+                suboptions: formBuilder.array([]),
+            })
+        )
+        fixture.detectChanges()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createHostSubmit').and.returnValue(of(okResp))
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.createHostSubmit).not.toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
 
@@ -662,5 +801,31 @@ describe('HostFormComponent', () => {
 
         expect(component.formSubmit.emit).not.toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should include dhcpv4 options form', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const optionsForm = fixture.debugElement.query(By.css('app-dhcp-option-set-form'))
+        expect(optionsForm).toBeTruthy()
+        expect(optionsForm.componentInstance.v6).toBeFalse()
+    }))
+
+    it('should include dhcpv6 options form', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
+        fixture.detectChanges()
+
+        const optionsForm = fixture.debugElement.query(By.css('app-dhcp-option-set-form'))
+        expect(optionsForm).toBeTruthy()
+        expect(optionsForm.componentInstance.v6).toBeTrue()
     }))
 })

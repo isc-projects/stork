@@ -1,0 +1,30 @@
+<div
+    *ngFor="let fieldControl of formArray.controls; let i = index; let last = last"
+    class="{{ last ? 'p-mb-0' : 'p-mb-3' }}"
+>
+    <app-dhcp-option-form
+        [v6]="v6"
+        [formGroup]="formArray.at(i)"
+        [formIndex]="i"
+        [nestLevel]="nestLevel"
+        (optionDelete)="onOptionDelete($event)"
+    ></app-dhcp-option-form>
+</div>
+<ng-container *ngIf="nestLevel === 0">
+    <button
+        *ngIf="formArray.length === 0; else nonEmptyFormArray"
+        pButton
+        class="p-button-text p-button-sm p-ml-0"
+        label="Add Option"
+        (click)="notifyOptionAdded()"
+    ></button>
+    <ng-template #nonEmptyFormArray>
+        <button
+            pRipple
+            pButton
+            label="Add More Options"
+            class="p-button-text p-button-sm p-ml-0"
+            (click)="notifyOptionAdded()"
+        ></button>
+    </ng-template>
+</ng-container>

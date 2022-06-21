@@ -17,6 +17,9 @@ import { IPReservation } from '../backend/model/iPReservation'
 import { KeaDaemon } from '../backend/model/keaDaemon'
 import { LocalHost } from '../backend/model/localHost'
 import { Subnet } from '../backend/model/subnet'
+import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
+import { DhcpOptionSetForm } from '../forms/dhcp-option-set-form'
+import { Universe } from '../universe'
 import { stringToHex } from '../utils'
 
 /**
@@ -72,53 +75,6 @@ function identifierRequiredValidator(group: FormGroup): ValidationErrors | null 
             return Validators.required(idInputText)
     }
     return null
-}
-
-/**
- * A form validator checking if a user specified at least one reservation.
- *
- * Besides IP reservations it is also possible to specify hostname
- * reservation. This validator checks if hostname reservation has been
- * specified. Otherwise, it checks if at least one IP reservation has been
- * specified.
- *
- * @param group top-level component form group.
- * @returns validation errors if neither hostname or IP address reservations
- *          have been specified.
- */
-function reservationRequiredValidator(group: FormGroup): ValidationErrors | null {
-    // The easiest check is whether the hostname reservation has been
-    // specified.
-    if (!Validators.required(group.get('hostname'))) {
-        return null
-    }
-    // Iterate over the IP reservations and see if they are specified.
-    if (group.get('ipGroups')) {
-        for (let i = 0; i < (group.get('ipGroups') as FormArray).length; i++) {
-            const ipg = (group.get('ipGroups') as FormArray).at(i)
-            switch (ipg.get('ipType').value) {
-                case 'ipv4':
-                    if (!Validators.required(ipg.get('inputIPv4'))) {
-                        return null
-                    }
-                    break
-                case 'ia_na':
-                    if (!Validators.required(ipg.get('inputNA'))) {
-                        return null
-                    }
-                    break
-                case 'ia_pd':
-                    if (!Validators.required(ipg.get('inputPD'))) {
-                        return null
-                    }
-                    break
-            }
-        }
-    }
-    // No hostname nor IP reservation found.
-    return {
-        err: 'at least one IP or hostname reservation is required',
-    }
 }
 
 /**
@@ -310,9 +266,10 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 ),
                 ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
                 hostname: [''],
+                options: this._formBuilder.array([]),
             },
             {
-                validators: [subnetRequiredValidator, reservationRequiredValidator],
+                validators: [subnetRequiredValidator],
             }
         )
 
@@ -564,6 +521,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Convenience function returning the form array with DHCP options.
+     *
+     * @returns form array with DHCP options.
+     */
+    get optionsArray(): FormArray {
+        return this.formGroup.get('options') as FormArray
+    }
+
+    /**
      * A callback invoked when selected DHCP servers have changed.
      *
      * Servers selection affects available subnets. If no servers are selected,
@@ -645,6 +611,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * A function called when a user clicked to add a new option form.
+     *
+     * It creates a new default form group for the option.
+     */
+    onOptionAdd(): void {
+        this.optionsArray.push(createDefaultDhcpOptionFormGroup())
+    }
+
+    /**
      * A function called when a user attempts to submit the new host reservation.
      *
      * It collects the data from the form and sends the request to commit the
@@ -656,6 +631,24 @@ export class HostFormComponent implements OnInit, OnDestroy {
             ? 0
             : this.formGroup.get('selectedSubnet').value
 
+        // DHCP options.
+        let options = []
+        if (this.optionsArray) {
+            try {
+                const optionsForm = new DhcpOptionSetForm(this.optionsArray)
+                optionsForm.process(this.form.dhcpv4 ? Universe.IPv4 : Universe.IPv6)
+                options = optionsForm.getSerializedOptions()
+            } catch (err) {
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot commit new host',
+                    detail: 'Processing specified DHCP options failed: ' + err,
+                    life: 10000,
+                })
+                return
+            }
+        }
+
         // Create associations with the daemons.
         let localHosts: LocalHost[] = []
         const selectedDaemons = this.formGroup.get('selectedDaemons').value
@@ -663,6 +656,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             localHosts.push({
                 daemonId: id,
                 dataSource: 'api',
+                options: options,
             })
         }
 

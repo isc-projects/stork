@@ -162,6 +162,18 @@
         </div>
     </p-fieldset>
 
+    <p-fieldset legend="DHCP options" styleClass="p-mt-4">
+        <div class="host-form-abs-width">
+            <div class="p-mb-3 p-mt-3">
+                <app-dhcp-option-set-form
+                    [v6]="form.dhcpv6"
+                    [formArray]="optionsArray"
+                    (optionAdd)="onOptionAdd()"
+                ></app-dhcp-option-set-form>
+            </div>
+        </div>
+    </p-fieldset>
+
     <div class="p-m-5">
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
     </div>

@@ -30,7 +30,7 @@
         "path": "^0.12.7",
         "primeflex": "^2.0.0",
         "primeicons": "^5.0.0",
-        "primeng": "^13.1.0",
+        "primeng": "^13.3.3",
         "rxjs": "~6.5.5",
         "swagger-ui-dist": "^4.4.1",
         "tslib": "^2.0.0",

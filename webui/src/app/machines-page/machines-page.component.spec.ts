@@ -218,10 +218,8 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).not.toContain('aaa')
     }))
 
-    it('should button menu click triggers the download handler', async () => {
+    it('should button menu click trigger the download handler', async () => {
         // Prepare the data
-        const selectBtns = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
-        const authSelectBtnEl = selectBtns[0]
         const getAuthorizedMachinesResp: any = {
             items: [
                 { id: 1, hostname: 'zzz' },
@@ -230,10 +228,13 @@ describe('MachinesPageComponent', () => {
             total: 2,
         }
         spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
-        authSelectBtnEl.dispatchEvent(new Event('click'))
+        // ngOnInit was already called before we prepared the static response.
+        // We have to reload the machines list manually.
+        component.loadMachines({ first: 0, rows: 0, filters: {} })
+        await fixture.whenStable()
         fixture.detectChanges()
 
-        // Show the menu
+        // Show the menu.
         const menuButton = fixture.debugElement.query(By.css('#show-machines-menu'))
         expect(menuButton).not.toBeNull()
 

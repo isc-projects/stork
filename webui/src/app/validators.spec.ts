@@ -48,4 +48,32 @@ describe('StorkValidators', () => {
         // Valid address.
         expect(StorkValidators.ipv6()(formBuilder.control('3000:1:2::3'))).toBeFalsy()
     })
+
+    it('validates fqdn', () => {
+        expect(StorkValidators.fqdn(false)(formBuilder.control('a..bc'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('a.b'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('test-.xyz'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('-test.xyz'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('test.xyz.'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('.test.xyz'))).toBeTruthy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('test'))).toBeTruthy()
+
+        expect(StorkValidators.fqdn(false)(formBuilder.control('a.bc'))).toBeFalsy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('test--abc.ec-a-b.xyz'))).toBeFalsy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('test.abc.xyz'))).toBeFalsy()
+        expect(StorkValidators.fqdn(false)(formBuilder.control('a123.xyz'))).toBeFalsy()
+    })
+
+    it('validates partial fqdn', () => {
+        expect(StorkValidators.fqdn(true)(formBuilder.control('a..bc'))).toBeTruthy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('test-.xyz'))).toBeTruthy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('-test.xyz'))).toBeTruthy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('test.xyz.'))).toBeTruthy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('.test.xyz'))).toBeTruthy()
+
+        expect(StorkValidators.fqdn(true)(formBuilder.control('a.bc'))).toBeFalsy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('test--abc.x-yz'))).toBeFalsy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('test.abc.xyz'))).toBeFalsy()
+        expect(StorkValidators.fqdn(true)(formBuilder.control('test'))).toBeFalsy()
+    })
 })

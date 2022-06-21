@@ -30,6 +30,8 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HostFormComponent } from '../host-form/host-form.component'
 import { Hosts } from '../backend/model/hosts'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -92,6 +94,8 @@ describe('HostsPageComponent', () => {
                     HostTabComponent,
                     IdentifierComponent,
                     HostFormComponent,
+                    DhcpOptionFormComponent,
+                    DhcpOptionSetFormComponent,
                 ],
             }).compileComponents()
         })

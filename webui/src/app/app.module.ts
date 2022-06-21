@@ -42,6 +42,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { CheckboxModule } from 'primeng/checkbox'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { InputTextareaModule } from 'primeng/inputtextarea'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -92,6 +93,8 @@ import { ConfigReviewPanelComponent } from './config-review-panel/config-review-
 import { IdentifierComponent } from './identifier/identifier.component'
 import { AppOverviewComponent } from './app-overview/app-overview.component'
 import { HostFormComponent } from './host-form/host-form.component'
+import { DhcpOptionFormComponent } from './dhcp-option-form/dhcp-option-form.component'
+import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -144,6 +147,8 @@ export function cfgFactory() {
         IdentifierComponent,
         AppOverviewComponent,
         HostFormComponent,
+        DhcpOptionFormComponent,
+        DhcpOptionSetFormComponent,
     ],
     imports: [
         BrowserModule,
@@ -189,6 +194,7 @@ export function cfgFactory() {
         MultiSelectModule,
         CheckboxModule,
         ConfirmDialogModule,
+        InputTextareaModule,
     ],
     providers: [
         {
