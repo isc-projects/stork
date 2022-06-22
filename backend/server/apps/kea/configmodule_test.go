@@ -13,6 +13,7 @@ import (
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	testutil "isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -608,9 +609,18 @@ func TestApplyHostDelete(t *testing.T) {
 
 // Test committing added host, i.e. actually sending control commands to Kea.
 func TestCommitHostDelete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	hosts, apps := testutil.AddTestHosts(t, db)
+	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	require.NoError(t, err)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	require.NoError(t, err)
+
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(nil, agents)
+	manager := newTestManager(db, agents)
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -620,49 +630,9 @@ func TestCommitHostDelete(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
 	// Create new host reservation and store it in the context.
-	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
-		HostIdentifiers: []dbmodel.HostIdentifier{
-			{
-				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
-			},
-		},
-		LocalHosts: []dbmodel.LocalHost{
-			{
-				DaemonID: 1,
-				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
-					App: &dbmodel.App{
-						AccessPoints: []*dbmodel.AccessPoint{
-							{
-								Type:    dbmodel.AccessPointControl,
-								Address: "192.0.2.1",
-								Port:    1234,
-							},
-						},
-					},
-				},
-			},
-			{
-				DaemonID: 2,
-				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
-					App: &dbmodel.App{
-						AccessPoints: []*dbmodel.AccessPoint{
-							{
-								Type:    dbmodel.AccessPointControl,
-								Address: "192.0.2.2",
-								Port:    2345,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	ctx, err := module.ApplyHostDelete(ctx, host)
+	host, err := dbmodel.GetHost(db, hosts[0].ID)
+	require.NoError(t, err)
+	ctx, err = module.ApplyHostDelete(ctx, host)
 	require.NoError(t, err)
 
 	// Committing the host should result in sending control commands to Kea servers.
@@ -671,8 +641,8 @@ func TestCommitHostDelete(t *testing.T) {
 
 	// Make sure that the commands were sent to appropriate servers.
 	require.Len(t, agents.RecordedURLs, 2)
-	require.Equal(t, "http://192.0.2.1:1234/", agents.RecordedURLs[0])
-	require.Equal(t, "http://192.0.2.2:2345/", agents.RecordedURLs[1])
+	require.Equal(t, "https://localhost:1234/", agents.RecordedURLs[0])
+	require.Equal(t, "https://localhost:1235/", agents.RecordedURLs[1])
 
 	// Validate the sent commands.
 	require.Len(t, agents.RecordedCommands, 2)
@@ -683,13 +653,17 @@ func TestCommitHostDelete(t *testing.T) {
                  "command": "reservation-del",
                  "service": [ "dhcp4" ],
                  "arguments": {
-                     "subnet-id": 0,
+                     "subnet-id": 111,
                      "identifier-type": "hw-address",
                      "identifier": "010203040506"
                   }
              }`,
 			marshalled)
 	}
+
+	returnedHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedHost)
 }
 
 // Test scheduling deleting a host reservation, retrieving the scheduled operation
@@ -697,6 +671,10 @@ func TestCommitHostDelete(t *testing.T) {
 func TestCommitScheduledHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+
+	hosts, apps := testutil.AddTestHosts(t, db)
+	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	require.NoError(t, err)
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(db, agents)
@@ -711,7 +689,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 		Name:     "test",
 		Password: "test",
 	}
-	_, err := dbmodel.CreateUser(db, user)
+	_, err = dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
 	require.NotZero(t, user.ID)
 
@@ -721,41 +699,8 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
 
 	// Create the host and store it in the context.
-	host := &dbmodel.Host{
-		ID: 1,
-		Subnet: &dbmodel.Subnet{
-			LocalSubnets: []*dbmodel.LocalSubnet{
-				{
-					DaemonID:      1,
-					LocalSubnetID: 123,
-				},
-			},
-		},
-		Hostname: "cool.example.org",
-		HostIdentifiers: []dbmodel.HostIdentifier{
-			{
-				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
-			},
-		},
-		LocalHosts: []dbmodel.LocalHost{
-			{
-				DaemonID: 1,
-				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
-					App: &dbmodel.App{
-						AccessPoints: []*dbmodel.AccessPoint{
-							{
-								Type:    dbmodel.AccessPointControl,
-								Address: "192.0.2.1",
-								Port:    1234,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	host, err := dbmodel.GetHost(db, hosts[0].ID)
+	require.NoError(t, err)
 	ctx, err = module.ApplyHostDelete(ctx, host)
 	require.NoError(t, err)
 
@@ -770,7 +715,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 
 	// Make sure it was sent to appropriate server.
 	require.Len(t, agents.RecordedURLs, 1)
-	require.Equal(t, "http://192.0.2.1:1234/", agents.RecordedURLs[0])
+	require.Equal(t, "https://localhost:1234/", agents.RecordedURLs[0])
 
 	// Ensure the command has appropriate structure.
 	require.Len(t, agents.RecordedCommands, 1)
@@ -781,10 +726,14 @@ func TestCommitScheduledHostDelete(t *testing.T) {
              "command": "reservation-del",
              "service": [ "dhcp4" ],
              "arguments": {
-                 "subnet-id": 123,
+                 "subnet-id": 111,
                  "identifier-type": "hw-address",
                  "identifier": "010203040506"
              }
          }`,
 		marshalled)
+
+	returnedHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedHost)
 }

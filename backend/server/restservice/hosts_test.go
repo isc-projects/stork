@@ -2,11 +2,9 @@ package restservice
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -15,6 +13,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
+	testutil "isc.org/stork/testutil"
 )
 
 func mockStatusError(commandName string, cmdResponses []interface{}) {
@@ -28,198 +27,6 @@ func mockStatusError(commandName string, cmdResponses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
-// This function creates multiple hosts used in tests which fetch and
-// filter hosts.
-func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel.App) {
-	// Add two apps.
-	for i := 0; i < 2; i++ {
-		m := &dbmodel.Machine{
-			ID:        0,
-			Address:   "cool.example.org",
-			AgentPort: int64(8080 + i),
-		}
-		err := dbmodel.AddMachine(db, m)
-		require.NoError(t, err)
-
-		accessPoints := []*dbmodel.AccessPoint{}
-		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", int64(1234+i), true)
-
-		a := dbmodel.App{
-			ID:           0,
-			MachineID:    m.ID,
-			Type:         dbmodel.AppTypeKea,
-			Name:         fmt.Sprintf("dhcp-server%d", i),
-			Active:       true,
-			AccessPoints: accessPoints,
-			Daemons: []*dbmodel.Daemon{
-				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
-				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv6, true),
-			},
-		}
-		err = a.Daemons[0].SetConfigFromJSON(`{
-            "Dhcp4": {
-                "subnet4": [
-                    {
-                        "id": 111,
-                        "subnet": "192.0.2.0/24"
-                    }
-                ],
-                "hooks-libraries": [
-                    {
-                        "library": "libdhcp_host_cmds.so"
-                    }
-                ]
-            }
-        }`)
-		require.NoError(t, err)
-
-		err = a.Daemons[1].SetConfigFromJSON(`{
-            "Dhcp6": {
-                "subnet6": [
-                    {
-                        "id": 222,
-                        "subnet": "2001:db8:1::/64"
-                    }
-                ],
-                "hooks-libraries": [
-                    {
-                        "library": "libdhcp_host_cmds.so"
-                    }
-                ]
-            }
-        }`)
-		require.NoError(t, err)
-		apps = append(apps, a)
-	}
-
-	subnets := []dbmodel.Subnet{
-		{
-			ID:     1,
-			Prefix: "192.0.2.0/24",
-		},
-		{
-			ID:     2,
-			Prefix: "2001:db8:1::/64",
-		},
-	}
-	for i, s := range subnets {
-		subnet := s
-		err := dbmodel.AddSubnet(db, &subnet)
-		require.NoError(t, err)
-		require.NotZero(t, subnet.ID)
-		subnets[i] = subnet
-	}
-
-	hosts = []dbmodel.Host{
-		{
-			SubnetID: 1,
-			Hostname: "first.example.org",
-			HostIdentifiers: []dbmodel.HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{1, 2, 3, 4, 5, 6},
-				},
-				{
-					Type:  "circuit-id",
-					Value: []byte{1, 2, 3, 4},
-				},
-			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "192.0.2.4",
-				},
-				{
-					Address: "192.0.2.5",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []dbmodel.HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{2, 3, 4, 5, 6, 7},
-				},
-				{
-					Type:  "circuit-id",
-					Value: []byte{2, 3, 4, 5},
-				},
-			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "192.0.2.6",
-				},
-				{
-					Address: "192.0.2.7",
-				},
-			},
-		},
-		{
-			SubnetID: 2,
-			HostIdentifiers: []dbmodel.HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{1, 2, 3, 4, 5, 6},
-				},
-			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "2001:db8:1::1",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []dbmodel.HostIdentifier{
-				{
-					Type:  "duid",
-					Value: []byte{1, 2, 3, 4},
-				},
-			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "2001:db8:1::2",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []dbmodel.HostIdentifier{
-				{
-					Type:  "duid",
-					Value: []byte{2, 2, 2, 2},
-				},
-			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "3000::/48",
-				},
-			},
-		},
-	}
-
-	// Add apps to the database.
-	for i, a := range apps {
-		app := a
-		_, err := dbmodel.AddApp(db, &app)
-		require.NoError(t, err)
-		require.NotZero(t, app.ID)
-		// Associate the daemons with the subnets.
-		for j := range apps[i].Daemons {
-			err = dbmodel.AddDaemonToSubnet(db, &subnets[j], apps[i].Daemons[j])
-			require.NoError(t, err)
-		}
-		apps[i] = app
-	}
-
-	// Add hosts to the database.
-	for i, h := range hosts {
-		host := h
-		err := dbmodel.AddHost(db, &host)
-		require.NoError(t, err)
-		require.NotZero(t, host.ID)
-		hosts[i] = host
-	}
-	return hosts, apps
-}
-
 // Test that all hosts can be fetched without filtering.
 func TestGetHostsNoFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -230,7 +37,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts, apps := addTestHosts(t, db)
+	hosts, apps := testutil.AddTestHosts(t, db)
 
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "config")
 	require.NoError(t, err)
@@ -317,7 +124,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_, _ = addTestHosts(t, db)
+	_, _ = testutil.AddTestHosts(t, db)
 
 	subnetID := int64(2)
 	params := dhcp.GetHostsParams{
@@ -340,7 +147,7 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_, _ = addTestHosts(t, db)
+	_, _ = testutil.AddTestHosts(t, db)
 
 	filteringText := "2001:db"
 	params := dhcp.GetHostsParams{
@@ -363,7 +170,7 @@ func TestGetHost(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts, _ := addTestHosts(t, db)
+	hosts, _ := testutil.AddTestHosts(t, db)
 
 	params := dhcp.GetHostParams{
 		ID: hosts[0].ID,
@@ -414,7 +221,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, apps := addTestHosts(t, db)
+	_, apps := testutil.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -499,7 +306,7 @@ func TestCreateHostBeginNoSession(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = addTestHosts(t, db)
+	_, _ = testutil.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -578,7 +385,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, apps := addTestHosts(t, db)
+	_, apps := testutil.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
 	// test that relies on the existence of the transaction.
@@ -714,7 +521,7 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = addTestHosts(t, db)
+	_, _ = testutil.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -777,7 +584,7 @@ func TestCreateHostDeleteError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = addTestHosts(t, db)
+	_, _ = testutil.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
 	// test that relies on the existence of the transaction.
@@ -847,7 +654,7 @@ func TestDeleteHost(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add test hosts and associate them with the daemons.
-	hosts, apps := addTestHosts(t, db)
+	hosts, apps := testutil.AddTestHosts(t, db)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
@@ -874,6 +681,10 @@ func TestDeleteHost(t *testing.T) {
             }
         }`, c.Marshal())
 	}
+
+	returnedHost, err := dbmodel.GetHost(db, hosts[0].ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedHost)
 }
 
 // Test error cases for deleting a host reservation.
@@ -908,7 +719,7 @@ func TestDeleteHostError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, apps := addTestHosts(t, db)
+	hosts, apps := testutil.AddTestHosts(t, db)
 
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)

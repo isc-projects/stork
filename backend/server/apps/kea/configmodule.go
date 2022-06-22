@@ -206,6 +206,7 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 	// Create config update to be stored in the transaction state.
 	update := config.NewUpdate("kea", "host_delete", daemonIDs...)
 	update.Recipe["commands"] = commands
+	update.Recipe["id"] = host.ID
 	state := config.TransactionState{
 		Updates: []*config.Update{
 			update,
@@ -217,5 +218,24 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 
 // Delete host reservation from the Kea servers.
 func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Context, error) {
-	return module.commitHostChanges(ctx)
+	state, ok := config.GetTransactionState(ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitHostChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		hostID, err := update.GetRecipeValueAsInt64("id")
+		if err != nil {
+			return ctx, err
+		}
+		err = dbmodel.DeleteHost(module.manager.GetDB(), hostID)
+		if err != nil {
+			return ctx, err
+		}
+	}
+	return ctx, nil
 }

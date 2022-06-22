@@ -156,6 +156,11 @@ namespace :unittest do
 
                                 # this requires interacting with terminal
                                 'GetSecretInTerminal',
+
+                                # Testing coverage should ignore testutil because we don't require writing
+                                # tests for testing code. They can still be written but we shouldn't fail
+                                # if they are not.
+                                'isc.org/stork/testutil',
                                 ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
@@ -163,8 +168,18 @@ namespace :unittest do
                     end
 
                     if cov < 35 and not ignore_list.include? func
-                        puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
-                        problem = true
+                        # Check if the file the whole package is ignored.
+                        should_ignore = false
+                        ignore_list.each { |ignored|
+                            if file.start_with? ignored
+                                should_ignore = true
+                                break
+                            end
+                        }
+                        if not should_ignore
+                            puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
+                            problem = true
+                        end
                     end
                 end
 

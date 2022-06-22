@@ -22,6 +22,16 @@ func TestNewConfigUpdate(t *testing.T) {
 	require.Contains(t, cu.DaemonIDs, int64(3))
 }
 
+// Test that extracting an int64 value from config update recipe works.
+func TestGetRecipeValueAsInt64(t *testing.T) {
+	cu := NewConfigUpdate("kea", "host_cmds")
+	cu.Recipe["foo"] = int64(45)
+	require.NotNil(t, cu)
+	value, err := cu.GetRecipeValueAsInt64("foo")
+	require.NoError(t, err)
+	require.Equal(t, int64(45), value)
+}
+
 // Test adding and getting scheduled config changes with ordering by deadline.
 func TestAddScheduledConfigChange(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
