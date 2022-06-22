@@ -81,7 +81,7 @@ func (host testHost) GetSubnetID(int64) (int64, error) {
 }
 
 // Returns static DHCP options.
-func (host TestHost) GetDHCPOptions(int64) (options []DHCPOption) {
+func (host testHost) GetDHCPOptions(int64) (options []DHCPOption) {
 	testOptions := []testDHCPOption{
 		{
 			code:        5,
