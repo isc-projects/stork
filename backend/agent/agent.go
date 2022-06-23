@@ -37,6 +37,7 @@ type StorkAgent struct {
 	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
 	shutdownOnce   sync.Once
+	hookManager    *HookManager
 
 	agentapi.UnimplementedAgentServer
 }
@@ -51,6 +52,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 		HTTPClient:     NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
 		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
+		hookManager:    NewHookManagerFromDirectory(settings.Path("hook-directory")),
 	}
 
 	registerKeaInterceptFns(sa)
@@ -300,6 +302,9 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 // Forwards one or more Kea commands sent by the Stork Server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
+	// Call hook
+	sa.hookManager.OnBeforeForwardToKeaOverHTTP(in)
+
 	// prepare base response
 	response := &agentapi.ForwardToKeaOverHTTPRsp{
 		Status: &agentapi.Status{
@@ -449,6 +454,7 @@ func (sa *StorkAgent) Shutdown(reload bool) {
 		if !reload {
 			log.Info("Stopping Stork Agent")
 		}
+		sa.hookManager.Close()
 		if sa.server != nil {
 			sa.server.GracefulStop()
 		}
