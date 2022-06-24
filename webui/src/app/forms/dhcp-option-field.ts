@@ -58,7 +58,7 @@ export class DhcpOptionField {
      * @param index control index for which an identifier should be returned.
      * @returns A control identifier.
      */
-    getInputId(index: number = 0): string {
+    getInputId(index: number): string {
         return this._inputIds[index]
     }
 }

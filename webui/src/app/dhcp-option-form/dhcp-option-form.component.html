@@ -89,7 +89,7 @@
                 <div *ngSwitchCase="FieldType.HexBytes" [formGroupName]="i">
                     <span class="p-float-label">
                         <textarea
-                            id="{{ fieldControl.data.getInputId() }}"
+                            id="{{ fieldControl.data.getInputId(0) }}"
                             rows="5"
                             cols="30"
                             pInputTextarea
@@ -97,22 +97,22 @@
                             class="option-field"
                             formControlName="control"
                         ></textarea>
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.String" [formGroupName]="i">
                     <span class="p-float-label">
                         <input
-                            id="{{ fieldControl.data.getInputId() }}"
+                            id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
                             class="option-field"
                             formControlName="control"
                         />
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.Bool" [formGroupName]="i">
-                    <div id="{{ fieldControl.data.getInputId() }}" class="p-inputtext option-field p-p-0">
+                    <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-p-0">
                         <p-toggleButton
                             pRipple
                             onLabel="True"
@@ -128,64 +128,64 @@
                     <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
-                            inputId="{{ fieldControl.data.getInputId() }}"
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
                             min="0"
                             max="255"
                             inputStyleClass="option-field"
                             formControlName="control"
                         >
                         </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.Uint16" [formGroupName]="i">
                     <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
-                            inputId="{{ fieldControl.data.getInputId() }}"
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
                             min="0"
                             max="65535"
                             inputStyleClass="option-field"
                             formControlName="control"
                         >
                         </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.Uint32" [formGroupName]="i">
                     <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
-                            inputId="{{ fieldControl.data.getInputId() }}"
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
                             min="0"
                             max="4294967295"
                             inputStyleClass="option-field"
                             formControlName="control"
                         >
                         </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.IPv4Address" [formGroupName]="i">
                     <span class="p-float-label">
                         <input
-                            id="{{ fieldControl.data.getInputId() }}"
+                            id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
                             class="option-field"
                             formControlName="control"
                         />
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.IPv6Address" [formGroupName]="i">
                     <span class="p-float-label">
                         <input
-                            id="{{ fieldControl.data.getInputId() }}"
+                            id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
                             class="option-field"
                             formControlName="control"
                         />
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.IPv6Prefix" class="p-d-flex" [formGroupName]="i">
@@ -219,7 +219,7 @@
                             formControlName="psid"
                         >
                         </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                         <p-inputNumber
                             inputId="{{ fieldControl.data.getInputId(1) }}"
                             ngDefaultControl
@@ -235,12 +235,12 @@
                     <div class="p-inputgroup">
                         <span class="p-float-label">
                             <input
-                                id="{{ fieldControl.data.getInputId() }}"
+                                id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
                                 class="option-field"
                                 formControlName="control"
                             />
-                            <label for="{{ fieldControl.data.getInputId() }}">{{ fieldControl.data.fieldType }}</label>
+                            <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                             <p-toggleButton
                                 onLabel="Full"
                                 offLabel="Partial"

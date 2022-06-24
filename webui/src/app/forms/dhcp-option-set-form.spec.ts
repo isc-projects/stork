@@ -54,6 +54,15 @@ describe('DhcpOptionSetForm', () => {
                             }),
                         ]),
                     }),
+                    formBuilder.group({
+                        alwaysSend: formBuilder.control(false),
+                        optionCode: formBuilder.control(0),
+                        optionFields: formBuilder.array([
+                            new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Uint32, {
+                                control: formBuilder.control(2222),
+                            }),
+                        ]),
+                    }),
                 ]),
             }),
         ])
@@ -114,8 +123,8 @@ describe('DhcpOptionSetForm', () => {
         expect(serialized[2].code).toBe(3087)
         expect(serialized[2].encapsulate).toBe('option-3087')
         expect(serialized[2].fields.length).toBe(0)
-        // The option should contain a suboption.
-        expect(serialized[2].options.length).toBe(1)
+        // The option should contain a suboptions
+        expect(serialized[2].options.length).toBe(2)
         expect(serialized[2].options[0].hasOwnProperty('code')).toBeTrue()
         expect(serialized[2].options[0].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[2].options[0].hasOwnProperty('fields')).toBeTrue()
@@ -125,6 +134,15 @@ describe('DhcpOptionSetForm', () => {
         expect(serialized[2].options[0].fields.length).toBe(1)
         expect(serialized[2].options[0].fields[0].fieldType).toBe(DhcpOptionFieldType.Uint16)
         expect(serialized[2].options[0].options.length).toBe(0)
+        expect(serialized[2].options[1].hasOwnProperty('code')).toBeTrue()
+        expect(serialized[2].options[1].hasOwnProperty('encapsulate')).toBeTrue()
+        expect(serialized[2].options[1].hasOwnProperty('fields')).toBeTrue()
+        expect(serialized[2].options[1].hasOwnProperty('options')).toBeTrue()
+        expect(serialized[2].options[1].code).toBe(0)
+        expect(serialized[2].options[1].encapsulate.length).toBe(0)
+        expect(serialized[2].options[1].fields.length).toBe(1)
+        expect(serialized[2].options[1].fields[0].fieldType).toBe(DhcpOptionFieldType.Uint32)
+        expect(serialized[2].options[1].options.length).toBe(0)
     })
 
     it('throws on too much recursion', () => {

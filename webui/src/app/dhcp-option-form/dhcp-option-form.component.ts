@@ -18,6 +18,16 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { StorkValidators } from '../validators'
 
 /**
+ * An interface to a DHCP option description.
+ *
+ * It is used to define a list of standard DHCP options.
+ */
+interface DHCPOptionListItem {
+    label: string
+    value: number
+}
+
+/**
  * A component providing a form to edit DHCP option information.
  *
  * It provides controls to select a DHCP option from the predefined options
@@ -82,7 +92,7 @@ export class DhcpOptionFormComponent implements OnInit {
      *
      * Commented out options are not configurable by a user.
      */
-    dhcp4Options: any = [
+    dhcp4Options: DHCPOptionListItem[] = [
         /* {
             label: '(1) Subnet Mask',
             value: 1,
@@ -838,7 +848,7 @@ export class DhcpOptionFormComponent implements OnInit {
      *
      * Commented out options are not configurable by a user.
      */
-    dhcp6Options: any = [
+    dhcp6Options: DHCPOptionListItem[] = [
         /*{
             label: '(0) Reserved',
             value: 0,
@@ -1612,7 +1622,7 @@ export class DhcpOptionFormComponent implements OnInit {
      * @param fieldType DHCP option field type.
      * @param controls the controls associated with the option field.
      */
-    private _addComplexField(fieldType: DhcpOptionFieldType, controls: { [key: string]: any }): void {
+    private _addComplexField(fieldType: DhcpOptionFieldType, controls: { [key: string]: AbstractControl }): void {
         this.optionFields.push(new DhcpOptionFieldFormGroup(fieldType, controls))
     }
 

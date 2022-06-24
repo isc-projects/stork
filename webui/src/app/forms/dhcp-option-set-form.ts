@@ -1,6 +1,7 @@
 import { FormArray, FormGroup } from '@angular/forms'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { Universe } from '../universe'
+import { DHCPOption } from '../backend/model/dHCPOption'
 
 /**
  * A class processing DHCP options forms.
@@ -18,7 +19,7 @@ export class DhcpOptionSetForm {
     /**
      * Extracted DHCP options into the REST API format.
      */
-    private _serializedOptions: any[]
+    private _serializedOptions: DHCPOption[]
 
     /**
      * Constructor.
@@ -37,7 +38,7 @@ export class DhcpOptionSetForm {
      * @throw An error for nesting level higher than 1 or if option data is invalid
      * or missing.
      */
-    private _process(universe: Universe, nestingLevel: number, optionSpace: string = '') {
+    private _process(universe: Universe, nestingLevel: number, optionSpace?: string) {
         // To avoid too much recursion, we only parse first level of suboptions.
         if (this._formArray.length > 0 && nestingLevel > 1) {
             throw new Error('options serialization supports up to two nesting levels')
@@ -46,7 +47,7 @@ export class DhcpOptionSetForm {
         for (let o of this._formArray.controls) {
             const option = o as FormGroup
             // Option code is mandatory.
-            if (!option.contains('optionCode') || !option.get('optionCode').value) {
+            if (!option.contains('optionCode') || option.get('optionCode').value === null) {
                 throw new Error('form group does not contain control with an option code')
             }
             const item = {
@@ -62,7 +63,7 @@ export class DhcpOptionSetForm {
             if (optionFieldsArray) {
                 for (const f of optionFieldsArray.controls) {
                     const field = f as DhcpOptionFieldFormGroup
-                    let values: any[]
+                    let values: unknown[]
                     switch (field.data.fieldType) {
                         case DhcpOptionFieldType.Bool:
                             if (!field.contains('control')) {
@@ -107,7 +108,7 @@ export class DhcpOptionSetForm {
             const suboptions = option.get('suboptions') as FormArray
             // Suboptions are not mandatory.
             if (suboptions && suboptions.length > 0) {
-                item.encapsulate = optionSpace.length > 0 ? `${optionSpace}.${item.code}` : `option-${item.code}`
+                item.encapsulate = optionSpace ? `${optionSpace}.${item.code}` : `option-${item.code}`
                 const suboptionsForm = new DhcpOptionSetForm(suboptions)
                 suboptionsForm._process(universe, nestingLevel + 1, item.encapsulate)
                 item.options = suboptionsForm.getSerializedOptions()
@@ -136,7 +137,7 @@ export class DhcpOptionSetForm {
      * @returns serialized options (in the REST API format).
      * @throws an error when process() function hasn't been called.
      */
-    getSerializedOptions(): any[] {
+    getSerializedOptions(): DHCPOption[] {
         if (!this._serializedOptions) {
             throw new Error('options form has not been processed')
         }
