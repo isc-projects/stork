@@ -9,13 +9,13 @@ import (
 
 // Callout types
 var (
-	BeforeForwardToKeaOverHTTPCalloutType reflect.Type = reflect.TypeOf((*hooks.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()
+	beforeForwardToKeaOverHTTPCalloutType reflect.Type = reflect.TypeOf((*hooks.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()
 )
 
 // Hook executor
 func newHookExecutor() *hooks.HookExecutor {
 	executor := hooks.NewHookExecutor([]reflect.Type{
-		BeforeForwardToKeaOverHTTPCalloutType,
+		beforeForwardToKeaOverHTTPCalloutType,
 	})
 	return executor
 }
@@ -28,7 +28,6 @@ type HookManager struct {
 var _ hooks.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
 
 func newHookManager(executor *hooks.HookExecutor) *HookManager {
-
 	return &HookManager{
 		executor: executor,
 	}
@@ -52,7 +51,7 @@ func (hm *HookManager) Close() {
 }
 
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
-	hm.executor.CallSequential(BeforeForwardToKeaOverHTTPCalloutType, func(rawCallout interface{}) {
+	hm.executor.CallSequential(beforeForwardToKeaOverHTTPCalloutType, func(rawCallout interface{}) {
 		callout := rawCallout.(hooks.BeforeForwardToKeaOverHTTPCallout)
 		callout.OnBeforeForwardToKeaOverHTTP(in)
 	})
