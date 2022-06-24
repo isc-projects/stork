@@ -541,6 +541,7 @@ SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
 file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
     sh PIP, "install", "-r", sphinx_requirements_file
+    sh "touch", "-c", SPHINX_BUILD
     sh SPHINX_BUILD, "--version"
 end
 
@@ -548,6 +549,7 @@ PYTEST = File.expand_path("tools/python/bin/pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
 file PYTEST => [PIP, pytests_requirements_file] do
     sh PIP, "install", "-r", pytests_requirements_file
+    sh "touch", "-c", PYTEST
     sh PYTEST, "--version"
 end
 
