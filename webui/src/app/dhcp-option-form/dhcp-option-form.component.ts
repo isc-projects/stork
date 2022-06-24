@@ -1428,7 +1428,7 @@ export class DhcpOptionFormComponent implements OnInit {
     fieldTypes: MenuItem[] = []
 
     /**
-     * Holds a pointer to the last executed command for adding a new option field.
+     * Holds a reference to the last executed command for adding a new option field.
      */
     lastFieldCommand: () => void
 
