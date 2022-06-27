@@ -234,7 +234,7 @@ protoc_ver='3.18.1'
 protoc_gen_go_ver='v1.26.0'
 protoc_gen_go_grpc='v1.1.0'
 richgo_ver='v0.3.10'
-mockery_ver='v1.0.0'
+mockery_ver='v2.13.1'
 mockgen_ver='v1.6.0'
 golangcilint_ver='1.33.0'
 yamlinc_ver='0.1.10'
@@ -424,6 +424,7 @@ file NPX => [NPM] do
     end
 
     sh NPX, "--version"
+    sh "touch", "-c", NPX
 end
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
@@ -558,7 +559,7 @@ add_version_guard(RICHGO, richgo_ver)
 
 MOCKERY = "#{gobin}/mockery"
 file MOCKERY => [GO] do
-    sh GO, "get", "github.com/vektra/mockery/.../@#{mockery_ver}"
+    sh GO, "install", "github.com/vektra/mockery/v2@#{mockery_ver}"
     sh MOCKERY, "--version"
 end
 add_version_guard(MOCKERY, mockery_ver)
