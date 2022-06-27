@@ -391,7 +391,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             .then((data) => {
                 this.hosts = data.items
                 this.totalHosts = data.total
-                this.hostsLoading = false
             })
             .catch((err) => {
                 let msg = err.statusText
@@ -404,6 +403,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     detail: 'Error getting host reservations list: ' + msg,
                     life: 10000,
                 })
+            })
+            .finally(() => {
                 this.hostsLoading = false
             })
     }
