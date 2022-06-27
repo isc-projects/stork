@@ -16,7 +16,7 @@ import (
 
 // CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
 // It is being modified by tests so needs to be writable.
-var CredentialsFile = "/etc/stork/agent-credentials.json" // nolint:gochecknoglobals
+var CredentialsFile = "/etc/stork/agent-credentials.json" // nolint:gochecknoglobals,gosec
 
 // HTTPClient is a normal http client.
 type HTTPClient struct {

@@ -128,7 +128,7 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 // Get list of hosts with specifying an offset and a limit. The hosts can be fetched
 // for a given subnet and with filtering by search text.
 func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -138,7 +138,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
-	var appID int64 = 0
+	var appID int64
 	if params.AppID != nil {
 		appID = *params.AppID
 	}

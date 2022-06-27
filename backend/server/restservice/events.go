@@ -41,7 +41,7 @@ func (r *RestAPI) getEvents(offset, limit int64, level int64, daemonType *string
 
 // Get list of events with specifying an offset and a limit.
 func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -51,7 +51,7 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 		limit = *params.Limit
 	}
 
-	var level int64 = 0
+	var level int64
 	if params.Level != nil {
 		level = *params.Level
 	}

@@ -231,7 +231,7 @@ func ExportSecret(db *pg.DB, object string, filename string) error {
 		return errors.Wrapf(err, "problem getting '%s' from database", objDisplayName)
 	}
 	if filename != "" {
-		err := os.WriteFile(filename, content, 0600)
+		err := os.WriteFile(filename, content, 0o600)
 		if err != nil {
 			return err
 		}

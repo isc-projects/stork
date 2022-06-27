@@ -71,10 +71,10 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 		}
 
 		if toVer >= oldVer {
-			return oldVer, oldVer, errors.New(fmt.Sprintf("can't migrate down, current version %d, want to migrate to %d", oldVer, toVer))
+			return oldVer, oldVer, errors.Errorf("can't migrate down, current version %d, want to migrate to %d", oldVer, toVer)
 		}
 		startVer := oldVer
-		var newVer int64 = 0
+		var newVer int64
 		for i := oldVer; i > toVer; i-- {
 			if oldVer, newVer, err = migrations.Run(db, "down"); err != nil {
 				return oldVer, oldVer, errors.Wrapf(err, "problem checking database version")

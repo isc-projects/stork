@@ -102,7 +102,7 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel
 		// HA configuration must contain this-server-name parameter which indicates
 		// which of the peers' configurations belongs to it. Let's iterate over
 		// the configured peers to identify the one.
-		var index int = -1
+		index := -1
 		for i, p := range params.Peers {
 			// this-server-name matches one of the peers. Remember which one.
 			if *p.Name == *params.ThisServerName {

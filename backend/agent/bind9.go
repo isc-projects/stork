@@ -111,7 +111,9 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 
 // Send command to named using rndc executable.
 func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
-	rndcCommand := append(rc.BaseCommand, command...)
+	var rndcCommand []string
+	rndcCommand = append(rndcCommand, rc.BaseCommand...)
+	rndcCommand = append(rndcCommand, command...)
 	log.Debugf("rndc: %+v", rndcCommand)
 
 	return rc.execute(rndcCommand)

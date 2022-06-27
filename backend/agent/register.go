@@ -94,11 +94,11 @@ func writeAgentFile(path string, content []byte) error {
 	}
 
 	directory := filepath.Dir(path)
-	err = os.MkdirAll(directory, 0700)
+	err = os.MkdirAll(directory, 0o700)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(path, content, 0600)
+	err = os.WriteFile(path, content, 0o600)
 	if err != nil {
 		return err
 	}

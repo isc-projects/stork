@@ -19,8 +19,7 @@ import (
 )
 
 // Settings specific to communication with Agents.
-type AgentsSettings struct {
-}
+type AgentsSettings struct{}
 
 // Holds runtime communication statistics with Kea daemons via
 // a given agent.

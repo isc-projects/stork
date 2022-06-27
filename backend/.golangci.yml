@@ -29,7 +29,7 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    - golint
+    - revive
     - gomodguard
     - goprintffuncname
     - gosec
@@ -39,7 +39,7 @@ linters:
     - noctx
     - nolintlint
     - rowserrcheck
-    - scopelint
+    - exportloopref
     - sqlclosecheck
     - stylecheck
     - tparallel

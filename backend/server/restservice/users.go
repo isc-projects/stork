@@ -109,7 +109,7 @@ func (r *RestAPI) getUsers(offset, limit int64, filterText *string, sortField st
 
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -369,7 +369,7 @@ func (r *RestAPI) getGroups(offset, limit int64, filterText *string, sortField s
 
 // Get groups defined in the system.
 func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}

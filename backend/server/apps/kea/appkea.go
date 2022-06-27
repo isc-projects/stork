@@ -307,8 +307,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		return nil
 	}
 
-	newActive, overrideDaemons, newDaemons, events, sameConfigDaemons :=
-		findChangesAndRaiseEvents(dbApp, daemonsMap, daemonsErrors)
+	newActive, overrideDaemons, newDaemons, events, sameConfigDaemons := findChangesAndRaiseEvents(dbApp, daemonsMap, daemonsErrors)
 
 	// update app state
 	dbApp.Active = newActive

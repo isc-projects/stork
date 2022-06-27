@@ -615,7 +615,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
 	restoreCerts := RememberPaths()
 	defer restoreCerts()
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
@@ -627,7 +627,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 			tmpDir, tmpDir))
 
 	// store bad cert
-	err = os.WriteFile(RootCAFile, []byte("CACertPEM"), 0600)
+	err = os.WriteFile(RootCAFile, []byte("CACertPEM"), 0o600)
 	require.NoError(t, err)
 	_, err = getRootCertificates(params)
 	require.EqualError(t, err, "failed to append client certs")
@@ -657,8 +657,8 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
 	restoreCerts := RememberPaths()
 	defer restoreCerts()
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
@@ -670,9 +670,9 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 		fmt.Sprintf("could not load key PEM file: %s/certs/key.pem: open %s/certs/key.pem: no such file or directory", tmpDir, tmpDir))
 
 	// store bad content to files
-	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0600)
+	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0o600)
 	require.NoError(t, err)
-	err = os.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0600)
+	err = os.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0o600)
 	require.NoError(t, err)
 	_, err = getIdentityCertificatesForServer(info)
 	require.EqualError(t, err, "could not setup TLS key pair: tls: failed to find any PEM data in certificate input")

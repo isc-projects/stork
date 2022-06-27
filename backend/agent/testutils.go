@@ -41,12 +41,12 @@ func GenerateSelfSignedCerts() (func(), error) {
 		restoreCerts()
 	}
 
-	err = os.Mkdir(path.Join(tmpDir, "certs"), 0755)
+	err = os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
-	err = os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+	err = os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
 	if err != nil {
 		cleanup()
 		return nil, err
@@ -58,19 +58,19 @@ func GenerateSelfSignedCerts() (func(), error) {
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 
 	// store proper content
-	err = os.WriteFile(KeyPEMFile, testutil.GetKeyPEMContent(), 0600)
+	err = os.WriteFile(KeyPEMFile, testutil.GetKeyPEMContent(), 0o600)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	err = os.WriteFile(CertPEMFile, testutil.GetCertPEMContent(), 0600)
+	err = os.WriteFile(CertPEMFile, testutil.GetCertPEMContent(), 0o600)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	err = os.WriteFile(RootCAFile, testutil.GetCACertPEMContent(), 0600)
+	err = os.WriteFile(RootCAFile, testutil.GetCACertPEMContent(), 0o600)
 	if err != nil {
 		cleanup()
 		return nil, err

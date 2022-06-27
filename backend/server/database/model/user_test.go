@@ -256,7 +256,7 @@ func TestGetUsers(t *testing.T) {
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
 
-	var prevID int = 0
+	prevID := 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)
@@ -297,7 +297,7 @@ func TestGetUsersPage(t *testing.T) {
 	require.EqualValues(t, 51, users[0].ID)
 	require.EqualValues(t, 101, total)
 
-	var prevID int = 0
+	prevID := 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)
@@ -318,7 +318,7 @@ func TestGetUsersLastPage(t *testing.T) {
 	require.EqualValues(t, 91, users[0].ID)
 	require.EqualValues(t, 101, total)
 
-	var prevID int = 0
+	prevID := 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)

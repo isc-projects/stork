@@ -48,7 +48,7 @@ func main() {
 	log.Printf("Starting Stork Server, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Setup graceful shutdown on Ctrl-C
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGINT)
 	go func() {
 		<-c

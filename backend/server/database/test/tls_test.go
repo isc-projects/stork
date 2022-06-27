@@ -33,7 +33,7 @@ func createTestCerts(t *testing.T, sb *testutil.Sandbox) (serverCert, serverKey,
 
 	serverKey, err = sb.Write("server-key.pem", string(testutil.GetKeyPEMContent()))
 	require.NoError(t, err)
-	err = os.Chmod(serverKey, 0600)
+	err = os.Chmod(serverKey, 0o600)
 	require.NoError(t, err)
 
 	rootCert, err = sb.Write("root-cert.pem", string(testutil.GetCACertPEMContent()))
@@ -196,7 +196,7 @@ func TestGetTLSConfigWrongKeyPermissions(t *testing.T) {
 	defer sb.Close()
 
 	serverCert, serverKey, rootCert := createTestCerts(t, sb)
-	err := os.Chmod(serverKey, 0644)
+	err := os.Chmod(serverKey, 0o644)
 	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert)

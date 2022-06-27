@@ -120,7 +120,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 			}
 		]
 	}`, serverIP, serverPort)
-	err = os.WriteFile(CredentialsFile, []byte(content), 0600)
+	err = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 	require.NoError(t, err)
 
 	// Create HTTP Client

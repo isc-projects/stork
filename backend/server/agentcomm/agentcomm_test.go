@@ -8,7 +8,7 @@ import (
 )
 
 // nolint:gochecknoglobals
-var CACertPEM []byte = []byte(`-----BEGIN CERTIFICATE-----
+var CACertPEM = []byte(`-----BEGIN CERTIFICATE-----
 MIIFFjCCAv6gAwIBAgIBATANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJVUzES
 MBAGA1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMB4XDTIwMTIwODA4
 MDc1M1oXDTMwMTIwODA4MDgwM1owMzELMAkGA1UEBhMCVVMxEjAQBgNVBAoTCUlT
@@ -94,7 +94,7 @@ RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
 // -----END PRIVATE KEY-----`)
 
 // nolint:gochecknoglobals
-var ServerCertPEM []byte = []byte(`-----BEGIN CERTIFICATE-----
+var ServerCertPEM = []byte(`-----BEGIN CERTIFICATE-----
 MIIGLTCCBBWgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJVUzES
 MBAGA1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMB4XDTIwMTIwODA4
 MDc1NloXDTMwMTIwODA4MDgwNlowRjELMAkGA1UEBhMCVVMxEjAQBgNVBAoTCUlT
@@ -132,7 +132,7 @@ wQ==
 -----END CERTIFICATE-----`)
 
 // nolint:gochecknoglobals
-var ServerKeyPEM []byte = []byte(`-----BEGIN PRIVATE KEY-----
+var ServerKeyPEM = []byte(`-----BEGIN PRIVATE KEY-----
 MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQDR8yndmAonFo0d
 KWS3WQ3r60lIwKPOZwsdJy+2+eNrmZixYJ+CdlvH3/AVSBRJfYx14NFrHcRUsbW+
 hn63kUwT3XHluLTs+QJWSaWa1zTLTJqiaEiPZI/xliQrTYoAV00jJip7CDWr0xpA

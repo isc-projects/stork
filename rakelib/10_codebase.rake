@@ -121,7 +121,7 @@ GO_TOOL_CODEBASE = go_tool_codebase
 
 file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
-        sh GO, "generate", "-v", "./..."
+        sh GO, "generate", "-n", "./..."
     end
     sh "touch", "-c", GO_SERVER_API_MOCK
 end

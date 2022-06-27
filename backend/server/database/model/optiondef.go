@@ -14,8 +14,7 @@ import (
 // Kea knows its definition if it is a standard option. We are going to
 // extend the lookup mechanism to take into account runtime option
 // definitions once we gather them from the monitored DHCP servers.
-type DHCPOptionDefinitionLookup struct {
-}
+type DHCPOptionDefinitionLookup struct{}
 
 // Checks if a definition of the specified option exists for the
 // given daemon.

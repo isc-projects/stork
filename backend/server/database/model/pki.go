@@ -24,7 +24,7 @@ type Secret struct {
 
 // Generate new serial number from database.
 func GetNewCertSerialNumber(db *pg.DB) (int64, error) {
-	var certSerialNumber int64 = 0
+	var certSerialNumber int64
 	_, err := db.QueryOne(pg.Scan(&certSerialNumber), "SELECT nextval('certs_serial_number_seq')")
 	return certSerialNumber, err
 }

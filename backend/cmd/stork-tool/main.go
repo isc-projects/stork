@@ -382,7 +382,9 @@ func setupApp() *cli.App {
 		Aliases: []string{"f"},
 	})
 
-	dbVerFlags := append(dbFlags,
+	var dbVerFlags []cli.Flag
+	dbVerFlags = append(dbVerFlags, dbFlags...)
+	dbVerFlags = append(dbVerFlags,
 		&cli.StringFlag{
 			Name:    "version",
 			Usage:   "Target database schema version (optional).",
@@ -390,7 +392,9 @@ func setupApp() *cli.App {
 			EnvVars: []string{"STORK_TOOL_DB_VERSION"},
 		})
 
-	certExportFlags := append(dbFlags,
+	var certExportFlags []cli.Flag
+	certExportFlags = append(certExportFlags, dbFlags...)
+	certExportFlags = append(certExportFlags,
 		&cli.StringFlag{
 			Name:     "object",
 			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
@@ -405,7 +409,9 @@ func setupApp() *cli.App {
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
 
-	certImportFlags := append(dbFlags,
+	var certImportFlags []cli.Flag
+	certImportFlags = append(certImportFlags, dbFlags...)
+	certImportFlags = append(certImportFlags,
 		&cli.StringFlag{
 			Name:     "object",
 			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",

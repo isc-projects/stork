@@ -2,7 +2,6 @@ package keactrl
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"sort"
 
@@ -81,7 +80,7 @@ type hasher struct {
 
 // Custom unmarshaller hashing arguments string with FNV128 hashing function.
 func (v *hasherValue) UnmarshalJSON(b []byte) error {
-	*v = hasherValue(storkutil.Fnv128(fmt.Sprintf("%s", b)))
+	*v = hasherValue(storkutil.Fnv128(string(b)))
 	return nil
 }
 

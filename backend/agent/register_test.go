@@ -115,8 +115,8 @@ func TestRegisterBadServer(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
@@ -313,8 +313,8 @@ func TestGenerateCerts(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
@@ -468,8 +468,8 @@ func TestRepeatRegister(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()

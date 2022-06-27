@@ -110,8 +110,8 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	require.False(t, requestReceived)
 
 	// prepare folders
-	os.Mkdir(path.Join(tmpDir, "assets"), 0755)
-	os.Mkdir(path.Join(tmpDir, "assets/pkgs"), 0755)
+	os.Mkdir(path.Join(tmpDir, "assets"), 0o755)
+	os.Mkdir(path.Join(tmpDir, "assets/pkgs"), 0o755)
 
 	// let do some request
 	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)

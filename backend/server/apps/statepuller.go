@@ -173,7 +173,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 	matchedApps := []*dbmodel.App{}
 	for _, app := range discoveredApps {
 		// try to match apps on machine with old apps from database
-		var dbApp *dbmodel.App = nil
+		var dbApp *dbmodel.App
 		for _, dbAppOld := range oldAppsList {
 			// If there is one app of a given type detected on the machine and one app recorded in the database
 			// we assume that this is the same app. If there are more apps of a given type than used to be,

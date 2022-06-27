@@ -303,8 +303,8 @@ func TestGetUsers(t *testing.T) {
 
 	// Retrieve all users using the API
 	var limit int64 = 99999
-	var start int64 = 0
-	var text string = ""
+	var start int64
+	text := ""
 	params = users.GetUsersParams{
 		Limit: &limit,
 		Start: &start,

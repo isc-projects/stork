@@ -178,7 +178,7 @@ func (manager *configManagerImpl) GetConnectedAgents() agentcomm.ConnectedAgents
 
 // Returns Kea configuration module of the configuration manager.
 func (manager *configManagerImpl) GetKeaModule() config.KeaModule {
-	return manager.kea.(config.KeaModule)
+	return manager.kea
 }
 
 // Creates the context for use with the configuration manager. It sets the

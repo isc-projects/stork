@@ -131,7 +131,7 @@ func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorize
 
 // Get machines where Stork Agent is running.
 func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -1001,7 +1001,7 @@ func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType strin
 }
 
 func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}

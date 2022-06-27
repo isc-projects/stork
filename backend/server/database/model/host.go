@@ -854,7 +854,8 @@ func CountGlobalReservations(dbi dbops.DBI) (ipv4Addresses, ipv6Addresses, prefi
 func (host Host) GetHostIdentifiers() (identifiers []struct {
 	Type  string
 	Value []byte
-}) {
+},
+) {
 	for _, ids := range host.HostIdentifiers {
 		identifiers = append(identifiers, struct {
 			Type  string

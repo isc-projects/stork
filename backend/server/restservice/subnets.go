@@ -70,7 +70,7 @@ func (r *RestAPI) getSubnets(offset, limit, appID, family int64, filterText *str
 
 // Get list of DHCP subnets. The list can be filtered by app ID, DHCP version and text.
 func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -80,12 +80,12 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		limit = *params.Limit
 	}
 
-	var appID int64 = 0
+	var appID int64
 	if params.AppID != nil {
 		appID = *params.AppID
 	}
 
-	var dhcpVer int64 = 0
+	var dhcpVer int64
 	if params.DhcpVersion != nil {
 		dhcpVer = *params.DhcpVersion
 	}
@@ -144,7 +144,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 
 // Get list of DHCP shared networks. The list can be filtered by app ID, DHCP version and text.
 func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNetworksParams) middleware.Responder {
-	var start int64 = 0
+	var start int64
 	if params.Start != nil {
 		start = *params.Start
 	}
@@ -154,12 +154,12 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 		limit = *params.Limit
 	}
 
-	var appID int64 = 0
+	var appID int64
 	if params.AppID != nil {
 		appID = *params.AppID
 	}
 
-	var dhcpVer int64 = 0
+	var dhcpVer int64
 	if params.DhcpVersion != nil {
 		dhcpVer = *params.DhcpVersion
 	}
