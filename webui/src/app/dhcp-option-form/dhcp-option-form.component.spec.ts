@@ -5,11 +5,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
 import { DropdownModule } from 'primeng/dropdown'
 import { InputNumberModule } from 'primeng/inputnumber'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionFormComponent } from './dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Universe } from '../universe'
 
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
@@ -25,11 +28,12 @@ describe('DhcpOptionFormComponent', () => {
                 FormsModule,
                 InputNumberModule,
                 NoopAnimationsModule,
+                OverlayPanelModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToggleButtonModule,
             ],
-            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent],
+            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
         }).compileComponents()
     })
 
@@ -38,7 +42,7 @@ describe('DhcpOptionFormComponent', () => {
         component = fixture.componentInstance
         fb = new FormBuilder()
         // Our component needs a form group instance to be initialized.
-        component.formGroup = createDefaultDhcpOptionFormGroup()
+        component.formGroup = createDefaultDhcpOptionFormGroup(Universe.IPv4)
         fixture.detectChanges()
     })
 
@@ -58,7 +62,7 @@ describe('DhcpOptionFormComponent', () => {
         // The dropdown should include a floating label associated with it using for/inputId.
         const labelEl = fixture.debugElement.query(By.css('[for="' + inputId + '"]'))
         expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Select Option Code')
+        expect(labelEl.nativeElement.innerText).toBe('Select or Type Option Code')
 
         // By default, we should display DHCPv4 options. Let's get one from the list
         // and ensure it is the DHCPv4 option.
@@ -80,61 +84,12 @@ describe('DhcpOptionFormComponent', () => {
         // There should be a label for it.
         const labelEl = fixture.debugElement.query(By.css('[for="' + inputId + '"]'))
         expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Select Option Code')
+        expect(labelEl.nativeElement.innerText).toBe('Select or Type Option Code')
 
         // This time the list should comprise DHCPv6 options.
         const nameServer = dropdownEl.componentInstance.options.find((opt) => opt.value === 31)
         expect(nameServer).toBeTruthy()
         expect(nameServer.label).toBe('(31) OPTION_SNTP_SERVERS')
-    })
-
-    it('should toggle between DHCPv4 options selection and input', () => {
-        const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
-        expect(dropdownEl).toBeTruthy()
-        let inputId = dropdownEl.componentInstance.inputId
-
-        let labelEl = fixture.debugElement.query(By.css('[for="' + inputId + '"]'))
-        expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Select Option Code')
-
-        // Simulate clicking the button that toggles between the dropdown and the
-        // input box where it is possible to type the option code.
-        component.toggleManualCode({ checked: true })
-        fixture.detectChanges()
-
-        // The label should have slightly different contents.
-        labelEl = fixture.debugElement.query(By.css('label'))
-        expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Type Option Code')
-
-        // We should see the input box with the minimum and maximum values set
-        // for DHCPv4 option codes range.
-        const inputEl = fixture.debugElement.query(By.css('p-inputNumber'))
-        expect(inputEl).toBeTruthy()
-        expect(inputEl.componentInstance.min).toBe('1')
-        expect(inputEl.componentInstance.max).toBe('255')
-    })
-
-    it('should toggle between DHCPv6 options selection and input', () => {
-        // Switch to DHCPv6 mode.
-        component.v6 = true
-        fixture.detectChanges()
-
-        const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
-        expect(dropdownEl).toBeTruthy()
-        let inputId = dropdownEl.componentInstance.inputId
-
-        // Simulate clicking the button that toggles between the dropdown and the
-        // input box where it is possible to type the option code.
-        component.toggleManualCode({ checked: true })
-        fixture.detectChanges()
-
-        // We should see the input box with the minimum and maximum values set
-        // for DHCPv6 option codes range.
-        const inputEl = fixture.debugElement.query(By.css('p-inputNumber'))
-        expect(inputEl).toBeTruthy()
-        expect(inputEl.componentInstance.min).toBe('1')
-        expect(inputEl.componentInstance.max).toBe('65535')
     })
 
     it('should emit an event to delete an option', () => {
@@ -165,6 +120,9 @@ describe('DhcpOptionFormComponent', () => {
         // It should be the hex-bytes field.
         expect(fixture.debugElement.query(By.css('textarea'))).toBeTruthy()
         expect(fixture.debugElement.query(By.css('p-tag'))).toBeFalsy()
+
+        // It should contain a help-tip for the hex-bytes option field.
+        expect(fixture.debugElement.query(By.css('[title="hex-bytes Option Field"]'))).toBeTruthy()
 
         // Find the last button. It should delete the option field.
         const allBtns = fixture.debugElement.queryAll(By.css('button'))
@@ -285,12 +243,47 @@ describe('DhcpOptionFormComponent', () => {
         expect(component.suboptions.length).toBe(0)
     })
 
-    it('should require option code', () => {
+    it('should require a valid DHCPv4 option code', () => {
+        component.formGroup.get('optionCode').setValue(7)
+        expect(component.formGroup.valid).toBeTrue()
+
+        // Option code must be specified.
         component.formGroup.get('optionCode').setValue(null)
         expect(component.formGroup.valid).toBeFalse()
 
-        component.formGroup.get('optionCode').setValue(5)
+        // Out of range value is invalid.
+        component.formGroup.get('optionCode').setValue(256)
+        expect(component.formGroup.valid).toBeFalse()
+
+        // String value is invalid.
+        component.formGroup.get('optionCode').setValue('abc')
+        expect(component.formGroup.valid).toBeFalse()
+    })
+
+    it('should require a valid DHCPv6 option code', () => {
+        component.v6 = true
+        component.formGroup = createDefaultDhcpOptionFormGroup(Universe.IPv6)
+        fixture.detectChanges()
+
+        component.formGroup.get('optionCode').setValue(7)
         expect(component.formGroup.valid).toBeTrue()
+
+        // Option code must be specified.
+        component.formGroup.get('optionCode').setValue(null)
+        expect(component.formGroup.valid).toBeFalse()
+
+        // The value that is out of range for DHCPv4 should be fine for
+        // DHCPv6 case.
+        component.formGroup.get('optionCode').setValue(256)
+        expect(component.formGroup.valid).toBeTrue()
+
+        // Out of range value is invalid.
+        component.formGroup.get('optionCode').setValue(65537)
+        expect(component.formGroup.valid).toBeFalse()
+
+        // String value is invalid.
+        component.formGroup.get('optionCode').setValue('abc')
+        expect(component.formGroup.valid).toBeFalse()
     })
 
     it('should require a valid ipv4 address', () => {
@@ -360,5 +353,15 @@ describe('DhcpOptionFormComponent', () => {
 
         component.optionFields.at(0).get('control').setValue('fqdn.valid')
         expect(component.formGroup.valid).toBeTrue()
+    })
+
+    it('should only add suboptions to top-level options', () => {
+        component.nestLevel = 0
+        component.ngOnInit()
+        expect(component.fieldTypes.find((field) => field.label === 'suboption')).toBeTruthy()
+
+        component.nestLevel = 1
+        component.ngOnInit()
+        expect(component.fieldTypes.find((field) => field.label === 'suboption')).toBeFalsy()
     })
 })

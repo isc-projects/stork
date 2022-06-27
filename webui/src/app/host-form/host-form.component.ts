@@ -616,7 +616,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * It creates a new default form group for the option.
      */
     onOptionAdd(): void {
-        this.optionsArray.push(createDefaultDhcpOptionFormGroup())
+        this.optionsArray.push(createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? Universe.IPv6 : Universe.IPv4))
     }
 
     /**

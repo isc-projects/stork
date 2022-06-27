@@ -1,9 +1,10 @@
-<i
-    class="pi pi-question-circle help-icon"
-    [ngClass]="variant === 'big' ? 'big-help-icon' : ''"
-    (click)="toggleOverlay($event)"
-></i>
-
+<div class="p-button p-button-text p-button-icon-only">
+    <i
+        class="pi pi-question-circle help-icon"
+        [ngClass]="variant === 'big' ? 'big-help-icon' : ''"
+        (click)="toggleOverlay($event)"
+    ></i>
+</div>
 <p-overlayPanel [showCloseIcon]="true">
     <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + title }}">
         <h3 style="margin: 4px -3px 16px -3px">Help for {{ title }}</h3>

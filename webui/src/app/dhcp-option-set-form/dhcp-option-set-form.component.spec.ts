@@ -5,11 +5,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
 import { DropdownModule } from 'primeng/dropdown'
 import { InputNumberModule } from 'primeng/inputnumber'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Universe } from '../universe'
 
 describe('DhcpOptionSetFormComponent', () => {
     let component: DhcpOptionSetFormComponent
@@ -25,11 +28,12 @@ describe('DhcpOptionSetFormComponent', () => {
                 FormsModule,
                 InputNumberModule,
                 NoopAnimationsModule,
+                OverlayPanelModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToggleButtonModule,
             ],
-            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent],
+            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
         }).compileComponents()
     })
 
@@ -50,7 +54,7 @@ describe('DhcpOptionSetFormComponent', () => {
         expect(addBtn).toBeTruthy()
 
         spyOn(component.optionAdd, 'emit').and.callFake(() => {
-            component.formArray.push(createDefaultDhcpOptionFormGroup())
+            component.formArray.push(createDefaultDhcpOptionFormGroup(Universe.IPv4))
         })
 
         addBtn.nativeElement.dispatchEvent(new Event('click'))

@@ -1,31 +1,18 @@
 <div [formGroup]="formGroup" class="p-d-flex p-flex-column">
     <div class="p-d-flex p-flex-column">
         <div *ngIf="topLevel; else showSuboptionInput">
-            <span *ngIf="selectCode; else showOptionCodeInput" class="p-float-label">
+            <span class="p-float-label">
                 <p-dropdown
                     inputId="{{ codeInputId }}"
                     [autoDisplayFirst]="false"
+                    [editable]="true"
                     [options]="v6 ? dhcp6Options : dhcp4Options"
                     styleClass="code-input-width"
                     formControlName="optionCode"
                 >
                 </p-dropdown>
-                <label for="{{ codeInputId }}">Select Option Code</label>
+                <label for="{{ codeInputId }}">Select or Type Option Code</label>
             </span>
-            <ng-template #showOptionCodeInput>
-                <span class="p-float-label">
-                    <p-inputNumber
-                        ngDefaultControl
-                        inputId="{{ codeInputId }}"
-                        min="1"
-                        max="{{ v6 ? 65535 : 255 }}"
-                        inputStyleClass="code-input-width"
-                        formControlName="optionCode"
-                    >
-                    </p-inputNumber>
-                    <label for="{{ codeInputId }}">Type Option Code</label>
-                </span>
-            </ng-template>
         </div>
         <ng-template #showSuboptionInput>
             <div>
@@ -50,13 +37,15 @@
                     formControlName="alwaysSend"
                     [binary]="true"
                     inputId="{{ alwaysSendCheckboxId }}"
+                    pTooltip="When checked, the option will always be returned to a DHCP client, regardless whether it is requested or not."
                 ></p-checkbox>
                 <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
             </div>
             <div>
                 <p-splitButton
-                    label="Add Payload"
+                    label="{{ 'Add ' + lastFieldType }}"
                     [model]="fieldTypes"
+                    pTooltip="Adds a new option field - a hex-bytes field or last added field type by default. Use the dropdown to select other type, if desired."
                     styleClass="p-button-secondary p-button-sm p-button-text"
                     (onClick)="lastFieldCommand()"
                 >
@@ -67,25 +56,16 @@
                     pButton
                     type="button"
                     icon="pi pi-times"
+                    [label]="topLevel ? 'Delete Option' : 'Delete Suboption'"
                     class="full-width p-button-sm p-button-danger p-button-text"
                     (click)="deleteOption()"
                 ></button>
-            </div>
-            <div class="p-ml-1">
-                <p-toggleButton
-                    *ngIf="topLevel"
-                    onLabel="Select Option"
-                    offLabel="Enter Code"
-                    styleClass="p-button-secondary p-button-sm p-button-text"
-                    (onChange)="toggleManualCode($event)"
-                >
-                </p-toggleButton>
             </div>
         </div>
     </div>
     <div *ngIf="optionFields.length !== 0; else emptyOption" formArrayName="optionFields">
         <ng-container *ngFor="let fieldControl of optionFields.controls as DhcpOptionFieldFormGroup; index as i">
-            <div [ngSwitch]="fieldControl.data.fieldType" class="p-d-flex p-ai-center p-mt-5 p-ml-3">
+            <div [ngSwitch]="fieldControl.data.fieldType" class="p-d-flex p-ai-top p-mt-5 p-ml-3">
                 <div *ngSwitchCase="FieldType.HexBytes" [formGroupName]="i">
                     <span class="p-float-label">
                         <textarea
@@ -252,13 +232,34 @@
                     </div>
                 </div>
                 <div>
-                    <button
-                        pButton
-                        type="button"
-                        icon="pi pi-times"
-                        class="full-width p-button-text p-button p-button-danger"
-                        (click)="deleteField(i)"
-                    ></button>
+                    <div>
+                        <button
+                            pButton
+                            type="button"
+                            icon="pi pi-times"
+                            class="full-width p-button-text p-button p-button-danger"
+                            (click)="deleteField(i)"
+                        ></button>
+                    </div>
+                    <div *ngIf="fieldControl.data.fieldType === FieldType.HexBytes">
+                        <app-help-tip title="hex-bytes Option Field">
+                            <p>
+                                Option value can be specified as a string of the hexadecimal digits. The following
+                                formats are accepted:
+                            </p>
+                            <ul>
+                                <li>Capital letters, e.g., 1F:1E:AB:CE</li>
+                                <li>Non-capital leters, e.g., 8f:6a:bc:78</li>
+                                <li>Space as a separator, e.g., 87 68 af b8</li>
+                                <li>Colon as a separator (see above)</li>
+                                <li>No separator, e.g., 05F74FA6</li>
+                            </ul>
+                            <p>
+                                The specified value must have even number of hexadecimal digits. Please prepend a
+                                leading zero when necessary.
+                            </p>
+                        </app-help-tip>
+                    </div>
                 </div>
             </div>
         </ng-container>

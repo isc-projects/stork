@@ -12,6 +12,7 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MessagesModule } from 'primeng/messages'
 import { MultiSelectModule } from 'primeng/multiselect'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { HostFormComponent } from './host-form.component'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SplitButtonModule } from 'primeng/splitbutton'
@@ -126,6 +127,7 @@ describe('HostFormComponent', () => {
                 MessagesModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
+                OverlayPanelModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToggleButtonModule,

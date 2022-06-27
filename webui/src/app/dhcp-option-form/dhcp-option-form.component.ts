@@ -15,6 +15,7 @@ import { MenuItem } from 'primeng/api'
 import { LinkedFormGroup } from '../forms/linked-form-group'
 import { DhcpOptionField, DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
+import { Universe } from '../universe'
 import { StorkValidators } from '../validators'
 
 /**
@@ -1443,10 +1444,9 @@ export class DhcpOptionFormComponent implements OnInit {
     lastFieldCommand: () => void
 
     /**
-     * Indicates if the user selects an option code using a dropdown or using
-     * an input box (when false).
+     * Holds a last added field type.
      */
-    selectCode: boolean
+    lastFieldType: string = ''
 
     /**
      * A unique id of the option selection dropdown or input box.
@@ -1472,8 +1472,8 @@ export class DhcpOptionFormComponent implements OnInit {
      * their selection with appropriate handler functions.
      */
     ngOnInit(): void {
+        this.lastFieldType = 'hex-bytes'
         this.lastFieldCommand = this.addHexBytesField
-        this.selectCode = true
         this.codeInputId = uuidv4()
         this.alwaysSendCheckboxId = uuidv4()
         this.fieldTypes = [
@@ -1481,6 +1481,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'hex-bytes',
                 id: this.FieldType.HexBytes,
                 command: () => {
+                    this.lastFieldType = 'hex-bytes'
                     this.lastFieldCommand = this.addHexBytesField
                     this.addHexBytesField()
                 },
@@ -1489,6 +1490,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'string',
                 id: this.FieldType.String,
                 command: () => {
+                    this.lastFieldType = 'string'
                     this.lastFieldCommand = this.addStringField
                     this.addStringField()
                 },
@@ -1497,6 +1499,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'bool',
                 id: this.FieldType.Bool,
                 command: () => {
+                    this.lastFieldType = 'bool'
                     this.lastFieldCommand = this.addBoolField
                     this.addBoolField()
                 },
@@ -1505,6 +1508,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'uint8',
                 id: this.FieldType.Uint8,
                 command: () => {
+                    this.lastFieldType = 'uint8'
                     this.lastFieldCommand = this.addUint8Field
                     this.addUint8Field()
                 },
@@ -1513,6 +1517,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'uint16',
                 id: this.FieldType.Uint16,
                 command: () => {
+                    this.lastFieldType = 'uint16'
                     this.lastFieldCommand = this.addUint16Field
                     this.addUint16Field()
                 },
@@ -1521,6 +1526,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'uint32',
                 id: this.FieldType.Uint32,
                 command: () => {
+                    this.lastFieldType = 'uint32'
                     this.lastFieldCommand = this.addUint32Field
                     this.addUint32Field()
                 },
@@ -1529,6 +1535,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'ipv4-address',
                 id: this.FieldType.IPv4Address,
                 command: () => {
+                    this.lastFieldType = 'ipv4-address'
                     this.lastFieldCommand = this.addIPv4AddressField
                     this.addIPv4AddressField()
                 },
@@ -1537,6 +1544,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'ipv6-address',
                 id: this.FieldType.IPv6Address,
                 command: () => {
+                    this.lastFieldType = 'ipv6-address'
                     this.lastFieldCommand = this.addIPv6AddressField
                     this.addIPv6AddressField()
                 },
@@ -1545,6 +1553,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'ipv6-prefix',
                 id: this.FieldType.IPv6Prefix,
                 command: () => {
+                    this.lastFieldType = 'ipv6-prefix'
                     this.lastFieldCommand = this.addIPv6PrefixField
                     this.addIPv6PrefixField()
                 },
@@ -1553,6 +1562,7 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'psid',
                 id: this.FieldType.Psid,
                 command: () => {
+                    this.lastFieldType = 'psid'
                     this.lastFieldCommand = this.addPsidField
                     this.addPsidField()
                 },
@@ -1561,19 +1571,25 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: 'fqdn',
                 id: this.FieldType.Fqdn,
                 command: () => {
+                    this.lastFieldType = 'fqdn'
                     this.lastFieldCommand = this.addFqdnField
                     this.addFqdnField()
                 },
             },
-            {
+        ]
+
+        // Currently we support only one nesting level. It is not possible
+        // to add a second-level sub-option.
+        if (this.topLevel) {
+            this.fieldTypes.push({
                 label: 'suboption',
                 id: this.FieldType.Suboption,
                 command: () => {
                     this.lastFieldCommand = this.addSuboption
                     this.addSuboption()
                 },
-            },
-        ]
+            })
+        }
     }
 
     /**
@@ -1716,7 +1732,7 @@ export class DhcpOptionFormComponent implements OnInit {
      * Initializes a new sub-option in the current option.
      */
     addSuboption(): void {
-        this.suboptions.push(createDefaultDhcpOptionFormGroup())
+        this.suboptions.push(createDefaultDhcpOptionFormGroup(this.v6 ? Universe.IPv6 : Universe.IPv4))
     }
 
     /**
@@ -1733,30 +1749,6 @@ export class DhcpOptionFormComponent implements OnInit {
      */
     deleteField(index: number): void {
         this.optionFields.removeAt(index)
-    }
-
-    /**
-     * Toggles option code selection mode.
-     *
-     * By default, a dropdown with predefined option codes is displayed.
-     * It can be toggled to display the input for manually typing the
-     * option code.
-     *
-     * @param event an event indicating whether the manual mode was
-     * selected.
-     */
-    toggleManualCode(event): void {
-        this.selectCode = !event.checked
-        if (!this.selectCode) {
-            // The p-dropdown component marks the form as touched during
-            // destroy. It may cause the "expression has changed after it
-            // was checked" error if the component wasn't really touched by
-            // a user. We have no control over it because it stems from
-            // the primeng implementation. We work around this by marking
-            // the component touched before it is destroyed. It guarantees
-            // that the touched state doesn't change.
-            this.formGroup.get('optionCode').markAsTouched()
-        }
     }
 
     /**
