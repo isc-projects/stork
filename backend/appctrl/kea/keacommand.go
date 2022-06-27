@@ -93,7 +93,14 @@ func NewCommand(command string, daemons []string, arguments interface{}) *Comman
 	}
 	if arguments != nil {
 		argsType := reflect.TypeOf(arguments)
-		if argsType.Kind() != reflect.Map && (argsType.Kind() != reflect.Ptr || argsType.Elem().Kind() != reflect.Struct) && argsType.Kind() != reflect.Struct {
+		switch argsType.Kind() {
+		case reflect.Map, reflect.Struct:
+			break
+		case reflect.Ptr:
+			if argsType.Elem().Kind() != reflect.Struct {
+				return nil
+			}
+		default:
 			return nil
 		}
 	}
