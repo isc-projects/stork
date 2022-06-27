@@ -9,14 +9,12 @@
 require 'open3'
 
 # Defines a :phony task that you can use as a dependency. This allows
-# file-based tasks to use non-file-based tasks as prerequisites
-# without forcing them to rebuild.
+# file-based tasks to use file-tasks without definition on how to create them
+# as prerequisites.
 # Source: https://github.com/ruby/rake/blob/master/lib/rake/phony.rb
-# ToDo: Write more descriptive comment
 task :phony
-
 Rake::Task[:phony].tap do |task|
-  def task.timestamp # :nodoc:
+  def task.timestamp
     Time.at 0
   end
   def task.needed?
@@ -161,6 +159,33 @@ def check_deps(file, *system_deps)
         print status, " ", d, path, "\n"
     end
 end
+
+# Defines the version guard for a file task. The version guard allows file
+# tasks to depend on the version from the Rake variable. Using it for the tasks
+# that have frozen versions using external files is not necessary.
+# It accepts a task to be guarded and the version.
+def add_version_guard(task_name, version)
+    task = Rake::Task[task_name]
+    if task.class != Rake::FileTask
+        fail "file task required"
+    end
+
+    # The version stamp file is a prerequisite, but it is created after the
+    # guarded task. It allows for cleaning the target directory in the task
+    # body.
+    version_stamp = "#{task_name}-#{version}.version"
+    file version_stamp => :phony
+    task.enhance [version_stamp] do
+        # Removes old version stamps
+        FileList["#{task_name}-*.version"].each do |f|
+            FileUtils.rm f
+        end
+        # Creates a new version stamp with a timestamp before the guarded task
+        # execution.
+        FileUtils.touch [version_stamp], mtime: task.timestamp
+    end 
+end
+
 
 ### Recognize the operating system
 uname=`uname -s`
@@ -337,9 +362,7 @@ ENV["VIRTUAL_ENV"] = python_tools_dir
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
-bundle_versionstamp = "#{BUNDLE}-#{bundler_ver}.version"
-file bundle_versionstamp => :phony
-file BUNDLE => [ruby_tools_dir, ruby_tools_bin_dir, bundle_versionstamp] do
+file BUNDLE => [ruby_tools_dir, ruby_tools_bin_dir] do
     sh "gem", "install",
             "--minimal-deps",
             "--no-document",
@@ -353,8 +376,8 @@ file BUNDLE => [ruby_tools_dir, ruby_tools_bin_dir, bundle_versionstamp] do
     end
 
     sh BUNDLE, "--version"
-    sh "touch", bundle_versionstamp
 end
+add_version_guard(BUNDLE, bundler_ver)
 
 fpm_gemfile = File.expand_path("init_deps/fpm.Gemfile", __dir__)
 FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
@@ -378,9 +401,7 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
 end
 
 NPM = File.join(node_bin_dir, "npm")
-npm_versionstamp = "#{NPM}-#{node_ver}.version"
-file npm_versionstamp => :phony
-file NPM => [node_dir, npm_versionstamp] do
+file NPM => [node_dir] do
     if use_system_nodejs
         fail "missing system NPM"
     end
@@ -392,9 +413,9 @@ file NPM => [node_dir, npm_versionstamp] do
         sh "rm", "node.tar.xz"
     end
     sh NPM, "--version"
-    sh "touch", npm_versionstamp
     sh "touch", "-c", NPM
 end
+add_version_guard(NPM, node_ver)
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
@@ -406,9 +427,7 @@ file NPX => [NPM] do
 end
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
-yamlinc_versionstamp = "#{YAMLINC}-#{yamlinc_ver}.version"
-file yamlinc_versionstamp => :phony
-file YAMLINC => [NPM, yamlinc_versionstamp] do
+file YAMLINC => [NPM] do
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-audit", "--no-progress"]
@@ -421,8 +440,8 @@ file YAMLINC => [NPM, yamlinc_versionstamp] do
             "yamlinc@#{yamlinc_ver}"
     sh "touch", "-c", YAMLINC
     sh YAMLINC, "--version"
-    sh "touch", yamlinc_versionstamp
 end
+add_version_guard(YAMLINC, yamlinc_ver)
 
 # Chrome driver is not currently used, but it can be needed in the UI tests.
 # This file task is ready to use after uncomment.
@@ -464,74 +483,60 @@ end
 # end
 
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
-openapi_generator_versionstamp = "#{OPENAPI_GENERATOR}-#{openapi_generator_ver}.version"
-file openapi_generator_versionstamp => :phony
-file OPENAPI_GENERATOR => [tools_dir, openapi_generator_versionstamp] do
+file OPENAPI_GENERATOR => [tools_dir] do
     sh *WGET, "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", "-O", OPENAPI_GENERATOR
-    sh "touch", openapi_generator_versionstamp
 end
+add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
 GO = File.join(gobin, "go")
-go_versionstamp = "#{GO}-#{go_ver}.version"
-file go_versionstamp => :phony
-file GO => [go_tools_dir, go_versionstamp] do
+file GO => [go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         FileUtils.rm_rf("go")
         sh *WGET, "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "-O", "go.tar.gz"
         sh "tar", "-zxf", "go.tar.gz" 
         sh "rm", "go.tar.gz"
     end
-    sh GO, "version"
-    sh "touch", go_versionstamp
     sh "touch", "-c", GO
+    sh GO, "version"
 end
+add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
-goswagger_versionstamp = "#{GOSWAGGER}-#{goswagger_ver}.version"
-file goswagger_versionstamp => :phony
-file GOSWAGGER => [go_tools_dir, goswagger_versionstamp] do
+file GOSWAGGER => [go_tools_dir] do
     sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
     sh "chmod", "u+x", GOSWAGGER
     sh GOSWAGGER, "version"
-    sh "touch", goswagger_versionstamp
 end
+add_version_guard(GOSWAGGER, goswagger_ver)
 
 PROTOC = File.join(go_tools_dir, "protoc")
-protoc_versionstamp = "#{PROTOC}-#{protoc_ver}.version"
-file protoc_versionstamp => :phony
-file PROTOC => [go_tools_dir, protoc_versionstamp] do
+file PROTOC => [go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
         sh "unzip", "-o", "-j", "protoc.zip", "bin/protoc"
         sh "rm", "protoc.zip"
     end
     sh PROTOC, "--version"
-    sh "touch", protoc_versionstamp
     sh "touch", "-c", PROTOC
 end
+add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
-protoc_gen_go_versionstamp = "#{PROTOC_GEN_GO}-#{protoc_gen_go_ver}.version"
-file protoc_gen_go_versionstamp => :phony
-file PROTOC_GEN_GO => [GO, protoc_gen_go_versionstamp] do
+file PROTOC_GEN_GO => [GO] do
     sh GO, "install", "google.golang.org/protobuf/cmd/protoc-gen-go@#{protoc_gen_go_ver}"
     sh PROTOC_GEN_GO, "--version"
-    sh "touch", protoc_gen_go_versionstamp
 end
+add_version_guard(PROTOC_GEN_GO, protoc_gen_go_ver)
 
 PROTOC_GEN_GO_GRPC = File.join(gobin, "protoc-gen-go-grpc")
-protoc_gen_go_grpc_versionstamp = "#{PROTOC_GEN_GO_GRPC}-#{protoc_gen_go_grpc}.version"
-file protoc_gen_go_grpc_versionstamp => :phony
-file PROTOC_GEN_GO_GRPC => [GO, protoc_gen_go_grpc_versionstamp] do
+file PROTOC_GEN_GO_GRPC => [GO] do
     sh GO, "install", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@#{protoc_gen_go_grpc}"
     sh PROTOC_GEN_GO_GRPC, "--version"
-    sh "touch", protoc_gen_go_grpc_versionstamp
 end
+add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_ver)
 
 GOLANGCILINT = File.join(go_tools_dir, "golangci-lint")
-golangcilint_versionstamp = "#{GOLANGCILINT}-#{golangcilint_ver}.version"
-file golangcilint_versionstamp => :phony
-file GOLANGCILINT => [go_tools_dir, golangcilint_versionstamp] do
+file GOLANGCILINT => [go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "-O", "golangci-lint.tar.gz"
         sh "mkdir", "tmp"
@@ -541,55 +546,45 @@ file GOLANGCILINT => [go_tools_dir, golangcilint_versionstamp] do
         sh "rm", "-f", "golangci-lint.tar.gz"
     end
     sh GOLANGCILINT, "--version"
-    sh "touch", golangcilint_versionstamp
 end
+add_version_guard(GOLANGCILINT, golangcilint_ver)
 
 RICHGO = "#{gobin}/richgo"
-richgo_versionstamp = "#{RICHGO}-#{richgo_ver}.version"
-file richgo_versionstamp => :phony
-file RICHGO => [GO, richgo_versionstamp] do
+file RICHGO => [GO] do
     sh GO, "install", "github.com/kyoh86/richgo@#{richgo_ver}"
     sh RICHGO, "version"
-    sh "touch", richgo_versionstamp
 end
+add_version_guard(RICHGO, richgo_ver)
 
 MOCKERY = "#{gobin}/mockery"
-mockery_versionstamp = "#{MOCKERY}-#{mockery_ver}.version"
-file mockery_versionstamp => :phony
-file MOCKERY => [GO, mockery_versionstamp] do
+file MOCKERY => [GO] do
     sh GO, "get", "github.com/vektra/mockery/.../@#{mockery_ver}"
     sh MOCKERY, "--version"
-    sh "touch", mockery_versionstamp
 end
+add_version_guard(MOCKERY, mockery_ver)
 
 MOCKGEN = "#{gobin}/mockgen"
-mockgen_versionstamp = "#{MOCKGEN}-#{mockgen_ver}.version"
-file mockgen_versionstamp => :phony
-file MOCKGEN => [GO, mockgen_versionstamp] do
+file MOCKGEN => [GO] do
     sh GO, "install", "github.com/golang/mock/mockgen@#{mockgen_ver}"
     sh MOCKGEN, "--version"
-    sh "touch", mockgen_versionstamp
 end
+add_version_guard(MOCKGEN, mockgen_ver)
 
 DLV = "#{gobin}/dlv"
-dlv_versionstamp = "#{DLV}-#{dlv_ver}.version"
-file dlv_versionstamp => :phony
-file DLV => [GO, dlv_versionstamp] do
+file DLV => [GO] do
     sh GO, "install", "github.com/go-delve/delve/cmd/dlv@#{dlv_ver}"
     sh DLV, "version"
-    sh "touch", dlv_versionstamp
 end
+add_version_guard(DLV, dlv_ver)
 
 GDLV = "#{gobin}/gdlv"
-gdlv_versionstamp = "#{GDLV}-#{gdlv_ver}.version"
-file gdlv_versionstamp => :phony
-file GDLV => [GO, gdlv_versionstamp] do
+file GDLV => [GO] do
     sh GO, "install", "github.com/aarzilli/gdlv@#{gdlv_ver}"
     if !File.file?(GDLV)
         fail
     end
-    sh "touch", gdlv_versionstamp
 end
+add_version_guard(GDLV, gdlv_ver)
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON do
