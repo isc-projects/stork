@@ -8,20 +8,6 @@
 
 require 'open3'
 
-# Defines a :phony task that you can use as a dependency. This allows
-# file-based tasks to use file-tasks without definition on how to create them
-# as prerequisites.
-# Source: https://github.com/ruby/rake/blob/master/lib/rake/phony.rb
-task :phony
-Rake::Task[:phony].tap do |task|
-  def task.timestamp
-    Time.at 0
-  end
-  def task.needed?
-    false
-  end
-end
-
 # Cross-platform way of finding an executable in the $PATH.
 # Source: https://stackoverflow.com/a/5471032
 #
@@ -174,7 +160,7 @@ def add_version_guard(task_name, version)
     # guarded task. It allows for cleaning the target directory in the task
     # body.
     version_stamp = "#{task_name}-#{version}.version"
-    file version_stamp => :phony
+    file version_stamp
     task.enhance [version_stamp] do
         # Removes old version stamps
         FileList["#{task_name}-*.version"].each do |f|
