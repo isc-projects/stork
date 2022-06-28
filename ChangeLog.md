@@ -1,3 +1,9 @@
+* 220 [func] marcin
+
+    Enabled deleting host reservations from the Kea servers running host_cmds
+    hook library.
+    (Gitlab #785)
+
 * 219 [func] slawek
 
     Refactored the system tests framework to use Docker instead of LXD. The
