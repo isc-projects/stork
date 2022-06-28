@@ -401,7 +401,9 @@ file NPM => [node_dir] do
     sh NPM, "--version"
     sh "touch", "-c", NPM
 end
-add_version_guard(NPM, node_ver)
+if !use_system_nodejs
+    add_version_guard(NPM, node_ver)
+end
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
