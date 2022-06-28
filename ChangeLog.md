@@ -1,3 +1,8 @@
+* 222 [func] slawek
+
+    Introduced golang 1.18 and upgraded go-related dependencies.
+    (Gitlab #788)
+
 * 221 [func] marcin
 
     Added an ability to specify DHCP options in the host reservations.
