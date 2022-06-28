@@ -120,8 +120,23 @@ GO_TOOL_CODEBASE = go_tool_codebase
         .exclude("backend/cmd/stork-tool/stork-tool")
 
 file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
+    api_mock_abs = File.expand_path GO_SERVER_API_MOCK
+
     Dir.chdir("backend") do
-        sh GO, "generate", "-n", "./..."
+        stdout, stderr, status = Open3.capture3 GO, "generate", "-v", "./..."
+        # The GO generate command returns a non-zero status. It is caused by
+        # update mockery to v2 version. The input arguments was changed
+        # (e.g. -name => --name, -inpkg => --inpackage). But the stratoscale
+        # template of the goswagger had no update and generates Go code with old
+        # //go:generate directives. It causes the mockery (called by go generate)
+        # to print an error message about unknown arguments and return status 1.
+        # But the mock file is generated properly.
+        # This workaround accepts non-zero code and continues execution.
+        puts stdout, stderr
+        if (status.exitstatus != 0 && status.exitstatus != 1) || !File.exists?(api_mock_abs)
+            puts status.exitstatus == 1
+            fail "cannot generate #{GO_SERVER_API_MOCK} file"
+        end
     end
     sh "touch", "-c", GO_SERVER_API_MOCK
 end

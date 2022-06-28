@@ -229,10 +229,10 @@ WGET = wget
 ### Define package versions
 go_ver='1.18.3'
 openapi_generator_ver='5.2.0'
-goswagger_ver='v0.23.0'
-protoc_ver='3.18.1'
-protoc_gen_go_ver='v1.26.0'
-protoc_gen_go_grpc='v1.1.0'
+goswagger_ver='v0.29.0'
+protoc_ver='3.20.1'
+protoc_gen_go_ver='v1.28.0'
+protoc_gen_go_grpc_ver='v1.2.0'
 richgo_ver='v0.3.10'
 mockery_ver='v2.13.1'
 mockgen_ver='v1.6.0'
@@ -531,10 +531,10 @@ add_version_guard(PROTOC_GEN_GO, protoc_gen_go_ver)
 
 PROTOC_GEN_GO_GRPC = File.join(gobin, "protoc-gen-go-grpc")
 file PROTOC_GEN_GO_GRPC => [GO] do
-    sh GO, "install", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@#{protoc_gen_go_grpc}"
+    sh GO, "install", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@#{protoc_gen_go_grpc_ver}"
     sh PROTOC_GEN_GO_GRPC, "--version"
 end
-add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_ver)
+add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
 
 GOLANGCILINT = File.join(go_tools_dir, "golangci-lint")
 file GOLANGCILINT => [go_tools_dir] do

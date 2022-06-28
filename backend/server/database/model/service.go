@@ -20,7 +20,7 @@ func init() {
 // generic information about the service such as ID, service name
 // and service type.
 type BaseService struct {
-	tableName   struct{} `pg:"service"` //nolint:unused,structcheck
+	tableName   struct{} `pg:"service"` //nolint:unused // ,structcheck // ToDo: restore nolint declaration. Structchecks temporary doesn't support Go 1.18.
 	ID          int64
 	Name        string
 	ServiceType string
@@ -41,7 +41,7 @@ type DaemonToService struct {
 // High Availability specific information. It is embedded in the
 // Service structure.
 type BaseHAService struct {
-	tableName                   struct{} `pg:"ha_service"` //nolint:unused,structcheck
+	tableName                   struct{} `pg:"ha_service"` //nolint:unused // ,structcheck // ToDo: restore nolint declaration. Structchecks temporary doesn't support Go 1.18.
 	ID                          int64
 	ServiceID                   int64
 	HAType                      string
