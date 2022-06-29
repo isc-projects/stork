@@ -30,8 +30,11 @@
                 </span>
             </div>
         </ng-template>
-        <div class="p-d-flex p-mt-1">
-            <div *ngIf="topLevel" class="p-ml-1 p-button p-button-secondary p-button-text p-button-sm p-field-checkbox">
+        <div class="p-d-flex p-mt-1 p-ai-center">
+            <div
+                *ngIf="topLevel"
+                class="p-ml-1 p-field-checkbox p-button-secondary p-button-sm p-button-text p-button p-mb-0"
+            >
                 <p-checkbox
                     ngDefaultControl
                     formControlName="alwaysSend"
@@ -64,8 +67,17 @@
         </div>
     </div>
     <div *ngIf="optionFields.length !== 0; else emptyOption" formArrayName="optionFields">
-        <ng-container *ngFor="let fieldControl of optionFields.controls as DhcpOptionFieldFormGroup; index as i">
-            <div [ngSwitch]="fieldControl.data.fieldType" class="p-d-flex p-ai-top p-mt-5 p-ml-3">
+        <ng-container
+            *ngFor="
+                let fieldControl of optionFields.controls as DhcpOptionFieldFormGroup;
+                let i = index;
+                let first = first
+            "
+        >
+            <div
+                [ngSwitch]="fieldControl.data.fieldType"
+                [ngClass]="{ 'p-d-flex': true, 'p-ai-top': true, 'p-ml-3': true, 'p-mt-4': first, 'p-mt-5': !first }"
+            >
                 <div *ngSwitchCase="FieldType.HexBytes" [formGroupName]="i">
                     <span class="p-float-label">
                         <textarea
