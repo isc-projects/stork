@@ -12,7 +12,7 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 
 describe('DhcpOptionSetFormComponent', () => {
     let component: DhcpOptionSetFormComponent
@@ -54,7 +54,7 @@ describe('DhcpOptionSetFormComponent', () => {
         expect(addBtn).toBeTruthy()
 
         spyOn(component.optionAdd, 'emit').and.callFake(() => {
-            component.formArray.push(createDefaultDhcpOptionFormGroup(Universe.IPv4))
+            component.formArray.push(createDefaultDhcpOptionFormGroup(IPType.IPv4))
         })
 
         addBtn.nativeElement.dispatchEvent(new Event('click'))

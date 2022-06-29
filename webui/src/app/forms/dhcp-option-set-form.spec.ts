@@ -1,7 +1,7 @@
 import { FormBuilder } from '@angular/forms'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { DhcpOptionSetForm } from './dhcp-option-set-form'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 
 describe('DhcpOptionSetForm', () => {
     let formBuilder: FormBuilder = new FormBuilder()
@@ -70,7 +70,7 @@ describe('DhcpOptionSetForm', () => {
         // Extract the options from the form and make sure there are
         // three of them.
         const options = new DhcpOptionSetForm(formArray)
-        options.process(Universe.IPv4)
+        options.process(IPType.IPv4)
         const serialized = options.getSerializedOptions()
         expect(serialized.length).toBe(3)
 
@@ -169,13 +169,13 @@ describe('DhcpOptionSetForm', () => {
         ])
 
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when there is no option code', () => {
         const formArray = formBuilder.array([formBuilder.group({})])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when prefix field lacks prefix control', () => {
@@ -190,7 +190,7 @@ describe('DhcpOptionSetForm', () => {
             }),
         ])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when prefix field lacks prefix control', () => {
@@ -205,7 +205,7 @@ describe('DhcpOptionSetForm', () => {
             }),
         ])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when psid field lacks psid control', () => {
@@ -220,7 +220,7 @@ describe('DhcpOptionSetForm', () => {
             }),
         ])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when psid field lacks psid length control', () => {
@@ -235,7 +235,7 @@ describe('DhcpOptionSetForm', () => {
             }),
         ])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when a single value field lacks control', () => {
@@ -250,7 +250,7 @@ describe('DhcpOptionSetForm', () => {
             }),
         ])
         const options = new DhcpOptionSetForm(formArray)
-        expect(() => options.process(Universe.IPv4)).toThrow()
+        expect(() => options.process(IPType.IPv4)).toThrow()
     })
 
     it('throws when options have not been processed', () => {

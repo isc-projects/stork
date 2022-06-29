@@ -12,7 +12,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionFormComponent } from './dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
@@ -42,7 +42,7 @@ describe('DhcpOptionFormComponent', () => {
         component = fixture.componentInstance
         fb = new FormBuilder()
         // Our component needs a form group instance to be initialized.
-        component.formGroup = createDefaultDhcpOptionFormGroup(Universe.IPv4)
+        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
         fixture.detectChanges()
     })
 
@@ -262,7 +262,7 @@ describe('DhcpOptionFormComponent', () => {
 
     it('should require a valid DHCPv6 option code', () => {
         component.v6 = true
-        component.formGroup = createDefaultDhcpOptionFormGroup(Universe.IPv6)
+        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv6)
         fixture.detectChanges()
 
         component.formGroup.get('optionCode').setValue(7)

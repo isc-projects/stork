@@ -1,7 +1,8 @@
-# DHCP Universe differentiating between DHCPv4 and DHCPv6 cases.
+# A general purpose type used to diferentiate between various
+# IPv4 (or DHCPv4) and IPv6 (or DHCPv6 cases).
   DHCPUniverse:
     type: integer
-    enum: &DHCPUNIVERSE
+    enum: &IPTYPE
       - 4
       - 6
 
@@ -118,7 +119,7 @@
           $ref: '#/definitions/DHCPOption'
       universe:
         type: integer
-        enum: *DHCPUNIVERSE
+        enum: *IPTYPE
 
 # Host
 

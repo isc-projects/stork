@@ -15,7 +15,7 @@ import { MenuItem } from 'primeng/api'
 import { LinkedFormGroup } from '../forms/linked-form-group'
 import { DhcpOptionField, DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
 
 /**
@@ -1732,7 +1732,7 @@ export class DhcpOptionFormComponent implements OnInit {
      * Initializes a new sub-option in the current option.
      */
     addSuboption(): void {
-        this.suboptions.push(createDefaultDhcpOptionFormGroup(this.v6 ? Universe.IPv6 : Universe.IPv4))
+        this.suboptions.push(createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4))
     }
 
     /**

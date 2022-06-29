@@ -1,6 +1,6 @@
 import { FormArray, FormGroup } from '@angular/forms'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 import { DHCPOption } from '../backend/model/dHCPOption'
 
 /**
@@ -38,7 +38,7 @@ export class DhcpOptionSetForm {
      * @throw An error for nesting level higher than 1 or if option data is invalid
      * or missing.
      */
-    private _process(universe: Universe, nestingLevel: number, optionSpace?: string) {
+    private _process(universe: IPType, nestingLevel: number, optionSpace?: string) {
         // To avoid too much recursion, we only parse first level of suboptions.
         if (this._formArray.length > 0 && nestingLevel > 1) {
             throw new Error('options serialization supports up to two nesting levels')
@@ -127,7 +127,7 @@ export class DhcpOptionSetForm {
      *
      * @param universe options universe (i.e., IPv4 or IPv6).
      */
-    process(universe: Universe) {
+    process(universe: IPType) {
         this._process(universe, 0)
     }
 

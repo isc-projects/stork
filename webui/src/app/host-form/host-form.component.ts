@@ -19,7 +19,7 @@ import { LocalHost } from '../backend/model/localHost'
 import { Subnet } from '../backend/model/subnet'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetForm } from '../forms/dhcp-option-set-form'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 import { stringToHex } from '../utils'
 
 /**
@@ -616,7 +616,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * It creates a new default form group for the option.
      */
     onOptionAdd(): void {
-        this.optionsArray.push(createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? Universe.IPv6 : Universe.IPv4))
+        this.optionsArray.push(createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4))
     }
 
     /**
@@ -636,7 +636,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         if (this.optionsArray) {
             try {
                 const optionsForm = new DhcpOptionSetForm(this.optionsArray)
-                optionsForm.process(this.form.dhcpv4 ? Universe.IPv4 : Universe.IPv6)
+                optionsForm.process(this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6)
                 options = optionsForm.getSerializedOptions()
             } catch (err) {
                 this._messageService.add({

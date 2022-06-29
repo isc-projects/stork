@@ -1,5 +1,5 @@
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { Universe } from '../universe'
+import { IPType } from '../iptype'
 
 /**
  * Creates a default form group for a DHCP option.
@@ -13,7 +13,7 @@ import { Universe } from '../universe'
  * allowed option code value.
  * @returns created form group for an option.
  */
-export function createDefaultDhcpOptionFormGroup(universe: Universe): FormGroup {
+export function createDefaultDhcpOptionFormGroup(universe: IPType): FormGroup {
     const fb = new FormBuilder()
     return fb.group({
         optionCode: [
@@ -22,7 +22,7 @@ export function createDefaultDhcpOptionFormGroup(universe: Universe): FormGroup 
                 Validators.required,
                 Validators.pattern('[0-9]*'),
                 Validators.min(1),
-                Validators.max(universe === Universe.IPv4 ? 255 : 65535),
+                Validators.max(universe === IPType.IPv4 ? 255 : 65535),
             ],
         ],
         alwaysSend: [{ value: false }],
