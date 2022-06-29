@@ -6,9 +6,12 @@
                     inputId="{{ codeInputId }}"
                     [autoDisplayFirst]="false"
                     [editable]="true"
+                    [filter]="true"
+                    filterBy="label"
                     [options]="v6 ? dhcp6Options : dhcp4Options"
                     styleClass="code-input-width"
                     formControlName="optionCode"
+                    pTooltip="Use the dropdown to select an option from the list of standard options. If the option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
                 >
                 </p-dropdown>
                 <label for="{{ codeInputId }}">Select or Type Option Code</label>
@@ -24,6 +27,7 @@
                         max="{{ v6 ? 65535 : 255 }}"
                         inputStyleClass="code-input-width"
                         formControlName="optionCode"
+                        pTooltip="Enter a suboption code (a number)."
                     >
                     </p-inputNumber>
                     <label for="{{ codeInputId }}">Type Suboption Code</label>
