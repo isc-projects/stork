@@ -312,8 +312,7 @@ and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one
 of the identifiers. Stork can detect existing host reservations specified both in
 the configuration files of the monitored Kea servers and in the host database
-backends accessed via the Kea Host Commands premium hook library. At present, Stork
-provides no means to update or delete host reservations.
+backends accessed via the Kea Host Commands premium hook library.
 
 All reservations detected by Stork can be listed by selecting the ``DHCP``
 menu option and then selecting ``Hosts``.
@@ -469,19 +468,50 @@ Further in the form, the user can specify the actual reservations. It is possibl
 to specify at most one IPv4 address. In the case of the DHCPv6 servers, it is
 possible to specify multiple IPv6 addresses and delegated prefixes.
 
-``Hostname`` is currently the only supported non-IP reservation type. Submitting
-the host reservation is possible after specifying at least one IP reservation or
-a hostname.
+``Hostname`` is currently the only supported non-IP reservation type besides
+DHCP options.
+
+DHCP options can be added to the host reservation by clicking the ``Add Option``
+button. The list of the standard DHCP options is available via the dropdown.
+However, if the list is missing a desired option, the user can simply
+type the option code in the dropdown. The ``Always Send`` checkbox specifies
+whether the option should always be returned to a DHCP client assigned this
+host reservation, regardless of whether the client requests this option from
+the DHCP server.
+
+In the current Stork version, the user must explicitly select an option
+payload suitable for the option. Thus, they must be familiar with the
+DHCP option formats and select appropriate option fields in the right
+order using the ``Add Payload`` button. For example, the ``(5) Name Server``
+option can comprise one or more IPv4 addresses. After selecting this option,
+the user should select an ``ipv4-address`` option field once or more and
+fill the option fields with the IP addresses.
 
 .. note::
 
-   Kea configuration with Stork is a new feature under development. Thus, it lacks
-   many configuration capabilities, e.g., DHCP options, client classes, etc. Stay
-   tuned for these capabilities in the subsequent Stork releases.
+   Currently, Stork does not verify whether or not the specified options comply
+   with the formats specified in the RFCs, nor does it check them against the
+   runtime option definitions configured in Kea. If the user specifies
+   wrong option format, Stork will try to send the option to Kea for verification,
+   and Kea will reject the new reservation. The reservation can be submitted
+   again after correcting the option payload.
+
+Please use the ``Add Payload`` button to add suboptions to a DHCP option.
+Stork currently supports first-level suboptions only, i.e., it is impossible
+to add a suboption of a suboption.
 
 Submitted host reservations may appear in Stork's host reservations list with some
 delay. Please allow some time for the reservations to propagate to the Kea DHCP
 servers and refresh the list.
+
+Deleting Host Reservations
+--------------------------
+
+To delete a host reservation from all DHCP servers for which it is configured,
+click on the reservation in the host reservations list. Find the ``Delete``
+button and confirm the reservation deletion. Use it with caution because this
+operation cannot be undone. The reservation is removed from the DHCP servers'
+databases. It must be re-created to be restored.
 
 Leases Search
 ~~~~~~~~~~~~~
