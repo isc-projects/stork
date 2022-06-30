@@ -555,6 +555,7 @@ func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 	require.Zero(t, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
+// Checks if the out-of-pool values are added to the total counters.
 func TestCounterAddExtraToTotalCounters(t *testing.T) {
 	// Arrange
 	subnets := []dbmodel.Subnet{
@@ -635,6 +636,7 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 	require.EqualValues(t, 0.1, sharedNetwork.getDelegatedPrefixUtilization())
 }
 
+// Checks if the excluded daemons are respected for IPv4 subnets.
 func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -696,6 +698,7 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 	require.Zero(t, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
+// Checks if the excluded daemons are respected for IPv6 subnets.
 func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -765,6 +768,7 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 	require.EqualValues(t, 40, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
+// Checks if the subnet statistics contain proper values for IPv4 subnet.
 func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -800,6 +804,7 @@ func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 	require.EqualValues(t, 60, stats["declined-addresses"])
 }
 
+// Checks if the subnet statistics contain proper values for IPv6 subnet.
 func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -841,6 +846,7 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 	require.EqualValues(t, 40, stats["assigned-pds"])
 }
 
+// Checks if the subnet statistics contain proper values for a shared network.
 func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 	// Arrange
 	subnet1 := &dbmodel.Subnet{
