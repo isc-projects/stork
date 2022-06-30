@@ -655,8 +655,8 @@ func TestGetPartnerHAFailureTime(t *testing.T) {
 	require.Equal(t, primaryFailoverAt, failureTime)
 }
 
-// Tests that non-leading HA daemons are selected properly when HA works correctly.
-func TestGetNonLeadingHADaemonIDs(t *testing.T) {
+// Tests that passive HA daemons are selected properly when HA works correctly.
+func TestGetPassiveHADaemonIDs(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -668,7 +668,7 @@ func TestGetNonLeadingHADaemonIDs(t *testing.T) {
 	_ = UpdateService(db, haService)
 
 	// Act
-	daemons, err := GetNonLeadingHADaemonIDs(db)
+	daemons, err := GetPassiveHADaemonIDs(db)
 
 	// Assert
 	require.NoError(t, err)
@@ -680,7 +680,7 @@ func TestGetNonLeadingHADaemonIDs(t *testing.T) {
 	require.Contains(t, daemons, haService.HAService.BackupID[1])
 }
 
-// Tests that non-leading HA daemons are selected properly when HA daemons are
+// Tests that passive HA daemons are selected properly when HA daemons are
 // unreachable.
 func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
 	// Arrange
@@ -694,7 +694,7 @@ func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
 	_ = UpdateService(db, haService)
 
 	// Act
-	daemons, err := GetNonLeadingHADaemonIDs(db)
+	daemons, err := GetPassiveHADaemonIDs(db)
 
 	// Assert
 	require.NoError(t, err)
@@ -704,9 +704,9 @@ func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
 	require.Len(t, daemons, 3)
 }
 
-// Tests that non-leading HA daemons are selected properly when a primary
+// Tests that passive HA daemons are selected properly when a primary
 // daemon isn't operational.
-func TestGetNonLeadingHADaemonIDsPrimaryIsNotOperational(t *testing.T) {
+func TestGetPassiveHADaemonIDsPrimaryIsNotOperational(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -718,7 +718,7 @@ func TestGetNonLeadingHADaemonIDsPrimaryIsNotOperational(t *testing.T) {
 	_ = UpdateService(db, haService)
 
 	// Act
-	daemons, err := GetNonLeadingHADaemonIDs(db)
+	daemons, err := GetPassiveHADaemonIDs(db)
 
 	// Assert
 	require.NoError(t, err)

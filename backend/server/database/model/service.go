@@ -449,13 +449,13 @@ func (s Service) GetPartnerHAFailureTime(daemonID int64) (failureTime time.Time)
 
 // Returns the HA daemons that don't allocate leases independently (depend on
 // another server or don't allocate at all).
-func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
+func GetPassiveHADaemonIDs(db dbops.DBI) ([]int64, error) {
 	services, err := GetDetailedAllServices(db)
 	if err != nil {
 		return nil, err
 	}
 
-	nonActiveHADaemons := make([]int64, 0)
+	passiveHADaemons := make([]int64, 0)
 
 	for _, service := range services {
 		if service.HAService == nil {
@@ -463,7 +463,7 @@ func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
 		}
 
 		// Backups never actively allocate leases.
-		nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.BackupID...)
+		passiveHADaemons = append(passiveHADaemons, service.HAService.BackupID...)
 
 		// Set of the operational states.
 		operationalStates := map[HAState]bool{
@@ -482,11 +482,11 @@ func GetNonLeadingHADaemonIDs(db dbops.DBI) ([]int64, error) {
 		isSecondaryOperational = isSecondaryOperational && service.HAService.SecondaryReachable
 
 		if isPrimaryOperational || !isSecondaryOperational {
-			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.SecondaryID)
+			passiveHADaemons = append(passiveHADaemons, service.HAService.SecondaryID)
 		} else {
-			nonActiveHADaemons = append(nonActiveHADaemons, service.HAService.PrimaryID)
+			passiveHADaemons = append(passiveHADaemons, service.HAService.PrimaryID)
 		}
 	}
 
-	return nonActiveHADaemons, nil
+	return passiveHADaemons, nil
 }

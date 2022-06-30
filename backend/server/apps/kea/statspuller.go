@@ -106,7 +106,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 	counter.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
 	counter.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
 
-	excludedDaemons, err := dbmodel.GetNonLeadingHADaemonIDs(statsPuller.DB)
+	excludedDaemons, err := dbmodel.GetPassiveHADaemonIDs(statsPuller.DB)
 	if err != nil {
 		return err
 	}
