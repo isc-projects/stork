@@ -447,6 +447,18 @@ func (s Service) GetPartnerHAFailureTime(daemonID int64) (failureTime time.Time)
 	return failureTime
 }
 
+// Checks if the HA state is operational.
+func isOperationalHAState(state HAState) bool {
+	switch state {
+	case HAStateHotStandby, HAStateLoadBalancing, HAStatePartnerDown,
+		HAStatePartnerInMaintenance, HAStateReady:
+		return true
+	default:
+		return false
+
+	}
+}
+
 // Returns the HA daemons that don't allocate leases independently (depend on
 // another server or don't allocate at all).
 func GetPassiveHADaemonIDs(db dbops.DBI) ([]int64, error) {
@@ -465,20 +477,11 @@ func GetPassiveHADaemonIDs(db dbops.DBI) ([]int64, error) {
 		// Backups never actively allocate leases.
 		passiveHADaemons = append(passiveHADaemons, service.HAService.BackupID...)
 
-		// Set of the operational states.
-		operationalStates := map[HAState]bool{
-			HAStateHotStandby:           true,
-			HAStateLoadBalancing:        true,
-			HAStatePartnerDown:          true,
-			HAStatePartnerInMaintenance: true,
-			HAStateReady:                true,
-		}
-
 		// The server is operational if it is reachable and has an operational state.
-		_, isPrimaryOperational := operationalStates[service.HAService.PrimaryLastState]
+		isPrimaryOperational := isOperationalHAState(service.HAService.PrimaryLastState)
 		isPrimaryOperational = isPrimaryOperational && service.HAService.PrimaryReachable
 
-		_, isSecondaryOperational := operationalStates[service.HAService.SecondaryLastState]
+		isSecondaryOperational := isOperationalHAState(service.HAService.SecondaryLastState)
 		isSecondaryOperational = isSecondaryOperational && service.HAService.SecondaryReachable
 
 		if isPrimaryOperational || !isSecondaryOperational {
