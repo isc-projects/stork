@@ -1,8 +1,8 @@
 * 223 [bug] slawek
 
-    Fixed counting of the utilization statistics for the HA servers. The
-    statistics of addresses/NAs/PDs are no longer doubled. Only the leading
-    server is counted, and others are skipped. 
+    Fixed lease utilization statistics calculations for the HA pairs. The
+    statistics of the assigned addresses and delegated prefixes are no longer
+    doubled. Only the active server's leases are counted.
     (Gitlab #710)
 
 * 222 [build] slawek
