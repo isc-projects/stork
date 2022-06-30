@@ -26,11 +26,10 @@ func TestCreateUserNegative(t *testing.T) {
 		Name:     "John",
 	}
 
-	password := models.Password("pass")
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: &password,
+			Password: models.Password("pass"),
 		},
 	}
 
@@ -86,11 +85,10 @@ func TestCreateUser(t *testing.T) {
 		Login:    "jb",
 		Name:     "John",
 	}
-	password := models.Password("pass")
 	params = users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: &password,
+			Password: models.Password("pass"),
 		},
 	}
 
@@ -168,11 +166,10 @@ func TestUpdateUser(t *testing.T) {
 
 	// Modify some values and update the user.
 	su.Lastname = "Born"
-	password := models.Password("pass")
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: &password,
+			Password: models.Password("pass"),
 		},
 	}
 	rsp = rapi.UpdateUser(ctx, params)
@@ -186,11 +183,10 @@ func TestUpdateUser(t *testing.T) {
 	// An attempt to update non-existing user (non macthing ID) should
 	// result in an error 409.
 	su.ID = 123
-	password = models.Password("pass")
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: &password,
+			Password: models.Password("pass"),
 		},
 	}
 	rsp = rapi.UpdateUser(ctx, params)
@@ -220,13 +216,11 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// Update user password via the API.
-	newPassword := models.Password("updated")
-	oldPassword := models.Password("pass")
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: &newPassword,
-			Oldpassword: &oldPassword,
+			Newpassword: models.Password("updated"),
+			Oldpassword: models.Password("pass"),
 		},
 	}
 	rsp := rapi.UpdateUserPassword(ctx, params)
@@ -235,13 +229,11 @@ func TestUpdateUserPassword(t *testing.T) {
 	// An attempt to update the password again should result in
 	// HTTP error 400 (Bad Request) because the old password is
 	// not matching anymore.
-	newPassword = models.Password("updated")
-	oldPassword = models.Password("pass")
 	params = users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: &newPassword,
-			Oldpassword: &oldPassword,
+			Newpassword: models.Password("updated"),
+			Oldpassword: models.Password("pass"),
 		},
 	}
 	rsp = rapi.UpdateUserPassword(ctx, params)
