@@ -125,7 +125,7 @@ file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
         stdout, stderr, status = Open3.capture3 GO, "generate", "-v", "./..."
         # The GO generate command returns a non-zero status. It is caused by
-        # update mockery to v2 version. The input arguments was changed
+        # update mockery to v2 version. The input arguments were changed
         # (e.g. -name => --name, -inpkg => --inpackage). But the stratoscale
         # template of the goswagger had no update and generates Go code with old
         # //go:generate directives. It causes the mockery (called by go generate)
