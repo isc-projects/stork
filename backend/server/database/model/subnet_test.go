@@ -996,7 +996,7 @@ func TestUtilizationsForNilStats(t *testing.T) {
 	stats := SubnetStats(nil)
 
 	// Act
-	aU, pdU := stats.Utilizations()
+	aU, pdU := stats.GetUtilizations()
 
 	// Assert
 	require.Zero(t, aU)
@@ -1012,7 +1012,7 @@ func TestUtilizationsForIPv4Stats(t *testing.T) {
 	}
 
 	// Act
-	aU, pdU := stats.Utilizations()
+	aU, pdU := stats.GetUtilizations()
 
 	// Assert
 	require.EqualValues(t, 0.25, aU)
@@ -1030,7 +1030,7 @@ func TestUtilizationsForIPv6Stats(t *testing.T) {
 	}
 
 	// Act
-	aU, pdU := stats.Utilizations()
+	aU, pdU := stats.GetUtilizations()
 
 	// Assert
 	require.EqualValues(t, 0.25, aU)
@@ -1046,7 +1046,7 @@ func TestUtilizationsForZeroTotalStats(t *testing.T) {
 	}
 
 	// Act
-	aU, _ := stats.Utilizations()
+	aU, _ := stats.GetUtilizations()
 
 	// Assert
 	require.Zero(t, aU)
@@ -1060,7 +1060,7 @@ func TestUtilizationsForMissingStats(t *testing.T) {
 	}
 
 	// Act
-	aU, _ := stats.Utilizations()
+	aU, _ := stats.GetUtilizations()
 
 	// Assert
 	require.Zero(t, aU)
@@ -1078,7 +1078,7 @@ func TestUtilizationsForBigIntStats(t *testing.T) {
 	}
 
 	// Act
-	aU, _ := stats.Utilizations()
+	aU, _ := stats.GetUtilizations()
 
 	// Assert
 	require.EqualValues(t, 0.5, aU)

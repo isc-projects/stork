@@ -110,7 +110,7 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 // Utilization is in 0 (0%) to 1 (100%) range.
 // For IPv6 networks, the address utilization should be based on NA statistics.
 // For IPv4 networks, the PD utilization should be zero.
-func (s *SubnetStats) Utilizations() (addressUtilization, prefixDelegationUtilization float64) {
+func (s *SubnetStats) GetUtilizations() (addressUtilization, prefixDelegationUtilization float64) {
 	if s == nil {
 		return
 	}
@@ -746,7 +746,7 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 
 // Update statistics in Subnet.
 func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics SubnetStats) error {
-	addrUtilization, pdUtilization := statistics.Utilizations()
+	addrUtilization, pdUtilization := statistics.GetUtilizations()
 	s.AddrUtilization = int16(addrUtilization * 1000)
 	s.PdUtilization = int16(pdUtilization * 1000)
 	s.Stats = statistics
