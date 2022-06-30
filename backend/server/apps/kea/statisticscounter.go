@@ -93,10 +93,10 @@ func (s *sharedNetworkStats) getDelegatedPrefixUtilization() float64 {
 // a given shared network.
 func (s *sharedNetworkStats) getStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
-		"total-nas":    s.totalAddresses.ToNativeType(),
-		"assigned-nas": s.totalAssignedAddresses.ToNativeType(),
-		"total-pds":    s.totalDelegatedPrefixes.ToNativeType(),
-		"assigned-pds": s.totalAssignedDelegatedPrefixes.ToNativeType(),
+		"total-nas":    s.totalAddresses.ConvertToNativeType(),
+		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
+		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
 	}
 }
 
@@ -170,11 +170,11 @@ func (s *subnetIPv6Stats) getDelegatedPrefixUtilization() float64 {
 // a given IPv6 network.
 func (s *subnetIPv6Stats) getStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
-		"total-nas":    s.totalAddresses.ToNativeType(),
-		"assigned-nas": s.totalAssignedAddresses.ToNativeType(),
-		"declined-nas": s.totalDeclinedAddresses.ToNativeType(),
-		"total-pds":    s.totalDelegatedPrefixes.ToNativeType(),
-		"assigned-pds": s.totalAssignedDelegatedPrefixes.ToNativeType(),
+		"total-nas":    s.totalAddresses.ConvertToNativeType(),
+		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
+		"declined-nas": s.totalDeclinedAddresses.ConvertToNativeType(),
+		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
 	}
 }
 

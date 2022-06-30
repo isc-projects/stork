@@ -279,8 +279,8 @@ func TestBigCounterToNativeType(t *testing.T) {
 	counterExtended := NewBigCounter(math.MaxUint64).AddUint64(1)
 
 	// Act
-	nativeBase := counterBase.ToNativeType()
-	nativeExtended := counterExtended.ToNativeType()
+	nativeBase := counterBase.ConvertToNativeType()
+	nativeExtended := counterExtended.ConvertToNativeType()
 
 	// Assert
 	require.EqualValues(t, uint64(42), nativeBase)

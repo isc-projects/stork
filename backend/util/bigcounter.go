@@ -157,7 +157,7 @@ func (n *BigCounter) ToBigInt() *big.Int {
 
 // Returns the counting value as uint64 if the value is in uint64 range.
 // Otherwise, returns big.Int.
-func (n *BigCounter) ToNativeType() interface{} {
+func (n *BigCounter) ConvertToNativeType() interface{} {
 	if n.isExtended() {
 		return n.extended
 	}
