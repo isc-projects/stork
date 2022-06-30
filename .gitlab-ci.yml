@@ -26,7 +26,7 @@ stages:
 
 # cache
 cache:
-  key: one-shared-key-1
+  key: one-shared-key-2
   paths:
   - webui/node_modules/
   - tools/
@@ -55,7 +55,7 @@ cache:
   rules:
     - when: always
   cache:
-    key: one-shared-key-rpm-1
+    key: one-shared-key-rpm-2
     paths:
     - webui/node_modules/
     - tools/
@@ -207,7 +207,7 @@ system_testing:
     - when: on_success
   image: docker/compose:1.29.2
   cache:
-    key: system-tests-key-1
+    key: system-tests-key-2
     paths:
     - tools/
   before_script:
