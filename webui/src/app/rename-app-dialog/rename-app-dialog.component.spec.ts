@@ -12,14 +12,12 @@ describe('RenameAppDialogComponent', () => {
     let component: RenameAppDialogComponent
     let fixture: ComponentFixture<RenameAppDialogComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [FormsModule, DialogModule, SharedModule, NoopAnimationsModule],
-                declarations: [RenameAppDialogComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [FormsModule, DialogModule, SharedModule, NoopAnimationsModule],
+            declarations: [RenameAppDialogComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(RenameAppDialogComponent)

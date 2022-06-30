@@ -7,14 +7,12 @@ describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
     let fixture: ComponentFixture<EntityLinkComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [RouterTestingModule],
-                declarations: [EntityLinkComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [RouterTestingModule],
+            declarations: [EntityLinkComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EntityLinkComponent)

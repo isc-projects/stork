@@ -9,14 +9,12 @@ describe('SubnetBarComponent', () => {
     let component: SubnetBarComponent
     let fixture: ComponentFixture<SubnetBarComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [TooltipModule],
-                declarations: [SubnetBarComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [TooltipModule],
+            declarations: [SubnetBarComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SubnetBarComponent)

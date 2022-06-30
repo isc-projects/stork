@@ -9,14 +9,12 @@ describe('JsonTreeComponent', () => {
     let component: JsonTreeComponent
     let fixture: ComponentFixture<JsonTreeComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [PaginatorModule],
-                declarations: [JsonTreeComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [PaginatorModule],
+            declarations: [JsonTreeComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(JsonTreeComponent)
@@ -688,14 +686,12 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         innerComponentRef: JsonTreeComponent
     }
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [PaginatorModule],
-                declarations: [WrapperComponent, JsonTreeComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [PaginatorModule],
+            declarations: [WrapperComponent, JsonTreeComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(WrapperComponent)

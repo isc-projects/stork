@@ -22,33 +22,31 @@ describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
     let fixture: ComponentFixture<SettingsPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    FormsModule,
-                    ReactiveFormsModule,
-                    BrowserAnimationsModule,
-                    FieldsetModule,
-                    HttpClientTestingModule,
-                    MessagesModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    RouterTestingModule,
-                ],
-                declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
-                providers: [
-                    SettingsService,
-                    MessageService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {},
-                    },
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                BrowserAnimationsModule,
+                FieldsetModule,
+                HttpClientTestingModule,
+                MessagesModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                RouterTestingModule,
+            ],
+            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
+            providers: [
+                SettingsService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SettingsPageComponent)

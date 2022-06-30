@@ -17,32 +17,30 @@ describe('LogViewPageComponent', () => {
     let component: LogViewPageComponent
     let fixture: ComponentFixture<LogViewPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    ServicesService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            paramMap: of(convertToParamMap({})),
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                ServicesService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of(convertToParamMap({})),
                     },
-                ],
-                imports: [
-                    HttpClientTestingModule,
-                    PanelModule,
-                    NoopAnimationsModule,
-                    ButtonModule,
-                    ProgressSpinnerModule,
-                    SharedModule,
-                    RouterModule,
-                    RouterTestingModule,
-                ],
-                declarations: [LogViewPageComponent, EntityLinkComponent],
-            }).compileComponents()
-        })
-    )
+                },
+            ],
+            imports: [
+                HttpClientTestingModule,
+                PanelModule,
+                NoopAnimationsModule,
+                ButtonModule,
+                ProgressSpinnerModule,
+                SharedModule,
+                RouterModule,
+                RouterTestingModule,
+            ],
+            declarations: [LogViewPageComponent, EntityLinkComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LogViewPageComponent)

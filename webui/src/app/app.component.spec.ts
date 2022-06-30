@@ -15,26 +15,24 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 
 describe('AppComponent', () => {
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
-                    TooltipModule,
-                    MenubarModule,
-                    SplitButtonModule,
-                    ProgressSpinnerModule,
-                    ToastModule,
-                    HttpClientTestingModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    FormsModule,
-                ],
-                declarations: [AppComponent, GlobalSearchComponent],
-                providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
+                TooltipModule,
+                MenubarModule,
+                SplitButtonModule,
+                ProgressSpinnerModule,
+                ToastModule,
+                HttpClientTestingModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                FormsModule,
+            ],
+            declarations: [AppComponent, GlobalSearchComponent],
+            providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
+        }).compileComponents()
+    }))
 
     it('should create the app', () => {
         const fixture = TestBed.createComponent(AppComponent)

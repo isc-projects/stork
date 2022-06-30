@@ -34,38 +34,36 @@ describe('AppsPageComponent', () => {
     let component: AppsPageComponent
     let fixture: ComponentFixture<AppsPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [ServicesService, MessageService],
-                imports: [
-                    HttpClientTestingModule,
-                    TabMenuModule,
-                    MenuModule,
-                    FormsModule,
-                    TableModule,
-                    TooltipModule,
-                    TabViewModule,
-                    PanelModule,
-                    MessageModule,
-                    RouterModule,
-                    RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                ],
-                declarations: [
-                    AppsPageComponent,
-                    Bind9AppTabComponent,
-                    KeaAppTabComponent,
-                    LocaltimePipe,
-                    HaStatusComponent,
-                    BreadcrumbsComponent,
-                    HelpTipComponent,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [ServicesService, MessageService],
+            imports: [
+                HttpClientTestingModule,
+                TabMenuModule,
+                MenuModule,
+                FormsModule,
+                TableModule,
+                TooltipModule,
+                TabViewModule,
+                PanelModule,
+                MessageModule,
+                RouterModule,
+                RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+            ],
+            declarations: [
+                AppsPageComponent,
+                Bind9AppTabComponent,
+                KeaAppTabComponent,
+                LocaltimePipe,
+                HaStatusComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(AppsPageComponent)

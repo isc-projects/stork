@@ -28,42 +28,40 @@ describe('SubnetsPageComponent', () => {
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    DHCPService,
-                    UsersService,
-                    MessageService,
-                    SettingsService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: { queryParamMap: new MockParamMap() },
-                            queryParamMap: of(new MockParamMap()),
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                DHCPService,
+                UsersService,
+                MessageService,
+                SettingsService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap()),
                     },
-                    {
-                        provide: Router,
-                        useValue: {},
-                    },
-                ],
-                imports: [
-                    FormsModule,
-                    DropdownModule,
-                    TableModule,
-                    TooltipModule,
-                    RouterModule,
-                    HttpClientTestingModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                ],
-                declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
-            })
-            dhcpService = TestBed.inject(DHCPService)
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
+            imports: [
+                FormsModule,
+                DropdownModule,
+                TableModule,
+                TooltipModule,
+                RouterModule,
+                HttpClientTestingModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+            ],
+            declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
         })
-    )
+        dhcpService = TestBed.inject(DHCPService)
+    }))
 
     beforeEach(() => {
         const fakeResponses: any = [

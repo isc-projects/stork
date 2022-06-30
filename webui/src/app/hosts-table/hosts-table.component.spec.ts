@@ -7,14 +7,12 @@ describe('HostsTableComponent', () => {
     let component: HostsTableComponent
     let fixture: ComponentFixture<HostsTableComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [TableModule],
-                declarations: [HostsTableComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [TableModule],
+            declarations: [HostsTableComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsTableComponent)

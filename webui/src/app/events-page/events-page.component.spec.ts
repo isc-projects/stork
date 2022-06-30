@@ -15,30 +15,28 @@ describe('EventsPageComponent', () => {
     let component: EventsPageComponent
     let fixture: ComponentFixture<EventsPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    EventsService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: { queryParams: {} },
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                EventsService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
                     },
-                    {
-                        provide: Router,
-                        useValue: {
-                            navigate: () => {},
-                        },
+                },
+                {
+                    provide: Router,
+                    useValue: {
+                        navigate: () => {},
                     },
-                    MessageService,
-                ],
-                declarations: [EventsPageComponent, EventsPageComponent, EventsPanelComponent],
-                imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule],
-            }).compileComponents()
-        })
-    )
+                },
+                MessageService,
+            ],
+            declarations: [EventsPageComponent, EventsPageComponent, EventsPanelComponent],
+            imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EventsPageComponent)

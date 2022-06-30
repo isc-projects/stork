@@ -7,14 +7,12 @@ describe('HelpTipComponent', () => {
     let component: HelpTipComponent
     let fixture: ComponentFixture<HelpTipComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [OverlayPanelModule],
-                declarations: [HelpTipComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [OverlayPanelModule],
+            declarations: [HelpTipComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HelpTipComponent)

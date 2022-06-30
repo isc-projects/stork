@@ -21,38 +21,36 @@ describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
     let fixture: ComponentFixture<ProfilePageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    MessageService,
-                    UsersService,
-                    ServicesService,
-                    {
-                        provide: AuthService,
-                        useValue: {
-                            currentUser: of({}),
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                MessageService,
+                UsersService,
+                ServicesService,
+                {
+                    provide: AuthService,
+                    useValue: {
+                        currentUser: of({}),
                     },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {},
-                    },
-                ],
-                declarations: [ProfilePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
-                imports: [
-                    HttpClientTestingModule,
-                    PanelModule,
-                    NoopAnimationsModule,
-                    BreadcrumbModule,
-                    MenuModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    RouterTestingModule,
-                ],
-            }).compileComponents()
-        })
-    )
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
+            declarations: [ProfilePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
+            imports: [
+                HttpClientTestingModule,
+                PanelModule,
+                NoopAnimationsModule,
+                BreadcrumbModule,
+                MenuModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                RouterTestingModule,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(ProfilePageComponent)

@@ -10,14 +10,12 @@ describe('BreadcrumbsComponent', () => {
     let component: BreadcrumbsComponent
     let fixture: ComponentFixture<BreadcrumbsComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [RouterTestingModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
-                declarations: [BreadcrumbsComponent, HelpTipComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [RouterTestingModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
+            declarations: [BreadcrumbsComponent, HelpTipComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(BreadcrumbsComponent)

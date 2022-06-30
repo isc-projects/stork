@@ -21,38 +21,31 @@ describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
     let fixture: ComponentFixture<PasswordChangePageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    FormBuilder,
-                    UsersService,
-                    MessageService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {},
-                    },
-                ],
-                imports: [
-                    HttpClientTestingModule,
-                    PanelModule,
-                    NoopAnimationsModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    MenuModule,
-                    RouterTestingModule,
-                    ReactiveFormsModule,
-                    PasswordModule,
-                ],
-                declarations: [
-                    PasswordChangePageComponent,
-                    BreadcrumbsComponent,
-                    SettingsMenuComponent,
-                    HelpTipComponent,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                FormBuilder,
+                UsersService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
+            imports: [
+                HttpClientTestingModule,
+                PanelModule,
+                NoopAnimationsModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                MenuModule,
+                RouterTestingModule,
+                ReactiveFormsModule,
+                PasswordModule,
+            ],
+            declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(PasswordChangePageComponent)

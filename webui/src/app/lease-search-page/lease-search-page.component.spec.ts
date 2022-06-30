@@ -33,39 +33,37 @@ describe('LeaseSearchPageComponent', () => {
     let router: Router
     let route: ActivatedRoute
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DHCPService, MessageService],
-                imports: [
-                    FormsModule,
-                    HttpClientTestingModule,
-                    RouterTestingModule.withRoutes([
-                        {
-                            path: 'dhcp/leases',
-                            component: LeaseSearchPageComponent,
-                        },
-                    ]),
-                    TableModule,
-                    MessageModule,
-                    ProgressSpinnerModule,
-                    FieldsetModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    BreadcrumbModule,
-                    MessagesModule,
-                    ToggleButtonModule,
-                ],
-                declarations: [
-                    LeaseSearchPageComponent,
-                    LocaltimePipe,
-                    BreadcrumbsComponent,
-                    HelpTipComponent,
-                    IdentifierComponent,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DHCPService, MessageService],
+            imports: [
+                FormsModule,
+                HttpClientTestingModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/leases',
+                        component: LeaseSearchPageComponent,
+                    },
+                ]),
+                TableModule,
+                MessageModule,
+                ProgressSpinnerModule,
+                FieldsetModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                BreadcrumbModule,
+                MessagesModule,
+                ToggleButtonModule,
+            ],
+            declarations: [
+                LeaseSearchPageComponent,
+                LocaltimePipe,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                IdentifierComponent,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LeaseSearchPageComponent)

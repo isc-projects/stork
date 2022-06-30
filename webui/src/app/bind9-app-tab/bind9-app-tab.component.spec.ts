@@ -49,24 +49,22 @@ describe('Bind9AppTabComponent', () => {
     let servicesApi: ServicesService
     let serverData: ServerDataService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
-                imports: [
-                    HttpClientTestingModule,
-                    FormsModule,
-                    RouterTestingModule,
-                    TooltipModule,
-                    TabViewModule,
-                    DialogModule,
-                    NoopAnimationsModule,
-                    PanelModule,
-                ],
-                declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent, AppOverviewComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
+            imports: [
+                HttpClientTestingModule,
+                FormsModule,
+                RouterTestingModule,
+                TooltipModule,
+                TabViewModule,
+                DialogModule,
+                NoopAnimationsModule,
+                PanelModule,
+            ],
+            declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent, AppOverviewComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(Bind9AppTabComponent)

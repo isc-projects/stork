@@ -10,20 +10,18 @@ describe('SettingsMenuComponent', () => {
     let component: SettingsMenuComponent
     let fixture: ComponentFixture<SettingsMenuComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [MenuModule, NoopAnimationsModule, RouterTestingModule],
-                declarations: [SettingsMenuComponent],
-                providers: [
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {},
-                    },
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [MenuModule, NoopAnimationsModule, RouterTestingModule],
+            declarations: [SettingsMenuComponent],
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SettingsMenuComponent)

@@ -25,35 +25,33 @@ describe('DashboardComponent', () => {
     let dhcpService: DHCPService
     let dataService: ServerDataService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    NoopAnimationsModule,
-                    PanelModule,
-                    OverlayPanelModule,
-                    PaginatorModule,
-                    TooltipModule,
-                    ButtonModule,
-                    RouterTestingModule,
-                    HttpClientTestingModule,
-                ],
-                declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent],
-                providers: [
-                    ServicesService,
-                    LocationStrategy,
-                    DHCPService,
-                    MessageService,
-                    UsersService,
-                    SettingsService,
-                    { provide: LocationStrategy, useClass: PathLocationStrategy },
-                ],
-            })
-
-            dhcpService = TestBed.inject(DHCPService)
-            dataService = TestBed.inject(ServerDataService)
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                NoopAnimationsModule,
+                PanelModule,
+                OverlayPanelModule,
+                PaginatorModule,
+                TooltipModule,
+                ButtonModule,
+                RouterTestingModule,
+                HttpClientTestingModule,
+            ],
+            declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent],
+            providers: [
+                ServicesService,
+                LocationStrategy,
+                DHCPService,
+                MessageService,
+                UsersService,
+                SettingsService,
+                { provide: LocationStrategy, useClass: PathLocationStrategy },
+            ],
         })
-    )
+
+        dhcpService = TestBed.inject(DHCPService)
+        dataService = TestBed.inject(ServerDataService)
+    }))
 
     beforeEach(() => {
         const fakeOverview: DhcpOverview = {

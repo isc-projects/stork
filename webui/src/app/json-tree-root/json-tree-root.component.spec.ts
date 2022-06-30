@@ -19,26 +19,24 @@ describe('JsonTreeRootComponent', () => {
     let authService: AuthService
     let userService: UsersService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
-                declarations: [JsonTreeRootComponent, JsonTreeComponent],
-                providers: [
-                    MessageService,
-                    UsersService,
-                    {
-                        provide: Router,
-                        useValue: {
-                            navigate: () => {},
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
+            declarations: [JsonTreeRootComponent, JsonTreeComponent],
+            providers: [
+                MessageService,
+                UsersService,
+                {
+                    provide: Router,
+                    useValue: {
+                        navigate: () => {},
                     },
-                ],
-            }).compileComponents()
-            userService = TestBed.inject(UsersService)
-            authService = TestBed.inject(AuthService)
-        })
-    )
+                },
+            ],
+        }).compileComponents()
+        userService = TestBed.inject(UsersService)
+        authService = TestBed.inject(AuthService)
+    }))
 
     beforeEach(() => {
         spyOn(userService, 'createSession').and.returnValues(

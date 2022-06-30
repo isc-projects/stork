@@ -6,13 +6,11 @@ describe('EventTextComponent', () => {
     let component: EventTextComponent
     let fixture: ComponentFixture<EventTextComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [EventTextComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [EventTextComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EventTextComponent)

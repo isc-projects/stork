@@ -7,14 +7,12 @@ describe('ForbiddenPageComponent', () => {
     let component: ForbiddenPageComponent
     let fixture: ComponentFixture<ForbiddenPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [MessageModule],
-                declarations: [ForbiddenPageComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [MessageModule],
+            declarations: [ForbiddenPageComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(ForbiddenPageComponent)

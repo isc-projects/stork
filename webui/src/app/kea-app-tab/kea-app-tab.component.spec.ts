@@ -83,41 +83,39 @@ describe('KeaAppTabComponent', () => {
     let servicesApi: ServicesService
     let serverData: ServerDataService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
-                imports: [
-                    RouterModule,
-                    RouterTestingModule,
-                    TableModule,
-                    TabViewModule,
-                    PanelModule,
-                    TooltipModule,
-                    MessageModule,
-                    HttpClientTestingModule,
-                    FormsModule,
-                    InputSwitchModule,
-                    FieldsetModule,
-                    DialogModule,
-                    NoopAnimationsModule,
-                    PaginatorModule,
-                    OverlayPanelModule,
-                    ButtonModule,
-                ],
-                declarations: [
-                    KeaAppTabComponent,
-                    HaStatusComponent,
-                    LocaltimePipe,
-                    RenameAppDialogComponent,
-                    EventsPanelComponent,
-                    ConfigReviewPanelComponent,
-                    HelpTipComponent,
-                    AppOverviewComponent,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
+            imports: [
+                RouterModule,
+                RouterTestingModule,
+                TableModule,
+                TabViewModule,
+                PanelModule,
+                TooltipModule,
+                MessageModule,
+                HttpClientTestingModule,
+                FormsModule,
+                InputSwitchModule,
+                FieldsetModule,
+                DialogModule,
+                NoopAnimationsModule,
+                PaginatorModule,
+                OverlayPanelModule,
+                ButtonModule,
+            ],
+            declarations: [
+                KeaAppTabComponent,
+                HaStatusComponent,
+                LocaltimePipe,
+                RenameAppDialogComponent,
+                EventsPanelComponent,
+                ConfigReviewPanelComponent,
+                HelpTipComponent,
+                AppOverviewComponent,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(KeaAppTabComponent)

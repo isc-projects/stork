@@ -11,29 +11,27 @@ describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
     let fixture: ComponentFixture<LoginScreenComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
-                declarations: [LoginScreenComponent],
-                providers: [
-                    GeneralService,
-                    UsersService,
-                    MessageService,
-                    {
-                        provide: Router,
-                        useValue: {},
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
+            declarations: [LoginScreenComponent],
+            providers: [
+                GeneralService,
+                UsersService,
+                MessageService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
                     },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: { queryParams: {} },
-                        },
-                    },
-                ],
-            }).compileComponents()
-        })
-    )
+                },
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LoginScreenComponent)

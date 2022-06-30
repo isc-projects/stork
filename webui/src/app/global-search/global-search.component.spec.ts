@@ -14,21 +14,19 @@ describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
     let fixture: ComponentFixture<GlobalSearchComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [GlobalSearchComponent],
-                providers: [SearchService],
-                imports: [
-                    HttpClientTestingModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    FormsModule,
-                    RouterTestingModule,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [GlobalSearchComponent],
+            providers: [SearchService],
+            imports: [
+                HttpClientTestingModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                FormsModule,
+                RouterTestingModule,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(GlobalSearchComponent)

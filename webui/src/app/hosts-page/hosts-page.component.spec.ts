@@ -50,56 +50,54 @@ describe('HostsPageComponent', () => {
     let paramMapSubject: BehaviorSubject<any>
     let paramMapSpy: any
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DHCPService, FormBuilder, ConfirmationService, MessageService],
-                imports: [
-                    FormsModule,
-                    TableModule,
-                    HttpClientTestingModule,
-                    RouterTestingModule.withRoutes([
-                        {
-                            path: 'dhcp/hosts',
-                            pathMatch: 'full',
-                            redirectTo: 'dhcp/hosts/all',
-                        },
-                        {
-                            path: 'dhcp/hosts/:id',
-                            component: HostsPageComponent,
-                        },
-                    ]),
-                    TabMenuModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    TooltipModule,
-                    FormsModule,
-                    FieldsetModule,
-                    ProgressSpinnerModule,
-                    ToggleButtonModule,
-                    ButtonModule,
-                    CheckboxModule,
-                    DropdownModule,
-                    FieldsetModule,
-                    MultiSelectModule,
-                    ReactiveFormsModule,
-                    ConfirmDialogModule,
-                ],
-                declarations: [
-                    EntityLinkComponent,
-                    HostsPageComponent,
-                    BreadcrumbsComponent,
-                    HelpTipComponent,
-                    HostTabComponent,
-                    IdentifierComponent,
-                    HostFormComponent,
-                    DhcpOptionFormComponent,
-                    DhcpOptionSetFormComponent,
-                ],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DHCPService, FormBuilder, ConfirmationService, MessageService],
+            imports: [
+                FormsModule,
+                TableModule,
+                HttpClientTestingModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/hosts',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/hosts/all',
+                    },
+                    {
+                        path: 'dhcp/hosts/:id',
+                        component: HostsPageComponent,
+                    },
+                ]),
+                TabMenuModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                TooltipModule,
+                FormsModule,
+                FieldsetModule,
+                ProgressSpinnerModule,
+                ToggleButtonModule,
+                ButtonModule,
+                CheckboxModule,
+                DropdownModule,
+                FieldsetModule,
+                MultiSelectModule,
+                ReactiveFormsModule,
+                ConfirmDialogModule,
+            ],
+            declarations: [
+                EntityLinkComponent,
+                HostsPageComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                HostTabComponent,
+                IdentifierComponent,
+                HostFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsPageComponent)

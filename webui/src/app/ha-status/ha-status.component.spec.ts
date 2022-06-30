@@ -13,15 +13,13 @@ describe('HaStatusComponent', () => {
     let component: HaStatusComponent
     let fixture: ComponentFixture<HaStatusComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [PanelModule, TooltipModule, MessageModule, RouterModule, HttpClientTestingModule],
-                declarations: [HaStatusComponent, LocaltimePipe],
-                providers: [ServicesService],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [PanelModule, TooltipModule, MessageModule, RouterModule, HttpClientTestingModule],
+            declarations: [HaStatusComponent, LocaltimePipe],
+            providers: [ServicesService],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HaStatusComponent)

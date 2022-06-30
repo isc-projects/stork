@@ -27,36 +27,34 @@ describe('UsersPageComponent', () => {
     let component: UsersPageComponent
     let fixture: ComponentFixture<UsersPageComponent>
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    HttpClientTestingModule,
-                    TabMenuModule,
-                    MenuModule,
-                    TableModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    RouterModule,
-                    RouterTestingModule,
-                ],
-                declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent],
-                providers: [
-                    FormBuilder,
-                    UsersService,
-                    ServicesService,
-                    MessageService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            paramMap: of(new MockParamMap()),
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                HttpClientTestingModule,
+                TabMenuModule,
+                MenuModule,
+                TableModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                RouterModule,
+                RouterTestingModule,
+            ],
+            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent],
+            providers: [
+                FormBuilder,
+                UsersService,
+                ServicesService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of(new MockParamMap()),
                     },
-                ],
-            }).compileComponents()
-        })
-    )
+                },
+            ],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(UsersPageComponent)

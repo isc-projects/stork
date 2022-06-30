@@ -25,25 +25,23 @@ describe('HostTabComponent', () => {
     let msgService: MessageService
     let confirmService: ConfirmationService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DHCPService, ConfirmationService, MessageService],
-                imports: [
-                    ConfirmDialogModule,
-                    FieldsetModule,
-                    FormsModule,
-                    HttpClientTestingModule,
-                    NoopAnimationsModule,
-                    TableModule,
-                    RouterModule,
-                    RouterTestingModule,
-                    ToggleButtonModule,
-                ],
-                declarations: [HostTabComponent, IdentifierComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DHCPService, ConfirmationService, MessageService],
+            imports: [
+                ConfirmDialogModule,
+                FieldsetModule,
+                FormsModule,
+                HttpClientTestingModule,
+                NoopAnimationsModule,
+                TableModule,
+                RouterModule,
+                RouterTestingModule,
+                ToggleButtonModule,
+            ],
+            declarations: [HostTabComponent, IdentifierComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostTabComponent)

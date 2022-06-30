@@ -22,28 +22,26 @@ describe('SharedNetworksPageComponent', () => {
     let fixture: ComponentFixture<SharedNetworksPageComponent>
     let dhcpService: DHCPService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    FormsModule,
-                    DropdownModule,
-                    TableModule,
-                    TooltipModule,
-                    HttpClientTestingModule,
-                    BreadcrumbModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    RouterModule,
-                    RouterTestingModule,
-                ],
-                declarations: [SharedNetworksPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
-                providers: [DHCPService],
-            })
-
-            dhcpService = TestBed.inject(DHCPService)
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                FormsModule,
+                DropdownModule,
+                TableModule,
+                TooltipModule,
+                HttpClientTestingModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                RouterModule,
+                RouterTestingModule,
+            ],
+            declarations: [SharedNetworksPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
+            providers: [DHCPService],
         })
-    )
+
+        dhcpService = TestBed.inject(DHCPService)
+    }))
 
     beforeEach(() => {
         const fakeResponses: any = [

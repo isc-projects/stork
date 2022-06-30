@@ -43,24 +43,22 @@ describe('EventsPanelComponent', () => {
         expect(params.get(name)).toBe(value)
     }
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    EventsService,
-                    UsersService,
-                    ServicesService,
-                    MessageService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {},
-                    },
-                ],
-                imports: [HttpClientTestingModule, PaginatorModule, RouterTestingModule],
-                declarations: [EventsPanelComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                EventsService,
+                UsersService,
+                ServicesService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
+            imports: [HttpClientTestingModule, PaginatorModule, RouterTestingModule],
+            declarations: [EventsPanelComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EventsPanelComponent)

@@ -66,14 +66,12 @@ describe('HaStatusPanelComponent', () => {
         expect(serverStateNative.textContent).toBe(text)
     }
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [PanelModule, NoopAnimationsModule, SharedModule, OverlayPanelModule],
-                declarations: [HaStatusPanelComponent, HelpTipComponent],
-            }).compileComponents()
-        })
-    )
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [PanelModule, NoopAnimationsModule, SharedModule, OverlayPanelModule],
+            declarations: [HaStatusPanelComponent, HelpTipComponent],
+        }).compileComponents()
+    }))
 
     beforeEach(() => {
         jasmine.clock().mockDate(new Date(2022, 1, 24, 19, 43))

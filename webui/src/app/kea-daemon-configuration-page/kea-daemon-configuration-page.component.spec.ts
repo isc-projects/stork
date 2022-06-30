@@ -35,46 +35,44 @@ describe('KeaDaemonConfigurationPageComponent', () => {
     let userService: UsersService
     let authService: AuthService
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    PanelModule,
-                    ButtonModule,
-                    RouterModule,
-                    HttpClientTestingModule,
-                    OverlayPanelModule,
-                    NoopAnimationsModule,
-                    MessageModule,
-                    BreadcrumbModule,
-                    RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
-                ],
-                declarations: [
-                    KeaDaemonConfigurationPageComponent,
-                    JsonTreeComponent,
-                    JsonTreeRootComponent,
-                    BreadcrumbsComponent,
-                    HelpTipComponent,
-                ],
-                providers: [
-                    ServicesService,
-                    MessageService,
-                    UsersService,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: { queryParamMap: new MockParamMap() },
-                            queryParamMap: of(new MockParamMap()),
-                            paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
-                        },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                PanelModule,
+                ButtonModule,
+                RouterModule,
+                HttpClientTestingModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                MessageModule,
+                BreadcrumbModule,
+                RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
+            ],
+            declarations: [
+                KeaDaemonConfigurationPageComponent,
+                JsonTreeComponent,
+                JsonTreeRootComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+            ],
+            providers: [
+                ServicesService,
+                MessageService,
+                UsersService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap()),
+                        paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
                     },
-                ],
-            })
-            dataService = TestBed.inject(ServerDataService)
-            userService = TestBed.inject(UsersService)
-            authService = TestBed.inject(AuthService)
+                },
+            ],
         })
-    )
+        dataService = TestBed.inject(ServerDataService)
+        userService = TestBed.inject(UsersService)
+        authService = TestBed.inject(AuthService)
+    }))
 
     beforeEach(() => {
         const fakeResponse: any = {
