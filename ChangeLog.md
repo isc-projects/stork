@@ -1,3 +1,9 @@
+* 224 [doc] marcin
+
+    Documented specification of the DHCP options with host reservations and
+    how to delete a host reservation.
+    (Gitlab #794)
+
 * 223 [bug] slawek
 
     Fixed lease utilization statistics calculations for the HA pairs. The
