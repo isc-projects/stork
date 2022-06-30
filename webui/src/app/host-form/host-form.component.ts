@@ -37,7 +37,9 @@ function subnetRequiredValidator(group: FormGroup): ValidationErrors | null {
             err: 'subnet is required for non-global reservations',
         }
         // Highlight the dropdown.
-        group.get('selectedSubnet').setErrors(errs)
+        if (group.get('selectedSubnet').touched && group.get('selectedSubnet').dirty) {
+            group.get('selectedSubnet').setErrors(errs)
+        }
         return errs
     }
     // Clear errors because everything seems fine.

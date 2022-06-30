@@ -25,7 +25,7 @@ export function createDefaultDhcpOptionFormGroup(universe: IPType): FormGroup {
                 Validators.max(universe === IPType.IPv4 ? 255 : 65535),
             ],
         ],
-        alwaysSend: [{ value: false }],
+        alwaysSend: [{ value: false, disabled: false }],
         optionFields: fb.array([]),
         suboptions: fb.array([]),
     })

@@ -264,6 +264,7 @@ describe('HostFormComponent', () => {
         fixture.detectChanges()
         expect(component.formGroup.get('selectedSubnet').valid).toBeTrue()
 
+        component.formGroup.get('selectedSubnet').markAsTouched()
         component.formGroup.get('selectedSubnet').setValue(null)
         fixture.detectChanges()
         expect(component.formGroup.get('selectedSubnet').valid).toBeFalse()
