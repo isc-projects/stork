@@ -106,11 +106,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 	counter.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
 	counter.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
 
+	// The HA servers share the same lease database and return the same
+	// statistics. The statistics from the passive daemons are excluded from
+	// calculations to avoid counting the same lease multiple times. The
+	// calculator uses only the active daemon statistics because the active
+	// daemon's database is overriding others.
 	excludedDaemons, err := dbmodel.GetPassiveHADaemonIDs(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-
 	counter.setExcludedDaemons(excludedDaemons)
 
 	// go through all Subnets and:
