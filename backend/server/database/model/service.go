@@ -455,7 +455,6 @@ func isOperationalHAState(state HAState) bool {
 		return true
 	default:
 		return false
-
 	}
 }
 
