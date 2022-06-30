@@ -59,12 +59,13 @@ volume_files.append cert_file, key_file, ca_dir
 # Server API
 open_api_generator_python_dir = "tests/system/openapi_client"
 file open_api_generator_python_dir => [SWAGGER_FILE, OPENAPI_GENERATOR] do
+    sh "rm", "-rf", open_api_generator_python_dir
     sh "java", "-jar", OPENAPI_GENERATOR, "generate",
-    "-i", SWAGGER_FILE,
-    "-g", "python",
-    "-o", "tests/system",
-    "--global-property", "apiTests=false,modelTests=false",
-    "--additional-properties", "generateSourceCodeOnly=true"
+        "-i", SWAGGER_FILE,
+        "-g", "python",
+        "-o", "tests/system",
+        "--global-property", "apiTests=false,modelTests=false",
+        "--additional-properties", "generateSourceCodeOnly=true"
     sh "touch", open_api_generator_python_dir
 end
 CLEAN.append open_api_generator_python_dir, "tests/system/.openapi-generator",

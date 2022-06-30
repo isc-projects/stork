@@ -159,6 +159,7 @@ DOC_CODEBASE = FileList["doc", "doc/**/*"]
 
 open_api_generator_webui_dir = "webui/src/app/backend"
 file open_api_generator_webui_dir => [SWAGGER_FILE, OPENAPI_GENERATOR] do
+    sh "rm", "-rf", open_api_generator_webui_dir
     sh "java", "-jar", OPENAPI_GENERATOR, "generate",
     "-i", SWAGGER_FILE,
     "-g", "typescript-angular",
