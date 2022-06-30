@@ -89,6 +89,8 @@ func (s *sharedNetworkStats) getDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
+// Returns set of accumulated statistics from all local subnets belonging to
+// a given shared network.
 func (s *sharedNetworkStats) getStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-nas":    s.totalAddresses.ToNativeType(),
@@ -134,6 +136,8 @@ func (s *subnetIPv4Stats) getDelegatedPrefixUtilization() float64 {
 	return 0.0
 }
 
+// Returns set of accumulated statistics from all local subnets belonging to
+// a given IPv4 subnet.
 func (s *subnetIPv4Stats) getStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-addresses":    s.totalAddresses,
@@ -162,6 +166,8 @@ func (s *subnetIPv6Stats) getDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
+// Returns set of accumulated statistics from all local subnets belonging to
+// a given IPv6 network.
 func (s *subnetIPv6Stats) getStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-nas":    s.totalAddresses.ToNativeType(),
