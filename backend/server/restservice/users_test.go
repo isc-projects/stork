@@ -302,9 +302,12 @@ func TestGetUsers(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
 
 	// Retrieve all users using the API
-	var limit int64 = 99999
-	var start int64
-	text := ""
+	var (
+		limit int64 = 99999
+		start int64
+		text  string
+	)
+
 	params = users.GetUsersParams{
 		Limit: &limit,
 		Start: &start,
