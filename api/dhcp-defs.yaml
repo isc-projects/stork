@@ -1,6 +1,6 @@
 # A general purpose type used to diferentiate between various
 # IPv4 (or DHCPv4) and IPv6 (or DHCPv6 cases).
-  DHCPUniverse:
+  IPType:
     type: integer
     enum: &IPTYPE
       - 4
