@@ -54,6 +54,17 @@ file swagger_server_dir => [SWAGGER_FILE, GOSWAGGER] do
         "--template", "stratoscale"
     end
     sh "touch", "-c", swagger_server_dir
+
+    # The Stratoscale template generates the go generate directives for mockery.
+    # Mockery library changed the arguments in version 2 but Stratoscale
+    # produces directives for Mockery V1. This workaround changes the argument
+    # style. It will be not necessary after merge https://github.com/go-swagger/go-swagger/pull/2796.
+    swagger_server_configure_file = File.join(swagger_server_dir, "restapi/configure_stork.go")
+    text = File.read(swagger_server_configure_file)
+    new_contents = text.gsub(
+        /\/\/go:generate mockery -name (.*) -inpkg/,
+        '//go:generate mockery --name \1 --inpackage')
+    File.open(swagger_server_configure_file, "w") {|file| file.puts new_contents }
 end
 CLEAN.append swagger_server_dir
 
@@ -121,7 +132,7 @@ GO_TOOL_CODEBASE = go_tool_codebase
 
 file GO_SERVER_API_MOCK => [GO, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
-        sh GO, "generate", "server/agentcomm/grpcli_test.go"
+        sh GO, "generate", "./..."
     end
     sh "touch", "-c", GO_SERVER_API_MOCK
 end

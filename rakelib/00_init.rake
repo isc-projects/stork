@@ -220,6 +220,7 @@ protoc_ver='3.18.1'
 protoc_gen_go_ver='v1.26.0'
 protoc_gen_go_grpc_ver='v1.1.0'
 richgo_ver='v0.3.10'
+mockery_ver='v2.13.1'
 mockgen_ver='v1.6.0'
 golangcilint_ver='1.46.2'
 yamlinc_ver='0.1.10'
@@ -543,6 +544,13 @@ file RICHGO => [GO] do
     sh RICHGO, "version"
 end
 add_version_guard(RICHGO, richgo_ver)
+
+MOCKERY = "#{gobin}/mockery"
+file MOCKERY => [GO] do
+    sh GO, "install", "github.com/vektra/mockery/v2@#{mockery_ver}"
+    sh MOCKERY, "--version"
+end
+add_version_guard(MOCKERY, mockery_ver)
 
 MOCKGEN = "#{gobin}/mockgen"
 file MOCKGEN => [GO] do
