@@ -28,6 +28,15 @@ type DhcpOverviewParsed = ModifyDeep<
         subnets4: {
             items: {
                 localSubnets: {
+                    // The UI presents whole subnet or shared network statistics.
+                    // They shouldn't be recalculated on the frontend because
+                    // it's not trivial, and we don't want to double the
+                    // calculation logic on the front and backend.
+                    // The local subnets are marked as never
+                    // to prevent recalculation. It causes any usage of local
+                    // subnets to be labeled as an error. If we don't find any
+                    // use case for them, then it will be easier to stop
+                    // sharing them between frontend and backend.
                     stats: never
                     statsCollectedAt: never
                 }[]
@@ -37,6 +46,7 @@ type DhcpOverviewParsed = ModifyDeep<
         subnets6: {
             items: {
                 localSubnets: {
+                    // Prevents local subnets recalculation.
                     stats: never
                     statsCollectedAt: never
                 }[]
