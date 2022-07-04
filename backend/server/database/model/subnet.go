@@ -53,6 +53,15 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toMarshal)
 }
 
+// An interface for a wrapper of subnet statistics that encapsulates the
+// utilization calculations. It corresponds to the
+// `statisticscounter.subnetStats` interface and prevents to dependency cycle.
+type utilizationStatistics interface {
+	GetAddressUtilization() float64
+	GetDelegatedPrefixUtilization() float64
+	GetStatistics() SubnetStats
+}
+
 // Deserialize statistics and convert back the strings to int64 or uint64.
 // I assume that the statistics will always contain numeric data, no string
 // that look like integers.
@@ -103,69 +112,6 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-// Calculates the utilization of addresses and delegated prefixes based on the
-// statistics values. If the values are missing or zeros, then it returns zero.
-// Utilization is in 0 (0%) to 1 (100%) range.
-// For IPv6 networks, the address utilization should be based on NA statistics.
-// For IPv4 networks, the PD utilization should be zero.
-func (s *SubnetStats) GetUtilizations() (addressUtilization, prefixDelegationUtilization float64) {
-	if s == nil {
-		return
-	}
-
-	statisticNames := [][]string{
-		{"total-addresses", "assigned-addresses"},
-		{"total-nas", "assigned-nas"},
-		{"total-pds", "assigned-pds"},
-	}
-	utilizations := make([]*float64, len(statisticNames))
-
-	for i := 0; i < len(statisticNames); i++ {
-		counters := make([]*storkutil.BigCounter, len(statisticNames[i]))
-		for j := 0; j < len(statisticNames[i]); j++ {
-			statisticName := statisticNames[i][j]
-			value, ok := (*s)[statisticName]
-			if !ok {
-				break
-			}
-
-			valueUint, ok := value.(uint64)
-			if ok {
-				counters[j] = storkutil.NewBigCounter(valueUint)
-				continue
-			}
-
-			valueBigInt, ok := value.(*big.Int)
-			if ok {
-				counter, ok := storkutil.NewBigCounter(0).AddBigInt(valueBigInt)
-				if ok {
-					counters[j] = counter
-				}
-			}
-		}
-
-		total, assigned := counters[0], counters[1]
-		if total == nil || assigned == nil {
-			continue
-		}
-
-		utilization := assigned.DivideSafeBy(total)
-		utilizations[i] = &utilization
-	}
-
-	addressUtilization = 0.0
-	if utilizations[0] != nil {
-		addressUtilization = *utilizations[0]
-	} else if utilizations[1] != nil {
-		addressUtilization = *utilizations[1]
-	}
-
-	if utilizations[2] != nil {
-		prefixDelegationUtilization = *utilizations[2]
-	}
-	return addressUtilization, prefixDelegationUtilization
 }
 
 // This structure holds subnet information retrieved from an app. Multiple
@@ -745,11 +691,12 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 }
 
 // Update statistics in Subnet.
-func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics SubnetStats) error {
-	addrUtilization, pdUtilization := statistics.GetUtilizations()
+func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStatistics) error {
+	addrUtilization := statistics.GetAddressUtilization()
+	pdUtilization := statistics.GetDelegatedPrefixUtilization()
 	s.AddrUtilization = int16(addrUtilization * 1000)
 	s.PdUtilization = int16(pdUtilization * 1000)
-	s.Stats = statistics
+	s.Stats = statistics.GetStatistics()
 	s.StatsCollectedAt = time.Now().UTC()
 	q := dbi.Model(s)
 	q = q.Column("addr_utilization", "pd_utilization", "stats", "stats_collected_at")

@@ -288,13 +288,14 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 }
 
 // Update statistics and utilization of addresses and delegated prefixes in a SharedNetwork.
-func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, statistics SubnetStats) error {
-	addrUtilization, pdUtilization := statistics.GetUtilizations()
+func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, statistics utilizationStatistics) error {
+	addrUtilization := statistics.GetAddressUtilization()
+	pdUtilization := statistics.GetDelegatedPrefixUtilization()
 	net := &SharedNetwork{
 		ID:               sharedNetworkID,
 		AddrUtilization:  int16(addrUtilization * 1000),
 		PdUtilization:    int16(pdUtilization * 1000),
-		Stats:            statistics,
+		Stats:            statistics.GetStatistics(),
 		StatsCollectedAt: time.Now().UTC(),
 	}
 	q := dbi.Model(net)

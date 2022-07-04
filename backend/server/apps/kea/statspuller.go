@@ -124,13 +124,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 		su := counter.add(sn)
 		err = sn.UpdateStatistics(
 			statsPuller.DB,
-			su.getStatistics(),
+			su,
 		)
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot update utilization (%.3f, %.3f) in subnet %d: %s",
-				su.getAddressUtilization(), su.getDelegatedPrefixUtilization(), sn.ID, err)
+				su.GetAddressUtilization(), su.GetDelegatedPrefixUtilization(), sn.ID, err)
 			continue
 		}
 	}
@@ -138,14 +138,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 	// shared network utilization
 	for sharedNetworkID, u := range counter.sharedNetworks {
 		err = dbmodel.UpdateStatisticsInSharedNetwork(
-			statsPuller.DB, sharedNetworkID,
-			u.getStatistics(),
+			statsPuller.DB, sharedNetworkID, u,
 		)
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot update utilization (%.3f, %.3f) in shared network %d: %s",
-				u.getAddressUtilization(), u.getDelegatedPrefixUtilization(), sharedNetworkID, err)
+				u.GetAddressUtilization(), u.GetDelegatedPrefixUtilization(), sharedNetworkID, err)
 			continue
 		}
 	}

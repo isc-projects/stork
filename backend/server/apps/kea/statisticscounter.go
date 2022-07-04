@@ -54,9 +54,9 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 // General subnet lease statistics.
 // It unifies the IPv4 and IPv6 subnet data.
 type subnetStats interface {
-	getAddressUtilization() float64
-	getDelegatedPrefixUtilization() float64
-	getStatistics() dbmodel.SubnetStats
+	GetAddressUtilization() float64
+	GetDelegatedPrefixUtilization() float64
+	GetStatistics() dbmodel.SubnetStats
 }
 
 // Sum of the subnet statistics from the single shared network.
@@ -79,19 +79,19 @@ func newSharedNetworkStats() *sharedNetworkStats {
 }
 
 // Address utilization of the shared network.
-func (s *sharedNetworkStats) getAddressUtilization() float64 {
+func (s *sharedNetworkStats) GetAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
 // Delegated prefix utilization of the shared network.
-func (s *sharedNetworkStats) getDelegatedPrefixUtilization() float64 {
+func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given shared network.
-func (s *sharedNetworkStats) getStatistics() dbmodel.SubnetStats {
+func (s *sharedNetworkStats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-nas":    s.totalAddresses.ConvertToNativeType(),
 		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
@@ -122,7 +122,7 @@ type subnetIPv4Stats struct {
 }
 
 // Return the address utilization for a single IPv4 subnet.
-func (s *subnetIPv4Stats) getAddressUtilization() float64 {
+func (s *subnetIPv4Stats) GetAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	if s.totalAddresses == 0 {
 		return 0
@@ -132,13 +132,13 @@ func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 
 // Return the delegated prefix utilization for a single IPv4 subnet.
 // It's always zero because the delegated prefix doesn't apply to IPv4.
-func (s *subnetIPv4Stats) getDelegatedPrefixUtilization() float64 {
+func (s *subnetIPv4Stats) GetDelegatedPrefixUtilization() float64 {
 	return 0.0
 }
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv4 subnet.
-func (s *subnetIPv4Stats) getStatistics() dbmodel.SubnetStats {
+func (s *subnetIPv4Stats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-addresses":    s.totalAddresses,
 		"assigned-addresses": s.totalAssignedAddresses,
@@ -156,19 +156,19 @@ type subnetIPv6Stats struct {
 }
 
 // Return the IPv6 address utilization for a single IPv6 subnet.
-func (s *subnetIPv6Stats) getAddressUtilization() float64 {
+func (s *subnetIPv6Stats) GetAddressUtilization() float64 {
 	// The assigned addresses include the declined ones that aren't reclaimed yet.
 	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
 // Return the delegated prefix utilization for a single IPv6 subnet.
-func (s *subnetIPv6Stats) getDelegatedPrefixUtilization() float64 {
+func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv6 network.
-func (s *subnetIPv6Stats) getStatistics() dbmodel.SubnetStats {
+func (s *subnetIPv6Stats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
 		"total-nas":    s.totalAddresses.ConvertToNativeType(),
 		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),

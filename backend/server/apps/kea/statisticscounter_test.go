@@ -51,8 +51,8 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.1), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.1), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.EqualValues(t, 100, counter.global.totalIPv4Addresses.ToInt64())
 	require.EqualValues(t, 10, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -91,8 +91,8 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.4), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.5), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.4), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.5), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -131,8 +131,8 @@ func TestCounterAddSubnetUsingNonUint64(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -190,8 +190,8 @@ func TestCounterAddMultipleIPv4LocalSubnet(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(34.0/355.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(34.0/355.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.EqualValues(t, 355, counter.global.totalIPv4Addresses.ToInt64())
 	require.EqualValues(t, 34, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -255,8 +255,8 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(34.0/355.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(44.0/243.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(34.0/355.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(44.0/243.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -326,8 +326,8 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 	// Assert
 	require.Len(t, counter.sharedNetworks, 1)
 	statistics := counter.sharedNetworks[1]
-	require.InDelta(t, float64(140.0/600.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(100.0/120.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(140.0/600.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(100.0/120.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the counter separates the shared networks during the calculations.
@@ -375,11 +375,11 @@ func TestCounterAddMultipleSharedNetworkSubnets(t *testing.T) {
 	// Assert
 	require.Len(t, counter.sharedNetworks, 2)
 	statistics := counter.sharedNetworks[13]
-	require.InDelta(t, float64(10.0/100.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(30.0/40.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(10.0/100.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(30.0/40.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 	statistics = counter.sharedNetworks[4]
-	require.InDelta(t, float64(40.0/200.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(70.0/80.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(40.0/200.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(70.0/80.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the counter works for a subnet without the local subnets.
@@ -396,11 +396,11 @@ func TestCounterAddEmptySubnet(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 	statistics = counter.sharedNetworks[42]
-	require.InDelta(t, float64(0.0), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the counter add extra IPv4 and IPv6 addresses, and delegated prefixes.
@@ -505,17 +505,17 @@ func TestCounterRealKeaResponse(t *testing.T) {
 		// Assert
 		switch subnet.ID {
 		case 0:
-			require.InDelta(t, float64((111.0+2034.0)/(256.0+4098.0)), statistics.getAddressUtilization(), float64(0.001))
+			require.InDelta(t, float64((111.0+2034.0)/(256.0+4098.0)), statistics.GetAddressUtilization(), float64(0.001))
 		case 1:
-			require.InDelta(t, float64((2400.0+60.0)/(4096.0+256.0)), statistics.getAddressUtilization(), float64(0.001))
-			require.InDelta(t, float64((15.0)/(500.0+1048.0)), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+			require.InDelta(t, float64((2400.0+60.0)/(4096.0+256.0)), statistics.GetAddressUtilization(), float64(0.001))
+			require.InDelta(t, float64((15.0)/(500.0+1048.0)), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 			require.EqualValues(t, int64(4096+256), counter.global.totalIPv6Addresses.ToInt64())
 		case 2:
 			expected := big.NewInt(4096 + 256)
 			expected = expected.Add(expected, big.NewInt(0).SetUint64(math.MaxUint64))
 			require.EqualValues(t, expected, counter.global.totalIPv6Addresses.ToBigInt())
-			require.InDelta(t, float64(0.5), statistics.getAddressUtilization(), float64(0.001))
+			require.InDelta(t, float64(0.5), statistics.GetAddressUtilization(), float64(0.001))
 		}
 	}
 }
@@ -543,8 +543,8 @@ func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.Zero(t, statistics.getAddressUtilization())
-	require.Zero(t, statistics.getDelegatedPrefixUtilization())
+	require.Zero(t, statistics.GetAddressUtilization())
+	require.Zero(t, statistics.GetDelegatedPrefixUtilization())
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv4Addresses.ToInt64())
@@ -621,10 +621,10 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 	require.EqualValues(t, uint64(9), counter.global.totalAssignedDelegatedPrefixes.ToUint64())
 	require.Len(t, counter.sharedNetworks, 1)
 
-	require.EqualValues(t, 0.5, utilization1.getAddressUtilization())
-	require.EqualValues(t, 0.1, utilization1.getDelegatedPrefixUtilization())
-	require.EqualValues(t, 0.25, utilization2.getAddressUtilization())
-	require.EqualValues(t, 0.0, utilization2.getDelegatedPrefixUtilization())
+	require.EqualValues(t, 0.5, utilization1.GetAddressUtilization())
+	require.EqualValues(t, 0.1, utilization1.GetDelegatedPrefixUtilization())
+	require.EqualValues(t, 0.25, utilization2.GetAddressUtilization())
+	require.EqualValues(t, 0.0, utilization2.GetDelegatedPrefixUtilization())
 
 	sharedNetwork := counter.sharedNetworks[42]
 	require.EqualValues(t, 180, sharedNetwork.totalAddresses.ToUint64())
@@ -632,8 +632,8 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 	require.EqualValues(t, 9, sharedNetwork.totalAssignedDelegatedPrefixes.ToUint64())
 	require.EqualValues(t, 90, sharedNetwork.totalDelegatedPrefixes.ToUint64())
 
-	require.InDelta(t, 7.0/18.0, sharedNetwork.getAddressUtilization(), 0.001)
-	require.EqualValues(t, 0.1, sharedNetwork.getDelegatedPrefixUtilization())
+	require.InDelta(t, 7.0/18.0, sharedNetwork.GetAddressUtilization(), 0.001)
+	require.EqualValues(t, 0.1, sharedNetwork.GetDelegatedPrefixUtilization())
 }
 
 // Checks if the excluded daemons are respected for IPv4 subnets.
@@ -685,8 +685,8 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.1), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.1), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.EqualValues(t, 300, counter.global.totalIPv4Addresses.ToInt64())
 	require.EqualValues(t, 30, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -755,8 +755,8 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.1), statistics.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(40.0/140.0), statistics.getDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.1), statistics.GetAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(40.0/140.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
@@ -796,7 +796,7 @@ func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 	sn := counter.add(subnet)
 
 	// Act
-	stats := sn.getStatistics()
+	stats := sn.GetStatistics()
 
 	// Assert
 	require.EqualValues(t, 300, stats["total-addresses"])
@@ -836,7 +836,7 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 	sn := counter.add(subnet)
 
 	// Act
-	stats := sn.getStatistics()
+	stats := sn.GetStatistics()
 
 	// Assert
 	require.EqualValues(t, 300, stats["total-nas"])
@@ -887,7 +887,7 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 	sn := counter.sharedNetworks[1]
 
 	// Act
-	stats := sn.getStatistics()
+	stats := sn.GetStatistics()
 
 	// Assert
 	require.EqualValues(t, 300, stats["total-nas"])

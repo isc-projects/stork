@@ -216,12 +216,12 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.Equal(t, network.Name, returned.Name)
 
 	// update utilization
-	err = UpdateStatisticsInSharedNetwork(db, network.ID, SubnetStats{
+	err = UpdateStatisticsInSharedNetwork(db, network.ID, newUtilizationStatisticsMock(0.01, 0.02, SubnetStats{
 		"assigned-nas": uint64(1),
 		"total-nas":    uint64(100),
 		"assigned-pds": uint64(4),
 		"total-pds":    uint64(200),
-	})
+	}))
 	require.NoError(t, err)
 
 	returned, err = GetSharedNetwork(db, network.ID)

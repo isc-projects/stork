@@ -14,6 +14,33 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Simple mock for utilizationStatisitcs for testing purposes.
+type utilizationStatisticsMock struct {
+	addressUtilization         float64
+	delegatedPrefixUtilization float64
+	statistics                 SubnetStats
+}
+
+func newUtilizationStatisticsMock(address, pd float64, stats SubnetStats) utilizationStatistics {
+	return &utilizationStatisticsMock{
+		addressUtilization:         address,
+		delegatedPrefixUtilization: pd,
+		statistics:                 stats,
+	}
+}
+
+func (m *utilizationStatisticsMock) GetAddressUtilization() float64 {
+	return m.addressUtilization
+}
+
+func (m *utilizationStatisticsMock) GetDelegatedPrefixUtilization() float64 {
+	return m.delegatedPrefixUtilization
+}
+
+func (m *utilizationStatisticsMock) GetStatistics() SubnetStats {
+	return m.statistics
+}
+
 // Test that subnet with address pools is inserted into the database.
 func TestAddSubnetWithAddressPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -766,12 +793,12 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, SubnetStats{
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatisticsMock(0.01, 0.02, SubnetStats{
 		"total-nas":    uint64(100),
 		"assigned-nas": uint64(1),
 		"total-pds":    uint64(100),
 		"assigned-pds": uint64(2),
-	})
+	}))
 
 	// check if utilization was stored in db
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
@@ -988,100 +1015,6 @@ func TestSerializeLocalSubnetWithNoneStatsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	require.Nil(t, deserialized.Stats)
-}
-
-// Test that the the nil stats returns zero utilizations.
-func TestUtilizationsForNilStats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats(nil)
-
-	// Act
-	aU, pdU := stats.GetUtilizations()
-
-	// Assert
-	require.Zero(t, aU)
-	require.Zero(t, pdU)
-}
-
-// Test that the the IPv4 stats returns proper utilizations.
-func TestUtilizationsForIPv4Stats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats{
-		"assigned-addresses": uint64(5),
-		"total-addresses":    uint64(20),
-	}
-
-	// Act
-	aU, pdU := stats.GetUtilizations()
-
-	// Assert
-	require.EqualValues(t, 0.25, aU)
-	require.Zero(t, pdU)
-}
-
-// Test that the the IPv6 stats returns proper utilizations.
-func TestUtilizationsForIPv6Stats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats{
-		"assigned-nas": uint64(5),
-		"total-nas":    uint64(20),
-		"assigned-pds": uint64(10),
-		"total-pds":    uint64(100),
-	}
-
-	// Act
-	aU, pdU := stats.GetUtilizations()
-
-	// Assert
-	require.EqualValues(t, 0.25, aU)
-	require.EqualValues(t, 0.1, pdU)
-}
-
-// Test that the the stats returns zero if the total value is zero.
-func TestUtilizationsForZeroTotalStats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats{
-		"assigned-nas": uint64(5),
-		"total-nas":    uint64(0),
-	}
-
-	// Act
-	aU, _ := stats.GetUtilizations()
-
-	// Assert
-	require.Zero(t, aU)
-}
-
-// Test that the the stats returns zero if any statistic is missing.
-func TestUtilizationsForMissingStats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats{
-		"total-nas": uint64(100),
-	}
-
-	// Act
-	aU, _ := stats.GetUtilizations()
-
-	// Assert
-	require.Zero(t, aU)
-}
-
-// Test that the the big.Int stats are supported..
-func TestUtilizationsForBigIntStats(t *testing.T) {
-	// Arrange
-	stats := SubnetStats{
-		"total-nas": big.NewInt(0).Add(
-			big.NewInt(0).SetUint64(math.MaxUint64),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		),
-		"assigned-nas": big.NewInt(0).SetUint64(math.MaxUint64),
-	}
-
-	// Act
-	aU, _ := stats.GetUtilizations()
-
-	// Assert
-	require.EqualValues(t, 0.5, aU)
 }
 
 // Benchmark measuring a time to add a single subnet.
