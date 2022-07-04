@@ -130,7 +130,7 @@ GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-tool/stork-tool")
 
-file GO_SERVER_API_MOCK => [GO, MOCKGEN] + GO_SERVER_CODEBASE do
+file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
         sh GO, "generate", "./..."
     end
