@@ -53,7 +53,7 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 
 // General subnet lease statistics.
 // It unifies the IPv4 and IPv6 subnet data.
-type leaseStats interface {
+type subnetStats interface {
 	getAddressUtilization() float64
 	getDelegatedPrefixUtilization() float64
 	getStatistics() dbmodel.SubnetStats
@@ -229,7 +229,7 @@ func (c *statisticsCounter) setExcludedDaemons(daemons []int64) {
 // The total counter (total addresses or NAs) will be increased by
 // outOfPool value.
 // It returns the statistics of this subnet.
-func (c *statisticsCounter) add(subnet *dbmodel.Subnet) leaseStats {
+func (c *statisticsCounter) add(subnet *dbmodel.Subnet) subnetStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
