@@ -682,7 +682,7 @@ func TestGetPassiveHADaemonIDs(t *testing.T) {
 
 // Tests that passive HA daemons are selected properly when HA daemons are
 // unreachable.
-func TestGetNonLeadingHAUnreachableDaemonIDs(t *testing.T) {
+func TestGetPassiveHAUnreachableDaemonIDs(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
