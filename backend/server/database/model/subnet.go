@@ -56,7 +56,7 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 // An interface for a wrapper of subnet statistics that encapsulates the
 // utilization calculations. It corresponds to the
 // `statisticscounter.subnetStats` interface and prevents to dependency cycle.
-type utilizationStatistics interface {
+type utilizationStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
 	GetStatistics() SubnetStats
@@ -691,7 +691,7 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 }
 
 // Update statistics in Subnet.
-func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStatistics) error {
+func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStats) error {
 	addrUtilization := statistics.GetAddressUtilization()
 	pdUtilization := statistics.GetDelegatedPrefixUtilization()
 	s.AddrUtilization = int16(addrUtilization * 1000)

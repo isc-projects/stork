@@ -15,29 +15,29 @@ import (
 )
 
 // Simple mock for utilizationStatisitcs for testing purposes.
-type utilizationStatisticsMock struct {
+type utilizationStatsMock struct {
 	addressUtilization         float64
 	delegatedPrefixUtilization float64
 	statistics                 SubnetStats
 }
 
-func newUtilizationStatisticsMock(address, pd float64, stats SubnetStats) utilizationStatistics {
-	return &utilizationStatisticsMock{
+func newUtilizationStatsMock(address, pd float64, stats SubnetStats) utilizationStats {
+	return &utilizationStatsMock{
 		addressUtilization:         address,
 		delegatedPrefixUtilization: pd,
 		statistics:                 stats,
 	}
 }
 
-func (m *utilizationStatisticsMock) GetAddressUtilization() float64 {
+func (m *utilizationStatsMock) GetAddressUtilization() float64 {
 	return m.addressUtilization
 }
 
-func (m *utilizationStatisticsMock) GetDelegatedPrefixUtilization() float64 {
+func (m *utilizationStatsMock) GetDelegatedPrefixUtilization() float64 {
 	return m.delegatedPrefixUtilization
 }
 
-func (m *utilizationStatisticsMock) GetStatistics() SubnetStats {
+func (m *utilizationStatsMock) GetStatistics() SubnetStats {
 	return m.statistics
 }
 
@@ -793,7 +793,7 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, newUtilizationStatisticsMock(0.01, 0.02, SubnetStats{
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, SubnetStats{
 		"total-nas":    uint64(100),
 		"assigned-nas": uint64(1),
 		"total-pds":    uint64(100),
