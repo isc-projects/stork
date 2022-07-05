@@ -96,5 +96,8 @@ then
     echo " ___) | || (_) | |  |   < "
     echo "|____/ \__\___/|_|  |_|\_\\"
     echo "                          "
-    echo "Open the demo in the browser: http://127.0.0.1:8080"
+    echo "Open the demo in the browser:"
+    echo "Stork Server: http://127.0.0.1:8080"
+    echo "Grafana: http://127.0.0.1:3000"
+    echo "Traffic simulator: http://127.0.0.1:5000"
 fi
