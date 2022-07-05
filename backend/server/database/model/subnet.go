@@ -55,7 +55,7 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 
 // An interface for a wrapper of subnet statistics that encapsulates the
 // utilization calculations. It corresponds to the
-// `statisticscounter.subnetStats` interface and prevents to dependency cycle.
+// `statisticscounter.subnetStats` interface and prevents the dependency cycle.
 type utilizationStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
