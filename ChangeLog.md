@@ -1,3 +1,9 @@
+* 226 [func] slawek
+
+    Added a shell script to run the demo only with docker-compose. The users
+    can try the Stork with minimal effort.
+    (Gitlab #761)
+
 * 225 [func] marcin
 
     Added multiple enhancements in the form for creating new host
