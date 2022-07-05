@@ -1,4 +1,4 @@
-* 222 [func] slawek
+* 222 [build] slawek
 
     Introduced golang 1.18 and upgraded go-related dependencies.
     (Gitlab #788)
