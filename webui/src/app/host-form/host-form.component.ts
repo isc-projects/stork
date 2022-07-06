@@ -258,7 +258,13 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 hostIdGroup: this._formBuilder.group(
                     {
                         idType: [this.hostIdTypes[0].label],
-                        idInputHex: ['', StorkValidators.hexIdentifier()],
+                        idInputHex: [
+                            '',
+                            Validators.compose([
+                                StorkValidators.hexIdentifier(),
+                                StorkValidators.hexIdentifierLength(40),
+                            ]),
+                        ],
                         idInputText: [''],
                         idFormat: ['hex'],
                     },
@@ -267,7 +273,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                     }
                 ),
                 ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
-                hostname: [''],
+                hostname: ['', StorkValidators.fqdn],
                 options: this._formBuilder.array([]),
             },
             {

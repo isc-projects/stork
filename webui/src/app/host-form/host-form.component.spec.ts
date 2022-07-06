@@ -331,6 +331,37 @@ describe('HostFormComponent', () => {
 
         component.formGroup.get('hostIdGroup.idInputHex').setValue('invalid')
         expect(component.formGroup.get('hostIdGroup.idInputHex').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputHex').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputHex').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('Please specify valid hexadecimal digits (e.g., ab:09:ef:01).')
+    }))
+
+    it('should validate hex identifier length', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.formGroup.get('hostIdGroup.idFormat').value).toBe('hex')
+
+        const pattern = '11'
+        component.formGroup.get('hostIdGroup.idInputHex').setValue(pattern.repeat(21))
+        expect(component.formGroup.get('hostIdGroup.idInputHex').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputHex').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputHex').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain(
+            'The number of hexadecimal digits exceeds the maximum value of 40.'
+        )
     }))
 
     it('should validate text identifier', fakeAsync(() => {
@@ -348,6 +379,14 @@ describe('HostFormComponent', () => {
 
         component.formGroup.get('hostIdGroup.idInputText').setValue('')
         expect(component.formGroup.get('hostIdGroup.idInputText').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputText').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputText').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('DHCP identifier is required.')
     }))
 
     it('should list ip reservation types for a server type', fakeAsync(() => {
@@ -449,8 +488,15 @@ describe('HostFormComponent', () => {
 
         expect(component.ipGroups.length).toBe(1)
         component.ipGroups.at(0).get('inputIPv4').setValue('invalid')
+        component.ipGroups.at(0).get('inputIPv4').markAsTouched()
+        component.ipGroups.at(0).get('inputIPv4').markAsDirty()
         fixture.detectChanges()
+
         expect(component.ipGroups.at(0).get('inputIPv4').valid).toBeFalse()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('Please specify a valid IPv4 address.')
     }))
 
     it('should validate ipv6 address reservation', fakeAsync(() => {
@@ -459,13 +505,24 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
+
         component.ipGroups.at(0).get('ipType').setValue('ia_na')
         fixture.detectChanges()
 
         expect(component.ipGroups.length).toBe(1)
-        component.ipGroups.at(0).get('inputNA').setValue('invalid')
+
+        component.ipGroups.at(0).get('inputNA').setValue('192.0.2.1')
+        component.ipGroups.at(0).get('inputNA').markAsTouched()
+        component.ipGroups.at(0).get('inputNA').markAsDirty()
         fixture.detectChanges()
+
         expect(component.ipGroups.at(0).get('inputNA').valid).toBeFalse()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('Please specify a valid IPv6 address.')
     }))
 
     it('should validate ipv6 prefix reservation', fakeAsync(() => {
@@ -474,13 +531,24 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
+
         component.ipGroups.at(0).get('ipType').setValue('ia_pd')
         fixture.detectChanges()
 
         expect(component.ipGroups.length).toBe(1)
+
         component.ipGroups.at(0).get('inputPD').setValue('invalid')
+        component.ipGroups.at(0).get('inputPD').markAsTouched()
+        component.ipGroups.at(0).get('inputPD').markAsDirty()
         fixture.detectChanges()
+
         expect(component.ipGroups.at(0).get('inputPD').valid).toBeFalse()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('Please specify a valid IPv6 prefix.')
     }))
 
     it('should present an error message when begin transaction fails', fakeAsync(() => {
@@ -519,7 +587,7 @@ describe('HostFormComponent', () => {
         component.formGroup.get('selectedSubnet').setValue(1)
         component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
         component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
-        component.formGroup.get('hostname').setValue(' example.org ')
+        component.formGroup.get('hostname').setValue('example.org')
         component.optionsArray.push(
             formBuilder.group({
                 optionCode: [5],

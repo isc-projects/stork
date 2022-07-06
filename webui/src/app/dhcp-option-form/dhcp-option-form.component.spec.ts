@@ -345,13 +345,13 @@ describe('DhcpOptionFormComponent', () => {
         expect(component.formGroup.valid).toBeTrue()
 
         component.addFqdnField()
-        component.optionFields.at(0).get('control').setValue('fqdn..invalid')
+        component.optionFields.at(0).get('control').setValue('fqdn..invalid.')
         expect(component.formGroup.valid).toBeFalse()
 
         component.optionFields.at(0).get('control').setValue(null)
         expect(component.formGroup.valid).toBeFalse()
 
-        component.optionFields.at(0).get('control').setValue('fqdn.valid')
+        component.optionFields.at(0).get('control').setValue('fqdn.valid.')
         expect(component.formGroup.valid).toBeTrue()
     })
 

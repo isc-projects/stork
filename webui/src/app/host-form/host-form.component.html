@@ -22,9 +22,9 @@
                 </span>
                 <small
                     *ngIf="
-                        formGroup.controls['selectedDaemons'].invalid &&
-                        formGroup.controls['selectedDaemons'].dirty &&
-                        formGroup.controls['selectedDaemons'].touched
+                        formGroup.get('selectedDaemons').invalid &&
+                        formGroup.get('selectedDaemons').dirty &&
+                        formGroup.get('selectedDaemons').touched
                     "
                     class="p-error block"
                     >At least one server must be selected.
@@ -66,23 +66,53 @@
             <div class="p-col-3">
                 <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
             </div>
-            <div class="p-col-6">
+
+            <div *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText" class="p-col-6">
                 <input
-                    *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
                     pInputText
                     formControlName="idInputHex"
                     class="full-width"
                     placeholder="e.g. 01:02:03:04:05:06"
                 />
-                <ng-template #hostIdFormatText>
+            </div>
+            <div class="p-offset-6 p-col-6 p-pt-0">
+                <small
+                    *ngIf="
+                        formGroup.get('hostIdGroup.idInputHex').invalid &&
+                        formGroup.get('hostIdGroup.idInputHex').dirty &&
+                        formGroup.get('hostIdGroup.idInputHex').touched
+                    "
+                    class="p-error block"
+                    >{{
+                        formGroup.get('hostIdGroup.idInputHex').hasError('pattern')
+                            ? 'Please specify valid hexadecimal digits (e.g., ab:09:ef:01).'
+                            : formGroup.get('hostIdGroup.idInputHex').hasError('maxlength')
+                            ? formGroup.get('hostIdGroup.idInputHex').errors['maxlength']
+                            : 'DHCP identifier is required.'
+                    }}
+                </small>
+            </div>
+            <ng-template #hostIdFormatText>
+                <div class="p-col-6">
                     <input
                         pInputText
                         formControlName="idInputText"
                         class="full-width"
                         placeholder="text identifier format"
                     />
-                </ng-template>
-            </div>
+                </div>
+                <div class="p-offset-6 p-col-6 p-pt-0">
+                    <small
+                        *ngIf="
+                            formGroup.get('hostIdGroup.idInputText').invalid &&
+                            formGroup.get('hostIdGroup.idInputText').dirty &&
+                            formGroup.get('hostIdGroup.idInputText').touched
+                        "
+                        class="p-error block"
+                        >DHCP identifier is required.
+                    </small>
+                </div>
+            </ng-template>
         </div>
     </p-fieldset>
 
@@ -94,24 +124,50 @@
                         <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width"> </p-dropdown>
                     </div>
                     <ng-container [ngSwitch]="ipGroup.value.ipType">
-                        <div *ngSwitchCase="'ipv4'" class="p-col-8">
-                            <input
-                                *ngSwitchCase="'ipv4'"
-                                pInputText
-                                formControlName="inputIPv4"
-                                class="full-width"
-                                placeholder="e.g. 10.0.0.1"
-                            />
-                        </div>
-                        <div *ngSwitchCase="'ia_na'" class="p-col-8">
-                            <input
-                                *ngSwitchCase="'ia_na'"
-                                pInputText
-                                formControlName="inputNA"
-                                class="full-width"
-                                placeholder="e.g. 2001:db8:1::"
-                            />
-                        </div>
+                        <ng-container *ngSwitchCase="'ipv4'">
+                            <div class="p-col-8">
+                                <input
+                                    *ngSwitchCase="'ipv4'"
+                                    pInputText
+                                    formControlName="inputIPv4"
+                                    class="full-width"
+                                    placeholder="e.g. 10.0.0.1"
+                                />
+                            </div>
+                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                            <div
+                                *ngIf="
+                                    ipGroup.get('inputIPv4').invalid &&
+                                    ipGroup.get('inputIPv4').dirty &&
+                                    ipGroup.get('inputIPv4').touched
+                                "
+                                class="p-offset-3 p-col-9 p-pt-0"
+                            >
+                                <small class="p-error block">Please specify a valid IPv4 address. </small>
+                            </div>
+                        </ng-container>
+                        <ng-container *ngSwitchCase="'ia_na'">
+                            <div class="p-col-8">
+                                <input
+                                    *ngSwitchCase="'ia_na'"
+                                    pInputText
+                                    formControlName="inputNA"
+                                    class="full-width"
+                                    placeholder="e.g. 2001:db8:1::"
+                                />
+                            </div>
+                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                            <div
+                                *ngIf="
+                                    ipGroup.get('inputNA').invalid &&
+                                    ipGroup.get('inputNA').dirty &&
+                                    ipGroup.get('inputNA').touched
+                                "
+                                class="p-offset-3 p-col-9 p-pt-0"
+                            >
+                                <small class="p-error block">Please specify a valid IPv6 address. </small>
+                            </div>
+                        </ng-container>
                         <ng-container *ngSwitchCase="'ia_pd'">
                             <div class="p-col-6">
                                 <input
@@ -122,21 +178,40 @@
                                 />
                             </div>
                             <div class="p-col-2">
-                                <p-inputNumber ngDefaultControl min="1" max="128" formControlName="inputPDLength">
+                                <p-inputNumber
+                                    ngDefaultControl
+                                    min="1"
+                                    max="128"
+                                    inputStyleClass="full-width"
+                                    formControlName="inputPDLength"
+                                >
                                 </p-inputNumber>
+                            </div>
+                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                            <div
+                                *ngIf="
+                                    ipGroup.get('inputPD').invalid &&
+                                    ipGroup.get('inputPD').dirty &&
+                                    ipGroup.get('inputPD').touched
+                                "
+                                class="p-offset-3 p-col-9 p-pt-0"
+                            >
+                                <small class="p-error block">Please specify a valid IPv6 prefix. </small>
                             </div>
                         </ng-container>
                     </ng-container>
-                    <div class="p-col-1">
-                        <button
-                            pButton
-                            pRipple
-                            type="button"
-                            icon="pi pi-times"
-                            class="full-width p-mr-2 p-button-rounded p-button-danger p-button-text"
-                            (click)="deleteIPInput(i)"
-                        ></button>
-                    </div>
+                    <ng-template #ipDeleteButton>
+                        <div class="p-col-1">
+                            <button
+                                pButton
+                                pRipple
+                                type="button"
+                                icon="pi pi-times"
+                                class="full-width p-mr-2 p-button-rounded p-button-danger p-button-text"
+                                (click)="deleteIPInput(i)"
+                            ></button>
+                        </div>
+                    </ng-template>
                 </ng-container>
             </ng-container>
         </div>
@@ -153,11 +228,22 @@
 
     <p-fieldset legend="Non-IP Reservations" styleClass="p-mt-4">
         <div class="p-grid host-form-abs-width">
-            <div class="p-col-8">
+            <div class="p-col-10">
                 <span class="p-float-label p-mt-3">
                     <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
                     <label for="hostname-input">Hostname</label>
                 </span>
+            </div>
+            <div class="p-col-10 p-pt-0">
+                <small
+                    *ngIf="
+                        formGroup.get('hostname').invalid &&
+                        formGroup.get('hostname').dirty &&
+                        formGroup.get('hostname').touched
+                    "
+                    class="p-error block"
+                    >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
+                </small>
             </div>
         </div>
     </p-fieldset>

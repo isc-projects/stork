@@ -1724,7 +1724,7 @@ export class DhcpOptionFormComponent implements OnInit {
     addFqdnField(): void {
         this._addSimpleField(
             this.FieldType.Fqdn,
-            this._formBuilder.control('', [Validators.required, StorkValidators.fqdn(false)])
+            this._formBuilder.control('', [Validators.required, StorkValidators.fullFqdn])
         )
     }
 
@@ -1760,16 +1760,10 @@ export class DhcpOptionFormComponent implements OnInit {
     togglePartialFqdn(event, index: number) {
         if (event.checked) {
             // Selected partial FQDN.
-            this.optionFields
-                .at(index)
-                .get('control')
-                .setValidators([Validators.required, StorkValidators.fqdn(true)])
+            this.optionFields.at(index).get('control').setValidators([Validators.required, StorkValidators.partialFqdn])
         } else {
             // Selected non-partial FQDN.
-            this.optionFields
-                .at(index)
-                .get('control')
-                .setValidators([Validators.required, StorkValidators.fqdn(false)])
+            this.optionFields.at(index).get('control').setValidators([Validators.required, StorkValidators.fullFqdn])
         }
         this.optionFields.at(index).get('control').updateValueAndValidity()
     }

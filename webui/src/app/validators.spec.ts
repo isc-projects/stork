@@ -17,6 +17,16 @@ describe('StorkValidators', () => {
         expect(StorkValidators.hexIdentifier()(formBuilder.control(''))).toBeFalsy()
     })
 
+    it('validates hex identifier length', () => {
+        expect(StorkValidators.hexIdentifierLength(6)(formBuilder.control('01:02:03'))).toBeFalsy()
+        expect(StorkValidators.hexIdentifierLength(8)(formBuilder.control('112233'))).toBeFalsy()
+        expect(StorkValidators.hexIdentifierLength(10)(formBuilder.control('ac-de-aa'))).toBeFalsy()
+
+        expect(StorkValidators.hexIdentifierLength(4)(formBuilder.control('ab-cd-ef'))).toBeTruthy()
+        expect(StorkValidators.hexIdentifierLength(2)(formBuilder.control('ee:02:90'))).toBeTruthy()
+        expect(StorkValidators.hexIdentifierLength(6)(formBuilder.control('01020389'))).toBeTruthy()
+    })
+
     it('validates IPv4 address', () => {
         // Partial address is not valid.
         expect(StorkValidators.ipv4()(formBuilder.control('10.0.'))).toBeTruthy()
@@ -49,31 +59,39 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv6()(formBuilder.control('3000:1:2::3'))).toBeFalsy()
     })
 
-    it('validates fqdn', () => {
-        expect(StorkValidators.fqdn(false)(formBuilder.control('a..bc'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('a.b'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('test-.xyz'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('-test.xyz'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('test.xyz.'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('.test.xyz'))).toBeTruthy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('test'))).toBeTruthy()
+    it('validates full fqdn', () => {
+        expect(StorkValidators.fullFqdn(formBuilder.control('a..bc.'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('a.b.'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('test-.xyz.'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('-test.xyz.'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('.test.xyz.'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('test'))).toBeTruthy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('a.bc'))).toBeTruthy()
 
-        expect(StorkValidators.fqdn(false)(formBuilder.control('a.bc'))).toBeFalsy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('test--abc.ec-a-b.xyz'))).toBeFalsy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('test.abc.xyz'))).toBeFalsy()
-        expect(StorkValidators.fqdn(false)(formBuilder.control('a123.xyz'))).toBeFalsy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('test--abc.ec-a-b.xyz.'))).toBeFalsy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('test.abc.xyz.'))).toBeFalsy()
+        expect(StorkValidators.fullFqdn(formBuilder.control('a123.xyz.'))).toBeFalsy()
     })
 
     it('validates partial fqdn', () => {
-        expect(StorkValidators.fqdn(true)(formBuilder.control('a..bc'))).toBeTruthy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('test-.xyz'))).toBeTruthy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('-test.xyz'))).toBeTruthy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('test.xyz.'))).toBeTruthy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('.test.xyz'))).toBeTruthy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('a..bc'))).toBeTruthy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('test-.xyz'))).toBeTruthy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('-test.xyz'))).toBeTruthy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('test.xyz.'))).toBeTruthy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('.test.xyz'))).toBeTruthy()
 
-        expect(StorkValidators.fqdn(true)(formBuilder.control('a.bc'))).toBeFalsy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('test--abc.x-yz'))).toBeFalsy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('test.abc.xyz'))).toBeFalsy()
-        expect(StorkValidators.fqdn(true)(formBuilder.control('test'))).toBeFalsy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('a.bc'))).toBeFalsy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('test--abc.x-yz'))).toBeFalsy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('test.abc.xyz'))).toBeFalsy()
+        expect(StorkValidators.partialFqdn(formBuilder.control('test'))).toBeFalsy()
+    })
+
+    it('validates fqdn', () => {
+        // Invalid FQDN should cause an error.
+        expect(StorkValidators.fqdn(formBuilder.control('test.'))).toBeTruthy()
+
+        // A full or partial FQDN should be fine.
+        expect(StorkValidators.fqdn(formBuilder.control('test--abc.ec-a-b.xyz.'))).toBeFalsy()
+        expect(StorkValidators.fqdn(formBuilder.control('test'))).toBeFalsy()
     })
 })
