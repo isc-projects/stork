@@ -19,6 +19,7 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
+import { HostForm } from '../forms/host-form'
 import { DHCPService } from '../backend'
 
 describe('HostFormComponent', () => {
@@ -499,6 +500,51 @@ describe('HostFormComponent', () => {
         expect(errmsg.nativeElement.innerText).toContain('Please specify a valid IPv4 address.')
     }))
 
+    it('should check that ipv4 reservation is within the subnet boundaries', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.ipGroups.length).toBe(1)
+        component.ipGroups.at(0).get('inputIPv4').setValue('192.0.3.2')
+        component.ipGroups.at(0).get('inputIPv4').markAsTouched()
+        component.ipGroups.at(0).get('inputIPv4').markAsDirty()
+        fixture.detectChanges()
+
+        // Initially, the specified address it not matched with the subnet prefix
+        // because the subnet is not selected.
+        expect(component.ipGroups.at(0).get('inputIPv4').valid).toBeTrue()
+
+        component.formGroup.get('selectedSubnet').setValue(1)
+        component.onSelectedSubnetChange()
+        fixture.detectChanges()
+        expect(component.formGroup.get('selectedSubnet').valid).toBeTrue()
+
+        // The subnet has been selected. This time the address should match
+        // the subnet prefix.
+        expect(component.ipGroups.at(0).get('inputIPv4').valid).toBeFalse()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('IP address is not in the subnet 192.0.2.0/24 range.')
+    }))
+
+    it('should replace ipv4 placeholder after subnet selection', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedSubnet').setValue(1)
+        component.onSelectedSubnetChange()
+        expect(component.ipv4Placeholder).toBe('in range of 192.0.2.0 - 192.0.2.255')
+
+        component.formGroup.get('selectedSubnet').setValue(null)
+        component.onSelectedSubnetChange()
+        expect(component.ipv4Placeholder).toBe('?.?.?.?')
+    }))
+
     it('should validate ipv6 address reservation', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
@@ -523,6 +569,66 @@ describe('HostFormComponent', () => {
         const errmsg = fixture.debugElement.query(By.css('small'))
         expect(errmsg).toBeTruthy()
         expect(errmsg.nativeElement.innerText).toContain('Please specify a valid IPv6 address.')
+    }))
+
+    it('should check that ipv6 address reservation is within the subnet boundaries', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([4])
+        component.onDaemonsChange()
+
+        component.ipGroups.at(0).get('ipType').setValue('ia_na')
+        fixture.detectChanges()
+
+        expect(component.ipGroups.length).toBe(1)
+
+        component.ipGroups.at(0).get('inputNA').setValue('2001:db8:2::56')
+        component.ipGroups.at(0).get('inputNA').markAsTouched()
+        component.ipGroups.at(0).get('inputNA').markAsDirty()
+        fixture.detectChanges()
+
+        // Initially, the specified address it not matched with the subnet prefix
+        // because the subnet is not selected.
+        expect(component.ipGroups.at(0).get('inputNA').valid).toBeTrue()
+
+        component.formGroup.get('selectedSubnet').setValue(3)
+        component.onSelectedSubnetChange()
+        fixture.detectChanges()
+        expect(component.formGroup.get('selectedSubnet').valid).toBeTrue()
+
+        // The subnet has been selected. This time the address should match
+        // the subnet prefix.
+        expect(component.ipGroups.at(0).get('inputNA').valid).toBeFalse()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('IP address is not in the subnet 2001:db8:1::/64 range.')
+    }))
+
+    it('should replace ipv6 placeholder after subnet selection', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([5])
+        component.onDaemonsChange()
+
+        component.ipGroups.at(0).get('ipType').setValue('ia_na')
+        fixture.detectChanges()
+
+        expect(component.ipGroups.length).toBe(1)
+
+        component.formGroup.get('selectedSubnet').setValue(4)
+        component.onSelectedSubnetChange()
+        expect(component.ipv6Placeholder).toBe('2001:db8:2::')
+
+        component.formGroup.get('selectedSubnet').setValue(null)
+        component.onSelectedSubnetChange()
+        expect(component.ipv6Placeholder).toBe('e.g. 2001:db8:1::')
     }))
 
     it('should validate ipv6 prefix reservation', fakeAsync(() => {
@@ -712,6 +818,7 @@ describe('HostFormComponent', () => {
         component.formGroup.get('selectedDaemons').setValue([5])
         component.formGroup.get('selectedSubnet').setValue(4)
         component.onDaemonsChange()
+        component.onSelectedSubnetChange()
         fixture.detectChanges()
 
         component.addIPInput()

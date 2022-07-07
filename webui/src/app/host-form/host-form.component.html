@@ -5,7 +5,7 @@
                 <p-checkbox label="Global reservation" formControlName="globalReservation" [binary]="true"></p-checkbox>
             </div>
             <div class="p-col-10 p-mb-3">
-                <span class="p-float-label">
+                <span class="p-float-label p-mb-2">
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
@@ -31,7 +31,7 @@
                 </small>
             </div>
             <div *ngIf="!formGroup.get('globalReservation').value" class="p-col-8">
-                <span class="p-float-label">
+                <span class="p-float-label p-mb-2">
                     <p-dropdown
                         inputId="subnets-dropdown"
                         optionLabel="subnet"
@@ -41,6 +41,7 @@
                         formControlName="selectedSubnet"
                         [showClear]="true"
                         styleClass="full-width"
+                        (onChange)="onSelectedSubnetChange()"
                     >
                     </p-dropdown>
                     <label for="subnets-dropdown">Subnet</label>
@@ -131,7 +132,7 @@
                                     pInputText
                                     formControlName="inputIPv4"
                                     class="full-width"
-                                    placeholder="e.g. 10.0.0.1"
+                                    [placeholder]="ipv4Placeholder"
                                 />
                             </div>
                             <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
@@ -143,7 +144,13 @@
                                 "
                                 class="p-offset-3 p-col-9 p-pt-0"
                             >
-                                <small class="p-error block">Please specify a valid IPv4 address. </small>
+                                <small class="p-error block">
+                                    {{
+                                        ipGroup.get('inputIPv4').hasError('ip-subnet-range')
+                                            ? ipGroup.get('inputIPv4').errors['ip-subnet-range']
+                                            : 'Please specify a valid IPv4 address.'
+                                    }}
+                                </small>
                             </div>
                         </ng-container>
                         <ng-container *ngSwitchCase="'ia_na'">
@@ -153,7 +160,7 @@
                                     pInputText
                                     formControlName="inputNA"
                                     class="full-width"
-                                    placeholder="e.g. 2001:db8:1::"
+                                    [placeholder]="ipv6Placeholder"
                                 />
                             </div>
                             <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
@@ -165,7 +172,13 @@
                                 "
                                 class="p-offset-3 p-col-9 p-pt-0"
                             >
-                                <small class="p-error block">Please specify a valid IPv6 address. </small>
+                                <small class="p-error block">
+                                    {{
+                                        ipGroup.get('inputNA').hasError('ip-subnet-range')
+                                            ? ipGroup.get('inputNA').errors['ip-subnet-range']
+                                            : 'Please specify a valid IPv6 address.'
+                                    }}
+                                </small>
                             </div>
                         </ng-container>
                         <ng-container *ngSwitchCase="'ia_pd'">

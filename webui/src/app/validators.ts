@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
+import { Validator } from 'ip-num'
 
 /**
  * A class with various static form validation functions.
@@ -30,7 +31,7 @@ export class StorkValidators {
     static hexIdentifierLength(maxLength: number): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             // If it is not a string we leave the validation to other validators.
-            if (control.value === null || typeof control.value !== 'string') {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
                 return null
             }
             let s = control.value
@@ -48,10 +49,16 @@ export class StorkValidators {
      * @returns validator function.
      */
     static ipv4(): ValidatorFn {
-        // See: https://github.com/ip-num/ip-num/blob/master/src/Validator.ts
-        return Validators.pattern(
-            '^(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$'
-        )
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+                return null
+            }
+            let ipv4 = control.value
+            if (!Validator.isValidIPv4String(ipv4)[0]) {
+                return { ipv4: `${ipv4} is not a valid IPv4 address.` }
+            }
+            return null
+        }
     }
 
     /**
@@ -61,10 +68,16 @@ export class StorkValidators {
      * @returns validator function.
      */
     static ipv6(): ValidatorFn {
-        // See: https://github.com/ip-num/ip-num/blob/master/src/Validator.ts
-        return Validators.pattern(
-            '^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*$'
-        )
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+                return null
+            }
+            let ipv6 = control.value
+            if (!Validator.isValidIPv6String(ipv6)[0]) {
+                return { ipv6: `${ipv6} is not a valid IPv6 address.` }
+            }
+            return null
+        }
     }
 
     /**

@@ -10,13 +10,14 @@ import {
 } from '@angular/forms'
 import { MessageService, SelectItem } from 'primeng/api'
 import { map } from 'rxjs/operators'
+import { collapseIPv6Number, isIPv4, IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
 import { StorkValidators } from '../validators'
 import { DHCPService } from '../backend/api/api'
 import { Host } from '../backend/model/host'
 import { IPReservation } from '../backend/model/iPReservation'
-import { KeaDaemon } from '../backend/model/keaDaemon'
 import { LocalHost } from '../backend/model/localHost'
 import { Subnet } from '../backend/model/subnet'
+import { HostForm } from '../forms/host-form'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetForm } from '../forms/dhcp-option-set-form'
 import { IPType } from '../iptype'
@@ -80,80 +81,52 @@ function identifierRequiredValidator(group: FormGroup): ValidationErrors | null 
 }
 
 /**
- * Holds the state of the form created by the HostFormComponent.
+ * A form validator checking if the specified IP address is within a
+ * selected subnet range.
  *
- * The state is shared with the parent component via the event emitter
- * and can be used to re-create the HostFormComponent with the already
- * edited form data. It is particularly useful when the component is
- * destroyed as a result of switching between different tabs.
+ * It skips the validation if the IP address is not specified, if the
+ * specified address is invalid, subnet hasn't been selected or the
+ * reservation is global.
+ *
+ * @param ipType specified if an IPv4 or IPv6 address is validated.
+ * @param hostForm a host form state.
+ * @returns validator function that returns validation errors when a
+ *          subnet is selected and the specified IPv4 or IPv6 address
+ *          is not in this subnet range.
  */
-class HostForm {
-    /**
-     * A boolean value indicating if the updated form was passed to
-     * the parent component when the HostFormComponent was destroyed.
-     *
-     * When the component is re-created it checks this value to decide
-     * whether or not the form should be initialized with default values.
-     */
-    preserved: boolean = false
-
-    /**
-     * A transaction id returned by the server after sending the
-     * request to begin one.
-     */
-    transactionId: number = 0
-
-    /**
-     * An error to begin the transaction returned by the server.
-     */
-    initError: string
-
-    /**
-     * A form group comprising all form controls, arrays and other form
-     * groups (a parent group for the HostFormComponent form).
-     */
-    group: FormGroup
-
-    /**
-     * A list of all daemons that can be selected from the drop down list.
-     */
-    allDaemons: KeaDaemon[]
-
-    /**
-     * A filtered list of daemons comprising only those that match the
-     * type of the first selected daemon.
-     *
-     * Maintaining a filtered list prevents the user from selecting the
-     * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
-     */
-    filteredDaemons: KeaDaemon[]
-
-    /**
-     * A list of subnets that can be selected from the drop down list.
-     *
-     * An actual drop down list can be shorter depending on the list of
-     * selected servers. It displays only the subnets that the selected
-     * servers serve.
-     */
-    allSubnets: Subnet[]
-
-    /**
-     * An array of selectable subnets according to the current form data.
-     *
-     * Suppose a user selected a server in the form. In this case, this
-     * array comprises only the subnets served by this server.
-     */
-    filteredSubnets: Subnet[]
-
-    /**
-     * A flag set to true when DHCPv4 servers have been selected.
-     */
-    dhcpv4: boolean = false
-
-    /**
-     * A flag set to true when DHCPv6 servers have been selected.
-     */
-    dhcpv6: boolean = false
+function addressInSubnetValidator(ipType: IPType, hostForm: HostForm): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+        // The value must be specified, must be a correct IP address, the
+        // reservation must not be global and the subnet must be specified.
+        if (
+            control.value === null ||
+            typeof control.value !== 'string' ||
+            control.value.length === 0 ||
+            !hostForm ||
+            (hostForm.group && hostForm.group.get('globalReservation').value) ||
+            !hostForm.filteredSubnets ||
+            (ipType === IPType.IPv4 && !Validator.isValidIPv4String(control.value)[0]) ||
+            (ipType === IPType.IPv6 && !Validator.isValidIPv6String(control.value)[0])
+        ) {
+            return null
+        }
+        // Convert the address to an IPv4 or IPv6 object.
+        let ipAddress: IPv4 | IPv6
+        ipAddress = ipType === IPType.IPv4 ? IPv4.fromString(control.value) : IPv6.fromString(control.value)
+        if (!ipAddress) {
+            return null
+        }
+        // Find the selected subnet range.
+        const subnetRange = hostForm.getSelectedSubnetRange()
+        if (!subnetRange) {
+            return null
+        }
+        // Make sure the address is within the subnet boundaries.
+        if (ipAddress.isLessThan(subnetRange[1].getFirst()) || ipAddress.isGreaterThan(subnetRange[1].getLast())) {
+            return { 'ip-subnet-range': `IP address is not in the subnet ${subnetRange[0]} range.` }
+        }
+        return null
+    }
 }
 
 /**
@@ -212,6 +185,26 @@ export class HostFormComponent implements OnInit, OnDestroy {
             value: 'text',
         },
     ]
+
+    /**
+     * Default placeholder displayed in the IPv4 resevation input box.
+     */
+    static defaultIPv4Placeholder = '?.?.?.?'
+
+    /**
+     * Default placeholder displayed in the IPv6 resevation input box.
+     */
+    static defaultIPv6Placeholder = 'e.g. 2001:db8:1::'
+
+    /**
+     * Current placeholder displayed in the IPv4 resevation input box.
+     */
+    ipv4Placeholder = HostFormComponent.defaultIPv4Placeholder
+
+    /**
+     * Current placeholder displayed in the IPv6 resevation input box.
+     */
+    ipv6Placeholder = HostFormComponent.defaultIPv6Placeholder
 
     /**
      * Constructor.
@@ -506,8 +499,14 @@ export class HostFormComponent implements OnInit, OnDestroy {
     private _createNewIPGroup(defaultType = 'ipv4'): FormGroup {
         return this._formBuilder.group({
             ipType: [defaultType],
-            inputIPv4: ['', StorkValidators.ipv4()],
-            inputNA: ['', StorkValidators.ipv6()],
+            inputIPv4: [
+                '',
+                Validators.compose([StorkValidators.ipv4(), addressInSubnetValidator(IPType.IPv4, this.form)]),
+            ],
+            inputNA: [
+                '',
+                Validators.compose([StorkValidators.ipv6(), addressInSubnetValidator(IPType.IPv6, this.form)]),
+            ],
             inputPD: ['', StorkValidators.ipv6()],
             inputPDLength: ['64', Validators.required],
         })
@@ -615,6 +614,33 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // have to reset the subnet selection.
         if (!this.form.filteredSubnets.find((fs) => fs.id === this.formGroup.get('selectedSubnet').value)) {
             this.formGroup.get('selectedSubnet').patchValue(null)
+        }
+    }
+
+    /**
+     * A callback called when a subnet has been selected or de-selected.
+     *
+     * It iterates over the specified IP addresses and checks if they belong
+     * to the new subnet boundaries. It also updates the placeholders of the
+     * respective input boxes. The placeholders contain IP addresses suitable
+     * for the selected subnet.
+     */
+    onSelectedSubnetChange(): void {
+        for (let i = 0; i < this.ipGroups.length; i++) {
+            this.ipGroups.at(i).get('inputIPv4').updateValueAndValidity()
+            this.ipGroups.at(i).get('inputNA').updateValueAndValidity()
+        }
+        const range = this.form.getSelectedSubnetRange()
+        if (range) {
+            let first = range[1].getFirst()
+            if (isIPv4(first)) {
+                this.ipv4Placeholder = `in range of ${first.toString()} - ${range[1].getLast()}`
+            } else {
+                this.ipv6Placeholder = collapseIPv6Number(first.toString())
+            }
+        } else {
+            this.ipv4Placeholder = HostFormComponent.defaultIPv4Placeholder
+            this.ipv6Placeholder = HostFormComponent.defaultIPv6Placeholder
         }
     }
 

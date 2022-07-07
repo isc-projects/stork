@@ -8,6 +8,7 @@ import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams } from '../utils'
 import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
+import { HostForm } from '../forms/host-form'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -25,7 +26,7 @@ export class HostTab {
     /**
      * Preserves information specified in a host form.
      */
-    form: any = {}
+    form: HostForm
 
     /**
      * Indicates if the form has been submitted.
@@ -39,7 +40,7 @@ export class HostTab {
      * @param host host information displayed in the tab.
      */
     constructor(public tabType: HostTabType, public host?: any) {
-        this.form = {}
+        this.form = new HostForm()
     }
 }
 
