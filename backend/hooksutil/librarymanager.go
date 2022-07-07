@@ -1,9 +1,11 @@
-package hooks
+package hooksutil
 
 import (
+	"io"
 	"plugin"
 
 	"github.com/pkg/errors"
+	"isc.org/stork/hooks"
 )
 
 type LibraryManager struct {
@@ -19,26 +21,30 @@ func NewLibraryManager(path string) (*LibraryManager, error) {
 	return &LibraryManager{p}, nil
 }
 
-func (lm *LibraryManager) Load() (interface{}, error) {
-	symbolName := HookLoadFunctionName
+func (lm *LibraryManager) Load() (io.Closer, error) {
+	symbolName := hooks.HookLoadFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
 	}
-	load, ok := symbol.(HookLoadFunction)
+	load, ok := symbol.(hooks.HookLoadFunction)
 	if !ok {
 		return nil, errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}
-	return load()
+
+	callouts, err := load()
+	err = errors.Wrap(err, "cannot load the hook")
+
+	return callouts, err
 }
 
 func (lm *LibraryManager) Version() (string, string, error) {
-	symbolName := HookVersionFunctionName
+	symbolName := hooks.HookVersionFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
 	}
-	versionFunction, ok := symbol.(HookVersionFunction)
+	versionFunction, ok := symbol.(hooks.HookVersionFunction)
 	if !ok {
 		return "", "", errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}

@@ -5,36 +5,38 @@ import (
 
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/hooks"
+	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
+	"isc.org/stork/hooksutil"
 )
 
 // Callout types
 var (
-	beforeForwardToKeaOverHTTPCalloutType reflect.Type = reflect.TypeOf((*hooks.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()
+	beforeForwardToKeaOverHTTPCalloutType reflect.Type = reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()
 )
 
 // Hook executor
-func newHookExecutor() *hooks.HookExecutor {
-	executor := hooks.NewHookExecutor([]reflect.Type{
+func newHookExecutor() *hooksutil.HookExecutor {
+	executor := hooksutil.NewHookExecutor([]reflect.Type{
 		beforeForwardToKeaOverHTTPCalloutType,
 	})
 	return executor
 }
 
 type HookManager struct {
-	executor *hooks.HookExecutor
+	executor *hooksutil.HookExecutor
 }
 
 // Interface checks
-var _ hooks.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
+var _ forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
 
-func newHookManager(executor *hooks.HookExecutor) *HookManager {
+func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
 	return &HookManager{
 		executor: executor,
 	}
 }
 
 func NewHookManagerFromDirectory(directory string) *HookManager {
-	allCallouts := hooks.LoadAllHooks(hooks.HookProgramAgent, directory)
+	allCallouts := hooksutil.LoadAllHooks(hooks.HookProgramAgent, directory)
 	return NewHookManagerFromCallouts(allCallouts)
 }
 
@@ -52,7 +54,7 @@ func (hm *HookManager) Close() {
 
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
 	hm.executor.CallSequential(beforeForwardToKeaOverHTTPCalloutType, func(rawCallout interface{}) {
-		callout := rawCallout.(hooks.BeforeForwardToKeaOverHTTPCallout)
+		callout := rawCallout.(forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)
 		callout.OnBeforeForwardToKeaOverHTTP(in)
 	})
 }

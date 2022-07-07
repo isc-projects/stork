@@ -2,7 +2,11 @@ package hooks
 
 import "isc.org/stork"
 
-type HookLoadFunction func() (interface{}, error)
+type Closer interface {
+	Close() error
+}
+
+type HookLoadFunction func() (Closer, error)
 type HookVersionFunction func() (string, string)
 
 const (
