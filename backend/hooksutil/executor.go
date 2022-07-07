@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Caller = func(callouts interface{})
+
 type HookExecutor struct {
 	registeredCallouts map[reflect.Type][]interface{}
 }
@@ -52,8 +54,24 @@ func (he *HookExecutor) UnregisterAllCallouts() {
 	he.registeredCallouts = make(map[reflect.Type][]interface{})
 }
 
-func (he *HookExecutor) CallSequential(calloutType reflect.Type, caller func(callouts interface{})) {
+// It can monitor performance
+func (he *HookExecutor) callCallout(callout interface{}, caller Caller) {
+	caller(callout)
+}
+
+func (he *HookExecutor) CallSequential(calloutType reflect.Type, caller Caller) {
 	for _, callouts := range he.registeredCallouts[calloutType] {
-		caller(callouts)
+		he.callCallout(callouts, caller)
 	}
+}
+
+func (he *HookExecutor) CallSingle(calloutType reflect.Type, caller Caller) {
+	if len(he.registeredCallouts[calloutType]) == 0 {
+		return
+	} else if len(he.registeredCallouts[calloutType]) > 1 {
+		logrus.
+			WithField("callout", calloutType.Name()).
+			Warn("there are many registered callouts but expected a single one")
+	}
+	he.callCallout(he.registeredCallouts[calloutType][0], caller)
 }
