@@ -657,4 +657,14 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
         expect(dhcpApi.getHosts).toHaveBeenCalledTimes(1)
     })
+
+    it('should contain a refresh button', () => {
+        const refreshBtn = fixture.debugElement.query(By.css('[label="Refresh List"]'))
+        expect(refreshBtn).toBeTruthy()
+
+        spyOn(dhcpApi, 'getHosts').and.returnValue(throwError({ status: 404 }))
+        refreshBtn.componentInstance.onClick.emit(new Event('click'))
+        fixture.detectChanges()
+        expect(dhcpApi.getHosts).toHaveBeenCalled()
+    })
 })

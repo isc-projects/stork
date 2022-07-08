@@ -275,6 +275,12 @@
 
     <div class="p-m-5">
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
+        <app-help-tip title="Host Reservation Submission">
+            <p>
+                Submitted host reservation is created in Kea and may appear in Stork with a delay. Try to refresh the
+                list of host reservations after submission to see the new reservation.
+            </p>
+        </app-help-tip>
     </div>
 </form>
 <ng-template #showInitError>

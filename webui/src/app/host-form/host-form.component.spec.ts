@@ -19,6 +19,7 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostForm } from '../forms/host-form'
 import { DHCPService } from '../backend'
 
@@ -133,7 +134,7 @@ describe('HostFormComponent', () => {
                 SplitButtonModule,
                 ToggleButtonModule,
             ],
-            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HostFormComponent],
+            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent, HostFormComponent],
         }).compileComponents()
     })
 

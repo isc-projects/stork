@@ -88,15 +88,27 @@
             </span>
         </div>
         <div>
-            <a
-                label="New Host"
-                icon="pi pi-plus"
-                class="p-button-primary no-underline"
-                style="display: block"
-                type="button"
-                routerLink="/dhcp/hosts/new"
-                pButton
-            ></a>
+            <div class="p-d-flex">
+                <div>
+                    <a
+                        label="New Host"
+                        icon="pi pi-plus"
+                        class="p-button-primary no-underline"
+                        style="display: block"
+                        type="button"
+                        routerLink="/dhcp/hosts/new"
+                        pButton
+                    ></a>
+                </div>
+                <div>
+                    <p-button
+                        label="Refresh List"
+                        icon="pi pi-refresh"
+                        styleClass="p-d-block p-button-primary no-underline p-ml-2"
+                        (onClick)="loadHosts()"
+                    ></p-button>
+                </div>
+            </div>
         </div>
     </div>
     <div style="margin: 0 0 10px, 5x">
