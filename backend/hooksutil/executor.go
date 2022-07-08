@@ -54,24 +54,49 @@ func (he *HookExecutor) UnregisterAllCallouts() {
 	he.registeredCallouts = make(map[reflect.Type][]interface{})
 }
 
-// It can monitor performance
-func (he *HookExecutor) callCallout(callout interface{}, caller Caller) {
-	caller(callout)
+func (he *HookExecutor) GetCallouts(calloutType reflect.Type) ([]interface{}, bool) {
+	callouts, ok := he.registeredCallouts[calloutType]
+	return callouts, ok
 }
 
-func (he *HookExecutor) CallSequential(calloutType reflect.Type, caller Caller) {
-	for _, callouts := range he.registeredCallouts[calloutType] {
-		he.callCallout(callouts, caller)
+func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
+	callouts, ok := he.registeredCallouts[calloutType]
+	return ok && len(callouts) != 0
+}
+
+// It can monitor performance.
+func callCallout[C interface{}, O interface{}](callout C, caller func(C) O) O {
+	return caller(callout)
+}
+
+func CallSequential[C interface{}, O interface{}](he *HookExecutor, caller func(C) O) []O {
+	t := reflect.TypeOf((*C)(nil)).Elem()
+	allCallouts, ok := he.GetCallouts(t)
+	if !ok {
+		return nil
 	}
+
+	var results []O
+	for _, callouts := range allCallouts {
+		result := callCallout(callouts.(C), caller)
+		results = append(results, result)
+	}
+	return results
 }
 
-func (he *HookExecutor) CallSingle(calloutType reflect.Type, caller Caller) {
-	if len(he.registeredCallouts[calloutType]) == 0 {
+func CallSingle[C interface{}, O interface{}](he *HookExecutor, caller func(C) O) (output O) {
+	t := reflect.TypeOf((*C)(nil)).Elem()
+	allCallouts, ok := he.GetCallouts(t)
+	if !ok {
 		return
-	} else if len(he.registeredCallouts[calloutType]) > 1 {
+	}
+
+	if len(allCallouts) == 0 {
+		return
+	} else if len(allCallouts) > 1 {
 		logrus.
-			WithField("callout", calloutType.Name()).
+			WithField("callout", t.Name()).
 			Warn("there are many registered callouts but expected a single one")
 	}
-	he.callCallout(he.registeredCallouts[calloutType][0], caller)
+	return callCallout(allCallouts[0].(C), caller)
 }

@@ -10,6 +10,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
+	"isc.org/stork/server/hookmanager"
 )
 
 // Tests that create user account without necessary fields is rejected via REST API.
@@ -797,7 +798,8 @@ func TestCreateSessionEmptyParams(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, _ := NewRestAPI(dbSettings, db)
+	hookManager := hookmanager.NewHookManagerFromCallouts([]interface{}{})
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
 	user := &dbmodel.SystemUser{
 		Email:    "jan@example.org",

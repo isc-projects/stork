@@ -5,9 +5,10 @@ import "isc.org/stork"
 type Closer interface {
 	Close() error
 }
-
-type HookLoadFunction func() (Closer, error)
-type HookVersionFunction func() (string, string)
+type (
+	HookLoadFunction    func() (Closer, error)
+	HookVersionFunction func() (string, string)
+)
 
 const (
 	HookLoadFunctionName    = "Load"

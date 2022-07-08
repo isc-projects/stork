@@ -30,6 +30,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/restapi"
 	"isc.org/stork/server/gen/restapi/operations"
+	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
 )
 
@@ -66,6 +67,7 @@ type RestAPI struct {
 	MetricsCollector           metrics.Collector
 	ConfigManager              config.Manager
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
+	HookManager                *hookmanager.HookManager
 
 	Agents agentcomm.ConnectedAgents
 
@@ -178,6 +180,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.AssignableTo(reflect.TypeOf((*RestAPISettings)(nil))) {
 			api.Settings = arg.(*RestAPISettings)
+			continue
+		}
+		if argType.AssignableTo(reflect.TypeOf((*hookmanager.HookManager)(nil))) {
+			api.HookManager = arg.(*hookmanager.HookManager)
 			continue
 		}
 		return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())

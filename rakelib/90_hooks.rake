@@ -1,14 +1,18 @@
 
 namespace :hook do
     desc "Init new hook directory
-        DEST - the hook directory - required
         PACKAGE - the package name - required"
-    task :init do
-        destination = ENV["DEST"]
+    task :init => [GO] do
         package = ENV["PACKAGE"]
-        if destination.nil?
-            fail "You must provide the DEST variable with the hook directory"
+        
+        package_last_segment = package
+        last_segment_idx = package.rindex "/"
+        if !last_segment_idx.nil?
+            package_last_segment = package[last_segment_idx+1..-1]
         end
+
+        destination = File.join("plugins", package_last_segment)
+
         if package.nil?
             fail "You must provide the PACKAGE variable with the package name"
         end
@@ -21,24 +25,23 @@ namespace :hook do
 
         sh "mkdir", "-p", destination
         Dir.chdir(destination) do
-            
+            sh "git", "init"
             sh GO, "mod", "init", package
             sh GO, "mod", "edit", "-require", main_package
             sh GO, "mod", "edit", "-replace", "#{main_package}=#{package_directory_rel}"
         end
     end
 
-    desc "Build the hook
-        DEST - the hook directory - required"
-    task :build do
-        destination = ENV["DEST"]
-        if destination.nil?
-            fail "You must provide the DEST variable with the hook directory"
-        end
+    desc "Build the hooks"
+    task :build => [GO] do
+        Dir.foreach("plugins") do |filename|
+            path = File.join("plugins", filename)
+            next if filename == '.' or filename == '..' or !File.directory? path
 
-        Dir.chdir(destination) do
-            sh GO, "mod", "tidy"
-            sh GO, "build", "-buildmode=plugin"
+            Dir.chdir(path) do
+                sh GO, "mod", "tidy"
+                sh GO, "build", "-buildmode=plugin", "-o", ".."
+            end
         end
     end 
 end

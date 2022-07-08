@@ -21,7 +21,7 @@ func newTestCalloutOnBeforeForwardToKeaOverHTTP(t *testing.T) *TestCalloutOnBefo
 
 func (tc *TestCalloutOnBeforeForwardToKeaOverHTTP) OnBeforeForwardToKeaOverHTTP(r *agentapi.ForwardToKeaOverHTTPReq) {
 	require.NotNil(tc.t, r)
-	tc.callCounts += 1
+	tc.callCounts++
 }
 
 func TestOnBeforeForwardToKeaOverHTTPHook(t *testing.T) {

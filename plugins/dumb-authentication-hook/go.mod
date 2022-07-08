@@ -1,9 +1,11 @@
-module example.com/myhook
+module isc.org/dumb-authentication-hook
 
 go 1.18
 
+replace isc.org/stork v0.0.0 => ../../backend
+
 require (
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	isc.org/stork v0.0.0
 )
 
@@ -46,5 +48,3 @@ require (
 	mellium.im/sasl v0.2.1 // indirect
 	muzzammil.xyz/jsonc v0.0.0-20211230184646-baf1f7156737 // indirect
 )
-
-replace isc.org/stork v0.0.0 => ../../

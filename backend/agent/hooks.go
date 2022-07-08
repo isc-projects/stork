@@ -9,15 +9,10 @@ import (
 	"isc.org/stork/hooksutil"
 )
 
-// Callout types
-var (
-	beforeForwardToKeaOverHTTPCalloutType reflect.Type = reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()
-)
-
-// Hook executor
+// Hook executor.
 func newHookExecutor() *hooksutil.HookExecutor {
 	executor := hooksutil.NewHookExecutor([]reflect.Type{
-		beforeForwardToKeaOverHTTPCalloutType,
+		reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem(),
 	})
 	return executor
 }
@@ -26,7 +21,7 @@ type HookManager struct {
 	executor *hooksutil.HookExecutor
 }
 
-// Interface checks
+// Interface checks.
 var _ forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
 
 func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
@@ -53,8 +48,8 @@ func (hm *HookManager) Close() {
 }
 
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
-	hm.executor.CallSequential(beforeForwardToKeaOverHTTPCalloutType, func(rawCallout interface{}) {
-		callout := rawCallout.(forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)
+	hooksutil.CallSequential(hm.executor, func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
 		callout.OnBeforeForwardToKeaOverHTTP(in)
+		return 0
 	})
 }

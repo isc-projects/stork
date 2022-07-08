@@ -50,34 +50,55 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 	return r
 }
 
-// Attempts to login the user to the system.
-func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
+func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	user := &dbmodel.SystemUser{}
-
 	var login string
+
 	if params.Credentials.Useremail != nil {
 		login = *params.Credentials.Useremail
 	}
+
 	if strings.Contains(login, "@") {
 		user.Email = login
 	} else {
 		user.Login = login
 	}
+
 	if params.Credentials.Userpassword != nil {
 		user.Password = *params.Credentials.Userpassword
 	}
 
 	ok, err := dbmodel.Authenticate(r.DB, user)
-	if ok {
+	if !ok {
+		return nil, err
+	}
+	return user, err
+}
+
+// Attempts to login the user to the system.
+func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
+	var user *dbmodel.SystemUser
+	var err error
+
+	if r.HookManager.HasAuthenticationHook() {
+		user, err = r.HookManager.Authenticate(ctx, params)
+	} else {
+		user, err = r.defaultAuthentication(params)
+	}
+
+	if user != nil {
 		err = r.SessionManager.LoginHandler(ctx, user)
 	}
 
-	if !ok || err != nil {
+	if user == nil || err != nil {
 		if err != nil {
 			log.Error(err)
 		}
 		return users.NewCreateSessionBadRequest()
 	}
+
+	// Hide the password
+	user.Password = ""
 
 	rspUser := newRestUser(*user)
 	return users.NewCreateSessionOK().WithPayload(rspUser)
@@ -90,6 +111,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 		log.Error(err)
 		return users.NewDeleteSessionBadRequest()
 	}
+	_ = r.HookManager.Unauthenticate(ctx)
 	return users.NewDeleteSessionOK()
 }
 

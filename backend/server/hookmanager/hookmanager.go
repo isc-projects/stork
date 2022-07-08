@@ -1,4 +1,4 @@
-package serverhooks
+package hookmanager
 
 import (
 	"reflect"
@@ -6,17 +6,11 @@ import (
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallout"
 	"isc.org/stork/hooksutil"
-	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/gen/restapi/operations/users"
-)
-
-var (
-	authenticationCalloutType reflect.Type = reflect.TypeOf((*authenticationcallout.AuthenticationCallout)(nil)).Elem()
 )
 
 func newHookExecutor() *hooksutil.HookExecutor {
 	executor := hooksutil.NewHookExecutor([]reflect.Type{
-		authenticationCalloutType,
+		reflect.TypeOf((*authenticationcallout.AuthenticationCallout)(nil)).Elem(),
 	})
 	return executor
 }
@@ -24,9 +18,6 @@ func newHookExecutor() *hooksutil.HookExecutor {
 type HookManager struct {
 	executor *hooksutil.HookExecutor
 }
-
-// Interface checks
-var _ authenticationcallout.AuthenticationCallout = (*HookManager)(nil)
 
 func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
 	return &HookManager{
@@ -49,16 +40,4 @@ func NewHookManagerFromCallouts(allCallouts []interface{}) *HookManager {
 
 func (hm *HookManager) Close() {
 	hm.executor.UnregisterAllCallouts()
-}
-
-func (hm *HookManager) GetAuthenticationDetails() *authenticationcallout.AuthenticationMethodDetails {
-	return hm.executor.
-}
-
-func (hm *HookManager) Authenticate(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
-
-}
-
-func (hm *HookManager) Unauthenticate(user *dbmodel.SystemUser) error {
-
 }

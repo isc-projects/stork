@@ -89,3 +89,6 @@ backend/appcfg/kea/stdoptiondef4.go
 backend/appcfg/kea/stdoptiondef6.go
 webui/src/app/std-dhcpv4-option-defs.ts
 webui/src/app/std-dhcpv6-option-defs.ts
+
+# Plugins
+plugins/*.so

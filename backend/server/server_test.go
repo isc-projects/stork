@@ -175,7 +175,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, RunCommand, command)
 
-	require.True(t, ss.EnableMetricsEndpoint)
+	require.True(t, ss.GeneralSettings.EnableMetricsEndpoint)
 	require.EqualValues(t, "dbname", ss.DBSettings.DBName)
 	require.EqualValues(t, "dbuser", ss.DBSettings.User)
 	require.EqualValues(t, "dbhost", ss.DBSettings.Host)
@@ -198,7 +198,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "tlskey", ss.RestAPISettings.TLSCertificateKey)
 	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
-	require.EqualValues(t, 54, ss.InitialPullerInterval)
+	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
 }
 
 // Test that the Stork Server is not constructed if the arguments are wrong.
@@ -376,5 +376,5 @@ func TestNewStorkServerFromEnvFile(t *testing.T) {
 	require.EqualValues(t, 42, ss.DBSettings.Port)
 	require.EqualValues(t, "bar", ss.DBSettings.DBName)
 	require.EqualValues(t, "baz", ss.RestAPISettings.Host)
-	require.True(t, ss.EnableMetricsEndpoint)
+	require.True(t, ss.GeneralSettings.EnableMetricsEndpoint)
 }

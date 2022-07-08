@@ -20,6 +20,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
+	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
 	"isc.org/stork/server/restservice"
 	storkutil "isc.org/stork/util"
@@ -51,19 +52,22 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
+	GeneralSettings Settings
+
 	Pullers *apps.Pullers
 
-	InitialPullerInterval int64
-	EnableMetricsEndpoint bool
-	MetricsCollector      metrics.Collector
+	MetricsCollector metrics.Collector
 
 	EventCenter eventcenter.EventCenter
 
 	ReviewDispatcher configreview.Dispatcher
-
-	ConfigManager              config.Manager
+	// Configuration manager instance. Note that it inherits some fields
+	// maintained by the server.
+	ConfigManager config.Manager
+	// Provides lookup functionality for DHCP option definitions.
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 	shutdownOnce               sync.Once
+	HookManager                *hookmanager.HookManager
 }
 
 // Read environment file settings. It's parsed before the above settings.
@@ -75,9 +79,10 @@ type EnvironmentFileSettings struct {
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
 	EnvironmentFileSettings
-	Version               bool  `short:"v" long:"version" description:"Show software version"`
-	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
-	InitialPullerInterval int64 `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea; if not provided the recommended values for each puller are used" env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
+	Version               bool   `short:"v" long:"version" description:"Show software version"`
+	EnableMetricsEndpoint bool   `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
+	InitialPullerInterval int64  `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea; if not provided the recommended values for each puller are used" env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
+	HookDirectory         string `long:"hook-directory" description:"Hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/var/lib/stork-server/hooks"`
 }
 
 // Parse the command line arguments into GO structures.
@@ -116,8 +121,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	}
 
 	// Process the rest of the flags.
-	var serverSettings Settings
-	parser = flags.NewParser(&serverSettings, flags.Default)
+	parser = flags.NewParser(&ss.GeneralSettings, flags.Default)
 	parser.ShortDescription = shortDescription
 	parser.LongDescription = longDescription
 
@@ -150,10 +154,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 		return NoneCommand, err
 	}
 
-	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
-	ss.InitialPullerInterval = serverSettings.InitialPullerInterval
-
-	if serverSettings.Version {
+	if ss.GeneralSettings.Version {
 		// If user specified --version or -v, print the version and quit.
 		return VersionCommand, nil
 	}
@@ -176,6 +177,8 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 // prepares the REST API. The reload flag indicates if the server is
 // starting up (reload=false) or it is being reloaded (reload=true).
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
+	ss.HookManager = hookmanager.NewHookManagerFromDirectory(ss.GeneralSettings.HookDirectory)
+
 	// setup database connection
 	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)
 	if err != nil {
@@ -183,7 +186,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 
 	// initialize stork settings
-	err = dbmodel.InitializeSettings(ss.DB, ss.InitialPullerInterval)
+	err = dbmodel.InitializeSettings(ss.DB, ss.GeneralSettings.InitialPullerInterval)
 	if err != nil {
 		return err
 	}
@@ -259,7 +262,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		return err
 	}
 
-	if ss.EnableMetricsEndpoint {
+	if ss.GeneralSettings.EnableMetricsEndpoint {
 		ss.MetricsCollector, err = metrics.NewCollector(ss.DB)
 		if err != nil {
 			return err
@@ -281,7 +284,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
-		ss.DHCPOptionDefinitionLookup)
+		ss.DHCPOptionDefinitionLookup, ss.HookManager)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()

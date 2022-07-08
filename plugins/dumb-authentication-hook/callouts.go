@@ -1,14 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/pkg/errors"
 	"isc.org/stork/hooks/server/authenticationcallout"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/restapi/operations/users"
 )
 
-type callouts struct {
-}
+type callouts struct{}
 
 var _ authenticationcallout.AuthenticationCallout = (*callouts)(nil)
 
@@ -16,14 +16,7 @@ func (c *callouts) Close() error {
 	return nil
 }
 
-func (c *callouts) GetAuthenticationDetails() *authenticationcallout.AuthenticationMethodDetails {
-	return &authenticationcallout.AuthenticationMethodDetails{
-		Name:        "LDAP",
-		Description: "LDAP authentication",
-	}
-}
-
-func (c *callouts) Authenticate(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+func (c *callouts) Authenticate(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	if params.Credentials.Useremail == nil || params.Credentials.Userpassword == nil {
 		return nil, errors.Errorf("missing email or password")
 	}
@@ -42,6 +35,6 @@ func (c *callouts) Authenticate(params users.CreateSessionParams) (*dbmodel.Syst
 	}, nil
 }
 
-func (c *callouts) Unauthenticate(user *dbmodel.SystemUser) error {
+func (c *callouts) Unauthenticate(ctx context.Context) error {
 	return nil
 }

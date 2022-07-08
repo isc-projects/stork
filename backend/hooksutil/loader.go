@@ -2,6 +2,7 @@ package hooksutil
 
 import (
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"isc.org/stork"
@@ -24,7 +25,7 @@ func LoadAllHooks(program string, directory string) []interface{} {
 			continue
 		}
 
-		library, err := NewLibraryManager(file.Name())
+		library, err := NewLibraryManager(filepath.Join(directory, file.Name()))
 		if err != nil {
 			logrus.
 				WithError(err).
