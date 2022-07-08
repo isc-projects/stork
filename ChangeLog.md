@@ -1,3 +1,12 @@
+* 225 [func] marcin
+
+    Added multiple enhancements in the form for creating new host
+    reservations. The form now checks if the specified IP addresses belong
+    to the selected subnet. The maximum size of the DHCP identifier is
+    limited to 40 hexadecimal digits. Host reservations list can be refreshed
+    with a button above the list.
+    (Gitlab #728)
+
 * 224 [doc] marcin
 
     Documented specification of the DHCP options with host reservations and
