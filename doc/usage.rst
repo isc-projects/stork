@@ -325,12 +325,10 @@ Supported identifier types are described in the following sections of the Kea
 Administrator Reference Manual (ARM):
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
 and `Host Reservation in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservation-in-dhcpv6>`_.
-If multiple identifiers are present for a reservation, the reservation is
-assigned when at least one of the identifiers matches the received DHCP packet.
 
-The second column, ``IP Reservations``, includes the static assignments of the
-IP addresses and/or delegated prefixes to the clients. There may be one or
-more IP reservations for each host.
+The next two columns contain the static assignments of the IP addresses and/or
+delegated prefixes to the clients. There may be one or more such IP reservations
+for each host.
 
 The ``Hostname`` column contains an optional hostname reservation, i.e., the
 hostname assigned to the particular client by the DHCP servers via the
@@ -417,7 +415,7 @@ There are two ways to configure Kea servers to use host reservations. First,
 the host reservations can be specified within the Kea configuration files; see
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
 for details. The other way is to use a host database backend, as described in
-`Storing Host Reservations in MySQL, PostgreSQL, or Cassandra <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-postgresql-or-cassandra>`_.
+`Storing Host Reservations in MySQL or PostgreSQL <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-or-postgresql>`_.
 The second solution requires the given Kea server to be configured to use the
 ``host_cmds`` premium hook library. This library implements control commands used
 to store and fetch the host reservations from the host database to which the Kea
@@ -512,6 +510,12 @@ click on the reservation in the host reservations list. Find the ``Delete``
 button and confirm the reservation deletion. Use it with caution because this
 operation cannot be undone. The reservation is removed from the DHCP servers'
 databases. It must be re-created to be restored.
+
+.. note::
+
+   The ``Delete`` button is unavailable for host reservations configured in the
+   Kea configuration files or when the reservations are configured in the host
+   database, but the ``host_cmds`` hook library is not loaded.
 
 Leases Search
 ~~~~~~~~~~~~~
