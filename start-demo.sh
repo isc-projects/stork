@@ -99,7 +99,9 @@ if ! [ -z "${ACCESS_TOKEN}" ]
 then
     PREMIUM_COMPOSE="-f${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
 else
-    PREMIUM_COMPOSE="--ansi=auto"
+    # This variable cannot be empty because it causes the docker-compose fails.
+    # This line sets any default value explicitly.
+    PREMIUM_COMPOSE="--env-file="
 fi
 
 # Run the demo
