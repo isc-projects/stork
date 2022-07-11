@@ -94,12 +94,12 @@ then
     fi
 fi
 
-PREMIUM_COMPOSE_OPTION=
-PREMIUM_COMPOSE_FILE=
+PREMIUM_COMPOSE=
 if ! [ -z "${ACCESS_TOKEN}" ]
 then
-    PREMIUM_COMPOSE_OPTION="-f"
-    PREMIUM_COMPOSE_FILE="${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
+    PREMIUM_COMPOSE="-f${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
+else
+    PREMIUM_COMPOSE="--ansi=auto"
 fi
 
 # Run the demo
@@ -110,13 +110,13 @@ CS_REPO_ACCESS_TOKEN=${ACCESS_TOKEN} \
 docker-compose \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    ${PREMIUM_COMPOSE_OPTION} "${PREMIUM_COMPOSE_FILE}" \
+    "${PREMIUM_COMPOSE}" \
     build
 # Start Docker containers
 docker-compose \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    ${PREMIUM_COMPOSE_OPTION} "${PREMIUM_COMPOSE_FILE}" \
+    "${PREMIUM_COMPOSE}" \
     up -d
 
 if [ ${NO_PROMPT} -eq 0 ]
