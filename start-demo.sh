@@ -100,7 +100,7 @@ then
     PREMIUM_COMPOSE="-f${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
 else
     # This variable cannot be empty because it causes the docker-compose fails.
-    # This line sets any default value explicitly.
+    # The below line sets any default value explicitly.
     PREMIUM_COMPOSE="--env-file="
 fi
 
