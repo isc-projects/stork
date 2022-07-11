@@ -49,33 +49,45 @@ function subnetRequiredValidator(group: FormGroup): ValidationErrors | null {
 }
 
 /**
- * A form validator checking if a selected DHCP identifier has been specified.
+ * A form validator checking if a selected DHCP identifier has been specified
+ * and does not exceed the maximum length.
  *
  * @param group a selected form group belonging to the ipGroups array.
  * @returns validation errors when no value has been specified in the
  *          idInputHex input box (when selected type is hex) or idInputText
- *          (when selected type is text).
+ *          (when selected type is text). It also returns validation errors
+ *          when hw-address exceeds 40 hexadecimal digits or 20 characters
+ *          or when other identifiers exceed 256 hexadecimal digits or 128
+ *          characters.
  */
-function identifierRequiredValidator(group: FormGroup): ValidationErrors | null {
+function identifierValidator(group: FormGroup): ValidationErrors | null {
+    const idType = group.get('idType')
     const idInputHex = group.get('idInputHex')
     const idInputText = group.get('idInputText')
+    let valErrors: ValidationErrors = null
     switch (group.get('idFormat').value) {
         case 'hex':
             // User selected hex format. Clear validation errors pertaining
             // to the idInputText and set errors for idInputHex if the
             // required value is not specified.
             idInputText.setErrors(null)
+            valErrors =
+                Validators.required(idInputHex) ||
+                StorkValidators.hexIdentifierLength(idType.value === 'hw-address' ? 40 : 256)(idInputHex)
             if (idInputHex.valid) {
-                idInputHex.setErrors(Validators.required(idInputHex))
+                idInputHex.setErrors(valErrors)
             }
-            return Validators.required(idInputHex)
+            return valErrors
         case 'text':
             // User selected text format.
             idInputHex.setErrors(null)
+            valErrors =
+                Validators.required(idInputText) ||
+                Validators.maxLength(idType.value === 'hw-address' ? 20 : 128)(idInputText)
             if (idInputText.valid) {
-                idInputText.setErrors(Validators.required(idInputText))
+                idInputText.setErrors(valErrors)
             }
-            return Validators.required(idInputText)
+            return valErrors
     }
     return null
 }
@@ -251,18 +263,12 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 hostIdGroup: this._formBuilder.group(
                     {
                         idType: [this.hostIdTypes[0].label],
-                        idInputHex: [
-                            '',
-                            Validators.compose([
-                                StorkValidators.hexIdentifier(),
-                                StorkValidators.hexIdentifierLength(40),
-                            ]),
-                        ],
+                        idInputHex: ['', StorkValidators.hexIdentifier()],
                         idInputText: [''],
                         idFormat: ['hex'],
                     },
                     {
-                        validators: [identifierRequiredValidator],
+                        validators: [identifierValidator],
                     }
                 ),
                 ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
@@ -641,6 +647,20 @@ export class HostFormComponent implements OnInit, OnDestroy {
         } else {
             this.ipv4Placeholder = HostFormComponent.defaultIPv4Placeholder
             this.ipv6Placeholder = HostFormComponent.defaultIPv6Placeholder
+        }
+    }
+
+    /**
+     * A callback called when new host identifier type has been selected.
+     *
+     * It updates the validity of the input fields in which the identifier is
+     * specified.
+     */
+    onSelectedIdentifierChange(): void {
+        if (this.formGroup.get('hostIdGroup.idFormat').value === 'hex') {
+            this.formGroup.get('hostIdGroup.idInputHex').updateValueAndValidity()
+        } else {
+            this.formGroup.get('hostIdGroup.idInputText').updateValueAndValidity()
         }
     }
 

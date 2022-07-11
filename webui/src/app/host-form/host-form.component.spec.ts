@@ -343,7 +343,7 @@ describe('HostFormComponent', () => {
         expect(errmsg.nativeElement.innerText).toContain('Please specify valid hexadecimal digits (e.g., ab:09:ef:01).')
     }))
 
-    it('should validate hex identifier length', fakeAsync(() => {
+    it('should validate hw-address hex identifier length', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
@@ -363,6 +363,31 @@ describe('HostFormComponent', () => {
         expect(errmsg).toBeTruthy()
         expect(errmsg.nativeElement.innerText).toContain(
             'The number of hexadecimal digits exceeds the maximum value of 40.'
+        )
+    }))
+
+    it('should validate other hex identifier length', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.formGroup.get('hostIdGroup.idFormat').value).toBe('hex')
+
+        component.formGroup.get('hostIdGroup.idType').setValue('client-id')
+        component.onSelectedIdentifierChange()
+        const pattern = '11'
+        component.formGroup.get('hostIdGroup.idInputHex').setValue(pattern.repeat(129))
+        expect(component.formGroup.get('hostIdGroup.idInputHex').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputHex').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputHex').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain(
+            'The number of hexadecimal digits exceeds the maximum value of 256.'
         )
     }))
 
@@ -389,6 +414,54 @@ describe('HostFormComponent', () => {
         const errmsg = fixture.debugElement.query(By.css('small'))
         expect(errmsg).toBeTruthy()
         expect(errmsg.nativeElement.innerText).toContain('DHCP identifier is required.')
+    }))
+
+    it('should validate hw-address text identifier length', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('hostIdGroup.idFormat').setValue('text')
+        fixture.detectChanges()
+        expect(component.formGroup.get('hostIdGroup.idFormat').value).toBe('text')
+
+        const pattern = 'a'
+        component.formGroup.get('hostIdGroup.idInputText').setValue(pattern.repeat(21))
+        expect(component.formGroup.get('hostIdGroup.idInputText').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputText').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputText').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('The identifier length exceeds the maximum value of 20.')
+    }))
+
+    it('should validate other text identifier length', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('hostIdGroup.idFormat').setValue('text')
+        fixture.detectChanges()
+        expect(component.formGroup.get('hostIdGroup.idFormat').value).toBe('text')
+
+        component.formGroup.get('hostIdGroup.idType').setValue('duid')
+        component.onSelectedIdentifierChange()
+        const pattern = 'a'
+        component.formGroup.get('hostIdGroup.idInputText').setValue(pattern.repeat(129))
+        expect(component.formGroup.get('hostIdGroup.idInputText').valid).toBeFalse()
+
+        component.formGroup.get('hostIdGroup.idInputText').markAsTouched()
+        component.formGroup.get('hostIdGroup.idInputText').markAsDirty()
+        fixture.detectChanges()
+
+        const errmsg = fixture.debugElement.query(By.css('small'))
+        expect(errmsg).toBeTruthy()
+        expect(errmsg.nativeElement.innerText).toContain('The identifier length exceeds the maximum value of 128.')
     }))
 
     it('should list ip reservation types for a server type', fakeAsync(() => {

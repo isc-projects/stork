@@ -60,7 +60,13 @@
     <p-fieldset legend="DHCP Identifier" styleClass="p-mt-4">
         <div formGroupName="hostIdGroup" class="p-grid host-form-abs-width">
             <div class="p-col-3">
-                <p-dropdown [options]="hostIdTypes" formControlName="idType" styleClass="full-width"> </p-dropdown>
+                <p-dropdown
+                    [options]="hostIdTypes"
+                    formControlName="idType"
+                    styleClass="full-width"
+                    (onChange)="onSelectedIdentifierChange()"
+                >
+                </p-dropdown>
             </div>
             <div class="p-col-3">
                 <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
@@ -108,7 +114,13 @@
                                 formGroup.get('hostIdGroup.idInputText').touched)
                         "
                         class="p-error block"
-                        >DHCP identifier is required.
+                        >{{
+                            formGroup.get('hostIdGroup.idInputText').hasError('maxlength')
+                                ? 'The identifier length exceeds the maximum value of ' +
+                                  formGroup.get('hostIdGroup.idInputText').errors['maxlength'].requiredLength +
+                                  '.'
+                                : 'DHCP identifier is required.'
+                        }}
                     </small>
                 </div>
             </ng-template>
