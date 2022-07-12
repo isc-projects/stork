@@ -1,3 +1,8 @@
+* 227 [bug] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot.
+    (Gitlab #805)
+
 * 226 [func] slawek
 
     Added a shell script to run the demo only with docker-compose. The users
