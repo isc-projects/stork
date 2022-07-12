@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
 	"isc.org/stork"
+	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -244,6 +247,44 @@ func runCertImport(settings *cli.Context) error {
 	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
 
+// Execute plugin inspect command.
+func runInspectPlugins(settings *cli.Context) error {
+	directory := settings.String("directory")
+
+	files, err := ioutil.ReadDir(directory)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		library, err := hooksutil.NewLibraryManager(filepath.Join(directory, file.Name()))
+		if err != nil {
+			log.
+				WithField("file", file.Name()).
+				Error(err)
+			continue
+		}
+
+		hookProgram, hookVersion, err := library.Version()
+		if err != nil {
+			log.
+				WithField("file", file.Name()).
+				Error(err)
+			continue
+		}
+
+		log.
+			WithField("file", file.Name()).
+			Infof("Hook is compatible with %s@%s", hookProgram, hookVersion)
+	}
+
+	return nil
+}
+
 // Prepare urfave cli app with all flags and commands defined.
 func setupApp() *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
@@ -426,6 +467,16 @@ func setupApp() *cli.App {
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
 
+	pluginInspectFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name:     "directory",
+			Usage:    "The hook directory path",
+			Required: true,
+			Aliases:  []string{"d"},
+			EnvVars:  []string{"STORK_TOOL_HOOK_DIRECTORY"},
+		},
+	}
+
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:    "help",
 		Aliases: []string{"h"},
@@ -580,6 +631,14 @@ func setupApp() *cli.App {
 				Flags:       certImportFlags,
 				Category:    "Certificates Management",
 				Action:      runCertImport,
+			},
+			{
+				Name:        "plugin-inspect",
+				Usage:       "Prints details about hook plugins",
+				UsageText:   "stork-tool plugin-inspect -d directory",
+				Description: "",
+				Flags:       pluginInspectFlags,
+				Action:      runInspectPlugins,
 			},
 		},
 	}
