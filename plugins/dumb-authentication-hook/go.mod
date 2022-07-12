@@ -5,7 +5,7 @@ go 1.18
 replace isc.org/stork v0.0.0 => ../../backend
 
 require (
-	github.com/pkg/errors v0.9.1
+	github.com/pkg/errors v0.8.1
 	isc.org/stork v0.0.0
 )
 
