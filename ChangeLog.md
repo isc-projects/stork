@@ -1,3 +1,5 @@
+Stork 1.5.0 released on 2022-07-13.
+
 * 227 [bug] slawek
 
     Fixed the security vulnerabilities reported by the Github Dependabot.
