@@ -86,3 +86,10 @@ namespace :hook do
     end
 end
 
+namespace :run do
+    desc "Run Stork Server with hooks"
+    task :server_with_hooks => ["hook:build"] do
+        ENV["STORK_SERVER_HOOK_DIRECTORY"] = File.expand_path "plugins"
+        Rake::Task["run:server"].invoke()
+    end
+end
