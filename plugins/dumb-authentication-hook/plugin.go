@@ -9,7 +9,7 @@ func Load() (hooks.Closer, error) {
 }
 
 func Version() (string, string) {
-	return hooks.HookProgramAgent, hooks.StorkVersion
+	return hooks.HookProgramServer, hooks.StorkVersion
 }
 
 // Type guards

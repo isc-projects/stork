@@ -61,7 +61,7 @@ func (he *HookExecutor) GetCallouts(calloutType reflect.Type) ([]interface{}, bo
 
 func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
 	callouts, ok := he.registeredCallouts[calloutType]
-	return ok && len(callouts) != 0
+	return ok && len(callouts) > 0
 }
 
 // It can monitor performance.

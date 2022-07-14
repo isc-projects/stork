@@ -25,13 +25,15 @@ func (c *callouts) Authenticate(ctx context.Context, params users.CreateSessionP
 	}
 
 	return &dbmodel.SystemUser{
-		ID:       0,
+		ID:       1,
 		Login:    "Secretary",
 		Email:    "secretary@office.com",
 		Lastname: "Bob",
 		Name:     "Alice",
 		Password: "",
-		Groups:   []*dbmodel.SystemGroup{},
+		Groups: []*dbmodel.SystemGroup{
+			&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID},
+		},
 	}, nil
 }
 
