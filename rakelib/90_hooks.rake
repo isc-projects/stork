@@ -32,15 +32,22 @@ namespace :hook do
         end
     end
 
-    desc "Build the hooks"
+    desc "Build the hooks
+        DEBUG - build plugins in debug mode - default: false
+    "
     task :build => [GO] do
         Dir.foreach("plugins") do |filename|
             path = File.join("plugins", filename)
             next if filename == '.' or filename == '..' or !File.directory? path
 
+            flags = []
+            if ENV["DEBUG"] == "true"
+                flags.append "-gcflags", "all=-N -l"
+            end
+
             Dir.chdir(path) do
                 sh GO, "mod", "tidy"
-                sh GO, "build", "-buildmode=plugin", "-o", ".."
+                sh GO, "build", *flags, "-buildmode=plugin", "-o", ".."
             end
         end
     end 
