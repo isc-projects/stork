@@ -16,10 +16,10 @@ FROM debian:11.2-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-                -y \
-                --no-install-recommends \
-                ca-certificates=20210119 \
-                wget=1.21-* \
+        -y \
+        --no-install-recommends \
+        ca-certificates=20210119 \
+        wget=1.21-* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
@@ -30,19 +30,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-                -y \
-                --no-install-recommends \
-                unzip=6.0-* \
-                ruby-dev=1:2.7+* \
-                python3.9=3.9.* \
-                python3-venv=3.9.* \
-                make=4.3-* \
-                gcc=4:10.2.* \
-                xz-utils=5.2.* \
-                libc6-dev=2.31-* \
-                ruby-rubygems=3.2.* \
-                openjdk-11-jre-headless=11.0.* \
-                git=1:2.30.* \
+        -y \
+        --no-install-recommends \
+        unzip=6.0-* \
+        ruby-dev=1:2.7+* \
+        python3.9=3.9.* \
+        python3-venv=3.9.* \
+        make=4.3-* \
+        gcc=4:10.2.* \
+        xz-utils=5.2.* \
+        libc6-dev=2.31-* \
+        ruby-rubygems=3.2.* \
+        openjdk-11-jre-headless=11.0.* \
+        git=1:2.30.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -178,15 +178,15 @@ FROM debian-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
-                -y \
-                --no-install-recommends \
-                curl=7.74.* \
-                supervisor=4.2.* \
-                prometheus-node-exporter=1.1.* \
-                default-mysql-client=1.0.* \ 
-                postgresql-client=13+* \
-                apt-transport-https=2.2.* \
-                gnupg=2.2.* \
+        -y \
+        --no-install-recommends \
+        curl=7.74.* \
+        supervisor=4.2.* \
+        prometheus-node-exporter=1.1.* \
+        default-mysql-client=1.0.* \ 
+        postgresql-client=13+* \
+        apt-transport-https=2.2.* \
+        gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
@@ -196,14 +196,14 @@ ARG KEA_VER
 RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
-                --no-install-recommends \
-                -y \
-                python3-isc-kea-connector=${KEA_VER} \
-                isc-kea-ctrl-agent=${KEA_VER} \
-                isc-kea-dhcp4-server=${KEA_VER} \
-                isc-kea-dhcp6-server=${KEA_VER} \
-                isc-kea-admin=${KEA_VER} \
-                isc-kea-common=${KEA_VER} \
+        --no-install-recommends \
+        -y \
+        python3-isc-kea-connector=${KEA_VER} \
+        isc-kea-ctrl-agent=${KEA_VER} \
+        isc-kea-dhcp4-server=${KEA_VER} \
+        isc-kea-dhcp6-server=${KEA_VER} \
+        isc-kea-admin=${KEA_VER} \
+        isc-kea-common=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
@@ -222,14 +222,14 @@ ARG KEA_VER
 RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         apt-get update \
         && apt-get install \
-                --no-install-recommends \
-                -y \
-                isc-kea-premium-host-cmds=${KEA_VER} \
-                isc-kea-premium-forensic-log=${KEA_VER} \
+        --no-install-recommends \
+        -y \
+        isc-kea-premium-host-cmds=${KEA_VER} \
+        isc-kea-premium-forensic-log=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
-)
+        )
 
 # Use the "kea-base" or "keapremium-base" image as a base image
 # for this stage.
@@ -264,40 +264,39 @@ HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Stork Agent files: /etc/stork
 
 # Bind9 with Stork Agent container
-FROM debian-base AS bind
+FROM internetsystemsconsortium/bind9:9.18 AS bind
 # Install Bind9 dependencies
 RUN apt-get update \
         && apt-get install \
-                -y \
-                --no-install-recommends \
-                supervisor=4.* \
-                prometheus-node-exporter=* \
-                prometheus-node-exporter=1.1.* \
-                apt-transport-https=2.2.* \
-                gnupg=2.2.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/*
-# Install Bind
-ARG BIND_VER="1:9.16.*"
-RUN apt-get update \
-        && apt-get install \
-                -y \
-                --no-install-recommends \
-                bind9=${BIND_VER} \
+        -y \
+        --no-install-recommends \
+        supervisor=4.2.* \
+        prometheus-node-exporter=1.3.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
-        && chown root:bind /etc/bind/rndc.key \
-        && chmod 640 /etc/bind/rndc.key \
         # Puts empty database file to allow mounting it as a volume.
-        && touch /etc/bind/db.test
+        && touch /etc/bind/db.test \
+        # The bind image uses a dedicated user. We need to run the entry point
+        # with this user to allow Stork Agent to read the process info. It
+        # means that the supervisors will use the same user. It must have the
+        # right to write the log files.
+        && mkdir -p /var/log/supervisor \
+        && chown bind:bind /var/log/supervisor \
+        && chmod 755 /var/log/supervisor \
+        # The same situation is with the Stork Agent
+        && mkdir -p /var/lib/stork-agent \
+        && chown bind:bind /var/lib/stork-agent \
+        && chmod 755 /var/lib/stork-agent
 # Install agent    
-COPY --from=agent-builder /app/dist/agent /
+COPY --from=agent-builder /app/dist/agent/usr/bin /usr/bin
+# Use dedicated bind user
+USER bind
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 # Incoming port
 EXPOSE 8080
-# Prometheus Bing9 port
+# Prometheus Bind9 port
 EXPOSE 9119
-HEALTHCHECK CMD [ "supervisorctl", "status " ]
+HEALTHCHECK CMD [ "supervisorctl", "status" ]
 # Configuration files:
 # Supervisor: /etc/supervisor/supervisord.conf
 # Stork Agent: /etc/stork
@@ -317,10 +316,10 @@ RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
 FROM debian-base AS external-packages
 RUN apt-get update \
         && apt-get install \
-                --no-install-recommends \
-                -y \
-                supervisor=4.2.* \
-                curl=7.74.* \
+        --no-install-recommends \
+        -y \
+        supervisor=4.2.* \
+        curl=7.74.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # The post-install hooks of the packages call the systemctl command
@@ -332,10 +331,10 @@ ARG STORK_CS_VER
 RUN wget -q -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
-                --no-install-recommends \
-                -y \
-                isc-stork-agent=${STORK_CS_VER} \
-                isc-stork-server=${STORK_CS_VER} \
+        --no-install-recommends \
+        -y \
+        isc-stork-agent=${STORK_CS_VER} \
+        isc-stork-server=${STORK_CS_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb

@@ -256,12 +256,16 @@ namespace :demo do
     end
 
     desc 'Run shell inside specific service
-        SERVICE - service name - required'
+        SERVICE - service name - required
+        USER - user to login - optional, default: root'
     task :shell do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
-        services = []
-        sh "docker-compose", *opts, "exec", ENV["SERVICE"], "/bin/sh"
+        exec_opts = []
+        if !ENV["USER"].nil?
+            exec_opts.append "--user", ENV["USER"]
+        end
+        sh "docker-compose", *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
     end
     
     #######################
