@@ -242,6 +242,18 @@ namespace :demo do
     task :check_etchosts do
         check_hosts_and_print_hint()
     end
+
+    desc 'Print logs of a given service
+        SERVICE - service name - optional'
+    task :logs do
+        ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
+        opts, _, _, _ = get_docker_opts(nil, false, false, [])
+        services = []
+        if !ENV["SERVICE"].nil?
+            services.append ENV["SERVICE"]
+        end
+        sh "docker-compose", *opts, "logs", *services
+    end
     
     #######################
     ### Docker registry ###
