@@ -89,18 +89,22 @@ func writeAgentFile(path string, content []byte) error {
 	if os.IsExist(err) {
 		err = os.Remove(path)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "cannot remove old agent file: %s", path)
 		}
 	}
 
 	directory := filepath.Dir(path)
-	err = os.MkdirAll(directory, 0o700)
-	if err != nil {
-		return err
+	_, err = os.Stat(directory)
+	if !os.IsExist(err) {
+		err = os.MkdirAll(directory, 0o700)
+		if err != nil {
+			return errors.Wrapf(err, "cannot create a directory for Stork files: %s", directory)
+		}
 	}
+
 	err = os.WriteFile(path, content, 0o600)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "cannot write file: %s", path)
 	}
 	return nil
 }
