@@ -118,7 +118,7 @@ namespace :demo do
         elsif server_mode == "no-server"
             up_opts += ["--scale", "server=0", "--scale", "webui=0"]
             # Prevents the Stork Agent from the registration
-            ENV["STORK_SERVER_MODE_URL"] = ""
+            ENV["STORK_SERVER_URL"] = ""
         elsif server_mode == "default" || server_mode == nil
             # Nothing
         else
