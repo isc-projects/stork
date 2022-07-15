@@ -80,36 +80,47 @@ RUN rake prepare:ui_deps
 # General-purpose stage for tasks: building, testing, linting, etc.
 # It contains the codebase with dependencies
 FROM prepare AS codebase
-WORKDIR /app/tools/golang
-COPY --from=gopath-prepare /app/tools/golang .
-WORKDIR /app/webui
-COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app
 COPY Rakefile .
-WORKDIR /app/api
-COPY api .
-WORKDIR /app/backend
-COPY backend .
 WORKDIR /app/doc
 COPY doc .
 WORKDIR /app/etc
 COPY etc .
-WORKDIR /app/grafana
-COPY grafana .
+WORKDIR /app/api
+COPY api .
 WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake rakelib/20_build.rake rakelib/40_dist.rake ./
+
+FROM codebase as codebase-backend
+WORKDIR /app/tools/golang
+COPY --from=gopath-prepare /app/tools/golang .
+WORKDIR /app/backend
+COPY backend .
+
+FROM codebase AS codebase-webui
+WORKDIR /app/grafana
+COPY grafana .
+WORKDIR /app/backend
+COPY backend/version.go .
+WORKDIR /app/webui
+COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app/webui
 COPY webui .
 
 # Build the Stork binaries
-FROM codebase AS server-builder
+FROM codebase-backend AS server-builder
 RUN rake build:server_only_dist
 
-FROM codebase AS webui-builder
+FROM codebase-webui AS webui-builder
 RUN rake build:ui_only_dist
 
-FROM codebase AS agent-builder
+FROM codebase-backend AS agent-builder
 RUN rake build:agent_dist
+
+FROM codebase AS server-full-builder
+COPY --from=server-builder /app/ /app/
+COPY --from=webui-builder /app/ /app/
+RUN rake build:server_dist
 
 # Agent container
 FROM debian-base as agent
@@ -259,8 +270,8 @@ RUN apt-get update \
         && apt-get install \
                 -y \
                 --no-install-recommends \
-                curl=7.74.* \
-                supervisor=4.2.* \
+                supervisor=4.* \
+                prometheus-node-exporter=* \
                 prometheus-node-exporter=1.1.* \
                 apt-transport-https=2.2.* \
                 gnupg=2.2.* \
@@ -297,7 +308,7 @@ HEALTHCHECK CMD [ "supervisorctl", "status " ]
 ### Packaging ###
 #################
 
-FROM server-builder AS server_package_builder
+FROM server-full-builder AS server_package_builder
 RUN rake build:server_pkg && rake utils:remove_last_package_suffix
 
 FROM agent-builder AS agent_package_builder
