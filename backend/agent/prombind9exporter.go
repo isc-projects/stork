@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -1160,9 +1159,6 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 
 // collectStats collects stats from all bind9 apps.
 func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
-	// Request to named statistics-channel for getting all server stats.
-	request := `{}`
-
 	pbe.up = 0
 
 	// go through all bind9 apps discovered by monitor and query them for stats
@@ -1184,7 +1180,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		address := storkutil.HostWithPortURL(sap.Address, sap.Port, sap.UseSecureProtocol)
 		path := "json/v1"
 		url := fmt.Sprintf("%s%s", address, path)
-		httpRsp, err := pbe.HTTPClient.Call(url, bytes.NewBuffer([]byte(request)))
+		httpRsp, err := pbe.HTTPClient.Call(url, nil)
 		if err != nil {
 			lastErr = err
 			log.Errorf("Problem getting stats from BIND 9: %+v", err)
@@ -1212,6 +1208,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot get stat from daemon: %+v", err)
+			continue
 		}
 
 		pbe.up = 1

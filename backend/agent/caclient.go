@@ -1,12 +1,12 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -80,7 +80,7 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 	return client
 }
 
-func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, error) {
+func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem creating POST request to %s", url)
