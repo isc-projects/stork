@@ -112,10 +112,16 @@ namespace :systemtest do
     end
 
     desc 'Run shell in the docker-compose container
-        SERVICE - name of the docker-compose service - required'
+        SERVICE - name of the docker-compose service - required
+        SERVICE_USER - user to log in - optional'
     task :shell do
+        user = []
+        if !ENV["SERVICE_USER"].nil?
+            user.append "--user", ENV["SERVICE_USER"]
+        end
+
         Rake::Task["systemtest:sh"].invoke(
-            "exec", ENV["SERVICE"], "/bin/sh")
+            "exec", *user, ENV["SERVICE"], "/bin/sh")
     end
 
     desc 'Display docker-compose logs

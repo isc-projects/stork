@@ -257,15 +257,39 @@ namespace :demo do
 
     desc 'Run shell inside specific service
         SERVICE - service name - required
-        USER - user to login - optional, default: root'
+        SERVICE_USER - user to login - optional, default: root'
     task :shell do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         exec_opts = []
-        if !ENV["USER"].nil?
-            exec_opts.append "--user", ENV["USER"]
+        if !ENV["SERVICE_USER"].nil?
+            exec_opts.append "--user", ENV["SERVICE_USER"]
         end
         sh "docker-compose", *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
+    end
+
+    desc "Build the demo containers
+        CS_REPO_ACCESS_TOKEN - CloudSmith token - optional
+        SERVICE - service name - optional
+        CACHE - doesn't rebuild the containers if present - default: true"
+    task :build do
+        services = []
+        if !ENV["SERVICE"].nil?
+            services.append ENV["SERVICE"]
+        end
+
+        cache = ENV["CACHE"] != "false"
+        
+        # Prepare the docker-compose flags
+        opts, build_opts, up_opts, additional_services = get_docker_opts(nil, cache, false, services)
+        
+        # We don't use the BuildKit features in our Dockerfiles (yet).
+        # But we turn on the BuildKit to build the Docker stages concurrently
+        # and skip unnecessary stages.  
+        ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
+        ENV["DOCKER_BUILDKIT"] = "1"
+
+        sh "docker-compose", *opts, "build", *build_opts, *services, *additional_services
     end
     
     #######################
