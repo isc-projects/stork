@@ -53,8 +53,8 @@ def test_build_uses_proper_command():
     # Assert
     mock.assert_called_once()
     build_cmd = mock.call_args.kwargs["cmd"]
-    assert " ".join(build_cmd[:-1]) == " ".join(base_cmd)
-    assert build_cmd[-1] == "build"
+    assert " ".join(build_cmd[:-2]) == " ".join(base_cmd)
+    assert build_cmd[-2] == "build"
 
 
 def test_build_uses_build_kit_by_default():
@@ -90,9 +90,23 @@ def test_build_uses_service_names():
     compose.build("foo", "bar")
     # Assert
     build_cmd = mock.call_args.kwargs["cmd"]
-    assert build_cmd[-3] == "build"
+    assert build_cmd[-4] == "build"
+    assert build_cmd[-3] == "--"
     assert build_cmd[-2] == "foo"
     assert build_cmd[-1] == "bar"
+
+
+def test_build_uses_build_arguments():
+    # Arrange
+    build_args = {"foo": "bar", "baz": "biz"}
+    compose = DockerCompose("project-dir", build_args=build_args)
+    mock = MagicMock()
+    compose._call_command = mock
+    # Act
+    compose.build("foobar")
+    build_cmd = " ".join(mock.call_args.kwargs["cmd"])
+    assert "-build-arg foo=bar"
+    assert "-build-arg baz=biz"
 
 
 def test_pull_uses_proper_command():

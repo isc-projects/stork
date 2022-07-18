@@ -13,7 +13,7 @@ import core.lease_generators as lease_generators
 logger = setup_logger(__name__)
 
 
-def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
+def _agent_parametrize(fixture_name, service_name, suppress_registration=False, bind9_version=None):
     """
     Helper for parametrizing the agent fixtures.
 
@@ -25,6 +25,8 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
         Name of docker-compose service
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
+    bind9_version : str, optional
+        Use a specific BIND9 version
 
     Returns
     -------
@@ -33,7 +35,8 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
     """
     return pytest.mark.parametrize(fixture_name, [{
         "service_name": service_name,
-        "suppress_registration": suppress_registration
+        "suppress_registration": suppress_registration,
+        "bind9_version": bind9_version
     }], indirect=True)
 
 
@@ -56,7 +59,7 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     return _agent_parametrize("kea_service", service_name, suppress_registration)
 
 
-def bind9_parametrize(service_name="agent-bind9", suppress_registration=False):
+def bind9_parametrize(service_name="agent-bind9", suppress_registration=False, version=None,):
     """
     Helper for parametrize the Bind9 fixture.
 
@@ -64,6 +67,8 @@ def bind9_parametrize(service_name="agent-bind9", suppress_registration=False):
     ----------
     service_name : str, optional
         Name of docker-compose service of the Kea, by default "agent-bind9"
+    version : str, optional
+        Use a specific BIND9 version, None means default one
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
 
@@ -72,7 +77,7 @@ def bind9_parametrize(service_name="agent-bind9", suppress_registration=False):
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("bind9_service", service_name, suppress_registration)
+    return _agent_parametrize("bind9_service", service_name, suppress_registration, bind9_version=version)
 
 
 def server_parametrize(service_name="server"):
@@ -223,7 +228,8 @@ def bind9_service(request):
     """
     param = {
         "service_name": "agent-bind9",
-        "suppress_registration": False
+        "suppress_registration": False,
+        "bind9_version": None,
     }
 
     if hasattr(request, "param"):
@@ -238,9 +244,13 @@ def bind9_service(request):
         # We need the Server to perform the registration
         server_service = request.getfixturevalue("server_service")
 
+    build_args = {}
+    if param["bind9_version"] is not None:
+        build_args['BIND9_VER'] = param["bind9_version"]
+
     # Setup wrapper
     service_name = param['service_name']
-    compose = create_docker_compose(env_vars=env_vars)
+    compose = create_docker_compose(env_vars=env_vars, build_args=build_args)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Bind9(compose, service_name, server_service)

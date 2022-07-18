@@ -7,6 +7,7 @@ ARG KEA_VER=2.0.2-isc20220227221539
 # Indicate if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
+ARG BIND9_VER=9.18
 
 ###################
 ### Base images ###
@@ -264,14 +265,14 @@ HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Stork Agent files: /etc/stork
 
 # Bind9 with Stork Agent container
-FROM internetsystemsconsortium/bind9:9.18 AS bind
+FROM internetsystemsconsortium/bind9:${BIND9_VER} AS bind
 # Install Bind9 dependencies
 RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
-        supervisor=4.2.* \
-        prometheus-node-exporter=1.3.* \
+                supervisor=4.* \
+                prometheus-node-exporter=* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # Puts empty database file to allow mounting it as a volume.

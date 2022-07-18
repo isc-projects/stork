@@ -161,6 +161,7 @@ class DockerCompose(object):
             build=False,
             env_file: str = None,
             env_vars: Dict[str, str] = None,
+            build_args: Dict[str, str] = None,
             project_name: str = None,
             use_build_kit=True,
             default_mapped_hostname: str = None):
@@ -174,6 +175,18 @@ class DockerCompose(object):
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
+
+        if build_args is not None:
+            build_args_pairs = [("--build-arg", "%s=%s" % pair)
+                                for pair in build_args.items()]
+            # Flatten list
+            build_args_strings = [item
+                                  for pair in build_args_pairs
+                                  for item in pair]
+
+            self._build_args = build_args_strings
+        else:
+            self._build_args = []
 
         if project_name is None:
             # Mimics the docker-compose convention
@@ -203,8 +216,12 @@ class DockerCompose(object):
         builds all containers. Supports BuildKit."""
         logger.info("Begin build containers")
 
-        build_cmd = self.docker_compose_command() + \
-            ['build', *service_names]
+        build_cmd = self.docker_compose_command() + [
+            "build",
+            *self._build_args,
+            "--",
+            *service_names
+        ]
 
         env = None
         if self._use_build_kit:
