@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
+import os
+
 from core.utils import memoize, wait_for_success, NoSuccessException
+from core.prometheus_parser import text_fd_to_metric_families
 
 
 def test_memoize():
@@ -189,3 +192,20 @@ def test_wait_for_no_success_with_retries_use_custom_expected_exception():
 
     # Assert
     assert call_count == 5
+
+
+def test_prometheus_parser():
+    """Checks if the parser properly processes the Stork Agent output of the
+    metrics endpoint."""
+    # Arrange
+    dataset_path = os.path.join(os.path.dirname(
+        __file__), "data", "stork_agent_metrics.txt")
+    with open(dataset_path, "rt") as f:
+        # Act
+        metrics = list(text_fd_to_metric_families(f))
+
+    # Assert
+    assert len(metrics) == 49
+    up_metric = [m for m in metrics if m.name == "bind_up"][0]
+    assert up_metric.documentation == "Was the BIND instance query successful?"
+    assert up_metric.samples[0].value == 1

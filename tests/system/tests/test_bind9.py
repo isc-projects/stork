@@ -12,3 +12,15 @@ def test_bind9(server_service: Server, bind9_service: Bind9):
     assert app['type'] == "bind9"
     assert len(app['access_points']) == 2
     assert app['access_points'][0]['address'] == '127.0.0.1'
+
+    # BIND9 rejects every second POST request if it contains a non-empty body.
+    # This loop checks if the Stork isn't affected.
+    for _ in range(2):
+        metrics = {
+            metric.name: metric
+            for metric
+            in bind9_service.read_prometheus_metrics()
+        }
+        up_metric = metrics["bind_up"]
+        up_metric_value = up_metric.samples[0].value
+        assert up_metric_value == 1.0

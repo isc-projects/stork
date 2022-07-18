@@ -1,0 +1,215 @@
+# HELP bind_boot_time_seconds Start time of the BIND process since unix epoch in seconds.
+# TYPE bind_boot_time_seconds gauge
+bind_boot_time_seconds 1.65815891e+09
+# HELP bind_config_time_seconds Time of the last reconfiguration since unix epoch in seconds.
+# TYPE bind_config_time_seconds gauge
+bind_config_time_seconds 1.65815891e+09
+# HELP bind_current_time_seconds Current time unix epoch in seconds as reported by named.
+# TYPE bind_current_time_seconds gauge
+bind_current_time_seconds 1.658158989e+09
+# HELP bind_exporter_build_info A metric with a constant '1' value labeled by version, revision, branch, and goversion from which bind_exporter was built.
+# TYPE bind_exporter_build_info gauge
+bind_exporter_build_info{branch="",goversion="go1.18.3",revision="",version="1.5.0"} 1
+# HELP bind_incoming_queries_tcp Number of incoming TCP queries.
+# TYPE bind_incoming_queries_tcp counter
+bind_incoming_queries_tcp 0
+# HELP bind_incoming_queries_udp Number of incoming UDP queries.
+# TYPE bind_incoming_queries_udp counter
+bind_incoming_queries_udp 0
+# HELP bind_incoming_requests_tcp Number of incoming TCP requests.
+# TYPE bind_incoming_requests_tcp counter
+bind_incoming_requests_tcp 0
+# HELP bind_incoming_requests_total Number of incoming DNS requests.
+# TYPE bind_incoming_requests_total counter
+bind_incoming_requests_total{opcode="IQUERY"} 0
+bind_incoming_requests_total{opcode="NOTIFY"} 0
+bind_incoming_requests_total{opcode="QUERY"} 0
+bind_incoming_requests_total{opcode="RESERVED10"} 0
+bind_incoming_requests_total{opcode="RESERVED11"} 0
+bind_incoming_requests_total{opcode="RESERVED12"} 0
+bind_incoming_requests_total{opcode="RESERVED13"} 0
+bind_incoming_requests_total{opcode="RESERVED14"} 0
+bind_incoming_requests_total{opcode="RESERVED15"} 0
+bind_incoming_requests_total{opcode="RESERVED3"} 0
+bind_incoming_requests_total{opcode="RESERVED6"} 0
+bind_incoming_requests_total{opcode="RESERVED7"} 0
+bind_incoming_requests_total{opcode="RESERVED8"} 0
+bind_incoming_requests_total{opcode="RESERVED9"} 0
+bind_incoming_requests_total{opcode="STATUS"} 0
+bind_incoming_requests_total{opcode="UPDATE"} 0
+# HELP bind_process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE bind_process_cpu_seconds_total counter
+bind_process_cpu_seconds_total 0.2
+# HELP bind_process_max_fds Maximum number of open file descriptors.
+# TYPE bind_process_max_fds gauge
+bind_process_max_fds 1.048576e+06
+# HELP bind_process_open_fds Number of open file descriptors.
+# TYPE bind_process_open_fds gauge
+bind_process_open_fds 281
+# HELP bind_process_resident_memory_bytes Resident memory size in bytes.
+# TYPE bind_process_resident_memory_bytes gauge
+bind_process_resident_memory_bytes 2.4469504e+07
+# HELP bind_process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE bind_process_start_time_seconds gauge
+bind_process_start_time_seconds 1.65815890929e+09
+# HELP bind_process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE bind_process_virtual_memory_bytes gauge
+bind_process_virtual_memory_bytes 1.55973632e+09
+# HELP bind_process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
+# TYPE bind_process_virtual_memory_max_bytes gauge
+bind_process_virtual_memory_max_bytes -1
+# HELP bind_query_duplicates_total Number of duplicated queries received.
+# TYPE bind_query_duplicates_total counter
+bind_query_duplicates_total 0
+# HELP bind_query_errors_total Number of query failures.
+# TYPE bind_query_errors_total counter
+bind_query_errors_total{error="Dropped"} 0
+bind_query_errors_total{error="Failure"} 0
+# HELP bind_query_recursions_total Number of queries causing recursion.
+# TYPE bind_query_recursions_total counter
+bind_query_recursions_total 0
+# HELP bind_resolver_cache_hit_ratio Cache effectiveness (cache hit ratio).
+# TYPE bind_resolver_cache_hit_ratio counter
+bind_resolver_cache_hit_ratio{view="_default"} 0
+# HELP bind_resolver_cache_hits Total number of cache hits.
+# TYPE bind_resolver_cache_hits counter
+bind_resolver_cache_hits{view="_bind"} 0
+bind_resolver_cache_hits{view="_default"} 0
+# HELP bind_resolver_cache_misses Total number of cache misses.
+# TYPE bind_resolver_cache_misses counter
+bind_resolver_cache_misses{view="_bind"} 0
+bind_resolver_cache_misses{view="_default"} 26
+# HELP bind_resolver_dnssec_validation_errors_total Number of DNSSEC validation attempt errors.
+# TYPE bind_resolver_dnssec_validation_errors_total counter
+bind_resolver_dnssec_validation_errors_total{view="_bind"} 0
+bind_resolver_dnssec_validation_errors_total{view="_default"} 0
+# HELP bind_resolver_dnssec_validation_success_total Number of successful DNSSEC validation attempts.
+# TYPE bind_resolver_dnssec_validation_success_total counter
+bind_resolver_dnssec_validation_success_total{result="ValNegOk",view="_bind"} 0
+bind_resolver_dnssec_validation_success_total{result="ValNegOk",view="_default"} 0
+bind_resolver_dnssec_validation_success_total{result="ValOk",view="_bind"} 0
+bind_resolver_dnssec_validation_success_total{result="ValOk",view="_default"} 0
+# HELP bind_resolver_queries_total Number of outgoing DNS queries.
+# TYPE bind_resolver_queries_total counter
+bind_resolver_queries_total{type="DNSKEY",view="_default"} 9
+bind_resolver_queries_total{type="NS",view="_default"} 9
+# HELP bind_resolver_query_duration_seconds Resolver query round-trip time in seconds.
+# TYPE bind_resolver_query_duration_seconds histogram
+bind_resolver_query_duration_seconds_bucket{view="_bind",le="+Inf"} 0
+bind_resolver_query_duration_seconds_sum{view="_bind"} NaN
+bind_resolver_query_duration_seconds_count{view="_bind"} 0
+bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 0
+bind_resolver_query_duration_seconds_sum{view="_default"} NaN
+bind_resolver_query_duration_seconds_count{view="_default"} 0
+# HELP bind_resolver_query_edns0_errors_total Number of EDNS(0) query errors.
+# TYPE bind_resolver_query_edns0_errors_total counter
+bind_resolver_query_edns0_errors_total{view="_bind"} 0
+bind_resolver_query_edns0_errors_total{view="_default"} 0
+# HELP bind_resolver_query_errors_total Number of failed resolver queries.
+# TYPE bind_resolver_query_errors_total counter
+bind_resolver_query_errors_total{error="QueryAbort",view="_bind"} 0
+bind_resolver_query_errors_total{error="QueryAbort",view="_default"} 0
+bind_resolver_query_errors_total{error="QuerySockFail",view="_bind"} 0
+bind_resolver_query_errors_total{error="QuerySockFail",view="_default"} 0
+bind_resolver_query_errors_total{error="QueryTimeout",view="_bind"} 0
+bind_resolver_query_errors_total{error="QueryTimeout",view="_default"} 18
+# HELP bind_resolver_query_hits Total number of queries that were answered from cache.
+# TYPE bind_resolver_query_hits counter
+bind_resolver_query_hits{view="_bind"} 0
+bind_resolver_query_hits{view="_default"} 0
+# HELP bind_resolver_query_misses Total number of queries that were not in cache.
+# TYPE bind_resolver_query_misses counter
+bind_resolver_query_misses{view="_bind"} 0
+bind_resolver_query_misses{view="_default"} 0
+# HELP bind_resolver_query_retries_total Number of resolver query retries.
+# TYPE bind_resolver_query_retries_total counter
+bind_resolver_query_retries_total{view="_bind"} 0
+bind_resolver_query_retries_total{view="_default"} 22
+# HELP bind_resolver_response_errors_total Number of resolver response errors received.
+# TYPE bind_resolver_response_errors_total counter
+bind_resolver_response_errors_total{error="FORMERR",view="_bind"} 0
+bind_resolver_response_errors_total{error="FORMERR",view="_default"} 0
+bind_resolver_response_errors_total{error="NXDOMAIN",view="_bind"} 0
+bind_resolver_response_errors_total{error="NXDOMAIN",view="_default"} 0
+bind_resolver_response_errors_total{error="OtherError",view="_bind"} 0
+bind_resolver_response_errors_total{error="OtherError",view="_default"} 0
+bind_resolver_response_errors_total{error="SERVFAIL",view="_bind"} 0
+bind_resolver_response_errors_total{error="SERVFAIL",view="_default"} 0
+# HELP bind_resolver_response_lame_total Number of lame delegation responses received.
+# TYPE bind_resolver_response_lame_total counter
+bind_resolver_response_lame_total{view="_bind"} 0
+bind_resolver_response_lame_total{view="_default"} 0
+# HELP bind_resolver_response_mismatch_total Number of mismatch responses received.
+# TYPE bind_resolver_response_mismatch_total counter
+bind_resolver_response_mismatch_total{view="_bind"} 0
+bind_resolver_response_mismatch_total{view="_default"} 0
+# HELP bind_resolver_response_truncated_total Number of truncated responses received.
+# TYPE bind_resolver_response_truncated_total counter
+bind_resolver_response_truncated_total{view="_bind"} 0
+bind_resolver_response_truncated_total{view="_default"} 0
+# HELP bind_responses_total Number of responses sent.
+# TYPE bind_responses_total counter
+bind_responses_total{result="FORMERR"} 0
+bind_responses_total{result="NXDOMAIN"} 0
+bind_responses_total{result="Nxrrset"} 0
+bind_responses_total{result="Referral"} 0
+bind_responses_total{result="SERVFAIL"} 0
+bind_responses_total{result="Success"} 0
+# HELP bind_tasks_running Number of running tasks.
+# TYPE bind_tasks_running gauge
+bind_tasks_running 0
+# HELP bind_traffic_incoming_requests_tcp4_size Size of DNS requests (TCP/IPv4).
+# TYPE bind_traffic_incoming_requests_tcp4_size histogram
+bind_traffic_incoming_requests_tcp4_size_bucket{le="+Inf"} 0
+bind_traffic_incoming_requests_tcp4_size_sum NaN
+bind_traffic_incoming_requests_tcp4_size_count 0
+# HELP bind_traffic_incoming_requests_tcp6_size Size of DNS requests (TCP/IPv6).
+# TYPE bind_traffic_incoming_requests_tcp6_size histogram
+bind_traffic_incoming_requests_tcp6_size_bucket{le="+Inf"} 0
+bind_traffic_incoming_requests_tcp6_size_sum NaN
+bind_traffic_incoming_requests_tcp6_size_count 0
+# HELP bind_traffic_incoming_requests_udp4_size Size of DNS requests (UDP/IPv4).
+# TYPE bind_traffic_incoming_requests_udp4_size histogram
+bind_traffic_incoming_requests_udp4_size_bucket{le="+Inf"} 0
+bind_traffic_incoming_requests_udp4_size_sum NaN
+bind_traffic_incoming_requests_udp4_size_count 0
+# HELP bind_traffic_incoming_requests_udp6_size Size of DNS requests (UDP/IPv6).
+# TYPE bind_traffic_incoming_requests_udp6_size histogram
+bind_traffic_incoming_requests_udp6_size_bucket{le="+Inf"} 0
+bind_traffic_incoming_requests_udp6_size_sum NaN
+bind_traffic_incoming_requests_udp6_size_count 0
+# HELP bind_traffic_responses_tcp4_size Size of DNS responses (TCP/IPv4).
+# TYPE bind_traffic_responses_tcp4_size histogram
+bind_traffic_responses_tcp4_size_bucket{le="+Inf"} 0
+bind_traffic_responses_tcp4_size_sum NaN
+bind_traffic_responses_tcp4_size_count 0
+# HELP bind_traffic_responses_tcp6_size Size of DNS responses (TCP/IPv6).
+# TYPE bind_traffic_responses_tcp6_size histogram
+bind_traffic_responses_tcp6_size_bucket{le="+Inf"} 0
+bind_traffic_responses_tcp6_size_sum NaN
+bind_traffic_responses_tcp6_size_count 0
+# HELP bind_traffic_responses_udp4_size Size of DNS responses (UDP/IPv4).
+# TYPE bind_traffic_responses_udp4_size histogram
+bind_traffic_responses_udp4_size_bucket{le="+Inf"} 0
+bind_traffic_responses_udp4_size_sum NaN
+bind_traffic_responses_udp4_size_count 0
+# HELP bind_traffic_responses_udp6_size Size of DNS responses (UDP/IPv6).
+# TYPE bind_traffic_responses_udp6_size histogram
+bind_traffic_responses_udp6_size_bucket{le="+Inf"} 0
+bind_traffic_responses_udp6_size_sum NaN
+bind_traffic_responses_udp6_size_count 0
+# HELP bind_up Was the BIND instance query successful?
+# TYPE bind_up gauge
+bind_up 1
+# HELP bind_worker_threads Total number of available worker threads.
+# TYPE bind_worker_threads gauge
+bind_worker_threads 0
+# HELP bind_zone_transfer_failure_total Number of failed zone transfers.
+# TYPE bind_zone_transfer_failure_total counter
+bind_zone_transfer_failure_total 0
+# HELP bind_zone_transfer_rejected_total Number of rejected zone transfers.
+# TYPE bind_zone_transfer_rejected_total counter
+bind_zone_transfer_rejected_total 0
+# HELP bind_zone_transfer_success_total Number of successful zone transfers.
+# TYPE bind_zone_transfer_success_total counter
+bind_zone_transfer_success_total 0

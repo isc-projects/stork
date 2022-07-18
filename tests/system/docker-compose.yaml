@@ -52,6 +52,8 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
     hostname: agent-kea
+    ports:
+      - "42119:9119"
     networks:
       storknet:
         ipv4_address: 172.20.42.100
@@ -159,10 +161,8 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.20.42.53
-    expose:
-      - "8080"
-      - "9100" # node_exporter for prometheus
-      - "9119" # bind_exporter for prometheus
+    ports:
+      - "42119:9119"
     volumes:
       - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
