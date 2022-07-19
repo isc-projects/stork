@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Generator, List
 import urllib3
 
 from core.compose import DockerCompose

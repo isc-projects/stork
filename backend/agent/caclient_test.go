@@ -152,3 +152,19 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	require.NoError(t, err)
 	defer res.Body.Close()
 }
+
+// Test that missing body in request is accepted.
+func TestCallWithMissingBody(t *testing.T) {
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.EqualValues(t, http.NoBody, r.Body)
+	}))
+	defer ts.Close()
+
+	client := NewHTTPClient(false)
+	res, err := client.Call(ts.URL, nil)
+	require.NoError(t, err)
+	defer res.Body.Close()
+}

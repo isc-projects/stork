@@ -281,7 +281,7 @@ namespace :demo do
         cache = ENV["CACHE"] != "false"
         
         # Prepare the docker-compose flags
-        opts, build_opts, up_opts, additional_services = get_docker_opts(nil, cache, false, services)
+        opts, build_opts, _, additional_services = get_docker_opts(nil, cache, false, services)
         
         # We don't use the BuildKit features in our Dockerfiles (yet).
         # But we turn on the BuildKit to build the Docker stages concurrently

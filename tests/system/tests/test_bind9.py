@@ -14,6 +14,7 @@ def test_bind9(server_service: Server, bind9_service: Bind9):
     assert app['access_points'][0]['address'] == '127.0.0.1'
 
     # BIND9 rejects every second POST request if it contains a non-empty body.
+    # See: https://gitlab.isc.org/isc-projects/bind9/-/issues/3463
     # This loop checks if the Stork isn't affected.
     for _ in range(2):
         metrics = {
