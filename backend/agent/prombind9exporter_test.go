@@ -3,6 +3,7 @@ package agent
 import (
 	"flag"
 	"math"
+	"net/http"
 	"testing"
 	"time"
 
@@ -64,6 +65,10 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://1.2.3.4:1234/").
 		Post("/").
+		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
+			// Require empty body
+			return r1.Body == nil, nil
+		}).
 		Persist().
 		Reply(200).
 		BodyString(`{ "json-stats-version": "1.2",
