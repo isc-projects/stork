@@ -112,11 +112,6 @@ def find_and_prepare_deps(file)
     end
 end
 
-# The below list contains the prerequisites related to the libc library but
-# without official libc-musl variants. They cannot be installed using this Rake
-# script.
-$prerequisites_without_official_libc_musl_packages = []
-
 # Searches for the prerequisites from the init file in the provided file and
 # checks if they exist. It accepts the system-wide dependencies list and tests
 # if they are in PATH.
@@ -127,20 +122,21 @@ def check_deps(file, *system_deps)
         prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
     end
 
-    if detect_libc_musl()
-        musl_prerequisites_tasks = []
-        prerequisites_tasks.each do |t|
-            if $prerequisites_without_official_libc_musl_packages.include? t.name
-                musl_prerequisites_tasks.append t
-            end
+    manual_install_prerequisites_tasks = []
+    prerequisites_tasks.each do |t|
+        if t.instance_variable_get(:@manuall_install)
+            manual_install_prerequisites_tasks.append t
         end
+    end
 
-        musl_prerequisites_tasks.each do |t|
-            prerequisites_tasks.delete t
-        end
+    manual_install_prerequisites_tasks.each do |t|
+        prerequisites_tasks.delete t
+    end
 
-        puts "Prerequisites without an official libc-musl packages:"
-        musl_prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
+    if manual_install_prerequisites_tasks.length != 0
+        puts "Prerequisites that must be manually installed on your operating system:"
+
+        manual_install_prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
             if t.class != Rake::FileTask
                 next
             end
@@ -155,7 +151,6 @@ def check_deps(file, *system_deps)
             end
     
             print status, " ", name, " (", path, ")\n"
-    
         end
     end
 
@@ -219,20 +214,46 @@ def add_version_guard(task_name, version)
 end
 
 
+def require_manual_install_on(task_name, *conditions)
+    task = Rake::Task[task_name]
+    if task.class != Rake::FileTask
+        fail "file task required"
+    end
+
+    if !conditions.any?
+        return
+    end
+
+    task.instance_variable_set(:@manuall_install, true)
+    task.clear_actions()
+    task.enhance do
+        fail "#{task.to_s} must be installed manually on your operating system"
+    end
+end
+
 ### Recognize the operating system
 uname=`uname -s`
 
 case uname.rstrip
-  when "Darwin"
-    OS="macos"
-  when "Linux"
-    OS="linux"
-  when "FreeBSD"
-    OS="FreeBSD"
-  else
-    puts "ERROR: Unknown/unsupported OS: %s" % UNAME
-    fail
-  end
+    when "Darwin"
+        OS="macos"
+    when "Linux"
+        OS="linux"
+    when "FreeBSD"
+        OS="FreeBSD"
+    else
+        puts "ERROR: Unknown/unsupported OS: %s" % UNAME
+        fail
+end
+
+### Tasks support conditions
+# Some prerequisites are related to the libc library but
+# without official libc-musl variants. They cannot be installed using this Rake
+# script.
+libc_musl_system = detect_libc_musl()
+# Some prerequisites doesn't have a public packages for BSD-like operating
+# systems.
+bsd_system = OS == "FreeBSD"
 
 ### Detect wget
 if which("wget").nil?
@@ -380,9 +401,7 @@ protoc_dir = go_tools_dir
 # Dependencies related to the `libc` library that don't have official
 # distributions with the `libc-musl` variant.
 # They must be installed out of the Rake if the `libc-musl` library is required.
-use_libc_musl = detect_libc_musl()
-
-if use_libc_musl
+if libc_musl_system
     node_bin_dir = "/usr/bin"
     protoc_dir = "/usr/bin"
 
@@ -451,10 +470,6 @@ end
 
 NPM = File.join(node_bin_dir, "npm")
 file NPM => [node_dir] do
-    if use_libc_musl
-        fail "missing system NPM"
-    end
-
     Dir.chdir(node_dir) do
         FileUtils.rm_rf("*")
         sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
@@ -463,21 +478,17 @@ file NPM => [node_dir] do
     end
     sh NPM, "--version"
 end
-if !use_libc_musl
+if !libc_musl_system
     add_version_guard(NPM, node_ver)
 end
-$prerequisites_without_official_libc_musl_packages.append NPM
+require_manual_install_on NPM, libc_musl_system
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
-    if use_libc_musl
-        fail "missing system NPX"
-    end
-
     sh NPX, "--version"
     sh "touch", "-c", NPX
 end
-$prerequisites_without_official_libc_musl_packages.append NPX
+require_manual_install_on NPX, libc_musl_system
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
@@ -552,10 +563,10 @@ file GO => [go_tools_dir] do
     sh "touch", "-c", GO
     sh GO, "version"
 end
-if !use_libc_musl
+if !libc_musl_system
     add_version_guard(GO, go_ver)
 end
-$prerequisites_without_official_libc_musl_packages.append GO
+require_manual_install_on GO, libc_musl_system
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [go_tools_dir] do
@@ -567,10 +578,6 @@ add_version_guard(GOSWAGGER, goswagger_ver)
 
 PROTOC = File.join(protoc_dir, "protoc")
 file PROTOC => [go_tools_dir] do
-    if use_libc_musl
-        fail "missing system PROTOC"
-    end
-
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
         sh "unzip", "-o", "-j", "protoc.zip", "bin/protoc"
@@ -579,10 +586,10 @@ file PROTOC => [go_tools_dir] do
     sh PROTOC, "--version"
     sh "touch", "-c", PROTOC
 end
-if !use_libc_musl
+if !libc_musl_system
     add_version_guard(PROTOC, protoc_ver)
 end
-$prerequisites_without_official_libc_musl_packages.append PROTOC
+require_manual_install_on PROTOC, libc_musl_system
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
 file PROTOC_GEN_GO => [GO] do
