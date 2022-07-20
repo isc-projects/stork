@@ -186,7 +186,7 @@ build_apks:
     paths:
     - webui/node_modules/
     - tools/
-  image: golang:1.17.10-alpine3.15
+  image: golang:1.18.3-alpine3.15
   tags:
     - linux
     - amd64
