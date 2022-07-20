@@ -234,6 +234,8 @@ case uname.rstrip
         OS="linux"
     when "FreeBSD"
         OS="FreeBSD"
+    when "OpenBSD"
+        OS="FreeBSD"    
     else
         puts "ERROR: Unknown/unsupported OS: %s" % UNAME
         fail

@@ -13,18 +13,25 @@ def get_pkg_type()
     end
 
     # Mapping between the package type and a command to check if the type is supported.
-    supported_type_checks = {
-        "rpm" => ["rpm", "-q", "-a"],
-        "deb" => ["dpkg", "-l"],
-        "apk" => ["apk", "--version"],
-        "freebsd" => ["freebsd-version"]
-    }
+    supported_type_checks = [
+        ["rpm", ["rpm", "-q", "-a"]],
+        ["deb", ["dpkg", "-l"]],
+        ["apk", ["apk", "--version"]],
+        ["freebsd", ["freebsd-version"]],
+        ["freebsd", [["uname", "-v"], ["grep", "-q", "OpenBSD"]]]
+    ]
 
     supported_types = []
 
     supported_type_checks.each do |type, check|
         begin
-            _, _, status = Open3.capture3(*check)
+            if check[0].kind_of? Array
+                statuses = Open3.pipeline(*check)
+                status = statuses[-1]
+            else
+                _, _, status = Open3.capture3(*check)
+            end
+
             if status.success?
                 supported_types.append(type)
             end
