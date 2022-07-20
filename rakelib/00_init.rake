@@ -321,20 +321,29 @@ end
 # not provided by a user, try to locate Chrome binary and set
 # environment variable to its location.
 if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
-    ENV['CHROME_BIN'] = "chromium"
-    chrome_locations = []
-    if OS == 'linux'
-      chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
-    elsif OS == 'macos'
-      chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
+    location = which("chromium")
+    if location.nil?
+        location = which("chome")
     end
-    # For each possible location check if the binary exists.
-    chrome_locations.each do |loc|
-      if File.exist?(loc)
-        # Found Chrome binary.
-        ENV['CHROME_BIN'] = loc
-        break
-      end
+    if !location.nil?
+        ENV['CHROME_BIN'] = location
+    else    
+        ENV['CHROME_BIN'] = "chromium"
+        chrome_locations = []
+
+        if OS == 'linux'
+            chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
+        elsif OS == 'macos'
+            chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
+        end
+        # For each possible location check if the binary exists.
+        chrome_locations.each do |loc|
+            if File.exist?(loc)
+                # Found Chrome binary.
+                ENV['CHROME_BIN'] = loc
+                break
+            end
+        end
     end
 end
 
