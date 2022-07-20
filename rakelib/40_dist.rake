@@ -16,7 +16,8 @@ def get_pkg_type()
     supported_type_checks = {
         "rpm" => ["rpm", "-q", "-a"],
         "deb" => ["dpkg", "-l"],
-        "apk" => ["apk", "--version"]
+        "apk" => ["apk", "--version"],
+        "freebsd" => ["freebsd-version"]
     }
 
     supported_types = []
@@ -347,4 +348,9 @@ namespace :check do
     task :dist do
         check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc", "tar")
     end
+end
+
+
+task :foo do
+    sh FPM, "--help"
 end
