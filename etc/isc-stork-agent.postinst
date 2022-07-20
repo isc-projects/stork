@@ -26,6 +26,9 @@ elif [ -x "$(command -v busybox)" ]; then
     if [ $(getent group bind) ]; then
         addgroup stork-agent bind
     fi
+elif [ -e /bin/freebsd-version ]; then
+    pw group add stork-agent
+    pw user add -n stork-agent -c "Stork Agent User" -g stork-agent -G bind
 else
     # add stork-agent user
     adduser --quiet --system --group --home $home_dir \

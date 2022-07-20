@@ -10,6 +10,9 @@ if [ -e /etc/redhat-release ]; then
 elif [ -x "$(command -v busybox)" ]; then
     addgroup -S stork-server >/dev/null
     adduser -h $home_dir -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
+elif [ -e /bin/freebsd-version ]; then
+    pw group add stork-server
+    pw user add -n stork-server -c "Stork Server User" -g stork-server
 else
     adduser --quiet --system --group --home /var/lib/ \
             --no-create-home --disabled-password --disabled-login \
