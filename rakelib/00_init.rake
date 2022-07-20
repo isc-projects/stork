@@ -116,6 +116,19 @@ end
 # checks if they exist. It accepts the system-wide dependencies list and tests
 # if they are in PATH.
 def check_deps(file, *system_deps)
+    def print_status(name, path, ok)
+        status = "[ OK ]"
+        if !ok
+            status = "[MISS]"
+        end
+
+        if !path.nil?
+            path = " (" + path + ")"
+        end
+
+        print status, " ", name, path, "\n"
+    end
+
     if file == __FILE__
         prerequisites_tasks = find_tasks(file)
     else
@@ -133,27 +146,6 @@ def check_deps(file, *system_deps)
         prerequisites_tasks.delete t
     end
 
-    if manual_install_prerequisites_tasks.length != 0
-        puts "Prerequisites that must be manually installed on your operating system:"
-
-        manual_install_prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
-            if t.class != Rake::FileTask
-                next
-            end
-    
-            path = t.to_s
-            name = path
-            _, _, name = path.rpartition("/")
-    
-            status = "[ OK ]"
-            if !File.exist?(path)
-                status = "[MISS]"
-            end
-    
-            print status, " ", name, " (", path, ")\n"
-        end
-    end
-
     puts "Prerequisites:"
     prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
         if t.class != Rake::FileTask
@@ -164,27 +156,21 @@ def check_deps(file, *system_deps)
         name = path
         _, _, name = path.rpartition("/")
 
-        status = "[ OK ]"
-        if !File.exist?(path)
-            status = "[MISS]"
-        end
-
-        print status, " ", name, " (", path, ")\n"
-
+        print_status(name, path, File.exist?(path))
     end
 
     puts "System dependencies:"
 
-    system_deps.sort.each do |d|
-        status = "[ OK ]"
-        path = which(d)
-        if path.nil?
-            status = "[MISS]"
-        else
-            path = " (" + path + ")"
-        end
-        print status, " ", d, path, "\n"
-    end
+    system_deps
+        .map { |d| [d.to_s, which(d)] }
+        .map { |d, path| [d, path, !path.nil?] }
+        .concat(
+            manual_install_prerequisites_tasks
+            .map { |p| [p.to_s().rpartition("/")[2], p.to_s() ] }
+            .map { |p, path| [p, path, File.exist?(path)] }
+        )
+        .sort_by{ |name, _, _| name }
+        .each { |args| print_status(*args) }
 end
 
 # Defines the version guard for a file task. The version guard allows file
@@ -195,6 +181,12 @@ def add_version_guard(task_name, version)
     task = Rake::Task[task_name]
     if task.class != Rake::FileTask
         fail "file task required"
+    end
+
+    # We don't use the verstion guard for the prerequirities that must be
+    # installed manually on current operating system
+    if task.instance_variable_get(:@manuall_install)
+        return
     end
 
     # The version stamp file is a prerequisite, but it is created after the
@@ -218,6 +210,13 @@ def require_manual_install_on(task_name, *conditions)
     task = Rake::Task[task_name]
     if task.class != Rake::FileTask
         fail "file task required"
+    end
+
+    # Version guard must be added after this check.
+    task.prerequisite_tasks.each do |p|
+        if p.name.match /#{task.name}-.*.version/
+            fail "Version guard (#{p.name}) declared before manual install check of task (#{task.name})"
+        end
     end
 
     if !conditions.any?
@@ -398,10 +397,7 @@ pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
-# Dependencies related to the `libc` library that don't have official
-# distributions with the `libc-musl` variant.
-# They must be installed out of the Rake if the `libc-musl` library is required.
-if libc_musl_system
+if libc_musl_system || bsd_system
     node_bin_dir = "/usr/bin"
     protoc_dir = "/usr/bin"
 
@@ -478,17 +474,15 @@ file NPM => [node_dir] do
     end
     sh NPM, "--version"
 end
-if !libc_musl_system
-    add_version_guard(NPM, node_ver)
-end
-require_manual_install_on NPM, libc_musl_system
+require_manual_install_on(NPM, libc_musl_system)
+add_version_guard(NPM, node_ver)
 
 NPX = File.join(node_bin_dir, "npx")
 file NPX => [NPM] do
     sh NPX, "--version"
     sh "touch", "-c", NPX
 end
-require_manual_install_on NPX, libc_musl_system
+require_manual_install_on(NPX, libc_musl_system)
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
@@ -563,10 +557,8 @@ file GO => [go_tools_dir] do
     sh "touch", "-c", GO
     sh GO, "version"
 end
-if !libc_musl_system
-    add_version_guard(GO, go_ver)
-end
-require_manual_install_on GO, libc_musl_system
+require_manual_install_on(GO, libc_musl_system)
+add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [go_tools_dir] do
@@ -586,10 +578,8 @@ file PROTOC => [go_tools_dir] do
     sh PROTOC, "--version"
     sh "touch", "-c", PROTOC
 end
-if !libc_musl_system
-    add_version_guard(PROTOC, protoc_ver)
-end
-require_manual_install_on PROTOC, libc_musl_system
+require_manual_install_on(PROTOC, libc_musl_system)
+add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
 file PROTOC_GEN_GO => [GO] do
