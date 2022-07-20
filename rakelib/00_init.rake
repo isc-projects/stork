@@ -323,7 +323,7 @@ end
 if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
     location = which("chromium")
     if location.nil?
-        location = which("chome")
+        location = which("chrome")
     end
     if !location.nil?
         ENV['CHROME_BIN'] = location

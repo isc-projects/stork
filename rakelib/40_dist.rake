@@ -349,8 +349,3 @@ namespace :check do
         check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc", "tar")
     end
 end
-
-
-task :foo do
-    sh FPM, "--help"
-end
