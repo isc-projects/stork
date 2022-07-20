@@ -212,19 +212,13 @@ def require_manual_install_on(task_name, *conditions)
         fail "file task required"
     end
 
-    # Version guard must be added after this check.
-    task.prerequisite_tasks.each do |p|
-        if p.name.match /#{task.name}-.*.version/
-            fail "Version guard (#{p.name}) declared before manual install check of task (#{task.name})"
-        end
-    end
-
     if !conditions.any?
         return
     end
 
     task.instance_variable_set(:@manuall_install, true)
     task.clear_actions()
+    task.clear_prerequisites()
     task.enhance do
         fail "#{task.to_s} must be installed manually on your operating system"
     end
@@ -388,10 +382,12 @@ python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
+goswagger_dir = go_tools_dir
 
 if libc_musl_system || freebsd_system
     protoc_dir = "/usr/bin"
     node_bin_dir = "/usr/bin"
+    goswagger_dir = "/usr/bin"
 end
 
 if libc_musl_system
@@ -556,7 +552,7 @@ end
 require_manual_install_on(GO, libc_musl_system)
 add_version_guard(GO, go_ver)
 
-GOSWAGGER = File.join(go_tools_dir, "goswagger")
+GOSWAGGER = File.join(goswagger_dir, "goswagger")
 file GOSWAGGER => [go_tools_dir] do
     sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
     sh "chmod", "u+x", GOSWAGGER
