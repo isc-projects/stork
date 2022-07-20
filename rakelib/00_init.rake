@@ -552,7 +552,9 @@ file GO => [go_tools_dir] do
     sh "touch", "-c", GO
     sh GO, "version"
 end
-add_version_guard(GO, go_ver)
+if !use_libc_musl
+    add_version_guard(GO, go_ver)
+end
 $prerequisites_without_official_libc_musl_packages.append GO
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
@@ -577,7 +579,9 @@ file PROTOC => [go_tools_dir] do
     sh PROTOC, "--version"
     sh "touch", "-c", PROTOC
 end
-add_version_guard(PROTOC, protoc_ver)
+if !use_libc_musl
+    add_version_guard(PROTOC, protoc_ver)
+end
 $prerequisites_without_official_libc_musl_packages.append PROTOC
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
