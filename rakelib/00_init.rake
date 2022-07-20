@@ -387,12 +387,13 @@ if use_libc_musl
     protoc_dir = "/usr/bin"
 
     gobin = ENV["GOBIN"]
-    gopath = ENV["GOPATH"]
     goroot = ENV["GOROOT"]
     if gobin.nil?
         gobin = which("go")
         if !gobin.nil?
             gobin = File.dirname gobin
+        else
+            gobin = "/usr/bin"
         end
     end
 end
