@@ -1,3 +1,8 @@
+* 236 [build] slawek
+
+    Refactored the FreeBSD and OpenBSD support for building agent packages.
+    (Gitlab #193)
+
 * 235 [func] marcin
 
     Enable updating host reservations in Stork.
