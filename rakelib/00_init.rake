@@ -315,7 +315,6 @@ when "FreeBSD"
   go_suffix="freebsd-amd64"
   golangcilint_suffix="freebsd-amd64"
 when "OpenBSD"
-  golangcilint_suffix="freebsd-amd64"
 else
   puts "ERROR: Unknown/unsupported OS: %s" % UNAME
   fail
@@ -614,6 +613,7 @@ file GOLANGCILINT => [go_tools_dir] do
     end
     sh GOLANGCILINT, "--version"
 end
+require_manual_install_on(GOLANGCILINT, openbsd_system)
 add_version_guard(GOLANGCILINT, golangcilint_ver)
 
 RICHGO = "#{gobin}/richgo"
