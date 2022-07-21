@@ -235,7 +235,7 @@ case uname.rstrip
     when "FreeBSD"
         OS="FreeBSD"
     when "OpenBSD"
-        OS="FreeBSD"    
+        OS="OpenBSD"    
     else
         puts "ERROR: Unknown/unsupported OS: %s" % UNAME
         fail
@@ -249,6 +249,7 @@ libc_musl_system = detect_libc_musl()
 # Some prerequisites doesn't have a public packages for BSD-like operating
 # systems.
 freebsd_system = OS == "FreeBSD"
+openbsd_system = OS == "OpenBSD"
 
 ### Detect wget
 if which("wget").nil?
@@ -312,6 +313,8 @@ when "linux"
   chrome_drv_suffix="linux64"
 when "FreeBSD"
   go_suffix="freebsd-amd64"
+  golangcilint_suffix="freebsd-amd64"
+when "OpenBSD"
   golangcilint_suffix="freebsd-amd64"
 else
   puts "ERROR: Unknown/unsupported OS: %s" % UNAME
@@ -395,13 +398,13 @@ node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 goswagger_dir = go_tools_dir
 
-if libc_musl_system || freebsd_system
+if libc_musl_system || freebsd_system || openbsd_system
     protoc_dir = "/usr/bin"
     node_bin_dir = "/usr/bin"
     goswagger_dir = "/usr/bin"
 end
 
-if libc_musl_system
+if libc_musl_system || openbsd_system
     gobin = ENV["GOBIN"]
     goroot = ENV["GOROOT"]
     if gobin.nil?
@@ -475,7 +478,7 @@ file NPM => [node_dir] do
     end
     sh NPM, "--version"
 end
-require_manual_install_on(NPM, libc_musl_system, freebsd_system)
+require_manual_install_on(NPM, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(NPM, node_ver)
 
 NPX = File.join(node_bin_dir, "npx")
@@ -560,7 +563,7 @@ file GO => [go_tools_dir] do
     sh "touch", "-c", GO
     sh GO, "version"
 end
-require_manual_install_on(GO, libc_musl_system)
+require_manual_install_on(GO, libc_musl_system, openbsd_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(goswagger_dir, "goswagger")
@@ -569,7 +572,7 @@ file GOSWAGGER => [go_tools_dir] do
     sh "chmod", "u+x", GOSWAGGER
     sh GOSWAGGER, "version"
 end
-require_manual_install_on(GOSWAGGER, freebsd_system)
+require_manual_install_on(GOSWAGGER, freebsd_system, openbsd_system)
 add_version_guard(GOSWAGGER, goswagger_ver)
 
 PROTOC = File.join(protoc_dir, "protoc")
@@ -582,7 +585,7 @@ file PROTOC => [go_tools_dir] do
     sh PROTOC, "--version"
     sh "touch", "-c", PROTOC
 end
-require_manual_install_on(PROTOC, libc_musl_system, freebsd_system)
+require_manual_install_on(PROTOC, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
