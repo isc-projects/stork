@@ -107,7 +107,7 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
 
     Dir.chdir(pkgs_dir) do
-        _, stderr, status = Open3.capture3 FPM,
+        stdout, stderr, status = Open3.capture3 FPM,
             "-C", agent_dist_dir_abs,
             "-n", "isc-stork-agent",
             "-s", "dir",
@@ -123,7 +123,7 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
             "--vendor", "Internet Systems Consortium, Inc."
         if status != 0
-            puts stderr
+            puts status, stdout, stderr
             fail
         end
     end
