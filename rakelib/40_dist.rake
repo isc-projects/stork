@@ -18,7 +18,7 @@ def get_pkg_type()
         ["deb", ["dpkg", "-l"]],
         ["apk", ["apk", "--version"]],
         ["freebsd", ["freebsd-version"]],
-        ["freebsd", [["uname", "-v"], ["grep", "-q", "OpenBSD"]]]
+        ["freebsd", [["uname", "-a"], ["grep", "-q", "OpenBSD"]]]
     ]
 
     supported_types = []
