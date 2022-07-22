@@ -84,6 +84,31 @@ func getTestConfigWithOneIPv4Subnet(t *testing.T) *dbmodel.KeaConfig {
 	return cfg
 }
 
+// Returns test Kea configuration including one IPv6 subnet.
+func getTestConfigWithOneIPv6Subnet(t *testing.T) *dbmodel.KeaConfig {
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 234,
+                    "subnet": "2001:db8:3::/64"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+
+	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	return cfg
+}
+
 // Returns test Kea configuration including multiple IPv6 subnets.
 func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
@@ -1193,7 +1218,7 @@ func TestGetPageFromHostCmds(t *testing.T) {
 
 // Test function which fetches host reservations from the Kea server over
 // the control channel and stores them in the database.
-func TestUpdateHostsFromHostCmds(t *testing.T) {
+func TestFetchHostsFromHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1677,4 +1702,143 @@ func TestHostIteratorTrace(t *testing.T) {
 	require.True(t, trace2.hasEqualHashes(trace0))
 	trace2.addResponse("3456", 0, hosts)
 	require.False(t, trace2.hasEqualHashes(trace0))
+}
+
+// Test that host reservation is updated if the identifier or IP address
+// doesn't change.
+func TestUpdateHost(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp6",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithOneIPv6Subnet(t),
+				},
+			},
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	_ = CommitAppIntoDB(db, &app, fec, nil)
+
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		var json string
+		// Update option data - read reservation option is unsupported yet.
+		switch callNo {
+		// Initial data
+		case 1:
+			json = `[
+				{
+					"result": 0,
+					"text": "Hosts found",
+					"arguments": {
+						"count": 1,
+						"hosts": [
+							{
+								"hw-address": "01:02:03:04:05:06",
+								"ip-address": "fe80::1"
+							}
+						]
+					}
+				}
+			]`
+		// Update hostname
+		case 4:
+			json = `[
+				{
+					"result": 0,
+					"text": "Hosts found",
+					"arguments": {
+						"count": 1,
+						"hosts": [
+							{
+								"hw-address": "01:02:03:04:05:06",
+								"ip-address": "fe80::1",
+								"hostname": "foo.bar"
+							}
+						]
+					}
+				}
+			]`
+		// Break pulling
+		case 0, 2, 3, 5:
+			json = `[
+				{
+					"result": 0,
+					"text": "Hosts found",
+					"arguments": {
+						"count": 0,
+						"hosts": [ ],
+						"next": {
+							"from": 0,
+							"source-index": 1
+						}
+					}
+				}
+			]`
+		}
+
+		command := keactrl.NewCommand("reservation-get-page", []string{"dhcp6"}, nil)
+
+		err = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
+		require.NoError(t, err)
+		fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
+	}, nil)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	// Create the puller instance.
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, fa, fd)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	for i := 0; i <= 1; i++ {
+		err = puller.pull()
+		require.NoError(t, err)
+
+		hosts, err := dbmodel.GetAllHosts(db, 6)
+		require.NoError(t, err)
+		require.Len(t, hosts, 1)
+		host := hosts[0]
+
+		switch i {
+		case 0:
+			require.EqualValues(t, "hw-address", host.HostIdentifiers[0].Type)
+			require.EqualValues(t, "01:02:03:04:05:06", host.HostIdentifiers[0].ToHex(":"))
+			require.EqualValues(t, "", host.Hostname)
+			require.EqualValues(t, "fe80::1/128", host.IPReservations[0].Address)
+		case 1:
+			require.EqualValues(t, "hw-address", host.HostIdentifiers[0].Type)
+			require.EqualValues(t, "01:02:03:04:05:06", host.HostIdentifiers[0].ToHex(":"))
+			require.EqualValues(t, "foo.bar", host.Hostname)
+			require.EqualValues(t, "fe80::1/128", host.IPReservations[0].Address)
+		}
+	}
+
 }
