@@ -982,6 +982,11 @@ func TestHostsEqual(t *testing.T) {
 	require.False(t, host2.Equal(&host1))
 	require.False(t, host1.HasEqualIPReservations(&host2))
 	require.False(t, host2.HasEqualIPReservations(&host1))
+
+	host1 = host2
+	host1.Hostname = "foobar"
+	require.False(t, host1.Equal(&host2))
+	require.False(t, host2.Equal(&host1))
 }
 
 func TestHostIdentifierToHex(t *testing.T) {

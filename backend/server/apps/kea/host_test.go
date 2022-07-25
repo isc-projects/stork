@@ -1840,5 +1840,4 @@ func TestUpdateHost(t *testing.T) {
 			require.EqualValues(t, "fe80::1/128", host.IPReservations[0].Address)
 		}
 	}
-
 }

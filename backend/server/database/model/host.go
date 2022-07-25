@@ -661,7 +661,12 @@ func (host Host) Equal(other *Host) bool {
 			return false
 		}
 	}
-	return host.HasEqualIPReservations(other)
+
+	if !host.HasEqualIPReservations(other) {
+		return false
+	}
+
+	return host.Hostname == other.Hostname
 }
 
 // Converts host identifier value to a string of hexadecimal digits.
