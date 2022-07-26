@@ -2,7 +2,9 @@ package configreview
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/armon/go-radix"
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -592,4 +594,104 @@ func reservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 		return checkDHCPv4ReservationsOutOfPool(ctx)
 	}
 	return checkDHCPv6ReservationsOutOfPool(ctx)
+}
+
+type minimalSubnet struct {
+	ID     int64
+	Subnet string
+}
+
+type minimalSubnetPair struct {
+	first  minimalSubnet
+	second minimalSubnet
+}
+
+// The checker validates that subnets don't overlap.
+func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	var decodedSubnets []minimalSubnet
+	err := config.DecodeTopLevelSubnets(&decodedSubnets)
+	if err != nil {
+		return nil, err
+	}
+
+	// Limits the overlaps count to avoid producing too huge review message.
+	maxOverlaps := 10
+	overlaps := findOverlaps(decodedSubnets, maxOverlaps)
+	if len(overlaps) == 0 {
+		return nil, nil
+	}
+
+	maxExceedMessage := ""
+	if len(overlaps) == maxOverlaps {
+		maxExceedMessage = " at least"
+	}
+
+	overlappingMessages := make([]string, len(overlaps))
+	for i, overlap := range overlaps {
+		message := fmt.Sprintf("%d. [%d] %s overlaps [%d] %s", i,
+			overlap.first.ID, overlap.first.Subnet,
+			overlap.second.ID, overlap.second.Subnet)
+		overlappingMessages = append(overlappingMessages, message)
+	}
+	overlapMessage := strings.Join(overlappingMessages, "; ")
+
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %d overlapping %s. It may cause unexpected or incorrect Kea behavior.\n%s",
+		maxExceedMessage, len(overlaps), storkutil.FormatNoun(int64(len(overlaps)), "subnet", "s"), overlapMessage)).
+		referencingDaemon(ctx.subjectDaemon).
+		create()
+}
+
+func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
+	tree := radix.New()
+
+	// Builds a radix tree from all prefixes.
+	for _, subnet := range subnets {
+		cidr := storkutil.ParseIP(subnet.Subnet)
+		if cidr == nil || !cidr.Prefix {
+			// Probably, it never happens because Kea doesn't accept invalid
+			// prefixes.
+			continue
+		}
+
+		// Converts the prefix to a binary string. The strings have different
+		// lengths corresponding to the prefix length. If the longer string
+		// starts with the shorter one, it means the shorter prefix contains
+		// the longer one.
+		prefix := cidr.GetNetworkPrefixAsBinary()
+
+		// Inserts binary prefix to the tree.
+		overlapedSubnet, ok := tree.Insert(prefix, subnet)
+		if ok {
+			// Two subnets have the same prefix. Their prefixes fully overlap.
+			overlaps = append(overlaps, minimalSubnetPair{subnet, overlapedSubnet.(minimalSubnet)})
+			if len(overlaps) == maxOverlaps {
+				return
+			}
+		}
+	}
+
+	// Walks through the tree. If any node have children then it means that
+	// it means that the children prefixes are contained by the parent prefix.
+	tree.Walk(func(parent string, parentValue interface{}) bool {
+		tree.WalkPrefix(parent, func(child string, childValue interface{}) bool {
+			if parent == child {
+				// Ignore the parent
+				return false
+			}
+			parentSubnet := parentValue.(minimalSubnet)
+			childSubnet := childValue.(minimalSubnet)
+			overlaps = append(overlaps, minimalSubnetPair{parentSubnet, childSubnet})
+			return len(overlaps) == maxOverlaps
+		})
+		return len(overlaps) == maxOverlaps
+	})
+
+	return overlaps
 }

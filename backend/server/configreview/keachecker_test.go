@@ -1663,6 +1663,185 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 	require.Nil(t, report)
 }
 
+// Test that no overlaps are detected for empty subnet list.
+func TestFindOverlapsEmptySubnets(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Empty(t, overlaps)
+}
+
+// Test that no overlaps are detected for non-overlapping subnets.
+func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/24"},
+		{ID: 2, Subnet: "192.168.1.0/24"},
+		{ID: 3, Subnet: "192.168.2.0/24"},
+		{ID: 4, Subnet: "192.168.3.0/24"},
+		{ID: 5, Subnet: "3001:0::/80"},
+		{ID: 6, Subnet: "3001:1::/80"},
+		{ID: 7, Subnet: "3001:2::/80"},
+		{ID: 8, Subnet: "3001:3::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Empty(t, overlaps)
+}
+
+// Test that duplicated prefixes are detected as overlaps.
+func TestFindOverlapsForDuplicates(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/24"},
+		{ID: 2, Subnet: "192.168.0.0/24"},
+		{ID: 5, Subnet: "3001:0::/80"},
+		{ID: 6, Subnet: "3001:0::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+	require.EqualValues(t, 2, overlaps[0].first.ID)
+	require.EqualValues(t, 1, overlaps[0].second.ID)
+	require.EqualValues(t, 6, overlaps[1].first.ID)
+	require.EqualValues(t, 5, overlaps[1].second.ID)
+}
+
+// Test that duplicated prefixes are detected as overlaps even if the prefix is
+// repeatedly duplicated.
+func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/24"},
+		{ID: 2, Subnet: "192.168.0.0/24"},
+		{ID: 3, Subnet: "192.168.0.0/24"},
+		{ID: 5, Subnet: "3001:0::/80"},
+		{ID: 6, Subnet: "3001:0::/80"},
+		{ID: 7, Subnet: "3001:0::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Len(t, overlaps, 4)
+	require.EqualValues(t, 2, overlaps[0].first.ID)
+	require.EqualValues(t, 1, overlaps[0].second.ID)
+	require.EqualValues(t, 3, overlaps[1].first.ID)
+	require.EqualValues(t, 2, overlaps[1].second.ID)
+	require.EqualValues(t, 6, overlaps[2].first.ID)
+	require.EqualValues(t, 5, overlaps[2].second.ID)
+	require.EqualValues(t, 7, overlaps[3].first.ID)
+	require.EqualValues(t, 6, overlaps[3].second.ID)
+}
+
+// Test that overlaps are detected for the same network but different prefix
+// lengths.
+func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/16"},
+		{ID: 2, Subnet: "192.168.0.0/24"},
+		{ID: 5, Subnet: "3001:0::/64"},
+		{ID: 6, Subnet: "3001:0::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+	require.EqualValues(t, 1, overlaps[0].first.ID)
+	require.EqualValues(t, 2, overlaps[0].second.ID)
+	require.EqualValues(t, 5, overlaps[1].first.ID)
+	require.EqualValues(t, 6, overlaps[1].second.ID)
+}
+
+// Test that overlaps are detected when one prefix is contained by another.
+func TestFindOverlapsForContainingPrefixes(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/16"},
+		{ID: 2, Subnet: "192.168.5.0/24"},
+		{ID: 5, Subnet: "3001:0::/16"},
+		{ID: 6, Subnet: "3001:1::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+	require.EqualValues(t, 1, overlaps[0].first.ID)
+	require.EqualValues(t, 2, overlaps[0].second.ID)
+	require.EqualValues(t, 5, overlaps[1].first.ID)
+	require.EqualValues(t, 6, overlaps[1].second.ID)
+}
+
+// Test that the searching for overlaps is stopped if the limit is exceeded on
+// duplicated subnets.
+func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/16"},
+		{ID: 2, Subnet: "192.168.5.0/24"},
+		{ID: 3, Subnet: "192.68.5.0/24"},
+		{ID: 4, Subnet: "192.68.5.0/24"},
+		{ID: 5, Subnet: "3001:0::/16"},
+		{ID: 6, Subnet: "3001:1::/80"},
+		{ID: 7, Subnet: "2001:0::/16"},
+		{ID: 8, Subnet: "2001:0::/16"},
+		{ID: 9, Subnet: "4001:0::/16"},
+		{ID: 10, Subnet: "4001:0::/16"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 2)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+	require.EqualValues(t, 4, overlaps[0].first.ID)
+	require.EqualValues(t, 3, overlaps[0].second.ID)
+	require.EqualValues(t, 8, overlaps[1].first.ID)
+	require.EqualValues(t, 7, overlaps[1].second.ID)
+}
+
+// Test that the searching for overlaps is stopped if the limit is exceeded on
+// containing subnets.
+func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
+	// Arrange
+	subnets := []minimalSubnet{
+		{ID: 1, Subnet: "192.168.0.0/16"},
+		{ID: 2, Subnet: "192.168.5.0/24"},
+		{ID: 3, Subnet: "192.68.0.0/16"},
+		{ID: 4, Subnet: "192.68.5.0/24"},
+		{ID: 5, Subnet: "3001:0::/16"},
+		{ID: 6, Subnet: "3001:1::/80"},
+		{ID: 7, Subnet: "2001:0::/16"},
+		{ID: 8, Subnet: "2001:1::/80"},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 2)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+	require.EqualValues(t, 3, overlaps[0].first.ID)
+	require.EqualValues(t, 4, overlaps[0].second.ID)
+	require.EqualValues(t, 1, overlaps[1].first.ID)
+	require.EqualValues(t, 2, overlaps[1].second.ID)
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
