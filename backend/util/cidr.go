@@ -208,3 +208,32 @@ func (parsed *ParsedIP) IsInPrefixRange(prefix string, prefixLen, delegatedLen i
 	}
 	return false
 }
+
+// Returns network prefix as a hexadecimal string without delimiters.
+func (parsed *ParsedIP) GetNetworkPrefixAsBinary() string {
+	ip := net.ParseIP(parsed.NetworkPrefix)
+	if ip == nil {
+		return ""
+	}
+
+	ip = ip.To16()
+	prefixLength := parsed.PrefixLength
+	if prefixLength <= 0 {
+		return ""
+	}
+
+	if parsed.Protocol == IPv4 {
+		prefixLength += 12 * 8
+	}
+
+	parts := make([]string, len(ip))
+	for i, tn := range ip {
+		parts[i] = fmt.Sprintf("%08b", tn)
+	}
+	prefixBin := strings.Join(parts, "")
+	if len(prefixBin) < prefixLength {
+		// Invalid prefix length
+		return ""
+	}
+	return prefixBin[0:prefixLength]
+}

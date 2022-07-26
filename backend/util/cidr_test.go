@@ -210,3 +210,66 @@ func TestPrefixInRange(t *testing.T) {
 	parsedIP = ParseIP("2001:db8:1:0:2::")
 	require.False(t, parsedIP.IsInPrefixRange("2001:db8:1::", 64, 96))
 }
+
+// Test that the network prefixes are correctly converted to hexademical strings.
+func TestPrefixToBinaryForValidPrefixes(t *testing.T) {
+	// Arrange
+	fourZeroOctets := "00000000" + "00000000" + "00000000" + "00000000"
+	v4InV6Prefix := fourZeroOctets + fourZeroOctets +
+		"00000000" + "00000000" + "11111111" + "11111111"
+
+	data := [][]string{
+		{"168.1.2.0/24", v4InV6Prefix + "10101000" + "00000001" + "00000010"},
+		{"168.1.0.0/16", v4InV6Prefix + "10101000" + "00000001"},
+		{"168.0.0.0/8", v4InV6Prefix + "10101000"},
+		{"168.1.2.0/26", v4InV6Prefix + "10101000" + "00000001" + "00000010" + "00"},
+		{"168.1.2.1/24", v4InV6Prefix + "10101000" + "00000001" + "00000010"},
+		{"3001::/80", "00110000" + "00000001" + fourZeroOctets + fourZeroOctets},
+		{"3001::1/80", "00110000" + "00000001" + fourZeroOctets + fourZeroOctets},
+	}
+
+	for _, entry := range data {
+		prefix := entry[0]
+		expected := entry[1]
+
+		t.Run(prefix, func(t *testing.T) {
+			// Act
+			cidr := ParseIP(prefix)
+			actual := cidr.GetNetworkPrefixAsBinary()
+
+			// Assert
+			require.EqualValues(t, expected, actual)
+		})
+	}
+}
+
+// Test that the invalid network prefixes are converted to empty strings.
+func TestPrefixToBinaryForInvalidPrefixes(t *testing.T) {
+	// Arrange
+	cidr := ParseIP("192.168.0.0/24")
+
+	data := []struct {
+		prefix string
+		length int
+	}{
+		{"foobar", 24},
+		{"192..168.0.0", 24},
+		{"512.512.0.0", 24},
+		{"192.168.0.0", 512},
+		{"192.168.0.0", 0},
+		{"192.168.0.0", -1},
+	}
+
+	for _, entry := range data {
+		t.Run(entry.prefix, func(t *testing.T) {
+			cidr.NetworkPrefix = entry.prefix
+			cidr.PrefixLength = entry.length
+
+			// Act
+			actual := cidr.GetNetworkPrefixAsBinary()
+
+			// Assert
+			require.Empty(t, actual)
+		})
+	}
+}
