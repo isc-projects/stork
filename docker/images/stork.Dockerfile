@@ -187,6 +187,7 @@ RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bas
         && apt-get install \
                 --no-install-recommends \
                 -y \
+                python3-isc-kea-connector=${KEA_VER} \
                 isc-kea-ctrl-agent=${KEA_VER} \
                 isc-kea-dhcp4-server=${KEA_VER} \
                 isc-kea-dhcp6-server=${KEA_VER} \
