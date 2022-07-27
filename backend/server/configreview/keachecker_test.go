@@ -1908,6 +1908,36 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
 	require.Contains(t, report.content, "1. [2] 10.0.0.0/16 is overlapped by [1] 10.0.1.0/24")
 }
 
+// Test that report has a proper content for a single overlap and subnets without IDs.
+func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "subnet": "10.0.1.0/24"
+                },
+                {
+                    "subnet": "10.0.0.0/16"
+                }
+            ]
+        }
+    }`)
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 42, report.daemonID)
+	require.Contains(t, report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
+	require.Contains(t, report.content, "1. 10.0.0.0/16 is overlapped by 10.0.1.0/24")
+}
+
 // Test that report has a proper content for a multiple overlaps.
 func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	// Arrange
