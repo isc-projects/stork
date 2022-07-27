@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import re
 from time import time
-from typing import Callable, List
+from typing import Callable, List, Optional
 from contextlib import contextmanager
 
 import openapi_client
@@ -243,11 +243,28 @@ class Server(ComposeServiceWrapper):
         return api_instance.get_hosts(**params, **self._no_validate_kwargs())
 
     def list_config_reports(self, daemon_id: int,
-                            limit=10, start=0) -> ConfigReports:
-        """Lists the config reports for a given daemon."""
+                            limit=10, start=0) -> Optional[ConfigReports]:
+        """Lists the config reports for a given daemon. Returns None if the
+        review is in progress."""
         params = dict(limit=limit, start=start, id=daemon_id)
         api_instance = ServicesApi(self._api_client)
-        return api_instance.get_daemon_config_reports(**params)
+
+        # OpenAPI generator doesn't support multiple status codes and empty
+        # responses. It expects that the data will always be returned. It is
+        # a workaround that adds a string to a list of accepted types. The
+        # empty string is received if the status is not equal to 200.
+        settings = api_instance.get_daemon_config_reports.settings
+        settings['response_type'] = tuple(
+            list(settings['response_type']) + [str, ])
+
+        reports, status, _ = api_instance.get_daemon_config_reports(
+            **params, _return_http_data_only=False)
+
+        if status == 202:
+            return None
+        elif status == 204:
+            return ConfigReports(total=0, items=[])
+        return reports
 
     def overview(self) -> DhcpOverview:
         """Fetches the DHCP overview. Warning! The OpenAPI client only
