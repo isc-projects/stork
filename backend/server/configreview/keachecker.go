@@ -602,8 +602,8 @@ type minimalSubnet struct {
 }
 
 type minimalSubnetPair struct {
-	first  minimalSubnet
-	second minimalSubnet
+	parent minimalSubnet
+	child  minimalSubnet
 }
 
 // The checker validates that subnets don't overlap.
@@ -635,15 +635,15 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 
 	overlappingMessages := make([]string, len(overlaps))
 	for i, overlap := range overlaps {
-		message := fmt.Sprintf("%d. [%d] %s overlaps [%d] %s", i,
-			overlap.first.ID, overlap.first.Subnet,
-			overlap.second.ID, overlap.second.Subnet)
-		overlappingMessages = append(overlappingMessages, message)
+		message := fmt.Sprintf("%d. [%d] %s is overlapped by [%d] %s", i+1,
+			overlap.parent.ID, overlap.parent.Subnet,
+			overlap.child.ID, overlap.child.Subnet)
+		overlappingMessages[i] = message
 	}
 	overlapMessage := strings.Join(overlappingMessages, "; ")
 
-	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %d overlapping %s. It may cause unexpected or incorrect Kea behavior.\n%s",
-		maxExceedMessage, len(overlaps), storkutil.FormatNoun(int64(len(overlaps)), "subnet", "s"), overlapMessage)).
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %s. It may cause unexpected or incorrect Kea behavior.\n%s",
+		maxExceedMessage, storkutil.FormatNoun(int64(len(overlaps)), "overlapping subnet pair", "s"), overlapMessage)).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
 }
@@ -687,7 +687,10 @@ func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalS
 			}
 			parentSubnet := parentValue.(minimalSubnet)
 			childSubnet := childValue.(minimalSubnet)
-			overlaps = append(overlaps, minimalSubnetPair{parentSubnet, childSubnet})
+			overlaps = append(overlaps, minimalSubnetPair{
+				parent: parentSubnet,
+				child:  childSubnet,
+			})
 			return len(overlaps) == maxOverlaps
 		})
 		return len(overlaps) == maxOverlaps

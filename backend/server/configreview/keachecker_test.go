@@ -1711,10 +1711,10 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 2, overlaps[0].first.ID)
-	require.EqualValues(t, 1, overlaps[0].second.ID)
-	require.EqualValues(t, 6, overlaps[1].first.ID)
-	require.EqualValues(t, 5, overlaps[1].second.ID)
+	require.EqualValues(t, 2, overlaps[0].parent.ID)
+	require.EqualValues(t, 1, overlaps[0].child.ID)
+	require.EqualValues(t, 6, overlaps[1].parent.ID)
+	require.EqualValues(t, 5, overlaps[1].child.ID)
 }
 
 // Test that duplicated prefixes are detected as overlaps even if the prefix is
@@ -1735,14 +1735,14 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 4)
-	require.EqualValues(t, 2, overlaps[0].first.ID)
-	require.EqualValues(t, 1, overlaps[0].second.ID)
-	require.EqualValues(t, 3, overlaps[1].first.ID)
-	require.EqualValues(t, 2, overlaps[1].second.ID)
-	require.EqualValues(t, 6, overlaps[2].first.ID)
-	require.EqualValues(t, 5, overlaps[2].second.ID)
-	require.EqualValues(t, 7, overlaps[3].first.ID)
-	require.EqualValues(t, 6, overlaps[3].second.ID)
+	require.EqualValues(t, 2, overlaps[0].parent.ID)
+	require.EqualValues(t, 1, overlaps[0].child.ID)
+	require.EqualValues(t, 3, overlaps[1].parent.ID)
+	require.EqualValues(t, 2, overlaps[1].child.ID)
+	require.EqualValues(t, 6, overlaps[2].parent.ID)
+	require.EqualValues(t, 5, overlaps[2].child.ID)
+	require.EqualValues(t, 7, overlaps[3].parent.ID)
+	require.EqualValues(t, 6, overlaps[3].child.ID)
 }
 
 // Test that overlaps are detected for the same network but different prefix
@@ -1761,10 +1761,10 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[0].first.ID)
-	require.EqualValues(t, 2, overlaps[0].second.ID)
-	require.EqualValues(t, 5, overlaps[1].first.ID)
-	require.EqualValues(t, 6, overlaps[1].second.ID)
+	require.EqualValues(t, 1, overlaps[0].parent.ID)
+	require.EqualValues(t, 2, overlaps[0].child.ID)
+	require.EqualValues(t, 5, overlaps[1].parent.ID)
+	require.EqualValues(t, 6, overlaps[1].child.ID)
 }
 
 // Test that overlaps are detected when one prefix is contained by another.
@@ -1782,10 +1782,10 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[0].first.ID)
-	require.EqualValues(t, 2, overlaps[0].second.ID)
-	require.EqualValues(t, 5, overlaps[1].first.ID)
-	require.EqualValues(t, 6, overlaps[1].second.ID)
+	require.EqualValues(t, 1, overlaps[0].parent.ID)
+	require.EqualValues(t, 2, overlaps[0].child.ID)
+	require.EqualValues(t, 5, overlaps[1].parent.ID)
+	require.EqualValues(t, 6, overlaps[1].child.ID)
 }
 
 // Test that the searching for overlaps is stopped if the limit is exceeded on
@@ -1810,10 +1810,10 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 4, overlaps[0].first.ID)
-	require.EqualValues(t, 3, overlaps[0].second.ID)
-	require.EqualValues(t, 8, overlaps[1].first.ID)
-	require.EqualValues(t, 7, overlaps[1].second.ID)
+	require.EqualValues(t, 4, overlaps[0].parent.ID)
+	require.EqualValues(t, 3, overlaps[0].child.ID)
+	require.EqualValues(t, 8, overlaps[1].parent.ID)
+	require.EqualValues(t, 7, overlaps[1].child.ID)
 }
 
 // Test that the searching for overlaps is stopped if the limit is exceeded on
@@ -1836,10 +1836,111 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 3, overlaps[0].first.ID)
-	require.EqualValues(t, 4, overlaps[0].second.ID)
-	require.EqualValues(t, 1, overlaps[1].first.ID)
-	require.EqualValues(t, 2, overlaps[1].second.ID)
+	require.EqualValues(t, 3, overlaps[0].parent.ID)
+	require.EqualValues(t, 4, overlaps[0].child.ID)
+	require.EqualValues(t, 1, overlaps[1].parent.ID)
+	require.EqualValues(t, 2, overlaps[1].child.ID)
+}
+
+// Test that error is generated for non-DHCP daemon.
+func TestSubnetsOverlappingReportErrorForNonDHCPDaemon(t *testing.T) {
+	// Arrange
+	ctx := newReviewContext(nil, dbmodel.NewBind9Daemon(true), ManualRun,
+		func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, report)
+}
+
+// Test that report is nil for non-overlapping subnets.
+func TestSubnetsOverlappingReportForNonOverlappingSubnets(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": []
+        }
+    }`)
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that report has a proper content for a single overlap.
+func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "10.0.1.0/24"
+                },
+                {
+                    "id": 2,
+                    "subnet": "10.0.0.0/16"
+                }
+            ]
+        }
+    }`)
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 42, report.daemonID)
+	require.Contains(t, report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
+	require.Contains(t, report.content, "1. [2] 10.0.0.0/16 is overlapped by [1] 10.0.1.0/24")
+}
+
+// Test that report has a proper content for a multiple overlaps.
+func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	var subnetsConfig []interface{}
+	for i := 0; i < 12; i++ {
+		subnetsConfig = append(subnetsConfig, map[string]interface{}{
+			"id":     i + 1,
+			"subnet": fmt.Sprintf("10.0.0.0/%d", 8+i),
+		})
+	}
+	config, _ := json.Marshal(map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": subnetsConfig,
+		},
+	})
+	_ = daemon.SetConfigFromJSON(string(config))
+
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 42, report.daemonID)
+	require.Contains(t, report.content, "Kea {daemon} configuration includes at least 10 overlapping subnet pairs.")
+	require.Contains(t, report.content, "1. [1] 10.0.0.0/8 is overlapped by [2] 10.0.0.0/9")
+	require.Contains(t, report.content, "10. [1] 10.0.0.0/8 is overlapped by [11] 10.0.0.0/18")
+	require.NotContains(t, report.content, "11.")
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects
