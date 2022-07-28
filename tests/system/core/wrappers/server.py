@@ -465,6 +465,13 @@ class Server(ComposeServiceWrapper):
             raise NoSuccessException("some data are out-of-date")
         return worker()
 
+    @wait_for_success(wait_msg="Waiting for config reports...")
+    def wait_for_config_reports(self, daemon_id: int, limit: int = 10, start: int = 0) -> ConfigReports:
+        reports = self.list_config_reports(daemon_id, limit=limit, start=start)
+        if reports is None:
+            raise NoSuccessException("reviews aren't ready yet")
+        return reports
+
     @contextmanager
     def no_validate(self):
         """

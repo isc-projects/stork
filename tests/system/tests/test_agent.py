@@ -85,7 +85,7 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
     daemon_id = daemons[0]['id']
 
     # Get config reports for the daemon.
-    data = server_service.list_config_reports(daemon_id)
+    data = server_service.wait_for_config_reports(daemon_id)
 
     # Expecting one report indicating that the stat_cmds hooks library
     # was not loaded.
