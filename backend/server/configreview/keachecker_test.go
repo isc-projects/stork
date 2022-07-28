@@ -1992,7 +1992,7 @@ func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
 	require.Nil(t, report)
 }
 
-// Test that error is returned for an empty JSON
+// Test that error is returned for an empty JSON.
 func TestSubnetsOverlappingForEmptyJSON(t *testing.T) {
 	// Arrange
 	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
