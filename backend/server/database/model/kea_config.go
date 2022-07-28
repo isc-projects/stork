@@ -135,10 +135,24 @@ func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
 // Converts a structure holding subnet in Kea format to Stork representation
 // of the subnet.
 func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source HostDataSource) (*Subnet, error) {
+	// Kea allows providing the subnet prefix in a non-canonical form, but
+	// Postgres rejects this value due to validation rules on the CIDR column.
+	// E.g., 192.168.1.1/24 is a valid prefix for Kea, but Postgres expects
+	// 192.168.1.0/24. We need to convert the prefix to its canonical form to
+	// avoid a database error.
+	cidr := storkutil.ParseIP(keaSubnet.Subnet)
+	if cidr == nil {
+		// It should never happen because Kea doesn't allow for prefixes that
+		// aren't IP addresses.
+		return nil, errors.Errorf("Invalid subnet prefix: %s", keaSubnet.Subnet)
+	}
+	prefix := cidr.GetNetworkPrefixWithLength()
+
 	convertedSubnet := &Subnet{
-		Prefix:      keaSubnet.Subnet,
+		Prefix:      prefix,
 		ClientClass: keaSubnet.ClientClass,
 	}
+
 	for _, p := range keaSubnet.Pools {
 		addressPool, err := NewAddressPoolFromRange(p.Pool)
 		if err != nil {

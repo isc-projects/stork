@@ -180,6 +180,91 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, parsedSubnet.Hosts[0].LocalHosts[0].DataSource)
 }
 
+// Test that the error is returned when the subnet prefix is invalid.
+func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
+	// Arrange
+	rawSubnet := map[string]interface{}{
+		"subnet": "invalid",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	// Act
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, parsedSubnet)
+}
+
+// Test that the default mask is added to IPv4 subnet prefix if missing.
+func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
+	// Arrange
+	rawSubnet := map[string]interface{}{
+		"subnet": "10.42.42.42",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	// Act
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "10.42.42.42/32", parsedSubnet.Prefix)
+}
+
+// Test that the default mask is added to IPv6 subnet prefix if missing.
+func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
+	// Arrange
+	rawSubnet := map[string]interface{}{
+		"subnet": "fe80::42",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	// Act
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "fe80::42/128", parsedSubnet.Prefix)
+}
+
+// Test that the IPv4 subnet prefix is converted from non-canonical to canonical form.
+func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
+	// Arrange
+	rawSubnet := map[string]interface{}{
+		"subnet": "10.42.42.42/8",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	// Act
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "10.0.0.0/8", parsedSubnet.Prefix)
+}
+
+// Test that the IPv6 subnet prefix is converted from non-canonical to canonical form.
+func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
+	// Arrange
+	rawSubnet := map[string]interface{}{
+		"subnet": "2001:db8:1::42/64",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 42
+
+	// Act
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "2001:db8:1::/64", parsedSubnet.Prefix)
+}
+
 // Verifies that the host instance can be created by parsing Kea
 // configuration.
 func TestNewHostFromKea(t *testing.T) {

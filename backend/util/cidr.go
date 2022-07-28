@@ -240,3 +240,8 @@ func (parsed *ParsedIP) GetNetworkPrefixAsBinary() string {
 	}
 	return prefixBin[0:prefixLength]
 }
+
+// Returns prefix with a length in form: prefix/length.
+func (parsed *ParsedIP) GetNetworkPrefixWithLength() string {
+	return fmt.Sprintf("%s/%d", parsed.NetworkPrefix, parsed.PrefixLength)
+}
