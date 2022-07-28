@@ -172,6 +172,15 @@ func newDispatchGroup() *dispatchGroup {
 	}
 }
 
+func (g *dispatchGroup) appendChecker(checker *checker) {
+	for _, trigger := range checker.triggers {
+		if _, ok := g.triggerRefCounts[trigger]; !ok {
+			g.triggerRefCounts[trigger] = 0
+		}
+		g.triggerRefCounts[trigger]++
+	}
+}
+
 // Stringer implementation for a dispatchGroup. It lists checker names
 // as a slice. It excludes checker function pointers making the output
 // consistent across function runs. The dispatcher uses this function
@@ -604,22 +613,19 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 // Each checker is assigned a unique name so it will be possible to
 // list available checkers and/or selectively disable them.
 func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error)) {
-	if group := d.getGroup(selector); group == nil {
-		d.groups[selector] = newDispatchGroup()
+	group := d.getGroup(selector)
+	if group == nil {
+		group = newDispatchGroup()
+		d.groups[selector] = group
 	}
-	d.groups[selector].checkers = append(d.groups[selector].checkers,
+
+	group.appendChecker(
 		&checker{
 			name:     checkerName,
 			triggers: triggers,
 			checkFn:  checkFn,
 		},
 	)
-	for _, trigger := range triggers {
-		if _, ok := d.groups[selector].triggerRefCounts[trigger]; !ok {
-			d.groups[selector].triggerRefCounts[trigger] = 0
-		}
-		d.groups[selector].triggerRefCounts[trigger]++
-	}
 }
 
 // Unregisters a checker from a dispatch group. It returns a boolean
