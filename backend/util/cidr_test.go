@@ -273,3 +273,29 @@ func TestPrefixToBinaryForInvalidPrefixes(t *testing.T) {
 		})
 	}
 }
+
+// Test that the prefix with length is properly returned.
+func TestGetPrefixWithLength(t *testing.T) {
+	// Arrange
+	prefixes := []string{
+		"10.0.0.0/8",
+		"42.42.0.0/16",
+		"192.168.1.0/24",
+		"127.0.0.1/32",
+		"fe80::/64",
+		"3001:1000::/80",
+		"2001::42/128",
+	}
+
+	for _, prefix := range prefixes {
+		t.Run(prefix, func(t *testing.T) {
+			cidr := ParseIP(prefix)
+
+			// Act
+			returnedPrefix := cidr.GetNetworkPrefixWithLength()
+
+			// Assert
+			require.EqualValues(t, returnedPrefix, prefix)
+		})
+	}
+}

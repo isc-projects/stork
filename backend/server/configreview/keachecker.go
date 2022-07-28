@@ -606,7 +606,7 @@ type minimalSubnetPair struct {
 	child  minimalSubnet
 }
 
-// The checker validates that subnets don't overlap.
+// The checker validates that subnets (global or from shared networks) don't overlap.
 func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
@@ -616,9 +616,26 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
 	var decodedSubnets []minimalSubnet
+	// Global subnets.
 	err := config.DecodeTopLevelSubnets(&decodedSubnets)
 	if err != nil {
 		return nil, err
+	}
+
+	// Subnets belonging to the shared networks.
+	type minimalSharedNetwork struct {
+		Subnet4 []minimalSubnet
+		Subnet6 []minimalSubnet
+	}
+	var decodedSharedNetworks []minimalSharedNetwork
+	err = config.DecodeSharedNetworks(&decodedSharedNetworks)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sharedNetwork := range decodedSharedNetworks {
+		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet4...)
+		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet6...)
 	}
 
 	// Limits the overlaps count to avoid producing too huge review message.
@@ -657,6 +674,8 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 		create()
 }
 
+// Finds the subnets with the overlapping  prefixes. It searches until
+// exceeding the maximum number of overlaps.
 func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
 	tree := radix.New()
 
@@ -707,3 +726,5 @@ func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalS
 
 	return overlaps
 }
+
+// The checker validates that

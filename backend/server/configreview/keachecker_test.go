@@ -1973,6 +1973,76 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	require.NotContains(t, report.content, "11.")
 }
 
+// Test that no error or overlaps are returned for a Kea config without subnet
+// node.
+func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": { }
+    }`)
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that error is returned for an empty JSON
+func TestSubnetsOverlappingForEmptyJSON(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	_ = daemon.SetConfigFromJSON(`{ }`)
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, report)
+}
+
+// Test that shared networks are processed by the overlapping checker.
+func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "shared-networks": [
+                {
+                    "subnet4": [
+                        {
+                            "subnet": "10.0.1.0/24"
+                        },
+                        {
+                            "subnet": "10.0.0.0/16"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := subnetsOverlapping(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 42, report.daemonID)
+	require.Contains(t, report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
+	require.Contains(t, report.content, "1. 10.0.0.0/16 is overlapped by 10.0.1.0/24")
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
