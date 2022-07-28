@@ -727,4 +727,89 @@ func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalS
 	return overlaps
 }
 
-// The checker validates that
+// The checker validates that all subnet prefixes are in canonical form.
+func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	var decodedSubnets []minimalSubnet
+	// Global subnets.
+	err := config.DecodeTopLevelSubnets(&decodedSubnets)
+	if err != nil {
+		return nil, err
+	}
+
+	// Subnets belonging to the shared networks.
+	type minimalSharedNetwork struct {
+		Subnet4 []minimalSubnet
+		Subnet6 []minimalSubnet
+	}
+	var decodedSharedNetworks []minimalSharedNetwork
+	err = config.DecodeSharedNetworks(&decodedSharedNetworks)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sharedNetwork := range decodedSharedNetworks {
+		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet4...)
+		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet6...)
+	}
+
+	maxIssues := 10
+	var issues []string
+
+	for _, decodedSubnet := range decodedSubnets {
+		prefix, ok := getCanonicalPrefix(decodedSubnet.Subnet)
+		if ok {
+			continue
+		}
+
+		subnetID := ""
+		if decodedSubnet.ID != 0 {
+			subnetID = fmt.Sprintf("[%d] ", decodedSubnet.ID)
+		}
+
+		issue := fmt.Sprintf("%d. %s%s is invalid prefix", len(issues)+1, subnetID, decodedSubnet.Subnet)
+
+		if prefix != "" {
+			issue = fmt.Sprintf("%s, expected: %s", issue, prefix)
+		}
+
+		issues = append(issues, issue)
+
+		if len(issues) == maxIssues {
+			break
+		}
+	}
+
+	maxExceedMessage := ""
+	if len(issues) == maxIssues {
+		maxExceedMessage = " at least"
+	}
+
+	hintMessage := strings.Join(issues, "; ")
+
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains%s %s. Use a proper form to enable the built-in subnet prefix validation.\n%s",
+		maxExceedMessage, storkutil.FormatNoun(int64(len(issues)), "non-canonical prefix", "es"), hintMessage)).
+		referencingDaemon(ctx.subjectDaemon).
+		create()
+}
+
+// Returns the prefix with zeros on masked bits. If it was already valid, return the true status.
+func getCanonicalPrefix(prefix string) (string, bool) {
+	candidate := storkutil.ParseIP(prefix)
+	if candidate == nil {
+		return "", false
+	}
+	expected := storkutil.ParseIP(candidate.NetworkPrefix)
+	for i, b := range candidate.IP {
+		if b != expected.IP[i] {
+			return candidate.GetNetworkPrefixWithLength(), false
+		}
+	}
+	return candidate.GetNetworkPrefixWithLength(), true
+}

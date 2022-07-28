@@ -707,4 +707,5 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_dispensable", ExtendDefaultTriggers(DBHostsModified), subnetDispensable)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "reservations_out_of_pool", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "overlapping_subnets", GetDefaultTriggers(), subnetsOverlapping)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "canonical_prefixes", GetDefaultTriggers(), canonicalPrefixes)
 }

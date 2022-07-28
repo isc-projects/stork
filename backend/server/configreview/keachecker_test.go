@@ -2043,6 +2043,120 @@ func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
 	require.Contains(t, report.content, "1. 10.0.0.0/16 is overlapped by 10.0.1.0/24")
 }
 
+// Test that the canonical prefix is recognized correctly.
+func TestGetCanonicalPrefixForValidPrefixes(t *testing.T) {
+	// Arrange
+	prefixes := []string{
+		"10.10.0.0/16",
+		"192.168.1.0/24",
+		"172.100.50.40/29",
+		"127.0.0.1/32",
+		"3001::/80",
+	}
+
+	for _, prefix := range prefixes {
+		t.Run(prefix, func(t *testing.T) {
+			// Act
+			canonicalPrefix, result := getCanonicalPrefix(prefix)
+
+			// Assert
+			require.True(t, result)
+			require.EqualValues(t, prefix, canonicalPrefix)
+		})
+	}
+}
+
+// Test that the canonical prefix has the shortest form.
+func TestGetCanonicalPrefixShortestIPv6Form(t *testing.T) {
+	// Arrange
+	prefix := "2001:0000:0000:0000:0000::/64"
+
+	// Act
+	canonicalPrefix, result := getCanonicalPrefix(prefix)
+
+	// Assert
+	require.True(t, result)
+	require.EqualValues(t, "2001::/64", canonicalPrefix)
+}
+
+// Test that the non-canonical prefix is recognized correctly.
+func TestIsCanonicalPrefixForInvalidPrefixes(t *testing.T) {
+	// Arrange
+	data := [][]string{
+		{"10.10.42.0/16", "10.10.0.0/16"},
+		{"192.168.1.42/24", "192.168.1.0/24"},
+		{"172.100.50.42/29", "172.100.50.40/29"},
+		{"3001::42:0/80", "3001::/80"},
+		{"2001:0000:0000:0000:0000::42/64", "2001::/64"},
+	}
+
+	for _, entry := range data {
+		prefix := entry[0]
+		expected := entry[1]
+
+		t.Run(prefix, func(t *testing.T) {
+			// Act
+			validPrefix, result := getCanonicalPrefix(prefix)
+
+			// Assert
+			require.False(t, result)
+			require.EqualValues(t, expected, validPrefix)
+		})
+	}
+}
+
+// Test that the canonical prefixes checker generates an expected report.
+func TestCanonicalPrefixes(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.168.0.0/16"
+                },
+                {
+                    "id": 2,
+                    "subnet": "192.168.1.2/24"
+                }
+            ],
+            "shared-networks": [
+                {
+                    "subnet4": [
+                        {
+                            "subnet": "10.0.0.0/8"
+                        },
+                        {
+                            "subnet": "10.1.2.3/24"
+                        },
+                        {
+                            "subnet": "10.1.2.3/16"
+                        },
+                        {
+                            "subnet": "foobar"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := canonicalPrefixes(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 42, report.daemonID)
+	require.Contains(t, report.content, "Kea {daemon} configuration contains 4 non-canonical prefixes.")
+	require.Contains(t, report.content, "1. [2] 192.168.1.2/24 is invalid prefix, expected: 192.168.1.0/24;")
+	require.Contains(t, report.content, "4. foobar is invalid prefix")
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
