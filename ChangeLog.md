@@ -1,3 +1,10 @@
+* 233 [func] slawek
+
+    Added two Kea configuration checkers. The first one finds the overlapping
+    subnets based on the subnet prefixes. The second checker validates the
+    subnet prefixes.
+    (Gitlab #763)
+
 * 232 [func] marcin
 
     Display DHCP options in the host reservation view.
