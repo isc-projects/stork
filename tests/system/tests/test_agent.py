@@ -89,9 +89,10 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
 
     # Expecting one report indicating that the stat_cmds hooks library
     # was not loaded.
-    assert data['total'] == 1
-    assert len(data['items']) == 1
+    assert data['total'] == 2
+    assert len(data['items']) == 2
     assert data['items'][0]['checker'] == 'stat_cmds_presence'
+    assert data['items'][1]['checker'] == 'overlapping_subnets'
 
 
 @kea_parametrize("agent-kea-basic-auth-no-credentials")
