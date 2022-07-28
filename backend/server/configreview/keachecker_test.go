@@ -2157,6 +2157,61 @@ func TestCanonicalPrefixes(t *testing.T) {
 	require.Contains(t, report.content, "4. foobar is invalid prefix")
 }
 
+// Test that the canonical prefixes report is not generated if all prefixes are valid.
+func TestCanonicalPrefixesForValidPrefixes(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon.ID = 42
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.168.0.0/16"
+                }
+            ],
+            "shared-networks": [
+                {
+                    "subnet4": [
+                        {
+                            "subnet": "10.0.0.0/8"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := canonicalPrefixes(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the canonical prefixes report is not generated for an empty config.
+func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
+	// Arrange
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	_ = daemon.SetConfigFromJSON(`{
+        "Dhcp4": { }
+    }`)
+
+	ctx := newReviewContext(nil, daemon,
+		ManualRun, func(i int64, err error) {})
+
+	// Act
+	report, err := canonicalPrefixes(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {

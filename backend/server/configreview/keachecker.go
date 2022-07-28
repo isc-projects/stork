@@ -786,6 +786,10 @@ func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
 		}
 	}
 
+	if len(issues) == 0 {
+		return nil, nil
+	}
+
 	maxExceedMessage := ""
 	if len(issues) == maxIssues {
 		maxExceedMessage = " at least"
