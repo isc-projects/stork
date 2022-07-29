@@ -1,9 +1,9 @@
 <p-panel>
     <ng-template pTemplate="header">
         <div style="width: 100%; display: flex; justify-content: space-between">
-            <div id="review-summary-div" *ngIf="review" class="p-text-normal">
-                <span class="p-text-bold"> {{ total || 0 }}</span> report{{ total !== 1 ? 's' : '' }} generated at
-                <span class="p-text-bold">{{ review.createdAt | localtime }} </span>
+            <div id="review-summary-div" *ngIf="review" class="font-normal">
+                <span class="font-bold"> {{ total || 0 }}</span> report{{ total !== 1 ? 's' : '' }} generated at
+                <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
             <button
                 id="review-button"
@@ -38,7 +38,7 @@
                 </p-tag>
             </p-divider>
             <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
-            <span class="p-text-italic" style="color: var(--text-color); font-size: 0.9rem">
+            <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
                 <app-event-text [text]="report.content"></app-event-text>
             </span>
         </div>
@@ -55,7 +55,7 @@
         </p-paginator>
     </ng-container>
     <ng-template #elseBlock>
-        <span id="status-text" class="p-text-italic" style="font-size: 0.9rem">
+        <span id="status-text" class="font-italic" style="font-size: 0.9rem">
             {{ getStatusText() }}
         </span>
     </ng-template>

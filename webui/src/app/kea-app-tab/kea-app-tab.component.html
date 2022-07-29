@@ -1,4 +1,4 @@
-<div style="margin: 0" class="p-grid">
+<div style="margin: 0" class="grid">
     <app-rename-app-dialog
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
@@ -9,7 +9,7 @@
         (hidden)="handleRenameDialogHidden()"
     >
     </app-rename-app-dialog>
-    <div class="p-pl-0 p-pr-0 p-pb-4 p-col-12">
+    <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
                 <div style="width: 100%; display: flex; justify-content: space-between">
@@ -43,7 +43,7 @@
             <app-app-overview [app]="appTab.app"></app-app-overview>
         </p-panel>
     </div>
-    <div class="p-p-0 p-col-12">
+    <div class="p-0 col-12">
         <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
             <p-tabPanel
                 *ngFor="let daemon of daemons; let i = index"
@@ -115,15 +115,15 @@
                         ></a>
                     </div>
 
-                    <div class="p-grid" style="padding: 12px">
+                    <div class="grid" style="padding: 12px">
                         <!-- box with error message if there is communication issue or other problem with daemon -->
-                        <div *ngIf="daemon.statusErred" class="p-col-4">
+                        <div *ngIf="daemon.statusErred" class="col-4">
                             <p-message severity="error" text="{{ daemonStatusErrorText(daemon) }}"></p-message>
                         </div>
-                        <div *ngIf="daemon.statusErred" class="p-col-8"><!-- fill horizontally all 12 cols --></div>
+                        <div *ngIf="daemon.statusErred" class="col-8"><!-- fill horizontally all 12 cols --></div>
 
                         <!-- warning about not-active and not-monitored -->
-                        <div *ngIf="!daemon.active" class="p-col-4">
+                        <div *ngIf="!daemon.active" class="col-4">
                             <p-message
                                 *ngIf="!daemon.monitored"
                                 severity="warn"
@@ -141,14 +141,14 @@
                             >
                             </p-message>
                         </div>
-                        <div *ngIf="!daemon.active" class="p-col-8"><!-- fill horizontally all 12 cols --></div>
+                        <div *ngIf="!daemon.active" class="col-8"><!-- fill horizontally all 12 cols --></div>
 
-                        <div class="p-col-7">
+                        <div class="col-7">
                             <!-- Overview -->
                             <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
-                                <div class="p-grid">
-                                    <div class="p-col-6">
+                                <div class="grid">
+                                    <div class="col-6">
                                         <p-fieldset legend="Daemon Information">
                                             <table style="width: 100%">
                                                 <tr>
@@ -170,7 +170,7 @@
                                             </table>
                                         </p-fieldset>
                                     </div>
-                                    <div class="p-col-6">
+                                    <div class="col-6">
                                         <p-fieldset legend="Hooks">
                                             <div *ngFor="let hook of daemon.hooks">
                                                 {{ hook }}
@@ -191,9 +191,9 @@
                                 style="margin-bottom: 20px"
                             >
                                 <h3>Data Storage</h3>
-                                <div class="p-grid">
+                                <div class="grid">
                                     <ng-container *ngIf="daemon.files">
-                                        <div class="p-col-6">
+                                        <div class="col-6">
                                             <p-fieldset id="data-storage-files-fieldset" legend="Files">
                                                 <table style="width: 100%">
                                                     <tr *ngFor="let file of daemon.files">
@@ -205,9 +205,9 @@
                                                 </table>
                                             </p-fieldset>
                                         </div>
-                                        <div class="p-col-6"></div>
+                                        <div class="col-6"></div>
                                     </ng-container>
-                                    <div *ngIf="daemon.backends" class="p-col-6">
+                                    <div *ngIf="daemon.backends" class="col-6">
                                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                             <div *ngFor="let backend of daemon.backends">
                                                 <i style="color: grey" class="fa fa-database"></i>
@@ -291,7 +291,7 @@
                         </div>
 
                         <!-- Events -->
-                        <div class="p-col-5">
+                        <div class="col-5">
                             <h3>Events</h3>
                             <app-events-panel
                                 #eventsTable

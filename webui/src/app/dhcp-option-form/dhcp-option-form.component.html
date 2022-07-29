@@ -1,5 +1,5 @@
-<div [formGroup]="formGroup" class="p-d-flex p-flex-column">
-    <div class="p-d-flex p-flex-column">
+<div [formGroup]="formGroup" class="flex flex-column">
+    <div class="flex flex-column">
         <div *ngIf="topLevel; else showSuboptionInput">
             <span class="p-float-label">
                 <p-dropdown
@@ -34,10 +34,10 @@
                 </span>
             </div>
         </ng-template>
-        <div class="p-d-flex p-mt-1 p-ai-center">
+        <div class="flex mt-1 align-items-center">
             <div
                 *ngIf="topLevel"
-                class="p-ml-1 p-field-checkbox p-button-secondary p-button-sm p-button-text p-button p-mb-0"
+                class="ml-1 field-checkbox p-button-secondary p-button-sm p-button-text p-button mb-0"
             >
                 <p-checkbox
                     ngDefaultControl
@@ -58,7 +58,7 @@
                 >
                 </p-splitButton>
             </div>
-            <div class="p-ml-1">
+            <div class="ml-1">
                 <button
                     pButton
                     type="button"
@@ -80,7 +80,7 @@
         >
             <div
                 [ngSwitch]="fieldControl.data.fieldType"
-                [ngClass]="{ 'p-d-flex': true, 'p-ai-top': true, 'p-ml-3': true, 'p-mt-4': first, 'p-mt-5': !first }"
+                [ngClass]="{ flex: true, 'align-items-top': true, 'ml-3': true, 'mt-4': first, 'mt-5': !first }"
             >
                 <div *ngSwitchCase="FieldType.HexBytes" [formGroupName]="i">
                     <span class="p-float-label">
@@ -108,7 +108,7 @@
                     </span>
                 </div>
                 <div *ngSwitchCase="FieldType.Bool" [formGroupName]="i">
-                    <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-p-0">
+                    <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-0">
                         <p-toggleButton
                             pRipple
                             onLabel="True"
@@ -184,7 +184,7 @@
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
-                <div *ngSwitchCase="FieldType.IPv6Prefix" class="p-d-flex" [formGroupName]="i">
+                <div *ngSwitchCase="FieldType.IPv6Prefix" class="flex" [formGroupName]="i">
                     <span class="p-float-label">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
@@ -197,14 +197,14 @@
                             ngDefaultControl
                             min="1"
                             max="128"
-                            inputStyleClass="p-ml-1 option-field prefix-length-width"
+                            inputStyleClass="ml-1 option-field prefix-length-width"
                             formControlName="prefixLength"
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </div>
-                <div *ngSwitchCase="FieldType.Psid" class="p-d-flex" [formGroupName]="i">
+                <div *ngSwitchCase="FieldType.Psid" class="flex" [formGroupName]="i">
                     <span class="p-float-label">
                         <p-inputNumber
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -221,7 +221,7 @@
                             ngDefaultControl
                             min="0"
                             max="16"
-                            inputStyleClass="p-ml-1 option-field psid-length-width"
+                            inputStyleClass="ml-1 option-field psid-length-width"
                             formControlName="psidLength"
                         >
                         </p-inputNumber>
@@ -240,7 +240,7 @@
                             <p-toggleButton
                                 onLabel="Use Full FQDN "
                                 offLabel="Use Partial FQDN"
-                                styleClass="p-ml-1"
+                                styleClass="ml-1"
                                 (onChange)="togglePartialFqdn($event, i)"
                             >
                             </p-toggleButton>
@@ -281,7 +281,7 @@
         </ng-container>
     </div>
     <ng-template #emptyOption>
-        <div class="p-ml-3 p-mt-3">
+        <div class="ml-3 mt-3">
             <p-tag
                 icon="pi pi-info-circle"
                 value="Empty Option"
@@ -290,7 +290,7 @@
             ></p-tag>
         </div>
     </ng-template>
-    <div class="p-ml-3 p-mt-5">
+    <div class="ml-3 mt-5">
         <ng-container *ngIf="suboptions.length > 0">
             <app-dhcp-option-set-form
                 v6="false"

@@ -1,4 +1,4 @@
-<div style="margin: 0" class="p-grid">
+<div style="margin: 0" class="grid">
     <app-rename-app-dialog
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
@@ -9,7 +9,7 @@
         (hidden)="handleRenameDialogHidden()"
     >
     </app-rename-app-dialog>
-    <div class="p-pl-0 p-pr-0 p-pb-4 p-col-12">
+    <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
                 <div style="width: 100%; display: flex; justify-content: space-between">
@@ -43,7 +43,7 @@
             <app-app-overview [app]="appTab.app"></app-app-overview>
         </p-panel>
     </div>
-    <div class="p-p-0 p-col-12">
+    <div class="p-0 col-12">
         <p-tabView>
             <p-tabPanel *ngFor="let daemon of daemons">
                 <ng-template pTemplate="header">
@@ -61,13 +61,13 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div class="p-grid" style="padding: 0">
-                        <div class="p-col-6">
-                            <div *ngIf="daemon.statusErred" class="p-col-12">
+                    <div class="grid" style="padding: 0">
+                        <div class="col-6">
+                            <div *ngIf="daemon.statusErred" class="col-12">
                                 <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
                             </div>
 
-                            <div class="p-col-12">
+                            <div class="col-12">
                                 <h3>Overview</h3>
                                 <table style="width: 100%">
                                     <tr>

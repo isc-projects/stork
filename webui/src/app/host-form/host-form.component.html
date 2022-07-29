@@ -1,11 +1,11 @@
 <form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup">
-    <p-fieldset legend="Assignments" styleClass="p-mt-4">
-        <div class="p-grid host-form-abs-width">
-            <div class="p-col-12 p-mb-3">
+    <p-fieldset legend="Assignments" styleClass="mt-4">
+        <div class="grid host-form-abs-width">
+            <div class="col-12 mb-3">
                 <p-checkbox label="Global reservation" formControlName="globalReservation" [binary]="true"></p-checkbox>
             </div>
-            <div class="p-col-10 p-mb-3">
-                <span class="p-float-label p-mb-2">
+            <div class="col-10 mb-3">
+                <span class="p-float-label mb-2">
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
@@ -29,8 +29,8 @@
                     >At least one server must be selected.
                 </small>
             </div>
-            <div *ngIf="!formGroup.get('globalReservation').value" class="p-col-8">
-                <span class="p-float-label p-mb-2">
+            <div *ngIf="!formGroup.get('globalReservation').value" class="col-8">
+                <span class="p-float-label mb-2">
                     <p-dropdown
                         inputId="subnets-dropdown"
                         optionLabel="subnet"
@@ -57,9 +57,9 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="DHCP Identifier" styleClass="p-mt-4">
-        <div formGroupName="hostIdGroup" class="p-grid host-form-abs-width">
-            <div class="p-col-3">
+    <p-fieldset legend="DHCP Identifier" styleClass="mt-4">
+        <div formGroupName="hostIdGroup" class="grid host-form-abs-width">
+            <div class="col-3">
                 <p-dropdown
                     [options]="hostIdTypes"
                     formControlName="idType"
@@ -68,11 +68,11 @@
                 >
                 </p-dropdown>
             </div>
-            <div class="p-col-3">
+            <div class="col-3">
                 <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
             </div>
 
-            <div *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText" class="p-col-6">
+            <div *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText" class="col-6">
                 <input
                     pInputText
                     formControlName="idInputHex"
@@ -80,7 +80,7 @@
                     placeholder="e.g. 01:02:03:04:05:06"
                 />
             </div>
-            <div class="p-offset-6 p-col-6 p-pt-0">
+            <div class="col-offset-6 col-6 pt-0">
                 <small
                     *ngIf="
                         formGroup.get('hostIdGroup.idInputHex').invalid &&
@@ -98,7 +98,7 @@
                 </small>
             </div>
             <ng-template #hostIdFormatText>
-                <div class="p-col-6">
+                <div class="col-6">
                     <input
                         pInputText
                         formControlName="idInputText"
@@ -106,7 +106,7 @@
                         placeholder="text identifier format"
                     />
                 </div>
-                <div class="p-offset-6 p-col-6 p-pt-0">
+                <div class="col-offset-6 col-6 pt-0">
                     <small
                         *ngIf="
                             formGroup.get('hostIdGroup.idInputText').invalid &&
@@ -127,16 +127,16 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="IP Reservations" styleClass="p-mt-4">
-        <div formArrayName="ipGroups" class="p-grid host-form-abs-width">
-            <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="p-mt-3">
-                <ng-container [formGroup]="ipGroup" class="p-d-flex p-ai-start">
-                    <div class="p-col-3">
+    <p-fieldset legend="IP Reservations" styleClass="mt-4">
+        <div formArrayName="ipGroups" class="grid host-form-abs-width">
+            <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="mt-3">
+                <ng-container [formGroup]="ipGroup" class="flex align-items-start">
+                    <div class="col-3">
                         <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width"> </p-dropdown>
                     </div>
                     <ng-container [ngSwitch]="ipGroup.value.ipType">
                         <ng-container *ngSwitchCase="'ipv4'">
-                            <div class="p-col-8">
+                            <div class="col-8">
                                 <input
                                     *ngSwitchCase="'ipv4'"
                                     pInputText
@@ -151,7 +151,7 @@
                                     ipGroup.get('inputIPv4').invalid &&
                                     (ipGroup.get('inputIPv4').dirty || ipGroup.get('inputIPv4').touched)
                                 "
-                                class="p-offset-3 p-col-9 p-pt-0"
+                                class="col-offset-3 col-9 pt-0"
                             >
                                 <small class="p-error block">
                                     {{
@@ -163,7 +163,7 @@
                             </div>
                         </ng-container>
                         <ng-container *ngSwitchCase="'ia_na'">
-                            <div class="p-col-8">
+                            <div class="col-8">
                                 <input
                                     *ngSwitchCase="'ia_na'"
                                     pInputText
@@ -178,7 +178,7 @@
                                     ipGroup.get('inputNA').invalid &&
                                     (ipGroup.get('inputNA').dirty || ipGroup.get('inputNA').touched)
                                 "
-                                class="p-offset-3 p-col-9 p-pt-0"
+                                class="col-offset-3 col-9 pt-0"
                             >
                                 <small class="p-error block">
                                     {{
@@ -190,7 +190,7 @@
                             </div>
                         </ng-container>
                         <ng-container *ngSwitchCase="'ia_pd'">
-                            <div class="p-col-6">
+                            <div class="col-6">
                                 <input
                                     pInputText
                                     formControlName="inputPD"
@@ -198,7 +198,7 @@
                                     placeholder="e.g. 3000:1::"
                                 />
                             </div>
-                            <div class="p-col-2">
+                            <div class="col-2">
                                 <p-inputNumber
                                     ngDefaultControl
                                     min="1"
@@ -214,20 +214,20 @@
                                     ipGroup.get('inputPD').invalid &&
                                     (ipGroup.get('inputPD').dirty || ipGroup.get('inputPD').touched)
                                 "
-                                class="p-offset-3 p-col-9 p-pt-0"
+                                class="col-offset-3 col-9 pt-0"
                             >
                                 <small class="p-error block">Please specify a valid IPv6 prefix. </small>
                             </div>
                         </ng-container>
                     </ng-container>
                     <ng-template #ipDeleteButton>
-                        <div class="p-col-1">
+                        <div class="col-1">
                             <button
                                 pButton
                                 pRipple
                                 type="button"
                                 icon="pi pi-times"
-                                class="full-width p-mr-2 p-button-rounded p-button-danger p-button-text"
+                                class="full-width mr-2 p-button-rounded p-button-danger p-button-text"
                                 (click)="deleteIPInput(i)"
                             ></button>
                         </div>
@@ -239,22 +239,22 @@
             <button
                 *ngIf="ipGroups.length === 0 || ipTypes.length > 1"
                 pButton
-                class="p-button-rounded p-button-text p-mt-2"
+                class="p-button-rounded p-button-text mt-2"
                 label="Add IP Reservation"
                 (click)="addIPInput()"
             ></button>
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="Non-IP Reservations" styleClass="p-mt-4">
-        <div class="p-grid host-form-abs-width">
-            <div class="p-col-10">
-                <span class="p-float-label p-mt-3">
+    <p-fieldset legend="Non-IP Reservations" styleClass="mt-4">
+        <div class="grid host-form-abs-width">
+            <div class="col-10">
+                <span class="p-float-label mt-3">
                     <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
                     <label for="hostname-input">Hostname</label>
                 </span>
             </div>
-            <div class="p-col-10 p-pt-0">
+            <div class="col-10 pt-0">
                 <small
                     *ngIf="
                         formGroup.get('hostname').invalid &&
@@ -267,9 +267,9 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="DHCP options" styleClass="p-mt-4">
+    <p-fieldset legend="DHCP options" styleClass="mt-4">
         <div class="host-form-abs-width">
-            <div class="p-mb-3 p-mt-3">
+            <div class="mb-3 mt-3">
                 <app-dhcp-option-set-form
                     [v6]="form.dhcpv6"
                     [formArray]="optionsArray"
@@ -279,7 +279,7 @@
         </div>
     </p-fieldset>
 
-    <div class="p-m-5">
+    <div class="m-5">
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
         <app-help-tip title="Host Reservation Submission">
             <p>
@@ -290,26 +290,26 @@
     </div>
 </form>
 <ng-template #showInitError>
-    <p-fieldset legend="Errors" styleClass="p-mt-4">
-        <div class="p-grid host-form-abs-width">
-            <div class="p-col-12">
+    <p-fieldset legend="Errors" styleClass="mt-4">
+        <div class="grid host-form-abs-width">
+            <div class="col-12">
                 <p-messages severity="error">
                     <ng-template pTemplate>
                         <div class="flex flex-column">
-                            <div class="flex align-items-center p-m-4">
+                            <div class="flex align-items-center m-4">
                                 In order to apply configuration changes, the server should begin a transaction between
                                 the user and the server. The server should also return current data required in the form
                                 where the host information is specified. Unfortunately, starting the new transaction
                                 failed with the following error:
                             </div>
-                            <div class="flex align-items-center p-m-4 p-text-italic">
+                            <div class="flex align-items-center m-4 font-italic">
                                 {{ form.initError }}
                             </div>
-                            <div class="flex align-items-center p-m-4">Retrying can help in some cases.</div>
+                            <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
                         </div>
                     </ng-template>
                 </p-messages>
-                <div class="p-mt-3">
+                <div class="mt-3">
                     <p-button label="Retry" (onClick)="onRetry()"></p-button>
                 </div>
             </div>

@@ -418,8 +418,8 @@ sudo ./stork-install-agent.sh</textarea
 
 <!-- Single machine tab -->
 <div *ngIf="activeTabIdx !== 0" class="p-component">
-    <div class="p-grid" style="width: 100%">
-        <div class="p-col-12" style="display: flex">
+    <div class="grid" style="width: 100%">
+        <div class="col-12" style="display: flex">
             <div style="font-size: 1.8em; font-weight: bold; margin: 10px 0 0 10px; color: #007ad9">
                 <i class="fa fa-server" style="padding-right: 10px"></i> {{ machineTab.machine.address
                 }}<span style="color: #007ad930">:{{ machineTab.machine.agentPort }}</span>
@@ -440,7 +440,7 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
 
-        <div class="p-col-4">
+        <div class="col-4">
             <h3>System Information</h3>
             <table [ngStyle]="{ color: machineTab.machine.error ? '#999' : '' }">
                 <tr>
@@ -539,7 +539,7 @@ sudo ./stork-install-agent.sh</textarea
                 label="Get Latest State"
                 id="get-latest-state-button"
                 icon="pi pi-refresh"
-                class="p-mt-3 p-mr-2 p-mb-2"
+                class="mt-3 mr-2 mb-2"
                 (click)="refreshMachineState(machineTab)"
             ></button>
             <button
@@ -550,11 +550,11 @@ sudo ./stork-install-agent.sh</textarea
                 id="dump-single-machine"
                 icon="pi pi-download"
                 title="Download data archive for troubleshooting purposes"
-                class="p-mt-3 p-mr-2 p-mb-2 p-button-secondary"
+                class="mt-3 mr-2 mb-2 p-button-secondary"
                 (click)="downloadDump(machineTab.machine)"
             ></button>
         </div>
-        <div class="p-col-4">
+        <div class="col-4">
             <h3>Applications</h3>
             <div *ngFor="let app of machineTab.machine.apps">
                 <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
@@ -564,7 +564,7 @@ sudo ./stork-install-agent.sh</textarea
                 <app-app-daemons-status [app]="app"></app-app-daemons-status>
             </div>
         </div>
-        <div class="p-col-4">
+        <div class="col-4">
             <h3>Events</h3>
             <app-events-panel #eventsTable [filter]="{ machine: machineTab.machine.id }"></app-events-panel>
         </div>

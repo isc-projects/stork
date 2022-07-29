@@ -1,5 +1,5 @@
-<div style="margin: 4px -4px" class="p-grid p-align-stretch" *ngIf="loaded">
-    <div class="p-col-4" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
+<div style="margin: 4px -4px" class="grid align-items-stretch" *ngIf="loaded">
+    <div class="col-4" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
         <p-panel>
             <p-header>
                 <span class="p-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
@@ -32,11 +32,11 @@
             </p>
         </p-panel>
     </div>
-    <div class="p-col-5" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
+    <div class="col-5" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
         <!-- fill empty space between welcome panel and events panel -->
     </div>
 
-    <div class="p-col-9" *ngIf="appsStats.keaAppsTotal > 0">
+    <div class="col-9" *ngIf="appsStats.keaAppsTotal > 0">
         <p-panel>
             <p-header>
                 <div style="display: flex; justify-content: space-between">
@@ -364,7 +364,7 @@
         </p-panel>
     </div>
 
-    <div class="p-col-3">
+    <div class="col-3">
         <p-panel>
             <p-header>
                 <div style="display: flex; justify-content: space-between">
@@ -388,7 +388,7 @@
     </div>
 
     <!-- TODO: for now do not show empty DNS dashboard
-    <div class="p-col-6" *ngIf="appsStats.bind9AppsTotal > 0">
+    <div class="col-6" *ngIf="appsStats.bind9AppsTotal > 0">
         <p-panel header="DNS">
             TODO
         </p-panel>

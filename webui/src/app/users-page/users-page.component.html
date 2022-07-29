@@ -84,50 +84,50 @@
 <div *ngIf="existingUserTab" class="p-component">
     <div style="display: flex; margin: 10px">
         <div style="min-width: 600px">
-            <div class="p-grid p-align-center" style="margin: 10px 0px">
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">Login:</div>
-                        <div class="p-col-10">
+            <div class="grid align-items-center" style="margin: 10px 0px">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">Login:</div>
+                        <div class="col-10">
                             {{ userTab.user.login }}
                         </div>
                     </div>
                 </div>
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">Email:</div>
-                        <div class="p-col-10">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">Email:</div>
+                        <div class="col-10">
                             {{ userTab.user.email }}
                         </div>
                     </div>
                 </div>
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">Lastname:</div>
-                        <div class="p-col-10">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">Lastname:</div>
+                        <div class="col-10">
                             {{ userTab.user.lastname }}
                         </div>
                     </div>
                 </div>
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">First name:</div>
-                        <div class="p-col-10">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">First name:</div>
+                        <div class="col-10">
                             {{ userTab.user.name }}
                         </div>
                     </div>
                 </div>
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">Group:</div>
-                        <div class="p-col-10">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">Group:</div>
+                        <div class="col-10">
                             {{ userTab.user.groups.length > 0 ? getGroupName(userTab.user.groups[0]) : 0 }}
                         </div>
                     </div>
                 </div>
-                <div class="p-col-12">
-                    <div class="p-grid">
-                        <div class="p-col-2">
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">
                             <button
                                 type="button"
                                 pButton
@@ -138,7 +138,7 @@
                             ></button>
                         </div>
                     </div>
-                    <div class="p-col-10"></div>
+                    <div class="col-10"></div>
                 </div>
             </div>
         </div>
@@ -147,8 +147,8 @@
 
 <div *ngIf="newUserTab || editedUserTab" class="p-component">
     <div style="display: flex; margin: 10px">
-        <div class="p-grid">
-            <div class="p-col-3">
+        <div class="grid">
+            <div class="col-3">
                 <p-panel header="Creating new account" *ngIf="newUserTab">
                     <p>
                         To create a new user account, please specify user login, first name, and last name. An email
@@ -174,14 +174,14 @@
                     <p>The user password remains unchanged if it is left blank while saving the form.</p>
                 </p-panel>
             </div>
-            <div class="p-col-7">
+            <div class="col-7">
                 <form [formGroup]="userform">
                     <p-panel header="User account">
-                        <div class="p-grid">
-                            <div class="p-col-2">Login*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                        <div class="grid">
+                            <div class="col-2">Login*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <input
                                             pInputText
                                             type="text"
@@ -191,7 +191,7 @@
                                             pattern="[a-zA-Z0-9_]*"
                                         />
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Login must only contain letters, digits, or underscore"
@@ -203,11 +203,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">Email:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">Email:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <input
                                             pInputText
                                             type="text"
@@ -216,7 +216,7 @@
                                             id="usermail"
                                         />
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Email is incorrect"
@@ -229,11 +229,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">First name*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">First name*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <input
                                             pInputText
                                             type="text"
@@ -243,7 +243,7 @@
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Firstname is invalid"
@@ -256,11 +256,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">Last name*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">Last name*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <input
                                             pInputText
                                             type="text"
@@ -270,7 +270,7 @@
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Lastname is invalid"
@@ -283,11 +283,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">Group*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">Group*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <p-dropdown
                                             [options]="userGroups"
                                             formControlName="usergroup"
@@ -295,7 +295,7 @@
                                             [style]="{ width: '14em' }"
                                         ></p-dropdown>
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Please select a group"
@@ -308,11 +308,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">Password*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">Password*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <p-password
                                             formControlName="userpassword"
                                             inputId="userpassword"
@@ -321,7 +321,7 @@
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
                                         ></p-password>
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long"
@@ -334,11 +334,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col-2">Repeat password*:</div>
-                            <div class="p-col-7">
-                                <div class="p-grid">
-                                    <div class="p-col-12">
+                            <div class="col-3"></div>
+                            <div class="col-2">Repeat password*:</div>
+                            <div class="col-7">
+                                <div class="grid">
+                                    <div class="col-12">
                                         <p-password
                                             [feedback]="false"
                                             formControlName="userpassword2"
@@ -348,7 +348,7 @@
                                             pattern="{{ userform.controls['userpassword'].value }}"
                                         ></p-password>
                                     </div>
-                                    <div class="p-col-12">
+                                    <div class="col-12">
                                         <p-message
                                             severity="error"
                                             text="Passwords must match"
@@ -360,8 +360,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-3"></div>
-                            <div class="p-col">
+                            <div class="col-3"></div>
+                            <div class="col">
                                 <button
                                     type="submit"
                                     pButton
@@ -373,7 +373,7 @@
                                     (click)="userFormSave()"
                                 ></button>
                             </div>
-                            <div class="p-col p-offset">
+                            <div class="col col-offset">
                                 <button
                                     type="submit"
                                     pButton
@@ -385,7 +385,7 @@
                                     (click)="userFormCancel()"
                                 ></button>
                             </div>
-                            <div class="p-col-9"></div>
+                            <div class="col-9"></div>
                         </div>
                     </p-panel>
                 </form>

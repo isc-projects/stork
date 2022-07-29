@@ -28,7 +28,7 @@
         "moment": "^2.29.4",
         "moment-timezone": "^0.5.33",
         "path": "^0.12.7",
-        "primeflex": "^2.0.0",
+        "primeflex": "^3.0.1",
         "primeicons": "^5.0.0",
         "primeng": "^13.3.3",
         "rxjs": "~6.5.5",

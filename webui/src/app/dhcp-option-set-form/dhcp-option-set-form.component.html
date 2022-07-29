@@ -1,6 +1,6 @@
 <div
     *ngFor="let fieldControl of formArray.controls; let i = index; let last = last"
-    class="{{ last ? 'p-mb-0' : 'p-mb-4' }}"
+    class="{{ last ? 'mb-0' : 'mb-4' }}"
 >
     <app-dhcp-option-form
         [v6]="v6"
@@ -14,7 +14,7 @@
     <button
         *ngIf="formArray.length === 0; else nonEmptyFormArray"
         pButton
-        class="p-button-text p-button-sm p-ml-0"
+        class="p-button-text p-button-sm ml-0"
         label="Add Option"
         type="button"
         (click)="notifyOptionAdded()"
@@ -24,7 +24,7 @@
             pRipple
             pButton
             label="Add More Options"
-            class="p-button-text p-button-sm p-ml-0"
+            class="p-button-text p-button-sm ml-0"
             type="button"
             (click)="notifyOptionAdded()"
         ></button>

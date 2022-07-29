@@ -8,35 +8,35 @@
     </div>
 </app-breadcrumbs>
 
-<div class="p-grid p-mt-2">
-    <div class="p-col-fixed p-ml-2" style="width: 200px">
+<div class="grid mt-2">
+    <div class="col-fixed ml-2" style="width: 200px">
         <app-settings-menu></app-settings-menu>
     </div>
-    <div class="p-col p-ml-2">
+    <div class="col ml-2">
         <p-panel header="{{ this.profilePanelHeader }}">
-            <div class="p-grid">
-                <div class="p-col-1">
+            <div class="grid">
+                <div class="col-1">
                     <b>ID:</b>
                 </div>
-                <div class="p-col-11">
+                <div class="col-11">
                     {{ currentUser.id }}
                 </div>
-                <div class="p-col-1">
+                <div class="col-1">
                     <b>Login:</b>
                 </div>
-                <div class="p-col-11">
+                <div class="col-11">
                     {{ currentUser.username }}
                 </div>
-                <div class="p-col-1">
+                <div class="col-1">
                     <b>Email:</b>
                 </div>
-                <div class="p-col-11">
+                <div class="col-11">
                     {{ currentUser.email ? currentUser.email : '(not specified)' }}
                 </div>
-                <div class="p-col-1">
+                <div class="col-1">
                     <b>Group:</b>
                 </div>
-                <div class="p-col-11">
+                <div class="col-11">
                     {{ groupName }}
                 </div>
             </div>

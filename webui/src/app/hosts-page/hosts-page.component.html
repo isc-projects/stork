@@ -36,7 +36,7 @@
 </p-tabMenu>
 
 <div *ngIf="activeTabIndex === 0; else openedTabBlock" style="margin: 10px">
-    <div class="p-mb-3" style="display: flex; justify-content: space-between">
+    <div class="mb-3" style="display: flex; justify-content: space-between">
         <div>
             <span>
                 <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
@@ -88,7 +88,7 @@
             </span>
         </div>
         <div>
-            <div class="p-d-flex">
+            <div class="flex">
                 <div>
                     <a
                         label="New Host"
@@ -104,7 +104,7 @@
                     <p-button
                         label="Refresh List"
                         icon="pi pi-refresh"
-                        styleClass="p-d-block p-button-primary no-underline p-ml-2"
+                        styleClass="block p-button-primary no-underline ml-2"
                         (onClick)="loadHosts()"
                     ></p-button>
                 </div>

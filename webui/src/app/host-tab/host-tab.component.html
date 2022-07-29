@@ -1,6 +1,6 @@
 <p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
-<div *ngIf="host" class="p-grid" style="margin: 10px">
-    <div class="p-col-12">
+<div *ngIf="host" class="grid" style="margin: 10px">
+    <div class="col-12">
         <div style="font-size: 1.2em; font-weight: bold; margin-left: 10px; color: #007ad9">
             <i class="fa fa-laptop" style="padding-right: 10px"></i>
             <span id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
@@ -10,7 +10,7 @@
         </div>
     </div>
     <ng-container *ngIf="erredApps && erredApps.length > 0">
-        <div class="p-col-4">
+        <div class="col-4">
             <p-messages id="erred-apps-message" [closable]="false" severity="warn">
                 <ng-template pTemplate>
                     <div>
@@ -27,14 +27,14 @@
                 </ng-template>
             </p-messages>
         </div>
-        <div class="p-col-8"></div>
+        <div class="col-8"></div>
     </ng-container>
-    <div class="p-col-4">
-        <div class="p-grid">
+    <div class="col-4">
+        <div class="grid">
             <ng-container
                 *ngFor="let reservations of [host.addressReservations, host.prefixReservations]; let i = index"
             >
-                <div *ngIf="reservations && reservations.length > 0" class="p-col-12">
+                <div *ngIf="reservations && reservations.length > 0" class="col-12">
                     <p-fieldset id="{{ ipReservationsStatics[i].id }}" legend="{{ ipReservationsStatics[i].legend }}">
                         <p-table [value]="reservations" dataKey="address">
                             <ng-template pTemplate="body" let-r let-expanded="expanded">
@@ -115,7 +115,7 @@
                     </p-fieldset>
                 </div>
             </ng-container>
-            <div *ngIf="host.hostname && host.hostname.length > 0" class="p-col-12">
+            <div *ngIf="host.hostname && host.hostname.length > 0" class="col-12">
                 <p-fieldset id="non-ip-reservations-fieldset" legend="Non-IP Reservations">
                     <table style="width: 100%">
                         <tr>
@@ -125,7 +125,7 @@
                     </table>
                 </p-fieldset>
             </div>
-            <div class="p-col-12">
+            <div class="col-12">
                 <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
                     <p-table [value]="host.hostIdentifiers">
                         <ng-template pTemplate="body" let-i>
@@ -144,7 +144,7 @@
             </div>
         </div>
     </div>
-    <div class="p-col-4">
+    <div class="col-4">
         <p-fieldset id="apps-fieldset" legend="Kea Apps using the reservations">
             <p-table [value]="host.localHosts">
                 <ng-template pTemplate="body" let-l>
@@ -161,8 +161,8 @@
             </p-table>
         </p-fieldset>
     </div>
-    <div class="p-col-4"></div>
-    <div class="p-col-12 p-d-flex">
+    <div class="col-4"></div>
+    <div class="col-12 flex">
         <div>
             <button
                 type="button"
@@ -171,7 +171,7 @@
                 label="Leases"
                 id="refresh-app-button"
                 icon="pi pi-refresh"
-                class="p-mr-2"
+                class="mr-2"
                 (click)="refreshLeases()"
             ></button>
         </div>
