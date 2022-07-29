@@ -17,7 +17,7 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 # Prompt for CloudSmith access token
 usage()
 {
-    echo "Usage: start-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ CLOUD_SMITH_ACCESS_TOKEN ]"
+    echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ CLOUD_SMITH_ACCESS_TOKEN ]"
     echo "You can also set the access token using environment variable CS_REPO_ACCESS_TOKEN."
     exit 2
 }
@@ -35,7 +35,7 @@ logo()
 }
 
 # Parse arguments
-PARSED_ARGUMENTS=$(getopt -a -n start-demo -o fs --long no-prompt,stop -- "$@")
+PARSED_ARGUMENTS=$(getopt -a -n stork-demo -o fs --long no-prompt,stop -- "$@")
 
 eval set -- "$PARSED_ARGUMENTS"
 NO_PROMPT=0
@@ -131,5 +131,5 @@ then
     echo "Traffic simulator: http://127.0.0.1:5000"
     echo "Default username: admin password: admin"
     echo ""
-    echo "Use './start-demo.sh --stop' to shutdown the demo"
+    echo "Use './stork-demo.sh --stop' to shutdown the demo"
 fi
