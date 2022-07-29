@@ -1,3 +1,8 @@
+* 230 [bug] slawek
+
+    Fixed a problem with running the demo by shell script on macOS.
+    (Gitlab #824)
+
 * 229 [bug] slawek
 
     Corrected a bug in the host puller, causing the Stork Server not to notice
