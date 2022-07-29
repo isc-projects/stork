@@ -1829,15 +1829,10 @@ func TestUpdateHost(t *testing.T) {
 
 		switch i {
 		case 0:
-			require.EqualValues(t, "hw-address", host.HostIdentifiers[0].Type)
-			require.EqualValues(t, "01:02:03:04:05:06", host.HostIdentifiers[0].ToHex(":"))
-			require.EqualValues(t, "", host.Hostname)
-			require.EqualValues(t, "fe80::1/128", host.IPReservations[0].Address)
+			testHost(t, host, "01:02:03:04:05:06", "fe80::1/128")
 		case 1:
-			require.EqualValues(t, "hw-address", host.HostIdentifiers[0].Type)
-			require.EqualValues(t, "01:02:03:04:05:06", host.HostIdentifiers[0].ToHex(":"))
+			testHost(t, host, "01:02:03:04:05:06", "fe80::1/128")
 			require.EqualValues(t, "foo.bar", host.Hostname)
-			require.EqualValues(t, "fe80::1/128", host.IPReservations[0].Address)
 		}
 	}
 }
