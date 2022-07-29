@@ -173,6 +173,7 @@ func newDispatchGroup() *dispatchGroup {
 }
 
 func (g *dispatchGroup) appendChecker(checker *checker) {
+	g.checkers = append(g.checkers, checker)
 	for _, trigger := range checker.triggers {
 		if _, ok := g.triggerRefCounts[trigger]; !ok {
 			g.triggerRefCounts[trigger] = 0
