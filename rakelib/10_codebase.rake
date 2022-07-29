@@ -175,6 +175,13 @@ file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] d
 
     Dir.chdir("webui") do
         ENV["NG_CLI_ANALYTICS"] = "false"
+
+        if OS == "OpenBSD"
+            # The clang++ is required but instead what is actually used is g++.
+            # See: https://obsd.solutions/en/blog/2022/02/23/node-sass-build-fails-on-openbsd-how-to-fix/
+            ENV["CXX"] = which("clang++")
+        end
+
         sh NPM, "ci",
                 "--prefer-offline",
                 *ci_opts
@@ -240,6 +247,10 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the codebase'
     task :codebase do
-        check_deps(__FILE__, "wget", "python3", "java", "unzip")
+        system_specific_deps = []
+        if OS == "OpenBSD"
+            system_specific_deps.append "clang++"
+        end
+        check_deps(__FILE__, "wget", "python3", "java", "unzip", *system_specific_deps)
     end
 end

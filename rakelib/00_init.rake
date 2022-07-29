@@ -290,7 +290,6 @@ yamlinc_ver='0.1.10'
 node_ver='14.18.2'
 dlv_ver='v1.8.3'
 gdlv_ver='v1.8.0'
-sphinx_ver='4.4.0'
 bundler_ver='2.3.8'
 
 # System-dependent variables
@@ -692,7 +691,11 @@ end
 
 desc 'Check all system-level dependencies'
 task :check do
+    system_specific_deps = []
+    if OS == "OpenBSD"
+        system_specific_deps.append "clang++"
+    end
     check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr", "git",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
-        "docker", "openssl", "gem", "make", "gcc", "tar")
+        "docker", "openssl", "gem", "make", "gcc", "tar", *system_specific_deps)
 end

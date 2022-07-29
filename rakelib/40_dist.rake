@@ -352,6 +352,11 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
     task :dist do
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make", "gcc", "tar")
+        system_specific_deps = []
+        if OS == "OpenBSD"
+            system_specific_deps.append "clang++"
+        end
+        check_deps(__FILE__, "wget", "python3", "java", "unzip", "gem", "make",
+                    "gcc", "tar", *system_specific_deps)
     end
 end
