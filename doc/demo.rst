@@ -51,11 +51,11 @@ password is necessary. It then prepares Docker images and starts them.
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.
 
-The ``start-demo.sh`` script can be used to start the demo without the Ruby toolkit:
+The ``stork-demo.sh`` script can be used to start the demo without the Ruby toolkit:
 
 .. code-block:: console
 
-   $ ./start-demo.sh
+   $ ./stork-demo.sh
 
 Premium Features
 ~~~~~~~~~~~~~~~~

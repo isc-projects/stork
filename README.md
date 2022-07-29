@@ -17,7 +17,7 @@ or the [Stork wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home).
 
 The easiest way to run Stork is to install it using
 [RPM and deb packages](https://stork.readthedocs.io/en/latest/install.html#installing-from-packages).
-The second easiest way is to use Docker (`rake demo:up` or `./start-demo.sh`). However, it is
+The second easiest way is to use Docker (`rake demo:up` or `./stork-demo.sh`). However, it is
 possible to run Stork without Docker. See the Installation section of the Stork ARM.
 
 # Reporting Issues
