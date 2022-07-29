@@ -1,3 +1,10 @@
+* 229 [bug] slawek
+
+    Corrected a bug in the host puller, causing the Stork Server not to notice
+    an update in the reserved hostnames in Kea configuration when neither an
+    IP address nor DHCP identifier has been changed.
+    (Gitlab #814)
+
 * 228 [build] marcin
 
     Migrated to PrimeFlex 3.0.1.
