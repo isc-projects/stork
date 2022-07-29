@@ -1704,8 +1704,8 @@ func TestHostIteratorTrace(t *testing.T) {
 	require.False(t, trace2.hasEqualHashes(trace0))
 }
 
-// Test that host reservation is updated if the identifier or IP address
-// doesn't change.
+// Test that host reservation is updated when DHCP identifiers and IP
+// addresses remain unchanged, but the hostname changes.
 func TestUpdateHost(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
