@@ -35,7 +35,16 @@ logo()
 }
 
 # Parse arguments
-PARSED_ARGUMENTS=$(getopt -a -n stork-demo -o fs --long no-prompt,stop -- "$@")
+set +e
+PARSED_ARGUMENTS=$(getopt -o fsh --long no-prompt,stop,help -- "$@")
+parse_status=$?
+set -e
+
+if [ ${parse_status} -ne 0 ]
+then
+    usage
+    exit ${parse_status}
+fi
 
 eval set -- "$PARSED_ARGUMENTS"
 NO_PROMPT=0
@@ -46,6 +55,7 @@ do
   case "$1" in
     -f | --no-prompt)   NO_PROMPT=1      ; shift   ;;
     -s | --stop)        STOP=1           ; shift   ;;
+    -h | --help)        usage            ; exit 2  ;;
     # -- means the end of the arguments; drop this, and break out of the while loop
     --) shift; break ;;
     # If invalid options were passed, then getopt should have reported an error,
