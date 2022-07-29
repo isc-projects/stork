@@ -1,3 +1,8 @@
+* 228 [build] marcin
+
+    Migrated to PrimeFlex 3.0.1.
+    (Gitlab #731)
+
 Stork 1.5.0 released on 2022-07-13.
 
 * 227 [bug] slawek
