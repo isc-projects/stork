@@ -19,7 +19,6 @@ usage()
 {
     echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ CLOUD_SMITH_ACCESS_TOKEN ]"
     echo "You can also set the access token using environment variable CS_REPO_ACCESS_TOKEN."
-    exit 2
 }
 
 logo()
@@ -55,13 +54,13 @@ do
   case "$1" in
     -f | --no-prompt)   NO_PROMPT=1      ; shift   ;;
     -s | --stop)        STOP=1           ; shift   ;;
-    -h | --help)        usage            ; exit 2  ;;
+    -h | --help)        usage            ; exit 0  ;;
     # -- means the end of the arguments; drop this, and break out of the while loop
     --) shift; break ;;
     # If invalid options were passed, then getopt should have reported an error,
     # which we checked as VALID_ARGUMENTS when getopt was called...
     *) echo "Unexpected option: $1 - this should not happen."
-       usage ;;
+       usage ; exit 2 ;;
   esac
 done
 
