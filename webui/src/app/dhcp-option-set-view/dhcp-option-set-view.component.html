@@ -1,0 +1,30 @@
+<p-tree [value]="optionNodes">
+    <ng-template let-node pTemplate="option">
+        <div class="flex p-1">
+            <div class="flex align-items-center font-bold">Option {{ node.data.code }}</div>
+            <div *ngIf="node.data.alwaysSend" class="flex align-items-center ml-2">
+                <p-tag>Always Sent</p-tag>
+            </div>
+            <div class="flex align-items-center">
+                <app-help-tip title="DHCP Option View">
+                    Option fields and suboptions are displayed for option {{ node.data.code }}. Move the cursor over the
+                    option fields to see their types. If the Always Sent tag is shown next to the option code it means
+                    that the option is configured to be always returned to the DHCP client, event when it is not
+                    requested.
+                </app-help-tip>
+            </div>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="suboption">
+        <div class="font-semibold p-1">Suboption {{ node.data.code }}</div>
+    </ng-template>
+    <ng-template let-node pTemplate="fields">
+        <div class="flex" *ngFor="let data of node.data">
+            <div class="flex">
+                <span pTooltip="ipv6-address" class="monospace" [ngStyle]="{ color: 'var(--gray-500)' }">{{
+                    data.value
+                }}</span>
+            </div>
+        </div>
+    </ng-template>
+</p-tree>

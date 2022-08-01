@@ -43,6 +43,7 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { CheckboxModule } from 'primeng/checkbox'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { InputTextareaModule } from 'primeng/inputtextarea'
+import { TreeModule } from 'primeng/tree'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -95,6 +96,7 @@ import { AppOverviewComponent } from './app-overview/app-overview.component'
 import { HostFormComponent } from './host-form/host-form.component'
 import { DhcpOptionFormComponent } from './dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -149,6 +151,7 @@ export function cfgFactory() {
         HostFormComponent,
         DhcpOptionFormComponent,
         DhcpOptionSetFormComponent,
+        DhcpOptionSetViewComponent,
     ],
     imports: [
         BrowserModule,
@@ -195,6 +198,7 @@ export function cfgFactory() {
         CheckboxModule,
         ConfirmDialogModule,
         InputTextareaModule,
+        TreeModule,
     ],
     providers: [
         {
