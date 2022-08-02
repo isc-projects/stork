@@ -21,7 +21,7 @@ func init() {
                     ON DELETE CASCADE
 			);
 
-			CREATE INDEX config_checker_daemon_preference_daemon_checker_idx ON config_checker_daemon_preference (daemon_id, checker_name);
+			CREATE UNIQUE INDEX config_checker_daemon_preference_daemon_checker_idx ON config_checker_daemon_preference (daemon_id, checker_name);
 		`)
 		return err
 	}, func(db migrations.DB) error {
