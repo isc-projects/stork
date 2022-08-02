@@ -45,7 +45,7 @@ func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.Indexed
 // configuration. All existing shared network matching the given configuration
 // are returned as they are. If there is no match a new shared network instance
 // is returned.
-func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (networks []dbmodel.SharedNetwork, err error) {
+func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon *dbmodel.Daemon) (networks []dbmodel.SharedNetwork, err error) {
 	// Get all shared networks and the subnets within those networks from the
 	// application configuration.
 	networkList, ok := config.GetTopLevelList("shared-networks")
@@ -72,7 +72,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 			continue
 		}
 		// Parse the configured network.
-		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family)
+		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family, daemon.ID, dbmodel.HostDataSourceConfig)
 		if err != nil {
 			log.Warnf("Skipping invalid shared network: %v", err)
 			continue
@@ -103,7 +103,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 				} else {
 					// Subnet already exists and may contain some hosts. Let's
 					// merge the hosts from the new subnet into the existing subnet.
-					hosts, err := mergeSubnetHosts(dbi, existingSubnet, &subnet)
+					hosts, err := mergeSubnetHosts(dbi, existingSubnet, &subnet, daemon, dbmodel.HostDataSourceConfig)
 					if err != nil {
 						log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 							subnet.Prefix, err)
@@ -125,7 +125,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) 
 // this configuration. All existing subnets matching the given configuration
 // are returned as they are. If there is no match a new subnet instance is
 // returned.
-func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (subnets []dbmodel.Subnet, err error) {
+func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon *dbmodel.Daemon) (subnets []dbmodel.Subnet, err error) {
 	subnetParamName := "subnet4"
 	if family == 6 {
 		subnetParamName = "subnet6"
@@ -156,7 +156,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (subnet
 	for _, s := range subnetList {
 		if subnetMap, ok := s.(map[string]interface{}); ok {
 			// Parse the configured subnet.
-			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap)
+			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap, daemon.ID, dbmodel.HostDataSourceConfig)
 			if err != nil {
 				log.Warnf("Skipping invalid subnet: %v", err)
 				continue
@@ -164,9 +164,10 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int) (subnet
 			existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
 			if existingSubnet != nil {
 				subnets = append(subnets, *existingSubnet)
+
 				// Subnet already exists and may contain some hosts. Let's
 				// merge the hosts from the new subnet into the existing subnet.
-				hosts, err := mergeSubnetHosts(dbi, existingSubnet, subnet)
+				hosts, err := mergeSubnetHosts(dbi, existingSubnet, subnet, daemon, dbmodel.HostDataSourceConfig)
 				if err != nil {
 					log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 						subnet.Prefix, err)
@@ -203,14 +204,14 @@ func detectDaemonNetworks(dbi dbops.DBI, daemon *dbmodel.Daemon) (networks []dbm
 	}
 
 	// Detect shared networks and the subnets.
-	detectedNetworks, err := detectSharedNetworks(dbi, daemon.KeaDaemon.Config, family)
+	detectedNetworks, err := detectSharedNetworks(dbi, daemon.KeaDaemon.Config, family, daemon)
 	if err != nil {
 		return networks, subnets, err
 	}
 	networks = append(networks, detectedNetworks...)
 
 	// Detect top level subnets.
-	detectedSubnets, err := detectSubnets(dbi, daemon.KeaDaemon.Config, family)
+	detectedSubnets, err := detectSubnets(dbi, daemon.KeaDaemon.Config, family, daemon)
 	if err != nil {
 		return []dbmodel.SharedNetwork{}, subnets, err
 	}

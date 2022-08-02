@@ -676,6 +676,12 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 									Address: "192.0.2.123/32",
 								},
 							},
+							LocalHosts: []LocalHost{
+								{
+									DaemonID:   app.Daemons[0].ID,
+									DataSource: "config",
+								},
+							},
 						},
 					},
 				},
@@ -696,6 +702,12 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					IPReservations: []IPReservation{
 						{
 							Address: "192.0.3.123/32",
+						},
+					},
+					LocalHosts: []LocalHost{
+						{
+							DaemonID:   app.Daemons[0].ID,
+							DataSource: "config",
 						},
 					},
 				},

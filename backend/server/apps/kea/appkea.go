@@ -484,7 +484,7 @@ func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Eve
 func deleteDaemonAssociations(tx *pg.Tx, daemon *dbmodel.Daemon) error {
 	// Remove associations between the daemon and the existing hosts.
 	// We will recreate the associations using new configuration.
-	_, err := dbmodel.DeleteDaemonFromHosts(tx, daemon.ID, "config")
+	_, err := dbmodel.DeleteDaemonFromHosts(tx, daemon.ID, dbmodel.HostDataSourceConfig)
 	if err != nil {
 		return err
 	}
@@ -655,7 +655,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
-			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, "config"); err != nil {
+			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, dbmodel.HostDataSourceConfig); err != nil {
 				return err
 			}
 

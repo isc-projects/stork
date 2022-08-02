@@ -133,7 +133,7 @@ func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
 
 // Converts a structure holding subnet in Kea format to Stork representation
 // of the subnet.
-func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
+func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemonID int64, source HostDataSource) (*Subnet, error) {
 	convertedSubnet := &Subnet{
 		Prefix:      keaSubnet.Subnet,
 		ClientClass: keaSubnet.ClientClass,
@@ -155,7 +155,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 		convertedSubnet.PrefixPools = append(convertedSubnet.PrefixPools, *prefixPool)
 	}
 	for _, r := range keaSubnet.Reservations {
-		host, err := NewHostFromKeaConfigReservation(r)
+		host, err := NewHostFromKeaConfigReservation(r, daemonID, source)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +190,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 // Creates new shared network instance from the pointer to the map of interfaces.
 // The family designates if the shared network contains IPv4 (if 4) or IPv6 (if 6)
 // subnets. If none of the subnets match this value, an error is returned.
-func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*SharedNetwork, error) {
+func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int, daemonID int64, source HostDataSource) (*SharedNetwork, error) {
 	var parsedSharedNetwork KeaConfigSharedNetwork
 	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
 	newSharedNetwork := &SharedNetwork{
@@ -201,7 +201,7 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*S
 	for _, subnetList := range [][]KeaConfigSubnet{parsedSharedNetwork.Subnet4, parsedSharedNetwork.Subnet6} {
 		for _, s := range subnetList {
 			keaSubnet := s
-			subnet, err := convertSubnetFromKea(&keaSubnet)
+			subnet, err := convertSubnetFromKea(&keaSubnet, daemonID, source)
 			if err == nil {
 				if subnet.GetFamily() != family {
 					return nil, errors.Errorf("no matching family of the subnet %s with the shared network %s",
@@ -223,15 +223,15 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*S
 }
 
 // Creates new subnet instance from the pointer to the map of interfaces.
-func NewSubnetFromKea(rawSubnet *map[string]interface{}) (*Subnet, error) {
+func NewSubnetFromKea(rawSubnet *map[string]interface{}, daemonID int64, source HostDataSource) (*Subnet, error) {
 	var parsedSubnet KeaConfigSubnet
 	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
-	return convertSubnetFromKea(&parsedSubnet)
+	return convertSubnetFromKea(&parsedSubnet, daemonID, source)
 }
 
 // Creates new host instance from the host reservation extracted from the
 // Kea configuration.
-func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation) (*Host, error) {
+func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemonID int64, source HostDataSource) (*Host, error) {
 	var host Host
 	host.Hostname = reservation.Hostname
 	structType := reflect.TypeOf(reservation)
@@ -276,20 +276,25 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation) (*Host, 
 			})
 		}
 	}
-	// Finally, take the IPv4 reservation.
+	// Take the IPv4 reservation.
 	if len(reservation.IPAddress) > 0 {
 		host.IPReservations = append(host.IPReservations, IPReservation{
 			Address: strings.TrimSpace(reservation.IPAddress),
 		})
 	}
+	// Finally, store server specific host information.
+	host.LocalHosts = append(host.LocalHosts, LocalHost{
+		DaemonID:   daemonID,
+		DataSource: source,
+	})
 	return &host, nil
 }
 
 // Creates new host instance from the pointer to the map of interfaces.
-func NewHostFromKea(rawHost *map[string]interface{}) (*Host, error) {
+func NewHostFromKea(rawHost *map[string]interface{}, daemonID int64, source HostDataSource) (*Host, error) {
 	var parsedHost keaconfig.Reservation
 	_ = mapstructure.Decode(rawHost, &parsedHost)
-	return NewHostFromKeaConfigReservation(parsedHost)
+	return NewHostFromKeaConfigReservation(parsedHost, daemonID, source)
 }
 
 // Creates log targets from Kea logger configuration. The Kea logger configuration

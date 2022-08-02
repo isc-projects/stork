@@ -244,10 +244,12 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 			Hostname: "example.org",
 			LocalHosts: []*models.LocalHost{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: "api",
 				},
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: "api",
 				},
 			},
 		},
@@ -457,7 +459,8 @@ func TestCreateHostSubmitError(t *testing.T) {
 			Host: &models.Host{
 				LocalHosts: []*models.LocalHost{
 					{
-						DaemonID: apps[0].Daemons[0].ID,
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: "api",
 					},
 				},
 			},
@@ -479,7 +482,8 @@ func TestCreateHostSubmitError(t *testing.T) {
 			Host: &models.Host{
 				LocalHosts: []*models.LocalHost{
 					{
-						DaemonID: apps[0].Daemons[0].ID,
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: "api",
 					},
 				},
 			},

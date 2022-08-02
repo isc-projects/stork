@@ -57,7 +57,7 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 		localHost := models.LocalHost{
 			AppID:      dbLocalHost.Daemon.AppID,
 			AppName:    dbLocalHost.Daemon.App.Name,
-			DataSource: dbLocalHost.DataSource,
+			DataSource: dbLocalHost.DataSource.String(),
 		}
 		host.LocalHosts = append(host.LocalHosts, &localHost)
 	}
@@ -67,7 +67,6 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 // Convert host reservation from the format used in REST API to a
 // database host representation.
 func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
-	var err error
 	host := &dbmodel.Host{
 		ID:       restHost.ID,
 		SubnetID: restHost.SubnetID,
@@ -90,15 +89,19 @@ func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 	}
 	// Convert local hosts containing associations of the host with daemons.
 	for _, lh := range restHost.LocalHosts {
+		ds, err := dbmodel.CreateHostDataSource(lh.DataSource)
+		if err != nil {
+			return nil, err
+		}
 		localHost := dbmodel.LocalHost{
 			DaemonID:   lh.DaemonID,
-			DataSource: lh.DataSource,
+			DataSource: ds,
 		}
 		localHost.DHCPOptionSet, err = flattenDHCPOptions("", lh.Options)
 		if err != nil {
 			return nil, err
 		}
-		host.LocalHosts = append(host.LocalHosts, localHost)
+		host.SetLocalHost(&localHost)
 	}
 	return host, nil
 }

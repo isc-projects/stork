@@ -16,6 +16,29 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Source of the host information, i.e. configuration file or API (host_cmds).
+type HostDataSource string
+
+const (
+	HostDataSourceConfig HostDataSource = "config"
+	HostDataSourceAPI    HostDataSource = "api"
+)
+
+// Converts HostDataSource to string.
+func (s HostDataSource) String() string {
+	return string(s)
+}
+
+// Creates HostDataSource instance from string. It returns an error
+// when specified string is neither "api" nor "config".
+func CreateHostDataSource(s string) (hds HostDataSource, err error) {
+	hds = HostDataSource(s)
+	if hds != HostDataSourceConfig && hds != HostDataSourceAPI {
+		err = pkgerrors.Errorf("unsupported host data source %s", s)
+	}
+	return
+}
+
 // This structure reflects a row in the host_identifier table. It includes
 // a value and type of the identifier used to match the client with a host. The
 // following types are available: hw-address, duid, circuit-id, client-id
@@ -60,12 +83,6 @@ type Host struct {
 	IPReservations  []IPReservation  `pg:"rel:has-many"`
 
 	LocalHosts []LocalHost `pg:"rel:has-many"`
-
-	// This flag is used to indicate that some changes have been applied to
-	// the Host instance locally and that these changes should be applied in
-	// the database too. It also indicates that the new app should be
-	// associated with the host upon the call to the CommitSubnetHostsIntoDB.
-	UpdateOnCommit bool `pg:"-"`
 }
 
 // This structure links a host entry stored in the database with a daemon from
@@ -76,7 +93,7 @@ type LocalHost struct {
 	DaemonID   int64   `pg:",pk"`
 	Daemon     *Daemon `pg:"rel:has-one"`
 	Host       *Host   `pg:"rel:has-one"`
-	DataSource string
+	DataSource HostDataSource
 
 	DHCPOptionSet     []DHCPOption
 	DHCPOptionSetHash string
@@ -324,7 +341,7 @@ func GetHostsBySubnetID(dbi dbops.DBI, subnetID int64) ([]Host, error) {
 
 // Fetches a collection of hosts by daemon ID and optionally filters by a
 // data source.
-func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Host, int64, error) {
+func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := dbi.Model(&hosts).
 		Join("INNER JOIN local_host AS lh ON host.id = lh.host_id").
@@ -475,7 +492,7 @@ func DeleteHost(dbi dbops.DBI, hostID int64) error {
 // perspective. The source argument indicates whether the host
 // information was fetched from the daemon's configuration or via the
 // command.
-func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string) error {
+func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source HostDataSource) error {
 	localHost := LocalHost{
 		HostID:     host.ID,
 		DaemonID:   daemonID,
@@ -497,7 +514,7 @@ func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string) error
 // Associates a daemon with the host having a specified ID.
 // It begins a new transaction when dbi has a *pg.DB type or uses an
 // existing transaction when dbi has a *pg.Tx type.
-func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source string) error {
+func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source HostDataSource) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			return addDaemonToHost(tx, host, daemonID, source)
@@ -510,7 +527,7 @@ func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source string) e
 // source from which the deleted hosts were fetched. If it is an empty value
 // the hosts from all sources are deleted. The first returned value indicates
 // if any row was removed from the local_host table.
-func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource string) (int64, error) {
+func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource HostDataSource) (int64, error) {
 	q := dbi.Model((*LocalHost)(nil)).
 		Where("daemon_id = ?", daemonID)
 
@@ -544,30 +561,37 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 }
 
 // Iterates over the list of hosts and commits them into the database. The hosts
-// can be associated with a subnet or can be made global.
-func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon, source string) (err error) {
+// can be associated with a subnet or can be made global. The committed hosts
+// must already include associations with the daemons and other information
+// specific to daemons, e.g., DHCP options.
+func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon, source HostDataSource) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
-		newHost := (hosts[i].ID == 0)
-		if newHost {
+		if hosts[i].ID == 0 {
 			err = AddHost(dbi, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
-		} else if hosts[i].UpdateOnCommit {
+		} else {
 			err = UpdateHost(dbi, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
-		if newHost || hosts[i].UpdateOnCommit {
-			err = AddDaemonToHost(dbi, &hosts[i], daemon.ID, source)
+		for j := range hosts[i].LocalHosts {
+			hosts[i].LocalHosts[j].HostID = hosts[i].ID
+			q := dbi.Model(&hosts[i].LocalHosts[j]).
+				OnConflict("(daemon_id, host_id) DO UPDATE").
+				Set("data_source = EXCLUDED.data_source").
+				Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
+				Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
+
+			_, err := q.Insert()
 			if err != nil {
-				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having ID %d",
-					daemon.ID)
-				return err
+				return pkgerrors.Wrapf(err, "problem associating the daemon %d with the host %d",
+					hosts[i].LocalHosts[j].DaemonID, hosts[i].ID)
 			}
 		}
 	}
@@ -575,7 +599,7 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daem
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source string) (err error) {
+func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source HostDataSource) (err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			return commitHostsIntoDB(dbi, hosts, 0, daemon, source)
@@ -587,7 +611,7 @@ func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source string) (err error) {
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source HostDataSource) (err error) {
 	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, daemon, source)
 }
 
@@ -650,8 +674,10 @@ func (host Host) HasEqualIPReservations(other *Host) bool {
 	return true
 }
 
-// Checks if two hosts are equal.
-func (host Host) Equal(other *Host) bool {
+// Checks if two Host instances describe the same host. The host is
+// the same when it has equal host identifiers, IP reservations and
+// hostname.
+func (host Host) IsSame(other *Host) bool {
 	if len(host.HostIdentifiers) != len(other.HostIdentifiers) {
 		return false
 	}
@@ -965,6 +991,34 @@ func (host *Host) PopulateSubnet(dbi dbops.DBI) error {
 			return pkgerrors.Errorf("problem with populating subnet %d for host %d because such subnet does not exist", host.SubnetID, host.ID)
 		}
 		host.Subnet = subnet
+	}
+	return nil
+}
+
+// Sets LocalHost instance for the Host. If the corresponding LocalHost
+// (having the same daemon ID) already exists, it is replaced with the
+// specified instance. Otherwise, the instance is appended to the slice
+// of LocalHosts.
+func (host *Host) SetLocalHost(localHost *LocalHost) {
+	for i, lh := range host.LocalHosts {
+		if lh.DaemonID == localHost.DaemonID {
+			host.LocalHosts[i] = *localHost
+			return
+		}
+	}
+	host.LocalHosts = append(host.LocalHosts, *localHost)
+}
+
+// Combines two hosts into a single host by copying LocalHost data from
+// the other host. It returns an error if the instances are not pointing
+// to the same host, i.e., they have different identifiers, IP reservations
+// or hostnames.
+func (host *Host) Join(other *Host) error {
+	if !host.IsSame(other) {
+		return pkgerrors.New("unable to join not the same hosts")
+	}
+	for i := range other.LocalHosts {
+		host.SetLocalHost(&other.LocalHosts[i])
 	}
 	return nil
 }

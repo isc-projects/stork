@@ -49,6 +49,11 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 			{
 				"id":     1,
 				"subnet": "2001:db8:2::/64",
+				"reservations": []interface{}{
+					map[string]interface{}{
+						"hw-address": "01:02:03:04:05:06",
+					},
+				},
 			},
 			{
 				"id":     2,
@@ -57,7 +62,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		},
 	}
 
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6)
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, 123, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
@@ -68,6 +73,8 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 	require.Equal(t, "2001:db8:2::/64", parsedNetwork.Subnets[0].Prefix)
 	require.Zero(t, parsedNetwork.Subnets[1].ID)
 	require.Equal(t, "2001:db8:1::/64", parsedNetwork.Subnets[1].Prefix)
+
+	require.Len(t, parsedNetwork.Subnets[0].Hosts, 1)
 }
 
 // Test that subnets within a shared network are verified to catch
@@ -89,7 +96,7 @@ func TestNewSharedNetworkFromKeaFamilyClash(t *testing.T) {
 		},
 	}
 
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4)
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, 1, HostDataSourceConfig)
 	require.Error(t, err)
 	require.Nil(t, parsedNetwork)
 }
@@ -138,7 +145,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 	}
 
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet)
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, 234, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
 	require.Zero(t, parsedSubnet.ID)
@@ -163,6 +170,11 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Equal(t, "2001:db8:1::2", parsedSubnet.Hosts[0].IPReservations[1].Address)
 	require.Equal(t, "3000:1::/64", parsedSubnet.Hosts[0].IPReservations[2].Address)
 	require.Equal(t, "3000:2::/64", parsedSubnet.Hosts[0].IPReservations[3].Address)
+
+	require.Len(t, parsedSubnet.Hosts[0].LocalHosts, 1)
+	require.Equal(t, parsedSubnet.Hosts[0].ID, parsedSubnet.Hosts[0].LocalHosts[0].HostID)
+	require.EqualValues(t, 234, parsedSubnet.Hosts[0].LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, parsedSubnet.Hosts[0].LocalHosts[0].DataSource)
 }
 
 // Verifies that the host instance can be created by parsing Kea
@@ -181,7 +193,7 @@ func TestNewHostFromKea(t *testing.T) {
 		"hostname": "hostname.example.org",
 	}
 
-	parsedHost, err := NewHostFromKea(&rawHost)
+	parsedHost, err := NewHostFromKea(&rawHost, 123, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedHost)
 
@@ -193,6 +205,10 @@ func TestNewHostFromKea(t *testing.T) {
 	require.Equal(t, "3000:1::/64", parsedHost.IPReservations[2].Address)
 	require.Equal(t, "3000:2::/64", parsedHost.IPReservations[3].Address)
 	require.Equal(t, "hostname.example.org", parsedHost.Hostname)
+	require.Len(t, parsedHost.LocalHosts, 1)
+	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
+	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
 }
 
 // Test that log targets can be created from parsed Kea logger config.

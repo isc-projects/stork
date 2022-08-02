@@ -686,7 +686,7 @@ func TestGetHostsByDaemonID(t *testing.T) {
 			(returned[0].ID == hosts[3].ID && returned[1].ID == hosts[2].ID))
 
 	// Use filtering by data source. It should return no hosts.
-	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "config")
+	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, returned)
@@ -745,7 +745,7 @@ func TestAddDaemonToHost(t *testing.T) {
 	// Make sure that the host includes the local host information which
 	// associates daemon with the host.
 	require.Len(t, returned.LocalHosts, 1)
-	require.Equal(t, "api", returned.LocalHosts[0].DataSource)
+	require.Equal(t, HostDataSourceAPI, returned.LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returned.LocalHosts[0].DaemonID)
 	// When fetching one selected host the daemon and app information should
 	// be also returned.
@@ -757,7 +757,7 @@ func TestAddDaemonToHost(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedList, 4)
 	require.Len(t, returnedList[0].LocalHosts, 1)
-	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
+	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
 	// When fetching all hosts, the detailed daemon information should not be returned.
 	require.Nil(t, returnedList[0].LocalHosts[0].Daemon)
@@ -769,7 +769,7 @@ func TestAddDaemonToHost(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, returnedList, 1)
 	require.Len(t, returnedList[0].LocalHosts, 1)
-	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
+	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
 	// When fetching all hosts, the detailed app and daemon information
 	// should be returned as well.
@@ -787,24 +787,24 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first app with two hosts.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Associate the second app with another host.
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Removing associations with non-matching data source should
 	// affect no hosts.
-	count, err := DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, "config")
+	count, err := DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.Zero(t, count)
 
 	// Remove associations of the first app.
-	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, "api")
+	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
 
@@ -832,7 +832,7 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 
 	// Associate one of the hosts with one of the daemons. The
 	// other two hosts are orphaned.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Delete hosts not assigned to any apps.
@@ -920,9 +920,9 @@ func TestHasIdentifier(t *testing.T) {
 	require.False(t, host.HasIdentifierType("duid"))
 }
 
-// Test the functions which compares two hosts for equality and which
+// Test the function that checks if two hosts are the same and which
 // compare IP reservations for equality.
-func TestHostsEqual(t *testing.T) {
+func TestSameHosts(t *testing.T) {
 	host1 := Host{
 		HostIdentifiers: []HostIdentifier{
 			{
@@ -965,8 +965,8 @@ func TestHostsEqual(t *testing.T) {
 		},
 	}
 
-	require.True(t, host1.Equal(&host2))
-	require.True(t, host2.Equal(&host1))
+	require.True(t, host1.IsSame(&host2))
+	require.True(t, host2.IsSame(&host1))
 	require.True(t, host1.HasEqualIPReservations(&host2))
 	require.True(t, host2.HasEqualIPReservations(&host1))
 
@@ -978,15 +978,15 @@ func TestHostsEqual(t *testing.T) {
 		Address: "192.0.2.6",
 	})
 
-	require.False(t, host1.Equal(&host2))
-	require.False(t, host2.Equal(&host1))
+	require.False(t, host1.IsSame(&host2))
+	require.False(t, host2.IsSame(&host1))
 	require.False(t, host1.HasEqualIPReservations(&host2))
 	require.False(t, host2.HasEqualIPReservations(&host1))
 
 	host1 = host2
 	host1.Hostname = "foobar"
-	require.False(t, host1.Equal(&host2))
-	require.False(t, host2.Equal(&host1))
+	require.False(t, host1.IsSame(&host2))
+	require.False(t, host2.IsSame(&host1))
 }
 
 func TestHostIdentifierToHex(t *testing.T) {
@@ -1019,6 +1019,12 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 					Address: "192.0.2.56",
 				},
 			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: HostDataSourceAPI,
+				},
+			},
 		},
 		{
 			HostIdentifiers: []HostIdentifier{
@@ -1032,11 +1038,17 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 					Address: "192.0.2.156",
 				},
 			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: HostDataSourceAPI,
+				},
+			},
 		},
 	}
 	// Add the hosts and their associations with the daemon to the database.
 	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0], "api")
+		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0], HostDataSourceAPI)
 	})
 	require.NoError(t, err)
 
@@ -1524,4 +1536,135 @@ func TestPopulateSubnetAlreadyPopulated(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, host.Subnet)
 	require.EqualValues(t, 1234, host.Subnet.ID)
+}
+
+// Test that HostDataSource is created from the string.
+func TestHostDataSource(t *testing.T) {
+	ds, err := CreateHostDataSource("api")
+	require.NoError(t, err)
+	require.Equal(t, HostDataSourceAPI, ds)
+	require.Equal(t, "api", ds.String())
+
+	ds, err = CreateHostDataSource("config")
+	require.NoError(t, err)
+	require.Equal(t, HostDataSourceConfig, ds)
+	require.Equal(t, "config", ds.String())
+}
+
+// Test that invalid string is rejected when creating HostDataSource.
+func TestHostDataSourceError(t *testing.T) {
+	_, err := CreateHostDataSource("unknown")
+	require.Error(t, err)
+}
+
+// Test that LocalHost instance is appended to the Host when there is
+// no corresponding LocalHost, and it is replaced when the corresponding
+// LocalHost exists.
+func TestSetLocalHost(t *testing.T) {
+	host := &Host{}
+
+	// Create new LocalHost instance.
+	host.SetLocalHost(&LocalHost{
+		DaemonID:   123,
+		DataSource: HostDataSourceConfig,
+	})
+	require.Len(t, host.LocalHosts, 1)
+	require.EqualValues(t, 123, host.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
+
+	// Create another one.
+	host.SetLocalHost(&LocalHost{
+		DaemonID:   234,
+		DataSource: HostDataSourceConfig,
+	})
+	require.Len(t, host.LocalHosts, 2)
+	require.EqualValues(t, 123, host.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
+	require.EqualValues(t, 234, host.LocalHosts[1].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
+
+	// Replace the first instance with a new one.
+	host.SetLocalHost(&LocalHost{
+		DaemonID:   123,
+		DataSource: HostDataSourceAPI,
+	})
+	require.Len(t, host.LocalHosts, 2)
+	require.EqualValues(t, 123, host.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
+	require.EqualValues(t, 234, host.LocalHosts[1].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
+}
+
+// Test that two hosts can be joined by copying LocalHost information from
+// one to another.
+func TestJoinHosts(t *testing.T) {
+	host1 := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   123,
+				DataSource: HostDataSourceConfig,
+			},
+		},
+	}
+	host2 := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   234,
+				DataSource: HostDataSourceConfig,
+			},
+		},
+	}
+	err := host1.Join(host2)
+	require.NoError(t, err)
+	require.Len(t, host1.LocalHosts, 2)
+	require.EqualValues(t, 123, host1.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host1.LocalHosts[0].DataSource)
+	require.EqualValues(t, 234, host1.LocalHosts[1].DaemonID)
+	require.Equal(t, HostDataSourceConfig, host1.LocalHosts[1].DataSource)
+}
+
+// Test that an error is returned upon an attempt to join not the same hosts.
+func TestJoinHostsError(t *testing.T) {
+	host1 := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   123,
+				DataSource: HostDataSourceConfig,
+			},
+		},
+	}
+	host2 := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "duid",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   234,
+				DataSource: HostDataSourceConfig,
+			},
+		},
+	}
+	err := host1.Join(host2)
+	require.Error(t, err)
 }

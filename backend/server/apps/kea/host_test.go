@@ -479,7 +479,7 @@ func testHost(t *testing.T, reservation interface{}, identifier string, address 
 		err  error
 	)
 	if r, ok := reservation.(keaconfig.Reservation); ok {
-		host, err = dbmodel.NewHostFromKeaConfigReservation(r)
+		host, err = dbmodel.NewHostFromKeaConfigReservation(r, 0, dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
 	} else {
 		h := reservation.(dbmodel.Host)
@@ -587,16 +587,16 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		require.Zero(t, h.SubnetID)
 		// Each of them has single DHCP identifier.
 		require.Len(t, h.HostIdentifiers, 1)
-		// The hosts are not yet associated with an app.
-		require.Len(t, h.LocalHosts, 0)
+		// The hosts should be associated with the app.
+		require.Len(t, h.LocalHosts, 1)
 	}
 
 	// Commit the hosts into the database.
 	tx, err := db.Begin()
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, app.Daemons[0], "config")
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, app.Daemons[0], dbmodel.HostDataSourceConfig)
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, app.Daemons[1], "config")
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, app.Daemons[1], dbmodel.HostDataSourceConfig)
 	require.NoError(t, err)
 	err = tx.Commit()
 	require.NoError(t, err)

@@ -204,7 +204,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 			// Remove associations between existing host reservations and the
 			// daemon. Some associations will be re-created and some possibly
 			// not. The orphaned hosts will be later removed.
-			if _, err = dbmodel.DeleteDaemonFromHosts(tx, daemon.ID, "api"); err != nil {
+			if _, err = dbmodel.DeleteDaemonFromHosts(tx, daemon.ID, dbmodel.HostDataSourceAPI); err != nil {
 				return true, err
 			}
 
@@ -515,7 +515,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation) (err error) {
 	var hosts []dbmodel.Host
 	for _, reservation := range reservations {
-		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation)
+		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon.ID, dbmodel.HostDataSourceAPI)
 		if err != nil {
 			log.Warnf("Failed to parse the host reservation: %s", err)
 			continue
@@ -529,10 +529,10 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	var mergedHosts []dbmodel.Host
 	// The subnet is nil when we're dealing with the global hosts.
 	if subnet == nil {
-		if mergedHosts, err = mergeHosts(tx, int64(0), hosts, true); err != nil {
+		if mergedHosts, err = mergeHosts(tx, int64(0), hosts, daemon, dbmodel.HostDataSourceAPI); err != nil {
 			return
 		}
-		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, "api"); err != nil {
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, dbmodel.HostDataSourceAPI); err != nil {
 			return
 		}
 		// We're done with global hosts, so let's get the next chunk of
@@ -550,14 +550,14 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	// the subnet with the new hosts (fetched via the Kea API). These
 	// hosts are merged into the existing hosts for this subnet and
 	// returned as mergedHosts.
-	if mergedHosts, err = mergeSubnetHosts(tx, subnet, subnet); err != nil {
+	if mergedHosts, err = mergeSubnetHosts(tx, subnet, subnet, daemon, dbmodel.HostDataSourceAPI); err != nil {
 		return
 	}
 	// Now we have to assign the combined set of existing hosts and
 	// new hosts into the subnet instance and commit everything to the
 	// database.
 	subnet.Hosts = mergedHosts
-	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, "api"); err != nil {
+	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, dbmodel.HostDataSourceAPI); err != nil {
 		return
 	}
 	return nil
@@ -565,14 +565,11 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 
 // Merges global or subnet specific hosts and returns the slice with merged
 // hosts. When subnetID of 0 is specified it indicates that the global hosts
-// are being merged. If the given host already exists in the database and a
-// new host is equal to it, the new host is not added. If none of the existing
-// hosts equals the new host, the new host is appended to the returned slice.
-// The combineHosts boolean flag indicates if the returned hosts are the
-// combination of the existing hosts and new hosts (if true) or only new
-// hosts are returned (if false). This function is called by mergeGlobalHosts
-// and mergeSubnetHosts.
-func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool) (hosts []dbmodel.Host, err error) {
+// are being merged. If the given host already exists in the database the
+// new host is joined to it, i.e., its local host instances are appended.
+// If the host does not exist yet, the new host is appended to the returned
+// slice.
+func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, daemon *dbmodel.Daemon, source dbmodel.HostDataSource) (hosts []dbmodel.Host, err error) {
 	// If there are no new hosts there is nothing to do.
 	if len(newHosts) == 0 {
 		return
@@ -586,32 +583,18 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 	// Merge each new host into the existing hosts.
 	for i := range newHosts {
 		newHost := &newHosts[i]
-		found := false
 		// Iterate over the existing hosts to check if the new hosts are there already.
 		for ie := range existingHosts {
 			host := &existingHosts[ie]
-			if newHost.Equal(host) {
-				// This host already exist. It will be updated.
-				found = true
+			// Joining the hosts will only pass when both instanes point to the
+			// same host. In that case, the resulting host is used instead of the
+			// newHost instance.
+			if err := host.Join(newHost); err == nil {
 				newHost = host
-
-				// Indicate that the host should be updated and that the new app should
-				// be associated with it upon the call to dbmodel.CommitSubnetHostsIntoDB
-				// or dbmodel.CommitGlobalHostsIntoDB.
-				newHost.UpdateOnCommit = true
-
 				break
 			}
 		}
-		if !found || !combineHosts {
-			// Host doesn't exist yet, so let's add it.
-			newHost.UpdateOnCommit = true
-			hosts = append(hosts, *newHost)
-		}
-	}
-	// Also include existing hosts if we're asked to do so.
-	if combineHosts {
-		hosts = append(existingHosts, hosts...)
+		hosts = append(hosts, *newHost)
 	}
 
 	return hosts, err
@@ -619,13 +602,10 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 
 // Merges hosts belonging to the new subnet into the hosts within existing subnet.
 // A host from the new subnet is added to the slice of returned hosts if such
-// host doesn't exist. If the host with exactly the same set of of identifiers
-// and IP reservation exists, it is not added to the slice of returned hosts to
-// avoid duplication. As a result, the returned slice of hosts is a collection of
-// existing hosts plus the hosts from the new subnet which do not exist in the
-// database.
-func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true)
+// host doesn't exist. If the host exists, the new host is joined to it by appending
+// the LocalHost instances.
+func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, daemon *dbmodel.Daemon, source dbmodel.HostDataSource) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, daemon, source)
 }
 
 // For a given Kea daemon it detects host reservations configured in the
@@ -643,7 +623,7 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 		for _, r := range reservationsList {
 			if reservationMap, ok := r.(map[string]interface{}); ok {
 				// Parse the reservation.
-				host, err := dbmodel.NewHostFromKea(&reservationMap)
+				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon.ID, dbmodel.HostDataSourceConfig)
 				if err != nil {
 					log.Warnf("Skipping invalid host reservation: %v", reservationMap)
 					return hosts, err
@@ -653,5 +633,5 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 		}
 	}
 	// Merge new hosts into the existing global hosts.
-	return mergeHosts(dbi, int64(0), hosts, false)
+	return mergeHosts(dbi, int64(0), hosts, daemon, dbmodel.HostDataSourceConfig)
 }
