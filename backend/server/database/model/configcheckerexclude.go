@@ -89,7 +89,7 @@ func RemoveCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDa
 	if len(preferences) == 0 {
 		return nil
 	}
-	_, err := db.Model(&preferences).WherePK().Delete()
+	_, err := db.Model(&preferences).Delete()
 	return pkgerrors.Wrap(err, "problem deleting checker preferences")
 }
 
