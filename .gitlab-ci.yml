@@ -21,7 +21,8 @@ variables:
 # stages order
 stages:
   - checks
-  - artifacts
+  - system_tests
+  - build
   - deploy
 
 # cache
@@ -138,7 +139,7 @@ danger:
     - rake lint:git
 
 tarball:
-  stage: artifacts
+  stage: build
   rules:
     - when: always
   tags:
@@ -157,7 +158,7 @@ tarball:
 
 build_debs:
   extends: .base_build_debian
-  stage: artifacts
+  stage: build
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -169,7 +170,7 @@ build_debs:
 
 build_rpms:
   extends: .base_build_centos
-  stage: artifacts
+  stage: build
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -180,7 +181,7 @@ build_rpms:
     expire_in: 1 hour
 
 build_apks:
-  stage: artifacts
+  stage: build
   rules:
     - when: always
   cache:
@@ -210,7 +211,7 @@ build_apks:
     expire_in: 1 hour
 
 packages:
-  stage: artifacts
+  stage: build
   rules:
     - when: on_success
   needs:
@@ -227,7 +228,7 @@ packages:
 ### system testing ###
 
 system_testing:
-  stage: artifacts
+  stage: system_tests
   allow_failure: false
   tags:
     - linux
