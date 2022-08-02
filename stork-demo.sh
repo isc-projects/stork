@@ -109,7 +109,7 @@ then
 else
     # This variable cannot be empty because it causes the docker-compose fails.
     # The below line sets any default value explicitly.
-    PREMIUM_COMPOSE="--env-file="
+    PREMIUM_COMPOSE="--verbose"
 fi
 
 # Run the demo
