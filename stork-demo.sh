@@ -17,7 +17,7 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 # Prompt for CloudSmith access token
 usage()
 {
-    echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ CLOUD_SMITH_ACCESS_TOKEN ]"
+    echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ -t | --token CLOUD_SMITH_ACCESS_TOKEN ]"
     echo "You can also set the access token using environment variable CS_REPO_ACCESS_TOKEN."
 }
 
@@ -34,27 +34,26 @@ logo()
 }
 
 # Parse arguments
-set +e
-PARSED_ARGUMENTS=$(getopt -o fsh --long no-prompt,stop,help -- "$@")
-parse_status=$?
-set -e
-
-if [ ${parse_status} -ne 0 ]
-then
-    usage
-    exit ${parse_status}
-fi
-
-eval set -- "$PARSED_ARGUMENTS"
 NO_PROMPT=0
 STOP=0
 ACCESS_TOKEN=${CS_REPO_ACCESS_TOKEN}
-while :
+SET_ACCESS_TOKEN=0
+while [ ${#} -gt 0 ];
 do
+  # Set access token from CMD
+  if [ ${SET_ACCESS_TOKEN} -eq 1 ]
+  then
+    SET_ACCESS_TOKEN=0
+    ACCESS_TOKEN=$1
+    shift
+    continue
+  fi
+
   case "$1" in
-    -f | --no-prompt)   NO_PROMPT=1      ; shift   ;;
-    -s | --stop)        STOP=1           ; shift   ;;
-    -h | --help)        usage            ; exit 0  ;;
+    -f | --no-prompt)   NO_PROMPT=1        ; shift ;;
+    -s | --stop)        STOP=1             ; shift ;;
+    -t | --token)       SET_ACCESS_TOKEN=1 ; shift ;;
+    -h | --help)        usage              ; exit 0;;
     # -- means the end of the arguments; drop this, and break out of the while loop
     --) shift; break ;;
     # If invalid options were passed, then getopt should have reported an error,
@@ -63,6 +62,12 @@ do
        usage ; exit 2 ;;
   esac
 done
+
+if [ ${SET_ACCESS_TOKEN} -eq 1 ]
+then
+    echo "Missing value for the access token."
+    exit 1
+fi
 
 # Stop the demo
 if [ ${STOP} -eq 1 ]
@@ -79,12 +84,6 @@ then
         echo "The demo was stopped."
     fi
     exit 0
-fi
-
-# Set access token from CMD
-if [ $# -gt 0 ]
-then
-    ACCESS_TOKEN=$1
 fi
 
 # Prompt necessary?
