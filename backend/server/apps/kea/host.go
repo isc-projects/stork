@@ -515,7 +515,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation) (err error) {
 	var hosts []dbmodel.Host
 	for _, reservation := range reservations {
-		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon.ID, dbmodel.HostDataSourceAPI)
+		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon, dbmodel.HostDataSourceAPI)
 		if err != nil {
 			log.Warnf("Failed to parse the host reservation: %s", err)
 			continue
@@ -623,7 +623,7 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 		for _, r := range reservationsList {
 			if reservationMap, ok := r.(map[string]interface{}); ok {
 				// Parse the reservation.
-				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon.ID, dbmodel.HostDataSourceConfig)
+				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon, dbmodel.HostDataSourceConfig)
 				if err != nil {
 					log.Warnf("Skipping invalid host reservation: %v", reservationMap)
 					return hosts, err

@@ -683,3 +683,144 @@ func TestFqdnFieldMalformed(t *testing.T) {
 	_, err = convertFqdnField(*newTestDHCPOptionField("invalid...fqdn"), false)
 	require.Error(t, err)
 }
+
+// Test that an option received from Kea is correctly parsed into the Stork's
+// representation of an option.
+func TestCreateDHCPOptionCSV(t *testing.T) {
+	optionData := SingleOptionData{
+		AlwaysSend: true,
+		Code:       244,
+		CSVFormat:  true,
+		Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12",
+		Name:       "foo",
+		Space:      "bar",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	require.True(t, option.IsAlwaysSend())
+	require.EqualValues(t, 244, option.GetCode())
+	require.Equal(t, "foo", option.GetName())
+	require.Equal(t, "bar", option.GetSpace())
+	require.Equal(t, storkutil.IPv4, option.GetUniverse())
+	require.Equal(t, "bar.244", option.GetEncapsulate())
+
+	fields := option.GetFields()
+	require.Len(t, fields, 8)
+	require.Equal(t, IPv4AddressField, fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.Equal(t, "192.0.2.1", fields[0].GetValues()[0])
+
+	require.Equal(t, StringField, fields[1].GetFieldType())
+	require.Len(t, fields[1].GetValues(), 1)
+	require.Equal(t, "xyz", fields[1].GetValues()[0])
+
+	require.Equal(t, BoolField, fields[2].GetFieldType())
+	require.Len(t, fields[2].GetValues(), 1)
+	require.Equal(t, true, fields[2].GetValues()[0])
+
+	require.Equal(t, Uint32Field, fields[3].GetFieldType())
+	require.Len(t, fields[1].GetValues(), 1)
+	require.EqualValues(t, 1020, fields[3].GetValues()[0])
+
+	require.Equal(t, IPv6PrefixField, fields[4].GetFieldType())
+	require.Len(t, fields[4].GetValues(), 2)
+	require.Equal(t, "3000::", fields[4].GetValues()[0])
+	require.EqualValues(t, 64, fields[4].GetValues()[1])
+
+	require.Equal(t, PsidField, fields[5].GetFieldType())
+	require.Len(t, fields[5].GetValues(), 2)
+	require.EqualValues(t, 90, fields[5].GetValues()[0])
+	require.EqualValues(t, 2, fields[5].GetValues()[1])
+
+	require.Equal(t, FqdnField, fields[6].GetFieldType())
+	require.Len(t, fields[6].GetValues(), 1)
+	require.EqualValues(t, "foobar.example.com.", fields[6].GetValues()[0])
+
+	require.Equal(t, IPv6AddressField, fields[7].GetFieldType())
+	require.Len(t, fields[7].GetValues(), 1)
+	require.EqualValues(t, "2001:db8:1::12", fields[7].GetValues()[0])
+}
+
+// Test that an option in a hex bytes format received from Kea is correctly parsed
+// into the Stork's representation of an option.
+func TestCreateDHCPOptionHex(t *testing.T) {
+	optionData := SingleOptionData{
+		AlwaysSend: false,
+		Code:       2048,
+		CSVFormat:  false,
+		Data:       "01 02 03 04 05 06 07 08 09 0A",
+		Name:       "foobar",
+		Space:      "baz",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	require.False(t, option.IsAlwaysSend())
+	require.EqualValues(t, 2048, option.GetCode())
+	require.Equal(t, "foobar", option.GetName())
+	require.Equal(t, "baz", option.GetSpace())
+	require.Equal(t, storkutil.IPv6, option.GetUniverse())
+	require.Equal(t, "baz.2048", option.GetEncapsulate())
+
+	fields := option.GetFields()
+	require.Len(t, fields, 1)
+	require.Equal(t, HexBytesField, fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.Equal(t, "0102030405060708090A", fields[0].GetValues()[0])
+}
+
+// Test that an empty option received from Kea is correctly parsed into the
+// Stork's representation of an option.
+func TestCreateDHCPOptionEmpty(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:      333,
+		CSVFormat: true,
+		Name:      "foobar",
+		Space:     "baz",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	require.False(t, option.IsAlwaysSend())
+	require.EqualValues(t, 333, option.GetCode())
+	require.Equal(t, "foobar", option.GetName())
+	require.Equal(t, "baz", option.GetSpace())
+	require.Equal(t, storkutil.IPv6, option.GetUniverse())
+	require.Equal(t, "baz.333", option.GetEncapsulate())
+	require.Empty(t, option.GetFields())
+}
+
+// Test encapsulated option space setting for top-level DHCPv4 options.
+func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:  253,
+		Space: DHCPv4OptionSpace,
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	require.Equal(t, "option-253", option.GetEncapsulate())
+}
+
+// Test encapsulated option space setting for DHCPv4 suboptions.
+func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:  1,
+		Space: "option-253",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	require.Equal(t, "option-253.1", option.GetEncapsulate())
+}
+
+// Test encapsulated option space setting for top-level DHCPv6 options.
+func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:  1024,
+		Space: DHCPv6OptionSpace,
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	require.Equal(t, "option-1024", option.GetEncapsulate())
+}
+
+// Test encapsulated option space setting for DHCPv6 suboptions.
+func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:  1,
+		Space: "option-1024",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	require.Equal(t, "option-1024.1", option.GetEncapsulate())
+}

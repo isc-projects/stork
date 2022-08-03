@@ -478,8 +478,9 @@ func testHost(t *testing.T, reservation interface{}, identifier string, address 
 		host *dbmodel.Host
 		err  error
 	)
+	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
 	if r, ok := reservation.(keaconfig.Reservation); ok {
-		host, err = dbmodel.NewHostFromKeaConfigReservation(r, 0, dbmodel.HostDataSourceConfig)
+		host, err = dbmodel.NewHostFromKeaConfigReservation(r, daemon, dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
 	} else {
 		h := reservation.(dbmodel.Host)

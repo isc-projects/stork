@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 
 	errors "github.com/pkg/errors"
@@ -45,7 +46,7 @@ type DHCPOptionField interface {
 	// Returns option field type.
 	GetFieldType() string
 	// Returns option field value(s).
-	GetValues() []interface{}
+	GetValues() []any
 }
 
 // An interface to a DHCP option. Database model representing DHCP options
@@ -391,4 +392,212 @@ func convertFqdnField(field DHCPOptionField, textFormat bool) (string, error) {
 		return "", errors.Errorf("failed to parse FQDN option field: %s", err)
 	}
 	return storkutil.BytesToHex(fqdnBytes), nil
+}
+
+// Represents a DHCP option field and implements DHCPOptionField interface. It
+// is returned by the CreateDHCPOption function.
+type dhcpOptionField struct {
+	FieldType string
+	Values    []any
+}
+
+// Represents a DHCP option and implements DHCPOption interface. It is returned
+// by the CreateDHCPOption function.
+type dhcpOption struct {
+	AlwaysSend  bool
+	Code        uint16
+	Encapsulate string
+	Fields      []DHCPOptionField
+	Name        string
+	Space       string
+	Universe    storkutil.IPType
+}
+
+// Returns option field type.
+func (field dhcpOptionField) GetFieldType() string {
+	return field.FieldType
+}
+
+// Returns option field values.
+func (field dhcpOptionField) GetValues() []any {
+	return field.Values
+}
+
+// Checks if the option is always returned to a DHCP client, regardless
+// if the client has requested it or not.
+func (option dhcpOption) IsAlwaysSend() bool {
+	return option.AlwaysSend
+}
+
+// Returns option code.
+func (option dhcpOption) GetCode() uint16 {
+	return option.Code
+}
+
+// Returns an encapsulated option space name.
+func (option dhcpOption) GetEncapsulate() string {
+	return option.Encapsulate
+}
+
+// Returns option fields belonging to the option.
+func (option dhcpOption) GetFields() (returnedFields []DHCPOptionField) {
+	return option.Fields
+}
+
+// Returns option name.
+func (option dhcpOption) GetName() string {
+	return option.Name
+}
+
+// Returns option universe (i.e., IPv4 or IPv6).
+func (option dhcpOption) GetUniverse() storkutil.IPType {
+	return option.Universe
+}
+
+// Returns option space name.
+func (option dhcpOption) GetSpace() string {
+	return option.Space
+}
+
+// Tries to infer option field type from its value and converts it to the
+// format used in Stork. The resulting format comprises an option field type
+// and the corresponding field value(s). It has some limitations:
+//
+// - It is unable to recognize an exact integer type, therefore it returns
+//   all numbers as uint32 fields.
+// - It is unable to differentiate between partial FQDN and a regular string,
+//   therefore it returns string field for partial FQDNs.
+//
+// The function is used temporarily until we add support for Kea option
+// definitions. However, even then, this function may be useful in cases when
+// the definition is not available for any reason.
+func inferDHCPOptionField(value string) dhcpOptionField {
+	var field dhcpOptionField
+
+	// Is it a bool value?
+	if bv, err := strconv.ParseBool(value); err == nil {
+		field = dhcpOptionField{
+			FieldType: BoolField,
+			Values:    []any{bv},
+		}
+		return field
+	}
+	// Is it a number?
+	if iv, err := strconv.ParseUint(value, 10, 32); err == nil {
+		field = dhcpOptionField{
+			FieldType: Uint32Field,
+			Values:    []any{iv},
+		}
+		return field
+	}
+	// Is it an IP address or prefix?
+	if ip := storkutil.ParseIP(value); ip != nil {
+		switch ip.Protocol {
+		// Is it an IPv4 address?
+		case storkutil.IPv4:
+			field = dhcpOptionField{
+				FieldType: IPv4AddressField,
+				Values:    []any{value},
+			}
+			return field
+		// Is it an IPv6 address or prefix?
+		case storkutil.IPv6:
+			// Is it a prefix?
+			if ip.Prefix {
+				field = dhcpOptionField{
+					FieldType: IPv6PrefixField,
+					Values: []any{
+						ip.NetworkPrefix,
+						ip.PrefixLength,
+					},
+				}
+			} else {
+				// Is it an IPv6 address?
+				field = dhcpOptionField{
+					FieldType: IPv6AddressField,
+					Values:    []any{value},
+				}
+			}
+			return field
+		}
+	}
+	// Is it an FQDN?
+	if fqdn, err := storkutil.ParseFqdn(value); err == nil {
+		if !fqdn.IsPartial() {
+			field = dhcpOptionField{
+				FieldType: FqdnField,
+				Values:    []any{value},
+			}
+			return field
+		}
+	}
+	// Is it PSID?
+	pv := strings.Split(value, "/")
+	if len(pv) == 2 {
+		if psid, err := strconv.ParseUint(pv[0], 10, 16); err == nil {
+			if psidLen, err := strconv.ParseUint(pv[1], 10, 8); err == nil {
+				field = dhcpOptionField{
+					FieldType: PsidField,
+					Values:    []any{psid, psidLen},
+				}
+				return field
+			}
+		}
+	}
+	// It must be a string.
+	field = dhcpOptionField{
+		FieldType: StringField,
+		Values:    []any{value},
+	}
+	return field
+}
+
+// Creates an instance of a DHCP option in Stork from the option representation
+// in Kea. This function does not recognize encapsulated option space because
+// it is unavailable in the returned option data. To recognize the encapsulated
+// option space we need to add support for option definitions.
+func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType) DHCPOption {
+	option := dhcpOption{
+		AlwaysSend: optionData.AlwaysSend,
+		Code:       optionData.Code,
+		Name:       optionData.Name,
+		Space:      optionData.Space,
+		Universe:   universe,
+	}
+	data := strings.TrimSpace(optionData.Data)
+
+	// Option encapsulation.
+	switch option.Space {
+	case DHCPv4OptionSpace, DHCPv6OptionSpace:
+		option.Encapsulate = fmt.Sprintf("option-%d", option.Code)
+	default:
+		option.Encapsulate = fmt.Sprintf("%s.%d", option.Space, option.Code)
+	}
+
+	// There is nothing to do if the option is empty.
+	if len(data) == 0 {
+		return option
+	}
+
+	// Option data specified as comma separated values.
+	if optionData.CSVFormat {
+		values := strings.Split(data, ",")
+		for _, raw := range values {
+			v := strings.TrimSpace(raw)
+			field := inferDHCPOptionField(v)
+			option.Fields = append(option.Fields, field)
+		}
+		return option
+	}
+
+	// If the csv-format is false the option payload is specified using a string
+	// of hexadecimal digits. Sanitize colons and whitespaces.
+	data = strings.ReplaceAll(strings.ReplaceAll(data, " ", ""), ":", "")
+	field := dhcpOptionField{
+		FieldType: HexBytesField,
+		Values:    []any{data},
+	}
+	option.Fields = append(option.Fields, field)
+
+	return option
 }

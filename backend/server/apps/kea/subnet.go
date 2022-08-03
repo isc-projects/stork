@@ -72,7 +72,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 			continue
 		}
 		// Parse the configured network.
-		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family, daemon.ID, dbmodel.HostDataSourceConfig)
+		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family, daemon, dbmodel.HostDataSourceConfig)
 		if err != nil {
 			log.Warnf("Skipping invalid shared network: %v", err)
 			continue
@@ -156,7 +156,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 	for _, s := range subnetList {
 		if subnetMap, ok := s.(map[string]interface{}); ok {
 			// Parse the configured subnet.
-			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap, daemon.ID, dbmodel.HostDataSourceConfig)
+			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig)
 			if err != nil {
 				log.Warnf("Skipping invalid subnet: %v", err)
 				continue

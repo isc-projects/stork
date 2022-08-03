@@ -61,8 +61,8 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 			},
 		},
 	}
-
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, 123, HostDataSourceConfig)
+	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, daemon, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
@@ -96,7 +96,8 @@ func TestNewSharedNetworkFromKeaFamilyClash(t *testing.T) {
 		},
 	}
 
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, 1, HostDataSourceConfig)
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, daemon, HostDataSourceConfig)
 	require.Error(t, err)
 	require.Nil(t, parsedNetwork)
 }
@@ -145,7 +146,9 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 	}
 
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, 234, HostDataSourceConfig)
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 234
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
 	require.Zero(t, parsedSubnet.ID)
@@ -191,9 +194,21 @@ func TestNewHostFromKea(t *testing.T) {
 			"3000:2::/64",
 		},
 		"hostname": "hostname.example.org",
+		"option-data": []interface{}{
+			map[string]interface{}{
+				"always-send": true,
+				"code":        23,
+				"csv-format":  true,
+				"data":        "2001:db8:1::15,2001:db8:1::16",
+				"name":        "dns-servers",
+				"space":       "dhcp6",
+			},
+		},
 	}
 
-	parsedHost, err := NewHostFromKea(&rawHost, 123, HostDataSourceConfig)
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 123
+	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.NotNil(t, parsedHost)
 
@@ -209,6 +224,17 @@ func TestNewHostFromKea(t *testing.T) {
 	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
 	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
 	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
+
+	// DHCP options
+	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet, 1)
+	require.True(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].AlwaysSend)
+	require.EqualValues(t, 23, parsedHost.LocalHosts[0].DHCPOptionSet[0].Code)
+	require.Equal(t, "dns-servers", parsedHost.LocalHosts[0].DHCPOptionSet[0].Name)
+	require.Equal(t, "dhcp6", parsedHost.LocalHosts[0].DHCPOptionSet[0].Space)
+	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields, 2)
+	require.Equal(t, "ipv6-address", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].FieldType)
+	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values, 1)
+	require.Equal(t, "2001:db8:1::15", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values[0])
 }
 
 // Test that log targets can be created from parsed Kea logger config.
