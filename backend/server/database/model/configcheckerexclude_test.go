@@ -14,7 +14,7 @@ func TestGetGloballyExcludedCheckers(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{
 			CheckerName: "foo",
 		},
@@ -57,7 +57,7 @@ func TestAddGloballyExcludedCheckers(t *testing.T) {
 	defer teardown()
 
 	// Act
-	err := AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{
 			CheckerName: "foo",
 		},
@@ -80,7 +80,7 @@ func TestAddGloballyExcludedCheckersForEmptyList(t *testing.T) {
 	defer teardown()
 
 	// Act
-	err := AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{})
+	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{})
 
 	// Assert
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestAddDuplicatedGloballyExcludedCheckersCausesError(t *testing.T) {
 	defer teardown()
 
 	// Act
-	err := AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 		{CheckerName: "foo"},
 	})
@@ -115,10 +115,10 @@ func TestAddDoubleGloballyExcludedCheckersCausesError(t *testing.T) {
 	defer teardown()
 
 	// Act
-	err1 := AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err1 := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 	})
-	err2 := AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err2 := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 	})
 
@@ -130,19 +130,19 @@ func TestAddDoubleGloballyExcludedCheckersCausesError(t *testing.T) {
 }
 
 // Test that the global exclusions of the config checkers are deleted properly.
-func TestRemoveGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteGloballyExcludedCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = AddGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 		{CheckerName: "bar"},
 	})
 	exclusions, _ := GetGloballyExcludedCheckers(db)
 
 	// Act
-	err := RemoveGloballyExcludedChekers(db, []*ConfigCheckerGlobalExclude{
-		exclusions[1],
+	err := deleteAllGloballyExcludedChekers(db, []int64{
+		exclusions[0].ID,
 	})
 
 	// Assert
@@ -154,13 +154,13 @@ func TestRemoveGloballyExcludedCheckers(t *testing.T) {
 
 // Test that removing an empty list of the global exclusions of the config
 // checkers generates no error.
-func TestRemoveEmptyGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteEmptyGloballyExcludedCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := RemoveGloballyExcludedChekers(db, []*ConfigCheckerGlobalExclude{})
+	err := deleteAllGloballyExcludedChekers(db, []int64{})
 
 	// Assert
 	require.NoError(t, err)
@@ -168,18 +168,43 @@ func TestRemoveEmptyGloballyExcludedCheckers(t *testing.T) {
 
 // Test that removing the non-existent global exclusions of the config checkers
 // generates no error.
-func TestRemoveNonExistentGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteNonExistentGloballyExcludedCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := RemoveGloballyExcludedChekers(db, []*ConfigCheckerGlobalExclude{
-		{ID: 42, CheckerName: "foo"},
-	})
+	err := deleteAllGloballyExcludedChekers(db, []int64{42})
 
 	// Assert
 	require.NoError(t, err)
+}
+
+// Test that the changes in the global exclusions of the config checkers are
+// committed properly.
+func TestCommitGloballyExcludedCheckers(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+		{CheckerName: "foo"}, {CheckerName: "bar"},
+	})
+	exclusions, _ := GetGloballyExcludedCheckers(db)
+
+	// Act
+	// Deletes foo
+	exclusions = append(exclusions[:0], exclusions[1:]...)
+	// Adds baz
+	exclusions = append(exclusions, &ConfigCheckerGlobalExclude{CheckerName: "baz"})
+	// Commits
+	err := CommitGloballyExcludedCheckers(db, exclusions)
+
+	// Assert
+	require.NoError(t, err)
+	exclusions, _ = GetGloballyExcludedCheckers(db)
+	require.Len(t, exclusions, 2)
+	require.EqualValues(t, "bar", exclusions[0].CheckerName)
+	require.EqualValues(t, "baz", exclusions[1].CheckerName)
 }
 
 // Creates one demon entry in the database.
@@ -221,7 +246,7 @@ func TestAddCheckerPreferencesForDaemon(t *testing.T) {
 	daemon, _ := addTestDaemon(db)
 
 	// Act
-	err := AddCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
+	err := addCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
 		{
 			DaemonID:    daemon.ID,
 			CheckerName: "foo",
@@ -247,7 +272,7 @@ func TestAddEmptyListOfCheckerPreferencesForDaemon(t *testing.T) {
 	daemon, _ := addTestDaemon(db)
 
 	// Act
-	err := AddCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
+	err := addCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
 
 	// Assert
 	require.NoError(t, err)
@@ -264,14 +289,14 @@ func TestAddCheckerPreferencesWithDoubledName(t *testing.T) {
 	daemon, _ := addTestDaemon(db)
 
 	// Act
-	err1 := AddCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
+	err1 := addCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
 		{
 			DaemonID:    daemon.ID,
 			CheckerName: "foo",
 			Excluded:    true,
 		},
 	})
-	err2 := AddCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
+	err2 := addCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
 		{
 			DaemonID:    daemon.ID,
 			CheckerName: "foo",
@@ -295,12 +320,12 @@ func TestUpdateCheckerPreferencesForDaemon(t *testing.T) {
 		CheckerName: "foo",
 		Excluded:    true,
 	}}
-	_ = AddCheckerPreferencesForDaemon(db, preferences)
+	_ = addCheckerPreferencesForDaemon(db, preferences)
 
 	// Act
 	preferences[0].Excluded = false
 	preferences[0].CheckerName = "bar"
-	err := UpdateCheckerPreferencesForDaemon(db, preferences)
+	err := updateCheckerPreferencesForDaemon(db, preferences)
 
 	// Assert
 	require.NoError(t, err)
@@ -319,7 +344,7 @@ func TestUpdateEmptyListOfCheckerPreferencesForDaemon(t *testing.T) {
 	daemon, _ := addTestDaemon(db)
 
 	// Act
-	err := UpdateCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
+	err := updateCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
 
 	// Assert
 	require.NoError(t, err)
@@ -346,11 +371,11 @@ func TestUpdateCheckerPreferencesForDaemonWithDuplicatedName(t *testing.T) {
 			Excluded:    true,
 		},
 	}
-	_ = AddCheckerPreferencesForDaemon(db, preferences)
+	_ = addCheckerPreferencesForDaemon(db, preferences)
 
 	// Act
 	preferences[1].CheckerName = "foo"
-	err := UpdateCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
+	err := updateCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{
 		preferences[1],
 	})
 
@@ -360,7 +385,7 @@ func TestUpdateCheckerPreferencesForDaemonWithDuplicatedName(t *testing.T) {
 
 // Test that the including/excluding preferences for a specific daemon are
 // removed properly.
-func TestRemoveCheckerPreferencesForDaemon(t *testing.T) {
+func TestDeleteCheckerPreferencesForDaemon(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -370,10 +395,10 @@ func TestRemoveCheckerPreferencesForDaemon(t *testing.T) {
 		CheckerName: "foo",
 		Excluded:    true,
 	}}
-	_ = AddCheckerPreferencesForDaemon(db, preferences)
+	_ = addCheckerPreferencesForDaemon(db, preferences)
 
 	// Act
-	err := RemoveCheckerPreferencesForDaemon(db, preferences)
+	err := deleteCheckerPreferencesForDaemon(db, preferences)
 
 	// Assert
 	require.NoError(t, err)
@@ -383,20 +408,20 @@ func TestRemoveCheckerPreferencesForDaemon(t *testing.T) {
 
 // Test that removing an empty list of the including/excluding preferences for a specific daemon
 // generates no error.
-func TestRemoveEmptyListOfCheckerPreferencesForDaemon(t *testing.T) {
+func TestDeleteEmptyListOfCheckerPreferencesForDaemon(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := RemoveCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
+	err := deleteCheckerPreferencesForDaemon(db, []*ConfigCheckerDaemonPreference{})
 
 	// Assert
 	require.NoError(t, err)
 }
 
 // Test that removing the daemon causes to wipe out all related checker preferences.
-func TestRemoveDaemonAndRelatedCheckerPreferencesForDaemon(t *testing.T) {
+func TestDeleteDaemonAndRelatedCheckerPreferencesForDaemon(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -406,7 +431,7 @@ func TestRemoveDaemonAndRelatedCheckerPreferencesForDaemon(t *testing.T) {
 		CheckerName: "foo",
 		Excluded:    true,
 	}}
-	_ = AddCheckerPreferencesForDaemon(db, preferences)
+	_ = addCheckerPreferencesForDaemon(db, preferences)
 
 	// Act
 	err := DeleteApp(db, daemon.App)

@@ -1,10 +1,12 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
+	dbops "isc.org/stork/server/database"
 )
 
 // Structure representing a global exclusion of a single config checker.
@@ -34,27 +36,63 @@ func GetGloballyExcludedCheckers(db *pg.DB) (exclusions []*ConfigCheckerGlobalEx
 	return exclusions, nil
 }
 
-// Adds a global exclusion of the review checker.
-func AddGloballyExcludedCheckers(db *pg.DB, exclusions []*ConfigCheckerGlobalExclude) error {
+// Commits changes in the global exclusions of the config checkers into DB
+// creating a transaction if necessary.
+func CommitGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return commitGloballyExcludedCheckers(dbi, exclusions)
+		})
+	}
+	return commitGloballyExcludedCheckers(dbi, exclusions)
+}
+
+// Commits changes in the global exclusions of the config checkers into DB.
+func commitGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
+	var newExclusions []*ConfigCheckerGlobalExclude
+	var existingExclusionIDs []int64
+	for _, exclusion := range exclusions {
+		if exclusion.ID != 0 {
+			existingExclusionIDs = append(existingExclusionIDs, exclusion.ID)
+		} else {
+			newExclusions = append(newExclusions, exclusion)
+		}
+	}
+
+	// Deletes old exclusions
+	err := deleteAllGloballyExcludedChekers(dbi, existingExclusionIDs)
+	if err != nil {
+		return err
+	}
+
+	// Insert new exclusions
+	err = addGloballyExcludedCheckers(dbi, newExclusions)
+	return err
+}
+
+// Adds a global exclusion of the config checker.
+func addGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
 	if len(exclusions) == 0 {
 		return nil
 	}
-	_, err := db.Model(&exclusions).Insert()
+	_, err := dbi.Model(&exclusions).Insert()
 	return pkgerrors.Wrap(err, "problem inseting global exclusions of checkers")
 }
 
-// Removes a global exclusion of the review checker.
-func RemoveGloballyExcludedChekers(db *pg.DB, exclusions []*ConfigCheckerGlobalExclude) error {
-	if len(exclusions) == 0 {
+// Deletes all global exclusions of the config checker except these from a given list of IDs.
+func deleteAllGloballyExcludedChekers(dbi dbops.DBI, excludedIDs []int64) error {
+	if len(excludedIDs) == 0 {
 		return nil
 	}
-	_, err := db.Model(&exclusions).Delete()
+	_, err := dbi.Model((*ConfigCheckerGlobalExclude)(nil)).
+		Where("id NOT IN (?)", pg.In(excludedIDs)).
+		Delete()
 	return pkgerrors.Wrap(err, "problem deleting global exclusions of checkers")
 }
 
-// Returns the preferences of including/excluding review checker for a specific daemon.
-func GetCheckerPreferencesByDaemon(db *pg.DB, daemonID int64) (preferences []*ConfigCheckerDaemonPreference, err error) {
-	err = db.Model(&preferences).
+// Returns the daemon preferences of config checkersconfig checker.
+func GetCheckerPreferencesByDaemon(dbi dbops.DBI, daemonID int64) (preferences []*ConfigCheckerDaemonPreference, err error) {
+	err = dbi.Model(&preferences).
 		Where("config_checker_daemon_preference.daemon_id = ?", daemonID).
 		Select()
 
@@ -66,8 +104,8 @@ func GetCheckerPreferencesByDaemon(db *pg.DB, daemonID int64) (preferences []*Co
 	return preferences, nil
 }
 
-// Adds the preferences of including/excluding review checkers for a specific daemon.
-func AddCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
+// Adds the daemon preferences of config checkers.
+func addCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
@@ -75,8 +113,8 @@ func AddCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemo
 	return pkgerrors.Wrap(err, "problem inserting checker preferences")
 }
 
-// Updates the preferences of including/excluding review checkers for a specific daemon.
-func UpdateCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
+// Updates the daemon preferences of config checkers.
+func updateCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
@@ -84,8 +122,8 @@ func UpdateCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDa
 	return pkgerrors.Wrap(err, "problem updating checker preferences")
 }
 
-// Removes the preferences of including/excluding review checker for a specific daemon.
-func RemoveCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
+// Deletes the daemon preferences of config checkersconfig checker.
+func deleteCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
@@ -93,8 +131,8 @@ func RemoveCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDa
 	return pkgerrors.Wrap(err, "problem deleting checker preferences")
 }
 
-// Combines the global exclusions with the including/excluding preferences for
-// a specific daemon. Returns the names of excluded checkers.
+// Combines the global exclusions with the daemon preferences of config checkers.
+// Returns the names of excluded checkers.
 func MergeExcludedCheckerNames(globalExcludes []*ConfigCheckerGlobalExclude, daemonPreferences []*ConfigCheckerDaemonPreference) []string {
 	daemonExcludes := make(map[string]bool)
 
