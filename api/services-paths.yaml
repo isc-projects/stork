@@ -586,6 +586,47 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /daemons/config-checkers:
+    get:
+      summary: Get global config checker preferences.
+      description: >-
+        Configuration review executes multiple configuration checkers to found
+        various issues. The checkers may be disabled or enabled globally or
+        per daemon. This enpoint returns the global checker preferences.
+      operationId: getGlobalConfigCheckers
+      tags:
+        - Services
+      responses:
+        200:
+            description: Global configuration checker preferences list.
+            schema:
+              $ref: "#/definitions/ConfigCheckerPreferences"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    put:
+      summary: Update global config checker preferences.
+      description: Replaces global config checker preferences.
+      operationId: putGlobalConfigCheckers
+      tags:
+        - Services
+      parameters:
+        - in: body
+          name: preferences
+          description: Checker preferences.
+          schema:
+            $ref: '#/definitions/ConfigCheckerPreferences'
+      responses:
+        200:
+          description: List of global config checker preferences.
+          schema:
+            $ref: "#/definitions/ConfigCheckerPreferences"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /daemons/{id}/config-checkers:
     get:
       summary: Get config checker preferences for a given daemon.
@@ -608,6 +649,10 @@
             description: Daemon configuration checker preferences list.
             schema:
               $ref: "#/definitions/ConfigCheckerPreferences"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
     put:
       summary: Update config checker preferences for a given daemon.
       description: Replaces config checker preferences for a given daemon.
