@@ -475,3 +475,34 @@
           $ref: '#/definitions/ConfigReport'
       total:
         type: integer
+
+  ConfigCheckerPrefernceState:
+    type: string
+    enum: &PREFERENCESTATE
+      - "enabled"
+      - "disabled"
+      - "inherit"
+
+  ConfigCheckerPreference:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      checker:
+        type: string
+        readOnly: true
+      state:
+        type: string
+        enum: *PREFERENCESTATE
+        
+
+  ConfigCheckerPreferences:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ConfigCheckerPreference'
+      total:
+        type: integer

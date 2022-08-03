@@ -585,3 +585,52 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /daemons/{id}/config-checkers:
+    get:
+      summary: Get config checker preferences for a given daemon.
+      description: >-
+        Configuration review executes multiple configuration checkers to found
+        various issues. The checkers may be disabled or enabled globally or
+        per daemon. This enpoint returns the checker preferences for a specific
+        daemon.
+      operationId: getDaemonConfigCheckers
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          required: true
+          description: Daemon ID
+      responses:
+        200:
+            description: Daemon configuration checker preferences list.
+            schema:
+              $ref: "#/definitions/ConfigCheckerPreferences"
+    put:
+      summary: Update config checker preferences for a given daemon.
+      description: Replaces config checker preferences for a given daemon.
+      operationId: putDaemonConfigCheckers
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID.
+        - in: body
+          name: preferences
+          description: Checker preferences.
+          schema:
+            $ref: '#/definitions/ConfigCheckerPreferences'
+      responses:
+        200:
+          description: List of config checker preferences for a given daemon.
+          schema:
+            $ref: "#/definitions/ConfigCheckerPreferences"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
