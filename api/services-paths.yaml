@@ -588,40 +588,40 @@
 
   /daemons/config-checkers:
     get:
-      summary: Get global config checker preferences.
+      summary: Get global config checker configuration.
       description: >-
         Configuration review executes multiple configuration checkers to found
         various issues. The checkers may be disabled or enabled globally or
-        per daemon. This enpoint returns the global checker preferences.
+        per daemon. This enpoint returns the global checker configuration.
       operationId: getGlobalConfigCheckers
       tags:
         - Services
       responses:
         200:
-            description: Global configuration checker preferences list.
+            description: Global configuration checker list.
             schema:
-              $ref: "#/definitions/ConfigCheckerPreferences"
+              $ref: "#/definitions/ConfigCheckers"
         default:
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
     put:
-      summary: Update global config checker preferences.
-      description: Replaces global config checker preferences.
+      summary: Update global config checker configuration.
+      description: Replaces global config checker configuration.
       operationId: putGlobalConfigCheckers
       tags:
         - Services
       parameters:
         - in: body
           name: preferences
-          description: Checker preferences.
+          description: Checker configuration.
           schema:
-            $ref: '#/definitions/ConfigCheckerPreferences'
+            $ref: '#/definitions/ConfigCheckers'
       responses:
         200:
-          description: List of global config checker preferences.
+          description: List of global config checker configuration.
           schema:
-            $ref: "#/definitions/ConfigCheckerPreferences"
+            $ref: "#/definitions/ConfigChecker"
         default:
           description: generic error response
           schema:
@@ -629,11 +629,11 @@
 
   /daemons/{id}/config-checkers:
     get:
-      summary: Get config checker preferences for a given daemon.
+      summary: Get config checkers for a given daemon.
       description: >-
         Configuration review executes multiple configuration checkers to found
         various issues. The checkers may be disabled or enabled globally or
-        per daemon. This enpoint returns the checker preferences for a specific
+        per daemon. This enpoint returns the checkers configuration for a specific
         daemon.
       operationId: getDaemonConfigCheckers
       tags:
@@ -646,16 +646,16 @@
           description: Daemon ID
       responses:
         200:
-            description: Daemon configuration checker preferences list.
+            description: Daemon configuration checker configuration list.
             schema:
-              $ref: "#/definitions/ConfigCheckerPreferences"
+              $ref: "#/definitions/ConfigCheckers"
         default:
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
     put:
-      summary: Update config checker preferences for a given daemon.
-      description: Replaces config checker preferences for a given daemon.
+      summary: Update config checkers configuration for a given daemon.
+      description: Replaces config checkers configuration for a given daemon.
       operationId: putDaemonConfigCheckers
       tags:
         - Services
@@ -667,14 +667,14 @@
           description: Daemon ID.
         - in: body
           name: preferences
-          description: Checker preferences.
+          description: Checkers configuration.
           schema:
-            $ref: '#/definitions/ConfigCheckerPreferences'
+            $ref: '#/definitions/ConfigCheckers'
       responses:
         200:
-          description: List of config checker preferences for a given daemon.
+          description: List of config checkers configuration for a given daemon.
           schema:
-            $ref: "#/definitions/ConfigCheckerPreferences"
+            $ref: "#/definitions/ConfigCheckers"
         default:
           description: generic error response
           schema:

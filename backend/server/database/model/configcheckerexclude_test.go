@@ -9,12 +9,12 @@ import (
 )
 
 // Test that the global exclusions of the config checkers are returned properly.
-func TestGetGloballyExcludedCheckers(t *testing.T) {
+func TestGetGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	_ = addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{
 			CheckerName: "foo",
 		},
@@ -24,7 +24,7 @@ func TestGetGloballyExcludedCheckers(t *testing.T) {
 	})
 
 	// Act
-	exclusions, err := GetGloballyExcludedCheckers(db)
+	exclusions, err := GetGloballyExcludedConfigCheckers(db)
 
 	// Assert
 	require.NoError(t, err)
@@ -37,13 +37,13 @@ func TestGetGloballyExcludedCheckers(t *testing.T) {
 
 // Test that an empty list is returned for missing the global exclusions of
 // the config checkers.
-func TestGetGloballyExcludedCheckersForEmptyData(t *testing.T) {
+func TestGetGloballyExcludedConfigCheckersForEmptyData(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	exclusions, err := GetGloballyExcludedCheckers(db)
+	exclusions, err := GetGloballyExcludedConfigCheckers(db)
 
 	// Assert
 	require.NoError(t, err)
@@ -51,13 +51,13 @@ func TestGetGloballyExcludedCheckersForEmptyData(t *testing.T) {
 }
 
 // Test that the global exclusions of the config checkers are inserted properly.
-func TestAddGloballyExcludedCheckers(t *testing.T) {
+func TestAddGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err := addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{
 			CheckerName: "foo",
 		},
@@ -68,77 +68,77 @@ func TestAddGloballyExcludedCheckers(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 	require.Len(t, exclusions, 2)
 }
 
 // Test that adding empty list of the global exclusions of the config checkers
 // generates no error.
-func TestAddGloballyExcludedCheckersForEmptyList(t *testing.T) {
+func TestAddGloballyExcludedConfigCheckersForEmptyList(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{})
+	err := addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{})
 
 	// Assert
 	require.NoError(t, err)
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 	require.Empty(t, exclusions)
 }
 
 // Test that adding the duplicated global exclusions of the config checkers
 // generates an error.
-func TestAddDuplicatedGloballyExcludedCheckersCausesError(t *testing.T) {
+func TestAddDuplicatedGloballyExcludedConfigCheckersCausesError(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err := addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 		{CheckerName: "foo"},
 	})
 
 	// Assert
 	require.Error(t, err)
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 	require.Empty(t, exclusions)
 }
 
 // Test that adding the same global exclusions of the config checkers
 // in separate queries generates an error on the second call.
-func TestAddDoubleGloballyExcludedCheckersCausesError(t *testing.T) {
+func TestAddDoubleGloballyExcludedConfigCheckersCausesError(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	err1 := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err1 := addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 	})
-	err2 := addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	err2 := addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 	})
 
 	// Assert
 	require.NoError(t, err1)
 	require.Error(t, err2)
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 	require.Len(t, exclusions, 1)
 }
 
 // Test that the global exclusions of the config checkers are deleted properly.
-func TestDeleteGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	_ = addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"},
 		{CheckerName: "bar"},
 	})
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 
 	// Act
 	err := deleteAllGloballyExcludedChekers(db, []int64{
@@ -147,14 +147,14 @@ func TestDeleteGloballyExcludedCheckers(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	exclusions, _ = GetGloballyExcludedCheckers(db)
+	exclusions, _ = GetGloballyExcludedConfigCheckers(db)
 	require.Len(t, exclusions, 1)
 	require.EqualValues(t, "foo", exclusions[0].CheckerName)
 }
 
 // Test that removing the global exclusions of the config
 // checkers without excluding any entry generates no error.
-func TestDeleteEmptyGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteEmptyGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -164,13 +164,13 @@ func TestDeleteEmptyGloballyExcludedCheckers(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 	require.Empty(t, exclusions)
 }
 
 // Test that removing the non-existent global exclusions of the config checkers
 // generates no error.
-func TestDeleteNonExistentGloballyExcludedCheckers(t *testing.T) {
+func TestDeleteNonExistentGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -184,14 +184,14 @@ func TestDeleteNonExistentGloballyExcludedCheckers(t *testing.T) {
 
 // Test that the changes in the global exclusions of the config checkers are
 // committed properly.
-func TestCommitGloballyExcludedCheckers(t *testing.T) {
+func TestCommitGloballyExcludedConfigCheckers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = addGloballyExcludedCheckers(db, []*ConfigCheckerGlobalExclude{
+	_ = addGloballyExcludedConfigCheckers(db, []*ConfigCheckerGlobalExclude{
 		{CheckerName: "foo"}, {CheckerName: "bar"},
 	})
-	exclusions, _ := GetGloballyExcludedCheckers(db)
+	exclusions, _ := GetGloballyExcludedConfigCheckers(db)
 
 	// Act
 	// Deletes foo
@@ -199,11 +199,11 @@ func TestCommitGloballyExcludedCheckers(t *testing.T) {
 	// Adds baz
 	exclusions = append(exclusions, &ConfigCheckerGlobalExclude{CheckerName: "baz"})
 	// Commits
-	err := CommitGloballyExcludedCheckers(db, exclusions)
+	err := CommitGloballyExcludedConfigCheckers(db, exclusions)
 
 	// Assert
 	require.NoError(t, err)
-	exclusions, _ = GetGloballyExcludedCheckers(db)
+	exclusions, _ = GetGloballyExcludedConfigCheckers(db)
 	require.Len(t, exclusions, 2)
 	require.EqualValues(t, "bar", exclusions[0].CheckerName)
 	require.EqualValues(t, "baz", exclusions[1].CheckerName)

@@ -25,7 +25,7 @@ type ConfigDaemonCheckerPreference struct {
 }
 
 // Returns all global exclusions of the review chckers.
-func GetGloballyExcludedCheckers(db *pg.DB) (exclusions []*ConfigCheckerGlobalExclude, err error) {
+func GetGloballyExcludedConfigCheckers(db *pg.DB) (exclusions []*ConfigCheckerGlobalExclude, err error) {
 	err = db.Model(&exclusions).Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
@@ -38,17 +38,17 @@ func GetGloballyExcludedCheckers(db *pg.DB) (exclusions []*ConfigCheckerGlobalEx
 
 // Commits changes in the global exclusions of the config checkers into DB
 // creating a transaction if necessary.
-func CommitGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
+func CommitGloballyExcludedConfigCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return commitGloballyExcludedCheckers(dbi, exclusions)
+			return commitGloballyExcludedConfigCheckers(dbi, exclusions)
 		})
 	}
-	return commitGloballyExcludedCheckers(dbi, exclusions)
+	return commitGloballyExcludedConfigCheckers(dbi, exclusions)
 }
 
 // Commits changes in the global exclusions of the config checkers into DB.
-func commitGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
+func commitGloballyExcludedConfigCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
 	var newExclusions []*ConfigCheckerGlobalExclude
 	var existingExclusionIDs []int64
 	for _, exclusion := range exclusions {
@@ -66,12 +66,12 @@ func commitGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGl
 	}
 
 	// Insert new exclusions
-	err = addGloballyExcludedCheckers(dbi, newExclusions)
+	err = addGloballyExcludedConfigCheckers(dbi, newExclusions)
 	return err
 }
 
 // Adds a global exclusion of the config checker.
-func addGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
+func addGloballyExcludedConfigCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGlobalExclude) error {
 	if len(exclusions) == 0 {
 		return nil
 	}

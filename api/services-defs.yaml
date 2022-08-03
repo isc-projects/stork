@@ -476,33 +476,43 @@
       total:
         type: integer
 
-  ConfigCheckerPrefernceState:
+  ConfigCheckerState:
     type: string
-    enum: &PREFERENCESTATE
+    enum: &CONFIGCHECKERSTATE
       - "enabled"
       - "disabled"
       - "inherit"
 
-  ConfigCheckerPreference:
+  ConfigChecker:
     type: object
     properties:
       id:
         type: integer
         readOnly: true
-      checker:
+      name:
         type: string
         readOnly: true
+      triggers:
+        type: array
+        readOnly: true
+        items:
+          type: string
+      selectors:
+        type: array
+        readOnly: true
+        items:
+          type: string
       state:
         type: string
-        enum: *PREFERENCESTATE
+        enum: *CONFIGCHECKERSTATE
         
 
-  ConfigCheckerPreferences:
+  ConfigCheckers:
     type: object
     properties:
       items:
         type: array
         items:
-          $ref: '#/definitions/ConfigCheckerPreference'
+          $ref: '#/definitions/ConfigChecker'
       total:
         type: integer
