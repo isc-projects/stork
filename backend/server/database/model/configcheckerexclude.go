@@ -79,19 +79,22 @@ func addGloballyExcludedCheckers(dbi dbops.DBI, exclusions []*ConfigCheckerGloba
 	return pkgerrors.Wrap(err, "problem inseting global exclusions of checkers")
 }
 
-// Deletes all global exclusions of the config checker except these from a given list of IDs.
+// Deletes all global exclusions of the config checkers except these from a
+// given list of IDs.
 func deleteAllGloballyExcludedChekers(dbi dbops.DBI, excludedIDs []int64) error {
-	if len(excludedIDs) == 0 {
-		return nil
+	q := dbi.Model((*ConfigCheckerGlobalExclude)(nil))
+	if len(excludedIDs) != 0 {
+		q = q.Where("id NOT IN (?)", pg.In(excludedIDs))
+	} else {
+		// Deletes all entries. Where clause is mandatory.
+		q = q.Where("1 = 1")
 	}
-	_, err := dbi.Model((*ConfigCheckerGlobalExclude)(nil)).
-		Where("id NOT IN (?)", pg.In(excludedIDs)).
-		Delete()
+	_, err := q.Delete()
 	return pkgerrors.Wrap(err, "problem deleting global exclusions of checkers")
 }
 
-// Returns the daemon preferences of config checkersconfig checker.
-func GetCheckerPreferencesByDaemon(dbi dbops.DBI, daemonID int64) (preferences []*ConfigCheckerDaemonPreference, err error) {
+// Returns the daemon preferences of config checker.
+func GetCheckerDaemonPreferences(dbi dbops.DBI, daemonID int64) (preferences []*ConfigCheckerDaemonPreference, err error) {
 	err = dbi.Model(&preferences).
 		Where("config_checker_daemon_preference.daemon_id = ?", daemonID).
 		Select()
@@ -105,30 +108,75 @@ func GetCheckerPreferencesByDaemon(dbi dbops.DBI, daemonID int64) (preferences [
 }
 
 // Adds the daemon preferences of config checkers.
-func addCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
+func addCheckerDaemonPreferences(dbi dbops.DBI, preferences []*ConfigCheckerDaemonPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
-	_, err := db.Model(&preferences).Insert()
+	_, err := dbi.Model(&preferences).Insert()
 	return pkgerrors.Wrap(err, "problem inserting checker preferences")
 }
 
 // Updates the daemon preferences of config checkers.
-func updateCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
+func updateCheckerDaemonPreferences(dbi dbops.DBI, preferences []*ConfigCheckerDaemonPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
-	_, err := db.Model(&preferences).WherePK().Update()
+	_, err := dbi.Model(&preferences).WherePK().Update()
 	return pkgerrors.Wrap(err, "problem updating checker preferences")
 }
 
-// Deletes the daemon preferences of config checkersconfig checker.
-func deleteCheckerPreferencesForDaemon(db *pg.DB, preferences []*ConfigCheckerDaemonPreference) error {
-	if len(preferences) == 0 {
-		return nil
+// Deletes all daemon preferences of config checkers for a given daemon except
+// these from a given list of IDs.
+func deleteAllCheckerDaemonPreferences(dbi dbops.DBI, daemonID int64, excludedIDs []int64) error {
+	q := dbi.Model((*ConfigCheckerDaemonPreference)(nil)).
+		Where("daemon_id = (?)", daemonID)
+	if len(excludedIDs) != 0 {
+		q = q.Where("id NOT IN (?)", pg.In(excludedIDs))
 	}
-	_, err := db.Model(&preferences).Delete()
+	_, err := q.Delete()
 	return pkgerrors.Wrap(err, "problem deleting checker preferences")
+}
+
+// Commits changes in the daemon preferences of the config checkers into DB
+// creating a transaction if necessary.
+func CommitCheckerDaemonPreferences(dbi dbops.DBI, daemonID int64, preferences []*ConfigCheckerDaemonPreference) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return commitCheckerDaemonPreferences(dbi, daemonID, preferences)
+		})
+	}
+	return commitCheckerDaemonPreferences(dbi, daemonID, preferences)
+}
+
+// Commits changes in the daemon preferences of the config checkers into DB.
+func commitCheckerDaemonPreferences(dbi dbops.DBI, daemonID int64, preferences []*ConfigCheckerDaemonPreference) error {
+	var newPreferences []*ConfigCheckerDaemonPreference
+	var existingPreferences []*ConfigCheckerDaemonPreference
+	var existingPreferenceIDs []int64
+	for _, preference := range preferences {
+		if preference.ID != 0 {
+			existingPreferenceIDs = append(existingPreferenceIDs, preference.ID)
+			existingPreferences = append(existingPreferences, preference)
+		} else {
+			newPreferences = append(newPreferences, preference)
+		}
+	}
+
+	// Deletes old preferences.
+	err := deleteAllCheckerDaemonPreferences(dbi, daemonID, existingPreferenceIDs)
+	if err != nil {
+		return err
+	}
+
+	// Updates existing preferences.
+	err = updateCheckerDaemonPreferences(dbi, existingPreferences)
+	if err != nil {
+		return err
+	}
+
+	// Insert new preferences.
+	err = addCheckerDaemonPreferences(dbi, newPreferences)
+	return err
 }
 
 // Combines the global exclusions with the daemon preferences of config checkers.
