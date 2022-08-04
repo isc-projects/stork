@@ -96,7 +96,7 @@ func deleteAllGloballyExcludedChekers(dbi dbops.DBI, excludedIDs []int64) error 
 // Returns the daemon preferences of config checker.
 func GetDaemonCheckerPreferences(dbi dbops.DBI, daemonID int64) (preferences []*ConfigDaemonCheckerPreference, err error) {
 	err = dbi.Model(&preferences).
-		Where("config_checker_daemon_preference.daemon_id = ?", daemonID).
+		Where("config_daemon_checker_preference.daemon_id = ?", daemonID).
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
