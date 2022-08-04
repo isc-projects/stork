@@ -699,7 +699,18 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 	metadata := make([]*CheckerMetadata, len(checkers))
 	for _, checker := range checkers {
 		isEnabled := d.checkerController.IsCheckerEnabledForDaemon(daemonID, checker.name)
-		state := d.checkerController.GetCheckerOwnState(daemonID, checker.name)
+
+		var state CheckerState
+		if isDaemonFetch {
+			state = d.checkerController.GetCheckerOwnState(daemonID, checker.name)
+		} else {
+			if d.checkerController.GetGlobalState(checker.name) {
+				state = CheckerStateEnabled
+			} else {
+				state = CheckerStateDisabled
+			}
+		}
+
 		m := newCheckerMetadataFromChecker(checker, selectors[checker.name], isEnabled, state)
 		metadata = append(metadata, m)
 	}

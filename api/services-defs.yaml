@@ -486,9 +486,6 @@
   ConfigChecker:
     type: object
     properties:
-      id:
-        type: integer
-        readOnly: true
       name:
         type: string
         readOnly: true
