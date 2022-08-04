@@ -607,21 +607,21 @@
             $ref: "#/definitions/ApiError"
     put:
       summary: Update global config checker configuration.
-      description: Replaces global config checker configuration.
+      description: Updates global config checker configuration.
       operationId: putGlobalConfigCheckers
       tags:
         - Services
       parameters:
         - in: body
-          name: preferences
+          name: changes
           description: Checker configuration.
           schema:
-            $ref: '#/definitions/ConfigCheckers'
+            $ref: '#/definitions/ConfigCheckerChanges'
       responses:
         200:
           description: List of global config checker configuration.
           schema:
-            $ref: "#/definitions/ConfigChecker"
+            $ref: "#/definitions/ConfigCheckers"
         default:
           description: generic error response
           schema:
@@ -655,7 +655,7 @@
             $ref: "#/definitions/ApiError"
     put:
       summary: Update config checkers configuration for a given daemon.
-      description: Replaces config checkers configuration for a given daemon.
+      description: Updates config checkers configuration for a given daemon.
       operationId: putDaemonConfigCheckers
       tags:
         - Services
@@ -666,10 +666,10 @@
           required: true
           description: Daemon ID.
         - in: body
-          name: preferences
-          description: Checkers configuration.
+          name: changes
+          description: Checkers configuration changes.
           schema:
-            $ref: '#/definitions/ConfigCheckers'
+            $ref: '#/definitions/ConfigCheckerChanges'
       responses:
         200:
           description: List of config checkers configuration for a given daemon.

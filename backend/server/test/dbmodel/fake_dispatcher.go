@@ -42,6 +42,10 @@ func (d *FakeDispatcher) GetSignature() string {
 	return d.Signature
 }
 
+func (d *FakeDispatcher) SetCheckerState(daemonID int64, checkerName string, state configreview.CheckerState) {
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "SetCheckerState"})
+}
+
 func (d *FakeDispatcher) Start() {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "Start"})
 }

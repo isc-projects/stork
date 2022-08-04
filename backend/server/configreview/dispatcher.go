@@ -111,6 +111,30 @@ func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, c
 // review checkers by daemon types.
 type DispatchGroupSelector int
 
+func (s DispatchGroupSelector) ToString() string {
+	switch s {
+	case EachDaemon:
+		return "each-daemon"
+	case KeaDaemon:
+		return "kea-daemon"
+	case KeaCADaemon:
+		return "kea-ca-daemon"
+	case KeaDHCPDaemon:
+		return "kea-dhcp-daemon"
+	case KeaDHCPv4Daemon:
+		return "kea-dhcp-v4-daemon"
+	case KeaDHCPv6Daemon:
+		return "kea-dhcp-v6-daemon"
+	case KeaD2Daemon:
+		return "kea-d2-daemon"
+	case Bind9Daemon:
+		return "bind9-daemon"
+	}
+	log.WithField("selector", s).
+		Warn("Config review dispatcher was unable to recognize the dispatch group selector and assign any string representation. Please notify the ISC Stork Development Team about this issue.")
+	return "unknown"
+}
+
 // A slice of the DispatchGroupSelector values.
 type DispatchGroupSelectors []DispatchGroupSelector
 
@@ -254,6 +278,7 @@ type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error))
 	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
 	GetCheckersMetadata(daemonID int64, daemonName string) []*CheckerMetadata
+	SetCheckerState(daemonID int64, checkerName string, state CheckerState)
 	GetSignature() string
 	Start()
 	Shutdown()
@@ -728,6 +753,14 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 // generation of a new signature and new config reviews.
 func (d *dispatcherImpl) GetSignature() string {
 	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", d.enforceSeq, d.groups))
+}
+
+func (d *dispatcherImpl) SetCheckerState(daemonID int64, checkerName string, state CheckerState) {
+	if daemonID == 0 {
+		d.checkerController.SetGlobalState(checkerName, state != CheckerStateDisabled)
+	} else {
+		d.checkerController.SetStateForDaemon(daemonID, checkerName, state)
+	}
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving

@@ -98,9 +98,8 @@ func (c checkerControllerImpl) GetCheckerOwnState(daemonID int64, checkerName st
 		if enabled, ok := c.daemonStates[daemonID][checkerName]; ok {
 			if enabled {
 				return CheckerStateEnabled
-			} else {
-				return CheckerStateDisabled
 			}
+			return CheckerStateDisabled
 		}
 	}
 

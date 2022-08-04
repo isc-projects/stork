@@ -190,7 +190,7 @@ func configCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *m
 	for _, m := range metadata {
 		var selectors []string
 		for _, selector := range m.Selectors {
-			selectors = append(selectors, string(selector))
+			selectors = append(selectors, selector.ToString())
 		}
 
 		var triggers []string
@@ -241,4 +241,26 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 
 	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
 	return rsp
+}
+
+func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.PutDaemonConfigCheckersParams) middleware.Responder {
+	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	for _, change := range params.Changes.Items {
+		r.ReviewDispatcher.SetCheckerState(daemon.ID, change.Name, configreview.CheckerStateInherit)
+	}
+
+	return nil
+}
+
+func (r *RestAPI) PutGlobalConfigCheckers(ctx context.Context, params services.PutGlobalConfigCheckersParams) middleware.Responder {
+	return nil
 }

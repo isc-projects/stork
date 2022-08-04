@@ -512,3 +512,21 @@
           $ref: '#/definitions/ConfigChecker'
       total:
         type: integer
+
+  ConfigCheckerChange:
+    type: object
+    properties:
+      name:
+        type: string
+      state:
+        enum: *CONFIGCHECKERSTATE
+
+  ConfigCheckerChanges:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ConfigCheckerChange'
+      total:
+        type: integer
