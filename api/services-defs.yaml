@@ -503,7 +503,6 @@
         items:
           type: string
       state:
-        type: string
         enum: *CONFIGCHECKERSTATE
         
 

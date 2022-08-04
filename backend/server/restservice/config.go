@@ -182,3 +182,36 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	rsp := services.NewPutDaemonConfigReviewAccepted()
 	return rsp
 }
+
+// Returns global config checker preferences.
+func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckers) middleware.Responder {
+	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
+
+	checkers := make([]*models.ConfigChecker, len(metadata))
+	for _, m := range metadata {
+		var selectors []string
+		for _, selector := range m.Selectors {
+			selectors = append(selectors, string(selector))
+		}
+
+		var triggers []string
+		for _, trigger := range m.Triggers {
+			triggers = append(triggers, string(trigger))
+		}
+
+		checkers = append(checkers, &models.ConfigChecker{
+			Name:      m.Name,
+			Selectors: selectors,
+			State:     m.State.ToString(),
+			Triggers:  triggers,
+		})
+	}
+
+	payload := &models.ConfigCheckers{
+		Items: checkers,
+		Total: int64(len(checkers)),
+	}
+
+	rsp := services.NewGetGlobalConfigCheckersOK().WithPayload(payload)
+	return rsp
+}
