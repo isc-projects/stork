@@ -19,8 +19,8 @@ func TestNewCheckerController(t *testing.T) {
 func TestGetGlobalState(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", true)
-	controller.SetGlobalState("bar", false)
+	controller.SetGlobalState("foo", CheckerStateEnabled)
+	controller.SetGlobalState("bar", CheckerStateDisabled)
 
 	// Act
 	foo := controller.GetGlobalState("foo")
@@ -39,12 +39,14 @@ func TestSetGlobalState(t *testing.T) {
 	controller := newCheckerController()
 
 	// Act
-	controller.SetGlobalState("foo", true)
-	controller.SetGlobalState("bar", false)
+	controller.SetGlobalState("foo", CheckerStateEnabled)
+	controller.SetGlobalState("bar", CheckerStateDisabled)
+	controller.SetGlobalState("baz", CheckerStateInherit)
 
 	// Assert
 	require.True(t, controller.IsCheckerEnabledForDaemon(0, "foo"))
 	require.False(t, controller.IsCheckerEnabledForDaemon(0, "bar"))
+	require.True(t, controller.IsCheckerEnabledForDaemon(0, "baz"))
 }
 
 // Test that the checker state for a specific daemon is set properly.
@@ -67,15 +69,15 @@ func TestSetStateForDaemon(t *testing.T) {
 func TestSetInheritedStateForDaemon(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", true)
-	controller.SetGlobalState("bar", false)
-	controller.SetGlobalState("baz", false)
+	controller.SetGlobalState("foo", CheckerStateEnabled)
+	controller.SetGlobalState("bar", CheckerStateDisabled)
+	controller.SetGlobalState("baz", CheckerStateDisabled)
 
 	// Act
 	controller.SetStateForDaemon(1, "foo", CheckerStateInherit)
 	controller.SetStateForDaemon(2, "bar", CheckerStateInherit)
 	controller.SetStateForDaemon(3, "baz", CheckerStateInherit)
-	controller.SetGlobalState("baz", true)
+	controller.SetGlobalState("baz", CheckerStateEnabled)
 
 	// Assert
 	require.True(t, controller.IsCheckerEnabledForDaemon(1, "foo"))
@@ -87,15 +89,15 @@ func TestSetInheritedStateForDaemon(t *testing.T) {
 func TestIsCheckerEnabledForDaemon(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", true)
-	controller.SetGlobalState("fee", false)
-	controller.SetGlobalState("bar", true)
+	controller.SetGlobalState("foo", CheckerStateEnabled)
+	controller.SetGlobalState("fee", CheckerStateDisabled)
+	controller.SetGlobalState("bar", CheckerStateEnabled)
 	controller.SetStateForDaemon(1, "bar", CheckerStateEnabled)
-	controller.SetGlobalState("baz", true)
+	controller.SetGlobalState("baz", CheckerStateEnabled)
 	controller.SetStateForDaemon(1, "baz", CheckerStateDisabled)
-	controller.SetGlobalState("biz", false)
+	controller.SetGlobalState("biz", CheckerStateDisabled)
 	controller.SetStateForDaemon(1, "biz", CheckerStateEnabled)
-	controller.SetGlobalState("boz", false)
+	controller.SetGlobalState("boz", CheckerStateDisabled)
 	controller.SetStateForDaemon(1, "boz", CheckerStateDisabled)
 
 	// Act

@@ -757,7 +757,7 @@ func (d *dispatcherImpl) GetSignature() string {
 
 func (d *dispatcherImpl) SetCheckerState(daemonID int64, checkerName string, state CheckerState) {
 	if daemonID == 0 {
-		d.checkerController.SetGlobalState(checkerName, state != CheckerStateDisabled)
+		d.checkerController.SetGlobalState(checkerName, state)
 	} else {
 		d.checkerController.SetStateForDaemon(daemonID, checkerName, state)
 	}

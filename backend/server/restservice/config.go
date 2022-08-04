@@ -185,7 +185,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 
 // Converts the internal config checker metadata to the REST API
 // structure.
-func configCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *models.ConfigCheckers {
+func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *models.ConfigCheckers {
 	checkers := make([]*models.ConfigChecker, len(metadata))
 	for _, m := range metadata {
 		var selectors []string
@@ -214,11 +214,26 @@ func configCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *m
 	return payload
 }
 
+// Converts the config checker state from RestAPI to the internal type.
+func convertConfigCheckerStateFromRestAPI(state models.ConfigCheckerState) (configreview.CheckerState, bool) {
+	switch state {
+	case models.ConfigCheckerStateEnabled:
+		return configreview.CheckerStateEnabled, true
+	case models.ConfigCheckerStateDisabled:
+		return configreview.CheckerStateDisabled, true
+	case models.ConfigCheckerStateInherit:
+		return configreview.CheckerStateInherit, true
+	default:
+		log.WithField("state", state).Error("Received unknown config checker state")
+		return configreview.CheckerStateEnabled, false
+	}
+}
+
 // Returns global config checkers metadata.
 func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckersParams) middleware.Responder {
 	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
 
-	payload := configCheckerMetadataToRestAPI(metadata)
+	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
 	rsp := services.NewGetGlobalConfigCheckersOK().WithPayload(payload)
 	return rsp
@@ -237,7 +252,7 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 	}
 
 	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
-	payload := configCheckerMetadataToRestAPI(metadata)
+	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
 	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
 	return rsp
@@ -255,12 +270,34 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 	}
 
 	for _, change := range params.Changes.Items {
-		r.ReviewDispatcher.SetCheckerState(daemon.ID, change.Name, configreview.CheckerStateInherit)
+		apiState := change.State.(models.ConfigCheckerState)
+		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
+			r.ReviewDispatcher.SetCheckerState(daemon.ID, change.Name, state)
+		}
 	}
 
-	return nil
+	// TODO: Update database
+
+	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
+	payload := convertConfigCheckerMetadataToRestAPI(metadata)
+
+	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
+	return rsp
 }
 
 func (r *RestAPI) PutGlobalConfigCheckers(ctx context.Context, params services.PutGlobalConfigCheckersParams) middleware.Responder {
-	return nil
+	for _, change := range params.Changes.Items {
+		apiState := change.State.(models.ConfigCheckerState)
+		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
+			r.ReviewDispatcher.SetCheckerState(0, change.Name, state)
+		}
+	}
+
+	// TODO: Update database
+
+	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
+	payload := convertConfigCheckerMetadataToRestAPI(metadata)
+
+	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
+	return rsp
 }
