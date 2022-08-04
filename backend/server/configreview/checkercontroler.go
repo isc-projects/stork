@@ -1,5 +1,7 @@
 package configreview
 
+import log "github.com/sirupsen/logrus"
+
 // Represents a state of config checker managed by the config checker controller.
 // Checker for a given condition can be enabled or disabled or inherit the
 // state from the higher order rule.
@@ -11,6 +13,19 @@ const (
 	CheckerStateEnabled  CheckerState = iota
 )
 
+func (s CheckerState) ToString() string {
+	switch s {
+	case CheckerStateDisabled:
+		return "disabled"
+	case CheckerStateEnabled:
+		return "enabled"
+	case CheckerStateInherit:
+		return "inherit"
+	}
+	log.WithField("state", s).Error("Unknown checker state")
+	return ""
+}
+
 // Represents a configuration checker controller. It manages the enable or
 // disable states of checkers for given conditions, e.g., only for a specific
 // daemon, selector, or globally.
@@ -19,6 +34,7 @@ type checkerController interface {
 	SetStateGlobally(checkerName string, enabled bool)
 	SetStateForDaemon(daemonID int64, checkerName string, state CheckerState)
 	IsCheckerEnabledForDaemon(daemonID int64, checkerName string) bool
+	GetCheckerOwnState(daemonID int64, checkerName string) CheckerState
 }
 
 // Implementation of the checker controller interface.
@@ -28,7 +44,7 @@ type checkerControllerImpl struct {
 }
 
 // Constructs the checker controller object.
-func NewCheckerController() checkerController {
+func newCheckerController() checkerController {
 	return &checkerControllerImpl{
 		globalStates: make(map[string]bool),
 		daemonStates: make(map[int64]map[string]bool),
@@ -65,4 +81,18 @@ func (c checkerControllerImpl) IsCheckerEnabledForDaemon(daemonID int64, checker
 		return enabled
 	}
 	return true
+}
+
+// Returns a checker state assigned with a given daemon.
+func (c checkerControllerImpl) GetCheckerOwnState(daemonID int64, checkerName string) CheckerState {
+	if _, ok := c.daemonStates[daemonID]; ok {
+		if enabled, ok := c.daemonStates[daemonID][checkerName]; ok {
+			if enabled {
+				return CheckerStateEnabled
+			} else {
+				return CheckerStateDisabled
+			}
+		}
+	}
+	return CheckerStateInherit
 }

@@ -27,6 +27,7 @@ func TestNewDispatcher(t *testing.T) {
 	require.NotNil(t, dispatcher.dispatchCtx)
 	require.NotNil(t, dispatcher.cancelDispatch)
 	require.NotNil(t, dispatcher.state)
+	require.NotNil(t, dispatcher.checkerController)
 }
 
 // Tests the whole lifecycle of the dispatcher. In particular, it verifies that

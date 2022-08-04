@@ -7,9 +7,9 @@ import (
 )
 
 // Test that the checker controller is constructed properly.
-func TestNewCheckerController(t *testing.T) {
+func TestnewCheckerController(t *testing.T) {
 	// Act
-	controller := NewCheckerController()
+	controller := newCheckerController()
 
 	// Assert
 	require.NotNil(t, controller)
@@ -18,7 +18,7 @@ func TestNewCheckerController(t *testing.T) {
 // Test that the checker state is set properly.
 func TestSetStateGlobally(t *testing.T) {
 	// Arrange
-	controller := NewCheckerController()
+	controller := newCheckerController()
 
 	// Act
 	controller.SetStateGlobally("foo", true)
@@ -32,7 +32,7 @@ func TestSetStateGlobally(t *testing.T) {
 // Test that the checker state for a specific daemon is set properly.
 func TestSetStateForDaemon(t *testing.T) {
 	// Arrange
-	controller := NewCheckerController()
+	controller := newCheckerController()
 
 	// Act
 	controller.SetStateForDaemon(1, "foo", CheckerStateEnabled)
@@ -48,7 +48,7 @@ func TestSetStateForDaemon(t *testing.T) {
 // Test that the checker state is correctly inherited for a specific daemon.
 func TestSetInheritedStateForDaemon(t *testing.T) {
 	// Arrange
-	controller := NewCheckerController()
+	controller := newCheckerController()
 	controller.SetStateGlobally("foo", true)
 	controller.SetStateGlobally("bar", false)
 	controller.SetStateGlobally("baz", false)
@@ -68,7 +68,7 @@ func TestSetInheritedStateForDaemon(t *testing.T) {
 // Test that the checker states are merged properly.
 func TestIsCheckerEnabledForDaemon(t *testing.T) {
 	// Arrange
-	controller := NewCheckerController()
+	controller := newCheckerController()
 	controller.SetStateGlobally("foo", true)
 	controller.SetStateGlobally("fee", false)
 	controller.SetStateGlobally("bar", true)

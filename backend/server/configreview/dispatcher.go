@@ -244,6 +244,8 @@ type dispatcherImpl struct {
 	state map[int64]bool
 	// Current value of the enforceDispatchSeq.
 	enforceSeq int
+	// Checker controller manages the state of configuration checkers.
+	checkerController checkerController
 }
 
 // Dispatcher interface. The interface is used in the unit tests that
@@ -251,6 +253,7 @@ type dispatcherImpl struct {
 type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error))
 	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
+	GetCheckersMetadata(daemonID int64, daemonName string) []*CheckerMetadata
 	GetSignature() string
 	Start()
 	Shutdown()
@@ -594,16 +597,17 @@ func (d *dispatcherImpl) getGroup(selector DispatchGroupSelector) *dispatchGroup
 func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	ctx, cancel := context.WithCancel(context.Background())
 	dispatcher := &dispatcherImpl{
-		db:             db,
-		groups:         make(map[DispatchGroupSelector]*dispatchGroup),
-		shutdownWg:     &sync.WaitGroup{},
-		reviewWg:       &sync.WaitGroup{},
-		mutex:          &sync.RWMutex{},
-		reviewDoneChan: make(chan *ReviewContext),
-		dispatchCtx:    ctx,
-		cancelDispatch: cancel,
-		state:          make(map[int64]bool),
-		enforceSeq:     enforceDispatchSeq,
+		db:                db,
+		groups:            make(map[DispatchGroupSelector]*dispatchGroup),
+		shutdownWg:        &sync.WaitGroup{},
+		reviewWg:          &sync.WaitGroup{},
+		mutex:             &sync.RWMutex{},
+		reviewDoneChan:    make(chan *ReviewContext),
+		dispatchCtx:       ctx,
+		cancelDispatch:    cancel,
+		state:             make(map[int64]bool),
+		enforceSeq:        enforceDispatchSeq,
+		checkerController: newCheckerController(),
 	}
 	return dispatcher
 }
@@ -653,6 +657,53 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 		}
 	}
 	return false
+}
+
+// Returns the metadata of all registered configuration checkers for a given
+// daemon. Metadata is a set of values describing the checker, i.e., name of
+// the checker, list of triggers and selectors, and state of checker (enabled
+// or disabled). The metadata is temporary objects releated to a specific
+// daemon and cannot be used to execute the checker function. If the daemon ID
+// equals to zero then it returns all registered checkers and global states.
+func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) []*CheckerMetadata {
+	isDaemonFetch := daemonID != 0
+
+	checkers := make(map[string]*checker)
+	selectors := make(map[string]DispatchGroupSelectors)
+
+	var availableSelectors map[DispatchGroupSelector]bool
+	if isDaemonFetch {
+		groupSelectors := getDispatchGroupSelectors(daemonName)
+		availableSelectors = make(map[DispatchGroupSelector]bool, len(groupSelectors))
+		for _, selector := range groupSelectors {
+			availableSelectors[selector] = true
+		}
+	}
+
+	for selector, group := range d.groups {
+		if isDaemonFetch {
+			if _, ok := availableSelectors[selector]; !ok {
+				continue
+			}
+		}
+
+		for _, checker := range group.checkers {
+			if _, ok := selectors[checker.name]; !ok {
+				selectors[checker.name] = DispatchGroupSelectors{}
+			}
+			checkers[checker.name] = checker
+			selectors[checker.name] = append(selectors[checker.name], selector)
+		}
+	}
+
+	metadata := make([]*CheckerMetadata, len(checkers))
+	for _, checker := range checkers {
+		isEnabled := d.checkerController.IsCheckerEnabledForDaemon(daemonID, checker.name)
+		m := newCheckerMetadataFromChecker(checker, selectors[checker.name], isEnabled)
+		metadata = append(metadata, m)
+	}
+
+	return metadata
 }
 
 // Returns dispatcher's signature. The signature is a hash function output
