@@ -13,7 +13,7 @@ const (
 	CheckerStateEnabled  CheckerState = iota
 )
 
-func (s CheckerState) ToString() string {
+func (s CheckerState) String() string {
 	switch s {
 	case CheckerStateDisabled:
 		return "disabled"
@@ -23,7 +23,7 @@ func (s CheckerState) ToString() string {
 		return "inherit"
 	}
 	log.WithField("state", s).Error("Unknown checker state")
-	return ""
+	return "unknown"
 }
 
 // Represents a configuration checker controller. It manages the enable or

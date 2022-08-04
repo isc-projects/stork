@@ -111,7 +111,7 @@ func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, c
 // review checkers by daemon types.
 type DispatchGroupSelector int
 
-func (s DispatchGroupSelector) ToString() string {
+func (s DispatchGroupSelector) String() string {
 	switch s {
 	case EachDaemon:
 		return "each-daemon"
@@ -130,8 +130,7 @@ func (s DispatchGroupSelector) ToString() string {
 	case Bind9Daemon:
 		return "bind9-daemon"
 	}
-	log.WithField("selector", s).
-		Warn("Config review dispatcher was unable to recognize the dispatch group selector and assign any string representation. Please notify the ISC Stork Development Team about this issue.")
+	log.WithField("selector", fmt.Sprintf("%d", s)).Error("Config review dispatcher was unable to recognize the dispatch group selector and assign any string representation. Please notify the ISC Stork Development Team about this issue.")
 	return "unknown"
 }
 
@@ -736,7 +735,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 			}
 		}
 
-		m := newCheckerMetadataFromChecker(checker, selectors[checker.name], isEnabled, state)
+		m := newCheckerMetadata(checker.name, checker.triggers, selectors[checker.name], isEnabled, state)
 		metadata = append(metadata, m)
 	}
 

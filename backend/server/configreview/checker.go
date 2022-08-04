@@ -28,7 +28,3 @@ func newCheckerMetadata(name string, triggers Triggers, selectors DispatchGroupS
 		State:     state,
 	}
 }
-
-func newCheckerMetadataFromChecker(checker *checker, selectors DispatchGroupSelectors, enabled bool, state CheckerState) *CheckerMetadata {
-	return newCheckerMetadata(checker.name, checker.triggers, selectors, enabled, state)
-}

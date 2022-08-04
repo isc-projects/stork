@@ -731,3 +731,15 @@ func TestGetSignature(t *testing.T) {
 	signatures[8] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[8], signatures[7])
 }
+
+// Test that the dispatch group selector is serialized to string properly.
+func TestDispatchGroupSelectorToString(t *testing.T) {
+	require.EqualValues(t, "each-daemon", EachDaemon.String())
+	require.EqualValues(t, "kea-dhcp-daemon", KeaDHCPDaemon.String())
+	require.EqualValues(t, "kea-ca-daemon", KeaCADaemon.String())
+	require.EqualValues(t, "kea-dhcp-v4-daemon", KeaDHCPv4Daemon.String())
+	require.EqualValues(t, "kea-dhcp-v6-daemon", KeaDHCPv6Daemon.String())
+	require.EqualValues(t, "kea-d2-daemon", KeaD2Daemon.String())
+	require.EqualValues(t, "bind9-daemon", Bind9Daemon.String())
+	require.EqualValues(t, "unknown", DispatchGroupSelector(42).String())
+}

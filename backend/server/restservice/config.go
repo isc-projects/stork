@@ -190,7 +190,7 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 	for _, m := range metadata {
 		var selectors []string
 		for _, selector := range m.Selectors {
-			selectors = append(selectors, selector.ToString())
+			selectors = append(selectors, selector.String())
 		}
 
 		var triggers []string
@@ -201,7 +201,7 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 		checkers = append(checkers, &models.ConfigChecker{
 			Name:      m.Name,
 			Selectors: selectors,
-			State:     m.State.ToString(),
+			State:     m.State.String(),
 			Triggers:  triggers,
 		})
 	}
