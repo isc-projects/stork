@@ -183,10 +183,9 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	return rsp
 }
 
-// Returns global config checker preferences.
-func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckers) middleware.Responder {
-	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
-
+// Converts the internal config checker metadata to the REST API
+// structure.
+func configCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *models.ConfigCheckers {
 	checkers := make([]*models.ConfigChecker, len(metadata))
 	for _, m := range metadata {
 		var selectors []string
@@ -212,6 +211,34 @@ func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.G
 		Total: int64(len(checkers)),
 	}
 
+	return payload
+}
+
+// Returns global config checkers metadata.
+func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckersParams) middleware.Responder {
+	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
+
+	payload := configCheckerMetadataToRestAPI(metadata)
+
 	rsp := services.NewGetGlobalConfigCheckersOK().WithPayload(payload)
+	return rsp
+}
+
+// Returns the config checkers metadata for a given daemon.
+func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.GetDaemonConfigCheckersParams) middleware.Responder {
+	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
+	payload := configCheckerMetadataToRestAPI(metadata)
+
+	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
 	return rsp
 }

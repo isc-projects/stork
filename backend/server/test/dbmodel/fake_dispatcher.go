@@ -21,6 +21,8 @@ type FakeDispatcher struct {
 	InProgress bool
 }
 
+var _ configreview.Dispatcher = (*FakeDispatcher)(nil)
+
 func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, triggers configreview.Triggers, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "RegisterChecker"})
 }
@@ -28,6 +30,11 @@ func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSele
 func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSelector, checkerName string) bool {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "UnregisterChecker"})
 	return true
+}
+
+func (d *FakeDispatcher) GetCheckersMetadata(daemonID int64, daemonName string) []*configreview.CheckerMetadata {
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetCheckersMetadata"})
+	return []*configreview.CheckerMetadata{}
 }
 
 func (d *FakeDispatcher) GetSignature() string {
