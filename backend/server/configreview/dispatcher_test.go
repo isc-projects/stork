@@ -743,3 +743,66 @@ func TestDispatchGroupSelectorToString(t *testing.T) {
 	require.EqualValues(t, "bind9-daemon", Bind9Daemon.String())
 	require.EqualValues(t, "unknown", DispatchGroupSelector(42).String())
 }
+
+// Test that the config checkers metadata are returned properly..
+func TestGetCheckersMetadata(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dispatcher := NewDispatcher(db)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, nil)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "baz", Triggers{ConfigModified, DBHostsModified}, nil)
+	dispatcher.RegisterChecker(Bind9Daemon, "boz", Triggers{ManualRun}, nil)
+	dispatcher.SetCheckerState(1, "bar", CheckerStateDisabled)
+	dispatcher.SetCheckerState(0, "baz", CheckerStateDisabled)
+
+	// Act
+	metadataKea := dispatcher.GetCheckersMetadata(1, dbmodel.DaemonNameDHCPv4)
+	metadataBind9 := dispatcher.GetCheckersMetadata(2, dbmodel.DaemonNameBind9)
+	metadataGlobal := dispatcher.GetCheckersMetadata(0, "")
+
+	// Assert
+	require.Len(t, metadataKea, 3)
+
+	require.EqualValues(t, "foo", metadataKea[0].Name)
+	require.True(t, metadataKea[0].Enabled)
+	require.Contains(t, metadataKea[0].Selectors, KeaDHCPDaemon)
+	require.EqualValues(t, CheckerStateInherit, metadataKea[0].State)
+	require.Contains(t, metadataKea[0].Triggers, ManualRun)
+	require.Contains(t, metadataKea[0].Triggers, ConfigModified)
+
+	require.EqualValues(t, "bar", metadataKea[1].Name)
+	require.False(t, metadataKea[1].Enabled)
+	require.Contains(t, metadataKea[1].Selectors, KeaDHCPDaemon)
+	require.EqualValues(t, CheckerStateDisabled, metadataKea[1].State)
+	require.Contains(t, metadataKea[1].Triggers, ManualRun)
+	require.Contains(t, metadataKea[1].Triggers, DBHostsModified)
+
+	require.EqualValues(t, "baz", metadataKea[2].Name)
+	require.False(t, metadataKea[2].Enabled)
+	require.Contains(t, metadataKea[2].Selectors, KeaDHCPDaemon)
+	require.EqualValues(t, CheckerStateInherit, metadataKea[2].State)
+	require.Contains(t, metadataKea[2].Triggers, ConfigModified)
+	require.Contains(t, metadataKea[2].Triggers, DBHostsModified)
+
+	require.Len(t, metadataBind9, 1)
+
+	require.EqualValues(t, "boz", metadataBind9[0].Name)
+	require.True(t, metadataBind9[0].Enabled)
+	require.Contains(t, metadataBind9[0].Selectors, Bind9Daemon)
+	require.EqualValues(t, CheckerStateInherit, metadataBind9[0].State)
+	require.Contains(t, metadataBind9[0].Triggers, ManualRun)
+
+	require.Len(t, metadataGlobal, 4)
+
+	require.EqualValues(t, "foo", metadataGlobal[0].Name)
+	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[0].State)
+	require.EqualValues(t, "bar", metadataGlobal[1].Name)
+	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[1].State)
+	require.EqualValues(t, "baz", metadataGlobal[2].Name)
+	require.EqualValues(t, CheckerStateDisabled, metadataGlobal[2].State)
+	require.EqualValues(t, "boz", metadataGlobal[3].Name)
+	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[3].State)
+
+}
