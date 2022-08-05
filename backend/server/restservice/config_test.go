@@ -922,5 +922,23 @@ func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
 	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
 	require.EqualValues(t, models.ConfigCheckerStateEnabled, apiMetadata.State)
+}
 
+// Test that the config checker state is properly converted from the REST API enum.
+func TestConvertConfigCheckerStateFromRestAPI(t *testing.T) {
+	// Act
+	disabled, disabledOk := convertConfigCheckerStateFromRestAPI(models.ConfigCheckerStateDisabled)
+	enabled, enabledOk := convertConfigCheckerStateFromRestAPI(models.ConfigCheckerStateEnabled)
+	inherit, inheritOk := convertConfigCheckerStateFromRestAPI(models.ConfigCheckerStateInherit)
+	unknown, unknownOk := convertConfigCheckerStateFromRestAPI(models.ConfigCheckerState("unknown"))
+
+	// Assert
+	require.EqualValues(t, configreview.CheckerStateDisabled, disabled)
+	require.True(t, disabledOk)
+	require.EqualValues(t, configreview.CheckerStateEnabled, enabled)
+	require.True(t, enabledOk)
+	require.EqualValues(t, configreview.CheckerStateInherit, inherit)
+	require.True(t, inheritOk)
+	require.EqualValues(t, configreview.CheckerStateEnabled, unknown)
+	require.False(t, unknownOk)
 }

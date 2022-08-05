@@ -232,9 +232,7 @@ func convertConfigCheckerStateFromRestAPI(state models.ConfigCheckerState) (conf
 // Returns global config checkers metadata.
 func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckersParams) middleware.Responder {
 	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
-
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
-
 	rsp := services.NewGetGlobalConfigCheckersOK().WithPayload(payload)
 	return rsp
 }
