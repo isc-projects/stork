@@ -339,10 +339,13 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def wait_for_next_machine_state(self, machine_id: int,
-                                    start: datetime = None) -> Machine:
+                                    start: datetime = None, wait_for_apps=True) -> Machine:
         """
         Waits for a next fetch of the machine state after a given date.
-        If the date is None then the current moment is used."""
+        If the date is None then the current moment is used.
+        By default,  this function waits until some application is fetched.
+        It may be suppressed by specifying a flag.
+        """
         if start is None:
             start = datetime.now(timezone.utc)
 
@@ -352,22 +355,24 @@ class Server(ComposeServiceWrapper):
             last_visited = state["last_visited_at"]
             if Server._is_before(last_visited, start):
                 raise NoSuccessException("the state not fetched")
-            if len(state["apps"]) == 0:
+            if wait_for_apps and len(state["apps"]) == 0:
                 raise NoSuccessException("the apps are missing")
             return state
         return worker()
 
-    def wait_for_next_machine_states(self) -> List[Machine]:
+    def wait_for_next_machine_states(self, wait_for_apps=True) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
+        By default,  this function waits until some application is fetched.
+        It may be suppressed by specifying a flag.
         """
         start = datetime.now(timezone.utc)
         machines = self.list_machines(authorized=True)
         states = []
         for machine in machines["items"]:
             state = self.wait_for_next_machine_state(
-                machine["id"], start=start)
+                machine["id"], start=start, wait_for_apps=wait_for_apps)
             states.append(state)
         return states
 
@@ -489,7 +494,7 @@ class Server(ComposeServiceWrapper):
 
         # Returns the patched wrapper
         yield self
-        
+
         # Restores the standard behaviour
         self._api_client.call_api = original_call
         self._api_client.configuration.discard_unknown_keys = original_discard_unknown_types

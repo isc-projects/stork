@@ -12,9 +12,12 @@ def test_update_stork_from_the_latest_released_version(external_service: Externa
     with external_service.no_validate() as legacy_service:
         legacy_service.log_in_as_admin()
         legacy_service.authorize_all_machines()
-        state = legacy_service.wait_for_next_machine_states()[0]
+        state = legacy_service.wait_for_next_machine_states(
+            wait_for_apps=False
+        )[0]
         agent_version = version.parse_version_info(state["agent_version"])
-        server_version = version.parse_version_info(legacy_service.read_version()["version"])
+        server_version = version.parse_version_info(
+            legacy_service.read_version()["version"])
         # We change the version in the release phase.
         # During the development the latest CloudSmith version equals to the
         # version in the GO files but during the release it is lower.
@@ -24,8 +27,11 @@ def test_update_stork_from_the_latest_released_version(external_service: Externa
     external_service.update_agent_to_latest_version()
     external_service.update_server_to_latest_version()
 
-    state = external_service.wait_for_next_machine_states()[0]
+    state = external_service.wait_for_next_machine_states(
+        wait_for_apps=False
+    )[0]
     agent_version = version.parse_version_info(state["agent_version"])
-    server_version = version.parse_version_info(external_service.read_version()["version"])
+    server_version = version.parse_version_info(
+        external_service.read_version()["version"])
     assert agent_version == expected_version_info
     assert server_version == expected_version_info
