@@ -268,14 +268,14 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
-		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if daemon == nil {
 		msg := fmt.Sprintf("Cannot find daemon with ID %d", params.ID)
-		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+		rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -293,7 +293,7 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
-	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
+	rsp := services.NewPutDaemonConfigCheckersOK().WithPayload(payload)
 	return rsp
 }
 
