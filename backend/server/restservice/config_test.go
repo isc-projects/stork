@@ -942,3 +942,85 @@ func TestConvertConfigCheckerStateFromRestAPI(t *testing.T) {
 	require.EqualValues(t, configreview.CheckerStateEnabled, unknown)
 	require.False(t, unknownOk)
 }
+
+// Test that the global configuration checkers are returned properly.
+func TestGetGlobalConfigCheckers(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	// Act
+	ctx := context.Background()
+	params := services.GetGlobalConfigCheckersParams{}
+	rsp := rapi.GetGlobalConfigCheckers(ctx, params)
+
+	// Assert
+	require.IsType(t, &services.GetGlobalConfigCheckersOK{}, rsp)
+	okRsp := rsp.(*services.GetGlobalConfigCheckersOK)
+	require.NotNil(t, okRsp)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Empty(t, okRsp.Payload.Items)
+}
+
+// Test that the configuration checkers for a given daemon are returned properly.
+func TestGetDaemonConfigCheckers(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	app := &dbmodel.App{
+		Type: dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+		},
+		MachineID: m.ID,
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	// Act
+	ctx := context.Background()
+	params := services.GetDaemonConfigCheckersParams{
+		ID: daemon.ID,
+	}
+	rsp := rapi.GetDaemonConfigCheckers(ctx, params)
+
+	// Assert
+	require.IsType(t, &services.GetDaemonConfigCheckersOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonConfigCheckersOK)
+	require.NotNil(t, okRsp)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Empty(t, okRsp.Payload.Items)
+}
+
+// Test that the configuration checkers for a non-existing daemon causes no panic.
+func TestGetDaemonConfigCheckersForMissingDaemon(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	// Act
+	ctx := context.Background()
+	params := services.GetDaemonConfigCheckersParams{
+		ID: 1,
+	}
+	rsp := rapi.GetDaemonConfigCheckers(ctx, params)
+
+	// Assert
+	require.IsType(t, &services.GetDaemonConfigCheckersDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonConfigCheckersDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
