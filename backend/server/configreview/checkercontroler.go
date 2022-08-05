@@ -1,6 +1,10 @@
 package configreview
 
-import log "github.com/sirupsen/logrus"
+import (
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // Represents a state of config checker managed by the config checker controller.
 // Checker for a given condition can be enabled or disabled or inherit the
@@ -22,7 +26,7 @@ func (s CheckerState) String() string {
 	case CheckerStateInherit:
 		return "inherit"
 	}
-	log.WithField("state", s).Error("Unknown checker state")
+	log.WithField("state", fmt.Sprintf("%d", s)).Error("Unknown checker state")
 	return "unknown"
 }
 
