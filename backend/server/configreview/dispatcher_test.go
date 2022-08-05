@@ -42,7 +42,7 @@ func TestGracefulShutdown(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// We will simulate reviews for all daemon types.
-	daemonNames := []string{"dhcp4", "dhcp6", "ca", "d2", "bind9"}
+	daemonNames := []string{"dhcp4", "dhcp6", "ca", "d2", "named"}
 	// Selectors must correspond to the daemons above.
 	selectors := []DispatchGroupSelector{
 		KeaDHCPv4Daemon,
@@ -260,7 +260,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 		MachineID: machine.ID,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name:   "bind9",
+				Name:   "named",
 				Active: true,
 			},
 		},
@@ -330,7 +330,7 @@ func TestReviewInProgress(t *testing.T) {
 		MachineID: machine.ID,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name:   "bind9",
+				Name:   "named",
 				Active: true,
 			},
 		},

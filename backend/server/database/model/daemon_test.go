@@ -387,7 +387,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 		Type:      AppTypeBind9,
 		Daemons: []*Daemon{
 			{
-				Name:   "bind9",
+				Name:   "named",
 				Active: true,
 			},
 		},

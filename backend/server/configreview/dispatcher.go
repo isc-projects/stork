@@ -168,7 +168,7 @@ func getDispatchGroupSelectors(daemonName string) DispatchGroupSelectors {
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaCADaemon}
 	case "d2":
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaD2Daemon}
-	case "bind9":
+	case "named":
 		return DispatchGroupSelectors{EachDaemon, Bind9Daemon}
 	}
 	log.WithFields(log.Fields{
@@ -721,6 +721,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 	}
 
 	metadata := make([]*CheckerMetadata, len(checkers))
+	i := 0
 	for _, checker := range checkers {
 		isEnabled := d.checkerController.IsCheckerEnabledForDaemon(daemonID, checker.name)
 
@@ -736,7 +737,8 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 		}
 
 		m := newCheckerMetadata(checker.name, checker.triggers, selectors[checker.name], isEnabled, state)
-		metadata = append(metadata, m)
+		metadata[i] = m
+		i++
 	}
 
 	return metadata
