@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
 )
@@ -724,7 +725,7 @@ func TestDeleteHost(t *testing.T) {
 }
 
 // Test that a daemon can be associated with a host.
-func TestAddDaemonToHost(t *testing.T) {
+func TestAddHostLocalHosts(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -734,7 +735,18 @@ func TestAddDaemonToHost(t *testing.T) {
 
 	// Associate the first host with the first app.
 	host := hosts[0]
-	err := AddDaemonToHost(db, &host, apps[0].Daemons[0].ID, "api")
+	host.LocalHosts = append(host.LocalHosts, LocalHost{
+		DaemonID:   apps[0].Daemons[0].ID,
+		DataSource: HostDataSourceAPI,
+		DHCPOptionSet: []DHCPOption{
+			{
+				Code:  254,
+				Name:  "foo",
+				Space: keaconfig.DHCPv4OptionSpace,
+			},
+		},
+	})
+	err := AddHostLocalHosts(db, &host)
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -775,6 +787,12 @@ func TestAddDaemonToHost(t *testing.T) {
 	// should be returned as well.
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon)
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon.App)
+
+	// Make sure that DHCP options are returned.
+	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet, 1)
+	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Code)
+	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet[0].Name)
+	require.Equal(t, keaconfig.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Space)
 }
 
 // Test that daemon's associations with multiple hosts can be removed.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
@@ -223,4 +224,127 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 			require.Nil(t, options)
 		})
 	}
+}
+
+// Test that a DHCP option model is successfully converted to a REST API format.
+func TestUnflattenDHCPOptions(t *testing.T) {
+	options := []dbmodel.DHCPOption{
+		{
+			AlwaysSend:  true,
+			Code:        1001,
+			Encapsulate: "option-1001",
+			Fields: []dbmodel.DHCPOptionField{
+				{
+					FieldType: keaconfig.StringField,
+					Values:    []any{"foo"},
+				},
+			},
+		},
+		{
+			AlwaysSend: false,
+			Code:       1,
+			Fields: []dbmodel.DHCPOptionField{
+				{
+					FieldType: keaconfig.Uint8Field,
+					Values:    []any{11},
+				},
+			},
+			Space:       "option-1001",
+			Encapsulate: "option-1001.1",
+		},
+	}
+
+	// Convert.
+	restOptions := unflattenDHCPOptions(options, "", 0)
+	require.Len(t, restOptions, 1)
+	require.True(t, restOptions[0].AlwaysSend)
+	require.EqualValues(t, 1001, restOptions[0].Code)
+	require.EqualValues(t, "option-1001", restOptions[0].Encapsulate)
+	require.Len(t, restOptions[0].Fields, 1)
+	require.Equal(t, keaconfig.StringField, restOptions[0].Fields[0].FieldType)
+	require.Len(t, restOptions[0].Fields[0].Values, 1)
+	require.Equal(t, "foo", restOptions[0].Fields[0].Values[0])
+	require.Len(t, restOptions[0].Options, 1)
+
+	// Suboption
+	require.Len(t, restOptions[0].Options, 1)
+	require.False(t, restOptions[0].Options[0].AlwaysSend)
+	require.EqualValues(t, 1, restOptions[0].Options[0].Code)
+	require.Len(t, restOptions[0].Options[0].Fields, 1)
+	require.Equal(t, keaconfig.Uint8Field, restOptions[0].Options[0].Fields[0].FieldType)
+	require.Len(t, restOptions[0].Options[0].Fields[0].Values, 1)
+	require.Equal(t, "11", restOptions[0].Options[0].Fields[0].Values[0])
+	require.Equal(t, "option-1001.1", restOptions[0].Options[0].Encapsulate)
+}
+
+// Test that option field values of different types are correctly converted
+// into REST API format.
+func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
+	type test struct {
+		testName    string
+		fieldType   string
+		inputValues []any
+		values      []string
+	}
+	tests := []test{
+		{"hex-bytes", keaconfig.HexBytesField, []any{"010203"}, []string{"010203"}},
+		{"string", keaconfig.StringField, []any{"foo"}, []string{"foo"}},
+		{"bool", keaconfig.BoolField, []any{true}, []string{"true"}},
+		{"uint8", keaconfig.Uint8Field, []any{111}, []string{"111"}},
+		{"uint16", keaconfig.Uint16Field, []any{65536}, []string{"65536"}},
+		{"uint32", keaconfig.Uint32Field, []any{14294967295}, []string{"14294967295"}},
+		{"ipv4-address", keaconfig.IPv4AddressField, []any{"192.0.1.2"}, []string{"192.0.1.2"}},
+		{"ipv6-address", keaconfig.IPv6AddressField, []any{"3001::"}, []string{"3001::"}},
+		{"ipv6-prefix", keaconfig.IPv6PrefixField, []any{"3001::", "64"}, []string{"3001::", "64"}},
+		{"psid", keaconfig.PsidField, []any{16111, 12}, []string{"16111", "12"}},
+		{"fqdn", keaconfig.FqdnField, []any{"foo.example.org."}, []string{"foo.example.org."}},
+	}
+	for _, test := range tests {
+		fieldType := test.fieldType
+		inputValues := test.inputValues
+		values := test.values
+		t.Run(test.testName, func(t *testing.T) {
+			options := []dbmodel.DHCPOption{
+				{
+					Code: 1001,
+					Fields: []dbmodel.DHCPOptionField{
+						{
+							FieldType: fieldType,
+							Values:    inputValues,
+						},
+					},
+				},
+			}
+			restOptions := unflattenDHCPOptions(options, "", 0)
+			require.Len(t, restOptions, 1)
+			require.Len(t, restOptions[0].Fields, 1)
+			require.Equal(t, fieldType, restOptions[0].Fields[0].FieldType)
+			require.Equal(t, values, restOptions[0].Fields[0].Values)
+		})
+	}
+}
+
+// Test that maximum recursion level is respected while converting DHCP options
+// to the REST API format.
+func TestUnflattenDHCPOptionsRecursionLevel(t *testing.T) {
+	options := []dbmodel.DHCPOption{
+		{
+			Code:        1001,
+			Encapsulate: "option-1001",
+		},
+		{
+			Code:        1,
+			Space:       "option-1001",
+			Encapsulate: "option-1001.1",
+		},
+		{
+			Code:  2,
+			Space: "option-1001.1",
+		},
+	}
+
+	restOptions := unflattenDHCPOptions(options, "", 0)
+	require.Len(t, restOptions, 1)
+	require.Len(t, restOptions[0].Options, 1)
+	require.Zero(t, restOptions[0].Options[0].Options)
 }

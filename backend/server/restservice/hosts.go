@@ -52,13 +52,14 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 		}
 	}
 	// Append local hosts containing associations of the host with
-	// daemons.
+	// daemons and DHCP options.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
 			AppID:      dbLocalHost.Daemon.AppID,
 			AppName:    dbLocalHost.Daemon.App.Name,
 			DataSource: dbLocalHost.DataSource.String(),
 		}
+		localHost.Options = unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
 	}
 	return host

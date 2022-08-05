@@ -1,6 +1,7 @@
 package restservice
 
 import (
+	"fmt"
 	"strconv"
 
 	errors "github.com/pkg/errors"
@@ -115,4 +116,49 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption) ([
 		options = append(options, option)
 	}
 	return options, nil
+}
+
+// Converts DHCP options from the database model to REST API format. The options
+// stored in the database have flat structure. Suboptions are associated with the
+// parent options via option spaces. This function uses option spaces to put the
+// options into a hierarchical structure used in the REST API. It processes the
+// options recursively with a two level limit (i.e., top level options with suboptions).
+// All option field values are converted to strings.
+func unflattenDHCPOptions(options []dbmodel.DHCPOption, space string, recursionLevel int) []*models.DHCPOption {
+	var restOptions []*models.DHCPOption
+	// Break if recursion level exceeded.
+	if recursionLevel >= 2 {
+		return restOptions
+	}
+	for _, option := range options {
+		// If it is a top-level option the option space argument is empty.
+		// In that case, select options belonging to dhcp4 or dhcp6 option
+		// spaces. Otherwise, check if the specified option space matches
+		// the current option's space. If so, convert the option.
+		if (space == "" && (option.Space == keaconfig.DHCPv4OptionSpace || option.Space == keaconfig.DHCPv6OptionSpace)) ||
+			space == option.Space {
+			restOption := &models.DHCPOption{
+				AlwaysSend:  option.AlwaysSend,
+				Code:        int64(option.Code),
+				Encapsulate: option.Encapsulate,
+				Universe:    int64(option.Universe),
+			}
+			for _, field := range option.Fields {
+				restField := &models.DHCPOptionField{
+					FieldType: field.FieldType,
+				}
+				// Convert option values to strings.
+				for _, v := range field.Values {
+					restField.Values = append(restField.Values, fmt.Sprintf("%v", v))
+				}
+				restOption.Fields = append(restOption.Fields, restField)
+			}
+			// Append suboptions recursively for the encapsulated option space.
+			if len(restOption.Encapsulate) > 0 {
+				restOption.Options = unflattenDHCPOptions(options, restOption.Encapsulate, recursionLevel+1)
+			}
+			restOptions = append(restOptions, restOption)
+		}
+	}
+	return restOptions
 }

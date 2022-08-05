@@ -486,41 +486,38 @@ func DeleteHost(dbi dbops.DBI, hostID int64) error {
 	return err
 }
 
-// Associates a daemon with the host having a specified ID in a
-// transaction. Internally, the association is made via the local_host
-// table which holds information about the host from the given daemon
-// perspective. The source argument indicates whether the host
-// information was fetched from the daemon's configuration or via the
-// command.
-func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source HostDataSource) error {
-	localHost := LocalHost{
-		HostID:     host.ID,
-		DaemonID:   daemonID,
-		DataSource: source,
+// Associates a daemon with the host having a specified ID.
+func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source HostDataSource) error {
+	hostCopy := Host{
+		ID: host.ID,
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   daemonID,
+				DataSource: source,
+			},
+		},
 	}
-	q := tx.Model(&localHost).
-		OnConflict("(daemon_id, host_id) DO UPDATE").
-		Set("daemon_id = EXCLUDED.daemon_id").
-		Set("data_source = EXCLUDED.data_source")
-
-	_, err := q.Insert()
-	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem associating the daemon %d with the host %d",
-			daemonID, host.ID)
-	}
-	return err
+	return AddHostLocalHosts(dbi, &hostCopy)
 }
 
-// Associates a daemon with the host having a specified ID.
-// It begins a new transaction when dbi has a *pg.DB type or uses an
-// existing transaction when dbi has a *pg.Tx type.
-func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source HostDataSource) error {
-	if db, ok := dbi.(*pg.DB); ok {
-		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addDaemonToHost(tx, host, daemonID, source)
-		})
+// Iterates over the LocalHost instances of a Host and inserts them or
+// updates in the database.
+func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
+	for i := range host.LocalHosts {
+		host.LocalHosts[i].HostID = host.ID
+		q := dbi.Model(&host.LocalHosts[i]).
+			OnConflict("(daemon_id, host_id) DO UPDATE").
+			Set("data_source = EXCLUDED.data_source").
+			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
+			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
+
+		_, err := q.Insert()
+		if err != nil {
+			return pkgerrors.Wrapf(err, "problem associating the daemon %d with the host %d",
+				host.LocalHosts[i].DaemonID, host.ID)
+		}
 	}
-	return addDaemonToHost(dbi.(*pg.Tx), host, daemonID, source)
+	return nil
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data
@@ -580,19 +577,8 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daem
 				return err
 			}
 		}
-		for j := range hosts[i].LocalHosts {
-			hosts[i].LocalHosts[j].HostID = hosts[i].ID
-			q := dbi.Model(&hosts[i].LocalHosts[j]).
-				OnConflict("(daemon_id, host_id) DO UPDATE").
-				Set("data_source = EXCLUDED.data_source").
-				Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
-				Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
-
-			_, err := q.Insert()
-			if err != nil {
-				return pkgerrors.Wrapf(err, "problem associating the daemon %d with the host %d",
-					hosts[i].LocalHosts[j].DaemonID, hosts[i].ID)
-			}
+		if err = AddHostLocalHosts(dbi, &hosts[i]); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -611,8 +597,8 @@ func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source HostDataSource) (err error) {
-	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, daemon, source)
+func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet, daemon *Daemon, source HostDataSource) (err error) {
+	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID, daemon, source)
 }
 
 // This function checks if the given host includes a reservation for the

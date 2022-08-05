@@ -81,7 +81,7 @@ type DHCPOptionDefinitionLookup interface {
 type SingleOptionData struct {
 	AlwaysSend bool   `mapstructure:"always-send" json:"always-send,omitempty"`
 	Code       uint16 `mapstructure:"code" json:"code,omitempty"`
-	CSVFormat  bool   `mapstructure:"csv-format" json:"csv-format,omitempty"`
+	CSVFormat  bool   `mapstructure:"csv-format" json:"csv-format"`
 	Data       string `mapstructure:"data" json:"data,omitempty"`
 	Name       string `mapstructure:"name" json:"name,omitempty"`
 	Space      string `mapstructure:"space" json:"space,omitempty"`

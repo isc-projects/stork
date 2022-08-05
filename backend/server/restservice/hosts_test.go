@@ -191,6 +191,45 @@ func TestGetHost(t *testing.T) {
 	require.IsType(t, &dhcp.GetHostDefault{}, rsp)
 }
 
+// Test that fetched host includes DHCP options.
+func TestGetHostWithOptions(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add hosts.
+	hosts, _ := testutil.AddTestHosts(t, db)
+
+	// Add LocalHost instances comprising DHCP options.
+	err = dbmodel.AddHostLocalHosts(db, &hosts[4])
+	require.NoError(t, err)
+
+	params := dhcp.GetHostParams{
+		ID: hosts[4].ID,
+	}
+	rsp := rapi.GetHost(ctx, params)
+	require.IsType(t, &dhcp.GetHostOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostOK)
+	returnedHost := okRsp.Payload
+	require.EqualValues(t, hosts[4].ID, returnedHost.ID)
+	require.EqualValues(t, hosts[4].SubnetID, returnedHost.SubnetID)
+	require.Equal(t, hosts[4].Hostname, returnedHost.Hostname)
+
+	// Validate returned DHCP options.
+	require.Len(t, returnedHost.LocalHosts, 2)
+	for _, lh := range returnedHost.LocalHosts {
+		require.Len(t, lh.Options, 1)
+		require.False(t, lh.Options[0].AlwaysSend)
+		require.EqualValues(t, 23, lh.Options[0].Code)
+		require.Empty(t, lh.Options[0].Encapsulate)
+		require.Len(t, lh.Options[0].Fields, 2)
+		require.EqualValues(t, 6, lh.Options[0].Universe)
+	}
+}
+
 // Test the calls for creating transaction and submitting a new host
 // reservation.
 func TestCreateHostBeginSubmit(t *testing.T) {

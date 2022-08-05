@@ -6,7 +6,9 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // This function creates multiple hosts used in tests which fetch and
@@ -91,6 +93,20 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 		subnets[i] = subnet
 	}
 
+	// Add apps to the database.
+	for i, a := range apps {
+		app := a
+		_, err := dbmodel.AddApp(db, &app)
+		require.NoError(t, err)
+		require.NotZero(t, app.ID)
+		// Associate the daemons with the subnets.
+		for j := range apps[i].Daemons {
+			err = dbmodel.AddDaemonToSubnet(db, &subnets[j], apps[i].Daemons[j])
+			require.NoError(t, err)
+		}
+		apps[i] = app
+	}
+
 	hosts = []dbmodel.Host{
 		{
 			SubnetID: 1,
@@ -113,6 +129,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Address: "192.0.2.5",
 				},
 			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+				{
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+			},
 		},
 		{
 			HostIdentifiers: []dbmodel.HostIdentifier{
@@ -133,6 +159,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Address: "192.0.2.7",
 				},
 			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+				{
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+			},
 		},
 		{
 			SubnetID: 2,
@@ -145,6 +181,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			IPReservations: []dbmodel.IPReservation{
 				{
 					Address: "2001:db8:1::1",
+				},
+			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+				{
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
 				},
 			},
 		},
@@ -160,6 +206,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Address: "2001:db8:1::2",
 				},
 			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+				{
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+			},
 		},
 		{
 			HostIdentifiers: []dbmodel.HostIdentifier{
@@ -173,21 +229,53 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Address: "3000::/48",
 				},
 			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+					DHCPOptionSet: []dbmodel.DHCPOption{
+						{
+							Code: 23,
+							Fields: []dbmodel.DHCPOptionField{
+								{
+									FieldType: keaconfig.IPv6AddressField,
+									Values:    []any{"3001:dbef:1e5::"},
+								},
+								{
+									FieldType: keaconfig.IPv6AddressField,
+									Values:    []any{"3002:abc::"},
+								},
+							},
+							Name:     "dns-servers",
+							Space:    keaconfig.DHCPv6OptionSpace,
+							Universe: storkutil.IPv6,
+						},
+					},
+				},
+				{
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+					DHCPOptionSet: []dbmodel.DHCPOption{
+						{
+							Code: 23,
+							Fields: []dbmodel.DHCPOptionField{
+								{
+									FieldType: keaconfig.IPv6AddressField,
+									Values:    []any{"3001:dbef:1e5::"},
+								},
+								{
+									FieldType: keaconfig.IPv6AddressField,
+									Values:    []any{"3002:abc::"},
+								},
+							},
+							Name:     "dns-servers",
+							Space:    keaconfig.DHCPv6OptionSpace,
+							Universe: storkutil.IPv6,
+						},
+					},
+				},
+			},
 		},
-	}
-
-	// Add apps to the database.
-	for i, a := range apps {
-		app := a
-		_, err := dbmodel.AddApp(db, &app)
-		require.NoError(t, err)
-		require.NotZero(t, app.ID)
-		// Associate the daemons with the subnets.
-		for j := range apps[i].Daemons {
-			err = dbmodel.AddDaemonToSubnet(db, &subnets[j], apps[i].Daemons[j])
-			require.NoError(t, err)
-		}
-		apps[i] = app
 	}
 
 	// Add hosts to the database.
