@@ -187,7 +187,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 // structure.
 func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetadata) *models.ConfigCheckers {
 	checkers := make([]*models.ConfigChecker, len(metadata))
-	for _, m := range metadata {
+	for i, m := range metadata {
 		var selectors []string
 		for _, selector := range m.Selectors {
 			selectors = append(selectors, selector.String())
@@ -198,12 +198,12 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 			triggers = append(triggers, string(trigger))
 		}
 
-		checkers = append(checkers, &models.ConfigChecker{
+		checkers[i] = &models.ConfigChecker{
 			Name:      m.Name,
 			Selectors: selectors,
 			State:     m.State.String(),
 			Triggers:  triggers,
-		})
+		}
 	}
 
 	payload := &models.ConfigCheckers{

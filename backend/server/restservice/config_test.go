@@ -8,8 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
@@ -894,4 +896,31 @@ func TestPutDaemonConfigReviewNoConfig(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, fmt.Sprintf("Configuration not found for daemon with ID %d", daemons[0].ID),
 		*defaultRsp.Payload.Message)
+}
+
+// Test that the config checker metadata is converted properly to API structure.
+func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
+	// Arrange
+	metadata := configreview.CheckerMetadata{
+		Name:      "foo",
+		Triggers:  configreview.Triggers{configreview.ConfigModified, configreview.ManualRun},
+		Selectors: configreview.DispatchGroupSelectors{configreview.Bind9Daemon, configreview.KeaDHCPDaemon},
+		Enabled:   true,
+		State:     configreview.CheckerStateEnabled,
+	}
+
+	// Act
+	payload := convertConfigCheckerMetadataToRestAPI([]*configreview.CheckerMetadata{&metadata})
+
+	// Assert
+	require.Len(t, payload.Items, 1)
+	require.EqualValues(t, 1, payload.Total)
+	apiMetadata := payload.Items[0]
+	require.EqualValues(t, "foo", apiMetadata.Name)
+	require.Contains(t, apiMetadata.Triggers, "manual")
+	require.Contains(t, apiMetadata.Triggers, "config change")
+	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
+	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
+	require.EqualValues(t, models.ConfigCheckerStateEnabled, apiMetadata.State)
+
 }
