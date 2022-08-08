@@ -209,7 +209,7 @@ func (parsed *ParsedIP) IsInPrefixRange(prefix string, prefixLen, delegatedLen i
 	return false
 }
 
-// Returns network prefix as a hexadecimal string without delimiters. It
+// Returns network prefix as a binary string without delimiters. It
 // contains only the prefix bytes without leading zeros. The IPv4 prefixes are
 // prepended by the constant term to avoid collisions with the IPv6 ones.
 // If the network prefix is invalid, the empty string is returned.

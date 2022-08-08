@@ -211,7 +211,7 @@ func TestPrefixInRange(t *testing.T) {
 	require.False(t, parsedIP.IsInPrefixRange("2001:db8:1::", 64, 96))
 }
 
-// Test that the network prefixes are correctly converted to hexademical strings.
+// Test that the network prefixes are correctly converted to binary strings.
 func TestPrefixToBinaryForValidPrefixes(t *testing.T) {
 	// Arrange
 	fourZeroOctets := "00000000" + "00000000" + "00000000" + "00000000"
