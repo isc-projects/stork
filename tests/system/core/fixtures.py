@@ -94,12 +94,12 @@ def server_parametrize(service_name="server"):
     }], indirect=True)
 
 
-def external_parametrize(version):
+def package_parametrize(version):
     """
     Sets the version of packages to install from the external repository.
     Empty version means the latest available.
     """
-    return pytest.mark.parametrize("external_service", [{
+    return pytest.mark.parametrize("package_service", [{
         "version": version
     }], indirect=True)
 
@@ -269,10 +269,11 @@ def perfdhcp_service():
 
 
 @pytest.fixture
-def external_service(request):
+def package_service(request):
     """
     A fixture that setup the Stork Server and Stork Agent services installed
-    from the external repository and guarantees that they are operational.
+    from the packages fetched from the external repository and guarantees that
+    they are operational.
     """
     param = {
         "version": ""
