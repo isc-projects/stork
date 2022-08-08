@@ -183,7 +183,7 @@ def add_version_guard(task_name, version)
         fail "file task required"
     end
 
-    # We don't use the verstion guard for the prerequirities that must be
+    # We don't use the version guard for the prerequisities that must be
     # installed manually on current operating system
     if task.instance_variable_get(:@manuall_install)
         return
