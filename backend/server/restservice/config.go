@@ -234,7 +234,7 @@ func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.G
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
 	if err != nil {
 		log.Error(err)
-		msg := fmt.Sprintf("cannot get the global checkers metadata")
+		msg := "cannot get the global checkers metadata"
 		rsp := services.NewGetGlobalConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

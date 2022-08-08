@@ -1138,7 +1138,7 @@ func TestPutDaemonConfigCheckersDatabase(t *testing.T) {
 		},
 	}
 	_ = rapi.PutDaemonConfigCheckers(ctx, params)
-	preferences, err := dbmodel.GetDaemonCheckerPreferences(db, daemon.ID)
+	preferences, err := dbmodel.GetDaemonCheckerPreferences(db, &daemon.ID)
 
 	// Assert
 	require.NoError(t, err)
