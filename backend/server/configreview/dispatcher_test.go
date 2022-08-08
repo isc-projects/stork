@@ -652,7 +652,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "host_cmds_presence")
 	require.Contains(t, checkerNames, "shared_network_dispensable")
 	require.Contains(t, checkerNames, "subnet_dispensable")
-	require.Contains(t, checkerNames, "reservations_out_of_pool")
+	require.Contains(t, checkerNames, "reservation_out_of_pool")
 
 	// Ensure that the appropriate triggers were registered for the
 	// default checkers.
