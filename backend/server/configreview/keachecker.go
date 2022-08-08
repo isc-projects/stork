@@ -668,7 +668,8 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	}
 	overlapMessage := strings.Join(overlappingMessages, "; ")
 
-	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %s. It may cause unexpected or incorrect Kea behavior.\n%s",
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %s. "+
+		"It means that the DHCP clients in different subnets may be assigned the same IP addresses.\n%s",
 		maxExceedMessage, storkutil.FormatNoun(int64(len(overlaps)), "overlapping subnet pair", "s"), overlapMessage)).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
@@ -797,7 +798,11 @@ func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
 
 	hintMessage := strings.Join(issues, "; ")
 
-	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains%s %s. Use a proper form to enable the built-in subnet prefix validation.\n%s",
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains%s %s. "+
+		"Kea accepts non-canonical prefix forms, which may lead to duplicates "+
+		"if two subnets have the same prefix specified in different forms. "+
+		"Use canonical forms to ensure that Kea properly identifies and "+
+		"validates subnet prefixes to avoid duplication or overlap.\n%s",
 		maxExceedMessage, storkutil.FormatNoun(int64(len(issues)), "non-canonical prefix", "es"), hintMessage)).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
