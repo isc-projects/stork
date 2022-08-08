@@ -2066,7 +2066,7 @@ func TestGetCanonicalPrefixForValidPrefixes(t *testing.T) {
 	}
 }
 
-// Test that the canonical prefix has the shortest form.
+// Test that the prefix with many zeros is reduced to the canonical form.
 func TestGetCanonicalPrefixShortestIPv6Form(t *testing.T) {
 	// Arrange
 	prefix := "2001:0000:0000:0000:0000::/64"
