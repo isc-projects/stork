@@ -1816,8 +1816,8 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 	require.EqualValues(t, 7, overlaps[1].child.ID)
 }
 
-// Test that the searching for overlaps is stopped if the limit is exceeded on
-// containing subnets.
+// Test that the searching for overlaps is stopped if the limit of overlapping
+// subnets is exceeded.
 func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 	// Arrange
 	subnets := []minimalSubnet{
