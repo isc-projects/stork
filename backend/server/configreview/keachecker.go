@@ -654,16 +654,16 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	for i, overlap := range overlaps {
 		parentID := ""
 		if overlap.parent.ID != 0 {
-			parentID = fmt.Sprintf("[%d] ", overlap.parent.ID)
+			parentID = fmt.Sprintf(" (subnet-id %d)", overlap.parent.ID)
 		}
 		childID := ""
 		if overlap.child.ID != 0 {
-			childID = fmt.Sprintf("[%d] ", overlap.child.ID)
+			childID = fmt.Sprintf(" (subnet-id %d)", overlap.child.ID)
 		}
 
 		message := fmt.Sprintf("%d. %s%s is overlapped by %s%s", i+1,
-			parentID, overlap.parent.Subnet,
-			childID, overlap.child.Subnet)
+			overlap.parent.Subnet, parentID,
+			overlap.child.Subnet, childID)
 		overlappingMessages[i] = message
 	}
 	overlapMessage := strings.Join(overlappingMessages, "; ")

@@ -1905,7 +1905,7 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
 	require.Contains(t, report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
-	require.Contains(t, report.content, "1. [2] 10.0.0.0/16 is overlapped by [1] 10.0.1.0/24")
+	require.Contains(t, report.content, "1. 10.0.0.0/16 (subnet-id 2) is overlapped by 10.0.1.0/24 (subnet-id 1)")
 }
 
 // Test that report has a proper content for a single overlap and subnets without IDs.
@@ -1968,8 +1968,8 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
 	require.Contains(t, report.content, "Kea {daemon} configuration includes at least 10 overlapping subnet pairs.")
-	require.Contains(t, report.content, "1. [1] 10.0.0.0/8 is overlapped by [2] 10.0.0.0/9")
-	require.Contains(t, report.content, "10. [1] 10.0.0.0/8 is overlapped by [11] 10.0.0.0/18")
+	require.Contains(t, report.content, "1. 10.0.0.0/8 (subnet-id 1) is overlapped by 10.0.0.0/9 (subnet-id 2)")
+	require.Contains(t, report.content, "10. 10.0.0.0/8 (subnet-id 1) is overlapped by 10.0.0.0/18 (subnet-id 11)")
 	require.NotContains(t, report.content, "11.")
 }
 
