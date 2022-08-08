@@ -578,7 +578,7 @@ started, and the Stork Agent does not try to register.
    It is not supported to test Stork with different Kea or Bind9 versions.
    This feature is under construction.
 
-Update packages in system tests
+Update Packages in System Tests
 -------------------------------
 A specialized ``package_service`` docker-compose service is dedicated to
 performing system tests related to updating the packages. The service contains
