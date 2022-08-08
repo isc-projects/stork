@@ -231,7 +231,16 @@ func convertConfigCheckerStateFromRestAPI(state models.ConfigCheckerState) (conf
 
 // Returns global config checkers metadata.
 func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckersParams) middleware.Responder {
-	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
+	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get the global checkers metadata")
+		rsp := services.NewGetGlobalConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 	rsp := services.NewGetGlobalConfigCheckersOK().WithPayload(payload)
 	return rsp
@@ -256,7 +265,16 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 		return rsp
 	}
 
-	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
+	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(daemon)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("Cannot get checkers metadata for daemon (ID: %d, Name: %s)", daemon.ID, daemon.Name)
+		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
 	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
@@ -284,13 +302,30 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 	for _, change := range params.Changes.Items {
 		apiState := change.State.(models.ConfigCheckerState)
 		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
-			r.ReviewDispatcher.SetCheckerState(daemon.ID, change.Name, state)
+			err = r.ReviewDispatcher.SetCheckerState(daemon, change.Name, state)
+			if err != nil {
+				log.Error(err)
+				msg := fmt.Sprintf("Cannot set the global state for the %s checker", change.Name)
+				rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+					Message: &msg,
+				})
+				return rsp
+			}
 		}
 	}
 
 	// TODO: Update database
 
-	metadata := r.ReviewDispatcher.GetCheckersMetadata(daemon.ID, daemon.Name)
+	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(daemon)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("Cannot get checkers metadata for daemon (ID: %d, Name: %s)", daemon.ID, daemon.Name)
+		rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
 	rsp := services.NewPutDaemonConfigCheckersOK().WithPayload(payload)
@@ -301,13 +336,30 @@ func (r *RestAPI) PutGlobalConfigCheckers(ctx context.Context, params services.P
 	for _, change := range params.Changes.Items {
 		apiState := change.State.(models.ConfigCheckerState)
 		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
-			r.ReviewDispatcher.SetCheckerState(0, change.Name, state)
+			err := r.ReviewDispatcher.SetCheckerState(nil, change.Name, state)
+			if err != nil {
+				log.Error(err)
+				msg := fmt.Sprintf("Cannot set the global state for the %s checker", change.Name)
+				rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+					Message: &msg,
+				})
+				return rsp
+			}
 		}
 	}
 
 	// TODO: Update database
 
-	metadata := r.ReviewDispatcher.GetCheckersMetadata(0, "")
+	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot get global checkers metadata for daemon"
+		rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	payload := convertConfigCheckerMetadataToRestAPI(metadata)
 
 	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)

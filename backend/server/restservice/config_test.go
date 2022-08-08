@@ -1052,8 +1052,8 @@ func TestPutGlobalConfigCheckers(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Items)
 }
 
-// Test that the daemon config checkers are updated properly.
-func TestPutDaemonConfigCheckers(t *testing.T) {
+// Test that updating the daemon config checkers produces a proper API response.
+func TestPutDaemonConfigCheckersAPIResponse(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1081,8 +1081,12 @@ func TestPutDaemonConfigCheckers(t *testing.T) {
 	params := services.PutDaemonConfigCheckersParams{
 		ID: daemon.ID,
 		Changes: &models.ConfigCheckerChanges{
-			Total: 0,
-			Items: []*models.ConfigCheckerChange{},
+			Total: 1,
+			Items: []*models.ConfigCheckerChange{
+				{
+					Name: "foo", State: models.ConfigCheckerStateEnabled,
+				},
+			},
 		},
 	}
 	rsp := rapi.PutDaemonConfigCheckers(ctx, params)
@@ -1091,8 +1095,56 @@ func TestPutDaemonConfigCheckers(t *testing.T) {
 	require.IsType(t, &services.PutDaemonConfigCheckersOK{}, rsp)
 	okRsp := rsp.(*services.PutDaemonConfigCheckersOK)
 	require.NotNil(t, okRsp)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.Items)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+	require.EqualValues(t, "foo", okRsp.Payload.Items[0].Name)
+	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
+}
+
+// Test that updating the daemon config checkers affects the database.
+func TestPutDaemonConfigCheckersDatabase(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	app := &dbmodel.App{
+		Type: dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+		},
+		MachineID: m.ID,
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	// Act
+	ctx := context.Background()
+	params := services.PutDaemonConfigCheckersParams{
+		ID: daemon.ID,
+		Changes: &models.ConfigCheckerChanges{
+			Total: 1,
+			Items: []*models.ConfigCheckerChange{
+				{
+					Name: "foo", State: models.ConfigCheckerStateEnabled,
+				},
+			},
+		},
+	}
+	_ = rapi.PutDaemonConfigCheckers(ctx, params)
+	preferences, err := dbmodel.GetDaemonCheckerPreferences(db, daemon.ID)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, preferences, 1)
+	require.EqualValues(t, "foo", preferences[0].CheckerName)
+	require.False(t, preferences[0].Excluded)
 }
 
 // Test that updating the daemon config checkers for non-existing daemon causes

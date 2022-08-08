@@ -16,9 +16,10 @@ type FakeDispatcherCall struct {
 // It substitutes the default dispatcher implementation in the
 // unit tests.
 type FakeDispatcher struct {
-	CallLog    []FakeDispatcherCall
-	Signature  string
-	InProgress bool
+	CallLog       []FakeDispatcherCall
+	Signature     string
+	InProgress    bool
+	checkerStates map[int64]map[string]configreview.CheckerState
 }
 
 var _ configreview.Dispatcher = (*FakeDispatcher)(nil)
@@ -32,9 +33,24 @@ func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSe
 	return true
 }
 
-func (d *FakeDispatcher) GetCheckersMetadata(daemonID int64, daemonName string) []*configreview.CheckerMetadata {
+func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configreview.CheckerMetadata, error) {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetCheckersMetadata"})
-	return []*configreview.CheckerMetadata{}
+
+	var daemonID int64 = 0
+	if daemon != nil {
+		daemonID = daemon.ID
+	}
+
+	var metadata []*configreview.CheckerMetadata
+	if checkerStates, ok := d.checkerStates[daemonID]; ok {
+		for checkerName, checkerState := range checkerStates {
+			metadata = append(metadata, &configreview.CheckerMetadata{
+				Name:  checkerName,
+				State: checkerState,
+			})
+		}
+	}
+	return metadata, nil
 }
 
 func (d *FakeDispatcher) GetSignature() string {
@@ -42,8 +58,23 @@ func (d *FakeDispatcher) GetSignature() string {
 	return d.Signature
 }
 
-func (d *FakeDispatcher) SetCheckerState(daemonID int64, checkerName string, state configreview.CheckerState) {
+func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state configreview.CheckerState) error {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "SetCheckerState"})
+
+	var daemonID int64 = 0
+	if daemon != nil {
+		daemonID = daemon.ID
+	}
+
+	if d.checkerStates == nil {
+		d.checkerStates = make(map[int64]map[string]configreview.CheckerState)
+	}
+	if _, ok := d.checkerStates[daemonID]; !ok {
+		d.checkerStates[daemonID] = make(map[string]configreview.CheckerState)
+	}
+	d.checkerStates[daemonID][checkerName] = state
+
+	return nil
 }
 
 func (d *FakeDispatcher) Start() {

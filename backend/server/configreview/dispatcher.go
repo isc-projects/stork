@@ -276,8 +276,8 @@ type dispatcherImpl struct {
 type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error))
 	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
-	GetCheckersMetadata(daemonID int64, daemonName string) []*CheckerMetadata
-	SetCheckerState(daemonID int64, checkerName string, state CheckerState)
+	GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*CheckerMetadata, error)
+	SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state CheckerState) error
 	GetSignature() string
 	Start()
 	Shutdown()
@@ -687,17 +687,21 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 // daemon. Metadata is a set of values describing the checker, i.e., name of
 // the checker, list of triggers and selectors, and state of checker (enabled
 // or disabled). The metadata is temporary objects releated to a specific
-// daemon and cannot be used to execute the checker function. If the daemon ID
-// equals to zero then it returns all registered checkers and global states.
-func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) []*CheckerMetadata {
-	isDaemonFetch := daemonID != 0
+// daemon and cannot be used to execute the checker function. If the daemon
+// is nil then it returns all registered checkers and global states.
+func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*CheckerMetadata, error) {
+	isDaemonFetch := daemon != nil
 
 	checkers := make(map[string]*checker)
 	selectors := make(map[string]DispatchGroupSelectors)
 
 	var availableSelectors map[DispatchGroupSelector]bool
 	if isDaemonFetch {
-		groupSelectors := getDispatchGroupSelectors(daemonName)
+		groupSelectors := getDispatchGroupSelectors(daemon.Name)
+		if len(groupSelectors) == 0 {
+			return nil, pkgerrors.Errorf("No dispatch group selectors for daemon with name: %s", daemon.Name)
+		}
+
 		availableSelectors = make(map[DispatchGroupSelector]bool, len(groupSelectors))
 		for _, selector := range groupSelectors {
 			availableSelectors[selector] = true
@@ -720,6 +724,10 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 		}
 	}
 
+	daemonID := int64(0)
+	if isDaemonFetch {
+		daemonID = daemon.ID
+	}
 	metadata := make([]*CheckerMetadata, len(checkers))
 	i := 0
 	for _, checker := range checkers {
@@ -741,7 +749,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemonID int64, daemonName string) 
 		i++
 	}
 
-	return metadata
+	return metadata, nil
 }
 
 // Returns dispatcher's signature. The signature is a hash function output
@@ -756,12 +764,37 @@ func (d *dispatcherImpl) GetSignature() string {
 	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", d.enforceSeq, d.groups))
 }
 
-func (d *dispatcherImpl) SetCheckerState(daemonID int64, checkerName string, state CheckerState) {
-	if daemonID == 0 {
+// Returns true if a given checker is registred to execute on a specific daemon.
+func (d *dispatcherImpl) isCheckerAvailableForDaemon(checkerName string, daemon *dbmodel.Daemon) bool {
+	selectors := getDispatchGroupSelectors(daemon.Name)
+	for _, selector := range selectors {
+		group := d.getGroup(selector)
+		if group == nil {
+			continue
+		}
+		for _, checker := range group.checkers {
+			if checker.name == checkerName {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Sets the checker state for a given daemon. If the daemon is nil then it sets
+// the global state. If the checker is unknown returns error.
+func (d *dispatcherImpl) SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state CheckerState) error {
+	if daemon != nil && !d.isCheckerAvailableForDaemon(checkerName, daemon) {
+		return pkgerrors.Errorf("The %s checker isn't registered to use with the %s daemon", checkerName, daemon.Name)
+	}
+
+	if daemon == nil {
 		d.checkerController.SetGlobalState(checkerName, state)
 	} else {
-		d.checkerController.SetStateForDaemon(daemonID, checkerName, state)
+		d.checkerController.SetStateForDaemon(daemon.ID, checkerName, state)
 	}
+
+	return nil
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving

@@ -2,6 +2,7 @@ package configreview
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -749,44 +750,63 @@ func TestGetCheckersMetadata(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	daemon1 := &dbmodel.Daemon{ID: 1, Name: dbmodel.DaemonNameDHCPv4}
+	daemon2 := &dbmodel.Daemon{ID: 2, Name: dbmodel.DaemonNameBind9}
+	daemon3 := &dbmodel.Daemon{ID: 3, Name: "unknown"}
 	dispatcher := NewDispatcher(db)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, nil)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "baz", Triggers{ConfigModified, DBHostsModified}, nil)
 	dispatcher.RegisterChecker(Bind9Daemon, "boz", Triggers{ManualRun}, nil)
-	dispatcher.SetCheckerState(1, "bar", CheckerStateDisabled)
-	dispatcher.SetCheckerState(0, "baz", CheckerStateDisabled)
+	dispatcher.SetCheckerState(daemon1, "bar", CheckerStateDisabled)
+	dispatcher.SetCheckerState(nil, "baz", CheckerStateDisabled)
 
 	// Act
-	metadataKea := dispatcher.GetCheckersMetadata(1, dbmodel.DaemonNameDHCPv4)
-	metadataBind9 := dispatcher.GetCheckersMetadata(2, dbmodel.DaemonNameBind9)
-	metadataGlobal := dispatcher.GetCheckersMetadata(0, "")
+	metadataKea, errKea := dispatcher.GetCheckersMetadata(daemon1)
+	metadataBind9, errBind9 := dispatcher.GetCheckersMetadata(daemon2)
+	metadataGlobal, errGlobal := dispatcher.GetCheckersMetadata(nil)
+	metadataUnknown, errUnknown := dispatcher.GetCheckersMetadata(daemon3)
 
 	// Assert
+	sort.Slice(metadataKea, func(i, j int) bool {
+		return metadataKea[i].Name < metadataKea[j].Name
+	})
+	sort.Slice(metadataBind9, func(i, j int) bool {
+		return metadataBind9[i].Name < metadataBind9[j].Name
+	})
+	sort.Slice(metadataGlobal, func(i, j int) bool {
+		return metadataGlobal[i].Name < metadataGlobal[j].Name
+	})
+	sort.Slice(metadataUnknown, func(i, j int) bool {
+		return metadataUnknown[i].Name < metadataUnknown[j].Name
+	})
+
 	require.Len(t, metadataKea, 3)
+	require.NoError(t, errKea)
 
-	require.EqualValues(t, "foo", metadataKea[0].Name)
-	require.True(t, metadataKea[0].Enabled)
+	require.EqualValues(t, "bar", metadataKea[0].Name)
+	require.False(t, metadataKea[0].Enabled)
 	require.Contains(t, metadataKea[0].Selectors, KeaDHCPDaemon)
-	require.EqualValues(t, CheckerStateInherit, metadataKea[0].State)
+	require.EqualValues(t, CheckerStateDisabled, metadataKea[0].State)
 	require.Contains(t, metadataKea[0].Triggers, ManualRun)
-	require.Contains(t, metadataKea[0].Triggers, ConfigModified)
+	require.Contains(t, metadataKea[0].Triggers, DBHostsModified)
 
-	require.EqualValues(t, "bar", metadataKea[1].Name)
+	require.EqualValues(t, "baz", metadataKea[1].Name)
 	require.False(t, metadataKea[1].Enabled)
 	require.Contains(t, metadataKea[1].Selectors, KeaDHCPDaemon)
-	require.EqualValues(t, CheckerStateDisabled, metadataKea[1].State)
-	require.Contains(t, metadataKea[1].Triggers, ManualRun)
+	require.EqualValues(t, CheckerStateInherit, metadataKea[1].State)
+	require.Contains(t, metadataKea[1].Triggers, ConfigModified)
 	require.Contains(t, metadataKea[1].Triggers, DBHostsModified)
 
-	require.EqualValues(t, "baz", metadataKea[2].Name)
-	require.False(t, metadataKea[2].Enabled)
+	require.EqualValues(t, "foo", metadataKea[2].Name)
+	require.True(t, metadataKea[2].Enabled)
 	require.Contains(t, metadataKea[2].Selectors, KeaDHCPDaemon)
 	require.EqualValues(t, CheckerStateInherit, metadataKea[2].State)
+	require.Contains(t, metadataKea[2].Triggers, ManualRun)
 	require.Contains(t, metadataKea[2].Triggers, ConfigModified)
-	require.Contains(t, metadataKea[2].Triggers, DBHostsModified)
 
 	require.Len(t, metadataBind9, 1)
+	require.NoError(t, errBind9)
 
 	require.EqualValues(t, "boz", metadataBind9[0].Name)
 	require.True(t, metadataBind9[0].Enabled)
@@ -795,14 +815,17 @@ func TestGetCheckersMetadata(t *testing.T) {
 	require.Contains(t, metadataBind9[0].Triggers, ManualRun)
 
 	require.Len(t, metadataGlobal, 4)
+	require.NoError(t, errGlobal)
 
-	require.EqualValues(t, "foo", metadataGlobal[0].Name)
+	require.EqualValues(t, "bar", metadataGlobal[0].Name)
 	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[0].State)
-	require.EqualValues(t, "bar", metadataGlobal[1].Name)
-	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[1].State)
-	require.EqualValues(t, "baz", metadataGlobal[2].Name)
-	require.EqualValues(t, CheckerStateDisabled, metadataGlobal[2].State)
-	require.EqualValues(t, "boz", metadataGlobal[3].Name)
+	require.EqualValues(t, "baz", metadataGlobal[1].Name)
+	require.EqualValues(t, CheckerStateDisabled, metadataGlobal[1].State)
+	require.EqualValues(t, "boz", metadataGlobal[2].Name)
+	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[2].State)
+	require.EqualValues(t, "foo", metadataGlobal[3].Name)
 	require.EqualValues(t, CheckerStateEnabled, metadataGlobal[3].State)
 
+	require.Error(t, errUnknown)
+	require.Nil(t, metadataUnknown)
 }
