@@ -271,7 +271,7 @@ def perfdhcp_service():
 @pytest.fixture
 def external_service(request):
     """
-    A fixture that setup the Strok Server and Stork Agent services installed
+    A fixture that setup the Stork Server and Stork Agent services installed
     from the external repository and guarantees that they are operational.
     """
     param = {

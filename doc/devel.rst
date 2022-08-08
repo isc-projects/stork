@@ -590,7 +590,7 @@ decorator. If not provided, then the latest version will be installed. You
 should notice that using many versions harms the performance.
 
 Additionally, the OpenAPI client is generated from the current Stork version
-and maybe not be compatible with the older ones. You can use the ``no_validate``
+and maybe be incompatible with the older ones. It is possible to use the ``no_validate``
 context to suppress some compatibility errors.
 
 .. code-block:: python

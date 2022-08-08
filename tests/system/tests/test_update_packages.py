@@ -5,7 +5,7 @@ import core.version as version
 def test_update_stork_from_the_latest_released_version(external_service: ExternalPackages):
     """
     Initializes the Stork Server with the packages from the CloudSmith and
-    next install the current packages.
+    installs current packages.
     """
     expected_version_info = version.get_version_info()
 
