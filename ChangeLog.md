@@ -1,7 +1,7 @@
 * 231 [func] slawek
 
-    Added the system test checks correctness of the updating the Stork
-    installed from the latest CloudSmith packages to the current version.
+    Added a system test validating Stork upgrade to the most recent version
+    using Cloudsmith repository.
     (Gitalb #746)
 
 * 230 [bug] slawek
