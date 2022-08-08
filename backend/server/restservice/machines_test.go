@@ -538,6 +538,7 @@ func TestGetMachines(t *testing.T) {
 	require.EqualValues(t, ms.Total, 2)
 }
 
+// Test that the empty list is returned when the database contains no machines.
 func TestGetMachinesEmptyList(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -560,6 +561,7 @@ func TestGetMachinesEmptyList(t *testing.T) {
 	ms := rsp.(*services.GetMachinesOK).Payload
 	require.EqualValues(t, ms.Total, 0)
 	require.NotNil(t, ms.Items)
+	require.Len(t, ms.Items, 0)
 }
 
 // Test that a list of machines' ids and addresses/names is returned
