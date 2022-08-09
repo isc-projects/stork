@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 
 	"github.com/go-pg/pg/v10"
@@ -97,4 +98,27 @@ func DeleteDaemonCheckerPreferences(dbi dbops.DBI, preferences []*ConfigDaemonCh
 	}
 
 	return nil
+}
+
+// Commits the changes in config checker preferences. It accepts a list of
+// preferences to add or update and a list of preferences to delete.
+func commitDaemonCheckerPreferences(dbi dbops.DBI, updates []*ConfigDaemonCheckerPreference, deletes []*ConfigDaemonCheckerPreference) error {
+	err := AddOrUpdateDaemonCheckerPreferences(dbi, updates)
+	if err != nil {
+		return err
+	}
+	return DeleteDaemonCheckerPreferences(dbi, deletes)
+}
+
+// Commits the changes in config checker preferences. It accepts a list of
+// preferences to add or update and a list of preferences to delete. The transaction
+// is created if needed.
+func CommitDaemonCheckerPreferences(dbi dbops.DBI, updates []*ConfigDaemonCheckerPreference, deletes []*ConfigDaemonCheckerPreference) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return commitDaemonCheckerPreferences(dbi, updates, deletes)
+		})
+		return err
+	}
+	return commitDaemonCheckerPreferences(dbi, updates, deletes)
 }

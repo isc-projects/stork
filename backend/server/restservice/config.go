@@ -299,22 +299,55 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 		return rsp
 	}
 
+	var newOrUpdatedPreferences []*dbmodel.ConfigDaemonCheckerPreference
+	var deletedPreferences []*dbmodel.ConfigDaemonCheckerPreference
 	for _, change := range params.Changes.Items {
 		apiState := change.State.(models.ConfigCheckerState)
-		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
-			err = r.ReviewDispatcher.SetCheckerState(daemon, change.Name, state)
-			if err != nil {
-				log.Error(err)
-				msg := fmt.Sprintf("Cannot set the global state for the %s checker", change.Name)
-				rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-					Message: &msg,
-				})
-				return rsp
-			}
+		state, ok := convertConfigCheckerStateFromRestAPI(apiState)
+		if !ok {
+			log.Errorf("Received unknown checker state %s", apiState)
+			msg := fmt.Sprintf("Cannot parse the checker state %s", apiState)
+			rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
 		}
+
+		err = r.ReviewDispatcher.SetCheckerState(daemon, change.Name, state)
+
+		if err != nil {
+			log.Error(err)
+			msg := fmt.Sprintf("Cannot set the state for the %s checker", change.Name)
+			rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
+		if state == configreview.CheckerStateInherit {
+			deletedPreferences = append(deletedPreferences, &dbmodel.ConfigDaemonCheckerPreference{
+				DaemonID:    &daemon.ID,
+				CheckerName: change.Name,
+			})
+		} else {
+			newOrUpdatedPreferences = append(newOrUpdatedPreferences, &dbmodel.ConfigDaemonCheckerPreference{
+				DaemonID:    &daemon.ID,
+				CheckerName: change.Name,
+				Excluded:    state == configreview.CheckerStateDisabled,
+			})
+		}
+
 	}
 
-	// TODO: Update database
+	err = dbmodel.CommitDaemonCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot commit the config checker changes into DB"
+		rsp := services.NewPutDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(daemon)
 	if err != nil {
