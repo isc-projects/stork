@@ -299,8 +299,8 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 		return rsp
 	}
 
-	var newOrUpdatedPreferences []*dbmodel.ConfigDaemonCheckerPreference
-	var deletedPreferences []*dbmodel.ConfigDaemonCheckerPreference
+	var newOrUpdatedPreferences []*dbmodel.ConfigCheckerPreference
+	var deletedPreferences []*dbmodel.ConfigCheckerPreference
 	for _, change := range params.Changes.Items {
 		apiState := change.State.(models.ConfigCheckerState)
 		state, ok := convertConfigCheckerStateFromRestAPI(apiState)
@@ -325,12 +325,12 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 		}
 
 		if state == configreview.CheckerStateInherit {
-			deletedPreferences = append(deletedPreferences, &dbmodel.ConfigDaemonCheckerPreference{
+			deletedPreferences = append(deletedPreferences, &dbmodel.ConfigCheckerPreference{
 				DaemonID:    &daemon.ID,
 				CheckerName: change.Name,
 			})
 		} else {
-			newOrUpdatedPreferences = append(newOrUpdatedPreferences, &dbmodel.ConfigDaemonCheckerPreference{
+			newOrUpdatedPreferences = append(newOrUpdatedPreferences, &dbmodel.ConfigCheckerPreference{
 				DaemonID:    &daemon.ID,
 				CheckerName: change.Name,
 				Excluded:    state == configreview.CheckerStateDisabled,
