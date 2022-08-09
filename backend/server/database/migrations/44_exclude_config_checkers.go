@@ -6,19 +6,24 @@ func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
 			CREATE TABLE config_daemon_checker_preference (
+				id BIGSERIAL PRIMARY KEY,
 				daemon_id BIGINT,
 				checker_name TEXT NOT NULL,
-				excluded BOOLEAN,
-				CONSTRAINT config_daemon_checker_preference_pkey PRIMARY KEY (daemon_id, checker_name),
-				CONSTRAINT config_daemon_checker_preference_daemon_id FOREIGN KEY (daemon_id)
+				excluded BOOLEAN NOT NULL,
+				CONSTRAINT config_daemon_checker_preference_daemon_id_fk FOREIGN KEY (daemon_id)
 					REFERENCES daemon (id)
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
 			);
+
+			CREATE UNIQUE INDEX config_daemon_checker_preference_non_null_idx ON config_daemon_checker_preference (daemon_id, checker_name) WHERE daemon_id IS NOT NULL;
+			CREATE UNIQUE INDEX config_daemon_checker_preference_nullable_idx ON config_daemon_checker_preference (checker_name) WHERE daemon_id IS NULL;
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+			DROP INDEX config_daemon_checker_preference_nullable_idx;
+			DROP INDEX config_daemon_checker_preference_non_null_idx;
 			DROP TABLE config_daemon_checker_preference;
         `)
 		return err

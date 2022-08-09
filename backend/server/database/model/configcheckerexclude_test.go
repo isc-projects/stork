@@ -40,149 +40,88 @@ func addTestDaemons(db *pg.DB) (*Daemon, *Daemon, error) {
 	return daemons[0], daemons[1], nil
 }
 
-// Test that the daemon preferences of config checkers are added properly.
-func TestAddDaemonCheckerPreferences(t *testing.T) {
+// Test that the daemon preferences of config checkers are inserted properly.
+// If the preference already exists it should be updated instead.
+func TestAddOrUpdateDaemonCheckerPreferences(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	daemon, _, _ := addTestDaemons(db)
 
 	// Act
-	err := AddDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
-		{
-			DaemonID:    &daemon.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-	})
-
-	// Assert
-	require.NoError(t, err)
-	preferences, _ := GetDaemonCheckerPreferences(db, &daemon.ID)
-	require.Len(t, preferences, 1)
-	require.EqualValues(t, "foo", preferences[0].CheckerName)
-	require.EqualValues(t, daemon.ID, preferences[0].DaemonID)
-	require.True(t, preferences[0].Excluded)
-}
-
-// Test that adding the empty list of the daemon preferences of config checkers
-// generates no error.
-func TestAddEmptyListOfDaemonCheckerPreferences(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	daemon, _, _ := addTestDaemons(db)
-
-	// Act
-	err := AddDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{})
-
-	// Assert
-	require.NoError(t, err)
-	preferences, _ := GetDaemonCheckerPreferences(db, &daemon.ID)
-	require.Empty(t, preferences)
-}
-
-// Test that adding a daemon preference with already existing checker name causes
-// an error.
-func TestAddCheckerPreferencesWithDoubledName(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	daemon, _, _ := addTestDaemons(db)
-
-	// Act
-	err1 := AddDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
-		{
-			DaemonID:    &daemon.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-	})
-	err2 := AddDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
-		{
-			DaemonID:    &daemon.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-	})
-
-	// Assert
-	require.NoError(t, err1)
-	require.Error(t, err2)
-}
-
-// Test that the daemon preferences for a specific daemon are updated properly.
-func TestUpdateDaemonCheckerPreferences(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	daemon, _, _ := addTestDaemons(db)
-	preferences := []*ConfigDaemonCheckerPreference{{
-		DaemonID:    &daemon.ID,
-		CheckerName: "foo",
-		Excluded:    true,
-	}}
-	_ = AddDaemonCheckerPreferences(db, preferences)
-
-	// Act
-	preferences[0].Excluded = false
-	preferences[0].CheckerName = "bar"
-	err := UpdateDaemonCheckerPreferences(db, preferences)
-
-	// Assert
-	require.NoError(t, err)
-	preferences, _ = GetDaemonCheckerPreferences(db, &daemon.ID)
-	require.Len(t, preferences, 1)
-	require.EqualValues(t, "bar", preferences[0].CheckerName)
-	require.False(t, preferences[0].Excluded)
-}
-
-// Test that updating an empty list of the daemon preferences of config checkers
-// generates no error.
-func TestUpdateEmptyListOfDaemonCheckerPreferences(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	daemon, _, _ := addTestDaemons(db)
-
-	// Act
-	err := UpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{})
-
-	// Assert
-	require.NoError(t, err)
-	preferences, _ := GetDaemonCheckerPreferences(db, &daemon.ID)
-	require.Empty(t, preferences)
-}
-
-// Test that updating the daemon preferences of config checkers with a name
-// that already exists for a given daemon generates error.
-func TestUpdateDaemonCheckerPreferencesWithDuplicatedName(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	daemon, _, _ := addTestDaemons(db)
 	preferences := []*ConfigDaemonCheckerPreference{
 		{
 			DaemonID:    &daemon.ID,
 			CheckerName: "foo",
 			Excluded:    true,
 		},
+	}
+	err1 := AddOrUpdateDaemonCheckerPreferences(db, preferences)
+	preferences[0].Excluded = false
+	preferences = append(preferences, &ConfigDaemonCheckerPreference{
+		DaemonID:    &daemon.ID,
+		CheckerName: "bar",
+		Excluded:    true,
+	})
+	err2 := AddOrUpdateDaemonCheckerPreferences(db, preferences)
+
+	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	preferences, _ = GetDaemonCheckerPreferences(db, &daemon.ID)
+	require.Len(t, preferences, 2)
+	require.EqualValues(t, "bar", preferences[0].CheckerName)
+	require.True(t, preferences[0].Excluded)
+	require.EqualValues(t, "foo", preferences[1].CheckerName)
+	require.False(t, preferences[1].Excluded)
+}
+
+// Test that the global preferences of config checkers are inserted properly.
+// If the preference already exists it should be updated instead.
+func TestAddOrUpdateGlobalCheckerPreferences(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	preferences := []*ConfigDaemonCheckerPreference{
 		{
-			DaemonID:    &daemon.ID,
-			CheckerName: "bar",
+			DaemonID:    nil,
+			CheckerName: "foo",
 			Excluded:    true,
 		},
 	}
-	_ = AddDaemonCheckerPreferences(db, preferences)
-
-	// Act
-	preferences[1].CheckerName = "foo"
-	err := UpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
-		preferences[1],
+	err1 := AddOrUpdateDaemonCheckerPreferences(db, preferences)
+	preferences[0].Excluded = false
+	preferences = append(preferences, &ConfigDaemonCheckerPreference{
+		DaemonID:    nil,
+		CheckerName: "bar",
+		Excluded:    true,
 	})
+	err2 := AddOrUpdateDaemonCheckerPreferences(db, preferences)
 
 	// Assert
-	require.Error(t, err)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	preferences, _ = GetDaemonCheckerPreferences(db, nil)
+	require.Len(t, preferences, 2)
+	require.EqualValues(t, "bar", preferences[0].CheckerName)
+	require.True(t, preferences[0].Excluded)
+	require.EqualValues(t, "foo", preferences[1].CheckerName)
+	require.False(t, preferences[1].Excluded)
+}
+
+// Test that adding/updating empty preference list causes no panic or error.
+func TestAddOrUpdateEmptyPreferenceList(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	err := AddOrUpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{})
+
+	// Assert
+	require.NoError(t, err)
 }
 
 // Test that the daemon preferences of config checkers are removed properly.
@@ -208,7 +147,7 @@ func TestDeleteDaemonCheckerPreferences(t *testing.T) {
 			Excluded:    false,
 		},
 	}
-	_ = AddDaemonCheckerPreferences(db, preferences)
+	_ = AddOrUpdateDaemonCheckerPreferences(db, preferences)
 
 	// Act
 	err := DeleteDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
@@ -250,7 +189,7 @@ func TestDeleteDaemonAndRelatedDaemonCheckerPreferences(t *testing.T) {
 		CheckerName: "foo",
 		Excluded:    true,
 	}}
-	_ = AddDaemonCheckerPreferences(db, preferences)
+	_ = AddOrUpdateDaemonCheckerPreferences(db, preferences)
 
 	// Act
 	err := DeleteApp(db, daemon.App)
@@ -290,12 +229,12 @@ func TestModifyDaemonCheckerPreferences(t *testing.T) {
 			Excluded:    true,
 		},
 	}
-	_ = AddDaemonCheckerPreferences(db, preferences)
+	_ = AddOrUpdateDaemonCheckerPreferences(db, preferences)
 
 	// Act
 	// Modifies bar
 	preferences[1].Excluded = false
-	errUpdate := UpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
+	errUpdate := AddOrUpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
 		preferences[1],
 	})
 	// Removes foo
@@ -303,7 +242,7 @@ func TestModifyDaemonCheckerPreferences(t *testing.T) {
 		preferences[0],
 	})
 	// Adds boz
-	errAdd := AddDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
+	errAdd := AddOrUpdateDaemonCheckerPreferences(db, []*ConfigDaemonCheckerPreference{
 		{
 			DaemonID:    &daemon1.ID,
 			CheckerName: "boz",
