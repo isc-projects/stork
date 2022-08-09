@@ -36,7 +36,7 @@ func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSe
 func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configreview.CheckerMetadata, error) {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetCheckersMetadata"})
 
-	var daemonID int64 = 0
+	var daemonID int64
 	if daemon != nil {
 		daemonID = daemon.ID
 	}
@@ -61,7 +61,7 @@ func (d *FakeDispatcher) GetSignature() string {
 func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state configreview.CheckerState) error {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "SetCheckerState"})
 
-	var daemonID int64 = 0
+	var daemonID int64
 	if daemon != nil {
 		daemonID = daemon.ID
 	}
