@@ -251,6 +251,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Universe: storkutil.IPv6,
 						},
 					},
+					DHCPOptionSetHash: "hash-value",
 				},
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
@@ -273,6 +274,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Universe: storkutil.IPv6,
 						},
 					},
+					DHCPOptionSetHash: "hash-value",
 				},
 			},
 		},

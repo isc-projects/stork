@@ -235,6 +235,9 @@ func TestNewHostFromKea(t *testing.T) {
 	require.Equal(t, "ipv6-address", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].FieldType)
 	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values, 1)
 	require.Equal(t, "2001:db8:1::15", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values[0])
+
+	// Make sure the hash is computed.
+	require.NotEmpty(t, parsedHost.LocalHosts[0].DHCPOptionSetHash)
 }
 
 // Test that log targets can be created from parsed Kea logger config.

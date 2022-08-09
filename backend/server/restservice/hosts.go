@@ -55,9 +55,10 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 	// daemons and DHCP options.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
-			AppID:      dbLocalHost.Daemon.AppID,
-			AppName:    dbLocalHost.Daemon.App.Name,
-			DataSource: dbLocalHost.DataSource.String(),
+			AppID:       dbLocalHost.Daemon.AppID,
+			AppName:     dbLocalHost.Daemon.App.Name,
+			DataSource:  dbLocalHost.DataSource.String(),
+			OptionsHash: dbLocalHost.DHCPOptionSetHash,
 		}
 		localHost.Options = unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)

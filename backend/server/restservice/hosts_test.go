@@ -218,8 +218,9 @@ func TestGetHostWithOptions(t *testing.T) {
 	require.EqualValues(t, hosts[4].SubnetID, returnedHost.SubnetID)
 	require.Equal(t, hosts[4].Hostname, returnedHost.Hostname)
 
-	// Validate returned DHCP options.
+	// Validate returned DHCP options and their hashes.
 	require.Len(t, returnedHost.LocalHosts, 2)
+	hashes := []string{}
 	for _, lh := range returnedHost.LocalHosts {
 		require.Len(t, lh.Options, 1)
 		require.False(t, lh.Options[0].AlwaysSend)
@@ -227,7 +228,10 @@ func TestGetHostWithOptions(t *testing.T) {
 		require.Empty(t, lh.Options[0].Encapsulate)
 		require.Len(t, lh.Options[0].Fields, 2)
 		require.EqualValues(t, 6, lh.Options[0].Universe)
+		hashes = append(hashes, lh.OptionsHash)
 	}
+	require.NotEmpty(t, hashes[0])
+	require.Equal(t, hashes[0], hashes[1])
 }
 
 // Test the calls for creating transaction and submitting a new host

@@ -309,6 +309,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 			})
 		}
 		lh.DHCPOptionSet = append(lh.DHCPOptionSet, hostOption)
+		lh.DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", lh.DHCPOptionSet))
 	}
 	host.LocalHosts = append(host.LocalHosts, lh)
 	return &host, nil
