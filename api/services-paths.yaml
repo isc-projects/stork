@@ -588,11 +588,12 @@
 
   /daemons/config-checkers:
     get:
-      summary: Get global config checker configuration.
+      summary: Get global config checker preferences.
       description: >-
         Configuration review executes multiple configuration checkers to found
         various issues. The checkers may be disabled or enabled globally or
-        per daemon. This enpoint returns the global checker configuration.
+        per daemon. This enpoint returns the global checker configuration
+        metadata and preferences.
       operationId: getGlobalConfigCheckers
       tags:
         - Services
@@ -606,20 +607,20 @@
           schema:
             $ref: "#/definitions/ApiError"
     put:
-      summary: Update global config checker configuration.
-      description: Updates global config checker configuration.
-      operationId: putGlobalConfigCheckers
+      summary: Update global config checker preferences.
+      description: Updates global config checker preferences.
+      operationId: putGlobalConfigCheckerPreferences
       tags:
         - Services
       parameters:
         - in: body
           name: changes
-          description: Checker configuration.
+          description: Global checker preferences to change.
           schema:
-            $ref: '#/definitions/ConfigCheckerChanges'
+            $ref: '#/definitions/ConfigCheckerPreferences'
       responses:
         200:
-          description: List of global config checker configuration.
+          description: List of global config checker metadata and preferences.
           schema:
             $ref: "#/definitions/ConfigCheckers"
         default:
@@ -633,8 +634,8 @@
       description: >-
         Configuration review executes multiple configuration checkers to found
         various issues. The checkers may be disabled or enabled globally or
-        per daemon. This enpoint returns the checkers configuration for a specific
-        daemon.
+        per daemon. This enpoint returns the checkers metadata and preferences
+        for a specific daemon.
       operationId: getDaemonConfigCheckers
       tags:
         - Services
@@ -654,9 +655,9 @@
           schema:
             $ref: "#/definitions/ApiError"
     put:
-      summary: Update config checkers configuration for a given daemon.
-      description: Updates config checkers configuration for a given daemon.
-      operationId: putDaemonConfigCheckers
+      summary: Update config checkers preferences for a given daemon.
+      description: Updates config checkers preferences for a given daemon.
+      operationId: putDaemonConfigCheckerPreferences
       tags:
         - Services
       parameters:
@@ -667,12 +668,12 @@
           description: Daemon ID.
         - in: body
           name: changes
-          description: Checkers configuration changes.
+          description: Checkers configuration preferences to change.
           schema:
-            $ref: '#/definitions/ConfigCheckerChanges'
+            $ref: '#/definitions/ConfigCheckerPreferences'
       responses:
         200:
-          description: List of config checkers configuration for a given daemon.
+          description: List of config checkers preferences for a given daemon.
           schema:
             $ref: "#/definitions/ConfigCheckers"
         default:

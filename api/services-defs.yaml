@@ -513,7 +513,7 @@
       total:
         type: integer
 
-  ConfigCheckerChange:
+  ConfigCheckerPreference:
     type: object
     properties:
       name:
@@ -521,12 +521,12 @@
       state:
         enum: *CONFIGCHECKERSTATE
 
-  ConfigCheckerChanges:
+  ConfigCheckerPreferences:
     type: object
     properties:
       items:
         type: array
         items:
-          $ref: '#/definitions/ConfigCheckerChange'
+          $ref: '#/definitions/ConfigCheckerPreference'
       total:
         type: integer

@@ -1026,7 +1026,7 @@ func TestGetDaemonConfigCheckersForMissingDaemon(t *testing.T) {
 }
 
 // Test that the global config checkers are updated properly.
-func TestPutGlobalConfigCheckers(t *testing.T) {
+func TestPutGlobalConfigCheckerPreferences(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1036,13 +1036,13 @@ func TestPutGlobalConfigCheckers(t *testing.T) {
 
 	// Act
 	ctx := context.Background()
-	params := services.PutGlobalConfigCheckersParams{
-		Changes: &models.ConfigCheckerChanges{
+	params := services.PutGlobalConfigCheckerPreferencesParams{
+		Changes: &models.ConfigCheckerPreferences{
 			Total: 0,
-			Items: []*models.ConfigCheckerChange{},
+			Items: []*models.ConfigCheckerPreference{},
 		},
 	}
-	rsp := rapi.PutGlobalConfigCheckers(ctx, params)
+	rsp := rapi.PutGlobalConfigCheckerPreferences(ctx, params)
 
 	// Assert
 	require.IsType(t, &services.GetDaemonConfigCheckersOK{}, rsp)
@@ -1053,7 +1053,7 @@ func TestPutGlobalConfigCheckers(t *testing.T) {
 }
 
 // Test that updating the daemon config checkers produces a proper API response.
-func TestPutDaemonConfigCheckersAPIResponse(t *testing.T) {
+func TestPutDaemonConfigCheckerPreferencesAPIResponse(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1078,30 +1078,30 @@ func TestPutDaemonConfigCheckersAPIResponse(t *testing.T) {
 
 	// Act
 	ctx := context.Background()
-	params := services.PutDaemonConfigCheckersParams{
+	params := services.PutDaemonConfigCheckerPreferencesParams{
 		ID: daemon.ID,
-		Changes: &models.ConfigCheckerChanges{
+		Changes: &models.ConfigCheckerPreferences{
 			Total: 1,
-			Items: []*models.ConfigCheckerChange{
+			Items: []*models.ConfigCheckerPreference{
 				{
 					Name: "foo", State: models.ConfigCheckerStateEnabled,
 				},
 			},
 		},
 	}
-	rsp := rapi.PutDaemonConfigCheckers(ctx, params)
+	rsp := rapi.PutDaemonConfigCheckerPreferences(ctx, params)
 
 	// Assert
-	require.IsType(t, &services.PutDaemonConfigCheckersOK{}, rsp)
-	okRsp := rsp.(*services.PutDaemonConfigCheckersOK)
+	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp)
+	okRsp := rsp.(*services.PutDaemonConfigCheckerPreferencesOK)
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.EqualValues(t, "foo", okRsp.Payload.Items[0].Name)
 	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
 }
 
-// Test that updating the daemon config checkers affects the database.
-func TestPutDaemonConfigCheckersDatabase(t *testing.T) {
+// Test that new daemon config checker preferences are inserted properly.
+func TestPutNewDaemonConfigCheckers(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1126,30 +1126,121 @@ func TestPutDaemonConfigCheckersDatabase(t *testing.T) {
 
 	// Act
 	ctx := context.Background()
-	params := services.PutDaemonConfigCheckersParams{
+	params := services.PutDaemonConfigCheckerPreferencesParams{
 		ID: daemon.ID,
-		Changes: &models.ConfigCheckerChanges{
+		Changes: &models.ConfigCheckerPreferences{
 			Total: 1,
-			Items: []*models.ConfigCheckerChange{
+			Items: []*models.ConfigCheckerPreference{
 				{
 					Name: "foo", State: models.ConfigCheckerStateEnabled,
 				},
 			},
 		},
 	}
-	_ = rapi.PutDaemonConfigCheckers(ctx, params)
-	preferences, err := dbmodel.GetCheckerPreferences(db, &daemon.ID)
+	rsp := rapi.PutDaemonConfigCheckerPreferences(ctx, params)
 
 	// Assert
+	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp)
+	preferences, err := dbmodel.GetCheckerPreferences(db, &daemon.ID)
 	require.NoError(t, err)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "foo", preferences[0].CheckerName)
 	require.False(t, preferences[0].Excluded)
 }
 
+// Test that the config checker preferences are updated properly.
+func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	app := &dbmodel.App{
+		Type: dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+		},
+		MachineID: m.ID,
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	// Act
+	// Initialize the config checker preferences.
+	rsp1 := rapi.PutDaemonConfigCheckerPreferences(
+		context.Background(),
+		services.PutDaemonConfigCheckerPreferencesParams{
+			ID: daemon.ID,
+			Changes: &models.ConfigCheckerPreferences{
+				Total: 2,
+				Items: []*models.ConfigCheckerPreference{
+					{
+						Name:  "foo",
+						State: models.ConfigCheckerStateEnabled,
+					},
+					{
+						Name:  "bar",
+						State: models.ConfigCheckerStateDisabled,
+					},
+				},
+			},
+		},
+	)
+	// Modify the config checker preferences.
+	rsp2 := rapi.PutDaemonConfigCheckerPreferences(
+		context.Background(),
+		services.PutDaemonConfigCheckerPreferencesParams{
+			ID: daemon.ID,
+			Changes: &models.ConfigCheckerPreferences{
+				Total: 3,
+				Items: []*models.ConfigCheckerPreference{
+					// Update the existing preference.
+					{
+						Name:  "foo",
+						State: models.ConfigCheckerStateDisabled,
+					},
+					// Delete the existing preference.
+					{
+						Name:  "bar",
+						State: models.ConfigCheckerStateInherit,
+					},
+					// Add new preference.
+					{
+						Name:  "baz",
+						State: models.ConfigCheckerStateEnabled,
+					},
+				},
+			},
+		},
+	)
+
+	// Assert
+	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp1)
+	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp2)
+	okRsp := rsp2.(*services.PutDaemonConfigCheckerPreferencesOK)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, "baz", okRsp.Payload.Items[0].Name)
+	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
+	require.EqualValues(t, "foo", okRsp.Payload.Items[1].Name)
+	require.EqualValues(t, models.ConfigCheckerStateDisabled, okRsp.Payload.Items[1].State)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, &daemon.ID)
+	require.Len(t, preferences, 2)
+	require.EqualValues(t, "baz", preferences[0].CheckerName)
+	require.False(t, preferences[0].Excluded)
+	require.EqualValues(t, "foo", preferences[1].CheckerName)
+	require.True(t, preferences[1].Excluded)
+}
+
 // Test that updating the daemon config checkers for non-existing daemon causes
 // no panic.
-func TestPutDaemonConfigCheckersForMissingDaemon(t *testing.T) {
+func TestPutDaemonConfigCheckerPreferencesForMissingDaemon(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1159,18 +1250,21 @@ func TestPutDaemonConfigCheckersForMissingDaemon(t *testing.T) {
 
 	// Act
 	ctx := context.Background()
-	params := services.PutDaemonConfigCheckersParams{
+	params := services.PutDaemonConfigCheckerPreferencesParams{
 		ID: 1,
-		Changes: &models.ConfigCheckerChanges{
+		Changes: &models.ConfigCheckerPreferences{
 			Total: 0,
-			Items: []*models.ConfigCheckerChange{},
+			Items: []*models.ConfigCheckerPreference{},
 		},
 	}
-	rsp := rapi.PutDaemonConfigCheckers(ctx, params)
+	rsp := rapi.PutDaemonConfigCheckerPreferences(ctx, params)
 
 	// Assert
-	require.IsType(t, &services.PutDaemonConfigCheckersDefault{}, rsp)
-	defaultRsp := rsp.(*services.PutDaemonConfigCheckersDefault)
+	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesDefault{}, rsp)
+	defaultRsp := rsp.(*services.PutDaemonConfigCheckerPreferencesDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	daemonID := int64(1)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, &daemonID)
+	require.Empty(t, preferences)
 }

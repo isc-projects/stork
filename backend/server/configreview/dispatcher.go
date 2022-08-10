@@ -3,6 +3,7 @@ package configreview
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -749,6 +750,10 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 		i++
 	}
 
+	// Sort by name
+	sort.Slice(metadata, func(i, j int) bool {
+		return metadata[i].Name < metadata[j].Name
+	})
 	return metadata, nil
 }
 

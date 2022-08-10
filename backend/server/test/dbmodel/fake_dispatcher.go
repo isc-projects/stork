@@ -1,6 +1,8 @@
 package storktestdbmodel
 
 import (
+	"sort"
+
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -50,6 +52,10 @@ func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configr
 			})
 		}
 	}
+
+	sort.Slice(metadata, func(i, j int) bool {
+		return metadata[i].Name < metadata[j].Name
+	})
 	return metadata, nil
 }
 
@@ -72,7 +78,12 @@ func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 	if _, ok := d.checkerStates[daemonID]; !ok {
 		d.checkerStates[daemonID] = make(map[string]configreview.CheckerState)
 	}
-	d.checkerStates[daemonID][checkerName] = state
+
+	if state != configreview.CheckerStateInherit {
+		d.checkerStates[daemonID][checkerName] = state
+	} else {
+		delete(d.checkerStates[daemonID], checkerName)
+	}
 
 	return nil
 }
