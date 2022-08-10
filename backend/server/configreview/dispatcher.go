@@ -637,6 +637,25 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	return dispatcher
 }
 
+func (d *dispatcherImpl) LoadCheckerStates() error {
+	preferences, err := dbmodel.GetCheckerPreferences(d.db)
+	if err != nil {
+		return err
+	}
+	for _, preference := range preferences {
+		state := CheckerStateEnabled
+		if preference.Excluded {
+			state = CheckerStateDisabled
+		}
+		if preference.IsGlobal() {
+			d.checkerController.SetGlobalState(preference.CheckerName, state)
+		} else {
+			d.checkerController.SetStateForDaemon(*preference.DaemonID, preference.CheckerName, state)
+		}
+	}
+	return nil
+}
+
 // Registers new checker. A checker implements an algorithm to verify
 // a single configuration piece (or aspect) and output a suitable report
 // if it finds issues. It should return nil when no issues were found.
