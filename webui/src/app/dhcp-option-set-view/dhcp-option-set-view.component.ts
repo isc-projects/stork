@@ -1,70 +1,131 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { TreeNode } from 'primeng/api'
 import { DHCPOption } from '../backend/model/dHCPOption'
-import { Host } from '../backend/model/host'
 
-interface Node {}
+/**
+ * A node of the displayed option holding its basic description.
+ *
+ * It currently holds the option code and whether or not the option
+ * is always returned by the DHCP server.
+ */
+export interface OptionNode {
+    alwaysSend?: boolean
+    code: number
+}
 
+/**
+ * A node of the displayed option comprising information for a single
+ * option field.
+ */
+export interface OptionFieldNode {
+    fieldType: string
+    value: string
+}
+
+/**
+ * A component displaying configured DHCP options as a tree.
+ */
 @Component({
     selector: 'app-dhcp-option-set-view',
     templateUrl: './dhcp-option-set-view.component.html',
     styleUrls: ['./dhcp-option-set-view.component.sass'],
 })
 export class DhcpOptionSetViewComponent implements OnInit {
-    @Input() host: Host
+    /**
+     * An input parameter holding an array of DHCP options associated with
+     * a particular daemon and a host, subnet etc.
+     */
+    @Input() options: Array<DHCPOption>
 
-    optionNodes: TreeNode[]
+    /**
+     * Collection of the converted options into the nodes that can be
+     * displayed as a tree.
+     */
+    optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
 
-    constructor() {
-        this.optionNodes = [
-            {
-                key: '53',
-                type: 'option',
-                expanded: true,
-                data: {
-                    alwaysSend: true,
-                    code: 53,
-                },
-                children: [
-                    {
-                        type: 'fields',
-                        expanded: true,
-                        data: [
-                            {
-                                value: '111',
-                            },
-                            {
-                                value: 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
-                            },
-                            {
-                                value: 'www.example.example.example.example.example.example.example.example.com',
-                            },
-                        ],
-                    },
-                    {
-                        key: '53-1',
-                        type: 'suboption',
-                        expanded: true,
-                        data: {
-                            code: 1,
-                        },
-                        children: [
-                            {
-                                key: '53-1',
-                                expanded: true,
-                                type: 'fields',
-                                data: [
-                                    {
-                                        value: 123,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ]
+    /**
+     * Constructor.
+     */
+    constructor() {}
+
+    /**
+     * A component lifecycle hook executed when the component is initialized.
+     *
+     * It converts input DHCP options into the nodes tree that can be displayed.
+     */
+    ngOnInit(): void {
+        this.optionNodes = this.optionNodes.concat(this._convertOptionsToNodes(this.options))
     }
 
-    ngOnInit(): void {}
+    /**
+     * Converts specified DHCP options into the nodes tree.
+     *
+     * The resulting tree can comprise three different kinds of nodes:
+     * - an option node, containing the basic option information (e.g., option code),
+     * - option field node, containing field type and value,
+     * - suboption node, i.e., a root of a suboption.
+     *
+     * It processes specified options recursively. It stops at recursion level of 2.
+     *
+     * @param options input options to be processed.
+     * @param recursionLevel specifies current recursion level. It protects against
+     *                       infinite recursion.
+     * @returns parsed options as a displayable tree.
+     */
+    private _convertOptionsToNodes(
+        options: DHCPOption[],
+        recursionLevel: number = 0
+    ): TreeNode<OptionNode | OptionFieldNode>[] {
+        let optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
+        if (!options || recursionLevel >= 2) {
+            return optionNodes
+        }
+        for (let option of options) {
+            // Parse option code and other parameters that don't belong to option payload.
+            let optionNode: TreeNode<OptionNode | OptionFieldNode> = {
+                type: recursionLevel === 0 ? 'option' : 'suboption',
+                expanded: true,
+                data: {
+                    alwaysSend: option.alwaysSend,
+                    code: option.code,
+                },
+                children: [],
+            }
+            // Iterate over the option fields.
+            if (option.fields) {
+                for (let field of option.fields) {
+                    // Parse option field type and values.
+                    let fieldNode: TreeNode<OptionNode | OptionFieldNode> = {
+                        type: 'field',
+                        expanded: true,
+                        data: {
+                            fieldType: field.fieldType,
+                            value: field.values.join('/'),
+                        },
+                    }
+                    optionNode.children.push(fieldNode)
+                }
+            }
+            // Parse suboptions recursively.
+            optionNode.children = optionNode.children.concat(
+                this._convertOptionsToNodes(option.options, recursionLevel + 1)
+            )
+            optionNodes.push(optionNode)
+        }
+        return optionNodes
+    }
+
+    /**
+     * Checks if the specified tree node represents an option with no suboptions.
+     *
+     * @param optionNode option node describing an option.
+     * @returns true if the option comprises on suboptions.
+     */
+    isEmpty(optionNode: any): boolean {
+        return (
+            !optionNode.children ||
+            optionNode.children.length === 0 ||
+            optionNode.children.findIndex((c) => c.type === 'field') < 0
+        )
+    }
 }

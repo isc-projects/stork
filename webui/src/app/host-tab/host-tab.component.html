@@ -31,7 +31,7 @@
             >
                 <div *ngIf="reservations && reservations.length > 0" class="pt-4">
                     <p-fieldset id="{{ ipReservationsStatics[i].id }}" legend="{{ ipReservationsStatics[i].legend }}">
-                        <p-table [value]="reservations" dataKey="address" responsiveLayout="scroll">
+                        <p-table [value]="reservations" dataKey="address">
                             <ng-template pTemplate="body" let-r let-expanded="expanded">
                                 <tr>
                                     <td class="p-2 border-none">
@@ -159,14 +159,31 @@
                     </p-table>
                 </p-fieldset>
             </div>
-            <div class="mt-4">
-                <p-fieldset legend="DHCP Options">
-                    <app-dhcp-option-set-view></app-dhcp-option-set-view>
+            <div *ngFor="let localHost of host.localHosts" class="mt-4">
+                <p-fieldset>
+                    <ng-template pTemplate="header">
+                        <span
+                            >DHCP Options&nbsp;
+                            <span class="font-normal"
+                                >/&nbsp;
+                                <a routerLink="/apps/kea/{{ localHost.appId }}">
+                                    {{ localHost.appName }}
+                                </a>
+                            </span>
+                            <app-help-tip title="DHCP Option View">
+                                This panel comprises DHCP options associated with the displayed host reservation and
+                                associated with the server whose name is displayed in the panel title. Typically,
+                                multiple DHCP servers using a host reservation have the same set of options configured
+                                for it. However, in some cases, they can be configured differently.
+                            </app-help-tip>
+                        </span>
+                    </ng-template>
+                    <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
                 </p-fieldset>
             </div>
         </div>
     </div>
-    <div class="flex mt-4">
+    <div class="flex mt-6">
         <div>
             <button
                 type="button"

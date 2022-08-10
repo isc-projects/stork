@@ -1,29 +1,43 @@
-<p-tree [value]="optionNodes">
+<p-tree [value]="optionNodes" emptyMessage="No options configured.">
     <ng-template let-node pTemplate="option">
         <div class="flex p-1">
-            <div class="flex align-items-center font-bold">Option {{ node.data.code }}</div>
+            <div class="flex align-items-center fa fa-cog" [ngStyle]="{ color: 'var(--blue-500)' }"></div>
+            <div class="flex align-items-center font-semibold ml-2">Option {{ node.data.code }}</div>
             <div *ngIf="node.data.alwaysSend" class="flex align-items-center ml-2">
-                <p-tag>Always Sent</p-tag>
+                <p-tag>always sent</p-tag>
+            </div>
+            <div *ngIf="isEmpty(node)" class="flex align-items-center ml-2">
+                <p-tag>empty option</p-tag>
             </div>
             <div class="flex align-items-center">
                 <app-help-tip title="DHCP Option View">
                     Option fields and suboptions are displayed for option {{ node.data.code }}. Move the cursor over the
-                    option fields to see their types. If the Always Sent tag is shown next to the option code it means
+                    option fields to see their types. If the "always sent" tag is shown next to the option code it means
                     that the option is configured to be always returned to the DHCP client, event when it is not
-                    requested.
+                    requested. The "empty option" and "empty suboption" tags indicate that the configured DHCP option
+                    contains no payload.
                 </app-help-tip>
             </div>
         </div>
     </ng-template>
     <ng-template let-node pTemplate="suboption">
-        <div class="font-semibold p-1">Suboption {{ node.data.code }}</div>
+        <div class="flex p-1">
+            <div class="flex align-items-center fa fa-cog" [ngStyle]="{ color: 'var(--blue-500)' }"></div>
+            <div class="font-semibold ml-2">Suboption {{ node.data.code }}</div>
+            <div *ngIf="isEmpty(node)" class="flex align-items-center ml-2">
+                <p-tag>empty suboption</p-tag>
+            </div>
+        </div>
     </ng-template>
-    <ng-template let-node pTemplate="fields">
-        <div class="flex" *ngFor="let data of node.data">
-            <div class="flex">
-                <span pTooltip="ipv6-address" class="monospace" [ngStyle]="{ color: 'var(--gray-500)' }">{{
-                    data.value
-                }}</span>
+    <ng-template let-node pTemplate="field">
+        <div class="flex">
+            <div class="flex align-items-center fa fa-ellipsis-h" [ngStyle]="{ color: 'var(--blue-500)' }"></div>
+            <div
+                pTooltip="{{ node.data.fieldType }} field"
+                class="flex align-items-center ml-2 monospace"
+                [ngStyle]="{ color: 'var(--gray-500)' }"
+            >
+                {{ node.data.value }}
             </div>
         </div>
     </ng-template>

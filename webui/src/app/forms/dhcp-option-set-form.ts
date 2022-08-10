@@ -50,9 +50,19 @@ export class DhcpOptionSetForm {
             if (!option.contains('optionCode') || option.get('optionCode').value === null) {
                 throw new Error('form group does not contain control with an option code')
             }
+            let optionCode = 0
+            if (typeof option.get('optionCode').value === 'string') {
+                optionCode = parseInt(option.get('optionCode').value, 10)
+                if (isNaN(optionCode)) {
+                    throw new Error(`specified option code ${option.get('optionCode').value} is not a valid number`)
+                }
+            } else {
+                optionCode = option.get('optionCode').value
+            }
+
             const item = {
                 alwaysSend: option.get('alwaysSend').value,
-                code: option.get('optionCode').value,
+                code: optionCode,
                 encapsulate: '',
                 fields: [],
                 universe: universe,

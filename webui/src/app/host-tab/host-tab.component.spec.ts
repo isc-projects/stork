@@ -17,6 +17,10 @@ import { RouterModule } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from '../identifier/identifier.component'
+import { TreeModule } from 'primeng/tree'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -34,12 +38,14 @@ describe('HostTabComponent', () => {
                 FormsModule,
                 HttpClientTestingModule,
                 NoopAnimationsModule,
+                OverlayPanelModule,
                 TableModule,
                 RouterModule,
                 RouterTestingModule,
                 ToggleButtonModule,
+                TreeModule,
             ],
-            declarations: [HostTabComponent, IdentifierComponent],
+            declarations: [DhcpOptionSetViewComponent, HelpTipComponent, HostTabComponent, IdentifierComponent],
         }).compileComponents()
     }))
 
@@ -259,11 +265,11 @@ describe('HostTabComponent', () => {
         expect(addressReservationTrs[1].nativeElement.textContent).toContain('unused')
 
         let links = addressReservationTrs[0].queryAll(By.css('a'))
-        expect(links.length).toBe(2)
-        expect(links[1].attributes.href).toBe('/dhcp/leases?text=2001:db8:1::1')
-        expect(links[1].properties.text).toBe('2001:db8:1::1')
+        expect(links.length).toBe(1)
+        expect(links[0].attributes.href).toBe('/dhcp/leases?text=2001:db8:1::1')
+        expect(links[0].properties.text).toBe('2001:db8:1::1')
 
-        const expandAddressLink = addressReservationTrs[0].query(By.css('a'))
+        const expandAddressLink = addressReservationTrs[0].query(By.css('button'))
         expect(expandAddressLink).toBeTruthy()
         expandAddressLink.nativeElement.click()
         fixture.detectChanges()
@@ -284,9 +290,9 @@ describe('HostTabComponent', () => {
         expect(prefixReservationTrs[1].nativeElement.textContent).toContain('unused')
 
         links = prefixReservationTrs[0].queryAll(By.css('a'))
-        expect(links.length).toBe(2)
-        expect(links[1].attributes.href).toBe('/dhcp/leases?text=2001:db8:2::')
-        expect(links[1].properties.text).toBe('2001:db8:2::/64')
+        expect(links.length).toBe(1)
+        expect(links[0].attributes.href).toBe('/dhcp/leases?text=2001:db8:2::')
+        expect(links[0].properties.text).toBe('2001:db8:2::/64')
     })
 
     it('should display multiple lease information', () => {

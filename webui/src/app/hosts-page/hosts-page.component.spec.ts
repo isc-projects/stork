@@ -32,6 +32,8 @@ import { HostFormComponent } from '../host-form/host-form.component'
 import { Hosts } from '../backend/model/hosts'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -84,6 +86,7 @@ describe('HostsPageComponent', () => {
                 MultiSelectModule,
                 ReactiveFormsModule,
                 ConfirmDialogModule,
+                TreeModule,
             ],
             declarations: [
                 EntityLinkComponent,
@@ -95,6 +98,7 @@ describe('HostsPageComponent', () => {
                 HostFormComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
+                DhcpOptionSetViewComponent,
             ],
         }).compileComponents()
     }))
