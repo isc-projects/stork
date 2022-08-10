@@ -11,7 +11,7 @@ import (
 // Tests that the config checker preferences are constructed properly.
 func TestNewConfigCheckerPreference(t *testing.T) {
 	// Act
-	global := NewGlobalConfigCheckerPreference("foo", true)
+	global := NewGlobalConfigCheckerPreference("foo")
 	nonGlobal := NewDaemonConfigCheckerPreference(42, "bar", false)
 
 	// Assert
@@ -27,7 +27,7 @@ func TestNewConfigCheckerPreference(t *testing.T) {
 // Tests that the global checker preference is recognized properly.
 func TestConfigCheckerPreferenceIsGlobal(t *testing.T) {
 	// Arrange
-	global := NewGlobalConfigCheckerPreference("foo", true)
+	global := NewGlobalConfigCheckerPreference("foo")
 	nonGlobal := NewDaemonConfigCheckerPreference(1, "bar", true)
 
 	// Act
@@ -43,7 +43,7 @@ func TestConfigCheckerPreferenceIsGlobal(t *testing.T) {
 // returned properly.
 func TestConfigCheckerPreferenceGetDaemonID(t *testing.T) {
 	// Arrange
-	global := NewGlobalConfigCheckerPreference("foo", true)
+	global := NewGlobalConfigCheckerPreference("foo")
 	nonGlobal := NewDaemonConfigCheckerPreference(42, "bar", true)
 
 	// Act

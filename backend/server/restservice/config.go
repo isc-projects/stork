@@ -325,16 +325,19 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 		}
 
 		if state == configreview.CheckerStateInherit {
-			deletedPreferences = append(deletedPreferences, &dbmodel.ConfigCheckerPreference{
-				DaemonID:    &daemon.ID,
-				CheckerName: change.Name,
-			})
+			deletedPreferences = append(
+				deletedPreferences,
+				dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, change.Name, false),
+			)
 		} else {
-			newOrUpdatedPreferences = append(newOrUpdatedPreferences, &dbmodel.ConfigCheckerPreference{
-				DaemonID:    &daemon.ID,
-				CheckerName: change.Name,
-				Excluded:    state == configreview.CheckerStateDisabled,
-			})
+			newOrUpdatedPreferences = append(
+				newOrUpdatedPreferences,
+				dbmodel.NewDaemonConfigCheckerPreference(
+					daemon.ID,
+					change.Name,
+					state == configreview.CheckerStateDisabled,
+				),
+			)
 		}
 	}
 
@@ -365,6 +368,9 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 }
 
 func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params services.PutGlobalConfigCheckerPreferencesParams) middleware.Responder {
+	var newOrUpdatedPreferences []*dbmodel.ConfigCheckerPreference
+	var deletedPreferences []*dbmodel.ConfigCheckerPreference
+
 	for _, change := range params.Changes.Items {
 		apiState := change.State.(models.ConfigCheckerState)
 		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
@@ -377,10 +383,30 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 				})
 				return rsp
 			}
+
+			if state == configreview.CheckerStateDisabled {
+				newOrUpdatedPreferences = append(
+					newOrUpdatedPreferences,
+					dbmodel.NewGlobalConfigCheckerPreference(change.Name),
+				)
+			} else {
+				deletedPreferences = append(
+					deletedPreferences,
+					dbmodel.NewGlobalConfigCheckerPreference(change.Name),
+				)
+			}
 		}
 	}
 
-	// TODO: Update database
+	err := dbmodel.CommitCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot commit the config checker changes into DB"
+		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
 	if err != nil {

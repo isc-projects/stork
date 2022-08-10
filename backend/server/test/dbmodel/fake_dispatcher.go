@@ -79,10 +79,10 @@ func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 		d.checkerStates[daemonID] = make(map[string]configreview.CheckerState)
 	}
 
-	if state != configreview.CheckerStateInherit {
-		d.checkerStates[daemonID][checkerName] = state
-	} else {
+	if state == configreview.CheckerStateInherit || (daemon == nil && state == configreview.CheckerStateEnabled) {
 		delete(d.checkerStates[daemonID], checkerName)
+	} else {
+		d.checkerStates[daemonID][checkerName] = state
 	}
 
 	return nil

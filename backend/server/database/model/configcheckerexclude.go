@@ -32,11 +32,11 @@ func (p *ConfigCheckerPreference) GetDaemonID() int64 {
 }
 
 // Constructs the global checker preference.
-func NewGlobalConfigCheckerPreference(checkerName string, excluded bool) *ConfigCheckerPreference {
+func NewGlobalConfigCheckerPreference(checkerName string) *ConfigCheckerPreference {
 	return &ConfigCheckerPreference{
 		DaemonID:    nil,
 		CheckerName: checkerName,
-		Excluded:    excluded,
+		Excluded:    true,
 	}
 }
 
