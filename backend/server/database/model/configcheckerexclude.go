@@ -16,7 +16,7 @@ type ConfigCheckerPreference struct {
 	Excluded    bool `pg:",use_zero"`
 }
 
-// Check if the preference is a global one - it isn't assigned to any specific
+// Check if the preference is a global - it isn't assigned to any specific
 // daemon.
 func (p *ConfigCheckerPreference) IsGlobal() bool {
 	return p.DaemonID == nil
@@ -50,7 +50,7 @@ func NewDaemonConfigCheckerPreference(daemonID int64, checkerName string, exclud
 }
 
 // Returns the daemon preferences of config checker.
-func GetDaemonCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []*ConfigCheckerPreference, err error) {
+func GetCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []*ConfigCheckerPreference, err error) {
 	q := dbi.Model(&preferences)
 	if daemonID != nil {
 		q = q.Where("daemon_id = ?", daemonID)
@@ -69,7 +69,7 @@ func GetDaemonCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []
 }
 
 // Adds or updates the daemon preferences of config checkers.
-func addOrUpdateDaemonCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerPreference) error {
+func addOrUpdateCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerPreference) error {
 	var daemonPreferences []*ConfigCheckerPreference
 	var globalPreferences []*ConfigCheckerPreference
 
@@ -100,7 +100,7 @@ func addOrUpdateDaemonCheckerPreferences(dbi dbops.DBI, preferences []*ConfigChe
 
 // Deletes all daemon preferences of config checkers for a given daemon except
 // these from a given list of IDs.
-func deleteDaemonCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerPreference) error {
+func deleteCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerPreference) error {
 	if len(preferences) == 0 {
 		return nil
 	}
@@ -123,23 +123,23 @@ func deleteDaemonCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerP
 
 // Commits the changes in config checker preferences. It accepts a list of
 // preferences to add or update and a list of preferences to delete.
-func commitDaemonCheckerPreferences(dbi dbops.DBI, updates []*ConfigCheckerPreference, deletes []*ConfigCheckerPreference) error {
-	err := addOrUpdateDaemonCheckerPreferences(dbi, updates)
+func commitCheckerPreferences(dbi dbops.DBI, updates []*ConfigCheckerPreference, deletes []*ConfigCheckerPreference) error {
+	err := addOrUpdateCheckerPreferences(dbi, updates)
 	if err != nil {
 		return err
 	}
-	return deleteDaemonCheckerPreferences(dbi, deletes)
+	return deleteCheckerPreferences(dbi, deletes)
 }
 
 // Commits the changes in config checker preferences. It accepts a list of
 // preferences to add or update and a list of preferences to delete. The transaction
 // is created if needed.
-func CommitDaemonCheckerPreferences(dbi dbops.DBI, updates []*ConfigCheckerPreference, deletes []*ConfigCheckerPreference) error {
+func CommitCheckerPreferences(dbi dbops.DBI, updates []*ConfigCheckerPreference, deletes []*ConfigCheckerPreference) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return commitDaemonCheckerPreferences(dbi, updates, deletes)
+			return commitCheckerPreferences(dbi, updates, deletes)
 		})
 		return err
 	}
-	return commitDaemonCheckerPreferences(dbi, updates, deletes)
+	return commitCheckerPreferences(dbi, updates, deletes)
 }

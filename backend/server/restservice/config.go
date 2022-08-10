@@ -336,10 +336,9 @@ func (r *RestAPI) PutDaemonConfigCheckers(ctx context.Context, params services.P
 				Excluded:    state == configreview.CheckerStateDisabled,
 			})
 		}
-
 	}
 
-	err = dbmodel.CommitDaemonCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
+	err = dbmodel.CommitCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot commit the config checker changes into DB"
