@@ -49,14 +49,9 @@ func NewDaemonConfigCheckerPreference(daemonID int64, checkerName string, exclud
 	}
 }
 
-// Returns the daemon preferences of config checker.
-func GetCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []*ConfigCheckerPreference, err error) {
+// Returns all config checker preferences.
+func GetCheckerPreferences(dbi dbops.DBI) (preferences []*ConfigCheckerPreference, err error) {
 	q := dbi.Model(&preferences)
-	if daemonID != nil {
-		q = q.Where("daemon_id = ?", daemonID)
-	} else {
-		q = q.Where("daemon_id IS NULL")
-	}
 	err = q.Order("checker_name").
 		Select()
 
