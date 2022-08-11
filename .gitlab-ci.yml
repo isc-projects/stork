@@ -59,7 +59,7 @@ cache:
     paths:
     - webui/node_modules/
     - tools/
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:latest
   tags:
     - linux
     - amd64
