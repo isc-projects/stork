@@ -676,11 +676,13 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 }
 
 func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
+	// Pair of the subnet and its binary prefix.
 	type subnetWithPrefix struct {
 		subnet       minimalSubnet
 		binaryPrefix string
 	}
 
+	// Calculates the binary prefixes for all subnets.
 	subnetPrefixes := make([]subnetWithPrefix, len(subnets))
 
 	for i, subnet := range subnets {
@@ -696,21 +698,33 @@ func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalS
 		}
 	}
 
+	// Sorts prefixes from the shortest (the most general masks) to the longest
+	// (the most specific masks).
 	sort.Slice(subnetPrefixes, func(i, j int) bool {
 		return len(subnetPrefixes[i].binaryPrefix) <= len(subnetPrefixes[j].binaryPrefix)
 	})
 
-	for outterIdx, outter := range subnetPrefixes {
+	for outerIdx, outer := range subnetPrefixes {
 		for innerIdx, inner := range subnetPrefixes {
-			if outterIdx >= innerIdx {
+			// The prefixes are sorted by length. The prefix length is equal to
+			// the subnet mask in bits. For a given prefix with length X, we
+			// need only check the prefixes with lengths equal to or greater
+			// than X. It means that we need to check only the following
+			// prefixes.
+			if outerIdx >= innerIdx {
 				continue
 			}
 
-			if strings.HasPrefix(inner.binaryPrefix, outter.binaryPrefix) {
+			// Checks if the outer prefix contains the inner prefix. It happens
+			// when the inner prefix's binary representation starts with the
+			// outer prefix's binary representation.
+			if strings.HasPrefix(inner.binaryPrefix, outer.binaryPrefix) {
 				overlaps = append(overlaps, minimalSubnetPair{
-					parent: outter.subnet,
+					parent: outer.subnet,
 					child:  inner.subnet,
 				})
+
+				// Checks if the overlap limit is exceed.
 				if len(overlaps) == maxOverlaps {
 					return
 				}
