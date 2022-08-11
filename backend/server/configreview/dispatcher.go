@@ -703,9 +703,9 @@ func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
 func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", GetDefaultTriggers(), statCmdsPresence)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", GetDefaultTriggers(), hostCmdsPresence)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "shared_network_dispensable", GetDefaultTriggers(), sharedNetworkDispensable)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_dispensable", ExtendDefaultTriggers(DBHostsModified), subnetDispensable)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "reservation_out_of_pool", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "dispensable_shared_network", GetDefaultTriggers(), sharedNetworkDispensable)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "dispensable_subnet", ExtendDefaultTriggers(DBHostsModified), subnetDispensable)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "out_of_pool_reservation", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "overlapping_subnet", GetDefaultTriggers(), subnetsOverlapping)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "canonical_prefix", GetDefaultTriggers(), canonicalPrefixes)
 }
