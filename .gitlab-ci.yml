@@ -256,6 +256,8 @@ system_testing:
     USE_SYSTEM_NODEJS: "true"
     # It must be an alias of the docker:dind service.
     DEFAULT_MAPPED_ADDRESS: "docker"
+  # Don't block if the artifacts from the previous stages expired.
+  dependencies: []
   script:
     # - rake system_tests_ui
     - rake systemtest
