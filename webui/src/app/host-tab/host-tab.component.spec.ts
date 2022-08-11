@@ -21,6 +21,7 @@ import { TreeModule } from 'primeng/tree'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { TagModule } from 'primeng/tag'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -44,6 +45,7 @@ describe('HostTabComponent', () => {
                 RouterTestingModule,
                 ToggleButtonModule,
                 TreeModule,
+                TagModule,
             ],
             declarations: [DhcpOptionSetViewComponent, HelpTipComponent, HostTabComponent, IdentifierComponent],
         }).compileComponents()
@@ -694,5 +696,212 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
         // Unable to delete hosts specified in the config file.
         expect(fixture.debugElement.query(By.css('[label=Delete]'))).toBeFalsy()
+    })
+
+    it('should display different DHCP options for different servers separately', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                    options: [
+                        {
+                            code: 1024,
+                        },
+                        {
+                            code: 1025,
+                        },
+                    ],
+                    optionsHash: '1111',
+                },
+                {
+                    appId: 2,
+                    daemonId: 1,
+                    appName: 'lion',
+                    dataSource: 'api',
+                    options: [
+                        {
+                            code: 1024,
+                        },
+                        {
+                            code: 1026,
+                        },
+                    ],
+                    optionsHash: '2222',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(4)
+
+        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[3].properties.innerText).toContain('DHCP Options')
+
+        let frogLink = fieldsets[2].query(By.css('a'))
+        expect(frogLink).toBeTruthy()
+        expect(frogLink.properties.innerText).toContain('frog')
+        expect(frogLink.properties.pathname).toBe('/apps/kea/1')
+
+        let lionLink = fieldsets[3].query(By.css('a'))
+        expect(lionLink).toBeTruthy()
+        expect(lionLink.properties.innerText).toContain('lion')
+        expect(lionLink.properties.pathname).toBe('/apps/kea/2')
+    })
+
+    it('should display the same DHCP options for different servers in one panel', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                    options: [
+                        {
+                            code: 1024,
+                        },
+                        {
+                            code: 1025,
+                        },
+                    ],
+                    optionsHash: '1111',
+                },
+                {
+                    appId: 2,
+                    daemonId: 1,
+                    appName: 'lion',
+                    dataSource: 'api',
+                    options: [
+                        {
+                            code: 1024,
+                        },
+                        {
+                            code: 1025,
+                        },
+                    ],
+                    optionsHash: '1111',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(3)
+
+        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[2].properties.innerText).toContain('All Servers')
+    })
+
+    it('should display DHCP options panel for host with one daemon and include server name', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                    options: [
+                        {
+                            code: 1024,
+                        },
+                        {
+                            code: 1025,
+                        },
+                    ],
+                    optionsHash: '1111',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(3)
+
+        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
+
+        let frogLink = fieldsets[2].query(By.css('a'))
+        expect(frogLink).toBeTruthy()
+        expect(frogLink.properties.innerText).toContain('frog')
+        expect(frogLink.properties.pathname).toBe('/apps/kea/1')
+    })
+
+    it('should display a message about no DHCP options configured', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                },
+                {
+                    appId: 2,
+                    daemonId: 1,
+                    appName: 'lion',
+                    dataSource: 'api',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(3)
+        expect(fieldsets[2].properties.innerText).toContain('No options configured.')
     })
 })

@@ -446,4 +446,15 @@ export class HostTabComponent {
                 })
             })
     }
+
+    /**
+     * Checks if all DHCP servers owning the reservation have equal set of
+     * DHCP options.
+     *
+     * @returns true, if all DHCP servers have equal option set hashes, false
+     *          otherwise.
+     */
+    allDaemonsHaveEqualDhcpOptions(): boolean {
+        return this.host.localHosts.every((lh) => lh.optionsHash === this.host.localHosts[0].optionsHash)
+    }
 }

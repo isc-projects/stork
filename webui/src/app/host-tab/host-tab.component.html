@@ -159,28 +159,60 @@
                     </p-table>
                 </p-fieldset>
             </div>
-            <div *ngFor="let localHost of host.localHosts" class="mt-4">
-                <p-fieldset>
-                    <ng-template pTemplate="header">
-                        <span
-                            >DHCP Options&nbsp;
-                            <span class="font-normal"
-                                >/&nbsp;
-                                <a routerLink="/apps/kea/{{ localHost.appId }}">
-                                    {{ localHost.appName }}
-                                </a>
-                            </span>
-                            <app-help-tip title="DHCP Option View">
-                                This panel comprises DHCP options associated with the displayed host reservation and
-                                associated with the server whose name is displayed in the panel title. Typically,
-                                multiple DHCP servers using a host reservation have the same set of options configured
-                                for it. However, in some cases, they can be configured differently.
-                            </app-help-tip>
-                        </span>
-                    </ng-template>
-                    <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
-                </p-fieldset>
-            </div>
+            <ng-container *ngIf="host.localHosts?.length > 0">
+                <ng-container
+                    *ngIf="
+                        host.localHosts.length === 1 || !allDaemonsHaveEqualDhcpOptions();
+                        else allServerOptionsBlock
+                    "
+                >
+                    <div *ngFor="let localHost of host.localHosts" class="mt-4">
+                        <p-fieldset>
+                            <ng-template pTemplate="header">
+                                <span
+                                    >DHCP Options&nbsp;
+                                    <span class="font-normal"
+                                        >/&nbsp;
+                                        <a routerLink="/apps/kea/{{ localHost.appId }}">
+                                            {{ localHost.appName }}
+                                        </a>
+                                    </span>
+                                    <app-help-tip title="DHCP Option View">
+                                        This panel comprises DHCP options associated with the displayed host reservation
+                                        and associated with the server whose name is displayed in the panel title.
+                                        Typically, multiple DHCP servers using a host reservation have the same set of
+                                        options configured for it. However, in some cases, they can be configured
+                                        differently.
+                                    </app-help-tip>
+                                </span>
+                            </ng-template>
+                            <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
+                        </p-fieldset>
+                    </div>
+                </ng-container>
+                <ng-template #allServerOptionsBlock>
+                    <div class="mt-4">
+                        <p-fieldset>
+                            <ng-template pTemplate="header">
+                                <span
+                                    >DHCP Options&nbsp;
+                                    <span class="font-normal">/&nbsp; All Servers </span>
+                                    <app-help-tip title="DHCP Option View">
+                                        This panel comprises DHCP options associated with the displayed host reservation
+                                        and all servers sharing this reservation. It appears that all the servers have
+                                        the DHCP options configured equally. Stork also supports the cases when the same
+                                        host reservation is associated with different DHCP options for different DHCP
+                                        servers. In that case, the displayed options would have been split into multiple
+                                        panels, one for each server.
+                                    </app-help-tip>
+                                </span>
+                            </ng-template>
+                            <app-dhcp-option-set-view [options]="host.localHosts[0].options">
+                            </app-dhcp-option-set-view>
+                        </p-fieldset>
+                    </div>
+                </ng-template>
+            </ng-container>
         </div>
     </div>
     <div class="flex mt-6">
