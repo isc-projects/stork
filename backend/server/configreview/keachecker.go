@@ -2,9 +2,9 @@ package configreview
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
-	"github.com/armon/go-radix"
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -675,56 +675,48 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 		create()
 }
 
-// Finds the subnets with the overlapping  prefixes. It searches until
-// exceeding the maximum number of overlaps.
 func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
-	tree := radix.New()
+	type subnetWithPrefix struct {
+		subnet       minimalSubnet
+		binaryPrefix string
+	}
 
-	// Builds a radix tree from all prefixes.
-	for _, subnet := range subnets {
+	subnetPrefixes := make([]subnetWithPrefix, len(subnets))
+
+	for i, subnet := range subnets {
 		cidr := storkutil.ParseIP(subnet.Subnet)
 		if cidr == nil || !cidr.Prefix {
-			// Probably, it never happens because Kea doesn't accept invalid
-			// prefixes.
 			continue
 		}
+		binaryPrefix := cidr.GetNetworkPrefixAsBinary()
 
-		// Converts the prefix to a binary string. The strings have different
-		// lengths corresponding to the prefix length. If the longer string
-		// starts with the shorter one, it means the shorter prefix contains
-		// the longer one.
-		prefix := cidr.GetNetworkPrefixAsBinary()
-
-		// Inserts binary prefix to the tree.
-		overlapedSubnet, ok := tree.Insert(prefix, subnet)
-		if ok {
-			// Two subnets have the same prefix. Their prefixes fully overlap.
-			overlaps = append(overlaps, minimalSubnetPair{subnet, overlapedSubnet.(minimalSubnet)})
-			if len(overlaps) == maxOverlaps {
-				return
-			}
+		subnetPrefixes[i] = subnetWithPrefix{
+			subnet:       subnet,
+			binaryPrefix: binaryPrefix,
 		}
 	}
 
-	// Walks through the tree. If any node have children then it means that
-	// it means that the children prefixes are contained by the parent prefix.
-	tree.Walk(func(parent string, parentValue interface{}) bool {
-		tree.WalkPrefix(parent, func(child string, childValue interface{}) bool {
-			if parent == child {
-				// Ignore the parent
-				return false
-			}
-			parentSubnet := parentValue.(minimalSubnet)
-			childSubnet := childValue.(minimalSubnet)
-			overlaps = append(overlaps, minimalSubnetPair{
-				parent: parentSubnet,
-				child:  childSubnet,
-			})
-			return len(overlaps) == maxOverlaps
-		})
-		return len(overlaps) == maxOverlaps
+	sort.Slice(subnetPrefixes, func(i, j int) bool {
+		return len(subnetPrefixes[i].binaryPrefix) <= len(subnetPrefixes[j].binaryPrefix)
 	})
 
+	for outterIdx, outter := range subnetPrefixes {
+		for innerIdx, inner := range subnetPrefixes {
+			if outterIdx >= innerIdx {
+				continue
+			}
+
+			if strings.HasPrefix(inner.binaryPrefix, outter.binaryPrefix) {
+				overlaps = append(overlaps, minimalSubnetPair{
+					parent: outter.subnet,
+					child:  inner.subnet,
+				})
+				if len(overlaps) == maxOverlaps {
+					return
+				}
+			}
+		}
+	}
 	return overlaps
 }
 

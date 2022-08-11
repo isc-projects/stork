@@ -1711,10 +1711,10 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 2, overlaps[0].parent.ID)
-	require.EqualValues(t, 1, overlaps[0].child.ID)
-	require.EqualValues(t, 6, overlaps[1].parent.ID)
-	require.EqualValues(t, 5, overlaps[1].child.ID)
+	require.EqualValues(t, 2, overlaps[1].parent.ID)
+	require.EqualValues(t, 1, overlaps[1].child.ID)
+	require.EqualValues(t, 6, overlaps[0].parent.ID)
+	require.EqualValues(t, 5, overlaps[0].child.ID)
 }
 
 // Test that duplicated prefixes are detected as overlaps even if the prefix is
@@ -1734,15 +1734,19 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 	overlaps := findOverlaps(subnets, 42)
 
 	// Assert
-	require.Len(t, overlaps, 4)
-	require.EqualValues(t, 2, overlaps[0].parent.ID)
-	require.EqualValues(t, 1, overlaps[0].child.ID)
-	require.EqualValues(t, 3, overlaps[1].parent.ID)
-	require.EqualValues(t, 2, overlaps[1].child.ID)
+	require.Len(t, overlaps, 6)
+	require.EqualValues(t, 2, overlaps[5].parent.ID)
+	require.EqualValues(t, 1, overlaps[5].child.ID)
+	require.EqualValues(t, 3, overlaps[4].parent.ID)
+	require.EqualValues(t, 1, overlaps[4].child.ID)
+	require.EqualValues(t, 3, overlaps[3].parent.ID)
+	require.EqualValues(t, 2, overlaps[3].child.ID)
 	require.EqualValues(t, 6, overlaps[2].parent.ID)
 	require.EqualValues(t, 5, overlaps[2].child.ID)
-	require.EqualValues(t, 7, overlaps[3].parent.ID)
-	require.EqualValues(t, 6, overlaps[3].child.ID)
+	require.EqualValues(t, 7, overlaps[1].parent.ID)
+	require.EqualValues(t, 5, overlaps[1].child.ID)
+	require.EqualValues(t, 7, overlaps[0].parent.ID)
+	require.EqualValues(t, 6, overlaps[0].child.ID)
 }
 
 // Test that overlaps are detected for the same network but different prefix
@@ -1761,10 +1765,10 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[0].parent.ID)
-	require.EqualValues(t, 2, overlaps[0].child.ID)
-	require.EqualValues(t, 5, overlaps[1].parent.ID)
-	require.EqualValues(t, 6, overlaps[1].child.ID)
+	require.EqualValues(t, 1, overlaps[1].parent.ID)
+	require.EqualValues(t, 2, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.ID)
+	require.EqualValues(t, 6, overlaps[0].child.ID)
 }
 
 // Test that overlaps are detected when one prefix is contained by another.
@@ -1782,10 +1786,10 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[0].parent.ID)
-	require.EqualValues(t, 2, overlaps[0].child.ID)
-	require.EqualValues(t, 5, overlaps[1].parent.ID)
-	require.EqualValues(t, 6, overlaps[1].child.ID)
+	require.EqualValues(t, 1, overlaps[1].parent.ID)
+	require.EqualValues(t, 2, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.ID)
+	require.EqualValues(t, 6, overlaps[0].child.ID)
 }
 
 // Test that the searching for overlaps is stopped if the limit is exceeded on
@@ -1810,10 +1814,10 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 4, overlaps[0].parent.ID)
-	require.EqualValues(t, 3, overlaps[0].child.ID)
-	require.EqualValues(t, 8, overlaps[1].parent.ID)
-	require.EqualValues(t, 7, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.ID)
+	require.EqualValues(t, 6, overlaps[0].child.ID)
+	require.EqualValues(t, 10, overlaps[1].parent.ID)
+	require.EqualValues(t, 9, overlaps[1].child.ID)
 }
 
 // Test that the searching for overlaps is stopped if the limit of overlapping
@@ -1825,9 +1829,9 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 		{ID: 2, Subnet: "192.168.5.0/24"},
 		{ID: 3, Subnet: "192.68.0.0/16"},
 		{ID: 4, Subnet: "192.68.5.0/24"},
-		{ID: 5, Subnet: "3001:0::/16"},
+		{ID: 5, Subnet: "3001::/16"},
 		{ID: 6, Subnet: "3001:1::/80"},
-		{ID: 7, Subnet: "2001:0::/16"},
+		{ID: 7, Subnet: "2001::/16"},
 		{ID: 8, Subnet: "2001:1::/80"},
 	}
 
@@ -1836,10 +1840,10 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 3, overlaps[0].parent.ID)
-	require.EqualValues(t, 4, overlaps[0].child.ID)
-	require.EqualValues(t, 1, overlaps[1].parent.ID)
-	require.EqualValues(t, 2, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.ID)
+	require.EqualValues(t, 6, overlaps[0].child.ID)
+	require.EqualValues(t, 7, overlaps[1].parent.ID)
+	require.EqualValues(t, 8, overlaps[1].child.ID)
 }
 
 // Test that error is generated for non-DHCP daemon.
@@ -2389,5 +2393,48 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)
 		}
+	}
+}
+
+func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalSubnet) {
+	overlappingStep := int(float32(n) * overlappingFactor)
+
+	for i := 0; i < n; i++ {
+		id := int64(i + 1)
+		index := i
+		mask := 24
+
+		if overlappingFactor != 0. && i%overlappingStep == 1 {
+			index--
+			mask++
+		}
+
+		part4 := 0
+		part3 := index % 256
+		part2 := (index / 256) % 256
+		part1 := (index / (256 * 256)) % 256
+
+		prefix := fmt.Sprintf("%d.%d.%d.%d/%d", part1, part2, part3, part4, mask)
+
+		subnet := minimalSubnet{
+			ID:     id,
+			Subnet: prefix,
+		}
+		subnets = append(subnets, subnet)
+	}
+
+	return subnets
+}
+
+func BenchmarkOverlaps_BinaryPrefixesOnly(b *testing.B) {
+	numberOfSubnets := 8196
+	overlappingFactor := float32(0.01)
+	maximumOverlaps := 10
+
+	subnets := getOverlappingSubnets(numberOfSubnets, overlappingFactor)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = findOverlaps(subnets, maximumOverlaps)
 	}
 }
