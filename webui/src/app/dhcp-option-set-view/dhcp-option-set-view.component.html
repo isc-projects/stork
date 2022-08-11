@@ -2,7 +2,9 @@
     <ng-template let-node pTemplate="option">
         <div class="flex p-1">
             <div class="flex align-items-center fa fa-cog" [ngStyle]="{ color: 'var(--blue-500)' }"></div>
-            <div class="flex align-items-center font-semibold ml-2">Option {{ node.data.code }}</div>
+            <div class="flex align-items-center font-semibold ml-2">
+                {{ getOptionTitle(node) }}
+            </div>
             <div *ngIf="node.data.alwaysSend" class="flex align-items-center ml-2">
                 <p-tag>always sent</p-tag>
             </div>

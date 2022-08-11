@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { TreeNode } from 'primeng/api'
 import { DHCPOption } from '../backend/model/dHCPOption'
+import { DhcpOptionsService } from '../dhcp-options.service'
+import { IPType } from '../iptype'
 
 /**
  * A node of the displayed option holding its basic description.
@@ -11,6 +13,7 @@ import { DHCPOption } from '../backend/model/dHCPOption'
 export interface OptionNode {
     alwaysSend?: boolean
     code: number
+    universe: IPType
 }
 
 /**
@@ -46,7 +49,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
     /**
      * Constructor.
      */
-    constructor() {}
+    constructor(public optionsService: DhcpOptionsService) {}
 
     /**
      * A component lifecycle hook executed when the component is initialized.
@@ -88,6 +91,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
                 data: {
                     alwaysSend: option.alwaysSend,
                     code: option.code,
+                    universe: option.universe,
                 },
                 children: [],
             }
@@ -127,5 +131,26 @@ export class DhcpOptionSetViewComponent implements OnInit {
             optionNode.children.length === 0 ||
             optionNode.children.findIndex((c) => c.type === 'field') < 0
         )
+    }
+
+    /**
+     * Returns a header displayed for an option.
+     *
+     * If the option is known, the returned string comprises option name
+     * and option code. Otherwise, it comprises only the option code.
+     *
+     * @param code option code.
+     * @returns option name followed by the option code or the string 'Option'
+     *          followed by the option code.
+     */
+    getOptionTitle(node: TreeNode<OptionNode>): string {
+        let option =
+            node.data.universe === IPType.IPv4
+                ? this.optionsService.findStandardDhcpv4Option(node.data.code)
+                : this.optionsService.findStandardDhcpv6Option(node.data.code)
+        if (option) {
+            return `${option.label}`
+        }
+        return `Option ${node.data.code}`
     }
 }

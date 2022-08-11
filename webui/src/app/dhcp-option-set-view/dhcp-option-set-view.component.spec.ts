@@ -46,9 +46,11 @@ describe('DhcpOptionSetViewComponent', () => {
                         values: ['3000::', '64'],
                     },
                 ],
+                universe: 6,
                 options: [
                     {
                         code: 1025,
+                        universe: 6,
                     },
                     {
                         code: 1026,
@@ -62,6 +64,7 @@ describe('DhcpOptionSetViewComponent', () => {
                                 values: ['2001:db8:2::1'],
                             },
                         ],
+                        universe: 6,
                     },
                 ],
             },
@@ -73,6 +76,7 @@ describe('DhcpOptionSetViewComponent', () => {
                         values: ['true'],
                     },
                 ],
+                universe: 6,
             },
             {
                 code: 1028,
@@ -85,8 +89,10 @@ describe('DhcpOptionSetViewComponent', () => {
                                 values: ['foo'],
                             },
                         ],
+                        universe: 6,
                     },
                 ],
+                universe: 6,
             },
         ]
         component.options = options
@@ -164,5 +170,48 @@ describe('DhcpOptionSetViewComponent', () => {
         let tree = fixture.debugElement.query(By.css('p-tree'))
         expect(tree).toBeTruthy()
         expect(tree.properties.innerText).toContain('No options configured.')
+    })
+
+    it('should should display DHCPv4 option name when it is known', () => {
+        let options: Array<DHCPOption> = [
+            {
+                code: 5,
+                fields: [
+                    {
+                        fieldType: 'ipv4-address',
+                        values: ['192.0.2.1'],
+                    },
+                ],
+                universe: 4,
+            },
+        ]
+        component.options = options
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let optionSet = fixture.debugElement.query(By.css('p-tree'))
+        expect(optionSet).toBeTruthy()
+        expect(optionSet.properties.innerText).toContain('(5) Name Server')
+    })
+    it('should should display DHCPv6 option name when it is known', () => {
+        let options: Array<DHCPOption> = [
+            {
+                code: 23,
+                fields: [
+                    {
+                        fieldType: 'ipv6-address',
+                        values: ['2001:db8:cafe::'],
+                    },
+                ],
+                universe: 6,
+            },
+        ]
+        component.options = options
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let optionSet = fixture.debugElement.query(By.css('p-tree'))
+        expect(optionSet).toBeTruthy()
+        expect(optionSet.properties.innerText).toContain('(23) OPTION_DNS_SERVERS')
     })
 })
