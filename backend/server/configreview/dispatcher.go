@@ -637,25 +637,6 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	return dispatcher
 }
 
-func (d *dispatcherImpl) LoadCheckerStates() error {
-	preferences, err := dbmodel.GetCheckerPreferences(d.db)
-	if err != nil {
-		return err
-	}
-	for _, preference := range preferences {
-		state := CheckerStateEnabled
-		if preference.Excluded {
-			state = CheckerStateDisabled
-		}
-		if preference.IsGlobal() {
-			d.checkerController.SetGlobalState(preference.CheckerName, state)
-		} else {
-			d.checkerController.SetStateForDaemon(*preference.DaemonID, preference.CheckerName, state)
-		}
-	}
-	return nil
-}
-
 // Registers new checker. A checker implements an algorithm to verify
 // a single configuration piece (or aspect) and output a suitable report
 // if it finds issues. It should return nil when no issues were found.
@@ -869,4 +850,60 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "out_of_pool_reservation", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "overlapping_subnet", GetDefaultTriggers(), subnetsOverlapping)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "canonical_prefix", GetDefaultTriggers(), canonicalPrefixes)
+}
+
+// Fetches all checker preferences from the database and loads them into
+// the review dispatcher (the checker controller).
+// It validates the preferences. If the preference cannot be loaded, it logs
+// the error message and skips this preference. Returns an error if any
+// database connection problem occurs.
+func LoadAndValidateCheckerStates(db dbops.DBI, d Dispatcher) error {
+	preferences, err := dbmodel.GetAllCheckerPreferences(db)
+	if err != nil {
+		return err
+	}
+
+	// Cache for daemon entries
+	daemons := make(map[int64]*dbmodel.Daemon)
+
+	for _, preference := range preferences {
+		// Convert the boolean to the checker state.
+		state := CheckerStateEnabled
+		if preference.Excluded {
+			state = CheckerStateDisabled
+		}
+
+		// Nil for the global preferences.
+		var daemon *dbmodel.Daemon
+
+		if !preference.IsGlobal() {
+			// Lookup in cache
+			var ok bool
+			daemon, ok = daemons[preference.GetDaemonID()]
+			if !ok {
+				// Lookup in database
+				daemon, err = dbmodel.GetDaemonByID(db, preference.GetDaemonID())
+				if err != nil {
+					// Should never happen
+					return err
+				} else if daemon == nil {
+					// Should never happen
+					return pkgerrors.Errorf("unknown daemon for ID %d", preference.GetDaemonID())
+				}
+				// Save entry to cache
+				daemons[preference.GetDaemonID()] = daemon
+			}
+		}
+
+		// Update the checker controller.
+		if err := d.SetCheckerState(daemon, preference.CheckerName, state); err != nil {
+			// The checker state cannot be set for a given daemon. It may happen when:
+			// 1. The checker name was changed but not updated in the database.
+			// 2. The dispatch group selector list was modified, and a given daemon is no longer related to this checker.
+			// 3. The hook that provided a custom checker was removed.
+			// Log the error message and skip the preference.
+			log.Errorf("cannot load the config review checker preference: [%s] due to %+v", preference.String(), err)
+		}
+	}
+	return nil
 }

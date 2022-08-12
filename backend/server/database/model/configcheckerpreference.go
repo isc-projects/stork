@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
@@ -31,6 +32,20 @@ func (p *ConfigCheckerPreference) GetDaemonID() int64 {
 	return *p.DaemonID
 }
 
+// Returns the string representation of the preference.
+func (p *ConfigCheckerPreference) String() string {
+	state := "included"
+	if p.Excluded {
+		state = "excluded"
+	}
+
+	if p.IsGlobal() {
+		return fmt.Sprintf("%s checker is globally %s", p.CheckerName, state)
+	} else {
+		return fmt.Sprintf("%s checker is %s for %d daemon ID", p.CheckerName, state, p.GetDaemonID())
+	}
+}
+
 // Constructs the global checker preference.
 func NewGlobalConfigCheckerPreference(checkerName string) *ConfigCheckerPreference {
 	return &ConfigCheckerPreference{
@@ -50,8 +65,28 @@ func NewDaemonConfigCheckerPreference(daemonID int64, checkerName string, exclud
 }
 
 // Returns all config checker preferences.
-func GetCheckerPreferences(dbi dbops.DBI) (preferences []*ConfigCheckerPreference, err error) {
+func GetAllCheckerPreferences(dbi dbops.DBI) (preferences []*ConfigCheckerPreference, err error) {
+	err = dbi.Model(&preferences).
+		Order("checker_name").
+		Select()
+
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrap(err, "problem selecting checker preferences for a given daemon")
+		return
+	}
+
+	return preferences, nil
+}
+
+// Returns config checker preferences for a given daemon. If the daemon ID is
+// nil returns only global checker preferences.
+func GetCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []*ConfigCheckerPreference, err error) {
 	q := dbi.Model(&preferences)
+	if daemonID == nil {
+		q = q.Where("daemon_id IS NULL")
+	} else {
+		q = q.Where("daemon_id = ?", *daemonID)
+	}
 	err = q.Order("checker_name").
 		Select()
 

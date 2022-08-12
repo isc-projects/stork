@@ -55,6 +55,23 @@ func TestConfigCheckerPreferenceGetDaemonID(t *testing.T) {
 	require.EqualValues(t, 42, nonGlobalDaemonID)
 }
 
+// Test that the string representation of the checker preference is created
+// properly.
+func TestCheckerPreferenceToString(t *testing.T) {
+	// Arrange
+	globalPreferenceExcluded := NewGlobalConfigCheckerPreference("foo")
+	globalPreferenceIncluded := NewGlobalConfigCheckerPreference("foo")
+	globalPreferenceIncluded.Excluded = false
+	nonGlobalPreferenceExcluded := NewDaemonConfigCheckerPreference(42, "foo", true)
+	nonGlobalPreferenceIncluded := NewDaemonConfigCheckerPreference(42, "foo", false)
+
+	// Act & Assert
+	require.EqualValues(t, "foo checker is globally excluded", globalPreferenceExcluded.String())
+	require.EqualValues(t, "foo checker is globally included", globalPreferenceIncluded.String())
+	require.EqualValues(t, "foo checker is excluded for 42 daemon ID", nonGlobalPreferenceExcluded.String())
+	require.EqualValues(t, "foo checker is included for 42 daemon ID", nonGlobalPreferenceIncluded.String())
+}
+
 // Creates two demon entries in the database. The daemons belong to different
 // apps and machines.
 func addTestDaemons(db *pg.DB) (*Daemon, *Daemon, error) {
@@ -102,19 +119,11 @@ func TestAddOrUpdateCheckerPreferences(t *testing.T) {
 
 	// Act
 	preferences := []*ConfigCheckerPreference{
-		{
-			DaemonID:    &daemon.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
+		NewDaemonConfigCheckerPreference(daemon.ID, "foo", true),
 	}
 	err1 := addOrUpdateCheckerPreferences(db, preferences)
 	preferences[0].Excluded = false
-	preferences = append(preferences, &ConfigCheckerPreference{
-		DaemonID:    &daemon.ID,
-		CheckerName: "bar",
-		Excluded:    true,
-	})
+	preferences = append(preferences, NewDaemonConfigCheckerPreference(daemon.ID, "bar", true))
 	err2 := addOrUpdateCheckerPreferences(db, preferences)
 
 	// Assert
@@ -137,19 +146,11 @@ func TestAddOrUpdateGlobalCheckerPreferences(t *testing.T) {
 
 	// Act
 	preferences := []*ConfigCheckerPreference{
-		{
-			DaemonID:    nil,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
+		NewGlobalConfigCheckerPreference("foo"),
 	}
 	err1 := addOrUpdateCheckerPreferences(db, preferences)
 	preferences[0].Excluded = false
-	preferences = append(preferences, &ConfigCheckerPreference{
-		DaemonID:    nil,
-		CheckerName: "bar",
-		Excluded:    true,
-	})
+	preferences = append(preferences, NewGlobalConfigCheckerPreference("bar"))
 	err2 := addOrUpdateCheckerPreferences(db, preferences)
 
 	// Assert
@@ -183,21 +184,9 @@ func TestDeleteCheckerPreferences(t *testing.T) {
 	defer teardown()
 	daemon1, daemon2, _ := addTestDaemons(db)
 	preferences := []*ConfigCheckerPreference{
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "bar",
-			Excluded:    false,
-		},
-		{
-			DaemonID:    &daemon2.ID,
-			CheckerName: "baz",
-			Excluded:    false,
-		},
+		NewDaemonConfigCheckerPreference(daemon1.ID, "foo", true),
+		NewDaemonConfigCheckerPreference(daemon1.ID, "bar", false),
+		NewDaemonConfigCheckerPreference(daemon2.ID, "baz", false),
 	}
 	_ = addOrUpdateCheckerPreferences(db, preferences)
 
@@ -225,9 +214,7 @@ func TestDeleteNonExistingCheckerPreferences(t *testing.T) {
 
 	// Act
 	err := deleteCheckerPreferences(db, []*ConfigCheckerPreference{
-		{
-			CheckerName: "foo",
-		},
+		NewGlobalConfigCheckerPreference("foo"),
 	})
 
 	// Assert
@@ -257,21 +244,9 @@ func TestDeleteDaemonAndRelatedCheckerPreferences(t *testing.T) {
 	defer teardown()
 	daemon1, daemon2, _ := addTestDaemons(db)
 	preferences := []*ConfigCheckerPreference{
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    &daemon2.ID,
-			CheckerName: "bar",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    nil,
-			CheckerName: "baz",
-			Excluded:    true,
-		},
+		NewDaemonConfigCheckerPreference(daemon1.ID, "foo", true),
+		NewDaemonConfigCheckerPreference(daemon2.ID, "bar", true),
+		NewGlobalConfigCheckerPreference("baz"),
 	}
 	_ = addOrUpdateCheckerPreferences(db, preferences)
 
@@ -299,26 +274,10 @@ func TestModifyCheckerPreferences(t *testing.T) {
 	defer teardown()
 	daemon1, daemon2, _ := addTestDaemons(db)
 	preferences := []*ConfigCheckerPreference{
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "foo",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "bar",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    &daemon1.ID,
-			CheckerName: "baz",
-			Excluded:    true,
-		},
-		{
-			DaemonID:    &daemon2.ID,
-			CheckerName: "biz",
-			Excluded:    true,
-		},
+		NewDaemonConfigCheckerPreference(daemon1.ID, "foo", true),
+		NewDaemonConfigCheckerPreference(daemon1.ID, "bar", true),
+		NewDaemonConfigCheckerPreference(daemon1.ID, "baz", true),
+		NewDaemonConfigCheckerPreference(daemon2.ID, "biz", true),
 	}
 	_ = addOrUpdateCheckerPreferences(db, preferences)
 
@@ -331,11 +290,7 @@ func TestModifyCheckerPreferences(t *testing.T) {
 	// Removes foo
 	deletes = append(deletes, preferences[0])
 	// Adds boz
-	updates = append(updates, &ConfigCheckerPreference{
-		DaemonID:    &daemon1.ID,
-		CheckerName: "boz",
-		Excluded:    true,
-	})
+	updates = append(updates, NewDaemonConfigCheckerPreference(daemon1.ID, "boz", true))
 	// Commits changes
 	err := CommitCheckerPreferences(db, updates, deletes)
 
@@ -349,4 +304,84 @@ func TestModifyCheckerPreferences(t *testing.T) {
 	preferences, _ = GetCheckerPreferences(db, &daemon2.ID)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "biz", preferences[0].CheckerName)
+}
+
+// Test that the global checker preferences are fetched properly.
+func TestGetGlobalCheckerPreferences(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemon, _, _ := addTestDaemons(db)
+	_ = addOrUpdateCheckerPreferences(db, []*ConfigCheckerPreference{
+		NewGlobalConfigCheckerPreference("foo"),
+		NewGlobalConfigCheckerPreference("bar"),
+		NewDaemonConfigCheckerPreference(daemon.ID, "baz", true),
+	})
+
+	// Act
+	preferences, err := GetCheckerPreferences(db, nil)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, preferences, 2)
+	require.EqualValues(t, "bar", preferences[0].CheckerName)
+	require.True(t, preferences[0].Excluded)
+	require.EqualValues(t, "foo", preferences[1].CheckerName)
+	require.True(t, preferences[1].Excluded)
+}
+
+// Test that the daemon checker preferences are fetched properly.
+func TestGetDaemonCheckerPreferences(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemon1, daemon2, _ := addTestDaemons(db)
+	_ = addOrUpdateCheckerPreferences(db, []*ConfigCheckerPreference{
+		NewDaemonConfigCheckerPreference(daemon1.ID, "foo", true),
+		NewDaemonConfigCheckerPreference(daemon1.ID, "bar", false),
+		NewDaemonConfigCheckerPreference(daemon2.ID, "baz", true),
+	})
+
+	// Act
+	preferences, err := GetCheckerPreferences(db, &daemon1.ID)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, preferences, 2)
+	require.EqualValues(t, "bar", preferences[0].CheckerName)
+	require.False(t, preferences[0].Excluded)
+	require.EqualValues(t, "foo", preferences[1].CheckerName)
+	require.True(t, preferences[1].Excluded)
+}
+
+// Test that the all checker preferences are fetched properly.
+func TestGetAllCheckerPreferences(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemon1, daemon2, _ := addTestDaemons(db)
+	_ = addOrUpdateCheckerPreferences(db, []*ConfigCheckerPreference{
+		NewDaemonConfigCheckerPreference(daemon1.ID, "foo", true),
+		NewDaemonConfigCheckerPreference(daemon1.ID, "bar", false),
+		NewDaemonConfigCheckerPreference(daemon2.ID, "baz", true),
+		NewGlobalConfigCheckerPreference("boz"),
+		NewGlobalConfigCheckerPreference("biz"),
+	})
+
+	// Act
+	preferences, err := GetAllCheckerPreferences(db)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, preferences, 5)
+	require.EqualValues(t, "bar", preferences[0].CheckerName)
+	require.False(t, preferences[0].Excluded)
+	require.EqualValues(t, "baz", preferences[1].CheckerName)
+	require.True(t, preferences[1].Excluded)
+	require.EqualValues(t, "biz", preferences[2].CheckerName)
+	require.True(t, preferences[2].Excluded)
+	require.EqualValues(t, "boz", preferences[3].CheckerName)
+	require.True(t, preferences[3].Excluded)
+	require.EqualValues(t, "foo", preferences[4].CheckerName)
+	require.True(t, preferences[4].Excluded)
 }
