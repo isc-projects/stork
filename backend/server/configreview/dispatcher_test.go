@@ -920,9 +920,48 @@ func TestBeginReviewForDaemonWithAllCheckersDisabled(t *testing.T) {
 // Test that the review doesn't execute the disabled config checkers.
 func TestBeginReviewForDaemonWithSomeCheckersDisabled(t *testing.T) {
 	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, machine)
+	app := &dbmodel.App{
+		Type:      dbmodel.AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+	checkerCallCount := 0
+
+	dispatcher := NewDispatcher(db)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, func(rc *ReviewContext) (*Report, error) {
+		require.Fail(t, "checker function shouldn't be called")
+		return nil, nil
+	})
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, func(rc *ReviewContext) (*Report, error) {
+		checkerCallCount++
+		return nil, nil
+	})
+
+	dispatcher.SetCheckerState(nil, "foo", CheckerStateDisabled)
+	dispatcher.Start()
+
+	var wg sync.WaitGroup
 
 	// Act
+	wg.Add(1)
+	ok := dispatcher.BeginReview(daemon, ManualRun, func(i int64, err error) {
+		wg.Done()
+	})
+	wg.Wait()
 
 	// Assert
-	require.Fail(t, "not implemented")
+	require.True(t, ok)
+	require.EqualValues(t, 1, checkerCallCount)
 }
