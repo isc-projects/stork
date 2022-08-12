@@ -687,7 +687,7 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 // Returns the metadata of all registered configuration checkers for a given
 // daemon. Metadata is a set of values describing the checker, i.e., name of
 // the checker, list of triggers and selectors, and state of checker (enabled
-// or disabled). The metadata is temporary objects releated to a specific
+// or disabled). The metadata is temporary objects related to a specific
 // daemon and cannot be used to execute the checker function. If the daemon
 // is nil then it returns all registered checkers and global states.
 func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*CheckerMetadata, error) {
@@ -769,7 +769,7 @@ func (d *dispatcherImpl) GetSignature() string {
 	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", d.enforceSeq, d.groups))
 }
 
-// Returns true if a given checker is registred to execute on a specific daemon.
+// Returns true if a given checker is registered to execute on a specific daemon.
 func (d *dispatcherImpl) isCheckerAvailableForDaemon(checkerName string, daemon *dbmodel.Daemon) bool {
 	selectors := getDispatchGroupSelectors(daemon.Name)
 	for _, selector := range selectors {

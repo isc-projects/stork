@@ -2,7 +2,6 @@ package configreview
 
 import (
 	"context"
-	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -768,19 +767,6 @@ func TestGetCheckersMetadata(t *testing.T) {
 	metadataUnknown, errUnknown := dispatcher.GetCheckersMetadata(daemon3)
 
 	// Assert
-	sort.Slice(metadataKea, func(i, j int) bool {
-		return metadataKea[i].Name < metadataKea[j].Name
-	})
-	sort.Slice(metadataBind9, func(i, j int) bool {
-		return metadataBind9[i].Name < metadataBind9[j].Name
-	})
-	sort.Slice(metadataGlobal, func(i, j int) bool {
-		return metadataGlobal[i].Name < metadataGlobal[j].Name
-	})
-	sort.Slice(metadataUnknown, func(i, j int) bool {
-		return metadataUnknown[i].Name < metadataUnknown[j].Name
-	})
-
 	require.Len(t, metadataKea, 3)
 	require.NoError(t, errKea)
 
