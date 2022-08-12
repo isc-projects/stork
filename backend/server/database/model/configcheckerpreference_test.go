@@ -306,6 +306,19 @@ func TestModifyCheckerPreferences(t *testing.T) {
 	require.EqualValues(t, "biz", preferences[0].CheckerName)
 }
 
+// Test that committing the nil preference lists causes no error.
+func TestModifyCheckerPreferencesWithNils(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	err := CommitCheckerPreferences(db, nil, nil)
+
+	// Assert
+	require.NoError(t, err)
+}
+
 // Test that the global checker preferences are fetched properly.
 func TestGetGlobalCheckerPreferences(t *testing.T) {
 	// Arrange

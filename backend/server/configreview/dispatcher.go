@@ -399,15 +399,19 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 
 	for _, selector := range selectors {
 		if group := d.getGroup(selector); group != nil {
-			for i := range group.checkers {
-				report, err := group.checkers[i].checkFn(ctx)
+			for _, checker := range group.checkers {
+				if !d.checkerController.IsCheckerEnabledForDaemon(daemon.ID, checker.name) {
+					// Skip disabled checker.
+					continue
+				}
+				report, err := checker.checkFn(ctx)
 				if err != nil {
 					log.Errorf("Malformed report created by the config review checker %s: %+v",
-						group.checkers[i].name, err)
+						checker.name, err)
 				}
 				if report != nil {
 					ctx.reports = append(ctx.reports, taggedReport{
-						checkerName: group.checkers[i].name,
+						checkerName: checker.name,
 						report:      report,
 					})
 				}
@@ -415,6 +419,21 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 		}
 	}
 	d.reviewDoneChan <- ctx
+}
+
+// Checks if the dispatch group has checkers registered that are launched
+// for the specified trigger that are enabled for a specific daemon.
+func (d *dispatcherImpl) hasEnabledCheckersForTrigger(daemon *dbmodel.Daemon, trigger Trigger, group *dispatchGroup) bool {
+	if !group.hasCheckersForTrigger(trigger) {
+		return false
+	}
+
+	for _, checker := range group.checkers {
+		if d.checkerController.IsCheckerEnabledForDaemon(daemon.ID, checker.name) {
+			return true
+		}
+	}
+	return false
 }
 
 // Internal function scheduling a new review. Comparing to the exported function,
@@ -433,7 +452,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, ca
 		dispatchGroupSelectors = getDispatchGroupSelectors(daemon.Name)
 		for _, selector := range dispatchGroupSelectors {
 			if group := d.getGroup(selector); group != nil {
-				if group.hasCheckersForTrigger(trigger) {
+				if d.hasEnabledCheckersForTrigger(daemon, trigger, group) {
 					shouldRun = true
 					break
 				}

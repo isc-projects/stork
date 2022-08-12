@@ -815,3 +815,79 @@ func TestGetCheckersMetadata(t *testing.T) {
 	require.Error(t, errUnknown)
 	require.Nil(t, metadataUnknown)
 }
+
+// Test that the checker state are loaded and validated properly.
+func TestLoadAndValidateCheckerState(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, machine)
+	app := &dbmodel.App{
+		Type:      dbmodel.AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+
+	dispatcher := NewDispatcher(db)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, nil)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "baz", Triggers{ManualRun}, nil)
+	_ = dbmodel.CommitCheckerPreferences(db, []*dbmodel.ConfigCheckerPreference{
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "foo", false),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "bar", true),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "oof", true),
+		dbmodel.NewGlobalConfigCheckerPreference("foo"),
+		dbmodel.NewGlobalConfigCheckerPreference("ofo"),
+	}, nil)
+
+	// Act
+	err := LoadAndValidateCheckerStates(db, dispatcher)
+
+	// Assert
+	require.NoError(t, err)
+	checkers, _ := dispatcher.GetCheckersMetadata(daemon)
+	require.Len(t, checkers, 3)
+
+	require.EqualValues(t, "bar", checkers[0].Name)
+	require.False(t, checkers[0].Enabled)
+	require.EqualValues(t, CheckerStateDisabled, checkers[0].State)
+
+	require.EqualValues(t, "baz", checkers[1].Name)
+	require.True(t, checkers[1].Enabled)
+	require.EqualValues(t, CheckerStateInherit, checkers[1].State)
+
+	require.EqualValues(t, "foo", checkers[2].Name)
+	require.True(t, checkers[2].Enabled)
+	require.EqualValues(t, CheckerStateEnabled, checkers[2].State)
+}
+
+// Test that the review don't run if all config checkers were disabled for a given
+// daemon.
+func TestBeginReviewForDaemonWithDisabledAllCheckers(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+	require.Fail(t, "not implemented")
+
+}
+
+// Test that the review doesn't execute the disabled config checkers.
+func TestBeginReviewForDaemonWithDisabledSomeCheckers(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+	require.Fail(t, "not implemented")
+}
