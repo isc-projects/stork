@@ -396,10 +396,14 @@ node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 goswagger_dir = go_tools_dir
 
-if libc_musl_system || freebsd_system || openbsd_system
+if libc_musl_system
     protoc_dir = "/usr/bin"
     node_bin_dir = "/usr/bin"
     goswagger_dir = "/usr/bin"
+elsif freebsd_system || openbsd_system
+    protoc_dir = "/usr/local/bin"
+    node_bin_dir = "/usr/local/bin"
+    goswagger_dir = "/usr/local/bin"
 end
 
 if libc_musl_system || openbsd_system

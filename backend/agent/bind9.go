@@ -338,6 +338,7 @@ func getPotentialNamedConfLocations() []string {
 		"/etc/bind/named.conf",
 		"/etc/opt/isc/isc-bind/named.conf",
 		"/etc/opt/isc/scls/isc-bind/named.conf",
+		"/usr/local/etc/namedb/named.conf",
 	}
 }
 
