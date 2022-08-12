@@ -41,9 +41,8 @@ func (p *ConfigCheckerPreference) String() string {
 
 	if p.IsGlobal() {
 		return fmt.Sprintf("%s checker is globally %s", p.CheckerName, state)
-	} else {
-		return fmt.Sprintf("%s checker is %s for %d daemon ID", p.CheckerName, state, p.GetDaemonID())
 	}
+	return fmt.Sprintf("%s checker is %s for %d daemon ID", p.CheckerName, state, p.GetDaemonID())
 }
 
 // Constructs the global checker preference.
