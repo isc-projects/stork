@@ -841,12 +841,16 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, nil)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "baz", Triggers{ManualRun}, nil)
+
 	_ = dbmodel.CommitCheckerPreferences(db, []*dbmodel.ConfigCheckerPreference{
+		dbmodel.NewGlobalConfigCheckerPreference("foo"),
+		// Unknown global config checker.
+		dbmodel.NewGlobalConfigCheckerPreference("ofo"),
+		// Override the global preference.
 		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "foo", false),
 		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "bar", true),
+		// Unknown daemon config checker.
 		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "oof", true),
-		dbmodel.NewGlobalConfigCheckerPreference("foo"),
-		dbmodel.NewGlobalConfigCheckerPreference("ofo"),
 	}, nil)
 
 	// Act
@@ -872,18 +876,49 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 
 // Test that the review don't run if all config checkers were disabled for a given
 // daemon.
-func TestBeginReviewForDaemonWithDisabledAllCheckers(t *testing.T) {
+func TestBeginReviewForDaemonWithAllCheckersDisabled(t *testing.T) {
 	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, machine)
+	app := &dbmodel.App{
+		Type:      dbmodel.AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	daemon := daemons[0]
+
+	dispatcher := NewDispatcher(db)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, func(rc *ReviewContext) (*Report, error) {
+		require.Fail(t, "checker function shouldn't be called")
+		return nil, nil
+	})
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "bar", Triggers{ManualRun, DBHostsModified}, func(rc *ReviewContext) (*Report, error) {
+		require.Fail(t, "checker function shouldn't be called")
+		return nil, nil
+	})
+	dispatcher.SetCheckerState(nil, "foo", CheckerStateDisabled)
+	dispatcher.SetCheckerState(daemon, "bar", CheckerStateDisabled)
 
 	// Act
+	ok := dispatcher.BeginReview(daemon, ManualRun, func(i int64, err error) {
+		require.Fail(t, "callback shouldn't be called")
+	})
 
 	// Assert
-	require.Fail(t, "not implemented")
-
+	require.False(t, ok)
 }
 
 // Test that the review doesn't execute the disabled config checkers.
-func TestBeginReviewForDaemonWithDisabledSomeCheckers(t *testing.T) {
+func TestBeginReviewForDaemonWithSomeCheckersDisabled(t *testing.T) {
 	// Arrange
 
 	// Act
