@@ -1,3 +1,8 @@
+* 232 [func] marcin
+
+    Display DHCP options in the host reservation view.
+    (Gitlab #827)
+
 * 231 [func] slawek
 
     Added a system test validating Stork upgrade to the most recent version
