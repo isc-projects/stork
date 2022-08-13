@@ -564,6 +564,11 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon, source HostDataSource) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
+		for j := range hosts[i].LocalHosts {
+			if hosts[i].LocalHosts[j].DaemonID == 0 {
+				hosts[i].LocalHosts[j].DaemonID = daemon.ID
+			}
+		}
 		if hosts[i].ID == 0 {
 			err = AddHost(dbi, &hosts[i])
 			if err != nil {
