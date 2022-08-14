@@ -276,8 +276,17 @@ func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interv
 		Select()
 
 	require.NoError(t, err)
-	require.Equal(t, interval1, daemon.Stats.RPS1)
-	require.Equal(t, interval2, daemon.Stats.RPS2)
+
+	// Since we use Sleep() in our tests, it is possible that the actual duration between
+	// samples is a bit longer than expected. The corresponding RPS values can therefore
+	// be rounded down. Let's add a margin of 1 to these checks. Without it, the test
+	// results were unstable.
+	require.Condition(t, func() bool {
+		return daemon.Stats.RPS1 == interval1 || daemon.Stats.RPS1 == interval1-1
+	})
+	require.Condition(t, func() bool {
+		return daemon.Stats.RPS2 == interval2 || daemon.Stats.RPS2 == interval2-1
+	})
 }
 
 // Calculate the RPS from an array of RpsIntervals.
