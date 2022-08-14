@@ -679,7 +679,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 							LocalHosts: []LocalHost{
 								{
 									DaemonID:   app.Daemons[0].ID,
-									DataSource: "config",
+									DataSource: HostDataSourceConfig,
 								},
 							},
 						},
@@ -707,7 +707,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					LocalHosts: []LocalHost{
 						{
 							DaemonID:   app.Daemons[0].ID,
-							DataSource: "config",
+							DataSource: HostDataSourceConfig,
 						},
 					},
 				},

@@ -442,7 +442,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		require.NoError(t, err)
 		hosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i])
 		require.NoError(t, err)
-		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, app.Daemons[i], "config")
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, app.Daemons[i], dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
 	}
 
@@ -773,7 +773,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 		require.NoError(t, err)
 		hosts, err := detectGlobalHostsFromConfig(db, daemon)
 		require.NoError(t, err)
-		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, daemon, "config")
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, daemon, dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
 	}
 

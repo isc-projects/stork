@@ -39,9 +39,9 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	hosts, apps := testutil.AddTestHosts(t, db)
 
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "config")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceConfig)
 	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "config")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceConfig)
 	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{}
@@ -106,11 +106,11 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.Len(t, items[0].LocalHosts, 2)
 	require.NotNil(t, items[0].LocalHosts[0])
 	require.EqualValues(t, apps[0].ID, items[0].LocalHosts[0].AppID)
-	require.Equal(t, "config", items[0].LocalHosts[0].DataSource)
+	require.Equal(t, dbmodel.HostDataSourceConfig.String(), items[0].LocalHosts[0].DataSource)
 	require.Equal(t, "dhcp-server0", items[0].LocalHosts[0].AppName)
 	require.NotNil(t, items[0].LocalHosts[1])
 	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)
-	require.Equal(t, "config", items[0].LocalHosts[1].DataSource)
+	require.Equal(t, dbmodel.HostDataSourceConfig.String(), items[0].LocalHosts[1].DataSource)
 	require.Equal(t, "dhcp-server1", items[0].LocalHosts[1].AppName)
 }
 
@@ -288,11 +288,11 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 			LocalHosts: []*models.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[0].ID,
-					DataSource: "api",
+					DataSource: dbmodel.HostDataSourceAPI.String(),
 				},
 				{
 					DaemonID:   apps[1].Daemons[0].ID,
-					DataSource: "api",
+					DataSource: dbmodel.HostDataSourceAPI.String(),
 				},
 			},
 		},
@@ -503,7 +503,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 				LocalHosts: []*models.LocalHost{
 					{
 						DaemonID:   apps[0].Daemons[0].ID,
-						DataSource: "api",
+						DataSource: dbmodel.HostDataSourceAPI.String(),
 					},
 				},
 			},
@@ -526,7 +526,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 				LocalHosts: []*models.LocalHost{
 					{
 						DaemonID:   apps[0].Daemons[0].ID,
-						DataSource: "api",
+						DataSource: dbmodel.HostDataSourceAPI.String(),
 					},
 				},
 			},
@@ -702,9 +702,9 @@ func TestDeleteHost(t *testing.T) {
 
 	// Add test hosts and associate them with the daemons.
 	hosts, apps := testutil.AddTestHosts(t, db)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Attempt to delete the first host.
@@ -768,9 +768,9 @@ func TestDeleteHostError(t *testing.T) {
 	// Make sure we have some Kea apps in the database.
 	hosts, apps := testutil.AddTestHosts(t, db)
 
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Submit transaction with non-matching host ID.

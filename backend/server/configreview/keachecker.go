@@ -260,7 +260,7 @@ func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts 
 		return false, dbHosts, nil
 	}
 	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
-		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, "api")
+		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, dbmodel.HostDataSourceAPI)
 		if err != nil {
 			return present, dbHosts, err
 		}

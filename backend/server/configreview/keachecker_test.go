@@ -109,7 +109,7 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	require.NoError(t, err)
 
 	// Associate the daemon with the host.
-	err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 }
 
@@ -1805,7 +1805,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
 		}
 		// Associate the daemon with the host.
-		err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, "api")
+		err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, dbmodel.HostDataSourceAPI)
 		if err != nil {
 			b.Fatalf("failed to add app to host: %+v", err)
 		}

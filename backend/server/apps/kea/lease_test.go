@@ -1234,11 +1234,11 @@ func TestFindLeasesByHostID(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID:   app1.Daemons[0].ID,
-				DataSource: "config",
+				DataSource: dbmodel.HostDataSourceConfig,
 			},
 			{
 				DaemonID:   app2.Daemons[1].ID,
-				DataSource: "config",
+				DataSource: dbmodel.HostDataSourceConfig,
 			},
 		},
 	}

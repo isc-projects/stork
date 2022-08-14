@@ -460,13 +460,13 @@ func TestGetHostsByPageApp(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Get global hosts only.
@@ -659,17 +659,17 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api")
+	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Get hosts for the first daemon.
-	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "api")
+	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)

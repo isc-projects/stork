@@ -587,7 +587,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, daemon, "config")
+		err = CommitSubnetHostsIntoDB(tx, subnet, daemon, HostDataSourceConfig)
 		if err != nil {
 			return nil, err
 		}

@@ -613,9 +613,9 @@ func TestCommitHostDelete(t *testing.T) {
 	defer teardown()
 
 	hosts, apps := testutil.AddTestHosts(t, db)
-	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "api")
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Create the config manager instance "connected to" fake agents.
@@ -673,7 +673,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	defer teardown()
 
 	hosts, apps := testutil.AddTestHosts(t, db)
-	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
+	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 
 	agents := agentcommtest.NewKeaFakeAgents()
