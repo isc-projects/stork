@@ -27,8 +27,8 @@ func TestWalkNonExistsTarball(t *testing.T) {
 func TestWalkEmptyTarball(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
-	tarballWritter := NewTarballWriter(&buffer)
-	tarballWritter.Close()
+	tarballWriter := NewTarballWriter(&buffer)
+	tarballWriter.Close()
 	callbackCallCount := 0
 
 	// Act
@@ -47,11 +47,11 @@ func TestWalkEmptyTarball(t *testing.T) {
 func TestWalkFilledTarball(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
-	tarballWritter := NewTarballWriter(&buffer)
+	tarballWriter := NewTarballWriter(&buffer)
 	for _, filename := range []string{"aaa", "bbb", "ccc"} {
-		tarballWritter.AddContent(filename, []byte(filename), time.Now())
+		tarballWriter.AddContent(filename, []byte(filename), time.Now())
 	}
-	tarballWritter.Close()
+	tarballWriter.Close()
 	callbackCallCount := 0
 
 	// Act
@@ -71,9 +71,9 @@ func TestWalkFilledTarball(t *testing.T) {
 func TestWalkAndReadTarball(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
-	tarballWritter := NewTarballWriter(&buffer)
-	tarballWritter.AddContent("foo", []byte("foobar"), time.Now())
-	tarballWritter.Close()
+	tarballWriter := NewTarballWriter(&buffer)
+	tarballWriter.AddContent("foo", []byte("foobar"), time.Now())
+	tarballWriter.Close()
 	var content []byte
 	var readErr error
 
@@ -95,11 +95,11 @@ func TestListFilesInTarball(t *testing.T) {
 	// Arrange
 	expectedFilenames := []string{"aaa", "bbb", "ccc"}
 	var buffer bytes.Buffer
-	tarballWritter := NewTarballWriter(&buffer)
+	tarballWriter := NewTarballWriter(&buffer)
 	for _, filename := range expectedFilenames {
-		tarballWritter.AddContent(filename, []byte(filename), time.Now())
+		tarballWriter.AddContent(filename, []byte(filename), time.Now())
 	}
-	tarballWritter.Close()
+	tarballWriter.Close()
 
 	// Act
 	actualFilenames, err := ListFilesInTarball(&buffer)
@@ -114,11 +114,11 @@ func TestSearchFileInTarball(t *testing.T) {
 	// Arrange
 	expectedFilenames := []string{"aaa", "bbb", "ccc"}
 	var buffer bytes.Buffer
-	tarballWritter := NewTarballWriter(&buffer)
+	tarballWriter := NewTarballWriter(&buffer)
 	for _, filename := range expectedFilenames {
-		tarballWritter.AddContent(filename, []byte(filename), time.Now())
+		tarballWriter.AddContent(filename, []byte(filename), time.Now())
 	}
-	tarballWritter.Close()
+	tarballWriter.Close()
 
 	// Act
 	content, err := SearchFileInTarball(&buffer, "bbb")

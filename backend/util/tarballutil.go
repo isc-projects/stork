@@ -55,13 +55,13 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 						header.Name,
 					)
 			}) {
-				break
+				return nil
 			}
 		default:
 			if !callback(header, func() ([]byte, error) {
 				return nil, pkgerrors.New("reading unsupported")
 			}) {
-				break
+				return nil
 			}
 		}
 	}

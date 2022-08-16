@@ -35,12 +35,12 @@ func HostWithPortURL(address string, port int64, secure bool) string {
 
 // Parses URL into host and port.
 func ParseURL(url string) (host string, port int64, secure bool) {
-	ptrn := regexp.MustCompile(`https{0,1}:\/\/\[{1}(\S+)\]{1}(:([0-9]+)){0,1}`)
-	m := ptrn.FindStringSubmatch(url)
+	pattern := regexp.MustCompile(`https{0,1}:\/\/\[{1}(\S+)\]{1}(:([0-9]+)){0,1}`)
+	m := pattern.FindStringSubmatch(url)
 
 	if len(m) == 0 {
-		ptrn := regexp.MustCompile(`https{0,1}:\/\/([^\s\:\/]+)(:([0-9]+)){0,1}`)
-		m = ptrn.FindStringSubmatch(url)
+		pattern := regexp.MustCompile(`https{0,1}:\/\/([^\s\:\/]+)(:([0-9]+)){0,1}`)
+		m = pattern.FindStringSubmatch(url)
 	}
 
 	if len(m) > 1 {
@@ -84,7 +84,7 @@ func FormatMACAddress(identifier string) (formatted string, ok bool) {
 	if !IsHexIdentifier(identifier) {
 		return "", false
 	}
-	// Remove any colons and whitespaces.
+	// Remove any colons and whitespace.
 	replacer := strings.NewReplacer(" ", "", ":", "")
 	numericOnly := replacer.Replace(identifier)
 	for i, character := range numericOnly {

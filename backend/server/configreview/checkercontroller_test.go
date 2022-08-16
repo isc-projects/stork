@@ -19,13 +19,13 @@ func TestNewCheckerController(t *testing.T) {
 func TestGetGlobalState(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", CheckerStateEnabled)
-	controller.SetGlobalState("bar", CheckerStateDisabled)
+	controller.setGlobalState("foo", CheckerStateEnabled)
+	controller.setGlobalState("bar", CheckerStateDisabled)
 
 	// Act
-	foo := controller.GetGlobalState("foo")
-	bar := controller.GetGlobalState("bar")
-	baz := controller.GetGlobalState("baz")
+	foo := controller.getGlobalState("foo")
+	bar := controller.getGlobalState("bar")
+	baz := controller.getGlobalState("baz")
 
 	// Assert
 	require.True(t, foo)
@@ -39,14 +39,14 @@ func TestSetGlobalState(t *testing.T) {
 	controller := newCheckerController()
 
 	// Act
-	controller.SetGlobalState("foo", CheckerStateEnabled)
-	controller.SetGlobalState("bar", CheckerStateDisabled)
-	controller.SetGlobalState("baz", CheckerStateInherit)
+	controller.setGlobalState("foo", CheckerStateEnabled)
+	controller.setGlobalState("bar", CheckerStateDisabled)
+	controller.setGlobalState("baz", CheckerStateInherit)
 
 	// Assert
-	require.True(t, controller.IsCheckerEnabledForDaemon(0, "foo"))
-	require.False(t, controller.IsCheckerEnabledForDaemon(0, "bar"))
-	require.True(t, controller.IsCheckerEnabledForDaemon(0, "baz"))
+	require.True(t, controller.isCheckerEnabledForDaemon(0, "foo"))
+	require.False(t, controller.isCheckerEnabledForDaemon(0, "bar"))
+	require.True(t, controller.isCheckerEnabledForDaemon(0, "baz"))
 }
 
 // Test that the checker state for a specific daemon is set properly.
@@ -55,58 +55,58 @@ func TestSetStateForDaemon(t *testing.T) {
 	controller := newCheckerController()
 
 	// Act
-	controller.SetStateForDaemon(1, "foo", CheckerStateEnabled)
-	controller.SetStateForDaemon(2, "bar", CheckerStateDisabled)
-	controller.SetStateForDaemon(3, "baz", CheckerStateInherit)
+	controller.setStateForDaemon(1, "foo", CheckerStateEnabled)
+	controller.setStateForDaemon(2, "bar", CheckerStateDisabled)
+	controller.setStateForDaemon(3, "baz", CheckerStateInherit)
 
 	// Assert
-	require.True(t, controller.IsCheckerEnabledForDaemon(1, "foo"))
-	require.False(t, controller.IsCheckerEnabledForDaemon(2, "bar"))
-	require.True(t, controller.IsCheckerEnabledForDaemon(3, "baz"))
+	require.True(t, controller.isCheckerEnabledForDaemon(1, "foo"))
+	require.False(t, controller.isCheckerEnabledForDaemon(2, "bar"))
+	require.True(t, controller.isCheckerEnabledForDaemon(3, "baz"))
 }
 
 // Test that the checker state is correctly inherited for a specific daemon.
 func TestSetInheritedStateForDaemon(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", CheckerStateEnabled)
-	controller.SetGlobalState("bar", CheckerStateDisabled)
-	controller.SetGlobalState("baz", CheckerStateDisabled)
+	controller.setGlobalState("foo", CheckerStateEnabled)
+	controller.setGlobalState("bar", CheckerStateDisabled)
+	controller.setGlobalState("baz", CheckerStateDisabled)
 
 	// Act
-	controller.SetStateForDaemon(1, "foo", CheckerStateInherit)
-	controller.SetStateForDaemon(2, "bar", CheckerStateInherit)
-	controller.SetStateForDaemon(3, "baz", CheckerStateInherit)
-	controller.SetGlobalState("baz", CheckerStateEnabled)
+	controller.setStateForDaemon(1, "foo", CheckerStateInherit)
+	controller.setStateForDaemon(2, "bar", CheckerStateInherit)
+	controller.setStateForDaemon(3, "baz", CheckerStateInherit)
+	controller.setGlobalState("baz", CheckerStateEnabled)
 
 	// Assert
-	require.True(t, controller.IsCheckerEnabledForDaemon(1, "foo"))
-	require.False(t, controller.IsCheckerEnabledForDaemon(2, "bar"))
-	require.True(t, controller.IsCheckerEnabledForDaemon(3, "baz"))
+	require.True(t, controller.isCheckerEnabledForDaemon(1, "foo"))
+	require.False(t, controller.isCheckerEnabledForDaemon(2, "bar"))
+	require.True(t, controller.isCheckerEnabledForDaemon(3, "baz"))
 }
 
 // Test that the checker states are merged properly.
 func TestIsCheckerEnabledForDaemon(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetGlobalState("foo", CheckerStateEnabled)
-	controller.SetGlobalState("fee", CheckerStateDisabled)
-	controller.SetGlobalState("bar", CheckerStateEnabled)
-	controller.SetStateForDaemon(1, "bar", CheckerStateEnabled)
-	controller.SetGlobalState("baz", CheckerStateEnabled)
-	controller.SetStateForDaemon(1, "baz", CheckerStateDisabled)
-	controller.SetGlobalState("biz", CheckerStateDisabled)
-	controller.SetStateForDaemon(1, "biz", CheckerStateEnabled)
-	controller.SetGlobalState("boz", CheckerStateDisabled)
-	controller.SetStateForDaemon(1, "boz", CheckerStateDisabled)
+	controller.setGlobalState("foo", CheckerStateEnabled)
+	controller.setGlobalState("fee", CheckerStateDisabled)
+	controller.setGlobalState("bar", CheckerStateEnabled)
+	controller.setStateForDaemon(1, "bar", CheckerStateEnabled)
+	controller.setGlobalState("baz", CheckerStateEnabled)
+	controller.setStateForDaemon(1, "baz", CheckerStateDisabled)
+	controller.setGlobalState("biz", CheckerStateDisabled)
+	controller.setStateForDaemon(1, "biz", CheckerStateEnabled)
+	controller.setGlobalState("boz", CheckerStateDisabled)
+	controller.setStateForDaemon(1, "boz", CheckerStateDisabled)
 
 	// Act
-	foo := controller.IsCheckerEnabledForDaemon(1, "foo")
-	fee := controller.IsCheckerEnabledForDaemon(1, "fee")
-	bar := controller.IsCheckerEnabledForDaemon(1, "bar")
-	baz := controller.IsCheckerEnabledForDaemon(1, "baz")
-	biz := controller.IsCheckerEnabledForDaemon(1, "biz")
-	boz := controller.IsCheckerEnabledForDaemon(1, "boz")
+	foo := controller.isCheckerEnabledForDaemon(1, "foo")
+	fee := controller.isCheckerEnabledForDaemon(1, "fee")
+	bar := controller.isCheckerEnabledForDaemon(1, "bar")
+	baz := controller.isCheckerEnabledForDaemon(1, "baz")
+	biz := controller.isCheckerEnabledForDaemon(1, "biz")
+	boz := controller.isCheckerEnabledForDaemon(1, "boz")
 
 	// Assert
 	require.True(t, foo)
@@ -121,15 +121,15 @@ func TestIsCheckerEnabledForDaemon(t *testing.T) {
 func TestGetCheckerOwnStateForDaemon(t *testing.T) {
 	// Arrange
 	controller := newCheckerController()
-	controller.SetStateForDaemon(1, "foo", CheckerStateDisabled)
-	controller.SetStateForDaemon(1, "bar", CheckerStateEnabled)
-	controller.SetStateForDaemon(1, "baz", CheckerStateInherit)
+	controller.setStateForDaemon(1, "foo", CheckerStateDisabled)
+	controller.setStateForDaemon(1, "bar", CheckerStateEnabled)
+	controller.setStateForDaemon(1, "baz", CheckerStateInherit)
 
 	// Act
-	foo := controller.GetCheckerOwnState(1, "foo")
-	bar := controller.GetCheckerOwnState(1, "bar")
-	baz := controller.GetCheckerOwnState(1, "baz")
-	boz := controller.GetCheckerOwnState(1, "boz")
+	foo := controller.getStateForDaemon(1, "foo")
+	bar := controller.getStateForDaemon(1, "bar")
+	baz := controller.getStateForDaemon(1, "baz")
+	boz := controller.getStateForDaemon(1, "boz")
 
 	// Assert
 	require.EqualValues(t, CheckerStateDisabled, foo)

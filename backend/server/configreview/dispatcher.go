@@ -112,6 +112,7 @@ func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, c
 // review checkers by daemon types.
 type DispatchGroupSelector int
 
+// String representation of the dispatch group selector.
 func (s DispatchGroupSelector) String() string {
 	switch s {
 	case EachDaemon:
@@ -196,6 +197,8 @@ func newDispatchGroup() *dispatchGroup {
 	}
 }
 
+// Appends a checker to the dispatch group. It updates the trigger reference
+// counts.
 func (g *dispatchGroup) appendChecker(checker *checker) {
 	g.checkers = append(g.checkers, checker)
 	for _, trigger := range checker.triggers {
@@ -400,7 +403,7 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 	for _, selector := range selectors {
 		if group := d.getGroup(selector); group != nil {
 			for _, checker := range group.checkers {
-				if !d.checkerController.IsCheckerEnabledForDaemon(daemon.ID, checker.name) {
+				if !d.checkerController.isCheckerEnabledForDaemon(daemon.ID, checker.name) {
 					// Skip disabled checker.
 					continue
 				}
@@ -421,15 +424,14 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 	d.reviewDoneChan <- ctx
 }
 
-// Checks if the dispatch group has checkers registered that are launched
-// for the specified trigger that are enabled for a specific daemon.
+// Checks if the dispatch group has checkers enabled for a specific daemon.
 func (d *dispatcherImpl) hasEnabledCheckersForTrigger(daemon *dbmodel.Daemon, trigger Trigger, group *dispatchGroup) bool {
 	if !group.hasCheckersForTrigger(trigger) {
 		return false
 	}
 
 	for _, checker := range group.checkers {
-		if d.checkerController.IsCheckerEnabledForDaemon(daemon.ID, checker.name) {
+		if d.checkerController.isCheckerEnabledForDaemon(daemon.ID, checker.name) {
 			return true
 		}
 	}
@@ -751,13 +753,13 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	metadata := make([]*CheckerMetadata, len(checkers))
 	i := 0
 	for _, checker := range checkers {
-		isEnabled := d.checkerController.IsCheckerEnabledForDaemon(daemonID, checker.name)
+		isEnabled := d.checkerController.isCheckerEnabledForDaemon(daemonID, checker.name)
 
 		var state CheckerState
 		if isDaemonFetch {
-			state = d.checkerController.GetCheckerOwnState(daemonID, checker.name)
+			state = d.checkerController.getStateForDaemon(daemonID, checker.name)
 		} else {
-			if d.checkerController.GetGlobalState(checker.name) {
+			if d.checkerController.getGlobalState(checker.name) {
 				state = CheckerStateEnabled
 			} else {
 				state = CheckerStateDisabled
@@ -813,9 +815,9 @@ func (d *dispatcherImpl) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 	}
 
 	if daemon == nil {
-		d.checkerController.SetGlobalState(checkerName, state)
+		d.checkerController.setGlobalState(checkerName, state)
 	} else {
-		d.checkerController.SetStateForDaemon(daemon.ID, checkerName, state)
+		d.checkerController.setStateForDaemon(daemon.ID, checkerName, state)
 	}
 
 	return nil

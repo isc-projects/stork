@@ -19,6 +19,7 @@ type CheckerMetadata struct {
 	State     CheckerState
 }
 
+// Constructs the checker metadata.
 func newCheckerMetadata(name string, triggers Triggers, selectors DispatchGroupSelectors, enabled bool, state CheckerState) *CheckerMetadata {
 	return &CheckerMetadata{
 		Name:      name,

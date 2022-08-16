@@ -15,9 +15,9 @@ import (
 
 // Minimal supported database Postgres server version.
 const (
-	minSupportedDatabaseServerVersionMajnor = 10
-	minSupportedDatabaseServerVersionMinor  = 0
-	minSupportedDatabaseServerVersionPatch  = 0
+	minSupportedDatabaseServerVersionMajor = 10
+	minSupportedDatabaseServerVersionMinor = 0
+	minSupportedDatabaseServerVersionPatch = 0
 )
 
 // Common interface for go-pg DB and Tx (transaction) objects.
@@ -100,19 +100,19 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		return nil, err
 	}
 
-	minVersion := minSupportedDatabaseServerVersionMajnor*100*100 +
+	minVersion := minSupportedDatabaseServerVersionMajor*100*100 +
 		minSupportedDatabaseServerVersionMinor*100 +
 		minSupportedDatabaseServerVersionPatch
 
 	if version < minVersion {
 		currentPatch := version % 100
 		currentMinor := (version / 100) % 100
-		currentMajnor := version / (100 * 100)
+		currentMajor := version / (100 * 100)
 
 		log.Warnf("Unsupported database server version: got %d.%d.%d, required at least %d.%d.%d, "+
 			"Please consider upgrading Postgres server; Stork may not work correctly with this version",
-			currentMajnor, currentMinor, currentPatch,
-			minSupportedDatabaseServerVersionMajnor,
+			currentMajor, currentMinor, currentPatch,
+			minSupportedDatabaseServerVersionMajor,
 			minSupportedDatabaseServerVersionMinor,
 			minSupportedDatabaseServerVersionPatch,
 		)
