@@ -137,11 +137,6 @@ namespace :unittest do
                                 'prepareTLS', 'handleRequest', 'pullerLoop', 'Output', 'Collect',
                                 'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
 
-                                # Those two are tested in backend/server/server_test.go, in TestCommandLineSwitches*
-                                # However, due to how it's executed (calling external binary), it's not detected
-                                # by coverage.
-                                'ParseArgs', 'Bootstrap',
-
                                 # We spent a lot of time to try test the main agent function. It is a problematic
                                 # function because it starts listening and blocks itself until receiving SIGINT.
                                 # Unfortunately, the signal handler isn't registered immediately after the function

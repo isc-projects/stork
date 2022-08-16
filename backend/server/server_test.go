@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
 )
 
@@ -181,4 +184,64 @@ func TestNewStorkServerNoArguments(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ss)
 	require.EqualValues(t, RunCommand, command)
+}
+
+// Test that the server is bootstrapped properly.
+func TestBootstrap(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Initializes DB.
+	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
+	_ = dbmodel.AddMachine(db, machine)
+	app := &dbmodel.App{
+		Type:      dbmodel.AppTypeKea,
+		MachineID: machine.ID,
+		Active:    true,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv6, true),
+		},
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+	_ = dbmodel.CommitCheckerPreferences(db, []*dbmodel.ConfigCheckerPreference{
+		dbmodel.NewGlobalConfigCheckerPreference("host_cmds_presence"),
+		dbmodel.NewDaemonConfigCheckerPreference(daemons[0].ID, "out_of_pool_reservation", true),
+	}, nil)
+
+	// Initializes CMD.
+	os.Args = []string{"stork-server"}
+
+	server, _, _ := NewStorkServer()
+
+	// Switches to test database.
+	server.DBSettings.DBName = db.Options().Database
+	hostAndPort := strings.Split(db.Options().Addr, ":")
+	server.DBSettings.Host = hostAndPort[0]
+	port, _ := strconv.ParseInt(hostAndPort[1], 10, 0)
+	server.DBSettings.Port = int(port)
+	password := db.Options().Password
+	os.Setenv("STORK_DATABASE_PASSWORD", password)
+	server.DBSettings.User = db.Options().User
+
+	// Act
+	err := server.Bootstrap()
+	defer server.Shutdown()
+
+	// Assert
+	require.NoError(t, err)
+
+	// Checks if the config review checker states were loaded from the database.
+	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemons[0])
+	require.GreaterOrEqual(t, len(configReviewCheckerPreferences), 5)
+	require.EqualValues(t, "host_cmds_presence", configReviewCheckerPreferences[3].Name)
+	require.False(t, configReviewCheckerPreferences[3].Enabled)
+	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
+	require.False(t, configReviewCheckerPreferences[4].Enabled)
+	configReviewCheckerPreferences, _ = server.ReviewDispatcher.GetCheckersMetadata(daemons[1])
+	require.EqualValues(t, "host_cmds_presence", configReviewCheckerPreferences[3].Name)
+	require.False(t, configReviewCheckerPreferences[3].Enabled)
+	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
+	require.True(t, configReviewCheckerPreferences[4].Enabled)
 }
