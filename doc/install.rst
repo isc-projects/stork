@@ -1060,18 +1060,6 @@ isn't compatible. We need to rename the existing executable.
    mv /usr/bin/tar /usr/bin/bsdtar
    ln -s /usr/local/bin/gtar /usr/bin/tar
 
-The last component, GoSwagger, must be built from sources and installed manually.
-The final executable must be located in the ``/usr/local/bin`` directory.
-
-.. code:: console
-
-   dir=$(mktemp -d)
-   git clone https://github.com/go-swagger/go-swagger "$dir" 
-   cd "$dir"
-   git checkout v0.23.0
-   go build
-   mv ./swagger /usr/local/bin/goswagger
-
 Stork build system can install all remaining dependencies automatically.
 
 The binary packages can be built using:
@@ -1107,19 +1095,6 @@ The first step is the installation of packages from the repository:
    pkg_add go
 
 Stork requires Golang version 1.18 or later.
-
-The last component that must be manually installed is GoSwagger in 0.23 version.
-You need to build it from the sources. The final executable must be located in the 
-``/usr/local/bin`` directory.
-
-.. code-block:: console
-
-   dir=$(mktemp -d)
-   git clone https://github.com/go-swagger/go-swagger "$dir" 
-   cd "$dir"
-   git checkout v0.23.0
-   go build
-   mv ./swagger /usr/local/bin/goswagger
 
 Stork build system can install all remaining dependencies automatically.
 

@@ -296,7 +296,6 @@ bundler_ver='2.3.8'
 case OS
 when "macos"
   go_suffix="darwin-amd64"
-  goswagger_suffix="darwin_amd64"
   protoc_suffix="osx-x86_64"
   node_suffix="darwin-x64"
   golangcilint_suffix="darwin-amd64"
@@ -305,7 +304,6 @@ when "macos"
   puts "WARNING: for the developers' convenience only."
 when "linux"
   go_suffix="linux-amd64"
-  goswagger_suffix="linux_amd64"
   protoc_suffix="linux-x86_64"
   node_suffix="linux-x64"
   golangcilint_suffix="linux-amd64"
@@ -394,7 +392,6 @@ python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
-goswagger_dir = go_tools_dir
 
 DEFAULT_OS_BINARY_DIRECTORY = "/usr/bin"
 if freebsd_system || openbsd_system
@@ -404,7 +401,6 @@ end
 if libc_musl_system || freebsd_system || openbsd_system
     protoc_dir = DEFAULT_OS_BINARY_DIRECTORY
     node_bin_dir = DEFAULT_OS_BINARY_DIRECTORY
-    goswagger_dir = DEFAULT_OS_BINARY_DIRECTORY
 end
 
 if libc_musl_system || openbsd_system
@@ -569,13 +565,22 @@ end
 require_manual_install_on(GO, libc_musl_system, openbsd_system)
 add_version_guard(GO, go_ver)
 
-GOSWAGGER = File.join(goswagger_dir, "goswagger")
-file GOSWAGGER => [go_tools_dir] do
-    sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
-    sh "chmod", "u+x", GOSWAGGER
+GOSWAGGER = File.join(go_tools_dir, "goswagger")
+file GOSWAGGER => [GO, go_tools_dir] do
+    goswagger_archive = "#{GOSWAGGER}.tar.gz"
+    goswagger_dir = "#{GOSWAGGER}-sources"
+    sh "mkdir", goswagger_dir
+    sh *WGET, "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", "-O", goswagger_archive
+    sh "tar", "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
+    goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
+    Dir.chdir(goswagger_build_dir) do
+        sh GO, "build", "-ldflags=-X 'github.com/go-swagger/go-swagger/cmd/swagger/commands.Version=#{goswagger_ver}'"
+    end
+    sh "mv", File.join(goswagger_build_dir, "swagger"), GOSWAGGER
+    sh "rm", "-rf", goswagger_dir
+    sh "rm", goswagger_archive
     sh GOSWAGGER, "version"
 end
-require_manual_install_on(GOSWAGGER, freebsd_system, openbsd_system)
 add_version_guard(GOSWAGGER, goswagger_ver)
 
 PROTOC = File.join(protoc_dir, "protoc")
