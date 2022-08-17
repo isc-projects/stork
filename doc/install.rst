@@ -1033,8 +1033,8 @@ purposes tt can be customized via the ``DEST`` variable, e.g.:
 Installing on FreeBSD
 ---------------------
 
-The FreeBSD isn't officially supported but we successfully ran the Stork on
-this operating system.
+Stork is not regularly tested on FreeBSD but can be installed on this operating
+system with the manual steps provided below.
 
 The first step is the installation of packages from the repository:
 
@@ -1099,8 +1099,9 @@ installed using the ``pkg install`` command.
 Installing on OpenBSD
 ---------------------
 
-The OpenBSD isn't officially supported but we successfully ran the Stork on
-this operating system. The installation guide is similar to FreeBSD one.
+Stork is not regularly tested on OpenBSD but can be installed on this operating
+system with the manual steps provided below. The installation guide is similar
+to FreeBSD one.
 
 The first step is the installation of packages from the repository:
 
