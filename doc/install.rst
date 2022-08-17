@@ -341,7 +341,7 @@ build it from the sources. The final executable must be located in the
    go build
    mv ./swagger /usr/bin/goswagger
 
-The Stork build system can install the rest of the dependencies internally.
+Stork build system can install all remaining dependencies automatically.
 
 The binary packages can be build using:
 
@@ -374,7 +374,7 @@ The first step is the installation of packages from the repository:
    pkg_add go
    pkg_add gtar
 
-The Stork requires Golang in at least the 1.18 version.
+Stork requires Golang version 1.18 or later.
 
 The utility to build the packages requires the GNU tar in PATH. The BSD tar
 isn't compatible. We need to rename the existing executable.
@@ -411,10 +411,10 @@ build it from the sources. The final executable must be located in the
    go build
    mv ./swagger /usr/bin/goswagger
 
-The Stork build system can install the rest of the dependencies internally.
+Stork build system can install all remaining dependencies automatically.
 
 Unfortunately, there is no possibility to build the binary packages for OpenBSD.
-But you can build the content of the packages (executables, UI, man, and docs).
+But it is possible to build the contents of the packages (executables, UI, man, and docs).
 
 .. code-block:: console
 
