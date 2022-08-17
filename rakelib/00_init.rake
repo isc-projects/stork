@@ -393,10 +393,11 @@ pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
-DEFAULT_OS_BINARY_DIRECTORY = "/usr/bin"
+default_os_binary_directory = "/usr/bin"
 if freebsd_system || openbsd_system
-    DEFAULT_OS_BINARY_DIRECTORY = "/usr/local/bin"
+    default_os_binary_directory = "/usr/local/bin"
 end
+DEFAULT_OS_BINARY_DIRECTORY = default_os_binary_directory
 
 if libc_musl_system || freebsd_system || openbsd_system
     protoc_dir = DEFAULT_OS_BINARY_DIRECTORY
