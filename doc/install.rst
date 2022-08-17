@@ -1074,7 +1074,7 @@ The final executable must be located in the ``/usr/local/bin`` directory.
 
 Stork build system can install all remaining dependencies automatically.
 
-The binary packages can be build using:
+The binary packages can be built using:
 
 .. code:: console
 
