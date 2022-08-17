@@ -1041,7 +1041,7 @@ The first step is the installation of packages from the repository:
 .. code-block:: console
 
    pkg install ruby
-   pkg install rubygems-rake
+   pkg install rubygem-rake
    pkg install wget
    pkg install openjdk11-jre
    pkg install node
