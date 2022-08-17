@@ -287,142 +287,6 @@ Next, install the Stork server package:
    For the time being, using the ``--allow-untrusted`` flag is the only option. The FPM packaging tool we use to prepare
    the package doesn't support the signatures for the APK package type.
 
-Installing on FreeBSD
-~~~~~~~~~~~~~~~~~~~~~
-
-The FreeBSD isn't officially supported but we successfully ran the Stork on
-this operating system.
-
-The first step is the installation of packages from the repository:
-
-.. code-block:: console
-
-   pkg install ruby
-   pkg install rubygems-rake
-   pkg install wget
-   pkg install openjdk11-jre
-   pkg install node
-   pkg install www/npm
-   npm install -g npm
-   pkg install python3
-   pkg install protobuf
-   pkg install gcc
-   pkg install gtar
-
-The utility to build the packages requires the GNU tar in PATH. The BSD tar
-isn't compatible. We need to rename the existing executable.
-
-.. code-block:: console
-
-   mv /usr/bin/tar /usr/bin/bsdtar
-
-The Stork build system expects the external applications to be located in a
-specific location. Unfortunately, this location isn't the default on the
-BSD-like operating system. We have opened #821 to search in PATH for missing
-packages, but currently, we recommend creating symbolic links.
-
-.. code-block:: console
-
-   ln -s /usr/local/bin/npm /usr/bin
-   ln -s /usr/local/bin/npx /usr/bin
-   ln -s /usr/local/bin/protoc /usr/bin
-   ln -s /usr/local/bin/gtar /usr/bin/tar
-
-The last component that must be manually installed is GoSwagger. You need to
-build it from the sources. The final executable must be located in the 
-``/usr/bin`` directory.
-
-.. code:: console
-
-   dir=$(mktemp -d)
-   git clone https://github.com/go-swagger/go-swagger "$dir" 
-   cd "$dir"
-   git checkout v0.23.0
-   go build
-   mv ./swagger /usr/bin/goswagger
-
-Stork build system can install all remaining dependencies automatically.
-
-The binary packages can be build using:
-
-.. code:: console
-
-   rake build:server_pkg
-   rake build:agent_pkg
-
-The output binaries will be located in the ``dist/pkgs/`` directory and can be
-installed using the ``pkg install`` command.
-
-Installing on OpenBSD
-~~~~~~~~~~~~~~~~~~~~~
-
-The OpenBSD isn't officially supported but we successfully ran the Stork on
-this operating system. The installation guide is similar to FreeBSD one.
-
-The first step is the installation of packages from the repository:
-
-.. code:: console
-
-   pkg_add ruby
-   gem31 install --user-install rake
-   pkg_add wget
-   pkg_add jdk
-   pkg_add node
-   pkg_add unzip
-   pkg_add protobuf
-   pkg_add gcc
-   pkg_add go
-   pkg_add gtar
-
-Stork requires Golang version 1.18 or later.
-
-The utility to build the packages requires the GNU tar in PATH. The BSD tar
-isn't compatible. We need to rename the existing executable.
-
-.. code-block:: console
-
-   mv /bin/tar /bin/bsdtar
-
-The Stork build system expects the external applications to be located in a
-specific location. Unfortunately, this location isn't the default on the
-BSD-like operating system. We have opened #821 to search in PATH for missing
-packages, but currently, we recommend creating symbolic links.
-
-.. code-block:: console
-
-   ln -s /usr/local/bin/ruby31 /usr/bin/ruby
-   ln -s /usr/local/bin/gem31 /usr/bin/gem
-   ln -s /usr/local/jdk-11/bin/java /usr/bin
-   ln -s /usr/local/bin/npm /usr/bin
-   ln -s /usr/local/bin/npx /usr/bin
-   ln -s /usr/local/bin/protoc /usr/bin
-   ln -s /usr/local/bin/gtar /usr/bin/tar
-
-The last component that must be manually installed is GoSwagger. You need to
-build it from the sources. The final executable must be located in the 
-``/usr/bin`` directory.
-
-.. code-block:: console
-
-   dir=$(mktemp -d)
-   git clone https://github.com/go-swagger/go-swagger "$dir" 
-   cd "$dir"
-   git checkout v0.23.0
-   go build
-   mv ./swagger /usr/bin/goswagger
-
-Stork build system can install all remaining dependencies automatically.
-
-Unfortunately, there is no possibility to build the binary packages for OpenBSD.
-But it is possible to build the contents of the packages (executables, UI, man, and docs).
-
-.. code-block:: console
-
-   rake build:server_dist
-   rake build:agent_dist
-
-The output files will be located in the ``dist/`` directory.
-
 Setup
 ~~~~~
 
@@ -1165,6 +1029,142 @@ purposes tt can be customized via the ``DEST`` variable, e.g.:
 .. code-block:: console
 
    $ rake install:server DEST=/home/user/stork
+
+Installing on FreeBSD
+---------------------
+
+The FreeBSD isn't officially supported but we successfully ran the Stork on
+this operating system.
+
+The first step is the installation of packages from the repository:
+
+.. code-block:: console
+
+   pkg install ruby
+   pkg install rubygems-rake
+   pkg install wget
+   pkg install openjdk11-jre
+   pkg install node
+   pkg install www/npm
+   npm install -g npm
+   pkg install python3
+   pkg install protobuf
+   pkg install gcc
+   pkg install gtar
+
+The utility to build the packages requires the GNU tar in PATH. The BSD tar
+isn't compatible. We need to rename the existing executable.
+
+.. code-block:: console
+
+   mv /usr/bin/tar /usr/bin/bsdtar
+
+The Stork build system expects the external applications to be located in a
+specific location. Unfortunately, this location isn't the default on the
+BSD-like operating system. We have opened #821 to search in PATH for missing
+packages, but currently, we recommend creating symbolic links.
+
+.. code-block:: console
+
+   ln -s /usr/local/bin/npm /usr/bin
+   ln -s /usr/local/bin/npx /usr/bin
+   ln -s /usr/local/bin/protoc /usr/bin
+   ln -s /usr/local/bin/gtar /usr/bin/tar
+
+The last component that must be manually installed is GoSwagger. You need to
+build it from the sources. The final executable must be located in the 
+``/usr/bin`` directory.
+
+.. code:: console
+
+   dir=$(mktemp -d)
+   git clone https://github.com/go-swagger/go-swagger "$dir" 
+   cd "$dir"
+   git checkout v0.23.0
+   go build
+   mv ./swagger /usr/bin/goswagger
+
+Stork build system can install all remaining dependencies automatically.
+
+The binary packages can be build using:
+
+.. code:: console
+
+   rake build:server_pkg
+   rake build:agent_pkg
+
+The output binaries will be located in the ``dist/pkgs/`` directory and can be
+installed using the ``pkg install`` command.
+
+Installing on OpenBSD
+---------------------
+
+The OpenBSD isn't officially supported but we successfully ran the Stork on
+this operating system. The installation guide is similar to FreeBSD one.
+
+The first step is the installation of packages from the repository:
+
+.. code:: console
+
+   pkg_add ruby
+   gem31 install --user-install rake
+   pkg_add wget
+   pkg_add jdk
+   pkg_add node
+   pkg_add unzip
+   pkg_add protobuf
+   pkg_add gcc
+   pkg_add go
+   pkg_add gtar
+
+Stork requires Golang version 1.18 or later.
+
+The utility to build the packages requires the GNU tar in PATH. The BSD tar
+isn't compatible. We need to rename the existing executable.
+
+.. code-block:: console
+
+   mv /bin/tar /bin/bsdtar
+
+The Stork build system expects the external applications to be located in a
+specific location. Unfortunately, this location isn't the default on the
+BSD-like operating system. We have opened #821 to search in PATH for missing
+packages, but currently, we recommend creating symbolic links.
+
+.. code-block:: console
+
+   ln -s /usr/local/bin/ruby31 /usr/bin/ruby
+   ln -s /usr/local/bin/gem31 /usr/bin/gem
+   ln -s /usr/local/jdk-11/bin/java /usr/bin
+   ln -s /usr/local/bin/npm /usr/bin
+   ln -s /usr/local/bin/npx /usr/bin
+   ln -s /usr/local/bin/protoc /usr/bin
+   ln -s /usr/local/bin/gtar /usr/bin/tar
+
+The last component that must be manually installed is GoSwagger. You need to
+build it from the sources. The final executable must be located in the 
+``/usr/bin`` directory.
+
+.. code-block:: console
+
+   dir=$(mktemp -d)
+   git clone https://github.com/go-swagger/go-swagger "$dir" 
+   cd "$dir"
+   git checkout v0.23.0
+   go build
+   mv ./swagger /usr/bin/goswagger
+
+Stork build system can install all remaining dependencies automatically.
+
+Unfortunately, there is no possibility to build the binary packages for OpenBSD.
+But it is possible to build the contents of the packages (executables, UI, man, and docs).
+
+.. code-block:: console
+
+   rake build:server_dist
+   rake build:agent_dist
+
+The output files will be located in the ``dist/`` directory.
 
 Integration With Prometheus and Grafana
 =======================================
