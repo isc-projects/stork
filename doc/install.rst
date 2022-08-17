@@ -1060,9 +1060,8 @@ isn't compatible. We need to rename the existing executable.
    mv /usr/bin/tar /usr/bin/bsdtar
    ln -s /usr/local/bin/gtar /usr/bin/tar
 
-The last component that must be manually installed is GoSwagger. You need to
-build it from the sources. The final executable must be located in the 
-``/usr/local/bin`` directory.
+The last component, GoSwagger, must be built from sources and installed manually.
+The final executable must be located in the ``/usr/local/bin`` directory.
 
 .. code:: console
 
