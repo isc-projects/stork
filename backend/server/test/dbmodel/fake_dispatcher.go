@@ -18,9 +18,11 @@ type FakeDispatcherCall struct {
 // It substitutes the default dispatcher implementation in the
 // unit tests.
 type FakeDispatcher struct {
-	CallLog       []FakeDispatcherCall
-	Signature     string
-	InProgress    bool
+	CallLog    []FakeDispatcherCall
+	Signature  string
+	InProgress bool
+	// First key is the daemon ID. The global states use 0 index.
+	// Second key is the checker name.
 	checkerStates map[int64]map[string]configreview.CheckerState
 }
 
@@ -53,6 +55,7 @@ func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configr
 		}
 	}
 
+	// Sorts the metadata by name for the predictable order.
 	sort.Slice(metadata, func(i, j int) bool {
 		return metadata[i].Name < metadata[j].Name
 	})
@@ -72,6 +75,7 @@ func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 		daemonID = daemon.ID
 	}
 
+	// Initializes the intermediate maps.
 	if d.checkerStates == nil {
 		d.checkerStates = make(map[int64]map[string]configreview.CheckerState)
 	}
@@ -80,6 +84,7 @@ func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 	}
 
 	if state == configreview.CheckerStateInherit || (daemon == nil && state == configreview.CheckerStateEnabled) {
+		// Removes the inherited or default state from the map.
 		delete(d.checkerStates[daemonID], checkerName)
 	} else {
 		d.checkerStates[daemonID][checkerName] = state

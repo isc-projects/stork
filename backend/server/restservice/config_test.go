@@ -949,6 +949,8 @@ func TestGetGlobalConfigCheckers(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	fd := &storktest.FakeDispatcher{}
+	fd.SetCheckerState(nil, "foo", configreview.CheckerStateDisabled)
+
 	rapi, _ := NewRestAPI(dbSettings, db, fd)
 
 	// Act
@@ -960,8 +962,8 @@ func TestGetGlobalConfigCheckers(t *testing.T) {
 	require.IsType(t, &services.GetGlobalConfigCheckersOK{}, rsp)
 	okRsp := rsp.(*services.GetGlobalConfigCheckersOK)
 	require.NotNil(t, okRsp)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.Items)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+	require.NotEmpty(t, okRsp.Payload.Items)
 }
 
 // Test that the configuration checkers for a given daemon are returned properly.
@@ -985,6 +987,9 @@ func TestGetDaemonConfigCheckers(t *testing.T) {
 	daemon := daemons[0]
 
 	fd := &storktest.FakeDispatcher{}
+	fd.SetCheckerState(daemon, "foo", configreview.CheckerStateDisabled)
+	fd.SetCheckerState(daemon, "bar", configreview.CheckerStateEnabled)
+
 	rapi, _ := NewRestAPI(dbSettings, db, fd)
 
 	// Act
@@ -998,8 +1003,8 @@ func TestGetDaemonConfigCheckers(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigCheckersOK{}, rsp)
 	okRsp := rsp.(*services.GetDaemonConfigCheckersOK)
 	require.NotNil(t, okRsp)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.Items)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.NotEmpty(t, okRsp.Payload.Items)
 }
 
 // Test that the configuration checkers for a non-existing daemon causes no panic.
