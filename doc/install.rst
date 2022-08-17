@@ -1058,22 +1058,11 @@ isn't compatible. We need to rename the existing executable.
 .. code-block:: console
 
    mv /usr/bin/tar /usr/bin/bsdtar
-
-The Stork build system expects the external applications to be located in a
-specific location. Unfortunately, this location isn't the default on the
-BSD-like operating system. We have opened #821 to search in PATH for missing
-packages, but currently, we recommend creating symbolic links.
-
-.. code-block:: console
-
-   ln -s /usr/local/bin/npm /usr/bin
-   ln -s /usr/local/bin/npx /usr/bin
-   ln -s /usr/local/bin/protoc /usr/bin
    ln -s /usr/local/bin/gtar /usr/bin/tar
 
 The last component that must be manually installed is GoSwagger. You need to
 build it from the sources. The final executable must be located in the 
-``/usr/bin`` directory.
+``/usr/local/bin`` directory.
 
 .. code:: console
 
@@ -1082,7 +1071,7 @@ build it from the sources. The final executable must be located in the
    cd "$dir"
    git checkout v0.23.0
    go build
-   mv ./swagger /usr/bin/goswagger
+   mv ./swagger /usr/local/bin/goswagger
 
 Stork build system can install all remaining dependencies automatically.
 
@@ -1108,7 +1097,8 @@ The first step is the installation of packages from the repository:
 .. code:: console
 
    pkg_add ruby
-   gem31 install --user-install rake
+   ln -s /usr/local/bin/gem31 /usr/local/bin/gem
+   gem install --user-install rake
    pkg_add wget
    pkg_add jdk
    pkg_add node
@@ -1116,35 +1106,12 @@ The first step is the installation of packages from the repository:
    pkg_add protobuf
    pkg_add gcc
    pkg_add go
-   pkg_add gtar
 
 Stork requires Golang version 1.18 or later.
 
-The utility to build the packages requires the GNU tar in PATH. The BSD tar
-isn't compatible. We need to rename the existing executable.
-
-.. code-block:: console
-
-   mv /bin/tar /bin/bsdtar
-
-The Stork build system expects the external applications to be located in a
-specific location. Unfortunately, this location isn't the default on the
-BSD-like operating system. We have opened #821 to search in PATH for missing
-packages, but currently, we recommend creating symbolic links.
-
-.. code-block:: console
-
-   ln -s /usr/local/bin/ruby31 /usr/bin/ruby
-   ln -s /usr/local/bin/gem31 /usr/bin/gem
-   ln -s /usr/local/jdk-11/bin/java /usr/bin
-   ln -s /usr/local/bin/npm /usr/bin
-   ln -s /usr/local/bin/npx /usr/bin
-   ln -s /usr/local/bin/protoc /usr/bin
-   ln -s /usr/local/bin/gtar /usr/bin/tar
-
-The last component that must be manually installed is GoSwagger. You need to
-build it from the sources. The final executable must be located in the 
-``/usr/bin`` directory.
+The last component that must be manually installed is GoSwagger in 0.23 version.
+You need to build it from the sources. The final executable must be located in the 
+``/usr/local/bin`` directory.
 
 .. code-block:: console
 
@@ -1153,7 +1120,7 @@ build it from the sources. The final executable must be located in the
    cd "$dir"
    git checkout v0.23.0
    go build
-   mv ./swagger /usr/bin/goswagger
+   mv ./swagger /usr/local/bin/goswagger
 
 Stork build system can install all remaining dependencies automatically.
 

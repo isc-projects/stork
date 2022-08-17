@@ -396,14 +396,15 @@ node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 goswagger_dir = go_tools_dir
 
-if libc_musl_system
-    protoc_dir = "/usr/bin"
-    node_bin_dir = "/usr/bin"
-    goswagger_dir = "/usr/bin"
-elsif freebsd_system || openbsd_system
-    protoc_dir = "/usr/local/bin"
-    node_bin_dir = "/usr/local/bin"
-    goswagger_dir = "/usr/local/bin"
+DEFAULT_OS_BINARY_DIRECTORY = "/usr/bin"
+if freebsd_system || openbsd_system
+    DEFAULT_OS_BINARY_DIRECTORY = "/usr/local/bin"
+end
+
+if libc_musl_system || freebsd_system || openbsd_system
+    protoc_dir = DEFAULT_OS_BINARY_DIRECTORY
+    node_bin_dir = DEFAULT_OS_BINARY_DIRECTORY
+    goswagger_dir = DEFAULT_OS_BINARY_DIRECTORY
 end
 
 if libc_musl_system || openbsd_system
@@ -414,7 +415,7 @@ if libc_musl_system || openbsd_system
         if !gobin.nil?
             gobin = File.dirname gobin
         else
-            gobin = "/usr/bin"
+            gobin = DEFAULT_OS_BINARY_DIRECTORY
         end
     end
 end

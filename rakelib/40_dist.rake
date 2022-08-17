@@ -57,7 +57,7 @@ CLEAN.append "dist"
 ### Agent ###
 ##############
 
-agent_dist_bin_dir = "dist/agent/usr/bin"
+agent_dist_bin_dir = File.join("dist/agent", DEFAULT_OS_BINARY_DIRECTORY)
 directory agent_dist_bin_dir
 agent_dist_bin_file = File.join(agent_dist_bin_dir, "stork-agent")
 file agent_dist_bin_file => [agent_dist_bin_dir, AGENT_BINARY_FILE] do
@@ -133,7 +133,7 @@ end
 ### Server ###
 ##############
 
-server_dist_bin_dir = "dist/server/usr/bin"
+server_dist_bin_dir = File.join("dist/server", DEFAULT_OS_BINARY_DIRECTORY)
 directory server_dist_bin_dir
 server_dist_bin_file = File.join(server_dist_bin_dir, "stork-server")
 file server_dist_bin_file => [server_dist_bin_dir, SERVER_BINARY_FILE] do

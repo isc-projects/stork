@@ -8,7 +8,7 @@ After=time-sync.target
 [Service]
 User=stork-server
 ConfigurationDirectory=stork
-ExecStart=/usr/bin/stork-server
+ExecStart=stork-server
 ExecReload=/bin/kill -HUP $MAINPID
 EnvironmentFile=/etc/stork/server.env
 Restart=on-failure
