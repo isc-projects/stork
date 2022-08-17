@@ -717,6 +717,8 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	checkers := make(map[string]*checker)
 	selectors := make(map[string]DispatchGroupSelectors)
 
+	// Checks the available selectors for a given daemon. It's not used for
+	// the global metadata.
 	var availableSelectors map[DispatchGroupSelector]bool
 	if isDaemonFetch {
 		groupSelectors := getDispatchGroupSelectors(daemon.Name)
@@ -732,11 +734,13 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 
 	for selector, group := range d.groups {
 		if isDaemonFetch {
+			// Skips the unavailable selector.
 			if _, ok := availableSelectors[selector]; !ok {
 				continue
 			}
 		}
 
+		// Fill the mapping between checker name and registered selectors.
 		for _, checker := range group.checkers {
 			if _, ok := selectors[checker.name]; !ok {
 				selectors[checker.name] = DispatchGroupSelectors{}
@@ -750,7 +754,10 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	if isDaemonFetch {
 		daemonID = daemon.ID
 	}
+
+	// Creates the metadata for each checker.
 	metadata := make([]*CheckerMetadata, len(checkers))
+
 	i := 0
 	for _, checker := range checkers {
 		isEnabled := d.checkerController.isCheckerEnabledForDaemon(daemonID, checker.name)
@@ -759,11 +766,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 		if isDaemonFetch {
 			state = d.checkerController.getStateForDaemon(daemonID, checker.name)
 		} else {
-			if d.checkerController.getGlobalState(checker.name) {
-				state = CheckerStateEnabled
-			} else {
-				state = CheckerStateDisabled
-			}
+			state = d.checkerController.getGlobalState(checker.name)
 		}
 
 		m := newCheckerMetadata(checker.name, checker.triggers, selectors[checker.name], isEnabled, state)

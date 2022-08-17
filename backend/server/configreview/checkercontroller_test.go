@@ -28,9 +28,9 @@ func TestGetGlobalState(t *testing.T) {
 	baz := controller.getGlobalState("baz")
 
 	// Assert
-	require.True(t, foo)
-	require.False(t, bar)
-	require.True(t, baz)
+	require.EqualValues(t, CheckerStateEnabled, foo)
+	require.EqualValues(t, CheckerStateDisabled, bar)
+	require.EqualValues(t, CheckerStateEnabled, baz)
 }
 
 // Test that the checker state is set properly.

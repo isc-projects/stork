@@ -37,7 +37,7 @@ func (s CheckerState) String() string {
 // The checkers are enabled by default.
 type checkerController interface {
 	setGlobalState(checkerName string, state CheckerState)
-	getGlobalState(checkerName string) bool
+	getGlobalState(checkerName string) CheckerState
 	setStateForDaemon(daemonID int64, checkerName string, state CheckerState)
 	isCheckerEnabledForDaemon(daemonID int64, checkerName string) bool
 	getStateForDaemon(daemonID int64, checkerName string) CheckerState
@@ -58,13 +58,13 @@ func newCheckerController() checkerController {
 }
 
 // Returns true if a checker with the given name is enabled.
-// The checkers are enabled by default.
-func (c checkerControllerImpl) getGlobalState(checkerName string) bool {
+// The checkers are enabled by default. The global state is never inherited.
+func (c checkerControllerImpl) getGlobalState(checkerName string) CheckerState {
 	enabled, ok := c.globalStates[checkerName]
-	if !ok {
-		return true
+	if !ok || enabled {
+		return CheckerStateEnabled
 	}
-	return enabled
+	return CheckerStateDisabled
 }
 
 // Sets the global state for a given checker.
