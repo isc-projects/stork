@@ -1114,9 +1114,7 @@ func TestCommitGlobalHostsIntoDBLateSetDaemonID(t *testing.T) {
 		},
 	}
 	// Add the hosts and their associations with the daemon to the database.
-	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0], HostDataSourceAPI)
-	})
+	err := CommitGlobalHostsIntoDB(db, hosts, apps[0].Daemons[0], HostDataSourceAPI)
 	require.NoError(t, err)
 
 	// Fetch global hosts.
