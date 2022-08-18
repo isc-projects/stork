@@ -57,7 +57,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * It converts input DHCP options into the nodes tree that can be displayed.
      */
     ngOnInit(): void {
-        this.optionNodes = this.optionNodes.concat(this._convertOptionsToNodes(this.options))
+        this.optionNodes = this._convertOptionsToNodes(this.options)
     }
 
     /**
