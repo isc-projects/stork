@@ -318,6 +318,12 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 * ``STORK_REST_TLS_CA_CERTIFICATE`` - a certificate authority file used for mutual TLS authentication
 * ``STORK_REST_STATIC_FILES_DIR`` - a directory with static files served in the user interface
 
+.. note::
+
+   The ``STORK_REST_STATIC_FILES_DIR`` should be set to ``/usr/share/stork/www``
+   for the Stork Server installed from the binary packages. It's the default location
+   for the static content.
+
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
 * ``STORK_SERVER_ENABLE_METRICS`` - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint
