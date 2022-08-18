@@ -1605,12 +1605,12 @@ func TestPopulateSubnetAlreadyPopulated(t *testing.T) {
 
 // Test that HostDataSource is created from the string.
 func TestHostDataSource(t *testing.T) {
-	ds, err := CreateHostDataSource("api")
+	ds, err := ParseHostDataSource("api")
 	require.NoError(t, err)
 	require.Equal(t, HostDataSourceAPI, ds)
 	require.Equal(t, "api", ds.String())
 
-	ds, err = CreateHostDataSource("config")
+	ds, err = ParseHostDataSource("config")
 	require.NoError(t, err)
 	require.Equal(t, HostDataSourceConfig, ds)
 	require.Equal(t, "config", ds.String())
@@ -1618,7 +1618,7 @@ func TestHostDataSource(t *testing.T) {
 
 // Test that invalid string is rejected when creating HostDataSource.
 func TestHostDataSourceError(t *testing.T) {
-	_, err := CreateHostDataSource("unknown")
+	_, err := ParseHostDataSource("unknown")
 	require.Error(t, err)
 }
 

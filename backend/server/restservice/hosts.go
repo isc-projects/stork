@@ -91,7 +91,7 @@ func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 	}
 	// Convert local hosts containing associations of the host with daemons.
 	for _, lh := range restHost.LocalHosts {
-		ds, err := dbmodel.CreateHostDataSource(lh.DataSource)
+		ds, err := dbmodel.ParseHostDataSource(lh.DataSource)
 		if err != nil {
 			return nil, err
 		}

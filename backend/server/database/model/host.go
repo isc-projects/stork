@@ -31,7 +31,7 @@ func (s HostDataSource) String() string {
 
 // Creates HostDataSource instance from string. It returns an error
 // when specified string is neither "api" nor "config".
-func CreateHostDataSource(s string) (hds HostDataSource, err error) {
+func ParseHostDataSource(s string) (hds HostDataSource, err error) {
 	hds = HostDataSource(s)
 	if hds != HostDataSourceConfig && hds != HostDataSourceAPI {
 		err = pkgerrors.Errorf("unsupported host data source %s", s)
