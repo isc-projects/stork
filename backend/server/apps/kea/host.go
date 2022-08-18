@@ -589,7 +589,7 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, daemon *
 			// Joining the hosts will only pass when both instances point to the
 			// same host. In that case, the resulting host is used instead of the
 			// newHost instance.
-			if err := host.Join(newHost); err == nil {
+			if ok := host.Join(newHost); ok {
 				newHost = host
 				break
 			}

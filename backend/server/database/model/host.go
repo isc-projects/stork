@@ -1001,15 +1001,15 @@ func (host *Host) SetLocalHost(localHost *LocalHost) {
 }
 
 // Combines two hosts into a single host by copying LocalHost data from
-// the other host. It returns an error if the instances are not pointing
-// to the same host, i.e., they have different identifiers, IP reservations
-// or hostnames.
-func (host *Host) Join(other *Host) error {
+// the other host. It returns a boolean value indicating whether or not
+// joining the hosts was successful. It returns false when joined hosts
+// are not the same ones (have different identifiers, hostnames etc.).
+func (host *Host) Join(other *Host) bool {
 	if !host.IsSame(other) {
-		return pkgerrors.New("unable to join not the same hosts")
+		return false
 	}
 	for i := range other.LocalHosts {
 		host.SetLocalHost(&other.LocalHosts[i])
 	}
-	return nil
+	return true
 }

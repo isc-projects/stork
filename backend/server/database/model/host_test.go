@@ -1691,8 +1691,8 @@ func TestJoinHosts(t *testing.T) {
 			},
 		},
 	}
-	err := host1.Join(host2)
-	require.NoError(t, err)
+	ok := host1.Join(host2)
+	require.True(t, ok)
 	require.Len(t, host1.LocalHosts, 2)
 	require.EqualValues(t, 123, host1.LocalHosts[0].DaemonID)
 	require.Equal(t, HostDataSourceConfig, host1.LocalHosts[0].DataSource)
@@ -1700,8 +1700,8 @@ func TestJoinHosts(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, host1.LocalHosts[1].DataSource)
 }
 
-// Test that an error is returned upon an attempt to join not the same hosts.
-func TestJoinHostsError(t *testing.T) {
+// Test that false is returned upon an attempt to join not the same hosts.
+func TestJoinDifferentHosts(t *testing.T) {
 	host1 := &Host{
 		HostIdentifiers: []HostIdentifier{
 			{
@@ -1730,6 +1730,6 @@ func TestJoinHostsError(t *testing.T) {
 			},
 		},
 	}
-	err := host1.Join(host2)
-	require.Error(t, err)
+	ok := host1.Join(host2)
+	require.False(t, ok)
 }
