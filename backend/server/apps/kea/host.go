@@ -586,7 +586,7 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, daemon *
 		// Iterate over the existing hosts to check if the new hosts are there already.
 		for ie := range existingHosts {
 			host := &existingHosts[ie]
-			// Joining the hosts will only pass when both instanes point to the
+			// Joining the hosts will only pass when both instances point to the
 			// same host. In that case, the resulting host is used instead of the
 			// newHost instance.
 			if err := host.Join(newHost); err == nil {
