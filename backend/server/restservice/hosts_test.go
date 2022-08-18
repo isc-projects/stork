@@ -285,6 +285,12 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		Host: &models.Host{
 			SubnetID: 1,
 			Hostname: "example.org",
+			HostIdentifiers: []*models.HostIdentifier{
+				{
+					IDType:     "hw-address",
+					IDHexValue: "010203040506",
+				},
+			},
 			LocalHosts: []*models.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[0].ID,
@@ -309,6 +315,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
             "service": ["dhcp4"],
             "arguments": {
                 "reservation": {
+                    "hw-address": "010203040506",
                     "subnet-id": 111,
                     "hostname": "example.org"
                 }
@@ -670,6 +677,458 @@ func TestCreateHostDeleteError(t *testing.T) {
 		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
 		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
+}
+
+// Test the calls for creating new transaction and updating a host reservation.
+func TestUpdateHostBeginSubmit(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	hosts, apps := testutil.AddTestHosts(t, db)
+
+	// Begin transaction.
+	params := dhcp.UpdateHostBeginParams{
+		HostID: hosts[0].ID,
+	}
+	rsp := rapi.UpdateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, host, daemons and subnets.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Host)
+	require.Len(t, contents.Daemons, 4)
+	require.Len(t, contents.Subnets, 2)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateHostSubmitParams{
+		ID: transactionID,
+		Host: &models.Host{
+			SubnetID: 1,
+			Hostname: "updated.example.org",
+			HostIdentifiers: []*models.HostIdentifier{
+				{
+					IDType:     "hw-address",
+					IDHexValue: "010203040506",
+				},
+			},
+			LocalHosts: []*models.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI.String(),
+				},
+				{
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI.String(),
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateHostSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateHostSubmitOK{}, rsp2)
+
+	// It should result in sending commands to two Kea servers. Each server
+	// receives reservation-del and reservation-add commands.
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch {
+		case i%2 == 0:
+			require.JSONEq(t, `{
+            "command": "reservation-del",
+            "service": ["dhcp4"],
+            "arguments": {
+                "identifier": "010203040506",
+                "identifier-type": "hw-address",
+                "subnet-id": 111
+            }
+        }`, c.Marshal())
+
+		default:
+			require.JSONEq(t, `{
+                "command": "reservation-add",
+                "service": ["dhcp4"],
+                "arguments": {
+                    "reservation": {
+                        "hw-address": "010203040506",
+                        "subnet-id": 111,
+                        "hostname": "updated.example.org"
+                    }
+                }
+             }`, c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+}
+
+// Test error case when a user attempts to begin new transaction when the
+// user has no session.
+func TestUpdateHostBeginNoSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager but do not login the user.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	hosts, _ := testutil.AddTestHosts(t, db)
+
+	// Begin transaction.
+	params := dhcp.UpdateHostBeginParams{
+		HostID: hosts[0].ID,
+	}
+	rsp := rapi.UpdateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
+	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+}
+
+// Test that an error is returned when it is attempted to begin new
+// transaction for updating non-existing host reservation.
+func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure there are some daemons in the database.
+	_, _ = testutil.AddTestHosts(t, db)
+
+	// Begin transaction for non-existing host.
+	params := dhcp.UpdateHostBeginParams{
+		HostID: int64(1024),
+	}
+	rsp := rapi.UpdateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
+// Test error cases for submitting host reservation update.
+func TestUpdateHostSubmitError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Setup fake agents that return an error in response to reservation-del
+	// command.
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("reservation-del", cmdResponses)
+	}, nil)
+	require.NotNil(t, fa)
+
+	// Create config manager.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Start session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create a user and simulate logging in.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps an hosts in the database.
+	hosts, apps := testutil.AddTestHosts(t, db)
+
+	// Begin transaction. It will be needed for the actual part of the
+	// test that relies on the existence of the transaction.
+	params := dhcp.UpdateHostBeginParams{
+		HostID: hosts[0].ID,
+	}
+	rsp := rapi.UpdateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Capture transaction ID.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+
+	// Submit transaction without the host information.
+	t.Run("no host", func(t *testing.T) {
+		params := dhcp.UpdateHostSubmitParams{
+			ID:   transactionID,
+			Host: nil,
+		}
+		rsp := rapi.UpdateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with non-matching transaction ID.
+	t.Run("wrong transaction id", func(t *testing.T) {
+		params := dhcp.UpdateHostSubmitParams{
+			ID: transactionID + 1,
+			Host: &models.Host{
+				HostIdentifiers: []*models.HostIdentifier{
+					{
+						IDType:     "hw-address",
+						IDHexValue: "010203040506",
+					},
+				},
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID: apps[0].Daemons[0].ID,
+					},
+					{
+						DaemonID: apps[1].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.UpdateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with a host that is not associated with any daemons.
+	// It simulates a failure in "apply" step which typically is caused by
+	// some internal server problem rather than malformed request.
+	t.Run("no daemons in host", func(t *testing.T) {
+		params := dhcp.UpdateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				HostIdentifiers: []*models.HostIdentifier{
+					{
+						IDType:     "hw-address",
+						IDHexValue: "010203040506",
+					},
+				},
+				LocalHosts: []*models.LocalHost{},
+			},
+		}
+		rsp := rapi.UpdateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID and host but expect the agent to
+	// return an error code. This is considered a conflict with the state
+	// of the Kea servers.
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.UpdateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				HostIdentifiers: []*models.HostIdentifier{
+					{
+						IDType:     "hw-address",
+						IDHexValue: "010203040506",
+					},
+				},
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: dbmodel.HostDataSourceAPI.String(),
+					},
+				},
+			},
+		}
+		rsp := rapi.UpdateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID and host but the user has no
+	// session.
+	t.Run("no user session", func(t *testing.T) {
+		err = rapi.SessionManager.LogoutHandler(ctx)
+		require.NoError(t, err)
+
+		params := dhcp.UpdateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				HostIdentifiers: []*models.HostIdentifier{
+					{
+						IDType:     "hw-address",
+						IDHexValue: "010203040506",
+					},
+				},
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: dbmodel.HostDataSourceAPI.String(),
+					},
+				},
+			},
+		}
+		rsp := rapi.UpdateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
+		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	})
+}
+
+// Test that the transaction to update a host can be canceled, resulting
+// in the removal of this transaction from the config manager and allowing
+// another user to apply config updates.
+func TestUpdateHostBeginCancel(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	hosts, _ := testutil.AddTestHosts(t, db)
+	err = dbmodel.AddHostLocalHosts(db, &hosts[0])
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateHostBeginParams{
+		HostID: hosts[0].ID,
+	}
+	rsp := rapi.UpdateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, daemons and subnets.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Daemons, 4)
+	require.Len(t, contents.Subnets, 2)
+
+	// Try to start another session by another user.
+	ctx2, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user = &dbmodel.SystemUser{
+		ID: 2345,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
+	// It should fail because the first session locked the daemons for
+	// update.
+	rsp = rapi.UpdateHostBegin(ctx2, params)
+	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
+	require.Equal(t, http.StatusLocked, getStatusCode(*defaultRsp))
+
+	// Cancel the transaction.
+	params2 := dhcp.UpdateHostDeleteParams{
+		ID: transactionID,
+	}
+	rsp2 := rapi.UpdateHostDelete(ctx, params2)
+	require.IsType(t, &dhcp.UpdateHostDeleteOK{}, rsp2)
+
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// After we released the lock, another user should be able to apply
+	// his changes.
+	rsp = rapi.UpdateHostBegin(ctx2, params)
+	require.IsType(t, &dhcp.UpdateHostBeginOK{}, rsp)
 }
 
 // Test successfully deleting host reservation.

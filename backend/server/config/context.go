@@ -2,6 +2,8 @@ package config
 
 import (
 	"context"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // Type of the context keys used by a config manager. The manager and the
@@ -36,4 +38,20 @@ func GetValueAsInt64(ctx context.Context, key ContextKey) (value int64, ok bool)
 func GetTransactionState(ctx context.Context) (state TransactionState, ok bool) {
 	state, ok = ctx.Value(StateContextKey).(TransactionState)
 	return
+}
+
+// Sets a value in the transaction state for a given update index, under the
+// specified name in the recipe. It returns an error if the context does not
+// contain a transaction state or the specified index is out of bounds. It
+// always returns a context with an updated value if the value has been
+// successfully set.
+func SetValueForUpdate(ctx context.Context, updateIndex int, valueName string, value any) (context.Context, error) {
+	state, ok := GetTransactionState(ctx)
+	if !ok {
+		return ctx, pkgerrors.New("transaction state does not exist in the context")
+	}
+	if err := state.SetValueForUpdate(updateIndex, valueName, value); err != nil {
+		return ctx, err
+	}
+	return context.WithValue(ctx, StateContextKey, state), nil
 }

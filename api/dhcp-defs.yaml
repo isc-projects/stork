@@ -208,6 +208,23 @@
         items:
           $ref: '#/definitions/Subnet'
 
+  UpdateHostBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      host:
+        $ref: '#/definitions/Host'
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+      subnets:
+        type: array
+        items:
+          $ref: '#/definitions/Subnet'
+
 # Subnet
 
   LocalSubnet:

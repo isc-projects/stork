@@ -51,3 +51,36 @@ func TestGetTransactionStateNoCast(t *testing.T) {
 	_, ok := GetTransactionState(ctx)
 	require.False(t, ok)
 }
+
+// Test setting and getting value for an update in the transaction state.
+func TestSetValueForUpdateInContext(t *testing.T) {
+	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	ctx := context.WithValue(context.Background(), StateContextKey, *state)
+
+	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+	require.NoError(t, err)
+
+	returnedState, ok := GetTransactionState(ctx)
+	require.True(t, ok)
+	v, err := returnedState.GetValueForUpdate(0, "foo")
+	require.NoError(t, err)
+	require.NotNil(t, v)
+	require.Equal(t, "bar", v)
+}
+
+// Test that an error is returned when trying to set a value for update in the
+// state when the state does not exist.
+func TestSetValueForUpdateInContextNoState(t *testing.T) {
+	ctx := context.Background()
+	_, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+	require.Error(t, err)
+}
+
+// Test that an error is returned when trying to set a value for update in the
+// state when update index is out of bounds.
+func TestSetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
+	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	ctx := context.WithValue(context.Background(), StateContextKey, *state)
+	_, err := SetValueForUpdate(ctx, 1, "foo", "bar")
+	require.Error(t, err)
+}

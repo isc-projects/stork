@@ -176,12 +176,100 @@
           description: Transaction ID returned when the transaction was created.
         - in: body
           name: host
-          description: Host reservation information.
+          description: Updated host reservation information.
           schema:
             $ref: '#/definitions/Host'
       responses:
         200:
           description: Host reservation successfully submitted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /hosts/{hostId}/transaction:
+    post:
+      summary: Begin transaction for updating an existing host reservation.
+      description: >-
+        Creates a transaction in the config manager to update an existing host reseravtion.
+        It returns the existing host reservation information, a current list of available
+        DHCP servers and subnets. This information is required in the form in which the
+        user edits host reservation data.
+      operationId: updateHostBegin
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: hostId
+          type: integer
+          required: true
+          description: Host ID to which the transaction pertains.
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/UpdateHostBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /hosts/{hostId}/transaction/{id}:
+    delete:
+      summary: Cancel transaction to update a host reservation.
+      description: Cancels the transaction to update a host reservation in the config manager.
+      operationId: updateHostDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: hostId
+          type: integer
+          required: true
+          description: Host ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /hosts/{hostId}/transaction/{id}/submit:
+    post:
+      summary: Submit transaction updating a host reservation.
+      description: >-
+        Submits a transaction causing the server to update host reservations on
+        respective DHCP servers. It applies and submits the transactions in Stork
+        config manager.
+      operationId:
+        updateHostSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: hostId
+          type: integer
+          required: true
+          description: Host ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: host
+          description: Host reservation information.
+          schema:
+            $ref: '#/definitions/Host'
+      responses:
+        200:
+          description: Host reservation successfully updated.
         default:
           description: generic error response
           schema:

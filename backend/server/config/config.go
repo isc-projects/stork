@@ -32,6 +32,8 @@ type LockKey int64
 type KeaModule interface {
 	BeginHostAdd(context.Context) (context.Context, error)
 	ApplyHostAdd(context.Context, *dbmodel.Host) (context.Context, error)
+	BeginHostUpdate(context.Context, int64) (context.Context, error)
+	ApplyHostUpdate(context.Context, *dbmodel.Host) (context.Context, error)
 	BeginHostDelete(context.Context) (context.Context, error)
 	ApplyHostDelete(context.Context, *dbmodel.Host) (context.Context, error)
 }
@@ -44,6 +46,7 @@ type KeaModuleCommit interface {
 
 // Common configuration manager interface.
 type Manager interface {
+	ManagerLocker
 	// Returns Kea configuration module.
 	GetKeaModule() KeaModule
 	// Creates new context for applying configuration changes.
@@ -52,10 +55,6 @@ type Manager interface {
 	RememberContext(context.Context, time.Duration) error
 	// Returns stored context for a given context and user ID.
 	RecoverContext(int64, int64) (context.Context, context.CancelFunc)
-	// Locks the daemons' configurations for update.
-	Lock(context.Context, ...int64) (context.Context, error)
-	// Unlocks the daemons' configurations.
-	Unlock(context.Context)
 	// Cancels the config update transaction.
 	Done(context.Context)
 	// Sends configuration changes to the daemons.
@@ -69,15 +68,61 @@ type Manager interface {
 // Configuration manager interface exposing functions accessing
 // its unexported fields. It is used by the config modules.
 type ManagerAccessors interface {
+	ManagerLocker
 	// Returns an instance of the database handler used by the configuration manager.
 	GetDB() *pg.DB
 	// Returns an interface to the agents the manager communicates with.
 	GetConnectedAgents() agentcomm.ConnectedAgents
 }
 
+// Config manager interface exposing locking functions.
+type ManagerLocker interface {
+	// Locks the daemons' configurations for update.
+	Lock(context.Context, ...int64) (context.Context, error)
+	// Unlocks the daemons' configurations.
+	Unlock(context.Context)
+}
+
 // Creates new config update instance.
 func NewUpdate(target, operation string, daemonIDs ...int64) *Update {
 	return dbmodel.NewConfigUpdate(target, operation, daemonIDs...)
+}
+
+// Creates new transaction state with one config update instance. It is
+// the most typical use case.
+func NewTransactionStateWithUpdate(target, operation string, daemonIDs ...int64) *TransactionState {
+	update := NewUpdate(target, operation, daemonIDs...)
+	state := &TransactionState{
+		Updates: []*Update{
+			update,
+		},
+	}
+	return state
+}
+
+// Sets a value in the transaction state for a given update index, under the
+// specified name in the recipe. It returns an error if the specified index
+// is out of bounds.
+func (state *TransactionState) SetValueForUpdate(updateIndex int, valueName string, value any) error {
+	if len(state.Updates) <= updateIndex {
+		return pkgerrors.Errorf("transaction state update index %d is out of bounds", updateIndex)
+	}
+	state.Updates[updateIndex].Recipe[valueName] = value
+	return nil
+}
+
+// Gets a value from the transaction state for a given update index, under the
+// specified name in the recipe. It returns an error if the specified index
+// is out of bounds or when the value doesn't exist.
+func (state *TransactionState) GetValueForUpdate(updateIndex int, valueName string) (any, error) {
+	if len(state.Updates) <= updateIndex {
+		return nil, pkgerrors.Errorf("transaction state update index %d is out of bounds", updateIndex)
+	}
+	value, ok := state.Updates[updateIndex].Recipe[valueName]
+	if !ok {
+		return nil, pkgerrors.Errorf("value %s does not exist for update with index %d", valueName, updateIndex)
+	}
+	return value, nil
 }
 
 // Decodes data stored as a map in the context/transaction into a custom structure.
