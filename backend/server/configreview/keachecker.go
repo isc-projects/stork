@@ -675,6 +675,9 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 		create()
 }
 
+// Search for prefix overlaps in the provided set of subnets.
+// The execution is stopped early if an expected name of founded overlaps is
+// reached.
 func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
 	// Pair of the subnet and its binary prefix.
 	type subnetWithPrefix struct {
