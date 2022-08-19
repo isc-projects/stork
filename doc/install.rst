@@ -1045,7 +1045,7 @@ The first step is the installation of packages from the repository:
    pkg install wget
    pkg install openjdk11-jre
    pkg install node14
-   pkg install node-npm14
+   pkg install npm-node14
    npm install -g npm
    pkg install python3
    pkg install protobuf
