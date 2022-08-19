@@ -2396,6 +2396,9 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 	}
 }
 
+// Generates the subnets with that given part overlaps.
+// The overlapping factor must be in range from 0 (no overlaps) to 1 (100% overlaps).
+// Each overlapped subnet is contained by exactly one another subnet.
 func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalSubnet) {
 	overlappingStep := int(float32(n) * overlappingFactor)
 
@@ -2426,7 +2429,11 @@ func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalS
 	return subnets
 }
 
-func BenchmarkOverlaps_BinaryPrefixesOnly(b *testing.B) {
+// Measures the performance of the overlapping prefixes detection based on the
+// binary prefixes without using the radix tree.
+// The possible solutions were discussed in this thread:
+// https://gitlab.isc.org/isc-projects/stork/-/merge_requests/474#note_305555
+func BenchmarkOverlapsBinaryPrefixesOnly(b *testing.B) {
 	numberOfSubnets := 8196
 	overlappingFactor := float32(0.01)
 	maximumOverlaps := 10
