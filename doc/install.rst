@@ -1044,8 +1044,8 @@ The first step is the installation of packages from the repository:
    pkg install rubygem-rake
    pkg install wget
    pkg install openjdk11-jre
-   pkg install node
-   pkg install www/npm
+   pkg install node14
+   pkg install node-npm14
    npm install -g npm
    pkg install python3
    pkg install protobuf
