@@ -1,17 +1,17 @@
 <p-tree [value]="optionNodes" emptyMessage="No options configured.">
     <ng-template let-node pTemplate="option">
-        <div class="flex p-1">
-            <div class="flex align-items-center tree-icon fa fa-cog"></div>
-            <div class="flex align-items-center font-semibold ml-2">
+        <div class="flex align-items-center p-1">
+            <i class="tree-icon fa fa-cog"></i>
+            <div class="font-semibold ml-2">
                 {{ getOptionTitle(node) }}
             </div>
-            <div *ngIf="node.data.alwaysSend" class="flex align-items-center ml-2">
+            <div *ngIf="node.data.alwaysSend" class="ml-2">
                 <p-tag>always sent</p-tag>
             </div>
-            <div *ngIf="isEmpty(node)" class="flex align-items-center ml-2">
+            <div *ngIf="isEmpty(node)" class="ml-2">
                 <p-tag>empty option</p-tag>
             </div>
-            <div class="flex align-items-center">
+            <div>
                 <app-help-tip title="DHCP Option View">
                     Option fields and suboptions are displayed for option {{ node.data.code }}. Move the cursor over the
                     option fields to see their types. If the "always sent" tag is shown next to the option code it means
@@ -23,10 +23,10 @@
         </div>
     </ng-template>
     <ng-template let-node pTemplate="suboption">
-        <div class="flex p-1">
-            <div class="flex align-items-center tree-icon fa fa-cog"></div>
+        <div class="flex align-items-center p-1">
+            <i class="tree-icon fa fa-cog"></i>
             <div class="font-semibold ml-2">Suboption {{ node.data.code }}</div>
-            <div *ngIf="isEmpty(node)" class="flex align-items-center ml-2">
+            <div *ngIf="isEmpty(node)" class="ml-2">
                 <p-tag>empty suboption</p-tag>
             </div>
         </div>
@@ -34,11 +34,7 @@
     <ng-template let-node pTemplate="field">
         <div class="flex align-items-center">
             <i class="tree-icon fa fa-ellipsis-h"></i>
-            <div
-                pTooltip="{{ node.data.fieldType }} field"
-                class="ml-2 monospace"
-                [ngStyle]="{ color: 'var(--gray-500)' }"
-            >
+            <div pTooltip="{{ node.data.fieldType }} field" class="field-value-icon ml-2 monospace">
                 {{ node.data.value }}
             </div>
         </div>
