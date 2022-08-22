@@ -11,6 +11,11 @@ type checker struct {
 
 // Represents current metadata of the configuration checker. It includes a name,
 // triggers, selectors on which the checker was registered, and enable state.
+// The checker metadata is valid only for a specific daemon (or globally).
+// It affects the selector list and the state. The enabled property combines
+// the daemon state and the global one. It means that for CheckerStateEnabled,
+// the enabled property is always true, and for CheckerStateDisabled, it's
+// always false, but for CheckerStateInherit, it may be true or false.
 type CheckerMetadata struct {
 	Name      string
 	Triggers  Triggers
