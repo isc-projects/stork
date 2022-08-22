@@ -97,7 +97,7 @@ func GetCheckerPreferences(dbi dbops.DBI, daemonID *int64) (preferences []*Confi
 	return preferences, nil
 }
 
-// Adds or updates the daemon preferences of config checkers.
+// Adds or updates preferences of the config checkers.
 func addOrUpdateCheckerPreferences(dbi dbops.DBI, preferences []*ConfigCheckerPreference) error {
 	var daemonPreferences []*ConfigCheckerPreference
 	var globalPreferences []*ConfigCheckerPreference

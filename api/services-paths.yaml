@@ -590,10 +590,10 @@
     get:
       summary: Get global config checker preferences.
       description: >-
-        Configuration review executes multiple configuration checkers to found
-        various issues. The checkers may be disabled or enabled globally or
-        per daemon. This endpoint returns the global checker configuration
-        metadata and preferences.
+        Configuration review executes available checkers to find configuration
+        issues. The checkers may be disabled or enabled globally or per daemon.
+        This endpoint returns the global checkers' configuration metadata and
+        preferences.
       operationId: getGlobalConfigCheckers
       tags:
         - Services

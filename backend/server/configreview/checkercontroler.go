@@ -104,7 +104,7 @@ func (c checkerControllerImpl) isCheckerEnabledForDaemon(daemonID int64, checker
 	return true
 }
 
-// Returns a checker state assigned with a given daemon.
+// Returns a checker state assigned to a given daemon.
 func (c checkerControllerImpl) getStateForDaemon(daemonID int64, checkerName string) CheckerState {
 	if _, ok := c.daemonStates[daemonID]; ok {
 		if enabled, ok := c.daemonStates[daemonID][checkerName]; ok {
