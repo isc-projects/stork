@@ -249,6 +249,93 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
     })
 
+    it('should switch a tab to host editing mode', () => {
+        // Create a list with two hosts.
+        component.hosts = [
+            {
+                id: 1,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '01:02:03:04',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 1,
+                        appName: 'frog',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 2,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '11:12:13:14',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 2,
+                        appName: 'mouse',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // Ensure that we don't fetch the host information from the server upon
+        // opening a new tab. We should use the information available in the
+        // hosts structure.
+        spyOn(dhcpApi, 'getHost')
+
+        // Open tab with host with id 1.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        component.onHostEditBegin(component.hosts[0])
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Make sure the tab includes the host reservation form.
+        expect(component.tabs[1].icon).toBe('pi pi-pencil')
+        let form = fixture.debugElement.query(By.css('form'))
+        expect(form).toBeTruthy()
+
+        // Open tab with host with id 2.
+        paramMapSubject.next(convertToParamMap({ id: 2 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(3)
+        expect(component.activeTabIndex).toBe(2)
+        // This tab should have no form.
+        form = fixture.debugElement.query(By.css('form'))
+        expect(form).toBeFalsy()
+
+        // Return to the previous tab and make sure the form is still open.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(3)
+        expect(component.activeTabIndex).toBe(1)
+        form = fixture.debugElement.query(By.css('form'))
+        expect(form).toBeTruthy()
+    })
+
     it('should open a tab when hosts have not been loaded', () => {
         const host: any = {
             id: 1,

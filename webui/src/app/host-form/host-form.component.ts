@@ -13,9 +13,11 @@ import { map } from 'rxjs/operators'
 import { collapseIPv6Number, isIPv4, IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
 import { StorkValidators } from '../validators'
 import { DHCPService } from '../backend/api/api'
+import { CreateHostBeginResponse } from '../backend/model/createHostBeginResponse'
 import { Host } from '../backend/model/host'
 import { IPReservation } from '../backend/model/iPReservation'
 import { LocalHost } from '../backend/model/localHost'
+import { UpdateHostBeginResponse } from '../backend/model/updateHostBeginResponse'
 import { Subnet } from '../backend/model/subnet'
 import { HostForm } from '../forms/host-form'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
@@ -141,6 +143,19 @@ function addressInSubnetValidator(ipType: IPType, hostForm: HostForm): Validator
     }
 }
 
+interface MappedDaemon {
+    id: number
+    name: string
+    label: string
+}
+
+interface MappedHostBeginData {
+    id: number
+    subnets: Array<Subnet>
+    daemons: Array<MappedDaemon>
+    host?: Host
+}
+
 /**
  * A component providing a form for editing and adding new host
  * reservation.
@@ -160,6 +175,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * destroyed.
      */
     @Input() form: HostForm = null
+
+    /**
+     * Host identifier.
+     *
+     * It should be set in cases when the form is used to update an existing
+     * host reservation. It is not set when the form is used to create new
+     * host reservation
+     */
+    @Input() hostId: number = 0
 
     /**
      * An event emitter notifying that the component is destroyed.
@@ -280,13 +304,19 @@ export class HostFormComponent implements OnInit, OnDestroy {
             }
         )
 
-        // Begin the transaction. It sends POST to /hosts/new/transaction/new.
-        this._createHostBegin()
+        // Begin transaction.
+        if (this.hostId) {
+            // Send POST to /hosts/{id}/transaction/new.
+            this._updateHostBegin()
+        } else {
+            // Send POST to /hosts/new/transaction/new.
+            this._createHostBegin()
+        }
     }
 
     /**
      * Sends a request to the server to begin a new transaction for adding
-     * a new host reservation.
+     * new host reservation.
      *
      * If the call is successful, the form components initialized with the
      * returned data, e.g. a list of available servers, subnets etc.
@@ -300,37 +330,12 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 map((data) => {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
-
-                    let daemons = []
-                    for (const d of data.daemons) {
-                        let daemon = {
-                            id: d.id,
-                            name: d.name,
-                            label: `${d.app.name}/${d.name}`,
-                        }
-                        daemons.push(daemon)
-                    }
-                    const mappedData: any = {
-                        id: data.id,
-                        subnets: data.subnets,
-                        daemons: daemons,
-                    }
-                    return mappedData
+                    return this._mapHostBeginData(data)
                 })
             )
             .toPromise()
             .then((data) => {
-                // Success. Clear any existing errors.
-                this.form.initError = null
-                // The server should return new transaction id and a current list of
-                // daemons and subnets to select.
-                this.form.transactionId = data.id
-                this.form.allDaemons = data.daemons
-                this.form.allSubnets = data.subnets
-                // Initially, list all daemons.
-                this.form.filteredDaemons = this.form.allDaemons
-                // Initially, show all subnets.
-                this.form.filteredSubnets = this.form.allSubnets
+                this._initializeForm(data)
             })
             .catch((err) => {
                 let msg = err.statusText
@@ -348,6 +353,73 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 })
                 this.form.initError = msg
             })
+    }
+
+    private _updateHostBegin(): void {
+        this._dhcpApi
+            .updateHostBegin(this.hostId)
+            .pipe(
+                map((data) => {
+                    // We have to mangle the returned information and store them
+                    // in the format usable by the component.
+                    return this._mapHostBeginData(data)
+                })
+            )
+            .toPromise()
+            .then((data) => {
+                this._initializeForm(data)
+            })
+            .catch((err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                if (!msg) {
+                    msg = `status: ${err.status}`
+                }
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot create new transaction',
+                    detail: `Failed to create transaction for updating host ${this.hostId}: ` + msg,
+                    life: 10000,
+                })
+                this.form.initError = msg
+            })
+    }
+
+    private _mapHostBeginData(data: CreateHostBeginResponse | UpdateHostBeginResponse): MappedHostBeginData {
+        let daemons = []
+        for (const d of data.daemons) {
+            let daemon = {
+                id: d.id,
+                name: d.name,
+                label: `${d.app.name}/${d.name}`,
+            }
+            daemons.push(daemon)
+        }
+        let mappedData: MappedHostBeginData = {
+            id: data.id,
+            subnets: data.subnets,
+            daemons: daemons,
+        }
+        if ('host' in data) {
+            mappedData.host = data.host
+        }
+        return mappedData
+    }
+
+    private _initializeForm(data: CreateHostBeginResponse | UpdateHostBeginResponse): void {
+        // Success. Clear any existing errors.
+        this.form.initError = null
+        // The server should return new transaction id and a current list of
+        // daemons and subnets to select.
+        this.form.transactionId = data.id
+        this.form.allDaemons = data.daemons
+        this.form.allSubnets = data.subnets
+        // Initially, list all daemons.
+        this.form.filteredDaemons = this.form.allDaemons
+        // Initially, show all subnets.
+        this.form.filteredSubnets = this.form.allSubnets
     }
 
     /**
@@ -799,6 +871,10 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * a new transaction.
      */
     onRetry(): void {
-        this._createHostBegin()
+        if (this.hostId) {
+            this._updateHostBegin()
+        } else {
+            this._createHostBegin()
+        }
     }
 }

@@ -190,6 +190,7 @@
         <app-host-tab
             *ngSwitchCase="HostTabType.Host"
             [host]="openedTabs[activeTabIndex - 1].host"
+            (hostEditBegin)="onHostEditBegin(openedTabs[activeTabIndex - 1].host)"
             (hostDelete)="onHostDelete(openedTabs[activeTabIndex - 1].host)"
         ></app-host-tab>
         <app-host-form
@@ -197,6 +198,13 @@
             (formDestroy)="onHostFormDestroy($event)"
             (formSubmit)="onHostFormSubmit($event)"
             *ngSwitchCase="HostTabType.NewHost"
+        ></app-host-form>
+        <app-host-form
+            [form]="openedTabs[activeTabIndex - 1].form"
+            [hostId]="openedTabs[activeTabIndex - 1].host.id"
+            (formDestroy)="onHostFormDestroy($event)"
+            (formSubmit)="onHostFormSubmit($event)"
+            *ngSwitchCase="HostTabType.EditHost"
         ></app-host-form>
     </div>
     <ng-template> </ng-template

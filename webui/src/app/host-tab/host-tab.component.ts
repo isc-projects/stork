@@ -35,6 +35,16 @@ enum HostReservationUsage {
     styleUrls: ['./host-tab.component.sass'],
 })
 export class HostTabComponent {
+    /**
+     * An event emitter notifying a parent that user has clicked the
+     * Edit button to modify the host reservation.
+     */
+    @Output() hostEditBegin = new EventEmitter<any>()
+
+    /**
+     * An event emitter notifying a parent that user has clicked the
+     * Delete button to delete the host reservation.
+     */
     @Output() hostDelete = new EventEmitter<any>()
 
     Usage = HostReservationUsage
@@ -391,6 +401,16 @@ export class HostTabComponent {
      */
     refreshLeases() {
         this._fetchLeases(this.host.id)
+    }
+
+    /**
+     * Event handler called when user begins host editing.
+     *
+     * It emits an event to the parent component to notify that host is
+     * is now edited.
+     */
+    onHostEditBegin(): void {
+        this.hostEditBegin.emit(this.host)
     }
 
     /*

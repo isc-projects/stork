@@ -16,6 +16,7 @@ import { HostForm } from '../forms/host-form'
 export enum HostTabType {
     List = 1,
     NewHost,
+    EditHost,
     Host,
 }
 
@@ -40,7 +41,38 @@ export class HostTab {
      * @param host host information displayed in the tab.
      */
     constructor(public tabType: HostTabType, public host?: any) {
-        this.form = new HostForm()
+        this._setHostTabType(tabType)
+    }
+
+    /**
+     * Sets new host tab type and initializes the form accordingly.
+     *
+     * It is a private function variant that does not check whether the type
+     * is already set to the desired value/
+     */
+    private _setHostTabType(tabType: HostTabType): void {
+        switch (tabType) {
+            case HostTabType.NewHost:
+            case HostTabType.EditHost:
+                this.form = new HostForm()
+                break
+            default:
+                this.form = null
+        }
+        this.submitted = false
+        this.tabType = tabType
+    }
+
+    /**
+     * Sets new host tab type and initializes the form accoridngly.
+     *
+     * It does nothing when the type is already set to the desired value.
+     */
+    public setHostTabType(tabType: HostTabType): void {
+        if (this.tabType === tabType) {
+            return
+        }
+        this._setHostTabType(tabType)
     }
 }
 
@@ -255,7 +287,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param id host ID.
      */
     private openHostTab(id) {
-        let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.Host && t.host.id === id)
+        let index = this.openedTabs.findIndex(
+            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === id
+        )
         if (index >= 0) {
             this.switchToTab(index + 1)
             return
@@ -508,6 +542,26 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         if (index >= 0) {
             this.openedTabs[index].submitted = true
             this.closeHostTab(null, index + 1)
+        }
+    }
+
+    /**
+     * Event handler triggered when a user starts editing a host reservation.
+     *
+     * It replaces the host view with the host edit form in the current tab.
+     *
+     * @param host an instance carrying host information.
+     */
+    onHostEditBegin(host): void {
+        let index = this.openedTabs.findIndex(
+            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === host.id
+        )
+        if (index >= 0) {
+            if (this.openedTabs[index].tabType !== HostTabType.EditHost) {
+                this.tabs[index + 1].icon = 'pi pi-pencil'
+                this.openedTabs[index].setHostTabType(HostTabType.EditHost)
+            }
+            this.switchToTab(index + 1)
         }
     }
 
