@@ -70,7 +70,7 @@ func GetAllCheckerPreferences(dbi dbops.DBI) (preferences []*ConfigCheckerPrefer
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrap(err, "problem selecting checker preferences for a given daemon")
+		err = pkgerrors.Wrap(err, "problem selecting all checker preferences")
 		return
 	}
 
