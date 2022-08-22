@@ -39,14 +39,27 @@ func TestSetGlobalState(t *testing.T) {
 	controller := newCheckerController()
 
 	// Act
-	controller.setGlobalState("foo", CheckerStateEnabled)
-	controller.setGlobalState("bar", CheckerStateDisabled)
-	controller.setGlobalState("baz", CheckerStateInherit)
+	err1 := controller.setGlobalState("foo", CheckerStateEnabled)
+	err2 := controller.setGlobalState("bar", CheckerStateDisabled)
 
 	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 	require.True(t, controller.isCheckerEnabledForDaemon(0, "foo"))
 	require.False(t, controller.isCheckerEnabledForDaemon(0, "bar"))
 	require.True(t, controller.isCheckerEnabledForDaemon(0, "baz"))
+}
+
+// Test that global state cannot be set to inherit value.
+func TestSetGlobalStateInherit(t *testing.T) {
+	// Arrange
+	controller := newCheckerController()
+
+	// Act
+	err := controller.setGlobalState("baz", CheckerStateInherit)
+
+	// Assert
+	require.Error(t, err)
 }
 
 // Test that the checker state for a specific daemon is set properly.
@@ -77,9 +90,10 @@ func TestSetInheritedStateForDaemon(t *testing.T) {
 	controller.setStateForDaemon(1, "foo", CheckerStateInherit)
 	controller.setStateForDaemon(2, "bar", CheckerStateInherit)
 	controller.setStateForDaemon(3, "baz", CheckerStateInherit)
-	controller.setGlobalState("baz", CheckerStateEnabled)
+	err := controller.setGlobalState("baz", CheckerStateEnabled)
 
 	// Assert
+	require.NoError(t, err)
 	require.True(t, controller.isCheckerEnabledForDaemon(1, "foo"))
 	require.False(t, controller.isCheckerEnabledForDaemon(2, "bar"))
 	require.True(t, controller.isCheckerEnabledForDaemon(3, "baz"))

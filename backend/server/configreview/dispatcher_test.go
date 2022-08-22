@@ -965,3 +965,21 @@ func TestBeginReviewForDaemonWithSomeCheckersDisabled(t *testing.T) {
 	require.True(t, ok)
 	require.EqualValues(t, 1, checkerCallCount)
 }
+
+// Test that the checker state is verified before changing.
+func TestSetCheckerStateToInvalidValue(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemon := &dbmodel.Daemon{ID: 1, Name: dbmodel.DaemonNameDHCPv4}
+	dispatcher := NewDispatcher(db)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
+
+	// Act
+	err1 := dispatcher.SetCheckerState(daemon, "bar", CheckerStateDisabled)
+	err2 := dispatcher.SetCheckerState(nil, "foo", CheckerStateInherit)
+
+	// Assert
+	require.Error(t, err1)
+	require.Error(t, err2)
+}

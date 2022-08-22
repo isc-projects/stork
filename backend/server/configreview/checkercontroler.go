@@ -1,5 +1,7 @@
 package configreview
 
+import "github.com/pkg/errors"
+
 // Represents a state of config checker managed by the config checker controller.
 // Checker for a given condition can be enabled or disabled or inherit the
 // state from the higher order rule.
@@ -16,7 +18,7 @@ const (
 // daemon, selector, or globally.
 // The checkers are enabled by default.
 type checkerController interface {
-	setGlobalState(checkerName string, state CheckerState)
+	setGlobalState(checkerName string, state CheckerState) error
 	getGlobalState(checkerName string) CheckerState
 	setStateForDaemon(daemonID int64, checkerName string, state CheckerState)
 	isCheckerEnabledForDaemon(daemonID int64, checkerName string) bool
@@ -47,14 +49,14 @@ func (c checkerControllerImpl) getGlobalState(checkerName string) CheckerState {
 	return CheckerStateDisabled
 }
 
-// Sets the global state for a given checker.
-func (c checkerControllerImpl) setGlobalState(checkerName string, state CheckerState) {
-	// Resets to default
+// Sets the global state for a given checker. The inherit state isn't accepted.
+func (c checkerControllerImpl) setGlobalState(checkerName string, state CheckerState) error {
 	if state == CheckerStateInherit {
-		delete(c.globalStates, checkerName)
-	} else {
-		c.globalStates[checkerName] = state == CheckerStateEnabled
+		return errors.Errorf("The global state cannot be inherit.")
 	}
+
+	c.globalStates[checkerName] = state == CheckerStateEnabled
+	return nil
 }
 
 // Sets the state of config checker for a specific daemon.

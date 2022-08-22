@@ -818,7 +818,9 @@ func (d *dispatcherImpl) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 	}
 
 	if daemon == nil {
-		d.checkerController.setGlobalState(checkerName, state)
+		if err := d.checkerController.setGlobalState(checkerName, state); err != nil {
+			return err
+		}
 	} else {
 		d.checkerController.setStateForDaemon(daemon.ID, checkerName, state)
 	}
