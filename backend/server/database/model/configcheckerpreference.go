@@ -90,7 +90,12 @@ func GetCheckerPreferences(dbi dbops.DBI, daemonID int64) (preferences []*Config
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrap(err, "problem selecting checker preferences for a given daemon")
+		message := "problem selecting global checker preferences"
+		if daemonID != 0 {
+			message = fmt.Sprintf("problem selecting checker preferences for a daemon with ID: %d", daemonID)
+		}
+
+		err = pkgerrors.Wrap(err, message)
 		return
 	}
 
