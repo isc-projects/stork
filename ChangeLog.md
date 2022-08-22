@@ -835,7 +835,7 @@ Stork 0.13.0 released on 2020-11-06.
 * 113 [bug] godfryd
 
     Fixed handling renamed statistics from Kea. In Kea 1.8 some
-    of the statistics have been renamed, e.g. total-addreses
+    of the statistics have been renamed, e.g. total-addresses
     to total-addresses. Now Stork supports both of the cases.
     (Gitlab #413)
 
@@ -1124,7 +1124,7 @@ Stork 0.9.0 released on 2020-07-01.
     If there is a communication problem with any app it is highlighted
     via appropriate icon and a text that describes the problem. The
     server logs were adjusted to indicate if the communication issue
-    is new or has been occuring for a longer period of time.
+    is new or has been occurring for a longer period of time.
     (Gitlab #305)
 
 * 72 [func] tomek
@@ -1142,7 +1142,7 @@ Stork 0.8.0 released on 2020-06-10.
 
 * 70 [func] matthijs
 
-    Implementated Bind exporter and embedded it in Stork Agent.
+    Implemented Bind exporter and embedded it in Stork Agent.
     It is based on bind_exporter:
     https://github.com/prometheus-community/bind_exporter
     (Gitlab #218)

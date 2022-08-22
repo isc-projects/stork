@@ -153,7 +153,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 		}
 	}
 
-	// In order to avoid iterating over all the filters everytime we have a new
+	// In order to avoid iterating over all the filters every time we have a new
 	// event we should check if everything we have done above resulted in setting
 	// any of these values. If all of them happen to be zero we leave the useFilter
 	// value as false reducing the number of checks to be performed to only this
