@@ -1,0 +1,9 @@
+<div class="container ml-2" *ngFor="let checker of checkers">
+    <h4>{{ checker.name }}</h4>
+    <span class="selector" *ngFor="let selector of checker.selectors">
+        {{ selector }}
+    </span>
+    <span class="trigger" *ngFor="let trigger of checker.triggers">
+        {{ trigger }}
+    </span>
+</div>
