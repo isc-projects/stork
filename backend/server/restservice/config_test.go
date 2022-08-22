@@ -1068,7 +1068,7 @@ func TestPutNewGlobalConfigCheckerPreferences(t *testing.T) {
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.EqualValues(t, "bar", okRsp.Payload.Items[0].Name)
-	preferences, _ := dbmodel.GetCheckerPreferences(db, nil)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, 0)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
 	require.False(t, preferences[0].Enabled)
@@ -1123,7 +1123,7 @@ func TestPutUpdateGlobalConfigCheckerPreferences(t *testing.T) {
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 0, okRsp.Payload.Total)
 	require.Empty(t, okRsp.Payload.Items)
-	preferences, _ := dbmodel.GetCheckerPreferences(db, nil)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, 0)
 	require.Empty(t, preferences)
 }
 
@@ -1216,7 +1216,7 @@ func TestPutNewDaemonConfigCheckers(t *testing.T) {
 
 	// Assert
 	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp)
-	preferences, err := dbmodel.GetCheckerPreferences(db, &daemon.ID)
+	preferences, err := dbmodel.GetCheckerPreferences(db, daemon.ID)
 	require.NoError(t, err)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "foo", preferences[0].CheckerName)
@@ -1305,7 +1305,7 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
 	require.EqualValues(t, "foo", okRsp.Payload.Items[1].Name)
 	require.EqualValues(t, models.ConfigCheckerStateDisabled, okRsp.Payload.Items[1].State)
-	preferences, _ := dbmodel.GetCheckerPreferences(db, &daemon.ID)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, daemon.ID)
 	require.Len(t, preferences, 2)
 	require.EqualValues(t, "baz", preferences[0].CheckerName)
 	require.True(t, preferences[0].Enabled)
@@ -1340,6 +1340,6 @@ func TestPutDaemonConfigCheckerPreferencesForMissingDaemon(t *testing.T) {
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	daemonID := int64(1)
-	preferences, _ := dbmodel.GetCheckerPreferences(db, &daemonID)
+	preferences, _ := dbmodel.GetCheckerPreferences(db, daemonID)
 	require.Empty(t, preferences)
 }

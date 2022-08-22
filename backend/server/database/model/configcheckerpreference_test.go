@@ -129,7 +129,7 @@ func TestAddOrUpdateCheckerPreferences(t *testing.T) {
 	// Assert
 	require.NoError(t, err1)
 	require.NoError(t, err2)
-	preferences, _ = GetCheckerPreferences(db, &daemon.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon.ID)
 	require.Len(t, preferences, 2)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
 	require.False(t, preferences[0].Enabled)
@@ -156,7 +156,7 @@ func TestAddOrUpdateGlobalCheckerPreferences(t *testing.T) {
 	// Assert
 	require.NoError(t, err1)
 	require.NoError(t, err2)
-	preferences, _ = GetCheckerPreferences(db, nil)
+	preferences, _ = GetCheckerPreferences(db, 0)
 	require.Len(t, preferences, 2)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
 	require.False(t, preferences[0].Enabled)
@@ -197,10 +197,10 @@ func TestDeleteCheckerPreferences(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	preferences, _ = GetCheckerPreferences(db, &daemon1.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon1.ID)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "foo", preferences[0].CheckerName)
-	preferences, _ = GetCheckerPreferences(db, &daemon2.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon2.ID)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "baz", preferences[0].CheckerName)
 }
@@ -219,7 +219,7 @@ func TestDeleteNonExistingCheckerPreferences(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	preferences, _ := GetCheckerPreferences(db, nil)
+	preferences, _ := GetCheckerPreferences(db, 0)
 	require.Empty(t, preferences)
 }
 
@@ -256,13 +256,13 @@ func TestDeleteDaemonAndRelatedCheckerPreferences(t *testing.T) {
 	// Assert
 	// Delete the config checker preferences related to the first daemon.
 	require.NoError(t, err)
-	preferences, _ = GetCheckerPreferences(db, &daemon1.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon1.ID)
 	require.Empty(t, preferences)
 	// Keep left the config checker preferences related to the second daemon.
-	preferences, _ = GetCheckerPreferences(db, &daemon2.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon2.ID)
 	require.Len(t, preferences, 1)
 	// Keep left the global config checker preferences.
-	preferences, _ = GetCheckerPreferences(db, nil)
+	preferences, _ = GetCheckerPreferences(db, 0)
 	require.Len(t, preferences, 1)
 }
 
@@ -296,12 +296,12 @@ func TestModifyCheckerPreferences(t *testing.T) {
 
 	// Asserts
 	require.NoError(t, err)
-	preferences, _ = GetCheckerPreferences(db, &daemon1.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon1.ID)
 	require.Len(t, preferences, 3)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
 	require.EqualValues(t, "baz", preferences[1].CheckerName)
 	require.EqualValues(t, "boz", preferences[2].CheckerName)
-	preferences, _ = GetCheckerPreferences(db, &daemon2.ID)
+	preferences, _ = GetCheckerPreferences(db, daemon2.ID)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "biz", preferences[0].CheckerName)
 }
@@ -332,7 +332,7 @@ func TestGetGlobalCheckerPreferences(t *testing.T) {
 	})
 
 	// Act
-	preferences, err := GetCheckerPreferences(db, nil)
+	preferences, err := GetCheckerPreferences(db, 0)
 
 	// Assert
 	require.NoError(t, err)
@@ -356,7 +356,7 @@ func TestGetDaemonCheckerPreferences(t *testing.T) {
 	})
 
 	// Act
-	preferences, err := GetCheckerPreferences(db, &daemon1.ID)
+	preferences, err := GetCheckerPreferences(db, daemon1.ID)
 
 	// Assert
 	require.NoError(t, err)
