@@ -712,15 +712,13 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 // daemon and cannot be used to execute the checker function. If the daemon
 // is nil then it returns all registered checkers and global states.
 func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*CheckerMetadata, error) {
-	isDaemonFetch := daemon != nil
-
 	checkers := make(map[string]*checker)
 	selectors := make(map[string]DispatchGroupSelectors)
 
 	// Checks the available selectors for a given daemon. It's not used for
 	// the global metadata.
 	var availableSelectors map[DispatchGroupSelector]bool
-	if isDaemonFetch {
+	if daemon != nil {
 		groupSelectors := getDispatchGroupSelectors(daemon.Name)
 		if len(groupSelectors) == 0 {
 			return nil, pkgerrors.Errorf("No dispatch group selectors for daemon with name: %s", daemon.Name)
@@ -733,7 +731,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	}
 
 	for selector, group := range d.groups {
-		if isDaemonFetch {
+		if daemon != nil {
 			// Skips the unavailable selector.
 			if _, ok := availableSelectors[selector]; !ok {
 				continue
@@ -751,7 +749,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	}
 
 	daemonID := int64(0)
-	if isDaemonFetch {
+	if daemon != nil {
 		daemonID = daemon.ID
 	}
 
@@ -763,7 +761,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 		isEnabled := d.checkerController.isCheckerEnabledForDaemon(daemonID, checker.name)
 
 		var state CheckerState
-		if isDaemonFetch {
+		if daemon != nil {
 			state = d.checkerController.getStateForDaemon(daemonID, checker.name)
 		} else {
 			state = d.checkerController.getGlobalState(checker.name)
