@@ -281,6 +281,9 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 	return rsp
 }
 
+// Modifies the checker preferences for a given daemon. The changes are
+// persistent. It returns a list of actual config checker metadata for given
+// daemon.
 func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params services.PutDaemonConfigCheckerPreferencesParams) middleware.Responder {
 	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
@@ -367,6 +370,8 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 	return rsp
 }
 
+// Modifies the global checker preferences. The changes are persistent.
+// It returns a list of actual global config checker metadata.
 func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params services.PutGlobalConfigCheckerPreferencesParams) middleware.Responder {
 	var newOrUpdatedPreferences []*dbmodel.ConfigCheckerPreference
 	var deletedPreferences []*dbmodel.ConfigCheckerPreference
