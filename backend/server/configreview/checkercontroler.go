@@ -1,35 +1,15 @@
 package configreview
 
-import (
-	"fmt"
-
-	log "github.com/sirupsen/logrus"
-)
-
 // Represents a state of config checker managed by the config checker controller.
 // Checker for a given condition can be enabled or disabled or inherit the
 // state from the higher order rule.
-type CheckerState int
+type CheckerState string
 
 const (
-	CheckerStateInherit  CheckerState = iota
-	CheckerStateDisabled CheckerState = iota
-	CheckerStateEnabled  CheckerState = iota
+	CheckerStateInherit  CheckerState = "inherit"
+	CheckerStateDisabled CheckerState = "disabled"
+	CheckerStateEnabled  CheckerState = "enabled"
 )
-
-// String representation of the checker state.
-func (s CheckerState) String() string {
-	switch s {
-	case CheckerStateDisabled:
-		return "disabled"
-	case CheckerStateEnabled:
-		return "enabled"
-	case CheckerStateInherit:
-		return "inherit"
-	}
-	log.WithField("state", fmt.Sprintf("%d", s)).Error("Unknown checker state")
-	return "unknown"
-}
 
 // Represents a configuration checker controller. It manages the enable or
 // disable states of checkers for given conditions, e.g., only for a specific

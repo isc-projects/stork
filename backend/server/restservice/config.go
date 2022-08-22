@@ -201,7 +201,7 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 		checkers[i] = &models.ConfigChecker{
 			Name:      m.Name,
 			Selectors: selectors,
-			State:     m.State.String(),
+			State:     m.State,
 			Triggers:  triggers,
 		}
 	}

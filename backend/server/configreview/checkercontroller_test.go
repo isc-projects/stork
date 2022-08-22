@@ -140,8 +140,8 @@ func TestGetCheckerOwnStateForDaemon(t *testing.T) {
 
 // Test that the config checker state is serialized to string properly.
 func TestConfigCheckerStateToString(t *testing.T) {
-	require.EqualValues(t, "disabled", CheckerStateDisabled.String())
-	require.EqualValues(t, "enabled", CheckerStateEnabled.String())
-	require.EqualValues(t, "inherit", CheckerStateInherit.String())
-	require.EqualValues(t, "unknown", CheckerState(42).String())
+	require.EqualValues(t, "disabled", string(CheckerStateDisabled))
+	require.EqualValues(t, "enabled", string(CheckerStateEnabled))
+	require.EqualValues(t, "inherit", string(CheckerStateInherit))
+	require.EqualValues(t, "unknown", string(CheckerState("unknown")))
 }
