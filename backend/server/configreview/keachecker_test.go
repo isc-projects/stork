@@ -2396,9 +2396,9 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 	}
 }
 
-// Generates the subnets with that given part overlaps.
+// Generates subnets of which some have overlapping prefixes.
 // The overlapping factor must be in range from 0 (no overlaps) to 1 (100% overlaps).
-// Each overlapped subnet is contained by exactly one another subnet.
+// Each overlapped subnet is contained in exactly one other subnet.
 func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalSubnet) {
 	overlappingStep := int(float32(n) * overlappingFactor)
 
