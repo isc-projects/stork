@@ -197,7 +197,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 
 	// Inspired by https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go
 	httpServer.TLSConfig = &tls.Config{
-		// Causes servers to use Go's default ciphersuite preferences,
+		// Causes servers to use Go's default cipher suite preferences,
 		// which are tuned to avoid attacks. Does nothing on clients.
 		PreferServerCipherSuites: true,
 		// Only use curves which have assembly implementations
@@ -207,7 +207,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		NextProtos: []string{"h2", "http/1.1"},
 		// https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet#Rule_-_Only_Support_Strong_Protocols
 		MinVersion: tls.VersionTLS12,
-		// These ciphersuites support Forward Secrecy: https://en.wikipedia.org/wiki/Forward_secrecy
+		// These cipher suites support Forward Secrecy: https://en.wikipedia.org/wiki/Forward_secrecy
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -253,7 +253,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		if s.TLSCertificateKey == "" {
 			log.Fatalf("The required flag `--tls-key` was not specified")
 		}
-		// this happens with a wrong custom TLS configurator
+		// this happens with a wrong custom TLS configuration
 		log.Fatalf("No certificate was configured for TLS")
 	}
 

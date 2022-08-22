@@ -146,7 +146,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	require.True(t, requestReceived)
 }
 
-// Check if metricsMiddelware works and handles requests correctly.
+// Check if metricsMiddleware works and handles requests correctly.
 func TestMetricsMiddleware(t *testing.T) {
 	// Arrange
 	metrics := storktest.NewFakeMetricsCollector()
@@ -184,23 +184,23 @@ func TestMetricsMiddlewarePlaceholder(t *testing.T) {
 
 // Dumb response writer struct with functions to enable testing
 // loggingResponseWriter.
-type dumbRespWritter struct{}
+type dumbRespWriter struct{}
 
-func (r *dumbRespWritter) Write(b []byte) (int, error) {
+func (r *dumbRespWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (r *dumbRespWritter) WriteHeader(statusCode int) {
+func (r *dumbRespWriter) WriteHeader(statusCode int) {
 }
 
-func (r *dumbRespWritter) Header() http.Header {
+func (r *dumbRespWriter) Header() http.Header {
 	return map[string][]string{}
 }
 
 // Check if helpers to logging middleware works.
 func TestLoggingMiddlewareHelpers(t *testing.T) {
 	lrw := &loggingResponseWriter{
-		rw:           &dumbRespWritter{},
+		rw:           &dumbRespWriter{},
 		responseData: &responseData{},
 	}
 

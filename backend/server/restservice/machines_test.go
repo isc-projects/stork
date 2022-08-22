@@ -1817,7 +1817,7 @@ func TestServerToken(t *testing.T) {
 	defer teardown()
 	settings := RestAPISettings{}
 
-	// Configure the fake control and preare rest API.
+	// Configure the fake control and prepare rest API.
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
