@@ -892,9 +892,9 @@ func LoadAndValidateCheckerPreferences(db dbops.DBI, d Dispatcher) error {
 
 	for _, preference := range preferences {
 		// Convert the boolean to the checker state.
-		state := CheckerStateEnabled
-		if preference.Excluded {
-			state = CheckerStateDisabled
+		state := CheckerStateDisabled
+		if preference.Enabled {
+			state = CheckerStateEnabled
 		}
 
 		// Nil for the global preferences.

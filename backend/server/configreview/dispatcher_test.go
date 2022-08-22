@@ -847,10 +847,10 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 		// Unknown global config checker.
 		dbmodel.NewGlobalConfigCheckerPreference("ofo"),
 		// Override the global preference.
-		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "foo", false),
-		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "bar", true),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "foo", true),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "bar", false),
 		// Unknown daemon config checker.
-		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "oof", true),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, "oof", false),
 	}, nil)
 
 	// Act

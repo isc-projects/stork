@@ -10,11 +10,11 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-// Structure representing an exclusion or inclusion of a single config checker.
+// Structure representing an enabling or disabling of a single config checker.
 type ConfigCheckerPreference struct {
 	DaemonID    *int64
 	CheckerName string
-	Excluded    bool `pg:",use_zero"`
+	Enabled     bool `pg:",use_zero"`
 }
 
 // Check if the preference is a global - it isn't assigned to any specific
@@ -34,9 +34,9 @@ func (p *ConfigCheckerPreference) GetDaemonID() int64 {
 
 // Returns the string representation of the preference.
 func (p *ConfigCheckerPreference) String() string {
-	state := "included"
-	if p.Excluded {
-		state = "excluded"
+	state := "disabled"
+	if p.Enabled {
+		state = "enabled"
 	}
 
 	if p.IsGlobal() {
@@ -50,16 +50,16 @@ func NewGlobalConfigCheckerPreference(checkerName string) *ConfigCheckerPreferen
 	return &ConfigCheckerPreference{
 		DaemonID:    nil,
 		CheckerName: checkerName,
-		Excluded:    true,
+		Enabled:     false,
 	}
 }
 
 // Constructs the checker preference for a specific daemon.
-func NewDaemonConfigCheckerPreference(daemonID int64, checkerName string, excluded bool) *ConfigCheckerPreference {
+func NewDaemonConfigCheckerPreference(daemonID int64, checkerName string, enabled bool) *ConfigCheckerPreference {
 	return &ConfigCheckerPreference{
 		DaemonID:    &daemonID,
 		CheckerName: checkerName,
-		Excluded:    excluded,
+		Enabled:     enabled,
 	}
 }
 

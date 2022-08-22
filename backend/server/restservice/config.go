@@ -327,7 +327,7 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 		if state == configreview.CheckerStateInherit {
 			deletedPreferences = append(
 				deletedPreferences,
-				dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, change.Name, false),
+				dbmodel.NewDaemonConfigCheckerPreference(daemon.ID, change.Name, true),
 			)
 		} else {
 			newOrUpdatedPreferences = append(
@@ -335,7 +335,7 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 				dbmodel.NewDaemonConfigCheckerPreference(
 					daemon.ID,
 					change.Name,
-					state == configreview.CheckerStateDisabled,
+					state == configreview.CheckerStateEnabled,
 				),
 			)
 		}

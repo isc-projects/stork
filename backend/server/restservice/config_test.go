@@ -1071,7 +1071,7 @@ func TestPutNewGlobalConfigCheckerPreferences(t *testing.T) {
 	preferences, _ := dbmodel.GetCheckerPreferences(db, nil)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
-	require.True(t, preferences[0].Excluded)
+	require.False(t, preferences[0].Enabled)
 }
 
 // Test that the global config checkers are updated properly.
@@ -1220,7 +1220,7 @@ func TestPutNewDaemonConfigCheckers(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "foo", preferences[0].CheckerName)
-	require.False(t, preferences[0].Excluded)
+	require.True(t, preferences[0].Enabled)
 }
 
 // Test that the config checker preferences are updated properly.
@@ -1308,9 +1308,9 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 	preferences, _ := dbmodel.GetCheckerPreferences(db, &daemon.ID)
 	require.Len(t, preferences, 2)
 	require.EqualValues(t, "baz", preferences[0].CheckerName)
-	require.False(t, preferences[0].Excluded)
+	require.True(t, preferences[0].Enabled)
 	require.EqualValues(t, "foo", preferences[1].CheckerName)
-	require.True(t, preferences[1].Excluded)
+	require.False(t, preferences[1].Enabled)
 }
 
 // Test that updating the daemon config checkers for non-existing daemon causes

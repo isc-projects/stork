@@ -52,7 +52,7 @@ func (c checkerControllerImpl) getGlobalState(checkerName string) CheckerState {
 // Sets the global state for a given checker. The inherit state isn't accepted.
 func (c checkerControllerImpl) setGlobalState(checkerName string, state CheckerState) error {
 	if state == CheckerStateInherit {
-		return errors.Errorf("The global state cannot be inherit.")
+		return errors.Errorf("the global state cannot be inherit")
 	}
 
 	c.globalStates[checkerName] = state == CheckerStateEnabled

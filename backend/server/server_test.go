@@ -207,7 +207,7 @@ func TestBootstrap(t *testing.T) {
 	daemons, _ := dbmodel.AddApp(db, app)
 	_ = dbmodel.CommitCheckerPreferences(db, []*dbmodel.ConfigCheckerPreference{
 		dbmodel.NewGlobalConfigCheckerPreference("host_cmds_presence"),
-		dbmodel.NewDaemonConfigCheckerPreference(daemons[0].ID, "out_of_pool_reservation", true),
+		dbmodel.NewDaemonConfigCheckerPreference(daemons[0].ID, "out_of_pool_reservation", false),
 	}, nil)
 
 	// Initializes CMD.

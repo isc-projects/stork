@@ -9,7 +9,7 @@ func init() {
 				id BIGSERIAL PRIMARY KEY,
 				daemon_id BIGINT,
 				checker_name TEXT NOT NULL,
-				excluded BOOLEAN NOT NULL,
+				enabled BOOLEAN NOT NULL,
 				CONSTRAINT config_checker_preference_daemon_id_fk FOREIGN KEY (daemon_id)
 					REFERENCES daemon (id)
                     ON UPDATE CASCADE
