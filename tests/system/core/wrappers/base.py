@@ -4,7 +4,7 @@ from core.compose import DockerCompose
 class ComposeServiceWrapper:
     """
     Base class for all continuously running docker-compose services.
-    It wraps the docker-compose controler methods and low-level access to
+    It wraps the docker-compose controller methods and low-level access to
     the container filesystem.
     """
 
