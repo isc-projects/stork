@@ -156,7 +156,7 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	// Setup configuration review dispatcher.
 	ss.ReviewDispatcher = configreview.NewDispatcher(ss.DB)
 	configreview.RegisterDefaultCheckers(ss.ReviewDispatcher)
-	err = configreview.LoadAndValidateCheckerStates(ss.DB, ss.ReviewDispatcher)
+	err = configreview.LoadAndValidateCheckerPreferences(ss.DB, ss.ReviewDispatcher)
 	if err != nil {
 		return err
 	}

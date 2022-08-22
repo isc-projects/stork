@@ -881,7 +881,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 // It validates the preferences. If the preference cannot be loaded, it logs
 // the error message and skips this preference. Returns an error if any
 // database connection problem occurs.
-func LoadAndValidateCheckerStates(db dbops.DBI, d Dispatcher) error {
+func LoadAndValidateCheckerPreferences(db dbops.DBI, d Dispatcher) error {
 	preferences, err := dbmodel.GetAllCheckerPreferences(db)
 	if err != nil {
 		return err

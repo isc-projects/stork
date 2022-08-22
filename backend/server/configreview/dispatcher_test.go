@@ -854,7 +854,7 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 	}, nil)
 
 	// Act
-	err := LoadAndValidateCheckerStates(db, dispatcher)
+	err := LoadAndValidateCheckerPreferences(db, dispatcher)
 
 	// Assert
 	require.NoError(t, err)
