@@ -306,9 +306,16 @@ func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Cont
 			// Send the command to Kea.
 			var response keactrl.ResponseList
 			result, err := module.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
+			// There was no error in communication between the server and the agent but
+			// the agent could have issues with the Kea response.
 			if err == nil {
+				// Let's check if the agent found errors in communication with Kea.
+				// If not, the individual Kea instances could return error codes as
+				// a result of processing the commands.
 				if err = result.GetFirstError(); err == nil {
 					for _, r := range response {
+						// Let's check if the individual Kea servers returned error
+						// codes for the processed commands.
 						if err = keactrl.GetResponseError(r); err != nil {
 							break
 						}

@@ -300,7 +300,19 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 }
 
 // Common function that implements the POST calls to apply and commit a new
-// or updated reservation..
+// or updated reservation. The ctx parameter is the REST API context. The
+// transactionID is the identifier of the current configuration transaction
+// used by the function to recover the transaction context. The restHost is
+// the pointer to the host reservation specified by the user. It is converted
+// by this function to the database model. The applyFunc is the function of
+// of the Kea config module that applies the specified reservation. It is
+// one of the ApplyHostAdd or ApplyHostUpdate, depending on whether the
+// new host is created (via CreateHostSubmit) or updated (via UpdateHostSubmit).
+// The apply functions receive the transaction context and a pointer to the
+// host reservation. They return the updated context and error. This function
+// returns the HTTP error code if an error occurs or 0 when there is no error.
+// In addition it returns an error string to be included in the HTTP response
+// or an empty string if there is no error.
 func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactionID int64, restHost *models.Host, applyFunc func(context.Context, *dbmodel.Host) (context.Context, error)) (int, string) {
 	// Make sure that the host information is present.
 	if restHost == nil {
@@ -375,8 +387,10 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 
 // Common function that implements the DELETE calls to cancel adding new
 // or updating a host reservation. It removes the specified transaction
-// from the config manager, if the transaction exists. It returns an http
-// status code and message if it fails.
+// from the config manager, if the transaction exists. It  returns the
+// HTTP error code if an error occurs or 0 when there is no error.
+// In addition it returns an error string to be included in the HTTP response
+// or an empty string if there is no error.
 func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactionID int64) (int, string) {
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
