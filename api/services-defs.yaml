@@ -501,7 +501,9 @@
           type: string
       state:
         enum: *CONFIGCHECKERSTATE
-        
+      enabled:
+        type: boolean
+        readOnly: true
 
   ConfigCheckers:
     type: object

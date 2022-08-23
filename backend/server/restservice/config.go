@@ -203,6 +203,7 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 			Selectors: selectors,
 			State:     m.State,
 			Triggers:  triggers,
+			Enabled:   m.Enabled,
 		}
 	}
 
