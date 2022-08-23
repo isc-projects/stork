@@ -1,9 +1,68 @@
-<div class="container ml-2" *ngFor="let checker of checkers">
-    <h4>{{ checker.name }}</h4>
-    <span class="selector" *ngFor="let selector of checker.selectors">
-        {{ selector }}
-    </span>
-    <span class="trigger" *ngFor="let trigger of checker.triggers">
-        {{ trigger }}
-    </span>
-</div>
+<p-table [value]="checkers" responsiveLayout="scroll">
+    <ng-template pTemplate="caption">
+        <div class="p-d-flex p-mt-1 p-ai-center">
+            Checkers list
+            <app-help-tip title="Checkers list">
+                <p>Lorem ipsum</p>
+            </app-help-tip>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr>
+            <th>State</th>
+            <th>Name</th>
+            <th>Selectors</th>
+            <th>Triggers</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-checker>
+        <tr>
+            <td 
+                class="picker__state-cell"
+                [ngClass]="checker.state == 'enabled' ? 'picker__state-cell--enabled' : checker.state == 'disabled' ? 'picker__state-cell--disabled' : ''">
+                <ng-container
+                    [ngTemplateOutlet]="stateSelector"
+                    [ngTemplateOutletContext]="{checker: checker}">
+                </ng-container>
+            </td>
+            <td>{{ checker.name }}</td>
+            <td class="picker__chip-cell">
+                <div class="chips">
+                    <p-chip
+                        label="{{ selector }}"
+                        icon="{{ getSelectorIcon(selector) }}"
+                        *ngFor="let selector of checker.selectors"></p-chip>
+                </div>
+            </td>
+            <td class="picker__chip-cell">
+                <div class="chips">
+                    <p-chip
+                        label="{{ trigger }}"
+                        icon="{{ getTriggerIcon(trigger) }}"
+                        *ngFor="let trigger of checker.triggers"></p-chip>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<!-- State selector - tri-state checkbox -->
+<ng-template #stateSelector let-checker="checker">
+    <div class="form-check">
+        <input
+            class="form-check-input"
+            name="select-{{checker.name}}"
+            id="select-{{checker.name}}"
+            type="checkbox"
+            [checked]="checker.state == 'enabled'" 
+            [indeterminate]="checker.state == 'inherit'"
+            (change)="onCheckerPreferenceChange($event, checker)"/>
+        <label class="form-check-label" for="select-{{checker.name}}">
+            {{ checker.state }}
+            {{ checker.state == 'inherit' 
+                ? '(' + (checker.enabled
+                    ? 'enabled' : 'disabled') + ')'
+                : '' }}
+        </label>
+    </div>
+</ng-template>

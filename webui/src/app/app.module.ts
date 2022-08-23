@@ -25,6 +25,7 @@ import { MessagesModule } from 'primeng/messages'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { InplaceModule } from 'primeng/inplace'
+import { ChipModule } from 'primeng/chip'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { TooltipModule } from 'primeng/tooltip'
 import { PasswordModule } from 'primeng/password'
@@ -199,6 +200,7 @@ export function cfgFactory() {
         ConfirmDialogModule,
         InputTextareaModule,
         TreeModule,
+        ChipModule,
     ],
     providers: [
         {
