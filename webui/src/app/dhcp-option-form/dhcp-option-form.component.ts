@@ -15,6 +15,7 @@ import { MenuItem } from 'primeng/api'
 import { LinkedFormGroup } from '../forms/linked-form-group'
 import { DhcpOptionField, DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DhcpOptionsService } from '../dhcp-options.service'
+import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
@@ -123,10 +124,16 @@ export class DhcpOptionFormComponent implements OnInit {
      * Constructor.
      *
      * @param _formBuilder a form builder instance used in this component.
+     * @param _optionSetFormService a service providing functions to convert
+     * options from and to reactive forms.
      * @param optionsService a service exposing a list of standard DHCP options
-     *                       to configure.
+     * to configure.
      */
-    constructor(private _formBuilder: FormBuilder, public optionsService: DhcpOptionsService) {}
+    constructor(
+        private _formBuilder: FormBuilder,
+        private _optionSetFormService: DhcpOptionSetFormService,
+        public optionsService: DhcpOptionsService
+    ) {}
 
     /**
      * A component lifecycle hook called on component initialization.
@@ -279,116 +286,89 @@ export class DhcpOptionFormComponent implements OnInit {
     }
 
     /**
-     * Adds a single control to the array of the option fields.
+     * Adds a single control the array of the option fields.
      *
-     * It is called for option fields which come with a single control,
-     * e.g. a string option fields.
-     *
-     * @param fieldType DHCP option field type.
-     * @param control a control associated with the option field.
+     * @param optionField an option field form group.
      */
-    private _addSimpleField(fieldType: DhcpOptionFieldType, control: FormControl): void {
-        this.optionFields.push(new DhcpOptionFieldFormGroup(fieldType, { control: control }))
-    }
-
-    /**
-     * Adds multiple controls to the array of the option fields.
-     *
-     * it is called for the option fields which require multiple controls,
-     * e.g. delegated prefix option field requires an input for the prefix
-     * and another input for the prefix length.
-     *
-     * @param fieldType DHCP option field type.
-     * @param controls the controls associated with the option field.
-     */
-    private _addComplexField(fieldType: DhcpOptionFieldType, controls: { [key: string]: AbstractControl }): void {
-        this.optionFields.push(new DhcpOptionFieldFormGroup(fieldType, controls))
+    private _addField(optionField: DhcpOptionFieldFormGroup) {
+        this.optionFields.push(optionField)
     }
 
     /**
      * Adds a control for option field specified in hex-bytes format.
      */
     addHexBytesField(): void {
-        this._addSimpleField(this.FieldType.HexBytes, this._formBuilder.control('', StorkValidators.hexIdentifier()))
+        this._addField(this._optionSetFormService.createHexBytesField())
     }
 
     /**
      * Adds a control for option field specified as a string.
      */
     addStringField(): void {
-        this._addSimpleField(this.FieldType.String, this._formBuilder.control('', Validators.required))
+        this._addField(this._optionSetFormService.createStringField())
     }
 
     /**
      * Adds a control for option field specified as a boolean.
      */
     addBoolField(): void {
-        this._addSimpleField(this.FieldType.Bool, this._formBuilder.control(''))
+        this._addField(this._optionSetFormService.createBoolField())
     }
 
     /**
      * Adds a control for option field specified as uint8.
      */
     addUint8Field(): void {
-        this._addSimpleField(this.FieldType.Uint8, this._formBuilder.control(null, Validators.required))
+        this._addField(this._optionSetFormService.createUint8Field())
     }
 
     /**
      * Adds a control for option field specified as uint16.
      */
     addUint16Field(): void {
-        this._addSimpleField(this.FieldType.Uint16, this._formBuilder.control(null, Validators.required))
+        this._addField(this._optionSetFormService.createUint16Field())
     }
 
     /**
      * Adds a control for option field specified as uint32.
      */
     addUint32Field(): void {
-        this._addSimpleField(this.FieldType.Uint32, this._formBuilder.control(null, Validators.required))
+        this._addField(this._optionSetFormService.createUint32Field())
     }
 
     /**
      * Adds a control for option field containing an IPv4 address.
      */
     addIPv4AddressField(): void {
-        this._addSimpleField(this.FieldType.IPv4Address, this._formBuilder.control('', StorkValidators.ipv4()))
+        this._addField(this._optionSetFormService.createIPv4AddressField())
     }
 
     /**
      * Adds a control for option field containing an IPv6 address.
      */
     addIPv6AddressField(): void {
-        this._addSimpleField(this.FieldType.IPv6Address, this._formBuilder.control('', StorkValidators.ipv6()))
+        this._addField(this._optionSetFormService.createIPv6AddressField())
     }
 
     /**
      * Adds controls for option field containing an IPv6 prefix.
      */
     addIPv6PrefixField(): void {
-        this._addComplexField(this.FieldType.IPv6Prefix, {
-            prefix: this._formBuilder.control('', StorkValidators.ipv6()),
-            prefixLength: this._formBuilder.control('64', Validators.required),
-        })
+        this._addField(this._optionSetFormService.createIPv6PrefixField())
     }
 
     /**
      * Adds controls for option field containing a PSID.
      */
     addPsidField(): void {
-        this._addComplexField(this.FieldType.Psid, {
-            psid: this._formBuilder.control(null, Validators.required),
-            psidLength: this._formBuilder.control(null, Validators.required),
-        })
+        this._addField(this._optionSetFormService.createPsidField())
     }
 
     /**
      * Adds a control for option field containing an FQDN.
      */
     addFqdnField(): void {
-        this._addSimpleField(
-            this.FieldType.Fqdn,
-            this._formBuilder.control('', [Validators.required, StorkValidators.fullFqdn])
-        )
+        this._addField(this._optionSetFormService.createFqdnField())
     }
 
     /**

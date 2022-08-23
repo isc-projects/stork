@@ -58,6 +58,7 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 		localHost := models.LocalHost{
 			AppID:       dbLocalHost.Daemon.AppID,
 			AppName:     dbLocalHost.Daemon.App.Name,
+			DaemonID:    dbLocalHost.Daemon.ID,
 			DataSource:  dbLocalHost.DataSource.String(),
 			OptionsHash: dbLocalHost.DHCPOptionSetHash,
 		}

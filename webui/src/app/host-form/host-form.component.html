@@ -1,3 +1,9 @@
+<p-fieldset legend="Form Settings" styleClass="mt-4">
+    <div class="flex align-items-center">
+        <p-inputSwitch ngDefaultControl [(ngModel)]="splitFormMode" (onChange)="onSplitModeChange()"></p-inputSwitch>
+        <div class="flex ml-2">Toggle editing DHCP options individually for each server.</div>
+    </div>
+</p-fieldset>
 <form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup">
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="grid host-form-abs-width">
@@ -267,17 +273,34 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="DHCP options" styleClass="mt-4">
-        <div class="host-form-abs-width">
-            <div class="mb-3 mt-3">
-                <app-dhcp-option-set-form
-                    [v6]="form.dhcpv6"
-                    [formArray]="optionsArray"
-                    (optionAdd)="onOptionAdd()"
-                ></app-dhcp-option-set-form>
-            </div>
-        </div>
-    </p-fieldset>
+    <ng-container formArrayName="options">
+        <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index" styleClass="mt-4">
+            <p-fieldset *ngIf="i === 0 || splitFormMode" styleClass="mt-4">
+                <ng-template pTemplate="header">
+                    <span
+                        >DHCP Options
+                        <span *ngIf="splitFormMode && selectedDaemons.value?.length >= i + 1" class="font-normal"
+                            >&nbsp;/&nbsp;
+                            <a
+                                routerLink="/apps/{{ form.getDaemonById(selectedDaemons.value[i]).appType }}/{{
+                                    form.getDaemonById(selectedDaemons.value[i]).appId
+                                }}"
+                            >
+                                {{ form.getDaemonById(selectedDaemons.value[i]).label }}
+                            </a>
+                        </span>
+                    </span>
+                </ng-template>
+                <div class="mb-3 mt-3 host-form-abs-width" [formGroupName]="i">
+                    <app-dhcp-option-set-form
+                        [v6]="form.dhcpv6"
+                        [formArray]="optionsSet"
+                        (optionAdd)="onOptionAdd(i)"
+                    ></app-dhcp-option-set-form>
+                </div>
+            </p-fieldset>
+        </ng-container>
+    </ng-container>
 
     <div class="m-5">
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>

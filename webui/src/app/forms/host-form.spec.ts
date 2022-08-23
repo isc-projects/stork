@@ -13,6 +13,129 @@ describe('HostForm', () => {
         })
     })
 
+    it('Returns daemon by ID', () => {
+        form.allDaemons = [
+            {
+                id: 1,
+                appId: 1,
+                appType: 'kea',
+                name: 'dhcp4',
+                label: 'server1',
+            },
+            {
+                id: 2,
+                appId: 3,
+                appType: 'bind9',
+                name: 'named',
+                label: 'server2',
+            },
+        ]
+
+        let daemon = form.getDaemonById(1)
+        expect(daemon).toBeTruthy()
+        expect(daemon.id).toBe(1)
+        expect(daemon.appId).toBe(1)
+        expect(daemon.name).toBe('dhcp4')
+        expect(daemon.label).toBe('server1')
+
+        daemon = form.getDaemonById(2)
+        expect(daemon).toBeTruthy()
+        expect(daemon.id).toBe(2)
+        expect(daemon.appId).toBe(3)
+        expect(daemon.name).toBe('named')
+        expect(daemon.label).toBe('server2')
+
+        expect(form.getDaemonById(3)).toBeFalsy()
+    })
+
+    it('Correctly updates form for selected daemons', () => {
+        form.allDaemons = [
+            {
+                id: 1,
+                appId: 1,
+                appType: 'kea',
+                name: 'dhcp4',
+                label: 'server1',
+            },
+            {
+                id: 2,
+                appId: 1,
+                appType: 'kea',
+                name: 'dhcp6',
+                label: 'server2',
+            },
+            {
+                id: 3,
+                appId: 2,
+                appType: 'kea',
+                name: 'dhcp4',
+                label: 'server3',
+            },
+            {
+                id: 4,
+                appId: 2,
+                appType: 'kea',
+                name: 'dhcp6',
+                label: 'server4',
+            },
+        ]
+        // Select a DHCPv4 daemon. It is not a breaking change because
+        // DHCPv4 options are displayed by default.
+        let breakingChange = form.updateFormForSelectedDaemons([1])
+        expect(breakingChange).toBeFalse()
+        expect(form.filteredDaemons.length).toBe(2)
+        expect(form.filteredDaemons[0].id).toBe(1)
+        expect(form.filteredDaemons[1].id).toBe(3)
+
+        // Add another DHCPv4 daemon to our selection. It is not a breaking
+        // change because we were already in the DHCPv4 mode.
+        breakingChange = form.updateFormForSelectedDaemons([1, 3])
+        expect(breakingChange).toBeFalse()
+        expect(form.filteredDaemons.length).toBe(2)
+        expect(form.filteredDaemons[0].id).toBe(1)
+        expect(form.filteredDaemons[1].id).toBe(3)
+
+        // Reduce selected DHCPv4 daemons. It is not a breaking change.
+        breakingChange = form.updateFormForSelectedDaemons([3])
+        expect(breakingChange).toBeFalse()
+        expect(form.filteredDaemons.length).toBe(2)
+        expect(form.filteredDaemons[0].id).toBe(1)
+        expect(form.filteredDaemons[1].id).toBe(3)
+
+        // Unselect all daemons. It is a breaking change.
+        breakingChange = form.updateFormForSelectedDaemons([])
+        expect(breakingChange).toBeTrue()
+        expect(form.filteredDaemons.length).toBe(4)
+        expect(form.filteredDaemons[0].id).toBe(1)
+        expect(form.filteredDaemons[1].id).toBe(2)
+        expect(form.filteredDaemons[2].id).toBe(3)
+        expect(form.filteredDaemons[3].id).toBe(4)
+
+        // Select DHCPv6 daemon. It is a breaking change because by default
+        // we display DHCPv4 options.
+        breakingChange = form.updateFormForSelectedDaemons([2])
+        expect(breakingChange).toBeTrue()
+        expect(form.filteredDaemons.length).toBe(2)
+        expect(form.filteredDaemons[0].id).toBe(2)
+        expect(form.filteredDaemons[1].id).toBe(4)
+
+        // Select another DHCPv6 daemon. It is not a breaking change.
+        breakingChange = form.updateFormForSelectedDaemons([2])
+        expect(breakingChange).toBeFalse()
+        expect(form.filteredDaemons.length).toBe(2)
+        expect(form.filteredDaemons[0].id).toBe(2)
+        expect(form.filteredDaemons[1].id).toBe(4)
+
+        // Unselect DHCPv6 daemons.
+        breakingChange = form.updateFormForSelectedDaemons([])
+        expect(breakingChange).toBeTrue()
+        expect(form.filteredDaemons.length).toBe(4)
+        expect(form.filteredDaemons[0].id).toBe(1)
+        expect(form.filteredDaemons[1].id).toBe(2)
+        expect(form.filteredDaemons[2].id).toBe(3)
+        expect(form.filteredDaemons[3].id).toBe(4)
+    })
+
     it('Returns correct ipv4 selected subnet range', () => {
         form.filteredSubnets = [
             {
