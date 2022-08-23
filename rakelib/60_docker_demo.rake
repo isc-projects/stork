@@ -202,7 +202,7 @@ namespace :demo do
             if !ENV["CS_REPO_ACCESS_TOKEN"]
                 fail 'You need to provide the CloudSmith access token in CS_REPO_ACCESS_TOKEN environment variable.'
             end
-            docker_up_services("agent-kea-premium")
+            docker_up_services("agent-kea-premium-one", "agent-kea-premium-two")
         end
         
         desc 'Build and run container with Stork Agent and BIND 9
