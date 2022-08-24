@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
-import { ConfigChecker, ConfigCheckerPreference, Configuration } from '../backend'
+import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { ConfigChecker, ConfigCheckerPreference } from '../backend'
 
 @Component({
     selector: 'app-config-review-checkers-picker',
