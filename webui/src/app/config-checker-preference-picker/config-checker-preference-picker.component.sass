@@ -1,7 +1,10 @@
-.picker__state-cell
+.picker__state-cell>.form-check
     // Sets fixed width of the first column to avoid resizing columns when a
     // checker state is changed.
-    width: 12em
+    width: 6em
+    // Flex defines two-column layout. The first column contains the checkbox.
+    // It causes it to not move when the second column's content grows.
+    display: flex
     // Capitalizes the first letters of state and enabled status.
     text-transform: capitalize
 
@@ -12,6 +15,16 @@
 .picker__state-cell--disabled
     // Displays the danger color when the checker is disabled.
     background-color: var(--red-100)
+
+.picker__state-cell--inherit-enabled
+    .picker__state-inherit-status
+        // Sets (dark) green color for inherited status if the checker is enabled.
+        color: var(--green-700)
+
+.picker__state-cell--inherit-disabled
+    .picker__state-inherit-status
+        // Sets (dark) red color for inherited status if the checker is disabled.
+        color: var(--red-700)
 
 .picker__chip-cell .chips
     // The gaps properties are supported only for flex and grid modes.

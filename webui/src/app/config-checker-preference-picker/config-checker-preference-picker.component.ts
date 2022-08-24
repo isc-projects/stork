@@ -109,6 +109,30 @@ export class ConfigReviewCheckersPickerComponent {
         }
     }
 
+    getCheckerDescription(checkerName: string): string {
+        switch (checkerName) {
+            case "stat_cmds_presence":
+                return "The checker verifying if the stat_cmds hooks library is loaded."
+            case "host_cmds_presence":
+                return "The checker verifying if the host_cmds hooks library is "
+                    + "loaded when host backend is in use."
+            case "shared_network_dispensable":
+                return "The checker verifying if a shared network can be removed "
+                    + "because it is empty or contains only one subnet."
+            case "subnet_dispensable":
+                return "The checker verifying if a subnet can be removed because "
+                    + "it includes no pools and no reservations. The check is "
+                    + "skipped when the host_cmds hook library is loaded because "
+                    + "host reservations may be present in the database."
+            case "reservations_out_of_pool":
+                return "The checker suggesting the use of out-of-pool host "
+                    + "reservation mode when there are subnets with all host "
+                    + "reservations outside of the dynamic pools."
+            default:
+                return ""
+        }
+    }
+
     /**
      * Callback called on change the checker state. It emits an Angular event
      * with changed checker preference.

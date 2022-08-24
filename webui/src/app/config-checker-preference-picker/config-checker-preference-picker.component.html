@@ -11,6 +11,7 @@
         <tr>
             <th>State</th>
             <th>Name</th>
+            <th>Description</th>
             <th>Selectors</th>
             <th>Triggers</th>
         </tr>
@@ -24,13 +25,20 @@
                         ? 'picker__state-cell--enabled'
                         : checker.state === 'disabled'
                         ? 'picker__state-cell--disabled'
-                        : ''
+                        : checker.enabled
+                        ? 'picker__state-cell--inherit-enabled'
+                        : 'picker__state-cell--inherit-disabled'
                 "
             >
                 <ng-container [ngTemplateOutlet]="stateSelector" [ngTemplateOutletContext]="{ checker: checker }">
                 </ng-container>
             </td>
             <td>{{ checker.name }}</td>
+            <td>
+                <p>
+                    {{ getCheckerDescription(checker.name) }}
+                </p>
+            </td>
             <td class="picker__chip-cell">
                 <div class="chips">
                     <p-chip
@@ -67,7 +75,9 @@
         />
         <label class="form-check-label" for="select-{{ checker.name }}">
             {{ checker.state }}
-            {{ checker.state === 'inherit' ? '(' + (checker.enabled ? 'enabled' : 'disabled') + ')' : '' }}
+            <span class="picker__state-inherit-status" *ngIf="checker.state === 'inherit'">
+                ({{ checker.enabled ? 'enabled' : 'disabled' }})
+            </span>
         </label>
     </div>
 </ng-template>
