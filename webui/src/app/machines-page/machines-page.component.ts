@@ -8,7 +8,7 @@ import { Machine } from '../backend'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 import { ServerDataService } from '../server-data.service'
-import { copyToClipboard } from '../utils'
+import { copyToClipboard, getErrorMessage } from '../utils'
 
 interface AppType {
     name: string
@@ -200,10 +200,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                                 this.switchToTab(this.tabs.length - 1)
                             },
                             (err) => {
-                                let msg = err.statusText
-                                if (err.error && err.error.message) {
-                                    msg = err.error.message
-                                }
+                                const msg = getErrorMessage(err)
                                 this.msgSrv.add({
                                     severity: 'error',
                                     summary: 'Cannot get machine',
@@ -353,10 +350,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 }
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Error getting machine state',
@@ -396,10 +390,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.serverData.forceReloadAppsStats()
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: txt + 'authorization failed',
@@ -521,10 +512,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this._refreshMachineState(machineTab.machine)
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Machine address update failed',
@@ -550,10 +538,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.displayAgentInstallationInstruction = true
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get server token',
@@ -581,10 +566,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.serverToken = data.token
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot regenerate server token',

@@ -13,6 +13,7 @@ import {
     daemonStatusIconColor,
     daemonStatusIconTooltip,
     getGrafanaSubnetTooltip,
+    getErrorMessage,
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
@@ -121,10 +122,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 },
                 (err) => {
                     this.loaded = true
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
+                    let msg = getErrorMessage(err)
                     this.msgSrv.add({
                         severity: 'error',
                         summary: 'Cannot get applications statistics',
@@ -194,10 +192,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 this.overview = data
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get DHCP overview',

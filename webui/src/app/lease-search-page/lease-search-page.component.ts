@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
 import { LocaltimePipe } from '../localtime.pipe'
+import { getErrorMessage } from '../utils'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -184,10 +185,7 @@ export class LeaseSearchPageComponent implements OnInit {
                 },
                 (err) => {
                     // Fetching leases erred.
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
+                    const msg = getErrorMessage(err)
                     this.msgService.add({
                         severity: 'error',
                         summary: 'Error searching leases',

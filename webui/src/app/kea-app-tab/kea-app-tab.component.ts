@@ -15,6 +15,7 @@ import {
     daemonStatusIconName,
     daemonStatusIconColor,
     daemonStatusIconTooltip,
+    getErrorMessage,
 } from '../utils'
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http'
 
@@ -304,10 +305,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
             },
             (err) => {
                 // Renaming the app failed.
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Error renaming app',

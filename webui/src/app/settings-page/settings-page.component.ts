@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { MessageService } from 'primeng/api'
 
 import { SettingsService } from '../backend/api/api'
+import { getErrorMessage } from '../utils'
 
 @Component({
     selector: 'app-settings-page',
@@ -51,10 +52,7 @@ export class SettingsPageComponent implements OnInit {
                 this.settingsForm.patchValue(data)
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get settings',
@@ -80,10 +78,7 @@ export class SettingsPageComponent implements OnInit {
                 })
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get settings',

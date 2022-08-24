@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfirmationService, MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
-import { durationToString, epochToLocal } from '../utils'
+import { durationToString, epochToLocal, getErrorMessage } from '../utils'
 
 enum HostReservationUsage {
     Conflicted = 1,
@@ -188,10 +188,7 @@ export class HostTabComponent {
             (err) => {
                 // Finished searching the leases.
                 this._leasesSearchStatus.set(hostId, false)
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Error searching leases for the host',
@@ -451,13 +448,7 @@ export class HostTabComponent {
                 // Re-enable the delete button.
                 this.hostDeleted = false
                 // Issues with deleting the host.
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                if (!msg) {
-                    msg = `status: ${err.status}`
-                }
+                const msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Cannot delete the host',

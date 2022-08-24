@@ -26,7 +26,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { IPType } from '../iptype'
-import { stringToHex } from '../utils'
+import { getErrorMessage, stringToHex } from '../utils'
 
 /**
  * A form validator checking if a subnet has been selected for
@@ -392,13 +392,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this._initializeForm(data)
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                if (!msg) {
-                    msg = `status: ${err.status}`
-                }
+                const msg = getErrorMessage(err)
                 this._messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
@@ -1120,10 +1114,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this.formSubmit.emit(this.form)
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this._messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit new host',

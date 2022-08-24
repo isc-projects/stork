@@ -5,6 +5,7 @@ import { throwError, EMPTY, Observable } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { AuthService } from './auth.service'
+import { getErrorMessage } from './utils'
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -16,7 +17,7 @@ export class AuthInterceptor implements HttpInterceptor {
         // also be returned for the authorized user but not having access to the
         // particular view. Therefore, we need to look into the error message
         // field. The 'user unauthorized' means that the user is not logged in.
-        if (err.status === 401 || (err.error && err.error.message === 'user unauthorized')) {
+        if (err.status === 401 || (getErrorMessage(err) === 'user unauthorized')) {
             // User is apparently not logged in as it got Unauthorized error.
             // Remove the session information from the local storage and redirect
             // the user to the login page.

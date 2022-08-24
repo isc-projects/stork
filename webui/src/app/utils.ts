@@ -382,3 +382,26 @@ export function stringToHex(s: string, separator = ':'): string {
     }
     return output.join(separator)
 }
+
+// General purpose function to extract an error message from object.
+export function getErrorMessage(err: any): string {
+    if (err.error && err.error.message) {
+        return err.error.message
+    }
+    if (err.statusText) {
+        return err.statusText
+    }
+    if (err.status) {
+        return `status: ${err.status}`
+    }
+    if (err.message) {
+        return err.message
+    }
+    if (err.cause) {
+        return err.cause
+    }
+    if (err.name) {
+        return err.name
+    }
+    return err.toString()
+}

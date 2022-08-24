@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { Message } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
+import { getErrorMessage } from '../utils'
 
 /**
  * Component providing a simple log viewer for remote log files.
@@ -98,11 +99,7 @@ export class LogViewPageComponent implements OnInit {
             },
             (err) => {
                 this.loaded = true
-
-                let msg = err.StatusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.loadingError = msg
             }
         )

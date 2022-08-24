@@ -5,7 +5,7 @@ import { MenuItem, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { extractKeyValsAndPrepareQueryParams } from '../utils'
+import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
 import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
@@ -313,10 +313,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     this.createMenuItem(this.getHostLabel(data), `/dhcp/hosts/${id}`)
                 },
                 (err) => {
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
+                    const msg = getErrorMessage(err)
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Cannot get host reservation',
@@ -467,10 +464,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 this.totalHosts = data.total
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot get host reservations list',

@@ -8,6 +8,7 @@ import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
 import { UserAccount } from '../backend/model/models'
 import { Subscription } from 'rxjs'
+import { getErrorMessage } from '../utils'
 
 /**
  * An enum specifying tab types in the user view
@@ -322,10 +323,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.totalUsers = data.total
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Loading user accounts failed',
@@ -468,10 +466,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.closeActiveTab()
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Failed to create new user account',
@@ -510,11 +505,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.closeActiveTab()
             })
             .catch((err) => {
-                console.info(err)
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Failed to update user account',

@@ -4,7 +4,7 @@ import { BehaviorSubject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
-import { daemonStatusErred } from '../utils'
+import { daemonStatusErred, getErrorMessage } from '../utils'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 
@@ -186,10 +186,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                                 this.switchToTab(this.tabs.length - 1)
                             })
                             .catch((err) => {
-                                let msg = err.statusText
-                                if (err.error && err.error.message) {
-                                    msg = err.error.message
-                                }
+                                let msg = getErrorMessage(err)
                                 this.msgSrv.add({
                                     severity: 'error',
                                     summary: 'Cannot get app',
@@ -284,10 +281,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 }
             },
             (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Error getting app state',

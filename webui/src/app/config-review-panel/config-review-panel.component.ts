@@ -4,6 +4,7 @@ import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { of } from 'rxjs'
 import { concatMap, delay, map, retryWhen, take, tap } from 'rxjs/operators'
+import { getErrorMessage } from '../utils'
 
 /**
  * The component comprising a list of configuration review
@@ -241,10 +242,7 @@ export class ConfigReviewPanelComponent implements OnInit {
                 }
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                let msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Error getting review reports',
@@ -309,10 +307,7 @@ export class ConfigReviewPanelComponent implements OnInit {
                 this.refreshDaemonConfigReports(null, useRefreshDelay)
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Error running new review',

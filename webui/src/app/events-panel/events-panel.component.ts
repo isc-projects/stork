@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api'
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { Subscription } from 'rxjs'
+import { getErrorMessage } from '../utils'
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -165,10 +166,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                         }
                     },
                     (err) => {
-                        let msg = err.statusText
-                        if (err.error && err.error.message) {
-                            msg = err.error.message
-                        }
+                        const msg = getErrorMessage(err)
                         this.msgSrv.add({
                             severity: 'error',
                             summary: 'Loading user accounts failed',
@@ -193,10 +191,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                     }
                 },
                 (err) => {
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
+                    const msg = getErrorMessage(err)
                     this.msgSrv.add({
                         severity: 'error',
                         summary: 'Cannot get machines',
@@ -247,10 +242,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.events = data
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get events',

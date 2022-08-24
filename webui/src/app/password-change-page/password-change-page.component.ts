@@ -7,6 +7,7 @@ import { PasswordModule } from 'primeng/password'
 
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
+import { getErrorMessage } from '../utils'
 
 /**
  * This component allows the logged user to change the password.
@@ -71,11 +72,7 @@ export class PasswordChangePageComponent implements OnInit {
                 })
             },
             (err) => {
-                console.info(err)
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Updating user password failed',
