@@ -2,9 +2,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfigChecker, ConfigCheckerPreference } from '../backend'
 
 @Component({
-    selector: 'app-config-review-checkers-picker',
-    templateUrl: './config-review-checkers-picker.component.html',
-    styleUrls: ['./config-review-checkers-picker.component.sass'],
+    selector: 'app-config-checker-preference-picker',
+    templateUrl: './config-checker-preference-picker.component.html',
+    styleUrls: ['./config-checker-preference-picker.component.sass'],
 })
 export class ConfigReviewCheckersPickerComponent {
     /**
@@ -15,7 +15,7 @@ export class ConfigReviewCheckersPickerComponent {
     /**
      * Stream of the changed config checker preferences.
      */
-    @Output() onChangePreference = new EventEmitter<ConfigCheckerPreference>()
+    @Output() changePreference = new EventEmitter<ConfigCheckerPreference>()
 
     /**
      * Use tri-state checkboxes to specify the checker state
@@ -117,7 +117,7 @@ export class ConfigReviewCheckersPickerComponent {
      */
     onCheckerStateChange(event, checker: ConfigChecker) {
         checker.state = this._getNextState(checker.state)
-        this.onChangePreference.emit({
+        this.changePreference.emit({
             name: checker.name,
             state: checker.state,
         })

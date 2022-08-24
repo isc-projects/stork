@@ -20,9 +20,9 @@
             <td
                 class="picker__state-cell"
                 [ngClass]="
-                    checker.state == 'enabled'
+                    checker.state === 'enabled'
                         ? 'picker__state-cell--enabled'
-                        : checker.state == 'disabled'
+                        : checker.state === 'disabled'
                         ? 'picker__state-cell--disabled'
                         : ''
                 "
@@ -61,13 +61,13 @@
             name="select-{{ checker.name }}"
             id="select-{{ checker.name }}"
             type="checkbox"
-            [checked]="checker.state == 'enabled'"
-            [indeterminate]="checker.state == 'inherit'"
+            [checked]="checker.state === 'enabled'"
+            [indeterminate]="checker.state === 'inherit'"
             (change)="onCheckerStateChange($event, checker)"
         />
         <label class="form-check-label" for="select-{{ checker.name }}">
             {{ checker.state }}
-            {{ checker.state == 'inherit' ? '(' + (checker.enabled ? 'enabled' : 'disabled') + ')' : '' }}
+            {{ checker.state === 'inherit' ? '(' + (checker.enabled ? 'enabled' : 'disabled') + ')' : '' }}
         </label>
     </div>
 </ng-template>
