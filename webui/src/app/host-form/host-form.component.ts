@@ -427,13 +427,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this._initializeForm(data)
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                if (!msg) {
-                    msg = `status: ${err.status}`
-                }
+                const msg = getErrorMessage(err)
                 this._messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
