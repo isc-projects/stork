@@ -454,6 +454,17 @@ namespace :db do
     end
 end
 
+namespace :gen do
+    namespace :ui do
+        desc 'Generate Angular component
+        NAME - name of component - required'
+        task :component => [NPX] do
+            Dir.chdir("webui") do
+                sh NPX, "ng", "generate", "component", ENV["NAME"]
+            end
+        end
+    end
+end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the development'

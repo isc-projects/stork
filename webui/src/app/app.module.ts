@@ -96,7 +96,8 @@ import { IdentifierComponent } from './identifier/identifier.component'
 import { AppOverviewComponent } from './app-overview/app-overview.component'
 import { HostFormComponent } from './host-form/host-form.component'
 import { DhcpOptionFormComponent } from './dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component';
+import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater/config-checker-preference-updater.component'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
 
 export function cfgFactory() {
@@ -153,6 +154,7 @@ export function cfgFactory() {
         DhcpOptionFormComponent,
         DhcpOptionSetFormComponent,
         DhcpOptionSetViewComponent,
+        ConfigCheckerPreferenceUpdaterComponent,
     ],
     imports: [
         BrowserModule,

@@ -6,7 +6,7 @@ import { ConfigChecker, ConfigCheckerPreference } from '../backend'
     templateUrl: './config-checker-preference-picker.component.html',
     styleUrls: ['./config-checker-preference-picker.component.sass'],
 })
-export class ConfigReviewCheckersPickerComponent {
+export class ConfigCheckerPreferencePicker {
     /**
      * List of the config checkers.
      */
