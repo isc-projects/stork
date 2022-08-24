@@ -922,7 +922,7 @@ func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
 	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
 	require.EqualValues(t, models.ConfigCheckerStateEnabled, apiMetadata.State)
-	require.True(t, apiMetadata.Enabled)
+	require.True(t, *apiMetadata.Enabled)
 }
 
 // Test that the config checker state is properly converted from the REST API enum.
