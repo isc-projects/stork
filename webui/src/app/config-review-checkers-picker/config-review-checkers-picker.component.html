@@ -17,12 +17,17 @@
     </ng-template>
     <ng-template pTemplate="body" let-checker>
         <tr>
-            <td 
+            <td
                 class="picker__state-cell"
-                [ngClass]="checker.state == 'enabled' ? 'picker__state-cell--enabled' : checker.state == 'disabled' ? 'picker__state-cell--disabled' : ''">
-                <ng-container
-                    [ngTemplateOutlet]="stateSelector"
-                    [ngTemplateOutletContext]="{checker: checker}">
+                [ngClass]="
+                    checker.state == 'enabled'
+                        ? 'picker__state-cell--enabled'
+                        : checker.state == 'disabled'
+                        ? 'picker__state-cell--disabled'
+                        : ''
+                "
+            >
+                <ng-container [ngTemplateOutlet]="stateSelector" [ngTemplateOutletContext]="{ checker: checker }">
                 </ng-container>
             </td>
             <td>{{ checker.name }}</td>
@@ -31,7 +36,8 @@
                     <p-chip
                         label="{{ selector }}"
                         icon="{{ getSelectorIcon(selector) }}"
-                        *ngFor="let selector of checker.selectors"></p-chip>
+                        *ngFor="let selector of checker.selectors"
+                    ></p-chip>
                 </div>
             </td>
             <td class="picker__chip-cell">
@@ -39,7 +45,8 @@
                     <p-chip
                         label="{{ trigger }}"
                         icon="{{ getTriggerIcon(trigger) }}"
-                        *ngFor="let trigger of checker.triggers"></p-chip>
+                        *ngFor="let trigger of checker.triggers"
+                    ></p-chip>
                 </div>
             </td>
         </tr>
@@ -51,18 +58,16 @@
     <div class="form-check">
         <input
             class="form-check-input"
-            name="select-{{checker.name}}"
-            id="select-{{checker.name}}"
+            name="select-{{ checker.name }}"
+            id="select-{{ checker.name }}"
             type="checkbox"
-            [checked]="checker.state == 'enabled'" 
+            [checked]="checker.state == 'enabled'"
             [indeterminate]="checker.state == 'inherit'"
-            (change)="onCheckerStateChange($event, checker)"/>
-        <label class="form-check-label" for="select-{{checker.name}}">
+            (change)="onCheckerStateChange($event, checker)"
+        />
+        <label class="form-check-label" for="select-{{ checker.name }}">
             {{ checker.state }}
-            {{ checker.state == 'inherit' 
-                ? '(' + (checker.enabled
-                    ? 'enabled' : 'disabled') + ')'
-                : '' }}
+            {{ checker.state == 'inherit' ? '(' + (checker.enabled ? 'enabled' : 'disabled') + ')' : '' }}
         </label>
     </div>
 </ng-template>

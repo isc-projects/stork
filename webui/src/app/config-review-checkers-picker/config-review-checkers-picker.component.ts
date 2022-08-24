@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
-import { ConfigChecker, ConfigCheckerPreference, Configuration } from "../backend"
+import { ConfigChecker, ConfigCheckerPreference, Configuration } from '../backend'
 
 @Component({
     selector: 'app-config-review-checkers-picker',
@@ -7,7 +7,6 @@ import { ConfigChecker, ConfigCheckerPreference, Configuration } from "../backen
     styleUrls: ['./config-review-checkers-picker.component.sass'],
 })
 export class ConfigReviewCheckersPickerComponent {
-
     /**
      * List of the config checkers.
      */
@@ -51,14 +50,14 @@ export class ConfigReviewCheckersPickerComponent {
      */
     getTriggerIcon(trigger: string): string {
         switch (trigger) {
-            case "internal":
-                return "fa fa-eye-slash"
-            case "manual":
-                return "fa fa-hand-paper"
-            case "config change":
-                return "fa fa-tools"
-            case "host reservation change":
-                return "fa fa-registered"
+            case 'internal':
+                return 'fa fa-eye-slash'
+            case 'manual':
+                return 'fa fa-hand-paper'
+            case 'config change':
+                return 'fa fa-tools'
+            case 'host reservation change':
+                return 'fa fa-registered'
             default:
                 return null
         }
@@ -66,12 +65,12 @@ export class ConfigReviewCheckersPickerComponent {
 
     /**
      * Returns a fancy icon for the checker selector. If the selector is unknown
-     * then returns no icon. 
+     * then returns no icon.
      * We don't have specialized icons for our daemons, and FontAwesome doesn't
      * contain any icons related to DHCP or DNS. But the chips with icons look
      * better than those without. The dices aren't the first thing you associate
      * with the Stork-supported daemons, but it has a little sense:
-     * - Kea DHCPv4 is a die with a single 4-dots-side visible  
+     * - Kea DHCPv4 is a die with a single 4-dots-side visible
      * - Kea DHCPv6 is a die with a single 6-dots-side visible
      * - Kea D2 daemon is a die with a single 2-dots-side visible
      * - General DHCP daemon is two dice with a single side visible
@@ -89,22 +88,22 @@ export class ConfigReviewCheckersPickerComponent {
      */
     getSelectorIcon(selector: string): string {
         switch (selector) {
-            case "each-daemon":
-                return "fa fa-dice-d20"
-            case "kea-daemon":
-                return "fa fa-dice-d6"
-            case "kea-ca-daemon":
-                return "fa fa-cube"
-            case "kea-dhcp-daemon":
-                return "fa fa-dice"
-            case "kea-dhcp-v4-daemon":
-                return "fa fa-dice-four"
-            case "kea-dhcp-v6-daemon":
-                return "fa fa-dice-six"
-            case "kea-d2-daemon":
-                return "fa fa-dice-two"
-            case "bind9-daemon":
-                return "fa fa-dot-circle"
+            case 'each-daemon':
+                return 'fa fa-dice-d20'
+            case 'kea-daemon':
+                return 'fa fa-dice-d6'
+            case 'kea-ca-daemon':
+                return 'fa fa-cube'
+            case 'kea-dhcp-daemon':
+                return 'fa fa-dice'
+            case 'kea-dhcp-v4-daemon':
+                return 'fa fa-dice-four'
+            case 'kea-dhcp-v6-daemon':
+                return 'fa fa-dice-six'
+            case 'kea-d2-daemon':
+                return 'fa fa-dice-two'
+            case 'bind9-daemon':
+                return 'fa fa-dot-circle'
             default:
                 return null
         }
@@ -120,7 +119,7 @@ export class ConfigReviewCheckersPickerComponent {
         checker.state = this._getNextState(checker.state)
         this.onChangePreference.emit({
             name: checker.name,
-            state: checker.state
+            state: checker.state,
         })
     }
 }
