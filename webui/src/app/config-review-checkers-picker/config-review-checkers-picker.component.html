@@ -56,7 +56,7 @@
             type="checkbox"
             [checked]="checker.state == 'enabled'" 
             [indeterminate]="checker.state == 'inherit'"
-            (change)="onCheckerPreferenceChange($event, checker)"/>
+            (change)="onCheckerStateChange($event, checker)"/>
         <label class="form-check-label" for="select-{{checker.name}}">
             {{ checker.state }}
             {{ checker.state == 'inherit' 
