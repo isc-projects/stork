@@ -14,6 +14,13 @@ import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ServicesService } from '../backend'
 import { LocaltimePipe } from '../localtime.pipe'
+import { DialogModule } from 'primeng/dialog'
+import { TableModule } from 'primeng/table'
+import { ChipModule } from 'primeng/chip'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
+import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -32,8 +39,18 @@ describe('ConfigReviewPanelComponent', () => {
                 PaginatorModule,
                 PanelModule,
                 TagModule,
+                TableModule,
+                ChipModule,
+                OverlayPanelModule
             ],
-            declarations: [ConfigReviewPanelComponent, EventTextComponent, LocaltimePipe],
+            declarations: [
+                ConfigReviewPanelComponent,
+                ConfigCheckerPreferenceUpdaterComponent,
+                ConfigCheckerPreferencePickerComponent,
+                EventTextComponent,
+                LocaltimePipe,
+                HelpTipComponent
+            ],
         }).compileComponents()
     })
 

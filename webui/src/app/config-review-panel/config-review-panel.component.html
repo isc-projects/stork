@@ -1,33 +1,43 @@
 <p-panel>
     <ng-template pTemplate="header">
-        <div style="width: 100%; display: flex; justify-content: space-between">
+        <div class="review-header" #selectCheckersPanelTarget>
             <div id="review-summary-div" *ngIf="review" class="font-normal">
                 <span class="font-bold"> {{ total || 0 }}</span> report{{ total !== 1 ? 's' : '' }} generated at
                 <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
-            <button
-                id="review-button"
-                pButton
-                *ngIf="!refreshFailed; else refreshFailedElse"
-                type="button"
-                label="Run review"
-                class="p-button-sm"
-                icon="fas fa-tasks"
-                [loading]="busy"
-                (click)="runReview()"
-            ></button>
-            <ng-template #refreshFailedElse>
+            <div id="review-buttons">
                 <button
-                    id="refresh-button"
                     pButton
                     type="button"
-                    label="Refresh reports"
+                    label="Checkers"
                     class="p-button-sm"
-                    icon="pi pi-refresh"
-                    [loading]="busy"
-                    (click)="refreshDaemonConfigReports(null)"
+                    icon="fa fa-cog"
+                    (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
                 ></button>
-            </ng-template>
+                <button
+                    id="review-button"
+                    pButton
+                    *ngIf="!refreshFailed; else refreshFailedElse"
+                    type="button"
+                    label="Run review"
+                    class="p-button-sm"
+                    icon="fas fa-tasks"
+                    [loading]="busy"
+                    (click)="runReview()"
+                ></button>
+                <ng-template #refreshFailedElse>
+                    <button
+                        id="refresh-button"
+                        pButton
+                        type="button"
+                        label="Refresh reports"
+                        class="p-button-sm"
+                        icon="pi pi-refresh"
+                        [loading]="busy"
+                        (click)="refreshDaemonConfigReports(null)"
+                    ></button>
+                </ng-template>
+            </div>
         </div>
     </ng-template>
     <ng-container *ngIf="reports && reports.length > 0; else elseBlock">
@@ -60,3 +70,10 @@
         </span>
     </ng-template>
 </p-panel>
+<p-overlayPanel #selectCheckersPanel>
+    <ng-template pTemplate>
+        <app-config-checker-preference-updater
+            [daemonID]="daemonId"
+        ></app-config-checker-preference-updater>
+    </ng-template>
+</p-overlayPanel>
