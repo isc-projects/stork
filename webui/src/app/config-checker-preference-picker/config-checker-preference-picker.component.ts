@@ -1,6 +1,15 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfigChecker, ConfigCheckerPreference } from '../backend'
 
+/**
+ * Presentational component to display the config checker metadata
+ * and update the checker preferences.
+ * It uses the table to list the config checkers. It presents the two- or
+ * tri-state checkbox to specify the checker state. The checker state
+ * changes are immediately passed to the event emitter. The trigger and
+ * selector list are presented as chips with the fancy icons. The presented
+ * metadata are extended with the description.
+ */
 @Component({
     selector: 'app-config-checker-preference-picker',
     templateUrl: './config-checker-preference-picker.component.html',
@@ -109,6 +118,12 @@ export class ConfigCheckerPreferencePickerComponent {
         }
     }
 
+    /**
+     * Returns the description for a given checker. If the checker is unknown,
+     * returns an empty string.
+     * @param checkerName Configuration checker name
+     * @returns Description of the checker
+     */
     getCheckerDescription(checkerName: string): string {
         switch (checkerName) {
             case "stat_cmds_presence":
