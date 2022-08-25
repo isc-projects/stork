@@ -463,6 +463,13 @@ namespace :gen do
                 sh NPX, "ng", "generate", "component", ENV["NAME"]
             end
         end
+
+        desc 'Regenerate package.json.lock'
+        task :package_lock => [NPM] do
+            Dir.chdir("webui") do
+                sh NPM, "install", "--package-lock-only"
+            end
+        end
     end
 end
 
