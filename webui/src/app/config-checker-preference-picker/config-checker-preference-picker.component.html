@@ -59,6 +59,16 @@
             </td>
         </tr>
     </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr class="picker__empty" >
+            <td colspan="100%">
+                <i *ngIf="!isSet" class="fa fa-spinner fa-spin"></i>
+                <span *ngIf="isSet">
+                    There are no checkers.
+                </span>
+            </td>
+        </tr>
+    </ng-template>
 </p-table>
 
 <!-- State selector - tri-state checkbox -->

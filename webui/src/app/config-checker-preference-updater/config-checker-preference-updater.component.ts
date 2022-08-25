@@ -41,7 +41,7 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
     /**
      * List of the checkers passed to sub-component. It will be changing in place.
      */
-    checkers: ConfigChecker[] = []
+    checkers: ConfigChecker[] = null
     /**
      * The deep copy of the list passed to the sub-component.
      * It's used to detect if any modifications were provided by a user.

@@ -161,4 +161,11 @@ export class ConfigCheckerPreferencePickerComponent {
             state: checker.state,
         })
     }
+
+    /**
+     * Returns true if the checkers are already set.
+     */
+    get isSet(): boolean {
+        return this.checkers != null
+    }
 }
