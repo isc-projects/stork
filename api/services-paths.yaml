@@ -586,7 +586,7 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /daemons/config-checkers:
+  /daemons/global/config-checkers:
     get:
       summary: Get global config checker preferences.
       description: >-
