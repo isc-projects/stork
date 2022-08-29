@@ -1,12 +1,14 @@
-.picker__state-cell>.form-check
+.picker__state-cell
     // Sets fixed width of the first column to avoid resizing columns when a
     // checker state is changed.
-    width: 6em
-    // Flex defines two-column layout. The first column contains the checkbox.
-    // It causes it to not move when the second column's content grows.
-    display: flex
-    // Capitalizes the first letters of state and enabled status.
-    text-transform: capitalize
+    width: 8rem
+
+    .form-check
+        // Flex defines two-column layout. The first column contains the checkbox.
+        // It causes it to not move when the second column's content grows.
+        display: flex
+        // Capitalizes the first letters of state and enabled status.
+        text-transform: capitalize
 
 .picker__state-cell--enabled
     // Displays the success color when the checker is enabled.
@@ -43,13 +45,19 @@
         // Centers the empty placeholder or loading icon
         text-align: center
 
-// Hides the detailed columns on minimal layout.
 .picker--minimal
     .picker__description-column
+        // Hides the description column on minimal layout.
         display: none
 
     .picker__selector-column
+        // Hides the selector column on minimal layout.
         display: none
 
     .picker__trigger-column
+        // Hides the trigger column on minimal layout.
         display: none
+
+    .picker__state-cell
+        // Prevent to wrap the label on minimal layout.
+        width: 12rem
