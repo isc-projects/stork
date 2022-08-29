@@ -50,9 +50,9 @@
             <td
                 class="picker__state-cell"
                 [ngClass]="
-                    checker.state === 'enabled'
+                    getActualState(checker) === 'enabled'
                         ? 'picker__state-cell--enabled'
-                        : checker.state === 'disabled'
+                        : getActualState(checker) === 'disabled'
                         ? 'picker__state-cell--disabled'
                         : checker.enabled
                         ? 'picker__state-cell--inherit-enabled'
@@ -93,6 +93,19 @@
             <td colspan="100%">There are no checkers.</td>
         </tr>
     </ng-template>
+    <ng-template pTemplate="summary">
+        <div class="picker__buttons">
+            <button pButton
+                label="Submit"
+                [disabled]="!hasChanges"
+                (click)="onSubmit()"></button>
+            <button pButton
+                label="Reset"
+                [disabled]="!hasChanges"
+                class="p-button-secondary p-button-outlined"
+                (click)="onReset()"></button>
+        </div>
+    </ng-template>
 </p-table>
 
 <!-- State selector - tri-state checkbox -->
@@ -103,13 +116,13 @@
             name="select-{{ checker.name }}"
             id="select-{{ checker.name }}"
             type="checkbox"
-            [checked]="checker.state === 'enabled'"
-            [indeterminate]="checker.state === 'inherit'"
-            (change)="onCheckerStateChange($event, checker)"
+            [checked]="getActualState(checker) === 'enabled'"
+            [indeterminate]="getActualState(checker) === 'inherit'"
+            (change)="onCheckerStateChanged(checker)"
         />
         <label class="form-check-label" for="select-{{ checker.name }}">
-            {{ checker.state }}
-            <span class="picker__state-inherit-status" *ngIf="checker.state === 'inherit'">
+            {{ getActualState(checker) }}
+            <span class="picker__state-inherit-status" *ngIf="getActualState(checker) === 'inherit'">
                 ({{ checker.enabled ? 'enabled' : 'disabled' }})
             </span>
         </label>

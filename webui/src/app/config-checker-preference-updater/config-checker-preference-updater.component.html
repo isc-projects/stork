@@ -1,6 +1,7 @@
 <app-config-checker-preference-picker
     [checkers]="checkers"
-    (changePreference)="onChangePreference($event)"
+    (changePreferences)="onChangePreferences($event)"
     [allowInheritState]="daemonID != null"
     [minimal]="minimal"
+    [loading]="loading"
 ></app-config-checker-preference-picker>

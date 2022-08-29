@@ -47,16 +47,11 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      * List of the checkers passed to sub-component. It will be changing in place.
      */
     checkers: ConfigChecker[] = null
-    /**
-     * The deep copy of the list passed to the sub-component.
-     * It's used to detect if any modifications were provided by a user.
-     */
-    originalCheckers: ConfigChecker[] = []
 
     /**
-     * Collects the preference changes received from sub-component.
+     * Indicate that the data aren't ready yet.
      */
-    preferences = new Subject<ConfigCheckerPreference>()
+    loading: boolean = true
 
     /**
      * Constructs the component.
@@ -95,73 +90,8 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
                 )
                 .subscribe((data) => {
                     // Sets the checker metadata to the component properties.
-                    this._setCheckers(data)
-                })
-        )
-
-        // Create multicast observable.
-        const preferenceShared = this.preferences.pipe(share())
-        this.subscriptions.add(
-            preferenceShared
-                .pipe(
-                    // It buffers the preferences until no change is provided at a
-                    // particular time.
-                    buffer(preferenceShared.pipe(debounceTime(this.waitMilliseconds))),
-                    // Reduces the preferences to keep only last change for each checker.
-                    map((preferences) => {
-                        let reducedPreferences = preferences
-                            .reduceRight((acc, preference) => {
-                                for (let existingPreference of acc) {
-                                    if (existingPreference.name === preference.name) {
-                                        return acc
-                                    }
-                                }
-                                acc.push(preference)
-                                return acc
-                            }, [] as ConfigCheckerPreference[])
-                            // Filter out non-changed preferences.
-                            .filter((preference) => {
-                                for (let checker of this.originalCheckers) {
-                                    if (preference.name == checker.name) {
-                                        return preference.state !== checker.state
-                                    }
-                                }
-                                return true
-                            })
-
-                        // Creates the preferences object.
-                        return {
-                            items: reducedPreferences,
-                            total: reducedPreferences.length,
-                        } as ConfigCheckerPreferences
-                    }),
-                    // Filter out empty objects.
-                    filter((preferences) => preferences.total !== 0)
-                )
-                // Send changes to API
-                .subscribe((preferences) => {
-                    (this.daemonID == null
-                        ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
-                        : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
-                    )
-                        .toPromise()
-                        .then((data) => {
-                            this._setCheckers(data.items)
-                            this.messageService.add({
-                                severity: 'success',
-                                summary: 'Configuration checker preferences updated',
-                                detail: 'Updating succeeded',
-                            })
-                        })
-                        .catch((err) => {
-                            // Restore the checkers
-                            this._setCheckers(this.originalCheckers)
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Cannot update configuration checker preferences',
-                                detail: getErrorMessage(err),
-                            })
-                        })
+                    this.checkers = data
+                    this.loading = false
                 })
         )
     }
@@ -174,22 +104,42 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
     }
 
     /**
-     * Callback called by the sub-component when user changed the checker state.
-     * It passes the provided checker preference to the observable stream.
-     * @param preference Config checker preference provided by a user.
+     * Callback called by the sub-component when user changed and submit
+     * the checker states.
+     * @param preference Config checker preferences provided by a user.
      */
-    onChangePreference(preference: ConfigCheckerPreference) {
-        this.preferences.next(preference)
-    }
+    onChangePreferences(preferenceList: ConfigCheckerPreference[]) {
+        this.loading = true
 
-    /**
-     * Helper function that deep copies the checkers and assign the checkers
-     * and copies to the properties.
-     * @param checkers Config checkers received from API.
-     */
-    private _setCheckers(checkers: ConfigChecker[]) {
-        this.checkers = checkers
-        // Make a deep copy using the old-school way.
-        this.originalCheckers = JSON.parse(JSON.stringify(checkers))
+        const preferences: ConfigCheckerPreferences = {
+            items: preferenceList,
+            total: preferenceList.length
+        }
+
+        const putRequest = this.daemonID == null
+            ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
+            : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
+        
+        putRequest
+            .toPromise()
+            .then((data) => {
+                this.checkers = data.items
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Configuration checker preferences updated',
+                    detail: 'Updating succeeded',
+                })
+            })
+            .catch((err) => {
+                // Restore the checkers
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot update configuration checker preferences',
+                    detail: getErrorMessage(err),
+                })
+            })
+            .then(() => {
+                this.loading = false
+            })
     }
 }

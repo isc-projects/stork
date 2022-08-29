@@ -19,12 +19,12 @@ export class ConfigCheckerPreferencePickerComponent {
     /**
      * List of the config checkers.
      */
-    @Input() checkers: ConfigChecker[]
+    @Input() checkers: ConfigChecker[] = null
 
     /**
      * Stream of the changed config checker preferences.
      */
-    @Output() changePreference = new EventEmitter<ConfigCheckerPreference>()
+    @Output() changePreferences = new EventEmitter<ConfigCheckerPreference[]>()
 
     /**
      * Use tri-state checkboxes to specify the checker state
@@ -35,6 +35,30 @@ export class ConfigCheckerPreferencePickerComponent {
      * If true, displays only the checker name and state.
      */
     @Input() minimal: boolean = false
+
+    _loading: boolean = true
+
+    /**
+     * Sets the loading state and resets the changes.
+     */
+    @Input() set loading(isLoading: boolean) {
+        this._loading = isLoading
+        if (!isLoading) {
+            this.changes = {}
+        }
+    }
+
+    /**
+     * It's true, the data aren't ready yet.
+     */
+    get loading(): boolean {
+        return this._loading
+    }
+
+    /**
+     * List of provided checker state changes.
+     */
+    private changes: Record<string, ConfigChecker.StateEnum> = {}
 
     /**
      * It cycles the checker states. The order is enabled - disabled - inherit.
@@ -161,23 +185,57 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * Callback called on change the checker state. It emits an Angular event
-     * with changed checker preference.
-     * @param event Generic change input event
-     * @param checker Affected checker
+     * Returns the actual checker state. If no changes were provided, returns
+     * an original state.
+     * @param checker Configuration checker
+     * @returns Checker state
      */
-    onCheckerStateChange(event, checker: ConfigChecker) {
-        checker.state = this._getNextState(checker.state)
-        this.changePreference.emit({
-            name: checker.name,
-            state: checker.state,
-        })
+    getActualState(checker: ConfigChecker): ConfigChecker.StateEnum {
+        return this.changes[checker.name] ?? checker.state
+    }
+    
+    /**
+     * Returns true is any significant change was provided.
+     */
+    get hasChanges(): boolean {
+        return Object.keys(this.changes).length !== 0
     }
 
     /**
-     * Returns true if the checkers aren't loaded yet.
+     * Callback called on change the checker state.
+     * @param event Generic change input event
+     * @param checker Affected checker
      */
-    get loading(): boolean {
-        return this.checkers == null
+    onCheckerStateChanged(checker: ConfigChecker) {
+        const originalState = checker.state
+        const currentState = this.getActualState(checker)
+        const nextState = this._getNextState(currentState)
+
+        if (nextState === originalState) {
+            delete this.changes[checker.name]
+        } else {
+            this.changes[checker.name] = nextState
+        }
+    }
+
+    /**
+     * Callback called on submit the checker state changes. It emits an Angular
+     * event with changed checker preference.
+     */
+    onSubmit() {
+        this.loading = true
+        this.changePreferences.emit(
+            Object.keys(this.changes).map(k => ({
+                name: k,
+                state: this.changes[k]
+            }))
+        )
+    }
+
+    /**
+     * Callback called on reset the checker state changes.
+     */
+    onReset() {
+        this.changes = {}
     }
 }
