@@ -307,7 +307,7 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 	var newOrUpdatedPreferences []*dbmodel.ConfigCheckerPreference
 	var deletedPreferences []*dbmodel.ConfigCheckerPreference
 	for _, change := range params.Changes.Items {
-		apiState := change.State.(models.ConfigCheckerState)
+		apiState := models.ConfigCheckerState(change.State.(string))
 		state, ok := convertConfigCheckerStateFromRestAPI(apiState)
 		if !ok {
 			log.Errorf("Received unknown checker state %s", apiState)
@@ -379,7 +379,7 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 	var deletedPreferences []*dbmodel.ConfigCheckerPreference
 
 	for _, change := range params.Changes.Items {
-		apiState := change.State.(models.ConfigCheckerState)
+		apiState := models.ConfigCheckerState(change.State.(string))
 		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
 			err := r.ReviewDispatcher.SetCheckerState(nil, change.Name, state)
 			if err != nil {

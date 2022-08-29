@@ -921,7 +921,7 @@ func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	require.Contains(t, apiMetadata.Triggers, "config change")
 	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
 	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
-	require.EqualValues(t, models.ConfigCheckerStateEnabled, apiMetadata.State)
+	require.EqualValues(t, "enabled", apiMetadata.State)
 	require.True(t, *apiMetadata.Enabled)
 }
 
@@ -1048,15 +1048,15 @@ func TestPutNewGlobalConfigCheckerPreferences(t *testing.T) {
 			Items: []*models.ConfigCheckerPreference{
 				{
 					Name:  "foo",
-					State: models.ConfigCheckerStateEnabled,
+					State: "enabled",
 				},
 				{
 					Name:  "bar",
-					State: models.ConfigCheckerStateDisabled,
+					State: "disabled",
 				},
 				{
 					Name:  "baz",
-					State: models.ConfigCheckerStateInherit,
+					State: "inherit",
 				},
 			},
 		},
@@ -1091,11 +1091,11 @@ func TestPutUpdateGlobalConfigCheckerPreferences(t *testing.T) {
 			Items: []*models.ConfigCheckerPreference{
 				{
 					Name:  "foo",
-					State: models.ConfigCheckerStateDisabled,
+					State: "disabled",
 				},
 				{
 					Name:  "bar",
-					State: models.ConfigCheckerStateDisabled,
+					State: "disabled",
 				},
 			},
 		},
@@ -1107,11 +1107,11 @@ func TestPutUpdateGlobalConfigCheckerPreferences(t *testing.T) {
 			Items: []*models.ConfigCheckerPreference{
 				{
 					Name:  "foo",
-					State: models.ConfigCheckerStateInherit,
+					State: "inherit",
 				},
 				{
 					Name:  "bar",
-					State: models.ConfigCheckerStateEnabled,
+					State: "enabled",
 				},
 			},
 		},
@@ -1160,7 +1160,7 @@ func TestPutDaemonConfigCheckerPreferencesAPIResponse(t *testing.T) {
 			Total: 1,
 			Items: []*models.ConfigCheckerPreference{
 				{
-					Name: "foo", State: models.ConfigCheckerStateEnabled,
+					Name: "foo", State: "enabled",
 				},
 			},
 		},
@@ -1173,7 +1173,7 @@ func TestPutDaemonConfigCheckerPreferencesAPIResponse(t *testing.T) {
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.EqualValues(t, "foo", okRsp.Payload.Items[0].Name)
-	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
+	require.EqualValues(t, "enabled", okRsp.Payload.Items[0].State)
 }
 
 // Test that new daemon config checker preferences are inserted properly.
@@ -1208,7 +1208,7 @@ func TestPutNewDaemonConfigCheckers(t *testing.T) {
 			Total: 1,
 			Items: []*models.ConfigCheckerPreference{
 				{
-					Name: "foo", State: models.ConfigCheckerStateEnabled,
+					Name: "foo", State: "enabled",
 				},
 			},
 		},
@@ -1259,11 +1259,11 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 				Items: []*models.ConfigCheckerPreference{
 					{
 						Name:  "foo",
-						State: models.ConfigCheckerStateEnabled,
+						State: "enabled",
 					},
 					{
 						Name:  "bar",
-						State: models.ConfigCheckerStateDisabled,
+						State: "disabled",
 					},
 				},
 			},
@@ -1280,17 +1280,17 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 					// Update the existing preference.
 					{
 						Name:  "foo",
-						State: models.ConfigCheckerStateDisabled,
+						State: "disabled",
 					},
 					// Delete the existing preference.
 					{
 						Name:  "bar",
-						State: models.ConfigCheckerStateInherit,
+						State: "inherit",
 					},
 					// Add new preference.
 					{
 						Name:  "baz",
-						State: models.ConfigCheckerStateEnabled,
+						State: "enabled",
 					},
 				},
 			},
@@ -1303,9 +1303,9 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 	okRsp := rsp2.(*services.PutDaemonConfigCheckerPreferencesOK)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.EqualValues(t, "baz", okRsp.Payload.Items[0].Name)
-	require.EqualValues(t, models.ConfigCheckerStateEnabled, okRsp.Payload.Items[0].State)
+	require.EqualValues(t, "enabled", okRsp.Payload.Items[0].State)
 	require.EqualValues(t, "foo", okRsp.Payload.Items[1].Name)
-	require.EqualValues(t, models.ConfigCheckerStateDisabled, okRsp.Payload.Items[1].State)
+	require.EqualValues(t, "disabled", okRsp.Payload.Items[1].State)
 	preferences, _ := dbmodel.GetCheckerPreferences(db, daemon.ID)
 	require.Len(t, preferences, 2)
 	require.EqualValues(t, "baz", preferences[0].CheckerName)
