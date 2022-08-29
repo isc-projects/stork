@@ -1,9 +1,9 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { MessageService } from 'primeng/api';
-import { of, Subject, Subscription } from 'rxjs';
-import { buffer, catchError, debounce, debounceTime, filter, map, share } from 'rxjs/operators';
-import { ConfigChecker, ConfigCheckerPreference, ConfigCheckerPreferences, ServicesService } from '../backend';
-import { getErrorMessage } from '../utils';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { MessageService } from 'primeng/api'
+import { of, Subject, Subscription } from 'rxjs'
+import { buffer, catchError, debounce, debounceTime, filter, map, share } from 'rxjs/operators'
+import { ConfigChecker, ConfigCheckerPreference, ConfigCheckerPreferences, ServicesService } from '../backend'
+import { getErrorMessage } from '../utils'
 
 /**
  * Smart component to display the config checker metadata and update the config
@@ -12,12 +12,12 @@ import { getErrorMessage } from '../utils';
  * sub-component and processes it. It buffers the changes until the user stops
  * providing them. Next, it analyzes the buffer to detect if any actual change
  * occurred. If yes, it shares the data with the API. The buffer is processed
- * when a specific amount of time passed from the last change. 
+ * when a specific amount of time passed from the last change.
  */
 @Component({
     selector: 'app-config-checker-preference-updater',
     templateUrl: './config-checker-preference-updater.component.html',
-    styleUrls: ['./config-checker-preference-updater.component.sass']
+    styleUrls: ['./config-checker-preference-updater.component.sass'],
 })
 export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestroy {
     /**
@@ -63,7 +63,7 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      * @param servicesApi Used to exchange data with API.
      * @param messageService Used to generate success and error messages
      */
-    constructor(private servicesApi: ServicesService, private messageService: MessageService) { }
+    constructor(private servicesApi: ServicesService, private messageService: MessageService) {}
 
     /**
      * Creates two subscriptions.
@@ -73,88 +73,95 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      */
     ngOnInit(): void {
         // Fetches config checker metadata from API.
-        this.subscriptions.add((this.daemonID == null
-            ? this.servicesApi.getGlobalConfigCheckers()
-            : this.servicesApi.getDaemonConfigCheckers(this.daemonID)
-        ).pipe(
-            // Extracts the content.
-            map(data => data.items),
-            // Handles any connection error. Generates an error message and
-            // returns an empty list.
-            catchError(err => {
-                this.messageService.add({
-                    severity: "error",
-                    summary: "Cannot get configuration checkers",
-                    detail: getErrorMessage(err)
+        this.subscriptions.add(
+            (this.daemonID == null
+                ? this.servicesApi.getGlobalConfigCheckers()
+                : this.servicesApi.getDaemonConfigCheckers(this.daemonID)
+            )
+                .pipe(
+                    // Extracts the content.
+                    map((data) => data.items),
+                    // Handles any connection error. Generates an error message and
+                    // returns an empty list.
+                    catchError((err) => {
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Cannot get configuration checkers',
+                            detail: getErrorMessage(err),
+                        })
+                        return of([])
+                    })
+                    // Receives the data.
+                )
+                .subscribe((data) => {
+                    // Sets the checker metadata to the component properties.
+                    this._setCheckers(data)
                 })
-                return of([])
-            })
-        // Receives the data.
-        ).subscribe((data) => {
-            // Sets the checker metadata to the component properties.
-            this._setCheckers(data)
-        }))
+        )
 
         // Create multicast observable.
         const preferenceShared = this.preferences.pipe(share())
-        this.subscriptions.add(preferenceShared.pipe(
-            // It buffers the preferences until no change is provided at a
-            // particular time.
-            buffer(
-                preferenceShared.pipe(debounceTime(this.waitMilliseconds))
-            ),
-            // Reduces the preferences to keep only last change for each checker.
-            map(preferences => {
-                let reducedPreferences = preferences.reduceRight((acc, preference) => {
-                    for (let existingPreference of acc) {
-                        if (existingPreference.name === preference.name) {
-                            return acc
-                        }
-                    }
-                    acc.push(preference)
-                    return acc
-                }, [] as ConfigCheckerPreference[])
-                // Filter out non-changed preferences.
-                .filter(preference => {
-                    for (let checker of this.originalCheckers) {
-                        if (preference.name == checker.name) {
-                            return preference.state !== checker.state
-                        }
-                    }
-                    return true
-                })
+        this.subscriptions.add(
+            preferenceShared
+                .pipe(
+                    // It buffers the preferences until no change is provided at a
+                    // particular time.
+                    buffer(preferenceShared.pipe(debounceTime(this.waitMilliseconds))),
+                    // Reduces the preferences to keep only last change for each checker.
+                    map((preferences) => {
+                        let reducedPreferences = preferences
+                            .reduceRight((acc, preference) => {
+                                for (let existingPreference of acc) {
+                                    if (existingPreference.name === preference.name) {
+                                        return acc
+                                    }
+                                }
+                                acc.push(preference)
+                                return acc
+                            }, [] as ConfigCheckerPreference[])
+                            // Filter out non-changed preferences.
+                            .filter((preference) => {
+                                for (let checker of this.originalCheckers) {
+                                    if (preference.name == checker.name) {
+                                        return preference.state !== checker.state
+                                    }
+                                }
+                                return true
+                            })
 
-                // Creates the preferences object.
-                return {
-                    items: reducedPreferences,
-                    total: reducedPreferences.length
-                } as ConfigCheckerPreferences
-            }),
-            // Filter out empty objects.
-            filter(preferences => preferences.total !== 0)
+                        // Creates the preferences object.
+                        return {
+                            items: reducedPreferences,
+                            total: reducedPreferences.length,
+                        } as ConfigCheckerPreferences
+                    }),
+                    // Filter out empty objects.
+                    filter((preferences) => preferences.total !== 0)
+                )
+                // Send changes to API
+                .subscribe((preferences) => {
+                    ;(this.daemonID == null
+                        ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
+                        : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
+                    )
+                        .toPromise()
+                        .then((data) => {
+                            this._setCheckers(data.items)
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Configuration checker preferences updated',
+                                detail: 'Updating succeeded',
+                            })
+                        })
+                        .catch((err) => {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Cannot update configuration checker preferences',
+                                detail: getErrorMessage(err),
+                            })
+                        })
+                })
         )
-        // Send changes to API
-        .subscribe(preferences => {
-            (this.daemonID == null
-                ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
-                : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences))
-                .toPromise()
-                .then(data => {
-                    this._setCheckers(data.items)
-                    this.messageService.add({
-                        severity: "success",
-                        summary: "Configuration checker preferences updated",
-                        detail: "Updating succeeded"
-                    })
-                })
-                .catch(err => {
-                    this.messageService.add({
-                        severity: "error",
-                        summary: "Cannot update configuration checker preferences",
-                        detail: getErrorMessage(err)
-                    })
-                })
-        }))
     }
 
     /**

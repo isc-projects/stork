@@ -1,16 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core'
 
 @Component({
-  selector: 'app-config-checker-preference-page',
-  templateUrl: './config-checker-preference-page.component.html',
-  styleUrls: ['./config-checker-preference-page.component.sass']
+    selector: 'app-config-checker-preference-page',
+    templateUrl: './config-checker-preference-page.component.html',
+    styleUrls: ['./config-checker-preference-page.component.sass'],
 })
 export class ConfigCheckerPreferencePageComponent implements OnInit {
-  breadcrumbs = [{ label: 'Configuration' }, { label: 'Checkers' }]
+    breadcrumbs = [{ label: 'Configuration' }, { label: 'Checkers' }]
 
-  constructor() { }
+    constructor() {}
 
-  ngOnInit(): void {
-  }
-
+    ngOnInit(): void {}
 }

@@ -1,25 +1,24 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
-import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component';
+import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 
 describe('ConfigCheckerPreferencePageComponent', () => {
-  let component: ConfigCheckerPreferencePageComponent;
-  let fixture: ComponentFixture<ConfigCheckerPreferencePageComponent>;
+    let component: ConfigCheckerPreferencePageComponent
+    let fixture: ComponentFixture<ConfigCheckerPreferencePageComponent>
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ ConfigCheckerPreferencePageComponent ]
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [ConfigCheckerPreferencePageComponent],
+        }).compileComponents()
     })
-    .compileComponents();
-  });
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(ConfigCheckerPreferencePageComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+    beforeEach(() => {
+        fixture = TestBed.createComponent(ConfigCheckerPreferencePageComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})

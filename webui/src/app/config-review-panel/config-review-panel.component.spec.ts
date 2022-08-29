@@ -41,7 +41,7 @@ describe('ConfigReviewPanelComponent', () => {
                 TagModule,
                 TableModule,
                 ChipModule,
-                OverlayPanelModule
+                OverlayPanelModule,
             ],
             declarations: [
                 ConfigReviewPanelComponent,
@@ -49,7 +49,7 @@ describe('ConfigReviewPanelComponent', () => {
                 ConfigCheckerPreferencePickerComponent,
                 EventTextComponent,
                 LocaltimePipe,
-                HelpTipComponent
+                HelpTipComponent,
             ],
         }).compileComponents()
     })

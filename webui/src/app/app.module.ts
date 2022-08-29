@@ -96,9 +96,9 @@ import { IdentifierComponent } from './identifier/identifier.component'
 import { AppOverviewComponent } from './app-overview/app-overview.component'
 import { HostFormComponent } from './host-form/host-form.component'
 import { DhcpOptionFormComponent } from './dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component';
+import { DhcpOptionSetFormComponent } from './dhcp-option-set-form/dhcp-option-set-form.component'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater/config-checker-preference-updater.component'
-import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker/config-checker-preference-picker.component';
+import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker/config-checker-preference-picker.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
 
