@@ -15,3 +15,13 @@
   order: 1
   display: flex
   column-gap: 0.5rem
+
+.checker-panel-wrapper
+  // Workaround for problem with displaying the overview panel out of the
+  // viewport. The panel's content is dynamically loaded; initially, it only
+  // contains a loading icon. The panel width is set based on this initial
+  // content. After loading the checkers, the overview panel is extended on
+  // the right side. It causes the panel may be displayed out of the viewport.
+  // The initial width is fixed to a value near to expected target value to
+  // prevent this situation.
+  min-width: 20rem

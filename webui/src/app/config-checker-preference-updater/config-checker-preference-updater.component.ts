@@ -39,6 +39,11 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
     @Input() waitMilliseconds: number = 5000
 
     /**
+     * If true, displays only the checker name and state.
+     */
+    @Input() minimal: boolean = false
+
+    /**
      * List of the checkers passed to sub-component. It will be changing in place.
      */
     checkers: ConfigChecker[] = null

@@ -7,6 +7,7 @@
             </div>
             <div id="review-buttons">
                 <button
+                    #selectCheckersPanelTarget
                     pButton
                     type="button"
                     label="Checkers"
@@ -72,8 +73,11 @@
 </p-panel>
 <p-overlayPanel #selectCheckersPanel>
     <ng-template pTemplate>
-        <app-config-checker-preference-updater
-            [daemonID]="daemonId"
-        ></app-config-checker-preference-updater>
+        <div class="checker-panel-wrapper">
+            <app-config-checker-preference-updater
+                [daemonID]="daemonId"
+                [minimal]="true"
+            ></app-config-checker-preference-updater>
+        </div>
     </ng-template>
 </p-overlayPanel>

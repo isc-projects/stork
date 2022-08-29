@@ -38,7 +38,18 @@
     // Sets the vertical gaps between clips.
     row-gap: 0.5rem
 
-.picker__empty>td
-    // Centers the empty placeholder or loading icon
-    text-align: center
+.picker__empty
+    td
+        // Centers the empty placeholder or loading icon
+        text-align: center
 
+// Hides the detailed columns on minimal layout.
+.picker--minimal
+    .picker__description-column
+        display: none
+
+    .picker__selector-column
+        display: none
+
+    .picker__trigger-column
+        display: none

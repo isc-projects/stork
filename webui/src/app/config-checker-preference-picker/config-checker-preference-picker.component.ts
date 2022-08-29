@@ -32,6 +32,11 @@ export class ConfigCheckerPreferencePickerComponent {
     @Input() allowInheritState: boolean = false
 
     /**
+     * If true, displays only the checker name and state.
+     */
+    @Input() minimal: boolean = false
+
+    /**
      * It cycles the checker states. The order is enabled - disabled - inherit.
      * It skips the inherit state if the component is configured to disallow it.
      * @param state Checker state
@@ -163,9 +168,9 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * Returns true if the checkers are already set.
+     * Returns true if the checkers aren't loaded yet.
      */
-    get isSet(): boolean {
-        return this.checkers != null
+    get loading(): boolean {
+        return this.checkers == null
     }
 }

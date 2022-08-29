@@ -1,4 +1,4 @@
-<p-table [value]="checkers" responsiveLayout="scroll">
+<p-table [value]="checkers" [loading]="loading" responsiveLayout="scroll" ngClass="{{ minimal ? 'picker--minimal' : '' }}">
     <ng-template pTemplate="caption">
         <div class="p-d-flex p-mt-1 p-ai-center">
             Checkers list
@@ -11,9 +11,9 @@
         <tr>
             <th>State</th>
             <th>Name</th>
-            <th>Description</th>
-            <th>Selectors</th>
-            <th>Triggers</th>
+            <th class="picker__description-column">Description</th>
+            <th class="picker__selector-column">Selectors</th>
+            <th class="picker__trigger-column">Triggers</th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-checker>
@@ -34,12 +34,12 @@
                 </ng-container>
             </td>
             <td>{{ checker.name }}</td>
-            <td>
+            <td class="picker__description-column">
                 <p>
                     {{ getCheckerDescription(checker.name) }}
                 </p>
             </td>
-            <td class="picker__chip-cell">
+            <td class="picker__chip-cell picker__selector-column">
                 <div class="chips">
                     <p-chip
                         label="{{ selector }}"
@@ -48,7 +48,7 @@
                     ></p-chip>
                 </div>
             </td>
-            <td class="picker__chip-cell">
+            <td class="picker__chip-cell picker__trigger-column">
                 <div class="chips">
                     <p-chip
                         label="{{ trigger }}"
@@ -62,10 +62,7 @@
     <ng-template pTemplate="emptymessage">
         <tr class="picker__empty" >
             <td colspan="100%">
-                <i *ngIf="!isSet" class="fa fa-spinner fa-spin"></i>
-                <span *ngIf="isSet">
-                    There are no checkers.
-                </span>
+                There are no checkers.
             </td>
         </tr>
     </ng-template>
