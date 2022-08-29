@@ -19,6 +19,7 @@ import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.componen
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
+import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 
 const routes: Routes = [
     {
@@ -142,6 +143,11 @@ const routes: Routes = [
         path: 'logs/:id',
         component: LogViewPageComponent,
         canActivate: [AuthGuard],
+    },
+    {
+        path: 'review-checkers',
+        component: ConfigCheckerPreferencePageComponent,
+        canActivate: [AuthGuard]
     },
 
     // otherwise redirect to home

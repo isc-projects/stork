@@ -146,6 +146,12 @@ export class AppComponent implements OnInit {
                         routerLink: '/users',
                     },
                     {
+                        label: 'Review checkers',
+                        id: 'checkers',
+                        icon: 'fa fa-tasks',
+                        routerLink: '/review-checkers'
+                    },
+                    {
                         label: 'Settings',
                         id: 'settings',
                         icon: 'fa fa-cog',

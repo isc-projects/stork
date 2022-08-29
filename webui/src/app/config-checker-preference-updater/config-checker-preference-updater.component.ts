@@ -140,7 +140,7 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
                 )
                 // Send changes to API
                 .subscribe((preferences) => {
-                    ;(this.daemonID == null
+                    (this.daemonID == null
                         ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
                         : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
                     )
@@ -154,6 +154,8 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
                             })
                         })
                         .catch((err) => {
+                            // Restore the checkers
+                            this._setCheckers(this.originalCheckers)
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Cannot update configuration checker preferences',

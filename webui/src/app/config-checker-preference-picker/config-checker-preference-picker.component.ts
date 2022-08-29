@@ -70,7 +70,7 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'fa fa-hand-paper'
             case 'config change':
                 return 'fa fa-tools'
-            case 'host reservation change':
+            case 'host reservations change':
                 return 'fa fa-registered'
             default:
                 return null
