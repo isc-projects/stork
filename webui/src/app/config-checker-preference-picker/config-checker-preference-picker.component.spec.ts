@@ -83,4 +83,8 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should handle the reset button', () => {
         fail("not implemented")
     })
+
+    it('should present the help button', () => {
+        fail("not implemented")
+    })
 })

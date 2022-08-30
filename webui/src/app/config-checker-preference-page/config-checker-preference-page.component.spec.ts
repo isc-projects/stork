@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { By } from '@angular/platform-browser'
+import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 
@@ -22,11 +24,12 @@ describe('ConfigCheckerPreferencePageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should have a general help button', () => {
-        fail('not implemented')
-    })
-
     it('should display the config review checkers panel with the full layout', () => {
-        fail('not implemented')
+        const element = fixture.debugElement.query(By.directive(ConfigCheckerPreferencePickerComponent))
+        expect(element).toBeDefined()
+        const picker = element.componentInstance as ConfigCheckerPreferencePickerComponent
+
+        expect(picker.allowInheritState).toBeFalse()
+        expect(picker.minimal).toBeFalse()
     })
 })
