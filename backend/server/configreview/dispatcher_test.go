@@ -771,21 +771,21 @@ func TestGetCheckersMetadata(t *testing.T) {
 	require.NoError(t, errKea)
 
 	require.EqualValues(t, "bar", metadataKea[0].Name)
-	require.False(t, metadataKea[0].Enabled)
+	require.True(t, metadataKea[0].GlobalEnabled)
 	require.Contains(t, metadataKea[0].Selectors, KeaDHCPDaemon)
 	require.EqualValues(t, CheckerStateDisabled, metadataKea[0].State)
 	require.Contains(t, metadataKea[0].Triggers, ManualRun)
 	require.Contains(t, metadataKea[0].Triggers, DBHostsModified)
 
 	require.EqualValues(t, "baz", metadataKea[1].Name)
-	require.False(t, metadataKea[1].Enabled)
+	require.False(t, metadataKea[1].GlobalEnabled)
 	require.Contains(t, metadataKea[1].Selectors, KeaDHCPDaemon)
 	require.EqualValues(t, CheckerStateInherit, metadataKea[1].State)
 	require.Contains(t, metadataKea[1].Triggers, ConfigModified)
 	require.Contains(t, metadataKea[1].Triggers, DBHostsModified)
 
 	require.EqualValues(t, "foo", metadataKea[2].Name)
-	require.True(t, metadataKea[2].Enabled)
+	require.True(t, metadataKea[2].GlobalEnabled)
 	require.Contains(t, metadataKea[2].Selectors, KeaDHCPDaemon)
 	require.EqualValues(t, CheckerStateInherit, metadataKea[2].State)
 	require.Contains(t, metadataKea[2].Triggers, ManualRun)
@@ -795,7 +795,7 @@ func TestGetCheckersMetadata(t *testing.T) {
 	require.NoError(t, errBind9)
 
 	require.EqualValues(t, "boz", metadataBind9[0].Name)
-	require.True(t, metadataBind9[0].Enabled)
+	require.True(t, metadataBind9[0].GlobalEnabled)
 	require.Contains(t, metadataBind9[0].Selectors, Bind9Daemon)
 	require.EqualValues(t, CheckerStateInherit, metadataBind9[0].State)
 	require.Contains(t, metadataBind9[0].Triggers, ManualRun)
@@ -862,15 +862,15 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 	require.Len(t, checkers, 3)
 
 	require.EqualValues(t, "bar", checkers[0].Name)
-	require.False(t, checkers[0].Enabled)
+	require.True(t, checkers[0].GlobalEnabled)
 	require.EqualValues(t, CheckerStateDisabled, checkers[0].State)
 
 	require.EqualValues(t, "baz", checkers[1].Name)
-	require.True(t, checkers[1].Enabled)
+	require.True(t, checkers[1].GlobalEnabled)
 	require.EqualValues(t, CheckerStateInherit, checkers[1].State)
 
 	require.EqualValues(t, "foo", checkers[2].Name)
-	require.True(t, checkers[2].Enabled)
+	require.False(t, checkers[2].GlobalEnabled)
 	require.EqualValues(t, CheckerStateEnabled, checkers[2].State)
 }
 

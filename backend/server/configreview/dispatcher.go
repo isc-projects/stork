@@ -758,7 +758,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 
 	i := 0
 	for _, checker := range checkers {
-		isEnabled := d.checkerController.isCheckerEnabledForDaemon(daemonID, checker.name)
+		isGloballyEnabled := d.checkerController.getGlobalState(checker.name) == CheckerStateEnabled
 
 		var state CheckerState
 		if daemon != nil {
@@ -767,7 +767,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 			state = d.checkerController.getGlobalState(checker.name)
 		}
 
-		m := newCheckerMetadata(checker.name, checker.triggers, selectors[checker.name], isEnabled, state)
+		m := newCheckerMetadata(checker.name, checker.triggers, selectors[checker.name], isGloballyEnabled, state)
 		metadata[i] = m
 		i++
 	}

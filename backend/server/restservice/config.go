@@ -204,7 +204,7 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 			State:     m.State,
 			Triggers:  triggers,
 			// I don't know why the boolean was generated as a pointer.
-			Enabled: &m.Enabled,
+			GlobalEnabled: &m.GlobalEnabled,
 		}
 	}
 

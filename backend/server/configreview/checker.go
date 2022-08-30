@@ -17,20 +17,20 @@ type checker struct {
 // the enabled property is always true, and for CheckerStateDisabled, it's
 // always false, but for CheckerStateInherit, it may be true or false.
 type CheckerMetadata struct {
-	Name      string
-	Triggers  Triggers
-	Selectors DispatchGroupSelectors
-	Enabled   bool
-	State     CheckerState
+	Name          string
+	Triggers      Triggers
+	Selectors     DispatchGroupSelectors
+	GlobalEnabled bool
+	State         CheckerState
 }
 
 // Constructs the checker metadata.
-func newCheckerMetadata(name string, triggers Triggers, selectors DispatchGroupSelectors, enabled bool, state CheckerState) *CheckerMetadata {
+func newCheckerMetadata(name string, triggers Triggers, selectors DispatchGroupSelectors, globalEnabled bool, state CheckerState) *CheckerMetadata {
 	return &CheckerMetadata{
-		Name:      name,
-		Triggers:  triggers,
-		Selectors: selectors,
-		Enabled:   enabled,
-		State:     state,
+		Name:          name,
+		Triggers:      triggers,
+		Selectors:     selectors,
+		GlobalEnabled: globalEnabled,
+		State:         state,
 	}
 }

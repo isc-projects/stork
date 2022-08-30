@@ -501,7 +501,7 @@
           type: string
       state:
         enum: *CONFIGCHECKERSTATE
-      enabled:
+      globalEnabled:
         type: boolean
         readOnly: true
 
