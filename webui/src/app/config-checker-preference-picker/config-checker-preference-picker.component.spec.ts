@@ -14,7 +14,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [TableModule, ChipModule, OverlayPanelModule, NoopAnimationsModule, ButtonModule],
-            declarations: [HelpTipComponent],
+            declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
         }).compileComponents()
     })
 
@@ -32,8 +32,12 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         fail("not implemented")
     })
 
-    it('should handle an empty state and display no buttons', () => {
-        fail("not implemented")
+    it('should handle an empty state and display no buttons', async () => {
+        component.checkers = []
+        component.loading = false
+        fixture.detectChanges()
+        const nativeElement = fixture.nativeElement as HTMLElement
+        expect(nativeElement.innerText).toContain("There are no checkers.")
     })
 
     it('should display full layout by default', () => {
