@@ -358,4 +358,8 @@ describe('ConfigReviewPanelComponent', () => {
         const refreshButton = fixture.debugElement.query(By.css('#refresh-button'))
         expect(refreshButton).toBeTruthy()
     }))
+
+    it('should open the config review checkers panel with minimal layout on click the button', () => {
+        fail("not implemented")
+    })
 })

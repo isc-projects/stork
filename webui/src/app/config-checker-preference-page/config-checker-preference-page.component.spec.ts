@@ -21,4 +21,12 @@ describe('ConfigCheckerPreferencePageComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should have a general help button', () => {
+        fail('not implemented')
+    })
+
+    it('should display the config review checkers panel with the full layout', () => {
+        fail('not implemented')
+    })
 })
