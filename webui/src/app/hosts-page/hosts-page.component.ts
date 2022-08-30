@@ -357,6 +357,18 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             !this.openedTabs[tabIndex - 1].submitted
         ) {
             this.dhcpApi.createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId).toPromise()
+        } else if (
+            this.openedTabs[tabIndex - 1].tabType === HostTabType.EditHost &&
+            this.openedTabs[tabIndex - 1].host.id > 0 &&
+            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
+            !this.openedTabs[tabIndex - 1].submitted
+        ) {
+            this.dhcpApi
+                .updateHostDelete(
+                    this.openedTabs[tabIndex - 1].host.id,
+                    this.openedTabs[tabIndex - 1].form.transactionId
+                )
+                .toPromise()
         }
 
         // Remove the MenuItem representing the tab.
@@ -542,6 +554,36 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         if (index >= 0) {
             this.openedTabs[index].submitted = true
             this.closeHostTab(null, index + 1)
+        }
+    }
+
+    /**
+     * Event handler triggered when host form editing is canceled.
+     *
+     * If the event comes from the new host form, the tab is closed. If the
+     * event comes from the host update form, the tab is turned into the
+     * host view. In both cases, the transaction is deleted in the server.
+     *
+     * @param hostId host identifier or zero for new host case.
+     */
+    onHostFormCancel(hostId): void {
+        // Find the form matching the form for which the notification has
+        // been sent.
+        const index = this.openedTabs.findIndex(
+            (t) => (t.host && t.host.id === hostId) || (t.tabType === HostTabType.NewHost && !hostId)
+        )
+        if (index >= 0) {
+            if (
+                hostId &&
+                this.openedTabs[index].form?.transactionId &&
+                this.openedTabs[index].tabType !== HostTabType.Host
+            ) {
+                this.dhcpApi.updateHostDelete(hostId, this.openedTabs[index].form.transactionId).toPromise()
+                this.tabs[index + 1].icon = ''
+                this.openedTabs[index].setHostTabType(HostTabType.Host)
+            } else {
+                this.closeHostTab(null, index + 1)
+            }
         }
     }
 

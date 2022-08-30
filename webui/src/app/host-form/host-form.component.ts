@@ -207,6 +207,11 @@ export class HostFormComponent implements OnInit, OnDestroy {
     @Output() formSubmit = new EventEmitter<HostForm>()
 
     /**
+     * An event emitter notifying that form editing has been canceled.
+     */
+    @Output() formCancel = new EventEmitter<number>()
+
+    /**
      * Different IP reservation types listed in the drop down.
      */
     ipTypes: SelectItem[] = []
@@ -269,6 +274,13 @@ export class HostFormComponent implements OnInit, OnDestroy {
     splitFormMode: boolean = false
 
     /**
+     * Holds the received server's response to the updateHostBegin call.
+     *
+     * It is required to revert host reservation edits.
+     */
+    savedUpdateHostBeginData: MappedHostBeginData
+
+    /**
      * Constructor.
      *
      * @param _formBuilder private form builder instance.
@@ -308,6 +320,25 @@ export class HostFormComponent implements OnInit, OnDestroy {
         }
 
         // New form.
+        this._createDefaultFormGroup()
+
+        // Begin transaction.
+        if (this.hostId) {
+            // Send POST to /hosts/{id}/transaction/new.
+            this._updateHostBegin()
+        } else {
+            // Send POST to /hosts/new/transaction/new.
+            this._createHostBegin()
+        }
+    }
+
+    /**
+     * Creates a default form group.
+     *
+     * It is used during the component initialization and when the current
+     * changes are reverted on user's request.
+     */
+    private _createDefaultFormGroup(): void {
         this.formGroup = this._formBuilder.group(
             {
                 globalReservation: [false],
@@ -335,15 +366,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 validators: [subnetRequiredValidator],
             }
         )
-
-        // Begin transaction.
-        if (this.hostId) {
-            // Send POST to /hosts/{id}/transaction/new.
-            this._updateHostBegin()
-        } else {
-            // Send POST to /hosts/new/transaction/new.
-            this._createHostBegin()
-        }
     }
 
     /**
@@ -487,6 +509,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this.form.filteredSubnets = this.form.allSubnets
         // Initialize host-specific controls if the host information is available.
         if (this.hostId && 'host' in data && data.host) {
+            this.savedUpdateHostBeginData = data
             this._initializeHost(data.host)
         }
     }
@@ -1122,5 +1145,22 @@ export class HostFormComponent implements OnInit, OnDestroy {
         } else {
             this._createHostBegin()
         }
+    }
+
+    /**
+     * A function called when user clicks the button to revert host edit changes.
+     */
+    onRevert(): void {
+        this._createDefaultFormGroup()
+        this._initializeForm(this.savedUpdateHostBeginData)
+    }
+
+    /**
+     * A function called when user clicks cancel button.
+     *
+     * It causes the parent component to close the form.
+     */
+    onCancel(): void {
+        this.formCancel.emit(this.hostId)
     }
 }

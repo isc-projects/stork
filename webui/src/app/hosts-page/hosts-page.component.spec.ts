@@ -650,6 +650,242 @@ describe('HostsPageComponent', () => {
         expect(dhcpApi.createHostDelete).toHaveBeenCalled()
     }))
 
+    it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
+        const createHostBeginResp: any = {
+            id: 123,
+            subnets: [
+                {
+                    id: 1,
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            daemonId: 1,
+                        },
+                    ],
+                },
+            ],
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(createHostBeginResp))
+        spyOn(dhcpApi, 'createHostDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        tick()
+        fixture.detectChanges()
+
+        paramMapSubject.next(convertToParamMap({}))
+        tick()
+        fixture.detectChanges()
+
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].form.transactionId).toBe(123)
+
+        // Cancel editing. It should close the tab and the transaction should be deleted.
+        component.onHostFormCancel(0)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(dhcpApi.createHostDelete).toHaveBeenCalled()
+    }))
+
+    it('should cancel update transaction when a tab is closed', fakeAsync(() => {
+        component.hosts = [
+            {
+                id: 1,
+                subnetId: 1,
+                subnetPrefix: '192.0.2.0/24',
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '01:02:03:04',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                prefixReservations: [],
+                localHosts: [
+                    {
+                        daemonId: 1,
+                        dataSource: 'api',
+                        options: [],
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // Ensure that we don't fetch the host information from the server upon
+        // opening a new tab. We should use the information available in the
+        // hosts structure.
+        spyOn(dhcpApi, 'getHost')
+
+        // Open tab with host with id 1.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(component.openedTabs.length).toBe(1)
+
+        const updateHostBeginResp: any = {
+            id: 123,
+            subnets: [
+                {
+                    id: 1,
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            daemonId: 1,
+                        },
+                    ],
+                },
+            ],
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+            host: component.hosts[0],
+        }
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(updateHostBeginResp))
+        spyOn(dhcpApi, 'updateHostDelete').and.returnValue(of(okResp))
+
+        component.onHostEditBegin(component.hosts[0])
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
+        expect(dhcpApi.updateHostDelete).not.toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].form.transactionId).toBe(123)
+
+        component.closeHostTab(null, 1)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpApi.updateHostDelete).toHaveBeenCalled()
+    }))
+
+    it('should cancel update transaction cancel button is clicked', fakeAsync(() => {
+        component.hosts = [
+            {
+                id: 1,
+                subnetId: 1,
+                subnetPrefix: '192.0.2.0/24',
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '01:02:03:04',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                prefixReservations: [],
+                localHosts: [
+                    {
+                        daemonId: 1,
+                        dataSource: 'api',
+                        options: [],
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // Ensure that we don't fetch the host information from the server upon
+        // opening a new tab. We should use the information available in the
+        // hosts structure.
+        spyOn(dhcpApi, 'getHost')
+
+        // Open tab with host with id 1.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(component.openedTabs.length).toBe(1)
+
+        const updateHostBeginResp: any = {
+            id: 123,
+            subnets: [
+                {
+                    id: 1,
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            daemonId: 1,
+                        },
+                    ],
+                },
+            ],
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+            host: component.hosts[0],
+        }
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(updateHostBeginResp))
+        spyOn(dhcpApi, 'updateHostDelete').and.returnValue(of(okResp))
+
+        component.onHostEditBegin(component.hosts[0])
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
+        expect(dhcpApi.updateHostDelete).not.toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].form.transactionId).toBe(123)
+
+        component.onHostFormCancel(component.hosts[0].id)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(dhcpApi.updateHostDelete).toHaveBeenCalled()
+
+        // Ensure that the form was closed and the tab now shows the host
+        // reservation view.
+        expect(fixture.debugElement.query(By.css('app-host-tab'))).toBeTruthy()
+    }))
+
     it('should close a tab after deleting a host', () => {
         // Create a list with two hosts.
         component.hosts = [

@@ -1483,4 +1483,67 @@ describe('HostFormComponent', () => {
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
+
+    it('should revert host changes', fakeAsync(() => {
+        component.hostId = 123
+
+        let beginResponse = cannedResponseBegin
+        beginResponse.host = {
+            id: 123,
+            subnetId: 1,
+            subnetPrefix: '192.0.2.0/24',
+            hostIdentifiers: [
+                {
+                    idType: 'hw-address',
+                    idHexValue: '01:02:03:04:05:06',
+                },
+            ],
+            addressReservations: [
+                {
+                    address: '192.0.2.4',
+                },
+            ],
+            prefixReservations: [],
+            hostname: 'foo.example.org',
+            localHosts: [
+                {
+                    daemonId: 1,
+                    dataSource: 'api',
+                    options: [],
+                    optionsHash: '',
+                },
+            ],
+        }
+        spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(beginResponse))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.ipGroups.length).toBe(1)
+        expect(component.ipGroups.get('0.inputIPv4').value).toBe('192.0.2.4')
+        expect(component.formGroup.get('hostname').value).toBe('foo.example.org')
+        expect(component.formGroup.valid).toBeTrue()
+
+        // Apply some changes.
+        component.ipGroups.get('0.inputIPv4').setValue('192.0.')
+        component.formGroup.get('hostname').setValue('xyz')
+        fixture.detectChanges()
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Revert the changes.
+        component.onRevert()
+        fixture.detectChanges()
+
+        // Ensure that the changes have been reverted.
+        expect(component.ipGroups.length).toBe(1)
+        expect(component.ipGroups.get('0.inputIPv4').value).toBe('192.0.2.4')
+        expect(component.formGroup.get('hostname').value).toBe('foo.example.org')
+        expect(component.formGroup.valid).toBeTrue()
+    }))
+
+    it('should emit cancel event', () => {
+        spyOn(component.formCancel, 'emit')
+        component.onCancel()
+        expect(component.formCancel.emit).toHaveBeenCalled()
+    })
 })
