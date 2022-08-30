@@ -36,10 +36,13 @@ export class ConfigCheckerPreferencePickerComponent {
      */
     @Input() minimal: boolean = false
 
+    /**
+     * Loading state.
+     */
     _loading: boolean = true
 
     /**
-     * Sets the loading state and resets the changes.
+     * Sets the loading state. The false value resets the changes.
      */
     @Input() set loading(isLoading: boolean) {
         this._loading = isLoading
@@ -49,7 +52,7 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * It's true, the data aren't ready yet.
+     * If it's true, the data aren't ready yet.
      */
     get loading(): boolean {
         return this._loading
@@ -193,7 +196,7 @@ export class ConfigCheckerPreferencePickerComponent {
     getActualState(checker: ConfigChecker): ConfigChecker.StateEnum {
         return this.changes[checker.name] ?? checker.state
     }
-    
+
     /**
      * Returns true is any significant change was provided.
      */
@@ -220,14 +223,14 @@ export class ConfigCheckerPreferencePickerComponent {
 
     /**
      * Callback called on submit the checker state changes. It emits an Angular
-     * event with changed checker preference.
+     * event with changed checker preference and sets the loading state.
      */
     onSubmit() {
         this.loading = true
         this.changePreferences.emit(
-            Object.keys(this.changes).map(k => ({
+            Object.keys(this.changes).map((k) => ({
                 name: k,
-                state: this.changes[k]
+                state: this.changes[k],
             }))
         )
     }

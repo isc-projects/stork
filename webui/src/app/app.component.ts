@@ -149,7 +149,7 @@ export class AppComponent implements OnInit {
                         label: 'Review checkers',
                         id: 'checkers',
                         icon: 'fa fa-tasks',
-                        routerLink: '/review-checkers'
+                        routerLink: '/review-checkers',
                     },
                     {
                         label: 'Settings',

@@ -147,7 +147,7 @@ const routes: Routes = [
     {
         path: 'review-checkers',
         component: ConfigCheckerPreferencePageComponent,
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard],
     },
 
     // otherwise redirect to home

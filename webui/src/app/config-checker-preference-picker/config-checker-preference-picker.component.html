@@ -9,28 +9,25 @@
             Checkers list
             <app-help-tip title="Checkers list">
                 <p>
-                    The table presents the review checkers. The checker is
-                    responsible for analyzing the daemon configuration to detect
-                    a particular issue. The table contains the checker states, 
+                    The table presents the review checkers. The checker is responsible for analyzing the daemon
+                    configuration to detect a particular issue. The table contains the checker states,
                     <span *ngIf="minimal"> and names.</span>
                     <span *ngIf="!minimal">names, descriptions, selectors, and triggers.</span>
                 </p>
                 <p>
                     The state indicates if the checker is enabled or disabled.
                     <span *ngIf="allowInheritState">
-                        The state may also be inherited from the global settings.
-                        In this case, the actual state is presented in the brackets.
+                        The state may also be inherited from the global settings. In this case, the actual state is
+                        presented in the brackets.
                     </span>
                     The state changes must be confirmed by clicking the submit button.
                 </p>
                 <p *ngIf="!minimal">
-                    The selectors define the daemon groups for which the
-                    specific configuration checker runs.
+                    The selectors define the daemon groups for which the specific configuration checker runs.
                 </p>
                 <p *ngIf="!minimal">
-                    The triggers mean the condition of running the configuration
-                    checker. The checkers may be run after a change of the daemon
-                    configuration, hook call, on user demand, and so on.
+                    The triggers mean the condition of running the configuration checker. The checkers may be run after
+                    a change of the daemon configuration, hook call, on user demand, and so on.
                 </p>
             </app-help-tip>
         </div>
@@ -94,15 +91,14 @@
     </ng-template>
     <ng-template pTemplate="summary">
         <div class="picker__buttons">
-            <button pButton
-                label="Submit"
-                [disabled]="!hasChanges"
-                (click)="onSubmit()"></button>
-            <button pButton
+            <button pButton label="Submit" [disabled]="!hasChanges" (click)="onSubmit()"></button>
+            <button
+                pButton
                 label="Reset"
                 [disabled]="!hasChanges"
                 class="p-button-secondary p-button-outlined"
-                (click)="onReset()"></button>
+                (click)="onReset()"
+            ></button>
         </div>
     </ng-template>
 </p-table>

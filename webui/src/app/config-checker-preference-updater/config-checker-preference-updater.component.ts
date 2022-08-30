@@ -32,13 +32,6 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
     @Input() daemonID: number | null = null
 
     /**
-     * The preferences changes aren't immediately pushed to a server to avoid
-     * generating too many requests. Instead of it, the component waits a given
-     * number of milliseconds after the last change.
-     */
-    @Input() waitMilliseconds: number = 5000
-
-    /**
      * If true, displays only the checker name and state.
      */
     @Input() minimal: boolean = false
@@ -113,13 +106,14 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
 
         const preferences: ConfigCheckerPreferences = {
             items: preferenceList,
-            total: preferenceList.length
+            total: preferenceList.length,
         }
 
-        const putRequest = this.daemonID == null
-            ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
-            : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
-        
+        const putRequest =
+            this.daemonID == null
+                ? this.servicesApi.putGlobalConfigCheckerPreferences(preferences)
+                : this.servicesApi.putDaemonConfigCheckerPreferences(this.daemonID, preferences)
+
         putRequest
             .toPromise()
             .then((data) => {
