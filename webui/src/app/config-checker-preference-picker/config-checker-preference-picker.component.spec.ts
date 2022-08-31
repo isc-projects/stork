@@ -37,7 +37,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         // Displays a spinner icon.
         const icon = fixture.debugElement.query(By.css('.pi-spinner'))
         expect(icon).not.toBeNull()
-        expect(icon.classes["pi-spin"]).toBeDefined()
+        expect(icon.classes['pi-spin']).toBeDefined()
     })
 
     it('should display a message on empty state', async () => {
@@ -45,7 +45,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.loading = false
         fixture.detectChanges()
         const nativeElement = fixture.nativeElement as HTMLElement
-        expect(nativeElement.innerText).toContain("There are no checkers.")
+        expect(nativeElement.innerText).toContain('There are no checkers.')
     })
 
     it('should display full layout by default', () => {
@@ -56,28 +56,24 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.minimal = true
         component.checkers = [
             {
-                name: "n1",
-                selectors: ["s1", "s2"],
+                name: 'n1',
+                selectors: ['s1', 's2'],
                 globalEnabled: true,
                 state: 'disabled',
-                triggers: ["t1", "t2", "t3"]
+                triggers: ['t1', 't2', 't3'],
             },
             {
-                name: "n2",
-                selectors: ["s3"],
+                name: 'n2',
+                selectors: ['s3'],
                 globalEnabled: false,
                 state: 'enabled',
-                triggers: ["t4"]
-            }
+                triggers: ['t4'],
+            },
         ]
 
         fixture.detectChanges()
-        
-        const hiddenClasses = [
-            ".picker__description-column",
-            ".picker__selector-column",
-            ".picker__trigger-column"
-        ]
+
+        const hiddenClasses = ['.picker__description-column', '.picker__selector-column', '.picker__trigger-column']
 
         for (const hiddenClass of hiddenClasses) {
             const elements = fixture.debugElement.queryAll(By.css(hiddenClass))
@@ -90,10 +86,10 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         }
 
         // Find all headers and cells.
-        const headers = fixture.debugElement.queryAll(By.css("th"))
-        const cells = fixture.debugElement.queryAll(By.css("td"))
+        const headers = fixture.debugElement.queryAll(By.css('th'))
+        const cells = fixture.debugElement.queryAll(By.css('td'))
         const elements = [...headers, ...cells]
-            
+
         // Filter out elements containing the hidden classes.
         const candidates = []
         for (const element of elements) {
@@ -113,25 +109,22 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         }
 
         // Two visible columns for header and content rows.
-        expect(candidates.length).toBe(2*(1+2))
+        expect(candidates.length).toBe(2 * (1 + 2))
 
         // Check if the elements are visible
         for (const element of candidates) {
             expect(element.nativeElement.clientWidth).not.toBe(0)
             expect(element.nativeElement.clientHeight).not.toBe(0)
         }
-
     })
 
     it('should correctly cycle the checker state', () => {
         const checker: ConfigChecker = {
             name: 'foo',
-            state: 'disabled'
+            state: 'disabled',
         }
 
-        component.checkers = [
-            checker    
-        ]
+        component.checkers = [checker]
         component.allowInheritState = true
 
         component.onCheckerStateChanged(checker)
@@ -153,15 +146,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.checkers = [
             {
                 globalEnabled: true,
-                name: "host_cmds_presence",
+                name: 'host_cmds_presence',
                 selectors: [],
                 state: 'enabled',
-                triggers: []
-            }
+                triggers: [],
+            },
         ]
         fixture.detectChanges()
 
-        const element = fixture.debugElement.query(By.css("td.picker__description-column"))
+        const element = fixture.debugElement.query(By.css('td.picker__description-column'))
         expect(element).not.toBeNull()
         const content = (element.nativeElement as HTMLElement).innerText
         expect(content).toContain('The checker verifying if the host_cmds hooks library is loaded')
@@ -171,15 +164,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.checkers = [
             {
                 globalEnabled: true,
-                name: "foo",
+                name: 'foo',
                 selectors: ['each-daemon', 'foobar'],
                 state: 'enabled',
-                triggers: []
-            }
+                triggers: [],
+            },
         ]
         fixture.detectChanges()
 
-        const element = fixture.debugElement.query(By.css("td.picker__selector-column"))
+        const element = fixture.debugElement.query(By.css('td.picker__selector-column'))
         expect(element).not.toBeNull()
         const content = (element.nativeElement as HTMLElement).innerText
         expect(content).toContain('each-daemon')
@@ -190,15 +183,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.checkers = [
             {
                 globalEnabled: true,
-                name: "foo",
+                name: 'foo',
                 selectors: [],
                 state: 'enabled',
-                triggers: ['host reservations change', 'barfoo']
-            }
+                triggers: ['host reservations change', 'barfoo'],
+            },
         ]
         fixture.detectChanges()
 
-        const element = fixture.debugElement.query(By.css("td.picker__trigger-column"))
+        const element = fixture.debugElement.query(By.css('td.picker__trigger-column'))
         expect(element).not.toBeNull()
         const content = (element.nativeElement as HTMLElement).innerText
         expect(content).toContain('host reservations change')
@@ -209,11 +202,11 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.checkers = [
             {
                 globalEnabled: true,
-                name: "foo",
+                name: 'foo',
                 selectors: [],
                 state: 'enabled',
-                triggers: []
-            }
+                triggers: [],
+            },
         ]
         component.allowInheritState = true
         fixture.detectChanges()
@@ -221,12 +214,14 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         const checker = component.checkers[0]
         let submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
         expect(submitButton).not.toBeNull()
-        
+
         // No changes
         expect(component.hasChanges).toBeFalse()
-        expect(submitButton.attributes).toEqual(jasmine.objectContaining({
-            disabled: ''
-        }))
+        expect(submitButton.attributes).toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
 
         // Significant changes.
         // Disabled state.
@@ -234,40 +229,46 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
         submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
-        expect(submitButton.attributes).not.toEqual(jasmine.objectContaining({
-            disabled: ''
-        }))
+        expect(submitButton.attributes).not.toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
         // Inherit state.
         component.onCheckerStateChanged(checker)
         fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
         submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
-        expect(submitButton.attributes).not.toEqual(jasmine.objectContaining({
-            disabled: ''
-        }))
+        expect(submitButton.attributes).not.toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
 
         // Revert changes.
         component.onCheckerStateChanged(checker)
         fixture.detectChanges()
         expect(component.hasChanges).toBeFalse()
         submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
-        expect(submitButton.attributes).toEqual(jasmine.objectContaining({
-            disabled: ''
-        }))
+        expect(submitButton.attributes).toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
     })
 
     it('should the checker state cell should have a proper CSS class', () => {
         const checker = {
             globalEnabled: true,
-            name: "foo",
+            name: 'foo',
             selectors: [],
             state: ConfigChecker.StateEnum.Enabled,
-            triggers: []
+            triggers: [],
         }
         component.checkers = [checker]
         fixture.detectChanges()
 
-        const stateCell = fixture.debugElement.query(By.css(".picker__state-cell"))
+        const stateCell = fixture.debugElement.query(By.css('.picker__state-cell'))
         expect(stateCell).not.toBeNull()
 
         // Enabled state.
@@ -304,15 +305,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should display inherit state with a global enabled status', () => {
         const checker = {
             globalEnabled: true,
-            name: "foo",
+            name: 'foo',
             selectors: [],
             state: ConfigChecker.StateEnum.Inherit,
-            triggers: []
+            triggers: [],
         }
         component.checkers = [checker]
         fixture.detectChanges()
 
-        const stateCell = fixture.debugElement.query(By.css(".picker__state-cell"))
+        const stateCell = fixture.debugElement.query(By.css('.picker__state-cell'))
         expect(stateCell).not.toBeNull()
 
         let content = (stateCell.nativeElement as HTMLElement).textContent
@@ -327,13 +328,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should handle submitting and set the loading state', () => {
         spyOn(component.changePreferences, 'emit')
 
-        component.checkers = [{
-            globalEnabled: true,
-            name: "foo",
-            selectors: [],
-            state: ConfigChecker.StateEnum.Inherit,
-            triggers: []
-        }]
+        component.checkers = [
+            {
+                globalEnabled: true,
+                name: 'foo',
+                selectors: [],
+                state: ConfigChecker.StateEnum.Inherit,
+                triggers: [],
+            },
+        ]
 
         component.onCheckerStateChanged(component.checkers[0])
         component.onSubmit()
@@ -341,20 +344,22 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         expect(component.loading).toBeTrue()
         expect(component.changePreferences.emit).toHaveBeenCalledOnceWith([
             {
-                name: "foo",
-                state: 'enabled'
-            }
+                name: 'foo',
+                state: 'enabled',
+            },
         ])
     })
 
     it('should handle the reset button', () => {
-        component.checkers = [{
-            globalEnabled: true,
-            name: "foo",
-            selectors: [],
-            state: ConfigChecker.StateEnum.Inherit,
-            triggers: []
-        }]
+        component.checkers = [
+            {
+                globalEnabled: true,
+                name: 'foo',
+                selectors: [],
+                state: ConfigChecker.StateEnum.Inherit,
+                triggers: [],
+            },
+        ]
 
         component.onCheckerStateChanged(component.checkers[0])
         expect(component.getActualState(component.checkers[0])).toBe('enabled')
@@ -366,6 +371,6 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         const helpElement = fixture.debugElement.query(By.directive(HelpTipComponent))
         expect(helpElement).not.toBeNull()
         const helpComponent = helpElement.componentInstance as HelpTipComponent
-        expect(helpComponent.title).toContain("Checkers list")
+        expect(helpComponent.title).toContain('Checkers list')
     })
 })

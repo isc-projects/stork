@@ -45,46 +45,46 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     })
 
     it('should fetch global preferences for an empty daemon ID', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should fetch daemon preferences for an non-empty daemon ID', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should handle fetching preferences errors', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should set non-loading state after fetching preferences', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should unsubscribe on destroy', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should set loading state on submit', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should update the global preferences if the daemon ID is empty', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should update the daemon preferences if the daemon ID is not empty', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should create toast on successful update', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should create toast on failed update', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 
     it('should set non-loading state after update', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 })

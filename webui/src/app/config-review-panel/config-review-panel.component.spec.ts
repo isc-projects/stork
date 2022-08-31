@@ -360,6 +360,6 @@ describe('ConfigReviewPanelComponent', () => {
     }))
 
     it('should open the config review checkers panel with minimal layout on click the button', () => {
-        fail("not implemented")
+        fail('not implemented')
     })
 })
