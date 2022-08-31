@@ -256,12 +256,49 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         }))
     })
 
-    it('should detect reverting changes', () => {
-        fail("not implemented")
-    })
+    it('should the checker state cell should have a proper CSS class', () => {
+        const checker = {
+            globalEnabled: true,
+            name: "foo",
+            selectors: [],
+            state: ConfigChecker.StateEnum.Enabled,
+            triggers: []
+        }
+        component.checkers = [checker]
+        fixture.detectChanges()
 
-    it('should display the checker state using a color and a proper checkbox state', () => {
-        fail("not implemented")
+        const stateCell = fixture.debugElement.query(By.css(".picker__state-cell"))
+        expect(stateCell).not.toBeNull()
+
+        // Enabled state.
+        expect(stateCell.classes['picker__state-cell--enabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+
+        // Disabled state.
+        checker.state = 'disabled'
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+
+        // Inherit state.
+        // Globally enabled.
+        checker.state = 'inherit'
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+        // Globally disabled.
+        checker.globalEnabled = false
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).toBeTrue()
     })
 
     it('should display inherit state with a global enabled status', () => {
