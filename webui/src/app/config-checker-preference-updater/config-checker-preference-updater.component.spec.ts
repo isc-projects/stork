@@ -126,9 +126,17 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
         expect(component.loading).toBeFalse()
     })
 
-    it('should set loading state on submit', () => {
-        fail('not implemented')
-    })
+    it('should set loading state on submit', fakeAsync(() => {
+        fixture.detectChanges()
+        expect(component.loading).toBeFalse()
+        component.onChangePreferences([{
+            name: 'foo',
+            state: 'disabled'
+        }])
+        expect(component.loading).toBeTrue()
+        tick()
+        expect(component.loading).toBeFalse()
+    }))
 
     it('should update the global preferences if the daemon ID is empty', fakeAsync(() => {
         fixture.detectChanges()
