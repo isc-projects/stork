@@ -302,18 +302,70 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     })
 
     it('should display inherit state with a global enabled status', () => {
-        fail("not implemented")
+        const checker = {
+            globalEnabled: true,
+            name: "foo",
+            selectors: [],
+            state: ConfigChecker.StateEnum.Inherit,
+            triggers: []
+        }
+        component.checkers = [checker]
+        fixture.detectChanges()
+
+        const stateCell = fixture.debugElement.query(By.css(".picker__state-cell"))
+        expect(stateCell).not.toBeNull()
+
+        let content = (stateCell.nativeElement as HTMLElement).textContent
+        expect(content.trim()).toEqual('inherit  (enabled)')
+
+        checker.globalEnabled = false
+        fixture.detectChanges()
+        content = (stateCell.nativeElement as HTMLElement).textContent
+        expect(content.trim()).toEqual('inherit  (disabled)')
     })
 
     it('should handle submitting and set the loading state', () => {
-        fail("not implemented")
+        spyOn(component.changePreferences, 'emit')
+
+        component.checkers = [{
+            globalEnabled: true,
+            name: "foo",
+            selectors: [],
+            state: ConfigChecker.StateEnum.Inherit,
+            triggers: []
+        }]
+
+        component.onCheckerStateChanged(component.checkers[0])
+        component.onSubmit()
+
+        expect(component.loading).toBeTrue()
+        expect(component.changePreferences.emit).toHaveBeenCalledOnceWith([
+            {
+                name: "foo",
+                state: 'enabled'
+            }
+        ])
     })
 
     it('should handle the reset button', () => {
-        fail("not implemented")
+        component.checkers = [{
+            globalEnabled: true,
+            name: "foo",
+            selectors: [],
+            state: ConfigChecker.StateEnum.Inherit,
+            triggers: []
+        }]
+
+        component.onCheckerStateChanged(component.checkers[0])
+        expect(component.getActualState(component.checkers[0])).toBe('enabled')
+        component.onReset()
+        expect(component.getActualState(component.checkers[0])).toBe('inherit')
     })
 
     it('should present the help button', () => {
-        fail("not implemented")
+        const helpElement = fixture.debugElement.query(By.directive(HelpTipComponent))
+        expect(helpElement).not.toBeNull()
+        const helpComponent = helpElement.componentInstance as HelpTipComponent
+        expect(helpComponent.title).toContain("Checkers list")
     })
 })
