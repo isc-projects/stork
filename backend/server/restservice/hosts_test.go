@@ -709,6 +709,10 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 
 	// Make sure we have some Kea apps in the database.
 	hosts, apps := testutil.AddTestHosts(t, db)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
+	require.NoError(t, err)
 
 	// Begin transaction.
 	params := dhcp.UpdateHostBeginParams{
@@ -759,7 +763,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 
 	for i, c := range fa.RecordedCommands {
 		switch {
-		case i%2 == 0:
+		case i < 2:
 			require.JSONEq(t, `{
             "command": "reservation-del",
             "service": ["dhcp4"],

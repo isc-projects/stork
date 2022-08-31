@@ -142,10 +142,37 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
+	// Retrieve existing host from the context. We will need it for sending
+	// the reservation-del commands, in case the DHCP identifier changes.
+	existingHostIface, err := config.GetValueForUpdate(ctx, 0, "host_before_update")
+	if err != nil {
+		return ctx, err
+	}
+	existingHost := existingHostIface.(dbmodel.Host)
 	var (
 		commands []any
 		lookup   dbmodel.DHCPOptionDefinitionLookup
 	)
+	// First, delete all instances of the host on all Kea servers.
+	for _, lh := range existingHost.LocalHosts {
+		if lh.Daemon == nil {
+			return ctx, pkgerrors.Errorf("updated host %d is associated with nil daemon", host.ID)
+		}
+		if lh.Daemon.App == nil {
+			return ctx, pkgerrors.Errorf("updated host %d is associated with nil app", host.ID)
+		}
+		// Convert the host information to Kea reservation.
+		deleteArguments, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, existingHost)
+		if err != nil {
+			return ctx, err
+		}
+		// Associate the command with an app receiving this command.
+		appCommand := make(map[string]any)
+		appCommand["command"] = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, deleteArguments)
+		appCommand["app"] = lh.Daemon.App
+		commands = append(commands, appCommand)
+	}
+	// Re-create the host reservations.
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
@@ -153,19 +180,6 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		if lh.Daemon.App == nil {
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
-		// Convert the host information to Kea reservation.
-		deletedReservation, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, host)
-		if err != nil {
-			return ctx, err
-		}
-		// Create command arguments.
-		deleteArguments := deletedReservation
-		// Associate the command with an app receiving this command.
-		appCommand := make(map[string]any)
-		appCommand["command"] = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, deleteArguments)
-		appCommand["app"] = lh.Daemon.App
-		commands = append(commands, appCommand)
-
 		// Convert the updated host information to Kea reservation.
 		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
@@ -174,7 +188,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		// Create command arguments.
 		addArguments := make(map[string]any)
 		addArguments["reservation"] = reservation
-		appCommand = make(map[string]any)
+		appCommand := make(map[string]any)
 		appCommand["command"] = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, addArguments)
 		appCommand["app"] = lh.Daemon.App
 		commands = append(commands, appCommand)

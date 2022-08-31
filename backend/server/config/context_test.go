@@ -84,3 +84,36 @@ func TestSetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
 	_, err := SetValueForUpdate(ctx, 1, "foo", "bar")
 	require.Error(t, err)
 }
+
+// Test getting a value for update from the context.
+func TestGetValueForUpdateInContext(t *testing.T) {
+	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	ctx := context.WithValue(context.Background(), StateContextKey, *state)
+	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+	require.NoError(t, err)
+
+	value, err := GetValueForUpdate(ctx, 0, "foo")
+	require.NoError(t, err)
+	require.Equal(t, value, "bar")
+}
+
+// Test that an error is returned when trying to get a value for update from the
+// context when the state does not exist.
+func TestGetValueForUpdateInContextNoState(t *testing.T) {
+	value, err := GetValueForUpdate(context.Background(), 0, "foo")
+	require.Error(t, err)
+	require.Nil(t, value)
+}
+
+// Test that an error is returned when trying to get a value for update from the
+// context when update index is out of bounds.
+func TestGetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
+	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	ctx := context.WithValue(context.Background(), StateContextKey, *state)
+	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+	require.NoError(t, err)
+
+	value, err := GetValueForUpdate(ctx, 1, "foo")
+	require.Error(t, err)
+	require.Nil(t, value)
+}

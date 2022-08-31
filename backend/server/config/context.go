@@ -40,6 +40,21 @@ func GetTransactionState(ctx context.Context) (state TransactionState, ok bool) 
 	return
 }
 
+// Gets a value from the transaction state for a given update index, under the
+// specified name in the recipe. It returns an error if the specified index
+// is out of bounds or when the value doesn't exist.
+func GetValueForUpdate(ctx context.Context, updateIndex int, valueName string) (any, error) {
+	state, ok := GetTransactionState(ctx)
+	if !ok {
+		return nil, pkgerrors.New("transaction state does not exist in the context")
+	}
+	value, err := state.GetValueForUpdate(updateIndex, valueName)
+	if err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
 // Sets a value in the transaction state for a given update index, under the
 // specified name in the recipe. It returns an error if the context does not
 // contain a transaction state or the specified index is out of bounds. It

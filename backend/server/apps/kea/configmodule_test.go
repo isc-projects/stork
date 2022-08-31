@@ -558,7 +558,46 @@ func TestApplyHostUpdate(t *testing.T) {
 	// Create dummy host to be stored in the context. We will later check if
 	// it is preserved after applying host update.
 	host := &dbmodel.Host{
-		ID: 1,
+		ID:       1,
+		Hostname: "cool.example.org",
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	module := NewConfigModule(nil)
@@ -572,15 +611,14 @@ func TestApplyHostUpdate(t *testing.T) {
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
-	// Simulate updating host entry. The host is associated with
-	// two different daemons/apps.
+	// Simulate updating host entry. We change host identifier and hostname.
 	host = &dbmodel.Host{
 		ID:       1,
-		Hostname: "cool.example.org",
+		Hostname: "foo.example.org",
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
+				Value: []byte{2, 3, 4, 5, 6, 7},
 			},
 		},
 		LocalHosts: []dbmodel.LocalHost{
@@ -645,10 +683,10 @@ func TestApplyHostUpdate(t *testing.T) {
 		require.True(t, ok)
 		marshalled := command.Marshal()
 
-		// Every even command is the reservation-del sent to respective servers.
-		// Every odd command is the reservation-add.
-		switch i % 2 {
-		case 0:
+		// First are the reservation-del commands sent to respective servers.
+		// Other are reservation-add commands.
+		switch {
+		case i < 2:
 			require.JSONEq(t,
 				`{
                      "command": "reservation-del",
@@ -668,8 +706,8 @@ func TestApplyHostUpdate(t *testing.T) {
                      "arguments": {
                          "reservation": {
                              "subnet-id": 0,
-                             "hw-address": "010203040506",
-                             "hostname": "cool.example.org"
+                             "hw-address": "020304050607",
+                             "hostname": "foo.example.org"
                          }
                      }
                  }`,
@@ -678,27 +716,13 @@ func TestApplyHostUpdate(t *testing.T) {
 		// Verify they are associated with appropriate apps.
 		app, ok := commands[i].(map[string]interface{})["app"].(*dbmodel.App)
 		require.True(t, ok)
-		require.Equal(t, app, host.LocalHosts[i/2].Daemon.App)
+		require.Equal(t, app, host.LocalHosts[i%2].Daemon.App)
 	}
 }
 
 // Test committing updated host, i.e. actually sending control commands to Kea.
 func TestCommitHostUpdate(t *testing.T) {
-	// Create the config manager instance "connected to" fake agents.
-	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(nil, agents)
-
-	// Create Kea config module.
-	module := NewConfigModule(manager)
-	require.NotNil(t, module)
-
-	daemonIDs := []int64{1}
-	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
-
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	ctx = context.WithValue(ctx, config.StateContextKey, *state)
-
-	// Create host reservation and store it in the context.
+	// Create host reservation.
 	host := &dbmodel.Host{
 		ID:       1,
 		Hostname: "cool.example.org",
@@ -741,7 +765,24 @@ func TestCommitHostUpdate(t *testing.T) {
 			},
 		},
 	}
-	ctx, err := module.ApplyHostUpdate(ctx, host)
+
+	// Create the config manager instance "connected to" fake agents.
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(nil, agents)
+
+	// Create Kea config module.
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
+	err := state.SetValueForUpdate(0, "host_before_update", *host)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	ctx, err = module.ApplyHostUpdate(ctx, host)
 	require.NoError(t, err)
 
 	// Committing the host should result in sending control commands to Kea servers.
@@ -754,17 +795,16 @@ func TestCommitHostUpdate(t *testing.T) {
 
 	// Validate the sent commands and URLS.
 	for i, command := range agents.RecordedCommands {
-		// First two commands sent to one server, another two sent to another.
-		switch {
-		case i < 2:
+		switch i % 2 {
+		case 0:
 			require.Equal(t, "http://192.0.2.1:1234/", agents.RecordedURLs[i])
 		default:
 			require.Equal(t, "http://192.0.2.2:2345/", agents.RecordedURLs[i])
 		}
 		marshalled := command.Marshal()
 		// Every event command is reservation-del. Every odd command is reservation-add.
-		switch i % 2 {
-		case 0:
+		switch {
+		case i < 2:
 
 			require.JSONEq(t,
 				`{
@@ -797,31 +837,7 @@ func TestCommitHostUpdate(t *testing.T) {
 
 // Test that error is returned when Kea response contains error status code.
 func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
-	// Create the config manager instance "connected to" fake agents.
-	agents := agentcommtest.NewKeaFakeAgents(func(callNo int, cmdResponses []interface{}) {
-		json := []byte(`[
-            {
-                "result": 1,
-                "text": "error is error"
-            }
-        ]`)
-		command := keactrl.NewCommand("reservation-del", []string{"dhcp4"}, nil)
-		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
-	})
-
-	manager := newTestManager(nil, agents)
-
-	// Create Kea config module.
-	module := NewConfigModule(manager)
-	require.NotNil(t, module)
-
-	daemonIDs := []int64{1}
-	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
-
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	ctx = context.WithValue(ctx, config.StateContextKey, *state)
-
-	// Create new host reservation and store it in the context.
+	// Create new host reservation.
 	host := &dbmodel.Host{
 		ID:       1,
 		Hostname: "cool.example.org",
@@ -850,7 +866,33 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 			},
 		},
 	}
-	ctx, err := module.ApplyHostUpdate(ctx, host)
+	// Create the config manager instance "connected to" fake agents.
+	agents := agentcommtest.NewKeaFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		json := []byte(`[
+            {
+                "result": 1,
+                "text": "error is error"
+            }
+        ]`)
+		command := keactrl.NewCommand("reservation-del", []string{"dhcp4"}, nil)
+		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	})
+
+	manager := newTestManager(nil, agents)
+
+	// Create Kea config module.
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
+	err := state.SetValueForUpdate(0, "host_before_update", *host)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	ctx, err = module.ApplyHostUpdate(ctx, host)
 	require.NoError(t, err)
 
 	_, err = module.Commit(ctx)
@@ -862,34 +904,7 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 
 // Test scheduling config changes in the database, retrieving and committing it.
 func TestCommitScheduledHostUpdate(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
-
-	module := NewConfigModule(manager)
-	require.NotNil(t, module)
-
-	// It is required to associate the config change with a user.
-	user := &dbmodel.SystemUser{
-		Login:    "test",
-		Lastname: "test",
-		Name:     "test",
-		Password: "test",
-	}
-	_, err := dbmodel.CreateUser(db, user)
-	require.NoError(t, err)
-	require.NotZero(t, user.ID)
-
-	// Prepare the context.
-	daemonIDs := []int64{1}
-	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	ctx = context.WithValue(ctx, config.StateContextKey, *state)
-
-	// Create the host and store it in the context.
+	// Create the host.
 	host := &dbmodel.Host{
 		ID: 1,
 		Subnet: &dbmodel.Subnet{
@@ -925,6 +940,37 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 			},
 		},
 	}
+
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(db, agents)
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// It is required to associate the config change with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+		Password: "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	// Prepare the context.
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+
+	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
+	err = state.SetValueForUpdate(0, "host_before_update", *host)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
 	ctx, err = module.ApplyHostUpdate(ctx, host)
 	require.NoError(t, err)
 
