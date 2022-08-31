@@ -29,7 +29,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 ToastModule,
                 ButtonModule,
             ],
-            declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
+            declarations: [HelpTipComponent, ConfigCheckerPreferenceUpdaterComponent, ConfigCheckerPreferencePickerComponent],
             providers: [MessageService, ServicesService],
         }).compileComponents()
     })

@@ -45,7 +45,7 @@ end
 
 namespace :unittest do
     desc 'Run unit tests for UI.
-        TEST - globs of test files to include, relative to project root - default: unspecified
+        TEST - globs of test files to include, relative to root or webui directory - default: unspecified
             There are 2 special cases:
                 when a path to directory is provided, all spec files ending ".spec.@(ts|tsx)" will be included
                 when a path to a file is provided, and a matching spec file exists it will be included instead
@@ -58,7 +58,13 @@ namespace :unittest do
 
         opts = []
         if !ENV["TEST"].nil?
-            opts += ["--include", ENV["TEST"]]
+            # The IDE built-in feature to copy a relative path returns the value
+            # that starts from the repository's root. But this option requires
+            # the path relative to the main frontend directory. The below line
+            # allows us to provide both a path relative to the root or webui
+            # directory.
+            test_path = ENV["TEST"].delete_prefix('webui/')
+            opts += ["--include", test_path]
         end
 
         opts += ["--progress", debug]
