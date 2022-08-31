@@ -20,6 +20,8 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     let component: ConfigCheckerPreferenceUpdaterComponent
     let fixture: ComponentFixture<ConfigCheckerPreferenceUpdaterComponent>
     let servicesApi: ServicesService
+    let messageService: MessageService
+    let messageAddSpy: jasmine.Spy
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -85,6 +87,9 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
 
         fixture = TestBed.createComponent(ConfigCheckerPreferenceUpdaterComponent)
         component = fixture.componentInstance
+        messageService = fixture.debugElement.injector.get(MessageService)
+
+        messageAddSpy = spyOn(messageService, 'add')
     })
 
     it('should create', () => {
@@ -152,11 +157,34 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
         expect(component.loading).toBeFalse()
     }))
 
-    it('should create toast on successful update', () => {
-        fail('not implemented')
-    })
+    it('should create message on successful update', fakeAsync(() => {
+        component.daemonID = 42
+        fixture.detectChanges()
+        messageAddSpy.calls.reset()
 
-    it('should create toast on failed update', () => {
-        fail('not implemented')
-    })
+        component.onChangePreferences([{
+            name: "foo",
+            state: 'disabled'
+        }])
+        tick()
+        fixture.detectChanges()
+        expect(messageService.add).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+            severity: 'success'
+        }))
+    }))
+
+    it('should create message on failed update', fakeAsync(() => {
+        fixture.detectChanges()
+        messageAddSpy.calls.reset()
+
+        component.onChangePreferences([{
+            name: "foo",
+            state: 'disabled'
+        }])
+        tick()
+        fixture.detectChanges()
+        expect(messageService.add).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+            severity: 'error'
+        }))
+    }))
 })
