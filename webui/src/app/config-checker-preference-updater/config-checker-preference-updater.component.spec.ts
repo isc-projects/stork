@@ -34,7 +34,11 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 ToastModule,
                 ButtonModule,
             ],
-            declarations: [HelpTipComponent, ConfigCheckerPreferenceUpdaterComponent, ConfigCheckerPreferencePickerComponent],
+            declarations: [
+                HelpTipComponent,
+                ConfigCheckerPreferenceUpdaterComponent,
+                ConfigCheckerPreferencePickerComponent,
+            ],
             providers: [MessageService, ServicesService],
         }).compileComponents()
 
@@ -68,7 +72,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
             throwError({
                 ok: false,
                 status: 500,
-                statusText: "Error"
+                statusText: 'Error',
             } as HttpEvent<ConfigCheckers>)
         )
 
@@ -76,14 +80,16 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
             throwError({
                 ok: false,
                 status: 500,
-                statusText: "Error"
+                statusText: 'Error',
             } as HttpEvent<ConfigCheckers>)
         )
 
-        spyOn(servicesApi, 'putDaemonConfigCheckerPreferences').and.returnValue(of({
-            total: 0,
-            items: []
-        } as ConfigCheckers & HttpEvent<ConfigCheckers>))
+        spyOn(servicesApi, 'putDaemonConfigCheckerPreferences').and.returnValue(
+            of({
+                total: 0,
+                items: [],
+            } as ConfigCheckers & HttpEvent<ConfigCheckers>)
+        )
 
         fixture = TestBed.createComponent(ConfigCheckerPreferenceUpdaterComponent)
         component = fixture.componentInstance
@@ -129,10 +135,12 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     it('should set loading state on submit', fakeAsync(() => {
         fixture.detectChanges()
         expect(component.loading).toBeFalse()
-        component.onChangePreferences([{
-            name: 'foo',
-            state: 'disabled'
-        }])
+        component.onChangePreferences([
+            {
+                name: 'foo',
+                state: 'disabled',
+            },
+        ])
         expect(component.loading).toBeTrue()
         tick()
         expect(component.loading).toBeFalse()
@@ -140,10 +148,12 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
 
     it('should update the global preferences if the daemon ID is empty', fakeAsync(() => {
         fixture.detectChanges()
-        component.onChangePreferences([{
-            name: "foo",
-            state: 'disabled'
-        }])
+        component.onChangePreferences([
+            {
+                name: 'foo',
+                state: 'disabled',
+            },
+        ])
         tick()
         fixture.detectChanges()
         expect(servicesApi.putGlobalConfigCheckerPreferences).toHaveBeenCalled()
@@ -154,10 +164,12 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     it('should update the daemon preferences if the daemon ID is not empty', fakeAsync(() => {
         component.daemonID = 42
         fixture.detectChanges()
-        component.onChangePreferences([{
-            name: "foo",
-            state: 'disabled'
-        }])
+        component.onChangePreferences([
+            {
+                name: 'foo',
+                state: 'disabled',
+            },
+        ])
         tick()
         fixture.detectChanges()
         expect(servicesApi.putGlobalConfigCheckerPreferences).not.toHaveBeenCalled()
@@ -170,29 +182,37 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
         fixture.detectChanges()
         messageAddSpy.calls.reset()
 
-        component.onChangePreferences([{
-            name: "foo",
-            state: 'disabled'
-        }])
+        component.onChangePreferences([
+            {
+                name: 'foo',
+                state: 'disabled',
+            },
+        ])
         tick()
         fixture.detectChanges()
-        expect(messageService.add).toHaveBeenCalledOnceWith(jasmine.objectContaining({
-            severity: 'success'
-        }))
+        expect(messageService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'success',
+            })
+        )
     }))
 
     it('should create message on failed update', fakeAsync(() => {
         fixture.detectChanges()
         messageAddSpy.calls.reset()
 
-        component.onChangePreferences([{
-            name: "foo",
-            state: 'disabled'
-        }])
+        component.onChangePreferences([
+            {
+                name: 'foo',
+                state: 'disabled',
+            },
+        ])
         tick()
         fixture.detectChanges()
-        expect(messageService.add).toHaveBeenCalledOnceWith(jasmine.objectContaining({
-            severity: 'error'
-        }))
+        expect(messageService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+            })
+        )
     }))
 })
