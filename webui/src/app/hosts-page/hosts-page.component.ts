@@ -58,6 +58,7 @@ export class HostTab {
                 break
             default:
                 this.form = null
+                break
         }
         this.submitted = false
         this.tabType = tabType
