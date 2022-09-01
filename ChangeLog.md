@@ -1,3 +1,5 @@
+Stork 1.6.0 released on 2022-09-07.
+
 * 239 [build] slawek
 
     Upgraded Angular to version 14.2.0.
@@ -12,9 +14,9 @@
 
 * 237 [func] slawek
 
-   Added the possibility to enable or disable the configuration review
-   checkers globally or only for selected daemons.
-   (Gitlab #610)
+    Added the possibility to enable or disable the configuration review
+    checkers globally or only for selected daemons.
+    (Gitlab #610)
 
 * 236 [build] slawek
 
