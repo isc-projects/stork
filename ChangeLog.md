@@ -1,3 +1,10 @@
+* 237 [func] slawek
+
+   Added the possibility to enable or disable the configuration review
+   checkers. They can be configured globally for all daemons and overwritten
+   for specific ones.
+   (Gitlab #610)
+
 * 236 [build] slawek
 
     Refactored the FreeBSD and OpenBSD support for building agent packages.
