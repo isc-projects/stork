@@ -811,9 +811,14 @@ Use ``rake build:agent_pkg`` to build the agent package and
 ``rake build:server_pkg`` for server package. The package binaries are located
 in the ``dist/pkgs`` directory.
 
+Stork build system attempts to detect native package format. If multiple tools
+are present, e.g., deb and rpm tools on a Debian-based system, a specific
+packaging format can be enforced using the PKG_TYPE variable. The available
+package types will be prompted on a console.
+
 Internally, these packages are built by FPM
-(https://fpm.readthedocs.io/). It is installed automatically but it requires
-the ``ruby-dev`` and ``make`` to build.
+(https://fpm.readthedocs.io/). It is installed automatically, but it requires
+the ``ruby-dev``, ``gnutar``, and ``make`` to build.
 
 Implementation details
 ======================
