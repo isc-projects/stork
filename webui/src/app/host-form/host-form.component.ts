@@ -451,7 +451,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Processes and converts received data when newn transaction is begun.
+     * Processes and converts received data when new transaction is begun.
      *
      * For each daemon, it generates a user friendly label by concatenating
      * app name and daemon name. The list of friendly names is displayed in
@@ -463,9 +463,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @returns processed data that includes friendly daemon names.
      */
     private _mapHostBeginData(data: CreateHostBeginResponse | UpdateHostBeginResponse): MappedHostBeginData {
-        let daemons: Array<SelectableDaemon> = []
+        const daemons: Array<SelectableDaemon> = []
         for (const d of data.daemons) {
-            let daemon = {
+            const daemon = {
                 id: d.id,
                 appId: d.app.id,
                 appType: 'kea',
@@ -474,7 +474,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             }
             daemons.push(daemon)
         }
-        let mappedData: MappedHostBeginData = {
+        const mappedData: MappedHostBeginData = {
             id: data.id,
             subnets: data.subnets,
             daemons: daemons,
@@ -520,7 +520,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @param host host information received from the server and to be updated.
      */
     private _initializeHost(host: Host): void {
-        let selectedDaemons: number[] = []
+        const selectedDaemons: number[] = []
         if (host.localHosts?.length > 0) {
             for (let lh of host.localHosts) {
                 selectedDaemons.push(lh.daemonId)

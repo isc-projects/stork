@@ -124,7 +124,7 @@ export class DhcpOptionSetFormService {
             } else {
                 optionCode = option.get('optionCode').value
             }
-            let item: DHCPOption = {
+            const item: DHCPOption = {
                 alwaysSend: option.get('alwaysSend').value,
                 code: optionCode,
                 encapsulate: '',
@@ -204,7 +204,7 @@ export class DhcpOptionSetFormService {
     }
 
     /**
-     * Implements convertion of the DHCP options from the REST API format to a reactive form.
+     * Implements conversion of the DHCP options from the REST API format to a reactive form.
      *
      * @param universe options universe (i.e., IPv4 or IPv6).
      * @param nestingLevel nesting level of the currently processed options.

@@ -48,7 +48,7 @@ export class HostTab {
      * Sets new host tab type and initializes the form accordingly.
      *
      * It is a private function variant that does not check whether the type
-     * is already set to the desired value/
+     * is already set to the desired value.
      */
     private _setHostTabType(tabType: HostTabType): void {
         switch (tabType) {
@@ -64,7 +64,7 @@ export class HostTab {
     }
 
     /**
-     * Sets new host tab type and initializes the form accoridngly.
+     * Sets new host tab type and initializes the form accordingly.
      *
      * It does nothing when the type is already set to the desired value.
      */
