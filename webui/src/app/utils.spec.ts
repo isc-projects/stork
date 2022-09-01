@@ -1,4 +1,4 @@
-import { clamp, humanCount, stringToHex } from './utils'
+import { clamp, humanCount, stringToHex, getErrorMessage } from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -102,6 +102,71 @@ describe('utils', () => {
     })
 
     it('retrieves the error message properly', () => {
-        fail('not implemented')
+        const testCases: (object | [object, string])[] = [
+            // Error wrapper
+            {
+                error: {
+                    message: 'expected message'
+                },
+                statusText: 'unexpected message',
+                status: 500,
+                message: 'unexpected message',
+                cause: 'unexpected message',
+                name: 'unexpected message',
+                toString: () => 'unexpected message'
+            },
+            // HTTP error with status text
+            {
+                statusText: 'expected message',
+                status: 500,
+                message: 'unexpected message',
+                cause: 'unexpected message',
+                name: 'unexpected message',
+                toString: () => 'unexpected message'
+            },
+            // HTTP error without status text
+            [{
+                status: 500,
+                message: 'unexpected message',
+                cause: 'unexpected message',
+                name: 'unexpected message',
+                toString: () => 'unexpected message'
+            }, 'status: 500'],
+            // Message container
+            {
+                message: 'expected message',
+                cause: 'unexpected message',
+                name: 'unexpected message',
+                toString: () => 'unexpected message'
+            },
+            // Error with a cause
+            {
+                cause: 'expected message',
+                name: 'unexpected message',
+                toString: () => 'unexpected message'
+            },
+            // Error with a name
+            {
+                name: 'expected message',
+                toString: () => 'unexpected message'
+            },
+            // Any object
+            {
+                toString: () => 'expected message'
+            },
+            // An error object
+            Error('expected message')
+        ]
+
+        for (const testCase of testCases) {
+            let error = testCase
+            let expectedMessage = 'expected message'
+            if (testCase instanceof Array) {
+                error = testCase[0]
+                expectedMessage = testCase[1]
+            }
+            const actualMessage = getErrorMessage(error)
+            expect(actualMessage).toBe(expectedMessage, error)
+        }
     })
 })
