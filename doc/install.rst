@@ -284,7 +284,7 @@ Next, install the Stork server package:
 
 .. warning::
 
-   You must to use the ``--allow-untrusted`` flag. The FPM packaging tool we use to prepare
+   For the time being, using the ``--allow-untrusted`` flag is the only option. The FPM packaging tool we use to prepare
    the package doesn't support the signatures for the APK package type.
 
 Setup
