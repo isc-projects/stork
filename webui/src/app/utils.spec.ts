@@ -100,4 +100,8 @@ describe('utils', () => {
         // Empty string.
         expect(stringToHex('')).toBe('')
     })
+
+    it('retrieves the error message properly', () => {
+        fail('not implemented')
+    })
 })
