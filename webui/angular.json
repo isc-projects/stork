@@ -121,6 +121,19 @@
                             "devServerTarget": "stork:serve:production"
                         }
                     }
+                },
+                "storybook": {
+                    "builder": "@storybook/angular:start-storybook",
+                    "options": {
+                        "browserTarget": "angular-cli:build",
+                        "port": 6006
+                    }
+                },
+                "build-storybook": {
+                    "builder": "@storybook/angular:build-storybook",
+                    "options": {
+                        "browserTarget": "angular-cli:build"
+                    }
                 }
             }
         }

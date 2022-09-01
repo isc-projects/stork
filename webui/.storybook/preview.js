@@ -1,0 +1,18 @@
+import { setCompodocJson } from '@storybook/addon-docs/angular'
+import docJson from '../documentation.json'
+setCompodocJson(docJson)
+
+export const parameters = {
+    actions: { argTypesRegex: '^on[A-Z].*' },
+    controls: {
+        matchers: {
+            color: /(background|color)$/i,
+        },
+        exclude: /^_/,
+    },
+
+    // Disabled due to bug in Storybook for Angular 13
+    // See: https://github.com/storybookjs/storybook/issues/17004
+    // docs: { inlineStories: true },
+    docs: false,
+}

@@ -79,3 +79,4 @@ tests/system/openapi_client/
 tests/system/.openapi-generator/
 tests/system/.openapi-generator-ignore
 tests/system/openapi_client_README.md
+webui/documentation.json
