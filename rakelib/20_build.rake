@@ -70,7 +70,7 @@ file WEBUI_DEBUG_DIRECTORY => WEBUI_CODEBASE + [NPX] do
 end
 
 CLEAN.append "webui/dist"
-CLOBBER.append "webui/.angular"
+CLEAN.append "webui/.angular"
 
 ###############
 ### Backend ###

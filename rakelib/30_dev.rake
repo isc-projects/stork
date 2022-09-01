@@ -460,6 +460,25 @@ namespace :db do
     end
 end
 
+
+desc 'Run Storybook'
+task :storybook => [NPM] + WEBUI_CODEBASE do
+    Dir.chdir("webui") do
+        sh NPM, "run", "storybook"
+    end
+end
+
+
+namespace :storybook do
+    desc 'Run any command on storybook'
+    task :exec => [STORYBOOK] do |t, args|
+        Dir.chdir("webui") do
+            sh STORYBOOK, "--disable-telemetry", *args
+        end
+    end
+end
+
+
 namespace :gen do
     namespace :ui do
         desc 'Generate Angular component

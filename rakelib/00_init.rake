@@ -291,6 +291,7 @@ node_ver='14.18.2'
 dlv_ver='v1.8.3'
 gdlv_ver='v1.8.0'
 bundler_ver='2.3.8'
+storybook_ver='6.5.10'
 
 # System-dependent variables
 case OS
@@ -504,6 +505,23 @@ file YAMLINC => [NPM] do
     sh YAMLINC, "--version"
 end
 add_version_guard(YAMLINC, yamlinc_ver)
+
+STORYBOOK = File.join(node_dir, "node_modules", "bin", "sb")
+file STORYBOOK => [NPM] do
+    ci_opts = []
+    if ENV["CI"] == "true"
+        ci_opts += ["--no-audit", "--no-progress"]
+    end
+
+    sh NPM, "install",
+            "-g",
+            *ci_opts,
+            "--prefix", "#{node_dir}/node_modules",
+            "storybook@#{storybook_ver}"
+    sh "touch", "-c", STORYBOOK
+    sh STORYBOOK, "--version"
+end
+add_version_guard(STORYBOOK, storybook_ver)
 
 # Chrome driver is not currently used, but it can be needed in the UI tests.
 # This file task is ready to use after uncomment.
