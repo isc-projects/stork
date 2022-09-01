@@ -431,7 +431,7 @@ export class DhcpOptionSetFormService {
     createIPv4AddressField(value: string = ''): DhcpOptionFieldFormGroup {
         return this._createSimpleField(
             DhcpOptionFieldType.IPv4Address,
-            this._formBuilder.control(value, StorkValidators.ipv4())
+            this._formBuilder.control(value, [Validators.required, StorkValidators.ipv4()])
         )
     }
 
@@ -444,7 +444,7 @@ export class DhcpOptionSetFormService {
     createIPv6AddressField(value: string = ''): DhcpOptionFieldFormGroup {
         return this._createSimpleField(
             DhcpOptionFieldType.IPv6Address,
-            this._formBuilder.control(value, StorkValidators.ipv6())
+            this._formBuilder.control(value, [Validators.required, StorkValidators.ipv6()])
         )
     }
 
@@ -456,7 +456,7 @@ export class DhcpOptionSetFormService {
      */
     createIPv6PrefixField(prefix: string = '', prefixLen: string | number | null = 64): DhcpOptionFieldFormGroup {
         return this._createComplexField(DhcpOptionFieldType.IPv6Prefix, {
-            prefix: this._formBuilder.control(prefix, StorkValidators.ipv6()),
+            prefix: this._formBuilder.control(prefix, [Validators.required, StorkValidators.ipv6()]),
             prefixLength: this._formBuilder.control(prefixLen, Validators.required),
         })
     }
