@@ -88,7 +88,7 @@ file agent_dist_dir => [agent_dist_bin_file, agent_dist_man_file, agent_dist_sys
 
 agent_hooks = FileList["etc/isc-stork-agent.post*", "etc/isc-stork-agent.pre*"]
 
-AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-builded.pkg")
+AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-built.pkg")
 file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
     ENV["PKG_NAME"] = "agent"
     Rake::Task["clean:pkgs"].invoke()
@@ -199,7 +199,7 @@ file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + s
 
 server_hooks = FileList["etc/isc-stork-server.post*", "etc/isc-stork-server.pre*"]
 
-SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-builded.pkg")
+SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-built.pkg")
 file SERVER_PACKAGE_STUB_FILE => [FPM, server_dist_dir, pkgs_dir] + server_hooks do
     ENV["PKG_NAME"] = "server"
     Rake::Task["clean:pkgs"].invoke()
@@ -238,7 +238,7 @@ namespace :clean do
     "
     task :pkgs do
         pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{ENV["PKG_NAME"]}*")]
-        stub = "-builded.pkg"
+        stub = "-built.pkg"
         if !ENV["PKG_NAME"].nil?
             stub = ENV["PKG_NAME"] + stub
         else
