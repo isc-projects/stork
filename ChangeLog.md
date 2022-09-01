@@ -1,3 +1,8 @@
+* 235 [func] marcin
+
+    Enable updating host reservations in Stork.
+    (Gitlab #838)
+
 * 234 [build] slawek
 
     Added scripts for building native APK packages with Stork Server and

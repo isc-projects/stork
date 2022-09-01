@@ -315,7 +315,7 @@ the configuration files of the monitored Kea servers and in the host database
 backends accessed via the Kea Host Commands premium hook library.
 
 All reservations detected by Stork can be listed by selecting the ``DHCP``
-menu option and then selecting ``Hosts``.
+menu option and then selecting ``Host Reservations``.
 
 The first column in the presented view displays one or more DHCP identifiers
 for each host in the format ``hw-address=0a:1b:bd:43:5f:99``, where
@@ -480,10 +480,11 @@ the DHCP server.
 In the current Stork version, the user must explicitly select an option
 payload suitable for the option. Thus, they must be familiar with the
 DHCP option formats and select appropriate option fields in the right
-order using the ``Add Payload`` button. For example, the ``(5) Name Server``
-option can comprise one or more IPv4 addresses. After selecting this option,
-the user should select an ``ipv4-address`` option field once or more and
-fill the option fields with the IP addresses.
+order using the ``Add <field-type>`` button below the option code. For
+example, the ``(5) Name Server`` option can comprise one or more IPv4
+addresses. After selecting this option, the user should select an
+``ipv4-address`` option field once or more and fill the option fields
+with the IP addresses.
 
 .. note::
 
@@ -494,13 +495,38 @@ fill the option fields with the IP addresses.
    and Kea will reject the new reservation. The reservation can be submitted
    again after correcting the option payload.
 
-Please use the ``Add Payload`` button to add suboptions to a DHCP option.
+Please use the ``Add <field-type>`` button to add suboptions to a DHCP option.
 Stork currently supports first-level suboptions only, i.e., it is impossible
 to add a suboption of a suboption.
+
+If a host reservation is configured in several DHCP servers, typically, all
+servers comprise the same set of parameters (i.e., IP addresses, hostname,
+and DHCP options). By default, creating a new host reservation for several
+servers sends an identical copy of the host reservation to each. A user may
+choose to specify a different set of options for different servers by selecting
+``Toggle editing DHCP options individually for each server`` at the top of the
+form. In this case, the user must specify the complete option sets for each DHCP
+server. Leaving options blank for some servers means that these servers receive
+no DHCP options with the reservation.
 
 Submitted host reservations may appear in Stork's host reservations list with some
 delay. Please allow some time for the reservations to propagate to the Kea DHCP
 servers and refresh the list.
+
+Updating Host Reservations
+--------------------------
+
+In a selected host reservation's view, click ``Edit`` button to open a form for
+editing host reservation information. The form automatically toggles editing
+DHCP options individually for each server (see above) when it detects different
+option sets on different servers using the reservation. Besides editing the
+host reservation information, it is also possible to deselect some of the
+servers (using the DHCP Servers dropdown), which will delete the reservation
+from these servers.
+
+Use the ``Revert Changes`` button to remove all applied changes and restore
+the original host reservation information. Use ``Cancel`` to close the form
+without applying the changes.
 
 Deleting Host Reservations
 --------------------------
@@ -618,7 +644,7 @@ servers and information about failover progress.
 
 The failover progress information is only presented when one of the
 active servers has been unable to communicate with the partner via
-the heartbeat exchange for a time exceeding the ``max-heartbeat-delay``
+refthe heartbeat exchange for a time exceeding the ``max-heartbeat-delay``
 threshold. If the server is configured to monitor the DHCP traffic
 directed to the partner, to verify that the partner is not responding
 to this traffic before transitioning to the ``partner-down`` state, the

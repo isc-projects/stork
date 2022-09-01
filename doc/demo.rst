@@ -121,9 +121,9 @@ agent-kea-ha1 and agent-kea-ha2
 agent-kea-many-subnets
    This container runs an agent with a Kea DHCPv4 server that has many (nearly
    7000) subnets defined in its configuration.
-agent-kea-premium
-   This container runs an agent with a Kea DHCPv4 server connected to a MySQL
-   database containing host reservations. It is only available when
+agent-kea-premium-one and agent-kea-premium-two
+   These containers run agents with Kea DHCPv4 and DHCPv6 servers connected
+   to a MySQL database containing host reservations. They are only available when
    premium features have been enabled during the demo build.
 
 These are containers with third-party services that are required by Stork:
