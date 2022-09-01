@@ -106,14 +106,14 @@ describe('utils', () => {
             // Error wrapper
             {
                 error: {
-                    message: 'expected message'
+                    message: 'expected message',
                 },
                 statusText: 'unexpected message',
                 status: 500,
                 message: 'unexpected message',
                 cause: 'unexpected message',
                 name: 'unexpected message',
-                toString: () => 'unexpected message'
+                toString: () => 'unexpected message',
             },
             // HTTP error with status text
             {
@@ -122,40 +122,43 @@ describe('utils', () => {
                 message: 'unexpected message',
                 cause: 'unexpected message',
                 name: 'unexpected message',
-                toString: () => 'unexpected message'
+                toString: () => 'unexpected message',
             },
             // HTTP error without status text
-            [{
-                status: 500,
-                message: 'unexpected message',
-                cause: 'unexpected message',
-                name: 'unexpected message',
-                toString: () => 'unexpected message'
-            }, 'status: 500'],
+            [
+                {
+                    status: 500,
+                    message: 'unexpected message',
+                    cause: 'unexpected message',
+                    name: 'unexpected message',
+                    toString: () => 'unexpected message',
+                },
+                'status: 500',
+            ],
             // Message container
             {
                 message: 'expected message',
                 cause: 'unexpected message',
                 name: 'unexpected message',
-                toString: () => 'unexpected message'
+                toString: () => 'unexpected message',
             },
             // Error with a cause
             {
                 cause: 'expected message',
                 name: 'unexpected message',
-                toString: () => 'unexpected message'
+                toString: () => 'unexpected message',
             },
             // Error with a name
             {
                 name: 'expected message',
-                toString: () => 'unexpected message'
+                toString: () => 'unexpected message',
             },
             // Any object
             {
-                toString: () => 'expected message'
+                toString: () => 'expected message',
             },
             // An error object
-            Error('expected message')
+            Error('expected message'),
         ]
 
         for (const testCase of testCases) {
