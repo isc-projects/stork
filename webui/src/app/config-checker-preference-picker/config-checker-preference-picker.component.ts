@@ -39,7 +39,7 @@ export class ConfigCheckerPreferencePickerComponent {
     /**
      * Loading state.
      */
-    _loading: boolean = true
+    private _loading: boolean = true
 
     /**
      * Sets the loading state. The false value resets the changes.
