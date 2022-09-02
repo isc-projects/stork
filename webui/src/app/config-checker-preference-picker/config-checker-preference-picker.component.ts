@@ -162,7 +162,8 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'The checker verifying if the stat_cmds hooks library is loaded.'
             case 'host_cmds_presence':
                 return (
-                    'The checker verifying if the host_cmds hooks library is ' + 'loaded when host backend is in use.'
+                    'The checker verifying if the host_cmds hooks library is ' +
+                    'loaded when host backend is in use.'
                 )
             case 'dispensable_shared_network':
                 return (
@@ -183,16 +184,17 @@ export class ConfigCheckerPreferencePickerComponent {
                     'reservations outside of the dynamic pools.'
                 )
             case 'overlapping_subnet':
-                return 'The checker validates that subnets (global or from shared' + 'networks) do not overlap.'
+                return 'The checker verifying if subnet prefixes do not overlap.'
             case 'canonical_prefix':
-                return 'The checker validates that all subnet prefixes are in ' + 'canonical form.'
+                return 'The checker verifying if subnet prefixes are in the ' +
+                       'canonical form.'
             default:
                 return ''
         }
     }
 
     /**
-     * Returns the actual checker state. If no changes were provided, returns
+     * Returns the actual checker state. If no changes were made, returns
      * an original state.
      * @param checker Configuration checker
      * @returns Checker state
@@ -202,14 +204,14 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * Returns true is any significant change was provided.
+     * Returns true if any significant change was made.
      */
     get hasChanges(): boolean {
         return Object.keys(this.changes).length !== 0
     }
 
     /**
-     * Callback called on change the checker state.
+     * Callback called on checker state change.
      * @param event Generic change input event
      * @param checker Affected checker
      */
@@ -226,7 +228,7 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * Callback called on submit the checker state changes. It emits an Angular
+     * Callback called on checker state changes submission. It emits an Angular
      * event with changed checker preference and sets the loading state.
      */
     onSubmit() {
@@ -240,7 +242,7 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
-     * Callback called on reset the checker state changes.
+     * Callback called on checker state reset.
      */
     onReset() {
         this.changes = {}

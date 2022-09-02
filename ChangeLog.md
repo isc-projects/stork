@@ -1,8 +1,7 @@
 * 237 [func] slawek
 
    Added the possibility to enable or disable the configuration review
-   checkers. They can be configured globally for all daemons and overwritten
-   for specific ones.
+   checkers globally or only for selected daemons.
    (Gitlab #610)
 
 * 236 [build] slawek

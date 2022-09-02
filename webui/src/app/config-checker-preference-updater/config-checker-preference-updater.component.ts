@@ -56,7 +56,7 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
     /**
      * Creates two subscriptions.
      * The first fetches the initial data from API.
-     * The second processes the config checker preference changes and send them
+     * The second processes the config checker preference changes and sends them
      * to API.
      */
     ngOnInit(): void {
