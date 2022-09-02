@@ -577,7 +577,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             host.localHosts?.length > 1 &&
             host.localHosts.slice(1).some((lh) => lh.optionsHash !== host.localHosts[0].optionsHash)
 
-        for (let i = 0; i < host.localHosts.length; i++) {
+        for (let i = 0; i < (this.splitFormMode ? host.localHosts.length : 1); i++) {
             let converted = this._optionSetFormService.convertOptionsToForm(
                 this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
                 host.localHosts[i].options
@@ -586,9 +586,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this.optionsArray.setControl(0, converted)
             } else {
                 this.optionsArray.push(converted)
-            }
-            if (!this.splitFormMode) {
-                break
             }
         }
     }
