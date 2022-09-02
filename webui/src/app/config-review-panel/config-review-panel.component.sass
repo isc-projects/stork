@@ -3,17 +3,26 @@
   margin-top: 10px
 
 .review-header
+  // Uses full width of the panel.
   width: 100%
+  // Enables the flex features.
   display: flex
+  // The creation date and buttons will be placed at the ends of the header.
   justify-content: space-between
+  // The buttons will be on the right, even if no report has been generated.
   flex-direction: row-reverse
 
 #review-summary-div
+  // The summary is aligned second because it may not exist.
   order: 2
 
 #review-buttons
+  // Buttons are aligned first. It ensures they will be on the right side even
+  // if the header doesn't have the summary. 
   order: 1
+  // Puts all buttons in a line.
   display: flex
+  // Defines the horizontal spacing between buttons.
   column-gap: 0.5rem
 
 .checker-panel-wrapper
