@@ -902,11 +902,11 @@ func TestPutDaemonConfigReviewNoConfig(t *testing.T) {
 func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	// Arrange
 	metadata := configreview.CheckerMetadata{
-		Name:          "foo",
-		Triggers:      configreview.Triggers{configreview.ConfigModified, configreview.ManualRun},
-		Selectors:     configreview.DispatchGroupSelectors{configreview.Bind9Daemon, configreview.KeaDHCPDaemon},
-		GlobalEnabled: true,
-		State:         configreview.CheckerStateEnabled,
+		Name:            "foo",
+		Triggers:        configreview.Triggers{configreview.ConfigModified, configreview.ManualRun},
+		Selectors:       configreview.DispatchGroupSelectors{configreview.Bind9Daemon, configreview.KeaDHCPDaemon},
+		GloballyEnabled: true,
+		State:           configreview.CheckerStateEnabled,
 	}
 
 	// Act
@@ -922,7 +922,7 @@ func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
 	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
 	require.EqualValues(t, "enabled", apiMetadata.State)
-	require.True(t, *apiMetadata.GlobalEnabled)
+	require.True(t, apiMetadata.GloballyEnabled)
 }
 
 // Test that the config checker state is properly converted from the REST API enum.

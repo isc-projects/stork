@@ -20,6 +20,6 @@ func TestNewCheckerMetadata(t *testing.T) {
 	require.Contains(t, metadata.Selectors, Bind9Daemon)
 	require.Contains(t, metadata.Selectors, KeaDHCPv4Daemon)
 	require.Len(t, metadata.Selectors, 2)
-	require.True(t, metadata.GlobalEnabled)
+	require.True(t, metadata.GloballyEnabled)
 	require.EqualValues(t, CheckerStateInherit, metadata.State)
 }

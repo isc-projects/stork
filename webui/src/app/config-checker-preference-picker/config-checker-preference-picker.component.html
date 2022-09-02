@@ -50,7 +50,7 @@
                         ? 'picker__state-cell--enabled'
                         : getActualState(checker) === 'disabled'
                         ? 'picker__state-cell--disabled'
-                        : checker.globalEnabled
+                        : checker.globallyEnabled
                         ? 'picker__state-cell--inherit-enabled'
                         : 'picker__state-cell--inherit-disabled'
                 "
@@ -118,7 +118,7 @@
         <label class="form-check-label" for="select-{{ checker.name }}">
             {{ getActualState(checker) }}
             <span class="picker__state-inherit-status" *ngIf="getActualState(checker) === 'inherit'">
-                ({{ checker.globalEnabled ? 'enabled' : 'disabled' }})
+                ({{ checker.globallyEnabled ? 'enabled' : 'disabled' }})
             </span>
         </label>
     </div>

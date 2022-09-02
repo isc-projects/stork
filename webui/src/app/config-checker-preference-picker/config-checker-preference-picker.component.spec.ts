@@ -58,14 +58,14 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             {
                 name: 'n1',
                 selectors: ['s1', 's2'],
-                globalEnabled: true,
+                globallyEnabled: true,
                 state: 'disabled',
                 triggers: ['t1', 't2', 't3'],
             },
             {
                 name: 'n2',
                 selectors: ['s3'],
-                globalEnabled: false,
+                globallyEnabled: false,
                 state: 'enabled',
                 triggers: ['t4'],
             },
@@ -145,7 +145,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should display the checker description', () => {
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'host_cmds_presence',
                 selectors: [],
                 state: 'enabled',
@@ -163,7 +163,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should display the checker selectors', () => {
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'foo',
                 selectors: ['each-daemon', 'foobar'],
                 state: 'enabled',
@@ -182,7 +182,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should display the checker triggers', () => {
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'foo',
                 selectors: [],
                 state: 'enabled',
@@ -201,7 +201,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should activate the submit button only if any changes were provided', () => {
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'foo',
                 selectors: [],
                 state: 'enabled',
@@ -259,7 +259,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
 
     it('should the checker state cell should have a proper CSS class', () => {
         const checker = {
-            globalEnabled: true,
+            globallyEnabled: true,
             name: 'foo',
             selectors: [],
             state: ConfigChecker.StateEnum.Enabled,
@@ -294,7 +294,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         expect(stateCell.classes['picker__state-cell--inherit-enabled']).toBeTrue()
         expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
         // Globally disabled.
-        checker.globalEnabled = false
+        checker.globallyEnabled = false
         fixture.detectChanges()
         expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
         expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
@@ -302,9 +302,9 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         expect(stateCell.classes['picker__state-cell--inherit-disabled']).toBeTrue()
     })
 
-    it('should display inherit state with a global enabled status', () => {
+    it('should display inherit state with a globally enabled status', () => {
         const checker = {
-            globalEnabled: true,
+            globallyEnabled: true,
             name: 'foo',
             selectors: [],
             state: ConfigChecker.StateEnum.Inherit,
@@ -319,7 +319,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         let content = (stateCell.nativeElement as HTMLElement).textContent
         expect(content.trim()).toEqual('inherit  (enabled)')
 
-        checker.globalEnabled = false
+        checker.globallyEnabled = false
         fixture.detectChanges()
         content = (stateCell.nativeElement as HTMLElement).textContent
         expect(content.trim()).toEqual('inherit  (disabled)')
@@ -330,7 +330,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
 
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'foo',
                 selectors: [],
                 state: ConfigChecker.StateEnum.Inherit,
@@ -353,7 +353,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     it('should handle the reset button', () => {
         component.checkers = [
             {
-                globalEnabled: true,
+                globallyEnabled: true,
                 name: 'foo',
                 selectors: [],
                 state: ConfigChecker.StateEnum.Inherit,

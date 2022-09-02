@@ -55,14 +55,14 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                         selectors: ['each-daemon', 'kea-daemon'],
                         state: ConfigChecker.StateEnum.Disabled,
                         triggers: ['manual', 'config change'],
-                        globalEnabled: false,
+                        globallyEnabled: false,
                     },
                     {
                         name: 'dispensable_subnet',
                         selectors: ['each-daemon'],
                         state: ConfigChecker.StateEnum.Enabled,
                         triggers: ['manual', 'config change'],
-                        globalEnabled: true,
+                        globallyEnabled: true,
                     },
                 ],
             } as ConfigCheckers & HttpEvent<ConfigCheckers>)

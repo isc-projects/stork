@@ -485,6 +485,12 @@
 
   ConfigChecker:
     type: object
+    required:
+      - name
+      - triggers
+      - selectors
+      - state
+      - globallyEnabled
     properties:
       name:
         type: string
@@ -501,7 +507,7 @@
           type: string
       state:
         enum: *CONFIGCHECKERSTATE
-      globalEnabled:
+      globallyEnabled:
         type: boolean
         readOnly: true
 
