@@ -124,7 +124,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             state: 'disabled',
             globallyEnabled: true,
             selectors: [],
-            triggers: []
+            triggers: [],
         }
 
         component.checkers = [checker]

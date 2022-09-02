@@ -162,8 +162,7 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'The checker verifying if the stat_cmds hooks library is loaded.'
             case 'host_cmds_presence':
                 return (
-                    'The checker verifying if the host_cmds hooks library is ' +
-                    'loaded when host backend is in use.'
+                    'The checker verifying if the host_cmds hooks library is ' + 'loaded when host backend is in use.'
                 )
             case 'dispensable_shared_network':
                 return (
@@ -186,8 +185,7 @@ export class ConfigCheckerPreferencePickerComponent {
             case 'overlapping_subnet':
                 return 'The checker verifying if subnet prefixes do not overlap.'
             case 'canonical_prefix':
-                return 'The checker verifying if subnet prefixes are in the ' +
-                       'canonical form.'
+                return 'The checker verifying if subnet prefixes are in the ' + 'canonical form.'
             default:
                 return ''
         }
