@@ -40,6 +40,10 @@
     // Sets the vertical gaps between chips.
     row-gap: 0.5rem
 
+    ::ng-deep .p-chip-text
+        // Disables the word wrap for chips.
+        white-space: nowrap
+
 .picker__empty
     td
         // Centers the empty placeholder or loading icon
@@ -65,5 +69,5 @@
         display: none
 
     .picker__state-cell
-        // Prevent to wrap the label on minimal layout.
+        // Prevents to wrap the label on minimal layout.
         width: 12rem
