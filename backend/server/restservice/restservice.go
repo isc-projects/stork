@@ -322,7 +322,14 @@ func (r *RestAPI) Serve() (err error) {
 	}
 
 	if s.StaticFilesDir == "" {
-		s.StaticFilesDir = "./webui/dist/stork"
+		devPath := "./webui/dist/stork"
+		// Check if the Stork is running in the development environment.
+		if _, err := os.Stat(devPath); errors.Is(err, os.ErrNotExist) {
+			// No development environment. Use the default production path.
+			s.StaticFilesDir = "/usr/share/stork/www"
+		} else {
+			s.StaticFilesDir = devPath
+		}
 	}
 	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, r.EventCenter)
 
