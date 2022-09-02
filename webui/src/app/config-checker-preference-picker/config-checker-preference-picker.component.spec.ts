@@ -122,6 +122,9 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         const checker: ConfigChecker = {
             name: 'foo',
             state: 'disabled',
+            globallyEnabled: true,
+            selectors: [],
+            triggers: []
         }
 
         component.checkers = [checker]
@@ -317,12 +320,12 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         expect(stateCell).not.toBeNull()
 
         let content = (stateCell.nativeElement as HTMLElement).textContent
-        expect(content.trim()).toEqual('inherit  (enabled)')
+        expect(content.trim()).toEqual('globally enabled')
 
         checker.globallyEnabled = false
         fixture.detectChanges()
         content = (stateCell.nativeElement as HTMLElement).textContent
-        expect(content.trim()).toEqual('inherit  (disabled)')
+        expect(content.trim()).toEqual('globally disabled')
     })
 
     it('should handle submitting and set the loading state', () => {

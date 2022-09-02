@@ -115,10 +115,12 @@
             [indeterminate]="getActualState(checker) === 'inherit'"
             (change)="onCheckerStateChanged(checker)"
         />
-        <label class="form-check-label" for="select-{{ checker.name }}">
-            {{ getActualState(checker) }}
+        <label class="form-check-label p-capitalize-first" for="select-{{ checker.name }}">
+            <span *ngIf="getActualState(checker) !== 'inherit'">
+                {{ getActualState(checker) }}
+            </span>
             <span class="picker__state-inherit-status" *ngIf="getActualState(checker) === 'inherit'">
-                ({{ checker.globallyEnabled ? 'enabled' : 'disabled' }})
+                globally {{ checker.globallyEnabled ? 'enabled' : 'disabled' }}
             </span>
         </label>
     </div>
