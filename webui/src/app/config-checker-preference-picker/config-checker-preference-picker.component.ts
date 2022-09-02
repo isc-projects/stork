@@ -164,24 +164,28 @@ export class ConfigCheckerPreferencePickerComponent {
                 return (
                     'The checker verifying if the host_cmds hooks library is ' + 'loaded when host backend is in use.'
                 )
-            case 'shared_network_dispensable':
+            case 'dispensable_shared_network':
                 return (
                     'The checker verifying if a shared network can be removed ' +
                     'because it is empty or contains only one subnet.'
                 )
-            case 'subnet_dispensable':
+            case 'dispensable_subnet':
                 return (
                     'The checker verifying if a subnet can be removed because ' +
                     'it includes no pools and no reservations. The check is ' +
                     'skipped when the host_cmds hook library is loaded because ' +
                     'host reservations may be present in the database.'
                 )
-            case 'reservations_out_of_pool':
+            case 'out_of_pool_reservation':
                 return (
                     'The checker suggesting the use of out-of-pool host ' +
                     'reservation mode when there are subnets with all host ' +
                     'reservations outside of the dynamic pools.'
                 )
+            case 'overlapping_subnet':
+                return 'The checker validates that subnets (global or from shared' + 'networks) do not overlap.'
+            case 'canonical_prefix':
+                return 'The checker validates that all subnet prefixes are in ' + 'canonical form.'
             default:
                 return ''
         }

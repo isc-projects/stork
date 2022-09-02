@@ -51,14 +51,14 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 total: 2,
                 items: [
                     {
-                        name: 'reservations_out_of_pool',
+                        name: 'out_of_pool_reservation',
                         selectors: ['each-daemon', 'kea-daemon'],
                         state: ConfigChecker.StateEnum.Disabled,
                         triggers: ['manual', 'config change'],
                         globalEnabled: false,
                     },
                     {
-                        name: 'subnet_dispensable',
+                        name: 'dispensable_subnet',
                         selectors: ['each-daemon'],
                         state: ConfigChecker.StateEnum.Enabled,
                         triggers: ['manual', 'config change'],
