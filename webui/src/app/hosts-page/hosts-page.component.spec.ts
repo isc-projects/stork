@@ -249,6 +249,27 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
     })
 
+    it('should emit error message when there is an error deleting transaction for new host', fakeAsync(() => {
+        // Open the tab for creating a host.
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Ensure an error is emitted when transaction is deleted.
+        component.openedTabs[0].form.transactionId = 123
+        spyOn(dhcpApi, 'createHostDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(messageService, 'add')
+
+        // Close the tab for adding new host.
+        component.closeHostTab(null, 1)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
     it('should switch a tab to host editing mode', () => {
         // Create a list with two hosts.
         component.hosts = [
@@ -335,6 +356,64 @@ describe('HostsPageComponent', () => {
         form = fixture.debugElement.query(By.css('form'))
         expect(form).toBeTruthy()
     })
+
+    it('should emit an error when deleting transaction for updating a host fails', fakeAsync(() => {
+        // Create a list with two hosts.
+        component.hosts = [
+            {
+                id: 1,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '01:02:03:04',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 1,
+                        appName: 'frog',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // Ensure that we don't fetch the host information from the server upon
+        // opening a new tab. We should use the information available in the
+        // hosts structure.
+        spyOn(dhcpApi, 'getHost')
+
+        // Open tab with host with id 1.
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Simulate clicking on Edit.
+        component.onHostEditBegin(component.hosts[0])
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Make sure an error is returned when closing the tab.
+        component.openedTabs[0].form.transactionId = 123
+        spyOn(dhcpApi, 'updateHostDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(messageService, 'add')
+
+        // Close the tab.
+        component.closeHostTab(null, 1)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(messageService.add).toHaveBeenCalled()
+    }))
 
     it('should open a tab when hosts have not been loaded', () => {
         const host: any = {

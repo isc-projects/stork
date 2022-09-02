@@ -357,7 +357,21 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
             !this.openedTabs[tabIndex - 1].submitted
         ) {
-            this.dhcpApi.createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId).toPromise()
+            this.dhcpApi
+                .createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId)
+                .toPromise()
+                .catch((err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
+                    })
+                })
         } else if (
             this.openedTabs[tabIndex - 1].tabType === HostTabType.EditHost &&
             this.openedTabs[tabIndex - 1].host.id > 0 &&
@@ -370,6 +384,18 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     this.openedTabs[tabIndex - 1].form.transactionId
                 )
                 .toPromise()
+                .catch((err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
+                    })
+                })
         }
 
         // Remove the MenuItem representing the tab.
