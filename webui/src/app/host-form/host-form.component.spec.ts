@@ -1262,9 +1262,11 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedDaemons').setValue([1, 2])
+        component.formGroup.get('selectedDaemons').setValue([3, 4, 5])
         component.onDaemonsChange()
         fixture.detectChanges()
+        expect(component.optionsArray.length).toBe(1)
+        expect(component.formGroup.get('selectedDaemons').value.length).toBe(3)
 
         component.splitFormMode = true
         component.onSplitModeChange()
@@ -1272,8 +1274,9 @@ describe('HostFormComponent', () => {
 
         let optionForms = fixture.debugElement.queryAll(By.css('app-dhcp-option-set-form'))
         expect(optionForms).toBeTruthy()
-        expect(optionForms.length).toBe(2)
+        expect(optionForms.length).toBe(3)
 
+        const optionSetLeft = component.optionsArray.at(0)
         component.splitFormMode = false
         component.onSplitModeChange()
         fixture.detectChanges()
@@ -1281,6 +1284,7 @@ describe('HostFormComponent', () => {
         optionForms = fixture.debugElement.queryAll(By.css('app-dhcp-option-set-form'))
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(1)
+        expect(component.optionsArray.at(0)).toBe(optionSetLeft)
     }))
 
     it('should clone options upon switching to split mode', fakeAsync(() => {

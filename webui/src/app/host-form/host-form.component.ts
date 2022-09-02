@@ -815,14 +815,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
      */
     onSplitModeChange(): void {
         if (this.splitFormMode) {
-            let selectedDaemons = this.formGroup.get('selectedDaemons').value
+            const selectedDaemons = this.formGroup.get('selectedDaemons').value
+            const itemsToAdd = selectedDaemons.length - this.optionsArray.length
             if (selectedDaemons.length >= this.optionsArray.length) {
-                for (let i = 0; i < selectedDaemons.length - this.optionsArray.length; i++) {
+                for (let i = 0; i < itemsToAdd; i++) {
                     this.optionsArray.push(this._optionSetFormService.cloneControl(this.optionsArray.at(0)))
                 }
             }
         } else {
-            for (let i = 1; i < this.optionsArray.length; i++) {
+            for (let i = this.optionsArray.length; i >= 1; i--) {
                 this.optionsArray.removeAt(i)
             }
         }
