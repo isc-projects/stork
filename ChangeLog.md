@@ -1,3 +1,8 @@
+* 239 [build] slawek
+
+    Upgraded Angular to version 14.2.0.
+    (Gitlab #849)
+
 * 238 [bug] slawek
 
     Prometheus exporter for BIND 9 sends the HTTP requests with an empty body.
