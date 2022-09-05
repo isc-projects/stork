@@ -101,7 +101,7 @@ func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			DaemonID:   lh.DaemonID,
 			DataSource: ds,
 		}
-		localHost.DHCPOptionSet, err = flattenDHCPOptions("", lh.Options)
+		localHost.DHCPOptionSet, err = flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {
 			return nil, err
 		}

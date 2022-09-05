@@ -100,15 +100,43 @@ func TestFlattenDHCPOptions(t *testing.T) {
 						},
 					},
 					Universe: 4,
+					Options: []*models.DHCPOption{
+						{
+							Code:        5,
+							Encapsulate: "option-1002.4.5",
+							Fields: []*models.DHCPOptionField{
+								{
+									FieldType: keaconfig.StringField,
+									Values:    []string{"baz"},
+								},
+							},
+							Universe: 4,
+							Options: []*models.DHCPOption{
+								// This option is at 4-th recursion level, thus it should be
+								// excluded from the result.
+								{
+									Code:        6,
+									Encapsulate: "option-1002.4.5.6",
+									Fields: []*models.DHCPOptionField{
+										{
+											FieldType: keaconfig.Uint32Field,
+											Values:    []string{"12"},
+										},
+									},
+									Universe: 4,
+								},
+							},
+						},
+					},
 				},
 			},
 			Universe: 4,
 		},
 	}
 	// Convert and flatten the structure.
-	options, err := flattenDHCPOptions("dhcp4", restOptions)
+	options, err := flattenDHCPOptions("dhcp4", restOptions, 0)
 	require.NoError(t, err)
-	require.Len(t, options, 6)
+	require.Len(t, options, 7)
 
 	// Sort the options by code because their order is not guaranteed.
 	sort.Slice(options, func(i, j int) bool {
@@ -160,23 +188,32 @@ func TestFlattenDHCPOptions(t *testing.T) {
 	require.Equal(t, "option-1002.4", options[3].Encapsulate)
 	require.Equal(t, storkutil.IPv4, options[3].Universe)
 
-	require.True(t, options[4].AlwaysSend)
-	require.EqualValues(t, 1001, options[4].Code)
+	require.False(t, options[4].AlwaysSend)
+	require.EqualValues(t, 5, options[4].Code)
 	require.Len(t, options[4].Fields, 1)
 	require.Len(t, options[4].Fields[0].Values, 1)
-	require.EqualValues(t, "foo", options[4].Fields[0].Values[0])
-	require.Equal(t, "option-1001", options[4].Encapsulate)
-	require.Equal(t, "dhcp4", options[4].Space)
+	require.EqualValues(t, "baz", options[4].Fields[0].Values[0])
+	require.Equal(t, "option-1002.4.5", options[4].Encapsulate)
+	require.Equal(t, "option-1002.4", options[4].Space)
 	require.Equal(t, storkutil.IPv4, options[4].Universe)
 
-	require.False(t, options[5].AlwaysSend)
-	require.EqualValues(t, 1002, options[5].Code)
+	require.True(t, options[5].AlwaysSend)
+	require.EqualValues(t, 1001, options[5].Code)
 	require.Len(t, options[5].Fields, 1)
 	require.Len(t, options[5].Fields[0].Values, 1)
-	require.EqualValues(t, 755, options[5].Fields[0].Values[0])
-	require.Equal(t, "option-1002", options[5].Encapsulate)
+	require.EqualValues(t, "foo", options[5].Fields[0].Values[0])
+	require.Equal(t, "option-1001", options[5].Encapsulate)
 	require.Equal(t, "dhcp4", options[5].Space)
 	require.Equal(t, storkutil.IPv4, options[5].Universe)
+
+	require.False(t, options[6].AlwaysSend)
+	require.EqualValues(t, 1002, options[6].Code)
+	require.Len(t, options[6].Fields, 1)
+	require.Len(t, options[6].Fields[0].Values, 1)
+	require.EqualValues(t, 755, options[6].Fields[0].Values[0])
+	require.Equal(t, "option-1002", options[6].Encapsulate)
+	require.Equal(t, "dhcp4", options[6].Space)
+	require.Equal(t, storkutil.IPv4, options[6].Universe)
 }
 
 // Test negative scenarios of conversion of the DHCP options from the
@@ -219,7 +256,7 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 					},
 				},
 			}
-			options, err := flattenDHCPOptions("dhcp4", restOptions)
+			options, err := flattenDHCPOptions("dhcp4", restOptions, 0)
 			require.Error(t, err)
 			require.Nil(t, options)
 		})
@@ -252,6 +289,18 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 			Space:       "option-1001",
 			Encapsulate: "option-1001.1",
 		},
+		{
+			AlwaysSend: false,
+			Code:       2,
+			Fields: []dbmodel.DHCPOptionField{
+				{
+					FieldType: keaconfig.Uint32Field,
+					Values:    []any{22},
+				},
+			},
+			Space:       "option-1001.1",
+			Encapsulate: "option-1001.1.2",
+		},
 	}
 
 	// Convert.
@@ -266,7 +315,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Equal(t, "foo", restOptions[0].Fields[0].Values[0])
 	require.Len(t, restOptions[0].Options, 1)
 
-	// Suboption
+	// First level suboption.
 	require.Len(t, restOptions[0].Options, 1)
 	require.False(t, restOptions[0].Options[0].AlwaysSend)
 	require.EqualValues(t, 1, restOptions[0].Options[0].Code)
@@ -275,6 +324,16 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Len(t, restOptions[0].Options[0].Fields[0].Values, 1)
 	require.Equal(t, "11", restOptions[0].Options[0].Fields[0].Values[0])
 	require.Equal(t, "option-1001.1", restOptions[0].Options[0].Encapsulate)
+
+	// Second level suboption.
+	require.Len(t, restOptions[0].Options[0].Options, 1)
+	require.False(t, restOptions[0].Options[0].Options[0].AlwaysSend)
+	require.EqualValues(t, 2, restOptions[0].Options[0].Options[0].Code)
+	require.Len(t, restOptions[0].Options[0].Options[0].Fields, 1)
+	require.Equal(t, keaconfig.Uint32Field, restOptions[0].Options[0].Options[0].Fields[0].FieldType)
+	require.Len(t, restOptions[0].Options[0].Options[0].Fields[0].Values, 1)
+	require.Equal(t, "22", restOptions[0].Options[0].Options[0].Fields[0].Values[0])
+	require.Equal(t, "option-1001.1.2", restOptions[0].Options[0].Options[0].Encapsulate)
 }
 
 // Test that option field values of different types are correctly converted
@@ -338,13 +397,20 @@ func TestUnflattenDHCPOptionsRecursionLevel(t *testing.T) {
 			Encapsulate: "option-1001.1",
 		},
 		{
-			Code:  2,
-			Space: "option-1001.1",
+			Code:        2,
+			Space:       "option-1001.1",
+			Encapsulate: "option-1001.1.2",
+		},
+		{
+			Code:        3,
+			Space:       "option-1001.1.2",
+			Encapsulate: "option-1001.1.3",
 		},
 	}
 
 	restOptions := unflattenDHCPOptions(options, "", 0)
 	require.Len(t, restOptions, 1)
 	require.Len(t, restOptions[0].Options, 1)
-	require.Zero(t, restOptions[0].Options[0].Options)
+	require.Len(t, restOptions[0].Options[0].Options, 1)
+	require.Zero(t, restOptions[0].Options[0].Options[0].Options)
 }

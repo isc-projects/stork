@@ -20,9 +20,16 @@ import (
 // the option. This is the same concept as in Kea. Option field values are
 // converted to suitable types. For example, if an option field has a uint8
 // value, the received option field value (REST API value) string is converted
-// to the uint8 type in the database model.
-func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption) ([]dbmodel.DHCPOption, error) {
+// to the uint8 type in the database model. This function should be called
+// with the recursionLevel value of 0. It supports up to three recursion
+// levels, i.e., top-level option with suboptions with suboptions. If there
+// is an option at deeper level, it is excluded from the result.
+func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, recursionLevel int) ([]dbmodel.DHCPOption, error) {
 	var options []dbmodel.DHCPOption
+	// Break if recursion level exceeded.
+	if recursionLevel >= 3 {
+		return options, nil
+	}
 	// Convert each option.
 	for _, restOption := range restOptions {
 		option := dbmodel.DHCPOption{
@@ -107,7 +114,7 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption) ([
 		}
 		if len(restOption.Options) > 0 {
 			// Convert suboptions recursively.
-			suboptions, err := flattenDHCPOptions(option.Encapsulate, restOption.Options)
+			suboptions, err := flattenDHCPOptions(option.Encapsulate, restOption.Options, recursionLevel+1)
 			if err != nil {
 				return nil, err
 			}
@@ -122,12 +129,12 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption) ([
 // stored in the database have flat structure. Suboptions are associated with the
 // parent options via option spaces. This function uses option spaces to put the
 // options into a hierarchical structure used in the REST API. It processes the
-// options recursively with a two level limit (i.e., top level options with suboptions).
-// All option field values are converted to strings.
+// options recursively with a three-level limit (i.e., top level options with
+// suboptions with suboptions). All option field values are converted to strings.
 func unflattenDHCPOptions(options []dbmodel.DHCPOption, space string, recursionLevel int) []*models.DHCPOption {
 	var restOptions []*models.DHCPOption
 	// Break if recursion level exceeded.
-	if recursionLevel >= 2 {
+	if recursionLevel >= 3 {
 		return restOptions
 	}
 	for _, option := range options {
