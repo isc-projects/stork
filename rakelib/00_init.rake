@@ -568,18 +568,26 @@ add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [GO, go_tools_dir] do
-    goswagger_archive = "#{GOSWAGGER}.tar.gz"
-    goswagger_dir = "#{GOSWAGGER}-sources"
-    sh "mkdir", goswagger_dir
-    sh *WGET, "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", "-O", goswagger_archive
-    sh "tar", "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
-    goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
-    Dir.chdir(goswagger_build_dir) do
-        sh GO, "build", "-ldflags=-X 'github.com/go-swagger/go-swagger/cmd/swagger/commands.Version=#{goswagger_ver}'"
+    if OS == 'macos'
+        # GoSwagger fails to build on macOS due to https://gitlab.isc.org/isc-projects/stork/-/issues/848.
+        goswagger_suffix="darwin_amd64"
+        sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
+        sh "chmod", "u+x", GOSWAGGER
+    else
+        goswagger_archive = "#{GOSWAGGER}.tar.gz"
+        goswagger_dir = "#{GOSWAGGER}-sources"
+        sh "mkdir", goswagger_dir
+        sh *WGET, "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", "-O", goswagger_archive
+        sh "tar", "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
+        goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
+        Dir.chdir(goswagger_build_dir) do
+            sh GO, "build", "-ldflags=-X 'github.com/go-swagger/go-swagger/cmd/swagger/commands.Version=#{goswagger_ver}'"
+        end
+        sh "mv", File.join(goswagger_build_dir, "swagger"), GOSWAGGER
+        sh "rm", "-rf", goswagger_dir
+        sh "rm", goswagger_archive
     end
-    sh "mv", File.join(goswagger_build_dir, "swagger"), GOSWAGGER
-    sh "rm", "-rf", goswagger_dir
-    sh "rm", goswagger_archive
+
     sh GOSWAGGER, "version"
 end
 add_version_guard(GOSWAGGER, goswagger_ver)
