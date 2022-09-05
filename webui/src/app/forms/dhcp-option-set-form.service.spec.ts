@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { FormArray, FormBuilder } from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
@@ -7,8 +7,8 @@ import { IPType } from '../iptype'
 
 describe('DhcpOptionSetFormService', () => {
     let service: DhcpOptionSetFormService
-    let formBuilder: FormBuilder = new FormBuilder()
-    let formArray: FormArray
+    let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
+    let formArray: UntypedFormArray
 
     beforeEach(() => {
         TestBed.configureTestingModule({})
@@ -93,8 +93,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(clonedArray.at(0).get('optionCode').value).toBe(1024)
 
         // Option 1024 fields.
-        expect(clonedArray.at(0).get('optionFields')).toBeInstanceOf(FormArray)
-        let fields = clonedArray.at(0).get('optionFields') as FormArray
+        expect(clonedArray.at(0).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        let fields = clonedArray.at(0).get('optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(4)
 
         // Option 1024 field 0.
@@ -134,8 +134,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(clonedArray.at(1).get('optionCode').value).toBe(2024)
 
         // Option 2024 fields.
-        expect(clonedArray.at(1).get('optionFields')).toBeInstanceOf(FormArray)
-        fields = clonedArray.at(1).get('optionFields') as FormArray
+        expect(clonedArray.at(1).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        fields = clonedArray.at(1).get('optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(2)
 
         // Option 2024 field 0.
@@ -159,8 +159,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(clonedArray.at(2).get('optionCode').value).toBe(3087)
 
         // Option 3087 suboptions.
-        expect(clonedArray.at(2).get('suboptions')).toBeInstanceOf(FormArray)
-        expect((clonedArray.at(2).get('suboptions') as FormArray).controls.length).toBe(2)
+        expect(clonedArray.at(2).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+        expect((clonedArray.at(2).get('suboptions') as UntypedFormArray).controls.length).toBe(2)
 
         // Option 3087.1.
         expect(clonedArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
@@ -168,7 +168,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(clonedArray.at(2).get('suboptions.0.optionFields')).toBeTruthy()
 
         // Option 3087.1 field 0.
-        fields = clonedArray.at(2).get('suboptions.0.optionFields') as FormArray
+        fields = clonedArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(1)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
         expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
@@ -184,7 +184,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(clonedArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
 
         // Option 3087.0 field 0.
-        fields = clonedArray.at(2).get('suboptions.1.optionFields') as FormArray
+        fields = clonedArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(1)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
         expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)
@@ -450,8 +450,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(0).get('optionCode').value).toBe(1024)
 
         // Option 1024 fields.
-        expect(formArray.at(0).get('optionFields')).toBeInstanceOf(FormArray)
-        let fields = formArray.at(0).get('optionFields') as FormArray
+        expect(formArray.at(0).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        let fields = formArray.at(0).get('optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(4)
 
         // Option 1024 field 0.
@@ -483,8 +483,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(fields.at(3).get('control').value).toBe('foobar')
 
         // Option 1024 suboptions.
-        expect(formArray.at(0).get('suboptions')).toBeInstanceOf(FormArray)
-        expect((formArray.at(0).get('suboptions') as FormArray).controls.length).toBe(0)
+        expect(formArray.at(0).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+        expect((formArray.at(0).get('suboptions') as UntypedFormArray).controls.length).toBe(0)
 
         // Option 2024.
         expect(formArray.at(1).get('alwaysSend')).toBeTruthy()
@@ -496,8 +496,8 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(1).get('optionCode').value).toBe(2024)
 
         // Option 2024 fields.
-        expect(formArray.at(1).get('optionFields')).toBeInstanceOf(FormArray)
-        fields = formArray.at(1).get('optionFields') as FormArray
+        expect(formArray.at(1).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        fields = formArray.at(1).get('optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(2)
 
         // Option 2024 field 0.
@@ -522,13 +522,13 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(2).get('optionCode').value).toBe(3087)
 
         // Option 3087 fields.
-        expect(formArray.at(2).get('optionFields')).toBeInstanceOf(FormArray)
-        fields = formArray.at(2).get('optionFields') as FormArray
+        expect(formArray.at(2).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        fields = formArray.at(2).get('optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(0)
 
         // Option 3087 suboptions.
-        expect(formArray.at(2).get('suboptions')).toBeInstanceOf(FormArray)
-        expect((formArray.at(2).get('suboptions') as FormArray).controls.length).toBe(2)
+        expect(formArray.at(2).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+        expect((formArray.at(2).get('suboptions') as UntypedFormArray).controls.length).toBe(2)
 
         // Option 3087.1.
         expect(formArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
@@ -540,7 +540,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(2).get('suboptions.0.optionCode').value).toBe(1)
 
         // Option 3087.1 field 0.
-        fields = formArray.at(2).get('suboptions.0.optionFields') as FormArray
+        fields = formArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(1)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
         expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
@@ -557,7 +557,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
 
         // Option 3087.0 field 0.
-        fields = formArray.at(2).get('suboptions.1.optionFields') as FormArray
+        fields = formArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(1)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
         expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)

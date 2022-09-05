@@ -2,7 +2,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
@@ -54,7 +54,7 @@ describe('HostsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, FormBuilder, ConfirmationService, MessageService],
+            providers: [DHCPService, UntypedFormBuilder, ConfirmationService, MessageService],
             imports: [
                 FormsModule,
                 TableModule,

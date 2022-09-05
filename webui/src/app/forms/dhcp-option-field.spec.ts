@@ -1,9 +1,9 @@
-import { FormBuilder } from '@angular/forms'
+import { UntypedFormBuilder } from '@angular/forms'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 
 describe('DhcpOptionField', () => {
     it('should create a form group for dhcp option field', () => {
-        const fb = new FormBuilder()
+        const fb = new UntypedFormBuilder()
         const formGroup = new DhcpOptionFieldFormGroup(DhcpOptionFieldType.String, {
             control1: fb.control(''),
             control2: fb.control(''),

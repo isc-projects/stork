@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core'
-import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
+import {
+    AbstractControl,
+    UntypedFormArray,
+    UntypedFormBuilder,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators,
+} from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from './dhcp-option-form'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
@@ -18,7 +25,7 @@ export class DhcpOptionSetFormService {
     /**
      * Form builder instance used by the service to create the reactive forms.
      */
-    _formBuilder: FormBuilder
+    _formBuilder: UntypedFormBuilder
 
     /**
      * Constructor.
@@ -26,7 +33,7 @@ export class DhcpOptionSetFormService {
      * Creates form builder instance.
      */
     constructor() {
-        this._formBuilder = new FormBuilder()
+        this._formBuilder = new UntypedFormBuilder()
     }
 
     /**
@@ -59,8 +66,8 @@ export class DhcpOptionSetFormService {
             })
 
             newControl = formGroup as any
-        } else if (control instanceof FormGroup) {
-            const formGroup = new FormGroup({}, control.validator, control.asyncValidator)
+        } else if (control instanceof UntypedFormGroup) {
+            const formGroup = new UntypedFormGroup({}, control.validator, control.asyncValidator)
             const controls = control.controls
 
             Object.keys(controls).forEach((key) => {
@@ -68,14 +75,14 @@ export class DhcpOptionSetFormService {
             })
 
             newControl = formGroup as any
-        } else if (control instanceof FormArray) {
-            const formArray = new FormArray([], control.validator, control.asyncValidator)
+        } else if (control instanceof UntypedFormArray) {
+            const formArray = new UntypedFormArray([], control.validator, control.asyncValidator)
 
             control.controls.forEach((formControl) => formArray.push(this.cloneControl(formControl)))
 
             newControl = formArray as any
-        } else if (control instanceof FormControl) {
-            newControl = new FormControl(control.value, control.validator, control.asyncValidator) as any
+        } else if (control instanceof UntypedFormControl) {
+            newControl = new UntypedFormControl(control.value, control.validator, control.asyncValidator) as any
         } else {
             throw new Error('Error: unexpected control value')
         }
@@ -100,7 +107,7 @@ export class DhcpOptionSetFormService {
      */
     private _convertFormToOptions(
         universe: IPType,
-        formArray: FormArray,
+        formArray: UntypedFormArray,
         nestingLevel: number,
         optionSpace?: string
     ): Array<DHCPOption> {
@@ -110,7 +117,7 @@ export class DhcpOptionSetFormService {
         }
         let serialized = new Array<DHCPOption>()
         for (let o of formArray.controls) {
-            const option = o as FormGroup
+            const option = o as UntypedFormGroup
             // Option code is mandatory.
             if (!option.contains('optionCode') || option.get('optionCode').value === null) {
                 throw new Error('form group does not contain control with an option code')
@@ -132,7 +139,7 @@ export class DhcpOptionSetFormService {
                 universe: universe,
                 options: new Array<DHCPOption>(),
             }
-            const optionFieldsArray = option.get('optionFields') as FormArray
+            const optionFieldsArray = option.get('optionFields') as UntypedFormArray
             // Option fields are not mandatory. It is possible to have an empty option.
             if (optionFieldsArray) {
                 for (const f of optionFieldsArray.controls) {
@@ -179,7 +186,7 @@ export class DhcpOptionSetFormService {
                     })
                 }
             }
-            const suboptions = option.get('suboptions') as FormArray
+            const suboptions = option.get('suboptions') as UntypedFormArray
             // Suboptions are not mandatory.
             if (suboptions && suboptions.length > 0) {
                 item.encapsulate = optionSpace ? `${optionSpace}.${item.code}` : `option-${item.code}`
@@ -199,7 +206,7 @@ export class DhcpOptionSetFormService {
      * @param formArray form array containing the options.
      * @returns options in the REST API format.
      */
-    public convertFormToOptions(universe: IPType, formArray: FormArray): Array<DHCPOption> {
+    public convertFormToOptions(universe: IPType, formArray: UntypedFormArray): Array<DHCPOption> {
         return this._convertFormToOptions(universe, formArray, 0)
     }
 
@@ -214,7 +221,11 @@ export class DhcpOptionSetFormService {
      * values. Typically, they contain a single value. They contain two values
      * when they are IPv6 prefixes or PSIDs.
      */
-    private _convertOptionsToForm(universe: IPType, nestingLevel: number, options: Array<DHCPOption>): FormArray {
+    private _convertOptionsToForm(
+        universe: IPType,
+        nestingLevel: number,
+        options: Array<DHCPOption>
+    ): UntypedFormArray {
         // To avoid too much recursion, we only convert first level of suboptions.
         if (options?.length > 0 && nestingLevel > 1) {
             throw new Error('options serialization supports up to two nesting levels')
@@ -282,7 +293,7 @@ export class DhcpOptionSetFormService {
                     default:
                         continue
                 }
-                ;(optionFormGroup.get('optionFields') as FormArray).push(fieldGroup)
+                ;(optionFormGroup.get('optionFields') as UntypedFormArray).push(fieldGroup)
             }
             if (option.options?.length > 0) {
                 optionFormGroup.setControl(
@@ -302,7 +313,7 @@ export class DhcpOptionSetFormService {
      * @param options a set of DHCP options at certain nesting level.
      * @returns form array comprising converted options.
      */
-    public convertOptionsToForm(universe: IPType, options: Array<DHCPOption>): FormArray {
+    public convertOptionsToForm(universe: IPType, options: Array<DHCPOption>): UntypedFormArray {
         return this._convertOptionsToForm(universe, 0, options)
     }
 
@@ -317,7 +328,7 @@ export class DhcpOptionSetFormService {
      * @param control a control associated with the option field.
      * @returns created form group instance.
      */
-    private _createSimpleField(fieldType: DhcpOptionFieldType, control: FormControl): DhcpOptionFieldFormGroup {
+    private _createSimpleField(fieldType: DhcpOptionFieldType, control: UntypedFormControl): DhcpOptionFieldFormGroup {
         return new DhcpOptionFieldFormGroup(fieldType, { control: control })
     }
 

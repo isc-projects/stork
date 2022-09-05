@@ -1,5 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import {
+    UntypedFormArray,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
@@ -17,11 +23,11 @@ import { IPType } from '../iptype'
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
     let fixture: ComponentFixture<DhcpOptionFormComponent>
-    let fb: FormBuilder
+    let fb: UntypedFormBuilder
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [FormBuilder],
+            providers: [UntypedFormBuilder],
             imports: [
                 CheckboxModule,
                 DropdownModule,
@@ -40,7 +46,7 @@ describe('DhcpOptionFormComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DhcpOptionFormComponent)
         component = fixture.componentInstance
-        fb = new FormBuilder()
+        fb = new UntypedFormBuilder()
         // Our component needs a form group instance to be initialized.
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
         fixture.detectChanges()
@@ -230,8 +236,10 @@ describe('DhcpOptionFormComponent', () => {
         addPayloadBtn.componentInstance.onClick.emit(new Event('click'))
         fixture.detectChanges()
         expect(component.suboptions.length).toBe(1)
-        expect((component.suboptions.at(0) as FormGroup).contains('optionFields')).toBeTrue()
-        expect(((component.suboptions.at(0) as FormGroup).get('optionFields') as FormArray).length).toBe(1)
+        expect((component.suboptions.at(0) as UntypedFormGroup).contains('optionFields')).toBeTrue()
+        expect(((component.suboptions.at(0) as UntypedFormGroup).get('optionFields') as UntypedFormArray).length).toBe(
+            1
+        )
         expect(suboptionEl.query(By.css('textarea'))).toBeTruthy()
 
         // Simulate deleting the suboption.

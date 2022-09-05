@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 
 import { MessageService } from 'primeng/api'
@@ -20,11 +20,11 @@ import { getErrorMessage } from '../utils'
 export class PasswordChangePageComponent implements OnInit {
     breadcrumbs = [{ label: 'User Profile' }, { label: 'Password Change' }]
 
-    passwordChangeForm: FormGroup
+    passwordChangeForm: UntypedFormGroup
 
     constructor(
         private router: Router,
-        private formBuilder: FormBuilder,
+        private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
         private auth: AuthService

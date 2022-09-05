@@ -1,4 +1,4 @@
-import { FormGroup } from '@angular/forms'
+import { UntypedFormGroup } from '@angular/forms'
 import { IPv4CidrRange, IPv6CidrRange, Validator } from 'ip-num'
 import { KeaDaemon } from '../backend/model/keaDaemon'
 import { Subnet } from '../backend/model/subnet'
@@ -38,7 +38,7 @@ export class HostForm {
      * A form group comprising all form controls, arrays and other form
      * groups (a parent group for the HostFormComponent form).
      */
-    group: FormGroup
+    group: UntypedFormGroup
 
     /**
      * A list of all daemons that can be selected from the drop down list.

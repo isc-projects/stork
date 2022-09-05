@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
-import { FormArray, FormBuilder, Validators } from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder, Validators } from '@angular/forms'
 
 /**
  * A component aggregating multiple forms for editing DHCP option information.
@@ -22,7 +22,7 @@ export class DhcpOptionSetFormComponent {
     /**
      * An array holding form groups for each embedded DHCP option form.
      */
-    @Input() formArray: FormArray
+    @Input() formArray: UntypedFormArray
 
     /**
      * Nesting level of edited options in this component.
@@ -41,7 +41,7 @@ export class DhcpOptionSetFormComponent {
      *
      * @param _formBuilder a form builder instance used in this component.
      */
-    constructor(private _formBuilder: FormBuilder) {}
+    constructor(private _formBuilder: UntypedFormBuilder) {}
 
     /**
      * Notifies a parent component to create new option form group.

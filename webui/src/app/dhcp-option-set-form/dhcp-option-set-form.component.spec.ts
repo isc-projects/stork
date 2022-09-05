@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
@@ -17,11 +17,11 @@ import { IPType } from '../iptype'
 describe('DhcpOptionSetFormComponent', () => {
     let component: DhcpOptionSetFormComponent
     let fixture: ComponentFixture<DhcpOptionSetFormComponent>
-    let fb: FormBuilder
+    let fb: UntypedFormBuilder
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [FormBuilder],
+            providers: [UntypedFormBuilder],
             imports: [
                 CheckboxModule,
                 DropdownModule,
@@ -40,7 +40,7 @@ describe('DhcpOptionSetFormComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DhcpOptionSetFormComponent)
         component = fixture.componentInstance
-        fb = new FormBuilder()
+        fb = new UntypedFormBuilder()
         component.formArray = fb.array([])
         fixture.detectChanges()
     })

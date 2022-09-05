@@ -1,4 +1,4 @@
-import { FormArray } from '@angular/forms'
+import { UntypedFormArray } from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from './dhcp-option-form'
 import { IPType } from '../iptype'
 
@@ -12,7 +12,7 @@ describe('DhcpOptionForm', () => {
 
         expect(fg.get('alwaysSend').value).toBeFalse()
         expect(fg.get('optionCode').value).toBe(null)
-        expect((fg.get('optionFields') as FormArray).length).toBe(0)
-        expect((fg.get('suboptions') as FormArray).length).toBe(0)
+        expect((fg.get('optionFields') as UntypedFormArray).length).toBe(0)
+        expect((fg.get('suboptions') as UntypedFormArray).length).toBe(0)
     })
 })

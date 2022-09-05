@@ -1,9 +1,9 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 import {
     AbstractControl,
-    FormBuilder,
-    FormArray,
-    FormGroup,
+    UntypedFormBuilder,
+    UntypedFormArray,
+    UntypedFormGroup,
     ValidatorFn,
     Validators,
     ValidationErrors,
@@ -36,7 +36,7 @@ import { getErrorMessage, stringToHex } from '../utils'
  * @returns validation errors when no subnet has been selected for
  *          a non-global reservation.
  */
-function subnetRequiredValidator(group: FormGroup): ValidationErrors | null {
+function subnetRequiredValidator(group: UntypedFormGroup): ValidationErrors | null {
     if (!group.get('globalReservation').value && !group.get('selectedSubnet').value) {
         // It is not a global reservation and no subnet has been selected.
         const errs = {
@@ -65,7 +65,7 @@ function subnetRequiredValidator(group: FormGroup): ValidationErrors | null {
  *          or when other identifiers exceed 256 hexadecimal digits or 128
  *          characters.
  */
-function identifierValidator(group: FormGroup): ValidationErrors | null {
+function identifierValidator(group: UntypedFormGroup): ValidationErrors | null {
     const idType = group.get('idType')
     const idInputHex = group.get('idInputHex')
     const idInputText = group.get('idInputText')
@@ -290,7 +290,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @param _messageService service displaying error and success messages.
      */
     constructor(
-        private _formBuilder: FormBuilder,
+        private _formBuilder: UntypedFormBuilder,
         private _dhcpApi: DHCPService,
         private _optionSetFormService: DhcpOptionSetFormService,
         private _messageService: MessageService
@@ -603,7 +603,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @returns form group.
      */
-    get formGroup(): FormGroup {
+    get formGroup(): UntypedFormGroup {
         return this.form.group
     }
 
@@ -612,7 +612,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @param fg new form group.
      */
-    set formGroup(fg: FormGroup) {
+    set formGroup(fg: UntypedFormGroup) {
         this.form.group = fg
     }
 
@@ -690,7 +690,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @param index input box index beginning from 0.
      */
     deleteIPInput(index): void {
-        ;(this.formGroup.get('ipGroups') as FormArray).removeAt(index)
+        ;(this.formGroup.get('ipGroups') as UntypedFormArray).removeAt(index)
     }
 
     /**
@@ -726,8 +726,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @returns form array with IP reservations.
      */
-    get ipGroups(): FormArray {
-        return this.formGroup.get('ipGroups') as FormArray
+    get ipGroups(): UntypedFormArray {
+        return this.formGroup.get('ipGroups') as UntypedFormArray
     }
 
     /**
@@ -736,7 +736,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @param defaultType IP reservation type.
      * @returns form group for specifying new IP reservation.
      */
-    private _createNewIPGroup(defaultType = 'ipv4'): FormGroup {
+    private _createNewIPGroup(defaultType = 'ipv4'): UntypedFormGroup {
         return this._formBuilder.group({
             ipType: [defaultType],
             inputIPv4: [
@@ -776,8 +776,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @returns Form array comprising option sets for different servers.
      */
-    get optionsArray(): FormArray {
-        return this.formGroup.get('options') as FormArray
+    get optionsArray(): UntypedFormArray {
+        return this.formGroup.get('options') as UntypedFormArray
     }
 
     /**
@@ -785,8 +785,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @returns form array with DHCP options.
      */
-    getOptionSetArray(index: number): FormArray {
-        return this.optionsArray.at(index) as FormArray
+    getOptionSetArray(index: number): UntypedFormArray {
+        return this.optionsArray.at(index) as UntypedFormArray
     }
 
     /**
@@ -899,7 +899,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         }
 
         if (this.splitFormMode) {
-            let optionSets: FormArray[] = []
+            let optionSets: UntypedFormArray[] = []
             for (let i = 0; i < selectedDaemons.length; i++) {
                 optionSets.push(this._formBuilder.array([]))
             }
@@ -989,7 +989,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 options.push(
                     this._optionSetFormService.convertFormToOptions(
                         this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
-                        arr as FormArray
+                        arr as UntypedFormArray
                     )
                 )
                 // There should be only one option set when the split mode is disabled.

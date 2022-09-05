@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
 
@@ -14,9 +14,9 @@ import { getErrorMessage } from '../utils'
 export class SettingsPageComponent implements OnInit {
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Settings' }]
 
-    public settingsForm: FormGroup
+    public settingsForm: UntypedFormGroup
 
-    constructor(private fb: FormBuilder, private settingsApi: SettingsService, private msgSrv: MessageService) {
+    constructor(private fb: UntypedFormBuilder, private settingsApi: SettingsService, private msgSrv: MessageService) {
         this.settingsForm = this.fb.group({
             bind9_stats_puller_interval: ['', [Validators.required, Validators.min(0)]],
             grafana_url: [''],

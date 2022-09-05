@@ -3,10 +3,10 @@ import {
     AbstractControl,
     AbstractControlOptions,
     AsyncValidatorFn,
-    FormArray,
-    FormBuilder,
+    UntypedFormArray,
+    UntypedFormBuilder,
     FormControl,
-    FormGroup,
+    UntypedFormGroup,
     Validators,
     ValidatorFn,
 } from '@angular/forms'
@@ -60,7 +60,7 @@ export class DhcpOptionFormComponent implements OnInit {
     /**
      * An empty form group instance created by the parent component.
      */
-    @Input() formGroup: FormGroup
+    @Input() formGroup: UntypedFormGroup
 
     /**
      * A form group index within the array of option form groups.
@@ -130,7 +130,7 @@ export class DhcpOptionFormComponent implements OnInit {
      * to configure.
      */
     constructor(
-        private _formBuilder: FormBuilder,
+        private _formBuilder: UntypedFormBuilder,
         private _optionSetFormService: DhcpOptionSetFormService,
         public optionsService: DhcpOptionsService
     ) {}
@@ -265,15 +265,15 @@ export class DhcpOptionFormComponent implements OnInit {
     /**
      * Convenience function returning a form array with option fields.
      */
-    get optionFields(): FormArray {
-        return this.formGroup.get('optionFields') as FormArray
+    get optionFields(): UntypedFormArray {
+        return this.formGroup.get('optionFields') as UntypedFormArray
     }
 
     /**
      * Convenience function returning a form array with sub-options.
      */
-    get suboptions(): FormArray {
-        return this.formGroup.get('suboptions') as FormArray
+    get suboptions(): UntypedFormArray {
+        return this.formGroup.get('suboptions') as UntypedFormArray
     }
 
     /**

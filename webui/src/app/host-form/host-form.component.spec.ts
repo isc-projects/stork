@@ -1,6 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
-import { FormArray, FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -31,7 +31,7 @@ describe('HostFormComponent', () => {
     let fixture: ComponentFixture<HostFormComponent>
     let dhcpApi: DHCPService
     let messageService: MessageService
-    let formBuilder: FormBuilder = new FormBuilder()
+    let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
 
     let cannedResponseBegin: any = {
         id: 123,
@@ -120,7 +120,7 @@ describe('HostFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [FormBuilder, DHCPService, MessageService],
+            providers: [UntypedFormBuilder, DHCPService, MessageService],
             imports: [
                 ButtonModule,
                 CheckboxModule,
@@ -1236,8 +1236,8 @@ describe('HostFormComponent', () => {
         expect(optionForms.length).toBe(2)
 
         expect(component.optionsArray.length).toBe(2)
-        expect((component.optionsArray.at(0) as FormArray).length).toBe(0)
-        expect((component.optionsArray.at(1) as FormArray).length).toBe(0)
+        expect((component.optionsArray.at(0) as UntypedFormArray).length).toBe(0)
+        expect((component.optionsArray.at(1) as UntypedFormArray).length).toBe(0)
 
         component.formGroup.get('selectedDaemons').setValue([1])
         component.onDaemonsChange()
@@ -1406,13 +1406,13 @@ describe('HostFormComponent', () => {
         expect(component.getOptionSetArray(0).length).toBe(1)
         expect(component.getOptionSetArray(0).get('0.alwaysSend').value).toBeTrue()
         expect(component.getOptionSetArray(0).get('0.optionCode').value).toBe(5)
-        let optionFields = component.getOptionSetArray(0).get('0.optionFields') as FormArray
+        let optionFields = component.getOptionSetArray(0).get('0.optionFields') as UntypedFormArray
         expect(optionFields.length).toBe(1)
         expect(optionFields.get('0.control').value).toBe('192.0.2.1')
         expect(component.getOptionSetArray(1).length).toBe(1)
         expect(component.getOptionSetArray(1).get('0.alwaysSend').value).toBeTrue()
         expect(component.getOptionSetArray(1).get('0.optionCode').value).toBe(5)
-        optionFields = component.getOptionSetArray(1).get('0.optionFields') as FormArray
+        optionFields = component.getOptionSetArray(1).get('0.optionFields') as UntypedFormArray
         expect(optionFields.length).toBe(1)
         expect(optionFields.get('0.control').value).toBe('192.0.2.2')
 

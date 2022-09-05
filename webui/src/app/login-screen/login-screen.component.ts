@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 import { HttpResponse } from '@angular/common/http'
 
@@ -16,14 +16,14 @@ import { AuthService } from '../auth.service'
 export class LoginScreenComponent implements OnInit {
     version = 'not available'
     returnUrl: string
-    loginForm: FormGroup
+    loginForm: UntypedFormGroup
 
     constructor(
         protected api: GeneralService,
         private auth: AuthService,
         private route: ActivatedRoute,
         private router: Router,
-        private formBuilder: FormBuilder
+        private formBuilder: UntypedFormBuilder
     ) {}
 
     ngOnInit() {

@@ -1,4 +1,4 @@
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { IPType } from '../iptype'
 
 /**
@@ -13,8 +13,8 @@ import { IPType } from '../iptype'
  * allowed option code value.
  * @returns created form group for an option.
  */
-export function createDefaultDhcpOptionFormGroup(universe: IPType): FormGroup {
-    const fb = new FormBuilder()
+export function createDefaultDhcpOptionFormGroup(universe: IPType): UntypedFormGroup {
+    const fb = new UntypedFormBuilder()
     return fb.group({
         optionCode: [
             { value: null, disabled: false },

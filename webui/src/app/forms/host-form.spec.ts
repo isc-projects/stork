@@ -1,12 +1,12 @@
-import { FormBuilder } from '@angular/forms'
+import { UntypedFormBuilder } from '@angular/forms'
 import { HostForm } from './host-form'
 
 describe('HostForm', () => {
-    let fb: FormBuilder
+    let fb: UntypedFormBuilder
     let form: HostForm
 
     beforeEach(() => {
-        fb = new FormBuilder()
+        fb = new UntypedFormBuilder()
         form = new HostForm()
         form.group = fb.group({
             selectedSubnet: [''],

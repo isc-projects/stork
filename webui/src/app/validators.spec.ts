@@ -1,8 +1,8 @@
-import { FormBuilder } from '@angular/forms'
+import { UntypedFormBuilder } from '@angular/forms'
 import { StorkValidators } from './validators'
 
 describe('StorkValidators', () => {
-    let formBuilder: FormBuilder = new FormBuilder()
+    let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
 
     it('validates hex identifier', () => {
         // Doesn't contain hexadecimal digits.

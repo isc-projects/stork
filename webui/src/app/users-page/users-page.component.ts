@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { FormBuilder, FormControl, FormGroup, NgForm, Validators } from '@angular/forms'
+import { UntypedFormBuilder, FormControl, UntypedFormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { MenuItem, MessageService, SelectItem } from 'primeng/api'
 
@@ -33,7 +33,7 @@ export class UserTab {
     /**
      * Instance of the reactive form belonging to the tab
      */
-    public userform: FormGroup
+    public userform: UntypedFormGroup
 
     /**
      * Constructor
@@ -74,7 +74,7 @@ export class UserTab {
  * @returns The validator function comparing the passwords.
  */
 function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
-    return (group: FormGroup): { [key: string]: any } => {
+    return (group: UntypedFormGroup): { [key: string]: any } => {
         const password = group.controls[passwordKey]
         const confirmPassword = group.controls[confirmPasswordKey]
 
@@ -118,7 +118,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private formBuilder: FormBuilder,
+        private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
         private serverData: ServerDataService,
@@ -134,7 +134,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *
      * @returns instance of the form or null if the current tab includes no form.
      */
-    get userform(): FormGroup {
+    get userform(): UntypedFormGroup {
         return this.userTab ? this.userTab.userform : null
     }
 
