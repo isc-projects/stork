@@ -1,3 +1,10 @@
+* 238 [bug] slawek
+
+    Prometheus exporter for BIND 9 sends the HTTP requests with an empty body.
+    BIND 9.18 periodically rejects requests that include a body, causing errors
+    in gathering the statistics.
+    (Gitlab #798)
+
 * 237 [func] slawek
 
    Added the possibility to enable or disable the configuration review
