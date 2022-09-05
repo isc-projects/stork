@@ -568,12 +568,17 @@ add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [GO, go_tools_dir] do
-    if OS == 'macos'
-        # GoSwagger fails to build on macOS due to https://gitlab.isc.org/isc-projects/stork/-/issues/848.
-        goswagger_suffix="darwin_amd64"
+    if OS != 'FreeBSD' && OS != "OpenBSD"
+        goswagger_suffix = "linux_amd64"
+        if OS == 'macos'
+            # GoSwagger fails to build on macOS due to https://gitlab.isc.org/isc-projects/stork/-/issues/848.
+            goswagger_suffix="darwin_amd64"
+        end
         sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
         sh "chmod", "u+x", GOSWAGGER
     else
+        # GoSwagger lacks the packages for BSD-like systems then it must be
+        # built from sources.
         goswagger_archive = "#{GOSWAGGER}.tar.gz"
         goswagger_dir = "#{GOSWAGGER}-sources"
         sh "mkdir", goswagger_dir
@@ -588,6 +593,7 @@ file GOSWAGGER => [GO, go_tools_dir] do
         sh "rm", goswagger_archive
     end
 
+    sh "touch", "-c", GOSWAGGER
     sh GOSWAGGER, "version"
 end
 add_version_guard(GOSWAGGER, goswagger_ver)
