@@ -496,8 +496,7 @@ with the IP addresses.
    again after correcting the option payload.
 
 Please use the ``Add <field-type>`` button to add suboptions to a DHCP option.
-Stork currently supports first-level suboptions only, i.e., it is impossible
-to add a suboption of a suboption.
+Stork supports top-level options with maximum two levels of suboptions.
 
 If a host reservation is configured in several DHCP servers, typically, all
 servers comprise the same set of parameters (i.e., IP addresses, hostname,
