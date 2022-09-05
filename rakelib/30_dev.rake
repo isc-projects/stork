@@ -479,6 +479,23 @@ namespace :gen do
     end
 end
 
+namespace :update do
+    desc 'Update Angular
+    VERSION - target Angular version - required'
+    task :angular => [NPX] do
+        version=ENV["VERSION"]
+        if version.nil?
+            fail "Provide VERSION variable"
+        end
+        Dir.chdir("webui") do
+            sh NPX, "ng", "update",
+                "@angular-eslint/schematics@#{version}",
+                "@angular/core@#{version}",
+                "@angular/cli@#{version}"
+        end
+    end
+end
+
 namespace :prepare do
     desc 'Install the external dependencies related to the development'
     task :dev do
