@@ -363,12 +363,16 @@ describe('DhcpOptionFormComponent', () => {
         expect(component.formGroup.valid).toBeTrue()
     })
 
-    it('should only add suboptions to top-level options', () => {
+    it('should only add suboptions to top-level options and first level suboptions', () => {
         component.nestLevel = 0
         component.ngOnInit()
         expect(component.fieldTypes.find((field) => field.label === 'suboption')).toBeTruthy()
 
         component.nestLevel = 1
+        component.ngOnInit()
+        expect(component.fieldTypes.find((field) => field.label === 'suboption')).toBeTruthy()
+
+        component.nestLevel = 2
         component.ngOnInit()
         expect(component.fieldTypes.find((field) => field.label === 'suboption')).toBeFalsy()
     })

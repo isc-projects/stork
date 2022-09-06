@@ -68,6 +68,17 @@ describe('DhcpOptionSetFormService', () => {
                                 control: formBuilder.control(2222),
                             }),
                         ]),
+                        suboptions: formBuilder.array([
+                            formBuilder.group({
+                                alwaysSend: formBuilder.control(false),
+                                optionCode: formBuilder.control(5),
+                                optionFields: formBuilder.array([
+                                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.String, {
+                                        control: formBuilder.control('foo'),
+                                    }),
+                                ]),
+                            }),
+                        ]),
                     }),
                 ]),
             }),
@@ -247,7 +258,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[2].code).toBe(3087)
         expect(serialized[2].encapsulate).toBe('option-3087')
         expect(serialized[2].fields.length).toBe(0)
-        // The option should contain a suboptions
+        // The option should contain suboptions.
         expect(serialized[2].options.length).toBe(2)
         expect(serialized[2].options[0].hasOwnProperty('code')).toBeTrue()
         expect(serialized[2].options[0].hasOwnProperty('encapsulate')).toBeTrue()
@@ -263,35 +274,48 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[2].options[1].hasOwnProperty('fields')).toBeTrue()
         expect(serialized[2].options[1].hasOwnProperty('options')).toBeTrue()
         expect(serialized[2].options[1].code).toBe(0)
-        expect(serialized[2].options[1].encapsulate.length).toBe(0)
         expect(serialized[2].options[1].fields.length).toBe(1)
         expect(serialized[2].options[1].fields[0].fieldType).toBe(DhcpOptionFieldType.Uint32)
-        expect(serialized[2].options[1].options.length).toBe(0)
+
+        expect(serialized[2].options[1].options.length).toBe(1)
+        expect(serialized[2].options[1].options[0].code).toBe(5)
+        expect(serialized[2].options[1].options[0].encapsulate.length).toBe(0)
+        expect(serialized[2].options[1].options[0].fields.length).toBe(1)
+        expect(serialized[2].options[1].options[0].fields[0].fieldType).toBe(DhcpOptionFieldType.String)
     })
 
     it('throws on too much recursion when converting a form', () => {
-        // Add an option with three nesting levels. It should throw because
-        // we merely support first level suboptions.
+        // Add an option with four nesting levels. It should throw because
+        // we support first and second level suboptions.
         const formArray = formBuilder.array([
             formBuilder.group({
+                alwaysSend: formBuilder.control(false),
                 optionCode: formBuilder.control(1024),
                 optionFields: formBuilder.array([]),
                 suboptions: formBuilder.array([
                     formBuilder.group({
+                        alwaysSend: formBuilder.control(false),
                         optionCode: formBuilder.control(1),
                         optionFields: formBuilder.array([]),
                         suboptions: formBuilder.array([
                             formBuilder.group({
+                                alwaysSend: formBuilder.control(false),
                                 optionCode: formBuilder.control(2),
                                 optionFields: formBuilder.array([]),
-                                suboptions: formBuilder.array([]),
+                                suboptions: formBuilder.array([
+                                    formBuilder.group({
+                                        alwaysSend: formBuilder.control(false),
+                                        optionCode: formBuilder.control(3),
+                                        optionFields: formBuilder.array([]),
+                                        suboptions: formBuilder.array([]),
+                                    }),
+                                ]),
                             }),
                         ]),
                     }),
                 ]),
             }),
         ])
-
         expect(() => service.convertFormToOptions(IPType.IPv4, formArray)).toThrow()
     })
 
@@ -421,6 +445,17 @@ describe('DhcpOptionSetFormService', () => {
                             {
                                 fieldType: DhcpOptionFieldType.Uint16,
                                 values: ['1111'],
+                            },
+                        ],
+                        options: [
+                            {
+                                code: 2,
+                                fields: [
+                                    {
+                                        fieldType: DhcpOptionFieldType.Bool,
+                                        values: ['true'],
+                                    },
+                                ],
                             },
                         ],
                     },
@@ -589,7 +624,7 @@ describe('DhcpOptionSetFormService', () => {
 
     it('throws on too much recursion when converting options', () => {
         // Add an option with three nesting levels. It should throw because
-        // we merely support first level suboptions.
+        // we merely support first and second level suboptions.
         let options: Array<DHCPOption> = [
             {
                 code: 1024,
@@ -602,7 +637,12 @@ describe('DhcpOptionSetFormService', () => {
                             {
                                 code: 2,
                                 fields: [],
-                                options: [],
+                                options: [
+                                    {
+                                        code: 3,
+                                        fields: [],
+                                    },
+                                ],
                             },
                         ],
                     },

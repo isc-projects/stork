@@ -248,9 +248,8 @@ export class DhcpOptionFormComponent implements OnInit {
             },
         ]
 
-        // Currently we support only one nesting level. It is not possible
-        // to add a second-level sub-option.
-        if (this.topLevel) {
+        // We support only two nesting levels.
+        if (this.nestLevel <= 1) {
             this.fieldTypes.push({
                 label: 'suboption',
                 id: this.FieldType.Suboption,

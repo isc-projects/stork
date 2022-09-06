@@ -102,7 +102,7 @@ export class DhcpOptionSetFormService {
      * @param nestingLevel nesting level of the currently processed options.
      * @param formArray form array containing the options.
      * @returns options in the REST API format.
-     * @throw An error for nesting level higher than 1 or if option data is invalid
+     * @throw An error for nesting level higher than 2 or if option data is invalid
      * or missing.
      */
     private _convertFormToOptions(
@@ -111,8 +111,8 @@ export class DhcpOptionSetFormService {
         nestingLevel: number,
         optionSpace?: string
     ): Array<DHCPOption> {
-        // To avoid too much recursion, we only parse first level of suboptions.
-        if (formArray.length > 0 && nestingLevel > 1) {
+        // To avoid too much recursion, we only parse first and second level of suboptions.
+        if (formArray.length > 0 && nestingLevel > 2) {
             throw new Error('options serialization supports up to two nesting levels')
         }
         let serialized = new Array<DHCPOption>()
@@ -226,8 +226,8 @@ export class DhcpOptionSetFormService {
         nestingLevel: number,
         options: Array<DHCPOption>
     ): UntypedFormArray {
-        // To avoid too much recursion, we only convert first level of suboptions.
-        if (options?.length > 0 && nestingLevel > 1) {
+        // To avoid too much recursion, we only convert first and second level of suboptions.
+        if (options?.length > 0 && nestingLevel > 2) {
             throw new Error('options serialization supports up to two nesting levels')
         }
         let formArray = this._formBuilder.array([])
