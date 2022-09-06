@@ -24,6 +24,7 @@ else
         groups stork-agent | xargs -n 1 | grep -v stork-agent | xargs -r -n 1 delgroup stork-agent
     elif [ -e /bin/freebsd-version ]; then
         # Do nothing
+        :
     else
         usermod -G "" stork-agent
     fi
