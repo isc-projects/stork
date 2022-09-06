@@ -89,6 +89,16 @@ describe('DhcpOptionSetViewComponent', () => {
                                 values: ['foo'],
                             },
                         ],
+                        options: [
+                            {
+                                code: 1030,
+                                options: [
+                                    {
+                                        code: 1031,
+                                    },
+                                ],
+                            },
+                        ],
                         universe: 6,
                     },
                 ],
@@ -152,11 +162,18 @@ describe('DhcpOptionSetViewComponent', () => {
         expect(component.optionNodes[2].children.length).toBe(1)
 
         // Suboption 1029.
-        expect((component.optionNodes[2].children[0] as TreeNode<OptionNode>).data.code).toBe(1029)
+        const option1029 = component.optionNodes[2].children[0] as TreeNode<OptionNode>
+        expect(option1029.data.code).toBe(1029)
+        expect(option1029.children.length).toBe(2)
+
+        // Suboption 1030.
+        const option1030 = option1029.children[1] as TreeNode<OptionNode>
+        expect(option1030.data.code).toBe(1030)
+        expect(option1030.children.length).toBe(0)
 
         // Make sure that appropriate tags are displayed.
         let optionTags = fixture.debugElement.queryAll(By.css('p-tag'))
-        expect(optionTags.length).toBe(3)
+        expect(optionTags.length).toBe(4)
 
         // First option is configured to be always sent.
         expect(optionTags[0].properties.innerText).toBe('always sent')
@@ -164,6 +181,8 @@ describe('DhcpOptionSetViewComponent', () => {
         expect(optionTags[1].properties.innerText).toBe('empty suboption')
         // One of the top-level options is empty.
         expect(optionTags[2].properties.innerText).toBe('empty option')
+        // Another empty suboption.
+        expect(optionTags[3].properties.innerText).toBe('empty suboption')
     })
 
     it('should should display a message indicating there are no options', () => {

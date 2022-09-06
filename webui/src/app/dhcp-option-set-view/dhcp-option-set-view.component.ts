@@ -68,7 +68,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * - option field node, containing field type and value,
      * - suboption node, i.e., a root of a suboption.
      *
-     * It processes specified options recursively. It stops at recursion level of 2.
+     * It processes specified options recursively. It stops at recursion level of 3.
      *
      * @param options input options to be processed.
      * @param recursionLevel specifies current recursion level. It protects against
@@ -80,7 +80,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
         recursionLevel: number = 0
     ): TreeNode<OptionNode | OptionFieldNode>[] {
         let optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
-        if (!options || recursionLevel >= 2) {
+        if (!options || recursionLevel >= 3) {
             return optionNodes
         }
         for (let option of options) {

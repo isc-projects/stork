@@ -547,6 +547,22 @@ describe('DhcpOptionSetFormService', () => {
         expect(fields.at(0).get('control')).toBeTruthy()
         expect(fields.at(0).get('control').value).toBe('1111')
 
+        // Option 3087.1.2
+        expect((formArray.at(2).get('suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(1)
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend')).toBeTruthy()
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode')).toBeTruthy()
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionFields')).toBeTruthy()
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.suboptions')).toBeTruthy()
+
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend').value).toBeFalse()
+        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode').value).toBe(2)
+        expect(
+            (formArray.at(2).get('suboptions.0.suboptions.0.optionFields') as UntypedFormArray).controls.length
+        ).toBe(1)
+        expect((formArray.at(2).get('suboptions.0.suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(
+            0
+        )
+
         // Option 3087.0.
         expect(formArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
         expect(formArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
