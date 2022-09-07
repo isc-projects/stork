@@ -14,11 +14,11 @@ import (
 // A configuration manager module responsible for Kea configuration.
 type ConfigModule struct {
 	// A configuration manager owning the module.
-	manager config.ManagerAccessors
+	manager config.ModuleManager
 }
 
 // Creates new instance of the Kea configuration module.
-func NewConfigModule(manager config.ManagerAccessors) *ConfigModule {
+func NewConfigModule(manager config.ModuleManager) *ConfigModule {
 	return &ConfigModule{
 		manager: manager,
 	}
@@ -63,10 +63,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
-	var (
-		commands []interface{}
-		lookup   dbmodel.DHCPOptionDefinitionLookup
-	)
+	var commands []interface{}
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
@@ -75,6 +72,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
+		lookup := module.manager.GetDHCPOptionDefinitionLookup()
 		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
 			return ctx, err
@@ -149,10 +147,8 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		return ctx, err
 	}
 	existingHost := existingHostIface.(dbmodel.Host)
-	var (
-		commands []any
-		lookup   dbmodel.DHCPOptionDefinitionLookup
-	)
+
+	var commands []any
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
 		if lh.Daemon == nil {
@@ -181,6 +177,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
 		// Convert the updated host information to Kea reservation.
+		lookup := module.manager.GetDHCPOptionDefinitionLookup()
 		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
 			return ctx, err

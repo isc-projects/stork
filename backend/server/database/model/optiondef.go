@@ -5,16 +5,21 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// DHCP option definition lookup mechanism. It can check if a definition
-// of a given option exists for the specified daemon.
+// DHCP option definition lookup mechanism.
 //
-// The lookup mechanism is currently very simple. It does not take into
-// account any runtime option definitions returned by Kea. It merely
-// checks if the specified option is a standard option, and assumes that
-// Kea knows its definition if it is a standard option. We are going to
-// extend the lookup mechanism to take into account runtime option
-// definitions once we gather them from the monitored DHCP servers.
-type DHCPOptionDefinitionLookup struct{}
+// Its capabilities are currently limited. In the near future it will
+// be able to search for runtime option definitions in the database. At
+// present, it can find some selected standard option definitions for Kea.
+type DHCPOptionDefinitionLookup struct {
+	keaStdLookup keaconfig.DHCPStdOptionDefinitionLookup
+}
+
+// Creates new lookup instance.
+func NewDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
+	return &DHCPOptionDefinitionLookup{
+		keaStdLookup: keaconfig.NewStdDHCPOptionDefinitionLookup(),
+	}
+}
 
 // Checks if a definition of the specified option exists for the
 // given daemon.
@@ -31,4 +36,11 @@ func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option
 		return option.GetSpace() == "dhcp6" && option.GetCode() >= 1 && option.GetCode() <= 143
 	}
 	return false
+}
+
+// Finds option definition for the specified option. Internally, it queries standard
+// Kea option definitions defined in the keaconfig package. In the future it will also
+// be able to search for the runtime definitions in the database.
+func (lookup DHCPOptionDefinitionLookup) Find(daemonID int64, option keaconfig.DHCPOption) keaconfig.DHCPOptionDefinition {
+	return lookup.keaStdLookup.FindByCodeSpace(option.GetCode(), option.GetSpace(), option.GetUniverse())
 }

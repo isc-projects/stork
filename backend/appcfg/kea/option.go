@@ -69,13 +69,6 @@ type DHCPOption interface {
 	GetUniverse() storkutil.IPType
 }
 
-// An interface to a structure providing option definition lookup capabilities.
-type DHCPOptionDefinitionLookup interface {
-	// Checks if a definition of the specified option exists for the
-	// given daemon.
-	DefinitionExists(int64, DHCPOption) bool
-}
-
 // Represents a DHCP option in the format used by Kea (i.e., an item of the
 // option-data list).
 type SingleOptionData struct {

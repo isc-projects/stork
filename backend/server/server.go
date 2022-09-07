@@ -3,10 +3,12 @@ package server
 import (
 	"errors"
 
+	"github.com/go-pg/pg/v10"
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
+	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/bind9"
@@ -49,8 +51,11 @@ type StorkServer struct {
 	EventCenter eventcenter.EventCenter
 
 	ReviewDispatcher configreview.Dispatcher
-
+	// Configuration manager instance. Note that it inherits some fields
+	// maintained by the server.
 	ConfigManager config.Manager
+	// Provides lookup functionality for DHCP option definitions.
+	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
@@ -210,7 +215,16 @@ func (ss *StorkServer) Bootstrap() (err error) {
 		log.Warn("The metric endpoint is disabled (it can be enabled with the -m flag)")
 	}
 
-	ss.ConfigManager = apps.NewManager(ss.DB, ss.Agents)
+	// This instance provides functions to search for option definitions, both in the
+	// database and among the standard options. It is required by the config manager.
+	ss.DHCPOptionDefinitionLookup = &dbmodel.DHCPOptionDefinitionLookup{}
+	// Create the config manager instance. It takes config.ManagerAccessors interface
+	// as a parameter. The manager uses this interface to setup its state. For example,
+	// it stores the instance of the DHCP option definition lookup. Note, that it is
+	// important to maintain one instance of the lookup because it applies indexing
+	// on the option definitions it returns. Indexing should be done only once at
+	// server startup.
+	ss.ConfigManager = apps.NewManager(ss)
 
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
@@ -263,4 +277,20 @@ func (ss *StorkServer) Shutdown() {
 	}
 	ss.DB.Close()
 	log.Println("Stork Server shut down")
+}
+
+// Returns an instance of the database handler used by the configuration manager.
+func (ss *StorkServer) GetDB() *pg.DB {
+	return ss.DB
+}
+
+// Returns an interface to the agents the manager communicates with.
+func (ss *StorkServer) GetConnectedAgents() agentcomm.ConnectedAgents {
+	return ss.Agents
+}
+
+// Returns an interface to the instance providing the DHCP option definition
+// lookup logic.
+func (ss *StorkServer) GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
+	return ss.DHCPOptionDefinitionLookup
 }

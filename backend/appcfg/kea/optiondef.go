@@ -1,0 +1,86 @@
+package keaconfig
+
+// DHCP option type enum, as defined in Kea.
+type DHCPOptionType = string
+
+const (
+	EmptyOption       DHCPOptionType = "empty"
+	StringOption      DHCPOptionType = "string"
+	BoolOption        DHCPOptionType = "bool"
+	Uint8Option       DHCPOptionType = "uint8"
+	Uint16Option      DHCPOptionType = "uint16"
+	Uint32Option      DHCPOptionType = "uint32"
+	IPv4AddressOption DHCPOptionType = "ipv4-address"
+	IPv6AddressOption DHCPOptionType = "ipv6-address"
+	IPv6PrefixOption  DHCPOptionType = "ipv6-prefix"
+	PsidOption        DHCPOptionType = "psid"
+	FqdnOption        DHCPOptionType = "fqdn"
+	TupleOption       DHCPOptionType = "tuple"
+	RecordOption      DHCPOptionType = "record"
+)
+
+// DHCP option definition in the format used by Kea.
+type dhcpOptionDefinition struct {
+	Array       bool             `mapstructure:"array" json:"array,omitempty"`
+	Code        uint16           `mapstructure:"code" json:"code"`
+	Encapsulate string           `mapstructure:"encapsulate" json:"encapsulate"`
+	Name        string           `mapstructure:"name" json:"name"`
+	RecordTypes []DHCPOptionType `mapstructure:"record-types" json:"record-types"`
+	Space       string           `mapstructure:"space" json:"space"`
+	OptionType  DHCPOptionType   `mapstructure:"type" json:"type"`
+}
+
+// DHCP option definition interface.
+type DHCPOptionDefinition interface {
+	GetArray() bool
+	GetCode() uint16
+	GetEncapsulate() string
+	GetName() string
+	GetRecordTypes() []DHCPOptionType
+	GetSpace() string
+	GetType() DHCPOptionType
+}
+
+// An interface to a structure providing option definition lookup capabilities.
+type DHCPOptionDefinitionLookup interface {
+	// Checks if a definition of the specified option exists for the
+	// given daemon.
+	DefinitionExists(int64, DHCPOption) bool
+	// Searches for an option definition for the specified daemon ID and option value.
+	Find(int64, DHCPOption) DHCPOptionDefinition
+}
+
+// Checks if the option is an array (has an array of option fields).
+func (def dhcpOptionDefinition) GetArray() bool {
+	return def.Array
+}
+
+// Returns option code.
+func (def dhcpOptionDefinition) GetCode() uint16 {
+	return def.Code
+}
+
+// Returns option space encapsulated by the option.
+func (def dhcpOptionDefinition) GetEncapsulate() string {
+	return def.Encapsulate
+}
+
+// Returns option name.
+func (def dhcpOptionDefinition) GetName() string {
+	return def.Name
+}
+
+// Returns record types (when an option is a record of different fields).
+func (def dhcpOptionDefinition) GetRecordTypes() []DHCPOptionType {
+	return def.RecordTypes
+}
+
+// Returns option space.
+func (def dhcpOptionDefinition) GetSpace() string {
+	return def.Space
+}
+
+// Returns option type.
+func (def dhcpOptionDefinition) GetType() DHCPOptionType {
+	return def.OptionType
+}

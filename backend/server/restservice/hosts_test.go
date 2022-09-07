@@ -9,6 +9,7 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
+	appstest "isc.org/stork/server/apps/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -245,7 +246,10 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -346,7 +350,10 @@ func TestCreateHostBeginNoSession(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -379,7 +386,10 @@ func TestCreateHostBeginNoServers(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -418,7 +428,10 @@ func TestCreateHostSubmitError(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create config manager.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -556,7 +569,10 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -619,7 +635,10 @@ func TestCreateHostDeleteError(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create config manager.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -689,7 +708,10 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -812,7 +834,10 @@ func TestUpdateHostBeginNoSession(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -847,7 +872,10 @@ func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -891,7 +919,10 @@ func TestUpdateHostSubmitError(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create config manager.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -1056,7 +1087,10 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -1145,7 +1179,10 @@ func TestDeleteHost(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create the config manager using these agents.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.
@@ -1210,7 +1247,10 @@ func TestDeleteHostError(t *testing.T) {
 	require.NotNil(t, fa)
 
 	// Create config manager.
-	cm := apps.NewManager(db, fa)
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
 	require.NotNil(t, cm)
 
 	// Create API.

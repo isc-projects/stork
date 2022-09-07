@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
+	appstest "isc.org/stork/server/apps/test"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
@@ -24,7 +25,10 @@ func TestNewRestAPI(t *testing.T) {
 	dispatcher := &storktestdbmodel.FakeDispatcher{}
 	pullers := &apps.Pullers{}
 	collector := storktest.NewFakeMetricsCollector()
-	configManager := apps.NewManager(db, agents)
+	configManager := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: agents,
+	})
 
 	// Specify all supported structures.
 	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager)

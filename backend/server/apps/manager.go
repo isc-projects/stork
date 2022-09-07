@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
@@ -38,6 +39,9 @@ type configManagerImpl struct {
 	db *pg.DB
 	// Interface to the agents that the manager communicates with.
 	agents agentcomm.ConnectedAgents
+	// Interface to the instance providing functions to search for
+	// option definitions.
+	lookup keaconfig.DHCPOptionDefinitionLookup
 	// Holds contexts for present transactions. The unique context
 	// identifier exchanged between the server and the client is a
 	// key of this map.
@@ -150,11 +154,14 @@ func (manager *configManagerImpl) unlock(ctx context.Context) {
 	}
 }
 
-// Creates new configuration manager instance.
-func NewManager(db *pg.DB, agents agentcomm.ConnectedAgents) config.Manager {
+// Creates new configuration manager instance. The server parameter is an
+// interface to the owner of the state required by the manager (i.e., an
+// instance of the Stork Server holding the state.).
+func NewManager(server config.ManagerAccessors) config.Manager {
 	manager := &configManagerImpl{
-		db:       db,
-		agents:   agents,
+		db:       server.GetDB(),
+		agents:   server.GetConnectedAgents(),
+		lookup:   server.GetDHCPOptionDefinitionLookup(),
 		contexts: make(map[int64]contextPair),
 		locks:    make(map[int64]configLock),
 		mutex:    &sync.RWMutex{},
@@ -174,6 +181,12 @@ func (manager *configManagerImpl) GetDB() *pg.DB {
 // Returns the interface to the agents the manager communicates with.
 func (manager *configManagerImpl) GetConnectedAgents() agentcomm.ConnectedAgents {
 	return manager.agents
+}
+
+// Returns an interface to the instance providing the DHCP option definition
+// lookup logic.
+func (manager *configManagerImpl) GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
+	return manager.lookup
 }
 
 // Returns Kea configuration module of the configuration manager.

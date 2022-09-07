@@ -7,9 +7,11 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	appstest "isc.org/stork/server/apps/test"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -22,15 +24,16 @@ import (
 type testManager struct {
 	db     *pg.DB
 	agents agentcomm.ConnectedAgents
+	lookup keaconfig.DHCPOptionDefinitionLookup
 
 	locks map[int64]bool
 }
 
 // Creates new test config manager instance.
-func newTestManager(db *pg.DB, agents *agentcommtest.FakeAgents) *testManager {
+func newTestManager(server config.ManagerAccessors) *testManager {
 	return &testManager{
-		db:     db,
-		agents: agents,
+		db:     server.GetDB(),
+		agents: server.GetConnectedAgents(),
 		locks:  make(map[int64]bool),
 	}
 }
@@ -43,6 +46,12 @@ func (tm *testManager) GetDB() *pg.DB {
 // Returns an interface to the test agents.
 func (tm *testManager) GetConnectedAgents() agentcomm.ConnectedAgents {
 	return tm.agents
+}
+
+// Returns an interface to the instance providing functions to find
+// option definitions.
+func (tm *testManager) GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
+	return tm.lookup
 }
 
 // Applies locks on specified daemons.
@@ -107,8 +116,9 @@ func TestCommit(t *testing.T) {
 
 // Test first stage of adding a new host.
 func TestBeginHostAdd(t *testing.T) {
-	manager := newTestManager(nil, nil)
-
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
 
@@ -128,7 +138,10 @@ func TestBeginHostAdd(t *testing.T) {
 
 // Test second stage of adding a new host.
 func TestApplyHostAdd(t *testing.T) {
-	module := NewConfigModule(nil)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
 	require.NotNil(t, module)
 
 	// Transaction state is required because typically it is created by the
@@ -250,7 +263,10 @@ func TestApplyHostAdd(t *testing.T) {
 func TestCommitHostAdd(t *testing.T) {
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(nil, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -350,7 +366,10 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 
-	manager := newTestManager(nil, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -422,7 +441,11 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	defer teardown()
 
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
@@ -525,7 +548,11 @@ func TestBeginHostUpdate(t *testing.T) {
 	defer teardown()
 
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
@@ -600,7 +627,10 @@ func TestApplyHostUpdate(t *testing.T) {
 		},
 	}
 
-	module := NewConfigModule(nil)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
 	require.NotNil(t, module)
 
 	daemonIDs := []int64{1}
@@ -768,7 +798,10 @@ func TestCommitHostUpdate(t *testing.T) {
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(nil, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -878,7 +911,10 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 
-	manager := newTestManager(nil, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -945,7 +981,11 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	defer teardown()
 
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
@@ -1162,7 +1202,11 @@ func TestCommitHostDelete(t *testing.T) {
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	// Create Kea config module.
 	module := NewConfigModule(manager)
@@ -1219,7 +1263,11 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	agents := agentcommtest.NewKeaFakeAgents()
-	manager := newTestManager(db, agents)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
 
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)

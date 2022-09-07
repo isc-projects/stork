@@ -93,6 +93,12 @@ func (lookup testDHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, op
 	return lookup.hasDefinition
 }
 
+// Finds option definition for the specified option.
+func (lookup testDHCPOptionDefinitionLookup) Find(daemonID int64, option DHCPOption) DHCPOptionDefinition {
+	stdLookup := NewStdDHCPOptionDefinitionLookup()
+	return stdLookup.FindByCodeSpace(option.GetCode(), option.GetSpace(), option.GetUniverse())
+}
+
 // Test that a DHCP option in the Kea format is created from the Stork's
 // option representation. It creates an option with many different option
 // fields and simulates the case that a definition for this option exists.

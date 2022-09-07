@@ -7,6 +7,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/mitchellh/mapstructure"
 	pkgerrors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -65,14 +66,23 @@ type Manager interface {
 	Schedule(context.Context, time.Time) (context.Context, error)
 }
 
-// Configuration manager interface exposing functions accessing
-// its unexported fields. It is used by the config modules.
+// Configuration manager interface exposing functions used for getting
+// state information, (e.g., database connection, connected agents etc.).
 type ManagerAccessors interface {
-	ManagerLocker
 	// Returns an instance of the database handler used by the configuration manager.
 	GetDB() *pg.DB
 	// Returns an interface to the agents the manager communicates with.
 	GetConnectedAgents() agentcomm.ConnectedAgents
+	// Returns an interface to the instance providing the DHCP option definition
+	// lookup logic.
+	GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup
+}
+
+// Configuration manager interface exposing functions available to the
+// configuration modules.
+type ModuleManager interface {
+	ManagerLocker
+	ManagerAccessors
 }
 
 // Config manager interface exposing locking functions.
