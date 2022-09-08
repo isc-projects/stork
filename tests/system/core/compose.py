@@ -26,9 +26,12 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 
 import os
+import profile
 from typing import Dict, List, Tuple
 import subprocess
 import sys
+
+import yaml
 
 from core.utils import setup_logger, memoize, wait_for_success
 
@@ -560,8 +563,31 @@ class DockerCompose(object):
             return int(stdout)
         except Exception:
             return None
-            
-    
+
+    def is_premium(self, service_name):
+        '''Checks if the given service is in the premium profile.'''
+        config = self._read_config_yaml()
+        services_config = config['services']
+        service_config = services_config.get(service_name)
+        if service_config is None:
+            raise LookupError(
+                f'service {service_name} not found in the configuration')
+
+        profiles = service_config.get("profiles")
+
+        if profiles is None:
+            # No profiles specified.
+            return False
+
+        return "premium" in profiles
+
+    @memoize
+    def _read_config_yaml(self):
+        '''Reads the configuration YAMS file and parses it.'''
+        config_cmd = self.docker_compose_command() + ["config", ]
+        _, stdout, _ = self._call_command(config_cmd)
+        return yaml.safe_load(stdout)
+
     def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
         env = os.environ.copy()
         if self._env_vars is not None:
@@ -587,4 +613,3 @@ class DockerCompose(object):
             stderr: str = stderr.decode("utf-8").rstrip()
             return result.returncode, stdout, stderr
         return result.returncode, None, None
-

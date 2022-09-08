@@ -1,0 +1,7 @@
+{
+    "type": "postgresql",
+    "host": "postgres",
+    "name": "kea_hostcmds",
+    "user": "kea_hostcmds",
+    "password": "kea_hostcmds"
+}

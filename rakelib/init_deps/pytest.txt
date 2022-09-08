@@ -20,6 +20,8 @@ pytest==7.0.1
     # via -r pytest.in
 python-dateutil==2.8.2
     # via -r pytest.in
+pyyaml==6.0
+    # via -r pytest.in
 six==1.16.0
     # via python-dateutil
 tomli==1.2.3

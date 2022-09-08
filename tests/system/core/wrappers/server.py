@@ -246,7 +246,9 @@ class Server(ComposeServiceWrapper):
 
     def list_hosts(self, text=None) -> Hosts:
         """Lists the hosts based on the host identifier."""
-        params = {}
+        params = {
+            'limit': 100
+        }
         if text != None:
             params["text"] = text
         api_instance = DHCPApi(self._api_client)

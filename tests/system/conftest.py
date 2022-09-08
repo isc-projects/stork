@@ -60,11 +60,36 @@ def pytest_runtest_makereport(item, call):
 
 
 def pytest_sessionstart(session):
-    # Stop all the running containers. The containers are stopped by default
-    # on the testing end if no interruption happened
+    """
+    Stop all the running containers. The containers are stopped by default
+    on the testing end if no interruption happened
+    """
     compose = create_docker_compose()
     compose.stop()
     # Remove old test results
     tests_dir = Path('test-results')
     if tests_dir.exists():
         shutil.rmtree(tests_dir)
+
+
+def pytest_collection_modifyitems(session, config, items):
+    """
+    Filters out all tests using the premium features if CloudSmith token is
+    not provided.
+    """
+    if 'CS_REPO_ACCESS_TOKEN' in os.environ:
+        return
+
+    compose = create_docker_compose()
+    skip = pytest.mark.skip(reason="Skip due to missing CloudSmith token.")
+
+    for item in items:
+        if not hasattr(item, "callspec"):
+            continue
+        callspec = item.callspec
+        for _, fixture_args in callspec.params.items():
+            service_name = fixture_args.get("service_name")
+            if service_name is None:
+                continue
+            if compose.is_premium(service_name):
+                item.add_marker(skip)

@@ -93,9 +93,10 @@ services:
       - $PWD/tests/system/config/kea/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
       - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - $PWD/tests/system/config/kea/hook-disabled.json:/etc/kea/hook-hostcmds.json
+      - $PWD/tests/system/config/kea/kea-host-database.json:/etc/kea/kea-host-database.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
-      - $PWD/tests/system/config/kea/kea-dhcp4-hooks.json:/etc/kea/kea-dhcp4-hooks.json
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - $PWD/docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -160,6 +161,26 @@ services:
         KEA_PREMIUM: "premium"
     profiles:
       - premium
+
+  agent-kea-premium-host-database-base:
+    extends: agent-kea-premium
+    environment:
+      DB_TYPE: pgsql
+      DB_NAME: kea_hostcmds
+      DB_USER: kea_hostcmds
+      DB_PASSWORD: kea_hostcmds
+      DB_HOST: postgres
+      DB_ROOT_USER: stork
+      DB_ROOT_PASSWORD: stork
+    volumes:
+      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database.json:/etc/kea/kea-host-database.json
+      - $PWD/tests/system/config/kea-premium-host-database/kea-hook-hostcmds.json:/etc/kea/hook-hostcmds.json
+      - $PWD/tests/system/config/kea-premium-host-database/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
+
+  agent-kea-premium-host-database:
+    extends: agent-kea-premium-host-database-base
+    depends_on:
+      - postgres
 
   agent-bind9:
     restart: always
@@ -262,6 +283,8 @@ services:
       interval: 250ms
       timeout: 1s
       retries: 40
+    ports:
+      - "42432:5432"
 
   radius:
     image: freeradius/freeradius-server:3.2.0-alpine
