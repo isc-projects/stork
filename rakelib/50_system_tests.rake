@@ -141,6 +141,7 @@ namespace :systemtest do
 
     desc 'Run system tests docker-compose
         USE_BUILD_KIT - use BuildKit for faster build - default: true
+        CS_REPO_ACCESS_TOKEN - build the containers including Kea premium features - optional
     '
     task :sh => volume_files do |t, args|
         if ENV["USE_BUILD_KIT"] != "false"
@@ -150,10 +151,17 @@ namespace :systemtest do
 
         ENV["PWD"] = Dir.pwd
 
+        profiles = []
+        if !ENV["CS_REPO_ACCESS_TOKEN"].nil?
+            puts "Use the Kea premium containers"
+            profiles.append "--profile", "premium"
+        end
+
         sh "docker-compose",
             "-f", File.expand_path(File.join(system_tests_dir, "docker-compose.yaml")),
             "--project-directory", File.expand_path("."),
             "--project-name", "stork_tests",
+            *profiles,
             *args
     end
 
