@@ -263,6 +263,13 @@ services:
       timeout: 1s
       retries: 40
 
+  radius:
+    image: freeradius/freeradius-server:3.2.0-alpine
+    networks:
+      - storknet
+    volumes:
+      - $PWD/tests/system/config/radius:/etc/raddb
+
 networks:
   storknet:
     enable_ipv6: true
