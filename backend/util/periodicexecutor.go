@@ -200,3 +200,8 @@ func (executor *PeriodicExecutor) executorLoop() {
 		}
 	}
 }
+
+// Returns the executor name.
+func (executor *PeriodicExecutor) GetName() string {
+	return executor.name
+}

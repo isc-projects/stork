@@ -17,3 +17,30 @@
         type: string
       metrics_collector_interval:
         type: integer
+
+  Puller:
+    type: object
+    properties:
+      name:
+        type: string
+        readOnly: true
+      setting:
+        type: string
+        readOnly: true
+      interval:
+        type: integer
+        readOnly: true
+      lastExecutedAt:
+        type: string
+        format: date-time
+        readOnly: true
+
+  Pullers:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Puller'
+      total:
+        type: integer

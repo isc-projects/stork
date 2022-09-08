@@ -1,6 +1,8 @@
 package agentcomm
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
@@ -15,6 +17,7 @@ import (
 type PeriodicPuller struct {
 	*storkutil.PeriodicExecutor
 	intervalSettingName string
+	lastExecutedAt      *time.Time
 	DB                  *dbops.PgDB
 	Agents              ConnectedAgents
 }
@@ -25,8 +28,14 @@ type PeriodicPuller struct {
 // interval available in the database. The intervalSettingName is a name of this
 // setting in the database. The pullerName is used for logging purposes.
 func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, intervalSettingName string, pullFunc func() error) (*PeriodicPuller, error) {
+	lastExecutedAt := &time.Time{}
 	periodicExecutor, err := storkutil.NewPeriodicExecutor(
-		pullerName, pullFunc,
+		pullerName,
+		func() error {
+			err := pullFunc()
+			*lastExecutedAt = time.Now()
+			return err
+		},
 		func() (int64, error) {
 			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
 			return interval, errors.WithMessagef(err, "Problem getting interval setting %s from db",
@@ -40,9 +49,20 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 	periodicPuller := &PeriodicPuller{
 		periodicExecutor,
 		intervalSettingName,
+		lastExecutedAt,
 		db,
 		agents,
 	}
 
 	return periodicPuller, nil
+}
+
+// Returns the interval setting name used by the puller.
+func (p *PeriodicPuller) GetIntervalName() string {
+	return p.intervalSettingName
+}
+
+// Return the last execution time.
+func (p *PeriodicPuller) GetLastExecutedAt() time.Time {
+	return *p.lastExecutedAt
 }

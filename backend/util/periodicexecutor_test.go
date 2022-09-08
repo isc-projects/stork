@@ -159,3 +159,15 @@ func TestGetInterval(t *testing.T) {
 	}, 5*time.Second, time.Second,
 		"test executor did not update the interval")
 }
+
+// Test that the executor name is returned properly.
+func TestGetName(t *testing.T) {
+	// Arrange
+	executor, _ := NewPeriodicExecutor("foobar", func() error { return nil }, func() (int64, error) { return 1, nil })
+
+	// Act
+	name := executor.GetName()
+
+	// Assert
+	require.EqualValues(t, "foobar", name)
+}

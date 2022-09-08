@@ -55,3 +55,52 @@ func TestReadIntervalFromDatabase(t *testing.T) {
 		return currentInterval == 10
 	}, 5*time.Second, time.Second, "puller didn't update the interval")
 }
+
+// Test that the interval setting name is returned properly.
+func TestGetIntervalName(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
+		func() error { return nil })
+	defer puller.Shutdown()
+
+	// Act
+	intervalName := puller.GetIntervalName()
+
+	// Assert
+	require.EqualValues(t, "kea_hosts_puller_interval", intervalName)
+}
+
+// Test that the puller returns properly last execution time.
+func TestPullerSavesLastExecutionTime(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
+
+	var pullTime *time.Time
+
+	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
+		func() error {
+			if pullTime == nil {
+				current := time.Now()
+				pullTime = &current
+			}
+			return nil
+		})
+	defer puller.Shutdown()
+	startTime := time.Now()
+
+	// Act
+	require.Eventually(t, func() bool {
+		return pullTime != nil
+	}, 5*time.Second, 500*time.Millisecond)
+	executionTime := puller.GetLastExecutedAt()
+
+	// Assert
+	require.Less(t, startTime, *pullTime)
+	require.Less(t, *pullTime, executionTime)
+}
