@@ -473,6 +473,11 @@ end
 
 
 namespace :gen do
+    namespace :backend do
+        desc 'Generate Swagger API files'
+        task :swagger => [SWAGGER_SERVER_DIR]
+    end
+
     namespace :ui do
         desc 'Generate Angular component
         NAME - name of component - required'
