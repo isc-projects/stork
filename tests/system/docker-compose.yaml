@@ -188,8 +188,6 @@ services:
       - $PWD/tests/system/config/kea-premium-radius/dictionary:/usr/local/etc/freeradius/dictionary
       # Disable DHCPv6 due to missing dedicated configuration.
       - /etc/supervisor/conf.d/kea-dhcp6.conf
-    depends_on:
-      - radius
 
   agent-bind9:
     restart: always
@@ -294,15 +292,6 @@ services:
       retries: 40
     ports:
       - "42432:5432"
-
-  radius:
-    image: freeradius/freeradius-server:3.2.0-alpine
-    networks:
-      - storknet
-    volumes:
-      - $PWD/tests/system/config/radius:/etc/raddb
-    profiles:
-      - premium
 
 networks:
   storknet:
