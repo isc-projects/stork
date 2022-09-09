@@ -10,9 +10,11 @@ from openapi_client.api.services_api import ServicesApi, Machine, Machines, Conf
 from openapi_client.api.dhcp_api import DHCPApi, Subnets, Leases, Hosts, DhcpOverview
 from openapi_client.api.events_api import EventsApi, Events
 from openapi_client.api.general_api import GeneralApi, Version
+from openapi_client.api.settings_api import SettingsApi
 from openapi_client.model.event import Event
 from openapi_client.model.subnet import Subnet
 from openapi_client.model.local_subnet import LocalSubnet
+from openapi_client.model.puller import Puller
 
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
@@ -312,6 +314,11 @@ class Server(ComposeServiceWrapper):
         api_instance = GeneralApi(self._api_client)
         return api_instance.get_version()
 
+    def _read_puller(self, puller_id) -> Puller:
+        "Read the puller state"
+        api_instance = SettingsApi(self._api_client)
+        return api_instance.get_puller(id=puller_id)
+
     # Update
 
     def update_machine(self, machine: Machine) -> Machine:
@@ -366,6 +373,26 @@ class Server(ComposeServiceWrapper):
                     return
             raise NoSuccessException("expected event doesn't occur")
         return worker()
+
+    def _wait_for_puller(self, puller_id: str, start: datetime = None):
+        if start is None:
+            start = datetime.now(timezone.utc)
+
+        interval_suffix = "_interval"
+        friendly_puller_name = puller_id
+        if puller_id.endswith(interval_suffix):
+            friendly_puller_name = puller_id[:-len(interval_suffix)]
+
+        @wait_for_success(wait_msg=f"Waiting to next puller ({friendly_puller_name}) execution...")
+        def worker():
+            puller = self._read_puller(puller_id)
+            last_executed_at = puller["last_executed_at"]
+            if Server._is_before(last_executed_at, start):
+                raise NoSuccessException("the puller not executed")
+        return worker()
+
+    def wait_for_host_reservation_pulling(self, start: datetime = None):
+        return self._wait_for_puller("kea_hosts_puller_interval", start)
 
     def wait_for_next_machine_state(self, machine_id: int,
                                     start: datetime = None, wait_for_apps=True) -> Machine:

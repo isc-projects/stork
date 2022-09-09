@@ -6,7 +6,7 @@ from core.fixtures import kea_parametrize
 def test_get_host_leases(kea_service: Kea, server_service: Server):
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
-    server_service.wait_for_next_machine_states()
+    server_service.wait_for_host_reservation_pulling()
 
     hosts = server_service.list_hosts('192.0.2.42')
     assert hosts is not None
