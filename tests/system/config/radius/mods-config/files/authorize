@@ -1,1 +1,1 @@
-bob	Cleartext-Password := "test"
+bob	Cleartext-Password := "radius_password"

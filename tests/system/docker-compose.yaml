@@ -162,7 +162,7 @@ services:
     profiles:
       - premium
 
-  agent-kea-premium-host-database-base:
+  agent-kea-premium-host-database:
     extends: agent-kea-premium
     environment:
       DB_TYPE: pgsql
@@ -176,11 +176,19 @@ services:
       - $PWD/tests/system/config/kea-premium-host-database/kea-host-database.json:/etc/kea/kea-host-database.json
       - $PWD/tests/system/config/kea-premium-host-database/kea-hook-hostcmds.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea-premium-host-database/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
-
-  agent-kea-premium-host-database:
-    extends: agent-kea-premium-host-database-base
     depends_on:
       - postgres
+
+  agent-kea-premium-radius:
+    extends: agent-kea-premium
+    volumes:
+      - $PWD/tests/system/config/kea-premium-host-database/kea-hook-hostcmds.json:/etc/kea/hook-hostcmds.json
+      - $PWD/tests/system/config/kea-premium-radius/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - $PWD/tests/system/config/kea-premium-radius/dictionary:/usr/local/etc/freeradius/dictionary
+      # Disable DHCPv6 due to missing dedicated configuration.
+      - /etc/supervisor/conf.d/kea-dhcp6.conf
+    depends_on:
+      - radius
 
   agent-bind9:
     restart: always

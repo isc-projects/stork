@@ -235,6 +235,8 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         -y \
         isc-kea-premium-host-cmds=${KEA_VER} \
         isc-kea-premium-forensic-log=${KEA_VER} \
+        isc-kea-premium-host-cache=${KEA_VER} \
+        isc-kea-premium-radius=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
