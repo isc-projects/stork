@@ -134,7 +134,7 @@ EXPOSE 9547
 # Prometheus Bing9 port
 EXPOSE 9119
 
-# Server container
+# Server containers
 FROM debian-base AS server
 RUN apt-get update \
         && apt-get install \
@@ -147,6 +147,15 @@ COPY --from=server-builder /app/dist/server/ /
 ENTRYPOINT [ "/bin/sh", "-c", \
       "supervisord -c /etc/supervisor/supervisord.conf" ]
 EXPOSE 8080
+HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
+
+FROM server-builder AS server-debug
+WORKDIR /app/rakelib
+COPY rakelib/30_dev.rake ./
+WORKDIR /app
+ENTRYPOINT ["rake", "run:server_debug", "HEADLESS=true", "UI_MODE=none"]
+EXPOSE 8080
+EXPOSE 45678
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 # Web UI container

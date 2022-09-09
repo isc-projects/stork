@@ -140,6 +140,8 @@ task :pre_run_server do
         # Check if user manually forces the UI mode
         use_testing_ui = true
         puts "Using testing UI - user choice"
+    elsif ui_mode == "none"
+        puts "Skip UI - user choice"
     elsif ui_mode != "production"
         puts "Invalid UI mode - choose 'production', 'testing' or unspecify"
         fail
@@ -155,7 +157,9 @@ task :pre_run_server do
     ENV["STORK_SERVER_ENABLE_METRICS"] = "true"
 
     # Build UI
-    Rake::Task[ENV["STORK_REST_STATIC_FILES_DIR"]].invoke()
+    if ui_mode != "none"
+        Rake::Task[ENV["STORK_REST_STATIC_FILES_DIR"]].invoke()
+    end
 end
 
 ## Build
@@ -220,7 +224,7 @@ end
 ## Run
 namespace :run do
     desc "Run Stork Server (release mode)
-        UI_MODE - WebUI mode to use - choose: 'production', 'testing' or unspecify
+        UI_MODE - WebUI mode to use - choose: 'production', 'testing', 'none' or unspecify
         DB_TRACE - trace SQL queries - default: false
     "
     task :server => [SERVER_BINARY_FILE, :pre_run_server] do

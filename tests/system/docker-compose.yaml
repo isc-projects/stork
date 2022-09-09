@@ -6,13 +6,14 @@ services:
     build:
       context: .
       dockerfile: $PWD/docker/images/stork.Dockerfile
-      target: server
+      target: server-debug
     networks:
       - storknet
     expose:
       - "8080"
     ports:
       - "42080:8080"
+      - "45678:45678" # Debugger
     hostname: server
     environment:
       STORK_DATABASE_HOST: postgres

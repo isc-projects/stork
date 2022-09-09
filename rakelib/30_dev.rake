@@ -279,16 +279,20 @@ namespace :run do
 
     desc "Run Stork Server (debug mode, no doc and UI)
         HEADLESS - run debugger in headless mode - default: false
-        UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing' or unspecify
+        UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing', 'none' or unspecify
         DB_TRACE - trace SQL queries - default: false"
-    task :server_debug => [DLV, :pre_run_server] + GO_SERVER_CODEBASE do
+    task :server_debug => [DLV, "db:setup_envvars", :pre_run_server] + GO_SERVER_CODEBASE do
         opts = []
         if ENV["HEADLESS"] == "true"
             opts = ["--headless", "-l", "0.0.0.0:45678"]
         end
 
         Dir.chdir("backend/cmd/stork-server") do
-            sh DLV, *opts, "debug"
+            sh DLV, *opts, "debug",
+                "--continue",
+                "--accept-multiclient",
+                "--log",
+                "--api-version", "2"
         end
     end
 
