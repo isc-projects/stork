@@ -33,7 +33,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	rapi, err := NewRestAPI(dbSettings, db)
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -120,7 +120,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	rapi, err := NewRestAPI(dbSettings, db)
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -143,7 +143,7 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	rapi, err := NewRestAPI(dbSettings, db)
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -166,7 +166,7 @@ func TestGetHost(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	rapi, err := NewRestAPI(dbSettings, db)
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -197,7 +197,7 @@ func TestGetHostWithOptions(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	rapi, err := NewRestAPI(dbSettings, db)
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -245,15 +245,19 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -349,15 +353,19 @@ func TestCreateHostBeginNoSession(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager but do not login the user.
@@ -385,15 +393,19 @@ func TestCreateHostBeginNoServers(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager but do not login the user.
@@ -427,15 +439,19 @@ func TestCreateHostSubmitError(t *testing.T) {
 	}, nil)
 	require.NotNil(t, fa)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
 	// Create config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Start session manager.
@@ -568,15 +584,19 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -634,15 +654,19 @@ func TestCreateHostDeleteError(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
 	// Create config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Start session manager.
@@ -707,15 +731,19 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -833,15 +861,19 @@ func TestUpdateHostBeginNoSession(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager but do not login the user.
@@ -871,15 +903,19 @@ func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -918,15 +954,19 @@ func TestUpdateHostSubmitError(t *testing.T) {
 	}, nil)
 	require.NotNil(t, fa)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
 	// Create config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Start session manager.
@@ -1086,15 +1126,19 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -1178,15 +1222,19 @@ func TestDeleteHost(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	require.NotNil(t, fa)
 
-	// Create the config manager using these agents.
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Create session manager.
@@ -1246,15 +1294,19 @@ func TestDeleteHostError(t *testing.T) {
 	}, nil)
 	require.NotNil(t, fa)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
 	// Create config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
 	})
 	require.NotNil(t, cm)
 
 	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
 	require.NoError(t, err)
 
 	// Start session manager.

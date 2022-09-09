@@ -547,9 +547,8 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 
 // Creates an instance of a DHCP option in Stork from the option representation
 // in Kea. This function does not recognize encapsulated option space because
-// it is unavailable in the returned option data. To recognize the encapsulated
-// option space we need to add support for option definitions.
-func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType) DHCPOption {
+// it is unavailable in the returned option data.
+func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lookup DHCPOptionDefinitionLookup) DHCPOption {
 	option := dhcpOption{
 		AlwaysSend: optionData.AlwaysSend,
 		Code:       optionData.Code,
@@ -560,11 +559,19 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType) DH
 	data := strings.TrimSpace(optionData.Data)
 
 	// Option encapsulation.
-	switch option.Space {
-	case DHCPv4OptionSpace, DHCPv6OptionSpace:
-		option.Encapsulate = fmt.Sprintf("option-%d", option.Code)
-	default:
-		option.Encapsulate = fmt.Sprintf("%s.%d", option.Space, option.Code)
+	if def := lookup.Find(0, option); def != nil {
+		// If the option definition is known, let's take the encapsulated option
+		// space name from it.
+		option.Encapsulate = def.GetEncapsulate()
+	} else {
+		// Generate the encapsulated option space name because option
+		// definition does not exist in Stork for this option.
+		switch option.Space {
+		case DHCPv4OptionSpace, DHCPv6OptionSpace:
+			option.Encapsulate = fmt.Sprintf("option-%d", option.Code)
+		default:
+			option.Encapsulate = fmt.Sprintf("%s.%d", option.Space, option.Code)
+		}
 	}
 
 	// There is nothing to do if the option is empty.

@@ -26,14 +26,16 @@ func NewDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
 func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option keaconfig.DHCPOption) bool {
 	switch option.GetUniverse() {
 	case storkutil.IPv4:
-		return option.GetSpace() == "dhcp4" &&
+		return (option.GetSpace() == "dhcp4" &&
 			((option.GetCode() >= 1 && option.GetCode() <= 100) ||
 				(option.GetCode() >= 108 && option.GetCode() <= 161) ||
 				(option.GetCode() >= 175 && option.GetCode() <= 177) ||
 				(option.GetCode() >= 208 && option.GetCode() <= 213) ||
-				(option.GetCode() >= 220 && option.GetCode() <= 221))
+				(option.GetCode() >= 220 && option.GetCode() <= 221))) ||
+			(lookup.Find(daemonID, option) != nil)
 	case storkutil.IPv6:
-		return option.GetSpace() == "dhcp6" && option.GetCode() >= 1 && option.GetCode() <= 143
+		return (option.GetSpace() == "dhcp6" && option.GetCode() >= 1 && option.GetCode() <= 143) ||
+			(lookup.Find(daemonID, option) != nil)
 	}
 	return false
 }

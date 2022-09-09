@@ -62,7 +62,8 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
@@ -97,7 +98,8 @@ func TestNewSharedNetworkFromKeaFamilyClash(t *testing.T) {
 	}
 
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, daemon, HostDataSourceConfig, lookup)
 	require.Error(t, err)
 	require.Nil(t, parsedNetwork)
 }
@@ -148,7 +150,8 @@ func TestNewSubnetFromKea(t *testing.T) {
 
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
 	daemon.ID = 234
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
 	require.Zero(t, parsedSubnet.ID)
@@ -190,7 +193,8 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 	daemon.ID = 42
 
 	// Act
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.Error(t, err)
@@ -207,7 +211,8 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 	daemon.ID = 42
 
 	// Act
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -224,7 +229,8 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	daemon.ID = 42
 
 	// Act
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -241,7 +247,8 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 	daemon.ID = 42
 
 	// Act
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -258,7 +265,8 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	daemon.ID = 42
 
 	// Act
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -293,7 +301,8 @@ func TestNewHostFromKea(t *testing.T) {
 
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
 	daemon.ID = 123
-	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig)
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedHost)
 

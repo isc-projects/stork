@@ -24,7 +24,7 @@ import (
 // with the recursionLevel value of 0. It supports up to three recursion
 // levels, i.e., top-level option with suboptions with suboptions. If there
 // is an option at deeper level, it is excluded from the result.
-func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, recursionLevel int) ([]dbmodel.DHCPOption, error) {
+func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, recursionLevel int) ([]dbmodel.DHCPOption, error) {
 	var options []dbmodel.DHCPOption
 	// Break if recursion level exceeded.
 	if recursionLevel >= 3 {
@@ -48,6 +48,12 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, re
 			} else {
 				option.Space = keaconfig.DHCPv6OptionSpace
 			}
+		}
+		// Try to find a definition for this option to see what option space
+		// it encapsulates. We should use the encapsulated option space that
+		// matches what Kea server expects.
+		if def := r.DHCPOptionDefinitionLookup.Find(0, option); def != nil {
+			option.Encapsulate = def.GetEncapsulate()
 		}
 		// Go over the option fields belonging to our options.
 		for _, restField := range restOption.Fields {
@@ -114,7 +120,7 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, re
 		}
 		if len(restOption.Options) > 0 {
 			// Convert suboptions recursively.
-			suboptions, err := flattenDHCPOptions(option.Encapsulate, restOption.Options, recursionLevel+1)
+			suboptions, err := r.flattenDHCPOptions(option.Encapsulate, restOption.Options, recursionLevel+1)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +137,7 @@ func flattenDHCPOptions(optionSpace string, restOptions []*models.DHCPOption, re
 // options into a hierarchical structure used in the REST API. It processes the
 // options recursively with a three-level limit (i.e., top level options with
 // suboptions with suboptions). All option field values are converted to strings.
-func unflattenDHCPOptions(options []dbmodel.DHCPOption, space string, recursionLevel int) []*models.DHCPOption {
+func (r *RestAPI) unflattenDHCPOptions(options []dbmodel.DHCPOption, space string, recursionLevel int) []*models.DHCPOption {
 	var restOptions []*models.DHCPOption
 	// Break if recursion level exceeded.
 	if recursionLevel >= 3 {
@@ -162,7 +168,7 @@ func unflattenDHCPOptions(options []dbmodel.DHCPOption, space string, recursionL
 			}
 			// Append suboptions recursively for the encapsulated option space.
 			if len(restOption.Encapsulate) > 0 {
-				restOption.Options = unflattenDHCPOptions(options, restOption.Encapsulate, recursionLevel+1)
+				restOption.Options = r.unflattenDHCPOptions(options, restOption.Encapsulate, recursionLevel+1)
 			}
 			restOptions = append(restOptions, restOption)
 		}

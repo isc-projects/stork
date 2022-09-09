@@ -1,19 +1,27 @@
 package restservice
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
-// Test successful conversion of DHCP options received over the REST API to
+// Test successful conversion of DHCPv4 options received over the REST API to
 // the database model.
-func TestFlattenDHCPOptions(t *testing.T) {
+func TestFlattenDHCPv4Options(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
 	// Create options with suboptions and different option field types.
 	restOptions := []*models.DHCPOption{
 		{
@@ -134,7 +142,7 @@ func TestFlattenDHCPOptions(t *testing.T) {
 		},
 	}
 	// Convert and flatten the structure.
-	options, err := flattenDHCPOptions("dhcp4", restOptions, 0)
+	options, err := rapi.flattenDHCPOptions("dhcp4", restOptions, 0)
 	require.NoError(t, err)
 	require.Len(t, options, 7)
 
@@ -216,9 +224,97 @@ func TestFlattenDHCPOptions(t *testing.T) {
 	require.Equal(t, storkutil.IPv4, options[6].Universe)
 }
 
+// Test successful conversion of standard DHCPv6 options received over the
+// REST API to the database model. Standard options have their definitions
+// used to set the encapsulate field.
+func TestFlattenDHCPv6Options(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	// Create options with suboptions and different option field types.
+	restOptions := []*models.DHCPOption{
+		{
+			AlwaysSend:  true,
+			Code:        94,
+			Encapsulate: "option-94",
+			Fields:      []*models.DHCPOptionField{},
+			Options: []*models.DHCPOption{
+				{
+					Code:        89,
+					Encapsulate: "option-94.89",
+					Fields: []*models.DHCPOptionField{
+						{
+							FieldType: keaconfig.Uint8Field,
+							Values:    []string{"1"},
+						},
+					},
+					Options: []*models.DHCPOption{
+						{
+							Code:        93,
+							Encapsulate: "option-94.89.93",
+							Fields: []*models.DHCPOptionField{
+								{
+									FieldType: keaconfig.Uint8Field,
+									Values:    []string{"2"},
+								},
+							},
+							Universe: 6,
+						},
+					},
+					Universe: 6,
+				},
+			},
+			Universe: 6,
+		},
+	}
+	// Convert and flatten the structure.
+	options, err := rapi.flattenDHCPOptions("dhcp6", restOptions, 0)
+	require.NoError(t, err)
+	require.Len(t, options, 3)
+
+	// Sort the options by code because their order is not guaranteed.
+	sort.Slice(options, func(i, j int) bool {
+		return options[i].Code < options[j].Code
+	})
+	fmt.Printf("%+v\n", options)
+	require.False(t, options[0].AlwaysSend)
+	require.EqualValues(t, 89, options[0].Code)
+	require.Len(t, options[0].Fields, 1)
+	require.Len(t, options[0].Fields[0].Values, 1)
+	require.EqualValues(t, 1, options[0].Fields[0].Values[0])
+	require.Equal(t, "s46-cont-mape-options", options[0].Space)
+	require.Equal(t, "s46-rule-options", options[0].Encapsulate)
+	require.Equal(t, storkutil.IPv6, options[0].Universe)
+
+	require.False(t, options[1].AlwaysSend)
+	require.EqualValues(t, 93, options[1].Code)
+	require.Len(t, options[1].Fields, 1)
+	require.Len(t, options[1].Fields[0].Values, 1)
+	require.EqualValues(t, 2, options[1].Fields[0].Values[0])
+	require.Equal(t, "s46-rule-options", options[1].Space)
+	require.Empty(t, options[1].Encapsulate)
+	require.Equal(t, storkutil.IPv6, options[1].Universe)
+
+	require.True(t, options[2].AlwaysSend)
+	require.EqualValues(t, 94, options[2].Code)
+	require.Empty(t, options[2].Fields)
+	require.Equal(t, "dhcp6", options[2].Space)
+	require.Equal(t, "s46-cont-mape-options", options[2].Encapsulate)
+	require.Equal(t, storkutil.IPv6, options[2].Universe)
+}
+
 // Test negative scenarios of conversion of the DHCP options from the
 // REST API format to the database model.
 func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
 	type test struct {
 		testName  string
 		fieldType string
@@ -256,7 +352,7 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 					},
 				},
 			}
-			options, err := flattenDHCPOptions("dhcp4", restOptions, 0)
+			options, err := rapi.flattenDHCPOptions("dhcp4", restOptions, 0)
 			require.Error(t, err)
 			require.Nil(t, options)
 		})
@@ -265,6 +361,12 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 
 // Test that a DHCP option model is successfully converted to a REST API format.
 func TestUnflattenDHCPOptions(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
 	options := []dbmodel.DHCPOption{
 		{
 			AlwaysSend:  true,
@@ -304,7 +406,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	}
 
 	// Convert.
-	restOptions := unflattenDHCPOptions(options, "", 0)
+	restOptions := rapi.unflattenDHCPOptions(options, "", 0)
 	require.Len(t, restOptions, 1)
 	require.True(t, restOptions[0].AlwaysSend)
 	require.EqualValues(t, 1001, restOptions[0].Code)
@@ -339,6 +441,12 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 // Test that option field values of different types are correctly converted
 // into REST API format.
 func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
 	type test struct {
 		testName    string
 		fieldType   string
@@ -374,7 +482,7 @@ func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
 					},
 				},
 			}
-			restOptions := unflattenDHCPOptions(options, "", 0)
+			restOptions := rapi.unflattenDHCPOptions(options, "", 0)
 			require.Len(t, restOptions, 1)
 			require.Len(t, restOptions[0].Fields, 1)
 			require.Equal(t, fieldType, restOptions[0].Fields[0].FieldType)
@@ -386,6 +494,12 @@ func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
 // Test that maximum recursion level is respected while converting DHCP options
 // to the REST API format.
 func TestUnflattenDHCPOptionsRecursionLevel(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
 	options := []dbmodel.DHCPOption{
 		{
 			Code:        1001,
@@ -408,7 +522,7 @@ func TestUnflattenDHCPOptionsRecursionLevel(t *testing.T) {
 		},
 	}
 
-	restOptions := unflattenDHCPOptions(options, "", 0)
+	restOptions := rapi.unflattenDHCPOptions(options, "", 0)
 	require.Len(t, restOptions, 1)
 	require.Len(t, restOptions[0].Options, 1)
 	require.Len(t, restOptions[0].Options[0].Options, 1)

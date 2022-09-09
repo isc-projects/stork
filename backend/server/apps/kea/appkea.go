@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
@@ -577,7 +578,7 @@ func addOnCommitSubnetEvents(app *dbmodel.App, daemon *dbmodel.Daemon, addedSubn
 // Kea's configurations and uses to either update or create new shared networks,
 // subnets and pools. Finally, the relations between the subnets and the Kea app
 // are created. Note that multiple apps can be associated with the same subnet.
-func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta, lookup keaconfig.DHCPOptionDefinitionLookup) (err error) {
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 		networks := make(map[string][]dbmodel.SharedNetwork)
 		subnets := make(map[string][]dbmodel.Subnet)
@@ -604,7 +605,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			// and match them with the existing entries in the database. If some of
 			// the shared networks or subnets do not exist they are instantiated and
 			// returned here.
-			networks[daemon.Name], subnets[daemon.Name], err = detectDaemonNetworks(tx, daemon)
+			networks[daemon.Name], subnets[daemon.Name], err = detectDaemonNetworks(tx, daemon, lookup)
 			if err != nil {
 				err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with ID %d", daemon.Name, app.ID)
 				return err
@@ -613,7 +614,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			if state == nil || state.SameConfigDaemons == nil || !state.SameConfigDaemons[daemon.Name] {
 				// Go over the global reservations stored in the Kea configuration and
 				// match them with the existing global hosts.
-				globalHosts[daemon.Name], err = detectGlobalHostsFromConfig(tx, daemon)
+				globalHosts[daemon.Name], err = detectGlobalHostsFromConfig(tx, daemon, lookup)
 				if err != nil {
 					err = errors.Wrapf(err, "unable to detect global host reservations for Kea daemon %d", daemon.ID)
 					return err

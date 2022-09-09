@@ -480,7 +480,7 @@ func testHost(t *testing.T, reservation interface{}, identifier string, address 
 	)
 	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
 	if r, ok := reservation.(keaconfig.Reservation); ok {
-		host, err = dbmodel.NewHostFromKeaConfigReservation(r, daemon, dbmodel.HostDataSourceConfig)
+		host, err = dbmodel.NewHostFromKeaConfigReservation(r, daemon, dbmodel.HostDataSourceConfig, dbmodel.NewDHCPOptionDefinitionLookup())
 		require.NoError(t, err)
 	} else {
 		h := reservation.(dbmodel.Host)
@@ -574,11 +574,13 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		v6hosts []dbmodel.Host
 	)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
 	// Detect global hosts in the configurations of the app.
-	v4hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[0])
+	v4hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[0], lookup)
 	require.NoError(t, err)
 	hosts = append(hosts, v4hosts...)
-	v6hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[1])
+	v6hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[1], lookup)
 	require.NoError(t, err)
 	hosts = append(hosts, v6hosts...)
 	require.Len(t, hosts, 4)
@@ -605,7 +607,7 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	// Run the detection again.
 	hosts = []dbmodel.Host{}
 	for i := range app.Daemons {
-		detectedHosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i])
+		detectedHosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i], lookup)
 		require.NoError(t, err)
 		hosts = append(hosts, detectedHosts...)
 	}
@@ -677,7 +679,8 @@ func TestDetectHostsSameConfig(t *testing.T) {
 
 	// Both configurations are indicated to be the same so the hosts should not
 	// be committed to the database.
-	err = CommitAppIntoDB(db, &app, fec, state)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, state, lookup)
 	require.NoError(t, err)
 
 	// Make sure that no hosts have been added.
@@ -691,7 +694,7 @@ func TestDetectHostsSameConfig(t *testing.T) {
 			dbmodel.DaemonNameDHCPv4: true,
 		},
 	}
-	err = CommitAppIntoDB(db, &app, fec, state)
+	err = CommitAppIntoDB(db, &app, fec, state, lookup)
 	require.NoError(t, err)
 
 	// The hosts should have been added for the DHCPv6 daemon.
@@ -747,7 +750,8 @@ func TestGetPageFromHostCmds(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1264,7 +1268,8 @@ func TestFetchHostsFromHostCmds(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1275,7 +1280,7 @@ func TestFetchHostsFromHostCmds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the puller.
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1322,7 +1327,8 @@ func TestNewHostsPuller(t *testing.T) {
 	require.NoError(t, err)
 
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, nil, fd)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	puller, err := NewHostsPuller(db, nil, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 	puller.Shutdown()
@@ -1375,7 +1381,8 @@ func TestPullHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1387,7 +1394,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	// Create the puller. It is configured to fetch the data every 60 seconds
 	// so we'd rather call it periodically.
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1458,7 +1465,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	// Create server which returns two hosts at the first attempt and
@@ -1471,7 +1479,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 
 	// Create the puller instance.
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1485,7 +1493,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.Len(t, hosts, 2)
 
 	// Repeat the same test, but this time only one host should be returned.
-	puller, err = NewHostsPuller(db, fa, fd)
+	puller, err = NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1541,7 +1549,8 @@ func TestPartialHostsChange(t *testing.T) {
 	app.Machine = m
 
 	fec := &storktest.FakeEventCenter{}
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPagePartialChange, nil)
@@ -1552,7 +1561,7 @@ func TestPartialHostsChange(t *testing.T) {
 
 	// Create the puller instance.
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1638,7 +1647,8 @@ func TestSkipPullingHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, &app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1648,7 +1658,7 @@ func TestSkipPullingHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1743,7 +1753,8 @@ func TestUpdateHost(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
-	_ = CommitAppIntoDB(db, &app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	_ = CommitAppIntoDB(db, &app, fec, nil, lookup)
 
 	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
 		var json string
@@ -1815,7 +1826,7 @@ func TestUpdateHost(t *testing.T) {
 
 	// Create the puller instance.
 	fd := &storktest.FakeDispatcher{}
-	puller, err := NewHostsPuller(db, fa, fd)
+	puller, err := NewHostsPuller(db, fa, fd, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 

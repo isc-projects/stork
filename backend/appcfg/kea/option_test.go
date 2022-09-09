@@ -701,7 +701,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 		Name:       "foo",
 		Space:      "bar",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
 	require.True(t, option.IsAlwaysSend())
 	require.EqualValues(t, 244, option.GetCode())
 	require.Equal(t, "foo", option.GetName())
@@ -757,7 +757,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 		Name:       "foobar",
 		Space:      "baz",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 2048, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
@@ -781,7 +781,7 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 		Name:      "foobar",
 		Space:     "baz",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 333, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
@@ -797,7 +797,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
 		Code:  253,
 		Space: DHCPv4OptionSpace,
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
 	require.Equal(t, "option-253", option.GetEncapsulate())
 }
 
@@ -807,7 +807,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
 		Code:  1,
 		Space: "option-253",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4)
+	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
 	require.Equal(t, "option-253.1", option.GetEncapsulate())
 }
 
@@ -817,7 +817,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
 		Code:  1024,
 		Space: DHCPv6OptionSpace,
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
 	require.Equal(t, "option-1024", option.GetEncapsulate())
 }
 
@@ -827,6 +827,25 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 		Code:  1,
 		Space: "option-1024",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6)
+	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
 	require.Equal(t, "option-1024.1", option.GetEncapsulate())
+}
+
+// Test that a standard option definition is used for setting the
+// encapsulated option space.
+func TestCreateStandardDHCPOption(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:      89,
+		CSVFormat: true,
+		Name:      "s46-rule",
+		Space:     "s46-cont-mape-options",
+	}
+	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NotNil(t, option)
+	require.False(t, option.IsAlwaysSend())
+	require.EqualValues(t, 89, option.GetCode())
+	require.Equal(t, "s46-rule", option.GetName())
+	require.Equal(t, "s46-cont-mape-options", option.GetSpace())
+	require.Equal(t, "s46-rule-options", option.GetEncapsulate())
+	require.Equal(t, storkutil.IPv6, option.GetUniverse())
 }

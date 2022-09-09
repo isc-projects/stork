@@ -175,8 +175,12 @@ func (ss *StorkServer) Bootstrap() (err error) {
 
 	ss.Pullers = &apps.Pullers{}
 
+	// This instance provides functions to search for option definitions, both in the
+	// database and among the standard options. It is required by the config manager.
+	ss.DHCPOptionDefinitionLookup = dbmodel.NewDHCPOptionDefinitionLookup()
+
 	// setup apps state puller
-	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher)
+	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher, ss.DHCPOptionDefinitionLookup)
 	if err != nil {
 		return err
 	}
@@ -194,7 +198,7 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	}
 
 	// Setup Kea hosts puller.
-	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents, ss.ReviewDispatcher)
+	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents, ss.ReviewDispatcher, ss.DHCPOptionDefinitionLookup)
 	if err != nil {
 		return err
 	}
@@ -215,9 +219,6 @@ func (ss *StorkServer) Bootstrap() (err error) {
 		log.Warn("The metric endpoint is disabled (it can be enabled with the -m flag)")
 	}
 
-	// This instance provides functions to search for option definitions, both in the
-	// database and among the standard options. It is required by the config manager.
-	ss.DHCPOptionDefinitionLookup = &dbmodel.DHCPOptionDefinitionLookup{}
 	// Create the config manager instance. It takes config.ManagerAccessors interface
 	// as a parameter. The manager uses this interface to setup its state. For example,
 	// it stores the instance of the DHCP option definition lookup. Note, that it is
@@ -229,7 +230,8 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
-		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager)
+		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
+		ss.DHCPOptionDefinitionLookup)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()

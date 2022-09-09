@@ -32,7 +32,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 
-	sp, err := NewStatePuller(db, fa, fec, fd)
+	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	require.NotNil(t, sp.PeriodicPuller)
 
@@ -113,7 +113,7 @@ func TestStatePullerPullData(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatePuller(db, fa, fec, fd)
+	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	// shutdown state puller at the end
 	defer sp.Shutdown()

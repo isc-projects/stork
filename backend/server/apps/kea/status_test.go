@@ -555,7 +555,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// This call, apart from adding the app to the machine, will also associate the
 	// app with the HA services.
-	err = CommitAppIntoDB(db, keaApp, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
 	require.NoError(t, err)
 
 	// The puller requires fetch interval to be present in the database.

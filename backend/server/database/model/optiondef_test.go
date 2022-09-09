@@ -94,6 +94,19 @@ func TestDHCPv6SuboptionDefinition(t *testing.T) {
 	require.False(t, lookup.DefinitionExists(1, option))
 }
 
+// Test that standard option definition exists for a non-top level
+// option space.
+func TestStandardDHCPv6OptionDefinitionInOtherSpace(t *testing.T) {
+	lookup := NewDHCPOptionDefinitionLookup()
+
+	option := DHCPOption{
+		Code:     89,
+		Space:    "s46-cont-mape-options",
+		Universe: storkutil.IPv6,
+	}
+	require.True(t, lookup.DefinitionExists(1, option))
+}
+
 // Test that option definition lookup can find a definition for a Kea
 // standard option.
 func TestFindStdDHCPOptionDefinition(t *testing.T) {

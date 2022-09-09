@@ -429,14 +429,15 @@ func TestCommitAppIntoDB(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 
-	err = CommitAppIntoDB(db, app, fec, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	err = CommitAppIntoDB(db, app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	// now change access point (different port) and trigger updating app in database
 	accessPoints = []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345, true)
 	app.AccessPoints = accessPoints
-	err = CommitAppIntoDB(db, app, fec, nil)
+	err = CommitAppIntoDB(db, app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	returned, err := dbmodel.GetAppByID(db, app.ID)

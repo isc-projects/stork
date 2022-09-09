@@ -19,7 +19,7 @@ import (
 
 // Converts host reservation fetched from the database to the format
 // used in REST API.
-func convertFromHost(dbHost *dbmodel.Host) *models.Host {
+func (r *RestAPI) convertFromHost(dbHost *dbmodel.Host) *models.Host {
 	host := &models.Host{
 		ID:       dbHost.ID,
 		SubnetID: dbHost.SubnetID,
@@ -62,7 +62,7 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 			DataSource:  dbLocalHost.DataSource.String(),
 			OptionsHash: dbLocalHost.DHCPOptionSetHash,
 		}
-		localHost.Options = unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
+		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
 	}
 	return host
@@ -70,7 +70,7 @@ func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 
 // Convert host reservation from the format used in REST API to a
 // database host representation.
-func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
+func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 	host := &dbmodel.Host{
 		ID:       restHost.ID,
 		SubnetID: restHost.SubnetID,
@@ -101,7 +101,7 @@ func convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			DaemonID:   lh.DaemonID,
 			DataSource: ds,
 		}
-		localHost.DHCPOptionSet, err = flattenDHCPOptions("", lh.Options, 0)
+		localHost.DHCPOptionSet, err = r.flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbHosts {
-		host := convertFromHost(&dbHosts[i])
+		host := r.convertFromHost(&dbHosts[i])
 		hosts.Items = append(hosts.Items, host)
 	}
 
@@ -188,7 +188,7 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 		return rsp
 	}
 	// Host found. Convert it to the format used in REST API.
-	host := convertFromHost(dbHost)
+	host := r.convertFromHost(dbHost)
 	rsp := dhcp.NewGetHostOK().WithPayload(host)
 	return rsp
 }
@@ -336,7 +336,7 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 		return http.StatusNotFound, msg
 	}
 	// Convert host information from REST API to database format.
-	host, err := convertToHost(restHost)
+	host, err := r.convertToHost(restHost)
 	if err != nil {
 		msg := "error parsing specified host reservation"
 		log.Error(err)
@@ -493,7 +493,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.UpdateHostBeginResponse{
 		ID:      cctxID,
-		Host:    convertFromHost(&host),
+		Host:    r.convertFromHost(&host),
 		Daemons: respDaemons,
 		Subnets: respSubnets,
 	}

@@ -97,7 +97,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher)
+	errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
 	if errStr != "" {
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -485,7 +485,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	}
 
 	// Communication with an agent established, so get machine's state.
-	errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher)
+	errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
 	if errStr != "" {
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -587,7 +587,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if !prevAuthorized && dbMachine.Authorized {
 		ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher)
+		errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
 		if errStr != "" {
 			rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &errStr,

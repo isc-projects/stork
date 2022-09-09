@@ -46,15 +46,17 @@ type ReservationGetPageResponse struct {
 // the Kea apps.
 type HostsPuller struct {
 	*agentcomm.PeriodicPuller
-	ReviewDispatcher configreview.Dispatcher
-	traces           map[int64]*hostIteratorTrace
+	ReviewDispatcher           configreview.Dispatcher
+	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
+	traces                     map[int64]*hostIteratorTrace
 }
 
 // Create an instance of the puller that periodically fetches host reservations
 // from the monitored Kea apps via control channel.
-func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, reviewDispatcher configreview.Dispatcher) (*HostsPuller, error) {
+func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) (*HostsPuller, error) {
 	hostsPuller := &HostsPuller{
-		ReviewDispatcher: reviewDispatcher,
+		ReviewDispatcher:           reviewDispatcher,
+		DHCPOptionDefinitionLookup: lookup,
 	}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Hosts puller", "kea_hosts_puller_interval",
 		hostsPuller.pull)
@@ -214,13 +216,13 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 			// responses to add the associations with the hosts that haven't
 			// changed.
 			for _, traceResponse := range it.trace.responses {
-				if err = convertAndUpdateHosts(tx, daemon, it.getSubnet(traceResponse.subnetIndex), traceResponse.hosts); err != nil {
+				if err = convertAndUpdateHosts(tx, daemon, it.getSubnet(traceResponse.subnetIndex), traceResponse.hosts, puller.DHCPOptionDefinitionLookup); err != nil {
 					return true, err
 				}
 			}
 		}
 		// Add the host reservations from the current response.
-		if err = convertAndUpdateHosts(tx, daemon, it.getCurrentSubnet(), reservations); err != nil {
+		if err = convertAndUpdateHosts(tx, daemon, it.getCurrentSubnet(), reservations, puller.DHCPOptionDefinitionLookup); err != nil {
 			return true, err
 		}
 	}
@@ -512,10 +514,10 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 // subnets. The converted hosts are merged into the existing hosts and
 // stored in the database. Note that the function modifies the subnet
 // specified in this function (modifies its host reservations).
-func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation) (err error) {
+func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation, lookup keaconfig.DHCPOptionDefinitionLookup) (err error) {
 	var hosts []dbmodel.Host
 	for _, reservation := range reservations {
-		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon, dbmodel.HostDataSourceAPI)
+		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon, dbmodel.HostDataSourceAPI, lookup)
 		if err != nil {
 			log.Warnf("Failed to parse the host reservation: %s", err)
 			continue
@@ -610,7 +612,7 @@ func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, 
 
 // For a given Kea daemon it detects host reservations configured in the
 // configuration file.
-func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
+func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup keaconfig.DHCPOptionDefinitionLookup) (hosts []dbmodel.Host, err error) {
 	if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
 		return hosts, err
 	}
@@ -623,7 +625,7 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 		for _, r := range reservationsList {
 			if reservationMap, ok := r.(map[string]interface{}); ok {
 				// Parse the reservation.
-				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon, dbmodel.HostDataSourceConfig)
+				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon, dbmodel.HostDataSourceConfig, lookup)
 				if err != nil {
 					log.Warnf("Skipping invalid host reservation: %v", reservationMap)
 					return hosts, err

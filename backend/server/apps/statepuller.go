@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
@@ -19,16 +20,18 @@ import (
 // Besides basic status information the High Availability status is fetched.
 type StatePuller struct {
 	*agentcomm.PeriodicPuller
-	EventCenter      eventcenter.EventCenter
-	ReviewDispatcher configreview.Dispatcher
+	EventCenter                eventcenter.EventCenter
+	ReviewDispatcher           configreview.Dispatcher
+	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 }
 
 // Create an instance of the puller which periodically checks the status of
 // the Kea apps.
-func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher) (*StatePuller, error) {
+func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) (*StatePuller, error) {
 	puller := &StatePuller{
-		EventCenter:      eventCenter,
-		ReviewDispatcher: reviewDispatcher,
+		EventCenter:                eventCenter,
+		ReviewDispatcher:           reviewDispatcher,
+		DHCPOptionDefinitionLookup: lookup,
 	}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Apps State puller",
 		"apps_state_puller_interval", puller.pullData)
@@ -59,7 +62,7 @@ func (puller *StatePuller) pullData() error {
 	for _, dbM := range dbMachines {
 		dbM2 := dbM
 		ctx := context.Background()
-		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher)
+		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher, puller.DHCPOptionDefinitionLookup)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
 			log.Errorf("Error occurred while getting info from machine %d: %s", dbM2.ID, errStr)
@@ -233,7 +236,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 }
 
 // Retrieve remotely machine and its apps state, and store it in the database.
-func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher) string {
+func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) string {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -270,7 +273,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		switch dbApp.Type {
 		case dbmodel.AppTypeKea:
 			state := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
-			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, state)
+			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, state, lookup)
 			if err == nil {
 				// Let's now identify new daemons or the daemons with updated
 				// configurations and schedule configuration reviews for them

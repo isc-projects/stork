@@ -434,13 +434,13 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	keaMock := createStandardKeaMock(statsFormat == "1.6")
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
-
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	for i := range app.Daemons {
-		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
+		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i], lookup)
 		require.NoError(t, err)
 		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app.Daemons[i])
 		require.NoError(t, err)
-		hosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i])
+		hosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i], lookup)
 		require.NoError(t, err)
 		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, app.Daemons[i], dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
@@ -766,12 +766,13 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	require.NotNil(t, loadBalancing)
 	require.NotNil(t, hotStandby)
 
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	for _, daemon := range daemons {
-		nets, snets, err := detectDaemonNetworks(db, daemon)
+		nets, snets, err := detectDaemonNetworks(db, daemon, lookup)
 		require.NoError(t, err)
 		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, daemon)
 		require.NoError(t, err)
-		hosts, err := detectGlobalHostsFromConfig(db, daemon)
+		hosts, err := detectGlobalHostsFromConfig(db, daemon, lookup)
 		require.NoError(t, err)
 		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, daemon, dbmodel.HostDataSourceConfig)
 		require.NoError(t, err)
