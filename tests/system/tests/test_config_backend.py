@@ -25,4 +25,10 @@ def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Ser
     server_service.wait_for_host_reservation_pulling()
 
     events = server_service.list_events("dhcp4")
-    assert len(events) > 0
+    assert len(events.items) > 0
+    for event in events.items:
+        text: str = event.text.strip()
+        assert not (
+            text.startswith("Communication with <daemon") and
+            text.endswith("failed")
+        )
