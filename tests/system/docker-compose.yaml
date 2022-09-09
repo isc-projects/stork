@@ -301,6 +301,8 @@ services:
       - storknet
     volumes:
       - $PWD/tests/system/config/radius:/etc/raddb
+    profiles:
+      - premium
 
 networks:
   storknet:
