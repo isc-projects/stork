@@ -3,6 +3,9 @@ from unittest.mock import MagicMock, patch
 from core.compose import ContainerExitedException, ContainerUnhealthyException, DockerCompose
 from tests.core.commons import subprocess_result_mock
 
+import pytest
+import yaml
+
 
 def test_command_contains_project_directory():
     compose = DockerCompose("project-dir")
@@ -721,6 +724,56 @@ def test_get_pid_unparsable_pid():
     pid = compose.get_pid("stork-agent", "kea-dhcp4")
     # Assert
     assert pid is None
+
+def test_is_premium_reads_config():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {
+        'services': {
+            'foo': {
+                'profiles': [
+                    'test',
+                    'premium'
+                ]
+            },
+            'bar': {
+                'profiles': [
+                    'non-premium'
+                ]
+            }
+        }
+    }
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    base_cmd = compose.docker_compose_command()
+    # Act
+    is_foo_premium = compose.is_premium("foo")
+    is_bar_premium = compose.is_premium("bar")
+    # Assert
+    # Checks if config is memoized.
+    mock.assert_called_once()
+    cmd = mock.call_args.kwargs["cmd"]
+    assert " ".join(cmd).startswith(" ".join(base_cmd))
+    assert cmd[-1] == "config"
+    assert is_foo_premium
+    assert not is_bar_premium
+
+
+def test_is_premium_raises_for_unknown_service():
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {
+        'services': {}
+    }
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    with pytest.raises(LookupError):
+        compose.is_premium("foo")
+
 
 @patch("subprocess.run")
 def test_call_command_passes_command(patch: MagicMock):

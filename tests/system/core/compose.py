@@ -585,7 +585,7 @@ class DockerCompose(object):
     def _read_config_yaml(self):
         '''Reads the configuration YAMS file and parses it.'''
         config_cmd = self.docker_compose_command() + ["config", ]
-        _, stdout, _ = self._call_command(config_cmd)
+        _, stdout, _ = self._call_command(cmd=config_cmd)
         return yaml.safe_load(stdout)
 
     def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
