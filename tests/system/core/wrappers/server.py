@@ -394,6 +394,12 @@ class Server(ComposeServiceWrapper):
     def wait_for_host_reservation_pulling(self, start: datetime = None):
         return self._wait_for_puller("kea_hosts_puller_interval", start)
 
+    def wait_for_kea_statistics_pulling(self, start: datetime = None):
+        return self._wait_for_puller("kea_stats_puller_interval", start)
+
+    def wait_for_bind9_statistics_pulling(self, start: datetime = None):
+        return self._wait_for_puller("bind9_stats_puller_interval", start)
+
     def wait_for_next_machine_state(self, machine_id: int,
                                     start: datetime = None, wait_for_apps=True) -> Machine:
         """
@@ -441,25 +447,6 @@ class Server(ComposeServiceWrapper):
         r'name="(?P<daemon_name>.*)" '
         r'appId="(?P<app_id>\d+)"')
 
-    def wait_for_adding_subnets(self, daemon_id: int = None,
-                                daemon_name: str = None, app_id: int = None):
-        """Waits for a first adding subnet event that meets the requirements."""
-        def condition(ev: Event):
-            match = Server._pattern_added_subnets.search(ev["text"])
-            if match is None:
-                return False
-            if daemon_id is not None and \
-                    match.group("daemon_id") != str(daemon_id):
-                return False
-            if daemon_name is not None and \
-                    match.group("daemon_name") != daemon_name:
-                return False
-            if app_id is not None and match.group("app_id") != str(app_id):
-                return False
-            return True
-
-        self._wait_for_event(condition)
-
     def wait_for_failed_CA_communication(self, check_unauthorized=True):
         """
         Waits for a failed communication with CA daemon event due to an
@@ -475,34 +462,6 @@ class Server(ComposeServiceWrapper):
                 return False
             return True
         self._wait_for_event(condition)
-
-    def wait_for_update_overview(self) -> DhcpOverview:
-        """
-        Waits for updating the overview. The overview is up-to-date if all
-        local subnet stats are collected after calling this function.
-        Warning! It doesn't recognize if the subnet is unavailable (e.g.,
-        managed by not running daemon).
-        """
-        start = datetime.now(timezone.utc)
-
-        @wait_for_success(wait_msg="Waiting to update overview...")
-        def worker():
-            overview = self.overview()
-
-            subnets: List[Subnet] = []
-            if overview["subnets4"]["items"] is not None:
-                subnets += overview["subnets4"]["items"]
-            if overview["subnets6"]["items"] is not None:
-                subnets += overview["subnets4"]["items"]
-
-            for subnet in subnets:
-                local_subnet: LocalSubnet
-                for local_subnet in subnet["localSubnets"]:
-                    collected_at = local_subnet["statsCollectedAt"]
-                    if not Server._is_before(collected_at, start):
-                        return overview
-            raise NoSuccessException("some data are out-of-date")
-        return worker()
 
     @wait_for_success(wait_msg="Waiting for config reports...")
     def wait_for_config_reports(self, daemon_id: int, limit: int = 10, start: int = 0) -> ConfigReports:
@@ -558,7 +517,7 @@ class Server(ComposeServiceWrapper):
         # Returns the patched wrapper
         yield self
 
-        # Restores the standard behaviour
+        # Restores the standard behavior
         self._api_client.call_api = original_call
         self._api_client.configuration.discard_unknown_keys = original_discard_unknown_types
         self._api_client.configuration.disabled_client_side_validations = original_validation_rules

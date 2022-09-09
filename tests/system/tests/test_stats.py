@@ -16,7 +16,7 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
     )
 
     # ToDo: Add support for generation IPv6 traffic.
-    # Unfortunatelly, there is a problem with starting the Kea DHCPv6 daemon.
+    # Unfortunately, there is a problem with starting the Kea DHCPv6 daemon.
     # It cannot bind the sockets. I didn't find any way to check if the
     # binding would be available. The Kea has implemented a solution to retry
     # the binding in kea#1716, but there is no possibility to check if the
@@ -27,9 +27,10 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
     #     interface="eth1"
     # )
 
-    data = server_service.wait_for_update_overview()
+    server_service.wait_for_kea_statistics_pulling()
+    data = server_service.overview()
 
-    # 9 leases are initialy store in the lease database
+    # 9 leases are initially store in the lease database
     assert int(data['dhcp4_stats']['assignedAddresses']) > 9
     assert data['subnets4']['items'] is not None
     # ToDo: Add support for generation IPv6 traffic.
