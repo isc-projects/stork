@@ -52,3 +52,27 @@
             description: generic error response
             schema:
               $ref: "#/definitions/ApiError"
+
+  /pullers/{id}:
+    get:
+      summary: Get the puller status
+      description: >-
+        Returns a puller status with a given ID
+      operationId: getPuller
+      tags:
+        - Settings
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: Puller ID.
+      responses:
+          200:
+            description: A puller
+            schema:
+              $ref: "#/definitions/Puller"
+          default:
+            description: generic error response
+            schema:
+              $ref: "#/definitions/ApiError"

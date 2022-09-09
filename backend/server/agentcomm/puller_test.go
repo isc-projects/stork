@@ -1,6 +1,7 @@
 package agentcomm
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func TestGetIntervalName(t *testing.T) {
 	defer puller.Shutdown()
 
 	// Act
-	intervalName := puller.GetIntervalName()
+	intervalName := puller.GetIntervalSettingName()
 
 	// Assert
 	require.EqualValues(t, "kea_hosts_puller_interval", intervalName)
@@ -81,26 +82,28 @@ func TestPullerSavesLastExecutionTime(t *testing.T) {
 	_ = dbmodel.InitializeSettings(db)
 	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
 
-	var pullTime *time.Time
+	var pullTimeWrapper atomic.Value
+	pullTimeWrapper.Store((*time.Time)(nil))
 
 	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
 		func() error {
-			if pullTime == nil {
+			if pullTimeWrapper.Load() == (*time.Time)(nil) {
 				current := time.Now()
-				pullTime = &current
+				pullTimeWrapper.Swap(&current)
 			}
 			return nil
 		})
-	defer puller.Shutdown()
 	startTime := time.Now()
 
 	// Act
 	require.Eventually(t, func() bool {
-		return pullTime != nil
+		return pullTimeWrapper.Load() != (*time.Time)(nil)
 	}, 5*time.Second, 500*time.Millisecond)
 	executionTime := puller.GetLastExecutedAt()
 
 	// Assert
+	puller.Shutdown()
+	pullTime := pullTimeWrapper.Load().(*time.Time)
 	require.Less(t, startTime, *pullTime)
 	require.Less(t, *pullTime, executionTime)
 }

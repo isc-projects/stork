@@ -1,6 +1,7 @@
 package agentcomm
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ import (
 type PeriodicPuller struct {
 	*storkutil.PeriodicExecutor
 	intervalSettingName string
-	lastExecutedAt      *time.Time
+	lastExecutedAt      *atomic.Value
 	DB                  *dbops.PgDB
 	Agents              ConnectedAgents
 }
@@ -28,12 +29,14 @@ type PeriodicPuller struct {
 // interval available in the database. The intervalSettingName is a name of this
 // setting in the database. The pullerName is used for logging purposes.
 func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, intervalSettingName string, pullFunc func() error) (*PeriodicPuller, error) {
-	lastExecutedAt := &time.Time{}
+	var lastExecutedAt atomic.Value
+	lastExecutedAt.Store(time.Time{})
+
 	periodicExecutor, err := storkutil.NewPeriodicExecutor(
 		pullerName,
 		func() error {
 			err := pullFunc()
-			*lastExecutedAt = time.Now()
+			lastExecutedAt.Store(time.Now())
 			return err
 		},
 		func() (int64, error) {
@@ -49,7 +52,7 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 	periodicPuller := &PeriodicPuller{
 		periodicExecutor,
 		intervalSettingName,
-		lastExecutedAt,
+		&lastExecutedAt,
 		db,
 		agents,
 	}
@@ -58,11 +61,11 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 }
 
 // Returns the interval setting name used by the puller.
-func (p *PeriodicPuller) GetIntervalName() string {
+func (p *PeriodicPuller) GetIntervalSettingName() string {
 	return p.intervalSettingName
 }
 
 // Return the last execution time.
 func (p *PeriodicPuller) GetLastExecutedAt() time.Time {
-	return *p.lastExecutedAt
+	return p.lastExecutedAt.Load().(time.Time)
 }

@@ -3,13 +3,10 @@ package restservice
 import (
 	"context"
 	"net/http"
-	"reflect"
 
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/settings"
@@ -101,38 +98,5 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 	}
 
 	rsp := settings.NewUpdateSettingsOK()
-	return rsp
-}
-
-// Returns a list of puller statuses.
-func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersParams) middleware.Responder {
-	v := reflect.ValueOf(r.Pullers)
-
-	pullers := []*models.Puller{}
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		if !field.CanInterface() {
-			continue
-		}
-		puller, ok := field.Interface().(agentcomm.PeriodicPuller)
-		if !ok {
-			continue
-		}
-
-		metadata := &models.Puller{
-			Name:           puller.GetName(),
-			Setting:        puller.GetIntervalName(),
-			Interval:       puller.GetInterval(),
-			LastExecutedAt: strfmt.DateTime(puller.GetLastExecutedAt()),
-		}
-
-		pullers = append(pullers, metadata)
-	}
-
-	rsp := settings.NewGetPullersOK().WithPayload(&models.Pullers{
-		Items: pullers,
-		Total: int64(len(pullers)),
-	})
 	return rsp
 }

@@ -24,7 +24,7 @@
       name:
         type: string
         readOnly: true
-      setting:
+      id:
         type: string
         readOnly: true
       interval:
