@@ -208,9 +208,9 @@ class Server(ComposeServiceWrapper):
         """
         params = dict(start=start, limit=limit)
         if daemon_type is not None:
-            params["daemonType"] = daemon_type
+            params["daemon_type"] = daemon_type
         if app_type is not None:
-            params["appType"] = app_type
+            params["app_type"] = app_type
         if machine_id is not None:
             params["machine"] = machine_id
         if user_id is not None:
