@@ -9,16 +9,20 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
+	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/settings"
 )
 
-type simplePuller interface {
+// Allows accessing the metadata of the periodic puller.
+type pullerMetadata interface {
 	GetName() string
 	GetIntervalSettingName() string
 	GetInterval() int64
 	GetLastExecutedAt() time.Time
 }
+
+var _ pullerMetadata = (*agentcomm.PeriodicPuller)(nil)
 
 // Returns a list of puller statuses.
 func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersParams) middleware.Responder {
@@ -31,7 +35,7 @@ func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersPara
 		if !field.CanInterface() || field.IsNil() {
 			continue
 		}
-		puller, ok := field.Interface().(simplePuller)
+		puller, ok := field.Interface().(pullerMetadata)
 		if !ok {
 			continue
 		}
@@ -63,7 +67,7 @@ func (r *RestAPI) GetPuller(ctx context.Context, params settings.GetPullerParams
 			continue
 		}
 
-		puller, ok := field.Interface().(simplePuller)
+		puller, ok := field.Interface().(pullerMetadata)
 		if !ok {
 			continue
 		}
