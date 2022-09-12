@@ -383,7 +383,7 @@ class Server(ComposeServiceWrapper):
         if puller_id.endswith(interval_suffix):
             friendly_puller_name = puller_id[:-len(interval_suffix)]
 
-        @wait_for_success(wait_msg=f"Waiting to next puller ({friendly_puller_name}) execution...")
+        @wait_for_success(wait_msg=f'Waiting to next "{friendly_puller_name}" execution...')
         def worker():
             puller = self._read_puller(puller_id)
             last_executed_at = puller["last_executed_at"]
@@ -392,49 +392,46 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def wait_for_host_reservation_pulling(self, start: datetime = None):
+        '''Waits for finish the next execution of host reservation puller.'''
         return self._wait_for_puller("kea_hosts_puller_interval", start)
 
     def wait_for_kea_statistics_pulling(self, start: datetime = None):
+        '''Waits for the finish next execution of Kea statistics puller.'''
         return self._wait_for_puller("kea_stats_puller_interval", start)
 
     def wait_for_bind9_statistics_pulling(self, start: datetime = None):
+        '''Waits for the finish next execution of Bind9 statistics puller.'''
         return self._wait_for_puller("bind9_stats_puller_interval", start)
 
+    def wait_for_states_pulling(self, start: datetime = None):
+        '''
+        Waits for the finish next execution of application state puller. Unlike
+        the `last_visited_at` property from the application entry, it waits
+        until the end of writing all application-related entries (subnets,
+        shared networks, hosts) to the database.
+        '''
+        self._wait_for_puller("apps_state_puller_interval", start)
+
     def wait_for_next_machine_state(self, machine_id: int,
-                                    start: datetime = None, wait_for_apps=True) -> Machine:
+                                    start: datetime = None) -> Machine:
         """
         Waits for a next fetch of the machine state after a given date.
         If the date is None then the current moment is used.
-        By default,  this function waits until some application is fetched.
-        It may be suppressed by specifying a flag.
         """
-        if start is None:
-            start = datetime.now(timezone.utc)
+        self.wait_for_states_pulling(start)
+        state = self.read_machine_state(machine_id)
+        return state
 
-        @wait_for_success(wait_msg="Waiting to fetch next state...")
-        def worker():
-            state = self.read_machine_state(machine_id)
-            last_visited = state["last_visited_at"]
-            if Server._is_before(last_visited, start):
-                raise NoSuccessException("the state not fetched")
-            if wait_for_apps and len(state["apps"]) == 0:
-                raise NoSuccessException("the apps are missing")
-            return state
-        return worker()
-
-    def wait_for_next_machine_states(self, wait_for_apps=True) -> List[Machine]:
+    def wait_for_next_machine_states(self, start: datetime = None) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
-        By default,  this function waits until some application is fetched.
-        It may be suppressed by specifying a flag.
         """
-        start = datetime.now(timezone.utc)
+        self.wait_for_states_pulling(start)
         machines = self.list_machines(authorized=True)
         states = []
         for machine in machines["items"]:
-            state = self.wait_for_next_machine_state(
-                machine["id"], start=start, wait_for_apps=wait_for_apps)
+            state = self.read_machine_state(machine["id"])
             states.append(state)
         return states
 

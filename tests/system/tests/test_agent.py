@@ -44,7 +44,7 @@ def test_communication_with_kea_over_secure_protocol(server_service: Server, kea
 
 
 @kea_parametrize("agent-kea-tls-required-client-cert-no-verify")
-def test_communication_with_kea_over_secure_protocol_nontrusted_client(server_service: Server, kea_service: Kea):
+def test_communication_with_kea_over_secure_protocol_non_trusted_client(server_service: Server, kea_service: Kea):
     """The Stork Agent uses self-signed TLS certificates over HTTPS, but the Kea
     requires the valid credentials. The Stork Agent should send request, but get
     rejection from the Kea CA."""

@@ -7,6 +7,13 @@ import pytest
 import yaml
 
 
+@pytest.fixture(autouse=True)
+def setup_and_cleanup():
+    yield
+    # Clear the list of built containers
+    DockerCompose._built_containers = []
+
+
 def test_command_contains_project_directory():
     compose = DockerCompose("project-dir")
     cmd = compose.docker_compose_command()
@@ -110,6 +117,18 @@ def test_build_uses_build_arguments():
     build_cmd = " ".join(mock.call_args.kwargs["cmd"])
     assert "-build-arg foo=bar"
     assert "-build-arg baz=biz"
+
+
+def test_build_executes_only_once_for_a_specific_service():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    compose._call_command = mock
+    # Act
+    compose.build("foo")
+    compose.build("foo")
+    # Assert
+    assert mock.call_count == 1
 
 
 def test_pull_uses_proper_command():
