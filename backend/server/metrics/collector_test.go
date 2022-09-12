@@ -47,7 +47,7 @@ func TestConstructController(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	// Act
 	collector, err := NewCollector(db)
@@ -78,7 +78,7 @@ func TestCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -95,7 +95,7 @@ func TestHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -120,7 +120,7 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	_ = dbmodel.SetSettingInt(db, "metrics_collector_interval", 1)
 
 	collector, _ := NewCollector(db)

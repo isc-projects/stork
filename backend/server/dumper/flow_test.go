@@ -102,7 +102,7 @@ func TestDumpMachineReturnsNoErrorWhenMachineExists(t *testing.T) {
 		Authorized: true,
 	}
 	_ = dbmodel.AddMachine(db, m)
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	agents := agentcommtest.NewFakeAgents(nil, nil)
 	defer agents.Shutdown()
@@ -130,7 +130,7 @@ func TestDumpMachineReturnsProperContent(t *testing.T) {
 		Authorized: true,
 	}
 	_ = dbmodel.AddMachine(db, m)
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	settings := agentcomm.AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}

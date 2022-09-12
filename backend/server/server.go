@@ -35,17 +35,25 @@ const (
 
 // Global Stork Server state.
 type StorkServer struct {
-	DBSettings                 dbops.DatabaseSettings
-	DB                         *dbops.PgDB
-	AgentsSettings             agentcomm.AgentsSettings
-	Agents                     agentcomm.ConnectedAgents
-	RestAPISettings            restservice.RestAPISettings
-	RestAPI                    *restservice.RestAPI
-	Pullers                    *apps.Pullers
-	EnableMetricsEndpoint      bool
-	MetricsCollector           metrics.Collector
-	EventCenter                eventcenter.EventCenter
-	ReviewDispatcher           configreview.Dispatcher
+	DBSettings dbops.DatabaseSettings
+	DB         *dbops.PgDB
+
+	AgentsSettings agentcomm.AgentsSettings
+	Agents         agentcomm.ConnectedAgents
+
+	RestAPISettings restservice.RestAPISettings
+	RestAPI         *restservice.RestAPI
+
+	Pullers *apps.Pullers
+
+	DefaultPullerInterval int64
+	EnableMetricsEndpoint bool
+	MetricsCollector      metrics.Collector
+
+	EventCenter eventcenter.EventCenter
+
+	ReviewDispatcher configreview.Dispatcher
+
 	ConfigManager              config.Manager
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 	shutdownOnce               sync.Once
@@ -53,8 +61,9 @@ type StorkServer struct {
 
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
-	Version               bool `short:"v" long:"version" description:"Show software version"`
-	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
+	Version               bool  `short:"v" long:"version" description:"Show software version"`
+	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
+	DefaultPullerInterval int64 `long:"puller-interval" description:"Default interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used." env:"STORK_SERVER_DEFAULT_PULLER_INTERVAL"`
 }
 
 // Parse the command line arguments into GO structures.
@@ -96,6 +105,7 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	}
 
 	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
+	ss.DefaultPullerInterval = serverSettings.DefaultPullerInterval
 
 	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
@@ -127,7 +137,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 
 	// initialize stork settings
-	err = dbmodel.InitializeSettings(ss.DB)
+	err = dbmodel.InitializeSettings(ss.DB, ss.DefaultPullerInterval)
 	if err != nil {
 		return err
 	}

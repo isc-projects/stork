@@ -350,7 +350,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 
 	// Act
@@ -369,7 +369,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	_ = createAppWithSubnets(t, db, 0, "", "")
 
 	// prepare fake agents
@@ -424,7 +424,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	_ = dbmodel.InitializeStats(db)
 
 	// prepare apps with subnets and local subnets
@@ -531,7 +531,7 @@ func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	dbmodel.InitializeSettings(db)
+	dbmodel.InitializeSettings(db, 0)
 
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 
@@ -600,7 +600,7 @@ func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames
 // configured in hot-standby mode.
 func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Service, hotStandby *dbmodel.Service) {
 	// Initialize database
-	err := dbmodel.InitializeSettings(db)
+	err := dbmodel.InitializeSettings(db, 0)
 	require.NoError(t, err)
 
 	err = dbmodel.InitializeStats(db)

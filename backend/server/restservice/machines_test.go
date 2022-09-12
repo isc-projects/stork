@@ -2129,7 +2129,7 @@ func TestGetMachineDumpOK(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	m := &dbmodel.Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
@@ -2164,7 +2164,7 @@ func TestGetMachineDumpReturnsTarball(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	m := &dbmodel.Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
@@ -2201,7 +2201,7 @@ func TestGetMachineDumpNotExists(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	// REST init
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -2233,7 +2233,7 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	// Database init
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 	m := &dbmodel.Machine{
 		ID:        42,
 		Address:   "localhost",

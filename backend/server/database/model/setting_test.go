@@ -21,7 +21,7 @@ func TestInitializeSettings(t *testing.T) {
 	require.Empty(t, settings)
 
 	// initialize settings
-	err = InitializeSettings(db)
+	err = InitializeSettings(db, 0)
 	require.NoError(t, err)
 
 	// check if any settings were added to db
@@ -54,7 +54,7 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 
 	// reinitialize settings, nothing should change
-	err = InitializeSettings(db)
+	err = InitializeSettings(db, 0)
 	require.NoError(t, err)
 	require.Len(t, settings, count)
 
@@ -68,6 +68,41 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 123, settingsMap["kea_stats_puller_interval"])
 	require.Len(t, settingsMap, count)
+}
+
+// Check if the intervals are set to a given value.
+func TestInitializeSettingsWithInterval(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	err1 := InitializeSettings(db, 42)
+	err2 := InitializeSettings(db, 24)
+
+	bind9Interval, err3 := GetSettingInt(db, "bind9_stats_puller_interval")
+	keaStatsInterval, err4 := GetSettingInt(db, "kea_stats_puller_interval")
+	hostsInterval, err5 := GetSettingInt(db, "kea_hosts_puller_interval")
+	appsStateInterval, err6 := GetSettingInt(db, "apps_state_puller_interval")
+	haStatusInterval, err7 := GetSettingInt(db, "kea_status_puller_interval")
+	metricsInterval, err8 := GetSettingInt(db, "metrics_collector_interval")
+
+	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	require.NoError(t, err3)
+	require.NoError(t, err4)
+	require.NoError(t, err5)
+	require.NoError(t, err6)
+	require.NoError(t, err7)
+	require.NoError(t, err8)
+
+	require.EqualValues(t, 42, bind9Interval)
+	require.EqualValues(t, 42, keaStatsInterval)
+	require.EqualValues(t, 42, hostsInterval)
+	require.EqualValues(t, 42, appsStateInterval)
+	require.EqualValues(t, 42, haStatusInterval)
+	require.EqualValues(t, 42, metricsInterval)
 }
 
 // Check getting and setting settings.

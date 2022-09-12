@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/go-pg/pg/v10"
@@ -34,33 +35,47 @@ type Setting struct {
 
 // Initialize settings in db. If new setting needs to be added then add it to defaultSettings list
 // and it will be automatically added to db here in this function.
-func InitializeSettings(db *pg.DB) error {
+// You can provide the interval used to initialize the database settings for
+// pullers. Specify zero to use default values.
+func InitializeSettings(db *pg.DB, pullerInterval int64) error {
+	// Init puller intervals.
+	longInterval := "60"
+	mediumInterval := "30"
+	shortInterval := "10"
+
+	if pullerInterval > 0 {
+		interval := fmt.Sprint(pullerInterval)
+		longInterval = interval
+		mediumInterval = interval
+		shortInterval = interval
+	}
+
 	// list of all stork settings with default values
 	defaultSettings := []Setting{
 		{
 			Name:    "bind9_stats_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
-			Value:   "60",
+			Value:   longInterval,
 		},
 		{
 			Name:    "kea_stats_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
-			Value:   "60",
+			Value:   longInterval,
 		},
 		{
 			Name:    "kea_hosts_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
-			Value:   "60",
+			Value:   longInterval,
 		},
 		{
 			Name:    "kea_status_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
-			Value:   "30",
+			Value:   mediumInterval,
 		},
 		{
 			Name:    "apps_state_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
-			Value:   "30",
+			Value:   mediumInterval,
 		},
 		{
 			Name:    "grafana_url",
@@ -75,7 +90,7 @@ func InitializeSettings(db *pg.DB) error {
 		{
 			Name:    "metrics_collector_interval",
 			ValType: SettingValTypeInt,
-			Value:   "10", // in seconds
+			Value:   shortInterval, // in seconds
 		},
 	}
 

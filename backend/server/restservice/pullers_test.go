@@ -18,7 +18,7 @@ func TestGetPullers(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	rapiSettings := RestAPISettings{}
 
@@ -48,7 +48,7 @@ func TestGetPuller(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	rapiSettings := RestAPISettings{}
 
@@ -80,7 +80,7 @@ func TestGetNonExistPuller(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db)
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	rapiSettings := RestAPISettings{}
 
