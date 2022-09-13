@@ -272,7 +272,7 @@ ENTRYPOINT [ "/bin/bash", "-c", \
 EXPOSE 8080
 # Prometheus Kea port
 EXPOSE 9547
-HEALTHCHECK CMD [ "supervisorctl", "status " ]
+HEALTHCHECK CMD [ "supervisorctl", "status" ]
 # Configuration files:
 # Mysql database seed: /var/lib/db/init_mysql_query.sql
 # Postgres database seed: /var/lib/db/init_pgsql_query.sql
