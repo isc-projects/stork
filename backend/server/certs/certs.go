@@ -1,6 +1,7 @@
 package certs
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/x509"
@@ -9,6 +10,7 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
@@ -123,13 +125,19 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		}
 		var srvIPs []net.IP
 		var srvNames []string
+		var resolver net.Resolver
 		for _, addr := range addrs {
 			ipAddr, _, err := net.ParseCIDR(addr.String())
 			if err != nil {
 				continue
 			}
 			srvIPs = append(srvIPs, ipAddr)
-			names, err := net.LookupAddr(ipAddr.String())
+
+			// Lookup sometimes blocks on IPv6 loopback address on Debian 10.
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+			names, err := resolver.LookupAddr(ctx, ipAddr.String())
+
 			if err == nil {
 				srvNames = append(srvNames, names...)
 			}
