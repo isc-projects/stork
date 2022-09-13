@@ -13,14 +13,14 @@ ARG BIND9_VER=9.18
 ### Base images ###
 ###################
 
-FROM debian:11.2-slim AS debian-base
+FROM debian:10.13-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
         -y \
         --no-install-recommends \
-        ca-certificates=20210119 \
-        wget=1.21-* \
+        ca-certificates=20200601* \
+        wget=1.20.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
@@ -34,16 +34,15 @@ RUN apt-get update \
         -y \
         --no-install-recommends \
         unzip=6.0-* \
-        ruby-dev=1:2.7+* \
-        python3.9=3.9.* \
-        python3-venv=3.9.* \
-        make=4.3-* \
-        gcc=4:10.2.* \
+        ruby-dev=1:2.5.* \
+        python3.7=3.7.* \
+        python3-venv=3.7.* \
+        make=4.2.* \
+        gcc=4:8.3.* \
         xz-utils=5.2.* \
-        libc6-dev=2.31-* \
-        ruby-rubygems=3.2.* \
+        libc6-dev=2.28-* \
         openjdk-11-jre-headless=11.0.* \
-        git=1:2.30.* \
+        git=1:2.20.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -198,12 +197,12 @@ RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
-        curl=7.74.* \
-        supervisor=4.2.* \
-        prometheus-node-exporter=1.1.* \
+        curl=7.64.* \
+        supervisor=3.3.* \
+        prometheus-node-exporter=0.17.* \
         default-mysql-client=1.0.* \ 
-        postgresql-client=13+* \
-        apt-transport-https=2.2.* \
+        postgresql-client=11+* \
+        apt-transport-https=1.8.* \
         gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
@@ -338,8 +337,8 @@ RUN apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        supervisor=4.2.* \
-        curl=7.74.* \
+        supervisor=3.3.* \
+        curl=7.64.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # The post-install hooks of the packages call the systemctl command
