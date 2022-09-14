@@ -15,16 +15,6 @@ STORK_VERSION = stork_version
 
 
 namespace :release do
-
-    desc 'Prepare release tarball with Stork sources'
-    task :tarball do
-            sh "git", "archive",
-                "--prefix", "stork-#{STORK_VERSION}/",
-                "-o", "stork-#{STORK_VERSION}.tar.gz", "HEAD"
-    end
-    CLEAN.append *FileList["stork-*.tar.gz"]
-
-
     desc 'Generic task for bumping up version
         VERSION - target version after bump - required
     '
@@ -91,6 +81,40 @@ namespace :release do
             patch = Integer(patch) + 1
             ENV["VERSION"] = "#{major}.#{minor}.#{patch}"
             Rake::Task['release:bump'].invoke()
+        end
+    end
+
+
+    desc 'Prepare release notes'
+    task :notes do
+        sh 'rm -rf stork.wiki'
+        sh 'git clone --depth 1 https://gitlab.isc.org/isc-projects/stork.wiki.git'
+        sh "cat './stork.wiki/Releases/Release-notes-#{STORK_VERSION}.md' |
+            sed '/^```/d' | sed 's/\\\[/[/g;s/\\\]/]/g' |
+            perl -pe 's|\[(http.*?)\]\(http.*\)|\1|' |
+            fold -sw 73 > Stork-#{STORK_VERSION}-ReleaseNotes.txt"
+        sh 'rm -rf stork.wiki'
+    end
+
+    desc 'Prepare release tarball with Stork sources'
+    task :tarball do
+        sh "git", "archive",
+            "--prefix", "stork-#{STORK_VERSION}/",
+            "-o", "stork-#{STORK_VERSION}.tar.gz", "HEAD"
+    end
+    CLEAN.append *FileList["stork-*.tar.gz"]
+
+
+    namespace :tarball do
+        desc 'Upload tarball and release notes to given host and path'
+        task :upload, [:host, :path] do |t, args|
+            path = "#{args[:path]}/#{STORK_VERSION}"
+            sh "ssh -4 #{args[:host]} -- mkdir -p '#{path}'"
+            sh "scp -4 -p \
+                       './stork-#{STORK_VERSION}.tar.gz' \
+                       './Stork-#{STORK_VERSION}-ReleaseNotes.txt' \
+                       '#{args[:host]}:#{path}'"
+            sh "ssh -4 #{args[:host]} -- chmod -R g+w #{path}"
         end
     end
 end

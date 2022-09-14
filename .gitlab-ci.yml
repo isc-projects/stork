@@ -269,7 +269,7 @@ system_testing:
 
 ### upload release notes and tarball to repo.isc.org ###
 
-deploy_to_repo:
+upload_to_repo:
   stage: deploy
   when: manual
   allow_failure: true
@@ -280,43 +280,15 @@ deploy_to_repo:
     - stork-repo
   needs:
     - tarball
-  before_script:
-    # Disable IPv6 to avoid problems gem has accessing rubygems.org.
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
-    - export LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
-    - ls -al
-    # prepare release notes file
-    - git clone https://gitlab.isc.org/isc-projects/stork.wiki
-    - stork_version=`perl -lne 'print $1 if /(\d+\.\d+\.\d+)/' < backend/version.go`
-    - output=Stork-${stork_version}-ReleaseNotes.txt
-    # 1. Remove lines starting with triple backticks. They are useful in
-    # markdown/wiki, but not that much in release notes.
-    # 2. Unescape square brackets.
-    # 3. Remove auto URL markdown formatting enforced by Gitlab Web Editor. Convert
-    # to normal links: [https://kea.isc.org/](https://kea.isc.org/) -> https://kea.isc.org/
-    # 4. Fold at column 73.
-    - cat "./stork.wiki/Releases/Release-notes-${stork_version}.md" | sed '/^```/d' | sed 's/\\\[/[/g;s/\\\]/]/g' | perl -pe 's|\[(http.*?)\]\(http.*\)|\1|' | fold -sw 73 > "${output}"
-    # upload release notes and tarball to repo.isc.org
     - eval $(ssh-agent -s)
-    - echo "$REPO_SSH_PRIVATE_KEY" | base64 -d | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 0700 ~/.ssh
-    - touch ~/.ssh/known_hosts
-    - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    - destdir=/data/shared/sweng/stork/releases/${stork_version}
-    - test -n "${DRY_RUN}" && exit 0
-    - ssh -4 storkpush@repo.isc.org mkdir -p $destdir
-    - scp -4 stork-${stork_version}.tar.gz $output storkpush@repo.isc.org:$destdir/
-    - ssh -4 storkpush@repo.isc.org chmod -R g+w $destdir
-    - ssh -4 storkpush@repo.isc.org ls -al $destdir
-    - ssh -4 storkpush@repo.isc.org sha256 $destdir/stork-*.tar.gz
-    # TODO:
-    # - automate pasting ChangeLog.md to release notes
+    - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
+    - mkdir ~/.ssh
+    - ssh-keyscan -4 repo.isc.org >> ~/.ssh/known_hosts
+    - rake release:notes
+    - rake release:tarball:upload['storkpush@repo.isc.org','/data/shared/sweng/stork/releases']
   artifacts:
-    name: "release-notes"
+    name: release-notes
     expire_in: 1 week
     paths:
       - Stork-*-ReleaseNotes.txt
