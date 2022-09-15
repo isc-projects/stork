@@ -108,20 +108,8 @@ def test_build_uses_build_arguments():
     # Act
     compose.build("foobar")
     build_cmd = " ".join(mock.call_args.kwargs["cmd"])
-    assert "-build-arg foo=bar"
-    assert "-build-arg baz=biz"
-
-
-def test_build_executes_only_once_for_a_specific_service():
-    # Arrange
-    compose = DockerCompose("project-dir")
-    mock = MagicMock()
-    compose._call_command = mock
-    # Act
-    compose.build("foo")
-    compose.build("foo")
-    # Assert
-    assert mock.call_count == 1
+    assert "-build-arg foo=bar" in build_cmd
+    assert "-build-arg baz=biz" in build_cmd
 
 
 def test_pull_uses_proper_command():
