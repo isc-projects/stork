@@ -606,13 +606,12 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 // are invalid or out-of-specification. It is called after validating the
 // response structure but before counting errors.
 func (agents *connectedAgentsData) rewriteCommandResponse(command keactrl.SerializableCommand, response reflect.Value) {
-	switch command.GetCommand() {
-	// Kea 2.2 and below return a general error response if RADIUS is used as
-	// the host backend. It causes Stork generates a false disconnect event
-	// and block pulling host reservations from other host backends.
-	// See: https://gitlab.isc.org/isc-projects/stork/-/issues/792 and
-	// https://gitlab.isc.org/isc-projects/kea/-/issues/2566 .
-	case "reservation-get-page":
+	if command.GetCommand() == "reservation-get-page" {
+		// Kea 2.2 and below return a general error response if RADIUS is used as
+		// the host backend. It causes Stork generates a false disconnect event
+		// and block pulling host reservations from other host backends.
+		// See: https://gitlab.isc.org/isc-projects/stork/-/issues/792 and
+		// https://gitlab.isc.org/isc-projects/kea/-/issues/2566 .
 		resultField := response.FieldByName("Result")
 		if resultField.Int() == keactrl.ResponseError {
 			textField := response.FieldByName("Text")
