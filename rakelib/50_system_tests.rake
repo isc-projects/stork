@@ -84,8 +84,14 @@ CLEAN.append "test-results/", "tests/system/test-results/"
 #########################
 
 desc 'Run system tests
-    TEST - Name of the test to run - optional'
-task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files] do
+    TEST - Name of the test to run - optional
+    KEA_VERSION - use specific Kea version - optional
+        Supported version formats:
+            - MAJOR.MINOR
+            - MAJOR.MINOR.PATCH
+            - MAJOR.MINOR.PATCH-REVISION
+    BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR'
+task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
     if !ENV["TEST"].nil?
@@ -98,6 +104,51 @@ task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files] do
 end
 
 namespace :systemtest do
+    # Setups the environment variables with Kea and Bind9 versions. Internal task.
+    task :setup_version_envvars do
+        # Parse Kea version
+        if !ENV["KEA_VERSION"].nil?
+            kea_version = ENV["KEA_VERSION"]
+        
+            # Extract major and minor components from version.
+            kea_version_major = ""
+            kea_version_minor = ""
+        
+            major_separator_index = kea_version.index('.')
+            if major_separator_index.nil?
+                fail "You need to specify at least MAJOR.MINOR components of KEA_VER variable - missing dot separator"
+            end
+            kea_version_major = kea_version[0..major_separator_index-1]
+        
+            minor_separator_index = kea_version[major_separator_index+1..-1].index('.')
+            if !minor_separator_index.nil?
+                minor_separator_index += major_separator_index + 1
+                kea_version_minor = kea_version[major_separator_index+1..minor_separator_index-1]
+            else
+                kea_version_minor = kea_version[major_separator_index+1..-1]
+            end
+            if kea_version_minor == ""
+                fail "You need to specify at least MAJOR.MINOR components of KEA_VER variable - empty minor component"
+            end
+        
+            # Enhance the Kea version with wildcard if the full package is not provided.
+            if minor_separator_index.nil?
+                # Add patch wildcard if not provided. 
+                kea_version += ".*"
+            elsif !kea_version.include? '-'
+                # Add revision wildcard if the full package name is not provided.
+                kea_version += "-*"
+            end
+        
+            ENV["KEA_VER"] = kea_version
+            ENV["KEA_VER_MAJOR"] = kea_version_major
+            ENV["KEA_VER_MINOR"] = kea_version_minor
+        end
+
+        if ENV["BIND9_VERSION"].nil?
+            ENV["BIND9_VER"] = ENV["BIND9_VERSION"]
+        end
+    end
 
     desc 'List the test cases'
     task :list => [PYTEST, open_api_generator_python_dir] do
@@ -142,8 +193,14 @@ namespace :systemtest do
     desc 'Run system tests docker-compose
         USE_BUILD_KIT - use BuildKit for faster build - default: true
         CS_REPO_ACCESS_TOKEN - build the containers including Kea premium features - optional
+        KEA_VERSION - use specific Kea version - optional
+            Supported version formats:
+                - MAJOR.MINOR
+                - MAJOR.MINOR.PATCH
+                - MAJOR.MINOR.PATCH-REVISION
+        BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     '
-    task :sh => volume_files do |t, args|
+    task :sh => volume_files + [:setup_version_envvars] do |t, args|
         if ENV["USE_BUILD_KIT"] != "false"
             ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
             ENV["DOCKER_BUILDKIT"] = "1"

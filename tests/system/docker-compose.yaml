@@ -50,12 +50,18 @@ services:
     depends_on:
       - postgres
 
-  agent-kea:
+  agent-kea-base:
     restart: always
     build:
       context: .
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
+      args:
+        KEA_REPO: public/isc/kea-${KEA_VER_MAJOR:-2}-${KEA_VER_MINOR:-0}
+        KEA_VER: ${KEA_VER:-2.0.2-isc20220227221539}
+
+  agent-kea:
+    extends: agent-kea-base
     hostname: agent-kea
     ports:
       - "42119:9119"
@@ -159,7 +165,7 @@ services:
     extends: agent-kea
     build:
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-2-0-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VER_MAJOR:-2}-${KEA_VER_MINOR:-0}-prv
         KEA_PREMIUM: "premium"
     profiles:
       - premium
@@ -196,6 +202,8 @@ services:
       context: .
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: bind
+      args:
+        BIND9_VER: ${BIND9_VER:-9.18}
     hostname: agent-bind9
     networks:
       storknet:
@@ -213,11 +221,7 @@ services:
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
 
   perfdhcp:
-    restart: always
-    build:
-      context: .
-      dockerfile: $PWD/docker/images/stork.Dockerfile
-      target: kea
+    extends: agent-kea-base
     entrypoint: /usr/sbin/perfdhcp
     hostname: perfdhcp
     networks:
