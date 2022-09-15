@@ -42,3 +42,13 @@ def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Ser
             text.startswith("Communication with <daemon") and
             text.endswith("failed")
         )
+
+    # Fetches the host reservations properly.
+    hosts = server_service.list_hosts('192.0.2.42')
+    assert hosts is not None
+    assert len(hosts.items) == 1
+    host = hosts.items[0]
+    local_hosts = host["localHosts"]
+    len(local_hosts) == 1
+    local_host = local_hosts[0]
+    assert local_host["dataSource"] == "api"
