@@ -371,6 +371,14 @@ This command first prepares all necessary toolkits (except these listed above)
 and configuration files. Next, it calls ``pytest``, a Python testing framework
 used in Stork for executing the system tests.
 
+Some test cases use the premium Kea hooks. They are disabled by default. To
+enable them, specify the valid CloudSmith access token in the
+CS_REPO_ACCESS_TOKEN variable.
+
+.. code-block:: console
+
+    $ rake systemtest CS_REPO_ACCESS_TOKEN=AbCdEfGh01234567
+
 Test results for individual test cases are shown at the end of the tests execution.
 
 .. warning::
@@ -391,7 +399,22 @@ To list available tests without actually running them, use the following command
 
     $ rake systemtest:list
 
+To run the test cases with a specific Kea version, provide it in the KEA_VERSION variable:
 
+.. code-block:: console
+
+    $ rake systemtest KEA_VERSION=2.2
+
+Accepted version format is: MAJOR.MINOR[.PATCH][-REVISION]. The version must
+contain at least major and minor components.
+
+Similarly, to run test cases with a specific BIND9 version, provide it in the BIND9_VERSION variable:
+
+.. code-block:: console
+    
+    $ rake systemtest BIND9_VERSION=9.16
+
+Expected version format is: MAJOR.MINOR. No more components are accepted.
 
 System Tests Framework Structure
 --------------------------------
@@ -640,6 +663,44 @@ In the configuration above, the ``storknet`` network should be assigned
 to the ``eth0`` (the first) interface, and the ``subnet_00`` network to the
 ``eth1`` interface. Our experiments show that this assumption works
 reliably.
+
+Debugging in system tests
+-------------------------
+
+.. note:: 
+    
+    This section is under construction.
+
+The system test debugging may be performed on different levels. You can debug
+the test execution itself or connect the debugger to an executable running in
+the Docker container.
+
+The easiest approach is to attach the debugger to the running ``pytest`` process.
+It can be done using the standard ``pdb`` Python debugger without any custom
+configuration, as the debugger is running on the same machine as debugged binary.
+It allows you to break the test execution at any point and inject custom commands
+or preview the runtime variables.
+
+Another possibility to use the Python debugger is running the ``pytest``
+executable directly by ``pdb``. You need manually call the ``rake systemtest:build``
+to generate all needed artifacts before running tests. It's recommended to pass
+the ``-s`` and ``-k`` flags to ``pytest``.
+
+Even if the test execution is stopped on a breakpoint, the Docker containers
+are still running in the background. You can check their logs using
+``rake systemtest:logs SERVICE=foobar`` or run the console inside the container
+by ``rake systemtest:shell SERVICE=foobar``. (Hint: to check the service status
+in the container console, type ``supervisorctl status``.) These tools should
+troubleshoot most problems with misconfigured Kea or Bind9 daemons.
+
+It is possible to attach the local debugger to the executable run in the Docker
+container for more complex cases. This possibility is currently implemented only
+for Stork Server. To use it, you must be sure that the codebase on a host is
+the same as on the container. The server is started by the ``dlv`` Go debugger
+in system tests and listens on the 45678 host port. You can use the
+``rake utils:connect_dbg`` command to attach the ``gdlv`` debugger. The recommended
+way is first to attach the Python debugger and stop the test execution, and next,
+attach the Golang debugger to the server.
 
 System Test Commands
 --------------------
