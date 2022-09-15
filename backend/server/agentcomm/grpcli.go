@@ -580,16 +580,6 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 				daemonName = "ca"
 			}
 
-			if resultField.Int() == keactrl.ResponseError {
-				textField := cmdRespItem.FieldByName("Text")
-				if textField.IsValid() {
-					text := textField.String()
-					if text == "not supported by the RADIUS backend" {
-						resultField.SetInt(keactrl.ResponseCommandUnsupported)
-					}
-				}
-			}
-
 			// Overwrites the Kea response. It allows change, fix, or refill
 			// the data if some Kea versions return invalid or out-of-specification
 			// responses.
