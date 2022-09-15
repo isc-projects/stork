@@ -711,42 +711,40 @@ The following commands run the system tests and help with troubleshooting:
     :class: longtable
     :widths: 26 74
 
-    +--------------------------------+----------------------------------------------+
-    | Rake Tasks                     | Description                                  |
-    +================================+==============================================+
-    | ``rake systemtest``            | Runs the system tests. Use TEST variable to  |
-    |                                | run a selected test.                         |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:build``      | Build the system test containers.            |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:down``       | Stops all system test containers and removes |
-    |                                | them. It also removes all networks, and      |
-    |                                | volumes.                                     |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:gen``        | Generates the OpenAPI client and             |
-    |                                | configurations.                              |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:list``       | Lists the test cases.                        |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:logs``       | Displays the container logs. Use the SERVICE |
-    |                                | variable to get the logs only for a specific |
-    |                                | service.                                     |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:perfdhcp``   | Low-level access to the perfdhcp command in  |
-    |                                | a container. The Rake-style arguments can be |
-    |                                | specified to control ``perfdhcp``, e.g.:     |
-    |                                | ``rake systemtest:perfdhcp[-6,-l,eth1]``.    |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:regen``      | Re-generates the files created by            |
-    |                                | ``rake systemtest:gen``.                     |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:sh``         | Low-level access to the docker-compose with  |
-    |                                | all necessary parameters. Use Rake-style     |
-    |                                | arguments, e.g. ``rake systemtest:sh[ps]``   |
-    +--------------------------------+----------------------------------------------+
-    | ``rake systemtest:shell``      | Attaches to a shell in a container with      |
-    |                                | provided name by SERVICE variable.           |
-    +--------------------------------+----------------------------------------------+
+    +---------------------------------+----------------------------------------------+
+    | Rake Tasks                      | Description                                  |
+    +=================================+==============================================+
+    | ``rake systemtest``             | Runs the system tests. Use TEST variable to  |
+    |                                 | run a selected test.                         |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:build``       | Build the system test containers.            |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:down``        | Stops all system test containers and removes |
+    |                                 | them. It also removes all networks, and      |
+    |                                 | volumes.                                     |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:list``        | Lists the test cases.                        |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:logs``        | Displays the container logs. Use the SERVICE |
+    |                                 | variable to get the logs only for a specific |
+    |                                 | service.                                     |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:perfdhcp``    | Low-level access to the perfdhcp command in  |
+    |                                 | a container. The Rake-style arguments can be |
+    |                                 | specified to control ``perfdhcp``, e.g.:     |
+    |                                 | ``rake systemtest:perfdhcp[-6,-l,eth1]``.    |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:sh``          | Low-level access to the docker-compose with  |
+    |                                 | all necessary parameters. Use Rake-style     |
+    |                                 | arguments, e.g. ``rake systemtest:sh[ps]``   |
+    +---------------------------------+----------------------------------------------+
+    | ``rake systemtest:shell``       | Attaches to a shell in a container with      |
+    |                                 | provided name by SERVICE variable.           |
+    +---------------------------------+----------------------------------------------+
+    | ``rake gen:systemtest:swagger`` | Generates the system test OpenAPI client.    |
+    +---------------------------------+----------------------------------------------+
+    | ``rake gen:systemtest:configs`` | Generates the configs used by system tests.  |
+    +---------------------------------+----------------------------------------------+
 
 Running Tests Alpine Linux
 --------------------------
