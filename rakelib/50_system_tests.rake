@@ -85,6 +85,7 @@ CLEAN.append "test-results/", "tests/system/test-results/"
 
 desc 'Run system tests
     TEST - Name of the test to run - optional
+    CS_REPO_ACCESS_TOKEN - enables test using the premium Kea hooks - optional
     KEA_VERSION - use specific Kea version - optional
         Supported version formats:
             - MAJOR.MINOR
