@@ -7,13 +7,6 @@ import pytest
 import yaml
 
 
-@pytest.fixture(autouse=True)
-def setup_and_cleanup():
-    yield
-    # Clear the list of built containers
-    DockerCompose._built_containers = []
-
-
 def test_command_contains_project_directory():
     compose = DockerCompose("project-dir")
     cmd = compose.docker_compose_command()

@@ -214,44 +214,9 @@ class DockerCompose(object):
             docker_compose_cmd += ['--env-file', self._env_file]
         return docker_compose_cmd
 
-    # Stores the names of the built containers to avoid sending unnecessary
-    # build commands and producing useless verbose output.
-    # This list is static and keeps the value between test cases.
-    # None value means that all services were built implicitly.
-    _built_containers: List[str] = []
-
     def build(self, *service_names):
         """Builds the service containers. If no arguments are provided, it
         builds all containers. Supports BuildKit."""
-        # Special case. All services were built implicitly.
-        if DockerCompose._built_containers is None:
-            logger.info('All containers built previously, skipping...')
-            return
-
-        # Checks if the service names were provided explicitly.
-        if len(service_names) != 0:
-            # Skips already built containers.
-            service_names = list(service_names)
-            for service_name in service_names:
-                if service_name in DockerCompose._built_containers:
-                    logger.info(
-                        f'Container "{service_name}" built previously, skipping')
-                    service_names.remove(service_name)
-
-            if len(service_names) == 0:
-                return
-
-        self._build_inner(*service_names)
-
-        # Saves the container as built.
-        if len(service_names) != 0:
-            DockerCompose._built_containers.extend(service_names)
-        else:
-            DockerCompose._built_containers = None
-
-    def _build_inner(self, *service_names):
-        """Builds the service containers. Internal function to call build
-        command."""
         logger.info("Begin build containers")
 
         build_cmd = self.docker_compose_command() + [
