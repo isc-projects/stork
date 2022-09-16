@@ -513,6 +513,13 @@ namespace :update do
                 "@angular/cli@#{version}"
         end
     end
+
+    desc 'Update Storybook to the latest version'
+    task :storybook => [STORYBOOK] do
+        Dir.chdir("webui") do
+            sh STORYBOOK, "upgrade"
+        end
+    end
 end
 
 namespace :prepare do
