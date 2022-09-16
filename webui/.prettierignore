@@ -14,3 +14,4 @@ dist
 src/assets/arm
 src/assets/pkgs
 .angular
+documentation.json
