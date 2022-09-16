@@ -310,12 +310,12 @@ class Server(ComposeServiceWrapper):
         return api_instance.get_machine_state(id=machine_id)
 
     def read_version(self) -> Version:
-        "Read the server version."
+        """Read the server version."""
         api_instance = GeneralApi(self._api_client)
         return api_instance.get_version()
 
     def _read_puller(self, puller_id) -> Puller:
-        "Read the puller state"
+        """Read the puller state"""
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_puller(id=puller_id)
 
@@ -392,24 +392,24 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def wait_for_host_reservation_pulling(self, start: datetime = None):
-        '''Waits for finish the next execution of host reservation puller.'''
+        """Waits for finish the next execution of host reservation puller."""
         return self._wait_for_puller("kea_hosts_puller_interval", start)
 
     def wait_for_kea_statistics_pulling(self, start: datetime = None):
-        '''Waits for the finish next execution of Kea statistics puller.'''
+        """Waits for the finish next execution of Kea statistics puller."""
         return self._wait_for_puller("kea_stats_puller_interval", start)
 
     def wait_for_bind9_statistics_pulling(self, start: datetime = None):
-        '''Waits for the finish next execution of Bind9 statistics puller.'''
+        """Waits for the finish next execution of Bind9 statistics puller."""
         return self._wait_for_puller("bind9_stats_puller_interval", start)
 
     def wait_for_states_pulling(self, start: datetime = None):
-        '''
+        """
         Waits for the finish next execution of application state puller. Unlike
         the `last_visited_at` property from the application entry, it waits
         until the end of writing all application-related entries (subnets,
         shared networks, hosts) to the database.
-        '''
+        """
         self._wait_for_puller("apps_state_puller_interval", start)
 
     def wait_for_next_machine_state(self, machine_id: int,
