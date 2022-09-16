@@ -693,11 +693,11 @@ by ``rake systemtest:shell SERVICE=foobar``. (Hint: to check the service status
 in the container console, type ``supervisorctl status``.) These tools should
 troubleshoot most problems with misconfigured Kea or Bind9 daemons.
 
-It is possible to attach the local debugger to the executable run in the Docker
+It is possible to attach the local debugger to the executable running in the Docker
 container for more complex cases. This possibility is currently implemented only
 for Stork Server. To use it, you must be sure that the codebase on a host is
-the same as on the container. The server is started by the ``dlv`` Go debugger
-in system tests and listens on the 45678 host port. You can use the
+the same as on the container. In system tests, the server is started by the ``dlv``
+Go debugger and listens on the 45678 host port. You can use the
 ``rake utils:connect_dbg`` command to attach the ``gdlv`` debugger. The recommended
 way is first to attach the Python debugger and stop the test execution, and next,
 attach the Golang debugger to the server.
