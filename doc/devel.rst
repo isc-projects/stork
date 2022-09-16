@@ -821,6 +821,177 @@ Internally, these packages are built by FPM
 (https://fpm.readthedocs.io/). It is installed automatically, but it requires
 the ``ruby-dev``, ``gnutar``, and ``make`` to build.
 
+Storybook
+=========
+
+Stork build system has integrated
+[Storybook](https://storybook.js.org/docs/angular/get-started/introduction) for
+development purposes.
+
+> Storybook is a tool for UI development. It makes development faster and easier
+> by isolating components. This allows you to work on one component at a time.
+> You can develop entire UIs without needing to start up a complex dev stack,
+> force certain data into your database, or navigate around your application.
+
+To run Storybook, type:
+
+.. code-block:: console
+
+    $ rake storybook
+
+and wait for opening a web browser.
+
+Writing a story
+---------------
+
+The Storybook stories for a given component should be located in the file with
+the `.stories.ts` extension.
+
+The file should start with the Story metadata:
+
+.. code-block:: typescript
+
+    export default {
+        title: 'App/JSON-Tree',
+        component: JsonTreeComponent,
+        decorators: [
+            moduleMetadata({
+                imports: [PaginatorModule],
+                declarations: [JsonTreeComponent],
+            }),
+        ],
+        argTypes: {
+            value: { control: 'object' },
+            customValueTemplates: { defaultValue: {} },
+            secretKeys: { control: 'object', defaultValue: ['password', 'secret'] },
+        },
+    } as Meta
+
+There is a provided title and the main component of the story.
+The most important part is the declaration of the ``moduleMetadata`` decorator.
+It contains all related modules, components, and services. It should have similar
+content to the dictionary passed to the ``TestBed.configureTestingModule`` in a
+``.spec.ts`` file.  
+The ``imports`` list should contain all used PrimeNG modules (including these
+from the sub-components) and Angular modules. Unlike unit tests, you can
+use the standard Angular modules instead of testing ones. Especially use:
+    
+    - ``HttpClientModule`` instead of ``HttpClientTestingModule`` to working HTTP mocks.
+    - ``BrowserAnimationsModule`` instead of ``NoopAnimationsModule`` to enable animations.
+
+The ``declarations`` list should contain all Stork-owned components used in the
+story. The ``providers`` list should contain all needed services.
+
+.. note::
+
+    There is no easy way to mock the services. Instead of it, you should use
+    HTTP mocks.
+
+If your component accepts the arguments, specify them using the ``argTypes``.
+It allows you to change the values from the Storybook UI.
+
+.. warning::
+
+    Storybook has a possibility to discover the component properties but this
+    feature is disabled due to [bug in Storybook for Angular](https://github.com/storybookjs/storybook/issues/17004).
+
+Next, you need to create an instance of the template object. You need to pass
+the component type as a generic type:
+
+.. code-block:: typescript
+
+    const Template: Story<JsonTreeComponent> = (args: JsonTreeComponent) => ({
+        props: args,
+    })
+
+The story is created by binding to the template object and providing the
+component arguments:
+
+.. code-block:: typescript
+
+    export const Basic = Template.bind({})
+
+    Basic.args = {
+        key: 'key',
+        value: {
+            foo: 42
+        }
+    }
+
+HTTP mocks
+----------
+
+The easiest way to mock the REST API is using the [``storybook-addon-mock``](https://storybook.js.org/addons/storybook-addon-mock)
+First, you need to import it:
+
+.. code-block:: typescript
+
+    import mockAddon from 'storybook-addon-mock'
+
+and append to the ``decorators`` list in the story metadata:
+
+.. code-block:: typescript
+
+    export default {
+        title: ...,
+        component: ...,
+        decorators: [
+            moduleMetadata({
+                ...
+            }),
+            mockAddon
+        ],
+        argTypes: ...,
+        parameters: {
+            mockData: [
+                ...
+            ],
+        },
+    } as Meta
+
+The mocked API responses are specified by the ``parameters.mockData`` list that
+is a property of the metadata object.
+
+.. note::
+
+    Remember to use ``HttpClientModule`` instead of ``HttpTestingClientModule``
+    in the ``imports`` list of the ``moduleMetadata`` decorator.
+
+Toast messages
+--------------
+
+The Stork components often use ``MessageService`` to present temporary messages
+to the user. The component that displays the toast message is a part of the root
+Stork component; it doesn't exist in the isolated Storybook environment.
+
+To workaround this problem, the ``toastDecorator`` can be used. It will be
+prepended with the component to handle toasts.
+
+First, you need to import the decorator:
+
+.. code-block:: typescript
+    
+    import { toastDecorator } from '../utils.stories'
+
+and append it to the ``decorator`` property of the metadata object:
+
+.. code-block:: typescript
+
+    export default {
+        title: ...,
+        component: ...,
+        decorators: [
+            moduleMetadata({
+                ...
+            }),
+            toastDecorator
+        ],
+        argTypes: ...
+    } as Meta
+
+Remember to add the ``MessageService`` to the ``providers`` list of
+the ``moduleMetadata`` decorator.
+
 Implementation details
 ======================
 
