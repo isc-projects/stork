@@ -286,7 +286,7 @@ upload_to_repo:
     - mkdir ~/.ssh
     - ssh-keyscan -4 repo.isc.org >> ~/.ssh/known_hosts
     - rake release:notes
-    - rake release:tarball:upload['storkpush@repo.isc.org','/data/shared/sweng/stork/releases']
+    - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
   artifacts:
     name: release-notes
     expire_in: 1 week

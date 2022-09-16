@@ -723,5 +723,6 @@ task :check do
     end
     check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr", "git",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
-        "docker", "openssl", "gem", "make", "gcc", "tar", *system_specific_deps)
+        "docker", "openssl", "gem", "make", "gcc", "tar", "sed", "perl", "fold",
+        "ssh", "scp", *system_specific_deps)
 end

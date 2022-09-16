@@ -87,13 +87,24 @@ namespace :release do
 
     desc 'Prepare release notes'
     task :notes do
-        sh 'rm -rf stork.wiki'
-        sh 'git clone --depth 1 https://gitlab.isc.org/isc-projects/stork.wiki.git'
-        sh "cat './stork.wiki/Releases/Release-notes-#{STORK_VERSION}.md' |
-            sed '/^```/d' | sed 's/\\\[/[/g;s/\\\]/]/g' |
-            perl -pe 's|\[(http.*?)\]\(http.*\)|\1|' |
-            fold -sw 73 > Stork-#{STORK_VERSION}-ReleaseNotes.txt"
-        sh 'rm -rf stork.wiki'
+        release_notes_filename = "Stork-#{STORK_VERSION}-ReleaseNotes.txt"
+        release_notes_file = File.new(release_notes_filename, 'w' )
+        Open3.pipeline [
+            # Downloads the latest release notes.
+            *WGET, '-q', '-O-', "https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md"
+        ], [
+            # Removes the triple backticks.
+            'sed', '/^```/d'
+        ], [
+            # Removes backslashes prepending square brackets.
+            'sed', 's/\\\[/[/g;s/\\\]/]/g'
+        ], [
+            # Replaces square brackets with round brackets for hyperlinks.
+            'perl', '-pe', 's|\[(http.*?)\]\(http.*\)|\1|',
+        ], [
+            # Wraps rows to a specific width.
+            'fold', '-sw', '73'
+        ], :out => release_notes_file
     end
 
     desc 'Prepare release tarball with Stork sources'
@@ -106,15 +117,25 @@ namespace :release do
 
 
     namespace :tarball do
-        desc 'Upload tarball and release notes to given host and path'
-        task :upload, [:host, :path] do |t, args|
-            path = "#{args[:path]}/#{STORK_VERSION}"
-            sh "ssh -4 #{args[:host]} -- mkdir -p '#{path}'"
-            sh "scp -4 -p \
-                       './stork-#{STORK_VERSION}.tar.gz' \
-                       './Stork-#{STORK_VERSION}-ReleaseNotes.txt' \
-                       '#{args[:host]}:#{path}'"
-            sh "ssh -4 #{args[:host]} -- chmod -R g+w #{path}"
+        desc 'Upload tarball and release notes to given host and path
+            HOST - the SSH host - required
+            TARGET - the target path for tarball file - required'
+        task :upload do
+            host = ENV["HOST"]
+            target = ENV["TARGET"]
+            if host.nil?
+                fail "You need to provide the HOST variable"
+            elsif target.nil?
+                fail "You need to provide the TARGET variable"
+            end
+
+            path = "#{target}/#{STORK_VERSION}"
+            sh "ssh", "-4", host, "--", "mkdir", "-p", path
+            sh "scp", "-4", "-p",
+                       "./stork-#{STORK_VERSION}.tar.gz",
+                       "./Stork-#{STORK_VERSION}-ReleaseNotes.txt",
+                       "#{host}:#{path}"
+            sh "ssh", "-4", host, "--", "chmod", "-R", "g+w", path
         end
     end
 end
@@ -122,7 +143,7 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
     task :release do
-        check_deps(__FILE__, "git")
+        check_deps(__FILE__, "git", "sed", "perl", "fold", "ssh", "scp")
     end
 end
 
