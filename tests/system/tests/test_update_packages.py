@@ -11,10 +11,8 @@ def test_update_stork_from_the_latest_released_version(package_service: External
 
     with package_service.no_validate() as legacy_service:
         legacy_service.log_in_as_admin()
-        legacy_service.authorize_all_machines()
-        state = legacy_service.wait_for_next_machine_states(
-            wait_for_apps=False
-        )[0]
+        m = legacy_service.authorize_all_machines()["items"][0]
+        state = legacy_service.read_machine_state(m["id"])
 
         agent_version = version.parse_version_info(state["agent_version"])
         server_version = version.parse_version_info(
