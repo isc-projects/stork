@@ -375,9 +375,11 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def _wait_for_puller(self, puller_id: str, start: datetime = None):
+        """Waits for finishing the next execution of a given puller."""
         if start is None:
             start = datetime.now(timezone.utc)
 
+        # Prepares a name used to logging.
         interval_suffix = "_interval"
         friendly_puller_name = puller_id
         if puller_id.endswith(interval_suffix):

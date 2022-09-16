@@ -4,6 +4,8 @@ from core.fixtures import kea_parametrize
 
 @kea_parametrize("agent-kea-premium-host-database")
 def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Server):
+    """Tests that the host reservations are fetched from the host database by
+    the hosts_cmds hook."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
@@ -21,6 +23,11 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
 
 @kea_parametrize("agent-kea-premium-radius")
 def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Server, perfdhcp_service: Perfdhcp):
+    """
+    Tests that the RADIUS hook configured to an accounting doesn't cause to
+    generate false disconnect events and doesn't interrupt fetching
+    reservations from other host backends.
+    """
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
 
