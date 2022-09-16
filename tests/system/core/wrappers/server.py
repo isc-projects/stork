@@ -403,7 +403,7 @@ class Server(ComposeServiceWrapper):
         """Waits for finishing next execution of Bind9 statistics puller."""
         return self._wait_for_puller("bind9_stats_puller_interval", start)
 
-    def wait_for_states_pulling(self, start: datetime = None):
+    def _wait_for_states_pulling(self, start: datetime = None):
         """
         Waits for finishing next execution of application state puller. Unlike
         the `last_visited_at` property from the application entry, it waits
@@ -412,26 +412,36 @@ class Server(ComposeServiceWrapper):
         """
         self._wait_for_puller("apps_state_puller_interval", start)
 
+    @wait_for_success(wait_msg="Wait to fetch next machine state...")
     def wait_for_next_machine_state(self, machine_id: int,
-                                    start: datetime = None) -> Machine:
+                                    start: datetime = None, wait_for_apps=True) -> Machine:
         """
         Waits for a next fetch of the machine state after a given date.
         If the date is None then the current moment is used.
+        By default, this function waits until some application is fetched.
+        It may be suppressed by specifying a flag.
         """
-        self.wait_for_states_pulling(start)
+        self._wait_for_states_pulling(start)
         state = self.read_machine_state(machine_id)
+        if wait_for_apps and len(state["apps"]) == 0:
+            raise NoSuccessException("the apps are missing")
         return state
 
-    def wait_for_next_machine_states(self, start: datetime = None) -> List[Machine]:
+    @wait_for_success(wait_msg="Wait to fetch next machine states...")
+    def wait_for_next_machine_states(self, start: datetime = None, wait_for_apps=True) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
+        By default, this function waits until some application is fetched.
+        It may be suppressed by specifying a flag.
         """
-        self.wait_for_states_pulling(start)
+        self._wait_for_states_pulling(start)
         machines = self.list_machines(authorized=True)
         states = []
         for machine in machines["items"]:
             state = self.read_machine_state(machine["id"])
+            if wait_for_apps and len(state["apps"]) == 0:
+                raise NoSuccessException("the apps are missing")
             states.append(state)
         return states
 
