@@ -40,8 +40,8 @@ CLEAN.append SWAGGER_FILE
 ### Backend ###
 ###############
 
-SWAGGER_SERVER_DIR = "backend/server/gen"
-file SWAGGER_SERVER_DIR => [SWAGGER_FILE, GOSWAGGER] do
+swagger_server_dir = "backend/server/gen"
+file swagger_server_dir => [SWAGGER_FILE, GOSWAGGER] do
     swagger_abs = File.expand_path(SWAGGER_FILE)
     Dir.chdir("backend") do
         sh GOSWAGGER, "generate", "server",
@@ -53,20 +53,20 @@ file SWAGGER_SERVER_DIR => [SWAGGER_FILE, GOSWAGGER] do
         "--spec", swagger_abs,
         "--template", "stratoscale"
     end
-    sh "touch", "-c", SWAGGER_SERVER_DIR
+    sh "touch", "-c", swagger_server_dir
 
     # The Stratoscale template generates the go generate directives for mockery.
     # Mockery library changed the arguments in version 2 but Stratoscale
     # produces directives for Mockery V1. This workaround changes the argument
     # style. It will be not necessary after merge https://github.com/go-swagger/go-swagger/pull/2796.
-    swagger_server_configure_file = File.join(SWAGGER_SERVER_DIR, "restapi/configure_stork.go")
+    swagger_server_configure_file = File.join(swagger_server_dir, "restapi/configure_stork.go")
     text = File.read(swagger_server_configure_file)
     new_contents = text.gsub(
         /\/\/go:generate mockery -name (.*) -inpkg/,
         '//go:generate mockery --name \1 --inpackage')
     File.open(swagger_server_configure_file, "w") {|file| file.puts new_contents }
 end
-CLEAN.append SWAGGER_SERVER_DIR
+CLEAN.append swagger_server_dir
 
 agent_proto_file = "backend/api/agent.proto"
 agent_pb_go_file = "backend/api/agent.pb.go"
@@ -88,9 +88,9 @@ go_server_codebase = FileList[
     "backend/server/**/*",
     "backend/cmd/stork-server",
     "backend/cmd/stork-server/*",
-    SWAGGER_SERVER_DIR
+    swagger_server_dir
 ]
-.exclude(SWAGGER_SERVER_DIR + "/**/*")
+.exclude(swagger_server_dir + "/**/*")
 
 go_agent_codebase = FileList[
     "backend/agent",
@@ -109,7 +109,7 @@ go_tool_codebase = FileList[
 
 go_common_codebase = FileList["backend/**/*"]
     .exclude("backend/coverage.out")
-    .exclude(SWAGGER_SERVER_DIR + "/**/*")
+    .exclude(swagger_server_dir + "/**/*")
     .exclude(go_server_codebase)
     .exclude(go_agent_codebase)
     .exclude(go_tool_codebase)
@@ -221,6 +221,13 @@ namespace :clean do
     desc 'Clobber all generated and non-source files in a project.'
     task :hard => [:soft] do
         remove_files(CLOBBER)
+    end
+end
+
+namespace :gen do
+    namespace :backend do
+        desc 'Generate Swagger API files'
+        task :swagger => [swagger_server_dir]
     end
 end
 
