@@ -392,20 +392,20 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def wait_for_host_reservation_pulling(self, start: datetime = None):
-        """Waits for finish the next execution of host reservation puller."""
+        """Waits for finishing the next execution of host reservation puller."""
         return self._wait_for_puller("kea_hosts_puller_interval", start)
 
     def wait_for_kea_statistics_pulling(self, start: datetime = None):
-        """Waits for the finish next execution of Kea statistics puller."""
+        """Waits for finishing next execution of Kea statistics puller."""
         return self._wait_for_puller("kea_stats_puller_interval", start)
 
     def wait_for_bind9_statistics_pulling(self, start: datetime = None):
-        """Waits for the finish next execution of Bind9 statistics puller."""
+        """Waits for finishing next execution of Bind9 statistics puller."""
         return self._wait_for_puller("bind9_stats_puller_interval", start)
 
     def wait_for_states_pulling(self, start: datetime = None):
         """
-        Waits for the finish next execution of application state puller. Unlike
+        Waits for finishing next execution of application state puller. Unlike
         the `last_visited_at` property from the application entry, it waits
         until the end of writing all application-related entries (subnets,
         shared networks, hosts) to the database.
