@@ -324,6 +324,17 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
    for the Stork Server installed from the binary packages. It's the default location
    for the static content.
 
+.. note::
+
+   The Stork Agent must trust the REST TLS certificate presented by Stork Server.
+   Otherwise, the registration process fails due to invalid Stork Server
+   certificate verification. We strongly recommend using proper, trusted
+   certificates for security reasons. If you need to use the self-signed
+   certificate (e.g., for deployment in the Docker environment), then you can
+   add its CA certificate to the system certificates on the Stork Agent machine.
+   See [SO thread](https://stackoverflow.com/a/42292623) and
+   [discussion in #859](https://gitlab.isc.org/isc-projects/stork/-/issues/859).
+
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
 * ``STORK_SERVER_ENABLE_METRICS`` - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint
