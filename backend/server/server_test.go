@@ -34,7 +34,7 @@ func getExpectedSwitches() []string {
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--puller-interval",
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
 	}
 }
 
@@ -123,7 +123,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--rest-tls-key", "tlskey",
 		"--rest-tls-ca", "tlsca",
 		"--rest-static-files-dir", "staticdir",
-		"--puller-interval", "54",
+		"--initial-puller-interval", "54",
 	)
 
 	// Act
@@ -156,7 +156,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "tlskey", ss.RestAPISettings.TLSCertificateKey)
 	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
-	require.EqualValues(t, 54, ss.DefaultPullerInterval)
+	require.EqualValues(t, 54, ss.InitialPullerInterval)
 }
 
 // Test that the Stork Server is not constructed if the arguments are wrong.

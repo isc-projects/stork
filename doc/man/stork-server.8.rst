@@ -38,8 +38,8 @@ Arguments
 ``-m|--metrics``
    Enables the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication; it is recommended to restrict external access to it (e.g. using the HTTP proxy). It is disabled by default. ``[$STORK_SERVER_ENABLE_METRICS]``
 
-``--puller-interval``
-   Default interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used. ``[$STORK_SERVER_DEFAULT_PULLER_INTERVAL]``
+``--initial-puller-interval``
+   Default interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used. ``[$STORK_SERVER_INITIAL_PULLER_INTERVAL]``
 
 ``-u|--db-user``
    Specifies the user name to be used for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
