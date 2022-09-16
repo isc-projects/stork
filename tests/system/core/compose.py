@@ -87,7 +87,7 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
     Notes
     -----
     Thread safety: The function is pure. It has the same output for the same
-    input. But access to the cache isn't synchronized (yet). 
+    input. But access to the cache isn't synchronized (yet).
     Race may happen, but it shouldn't have any adverse effects.
 
     The cache isn't limited. We expect the function to be used with a small,
@@ -565,7 +565,7 @@ class DockerCompose(object):
             return None
 
     def is_premium(self, service_name):
-        '''Checks if the given service is in the premium profile.'''
+        """Checks if the given service is in the premium profile."""
         config = self._read_config_yaml()
         services_config = config['services']
         service_config = services_config.get(service_name)
@@ -583,7 +583,7 @@ class DockerCompose(object):
 
     @memoize
     def _read_config_yaml(self):
-        '''Reads the configuration YAMS file and parses it.'''
+        """Reads the configuration YAMS file and parses it."""
         config_cmd = self.docker_compose_command() + ["config", ]
         _, stdout, _ = self._call_command(cmd=config_cmd)
         return yaml.safe_load(stdout)
