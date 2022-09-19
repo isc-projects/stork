@@ -332,9 +332,9 @@ deploy_demo:
     # Build & Start Docker containers
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN deploy/stork-demo.sh --no-prompt
 
-### deploy pkgs to cloudsmith.io ###
+### upload packages to cloudsmith.io ###
 
-deploy_pkgs:
+upload_packages:
   stage: deploy
   rules:
     - when: manual
@@ -351,12 +351,25 @@ deploy_pkgs:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
-    - ls -al
-    - export LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
-    - cloudsmith check service
-    - cloudsmith whoami -k $CLOUDSMITH_API_KEY
-    - if [ -z "$REPO" ]; then export REPO="stork-testing"; fi
-    - cloudsmith upload deb -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-agent*deb
-    - cloudsmith upload deb -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-server*deb
-    - cloudsmith upload rpm -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-agent*rpm
-    - cloudsmith upload rpm -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-server*rpm
+    - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+    - rake release:packages:upload REPO=stork
+
+upload_test_packages:
+  stage: deploy
+  rules:
+    - when: manual
+  allow_failure: true
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest
+  tags:
+    - linux
+    - docker
+    - amd64
+    - ssd
+  needs:
+    - packages
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  script:
+    - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+    - rake release:packages:upload REPO=stork-testing
