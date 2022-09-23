@@ -84,3 +84,28 @@ func (def dhcpOptionDefinition) GetSpace() string {
 func (def dhcpOptionDefinition) GetType() DHCPOptionType {
 	return def.OptionType
 }
+
+// Given the option definition, find field type at specified position.
+// First option field has position 0. If the position is out of bounds,
+// the second returned paramerter is false and the option field type
+// is empty. For an empty option this function always returns false and
+// empty option field type.
+func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (DHCPOptionFieldType, bool) {
+	switch def.GetType() {
+	case EmptyOption:
+		return "", false
+	case RecordOption:
+		recordTypes := def.GetRecordTypes()
+		arrayIndex := position / len(recordTypes)
+		if !def.GetArray() && arrayIndex > 0 {
+			return "", false
+		}
+		recordPosition := position % len(recordTypes)
+		return recordTypes[recordPosition], true
+	default:
+		if position > 0 && !def.GetArray() {
+			return "", false
+		}
+		return def.GetType(), true
+	}
+}

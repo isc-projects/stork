@@ -1,7 +1,6 @@
 package keaconfig
 
 import (
-	"math"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -280,416 +279,6 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 	require.Equal(t, "7B00EA0000017101C0000201300000120000000000000000000000003001000000000000000000000000000040066C0C06666F6F626172076578616D706C65036F7267666F6F626172", data.Data)
 }
 
-// Test that a hex-bytes option field is converted to Kea format successfully.
-func TestConvertHexBytesField(t *testing.T) {
-	// Colons are allowed.
-	value, err := convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "00:01:02:03:04"))
-	require.NoError(t, err)
-	require.Equal(t, "0001020304", value)
-
-	// Spaces are allowed.
-	value, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "00 01 02 03 04"))
-	require.NoError(t, err)
-	require.Equal(t, "0001020304", value)
-
-	// No separators are also allowed.
-	value, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "0001020304"))
-	require.NoError(t, err)
-	require.Equal(t, "0001020304", value)
-}
-
-// Test that conversion of a malformed hex-bytes option field yields an error.
-func TestConvertHexBytesFieldMalformed(t *testing.T) {
-	// It must have a single value.
-	_, err := convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "010203", "010203"))
-	require.Error(t, err)
-
-	// Having no values is wrong.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField))
-	require.Error(t, err)
-
-	// Non-hex string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "wrong"))
-	require.Error(t, err)
-
-	// Not a string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, 525))
-	require.Error(t, err)
-
-	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, ""))
-	require.Error(t, err)
-}
-
-// Test that a string option field is converted to a hex format.
-func TestConvertStringFieldToHex(t *testing.T) {
-	value, err := convertStringField(*newTestDHCPOptionField(StringField, "foobar"), false)
-	require.NoError(t, err)
-	require.Equal(t, "666F6F626172", value)
-}
-
-// Test that a string option field is converted to text format.
-func TestConvertStringFieldToText(t *testing.T) {
-	value, err := convertStringField(*newTestDHCPOptionField(StringField, "foobar"), true)
-	require.NoError(t, err)
-	require.Equal(t, "foobar", value)
-}
-
-// Test that conversion of a malformed string option field yields an error.
-func TestConvertStringFieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertStringField(*newTestDHCPOptionField(StringField, "foo", "bar"), false)
-	require.Error(t, err)
-
-	// Having no values is wrong.
-	_, err = convertStringField(*newTestDHCPOptionField(StringField), false)
-	require.Error(t, err)
-
-	// Not a string.
-	_, err = convertStringField(*newTestDHCPOptionField(StringField, 123), false)
-	require.Error(t, err)
-
-	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(StringField, ""))
-	require.Error(t, err)
-}
-
-// Test that a boolean option field is converted to a hex format.
-func TestBoolFieldToHex(t *testing.T) {
-	// Convert true value.
-	value, err := convertBoolField(*newTestDHCPOptionField(BoolField, true), false)
-	require.NoError(t, err)
-	require.Equal(t, "01", value)
-
-	// Convert false value.
-	value, err = convertBoolField(*newTestDHCPOptionField(BoolField, false), false)
-	require.NoError(t, err)
-	require.Equal(t, "00", value)
-}
-
-// Test that a boolean option field is converted to a text format.
-func TestBoolFieldToText(t *testing.T) {
-	// Convert true value.
-	value, err := convertBoolField(*newTestDHCPOptionField(BoolField, true), true)
-	require.NoError(t, err)
-	require.Equal(t, "true", value)
-
-	// Convert false value.
-	value, err = convertBoolField(*newTestDHCPOptionField(BoolField, false), true)
-	require.NoError(t, err)
-	require.Equal(t, "false", value)
-}
-
-// Test that conversion of a malformed boolean option field yields an error.
-func TestBoolFieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertBoolField(*newTestDHCPOptionField(BoolField, false, true), false)
-	require.Error(t, err)
-
-	// Having no values is wrong.
-	_, err = convertBoolField(*newTestDHCPOptionField(BoolField), false)
-	require.Error(t, err)
-
-	// Not a boolean value.
-	_, err = convertBoolField(*newTestDHCPOptionField(BoolField, 123), false)
-	require.Error(t, err)
-}
-
-// Test that an uint8 option field is converted to a hex format.
-func TestUint8FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 155), false)
-	require.NoError(t, err)
-	require.Equal(t, "9B", value)
-}
-
-// Test that an uint8 option field is converted to a text format.
-func TestUint8FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 155), true)
-	require.NoError(t, err)
-	require.Equal(t, "155", value)
-}
-
-// Test that conversion of a malformed uint8 option field yields an error.
-func TestUint8FieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 15, 16), false)
-	require.Error(t, err)
-
-	// It must be lower than 256.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, 1550), false)
-	require.Error(t, err)
-
-	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field), false)
-	require.Error(t, err)
-
-	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, "111"), false)
-	require.Error(t, err)
-
-	// Floating point number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, 1.1), false)
-	require.Error(t, err)
-}
-
-// Test that an uint16 option field is converted to a hex format.
-func TestUint16FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1550), false)
-	require.NoError(t, err)
-	require.Equal(t, "060E", value)
-}
-
-// Test that converted uint16 option field value has 4 digits.
-func TestUint16FieldToHexPadding(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1), false)
-	require.NoError(t, err)
-	require.Equal(t, "0001", value)
-}
-
-// Test that an uint16 option field is converted to a text format.
-func TestUint16FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1550), true)
-	require.NoError(t, err)
-	require.Equal(t, "1550", value)
-}
-
-// Test that conversion of a malformed uint16 option field yields an error.
-func TestUint16FieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 150, 1600), false)
-	require.Error(t, err)
-
-	// It must be lower or equal max uint16.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field, 166535), false)
-	require.Error(t, err)
-
-	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field), false)
-	require.Error(t, err)
-
-	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field, "222"), false)
-	require.Error(t, err)
-}
-
-// Test that an uint32 option field is converted to a hex format.
-func TestUint32FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 65537), false)
-	require.NoError(t, err)
-	require.Equal(t, "00010001", value)
-}
-
-// Test that converted uint32 option field value has 8 digits.
-func TestUint32FieldToHexPadding(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 1), false)
-	require.NoError(t, err)
-	require.Equal(t, "00000001", value)
-}
-
-// Test that an uint32 option field is converted to a text format.
-func TestUint32FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 65537), true)
-	require.NoError(t, err)
-	require.Equal(t, "65537", value)
-}
-
-// Test that conversion of a malformed uint32 option field yields an error.
-func TestUint32FieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 1, 10), false)
-	require.Error(t, err)
-
-	// It must be lower than max uint32.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field, uint64(math.MaxUint64-5)), false)
-	require.Error(t, err)
-
-	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field), false)
-	require.Error(t, err)
-
-	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field, "222"), false)
-	require.Error(t, err)
-}
-
-// Test that an IPv4 option field is converted to a hex format.
-func TestIPv4AddressFieldToHex(t *testing.T) {
-	value, err := convertIPv4AddressField(*newTestDHCPOptionField(HexBytesField, "192.0.2.1"), false)
-	require.NoError(t, err)
-	require.Equal(t, "C0000201", value)
-}
-
-// Test that an IPv4 option field is converted to a text format.
-func TestIPv4AddressFieldToText(t *testing.T) {
-	value, err := convertIPv4AddressField(*newTestDHCPOptionField(HexBytesField, "192.0.2.1"), true)
-	require.NoError(t, err)
-	require.Equal(t, "192.0.2.1", value)
-}
-
-// Test that conversion of a malformed IPv4 option field yields an error.
-func TestIPv4AddressFieldMalformed(t *testing.T) {
-	// It must be a single value.
-	_, err := convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField, "192.0.2.1", "192.0.2.2"), false)
-	require.Error(t, err)
-
-	// No value.
-	_, err = convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField), false)
-	require.Error(t, err)
-
-	// IPv6 address.
-	_, err = convertIPv4AddressField(*newTestDHCPOptionField(IPv4AddressField, "2001:db8:1::1"), false)
-	require.Error(t, err)
-
-	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv4AddressField, ""))
-	require.Error(t, err)
-}
-
-// Test that an IPv6 option field is converted to a hex format.
-func TestIPv6AddressFieldToHex(t *testing.T) {
-	value, err := convertIPv6AddressField(*newTestDHCPOptionField(HexBytesField, "2001:db8:1::1"), false)
-	require.NoError(t, err)
-	require.Equal(t, "20010DB8000100000000000000000001", value)
-}
-
-// Test that an IPv6 option field is converted to a text format.
-func TestIPv6AddressFieldToText(t *testing.T) {
-	value, err := convertIPv6AddressField(*newTestDHCPOptionField(HexBytesField, "2001:db8:1::1"), true)
-	require.NoError(t, err)
-	require.Equal(t, "2001:db8:1::1", value)
-}
-
-// Test that conversion of a malformed IPv6 option field yields an error.
-func TestIPv6AddressFieldMalformed(t *testing.T) {
-	_, err := convertIPv6AddressField(*newTestDHCPOptionField(IPv6AddressField, "2001:db8:1::1", "2001:db8:1::1"), false)
-	require.Error(t, err)
-
-	_, err = convertIPv6AddressField(*newTestDHCPOptionField(IPv6AddressField), false)
-	require.Error(t, err)
-
-	_, err = convertIPv6AddressField(*newTestDHCPOptionField(IPv6AddressField, "192.0.2.1"), false)
-	require.Error(t, err)
-}
-
-// Test that an IPv6 prefix option field is converted to a hex format.
-func TestIPv6PrefixFieldToHex(t *testing.T) {
-	value, err := convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", 64), false)
-	require.NoError(t, err)
-	require.Equal(t, "3001000000000000000000000000000040", value)
-}
-
-// Test that an IPv6 prefix option field is converted to text format.
-func TestIPv6PrefixFieldToText(t *testing.T) {
-	value, err := convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", 64), true)
-	require.NoError(t, err)
-	require.Equal(t, "3001::/64", value)
-}
-
-// Test that conversion of a malformed IPv6 prefix option field yields an error.
-func TestIPv6PrefixFieldMalformed(t *testing.T) {
-	// No prefix length.
-	_, err := convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::"), false)
-	require.Error(t, err)
-
-	// No prefix.
-	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, 64), false)
-	require.Error(t, err)
-
-	// Too high prefix length.
-	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", 129), false)
-	require.Error(t, err)
-
-	// Negative prefix length.
-	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "3001::", -1), false)
-	require.Error(t, err)
-
-	// No value.
-	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField), false)
-	require.Error(t, err)
-
-	// IPv4 prefix.
-	_, err = convertIPv6PrefixField(*newTestDHCPOptionField(IPv6PrefixField, "192.0.2.1", 32), false)
-	require.Error(t, err)
-
-	// Empty prefix.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv6PrefixField, "", 32))
-	require.Error(t, err)
-}
-
-// Test that PSID option field is converted to hex format.
-func TestPsidFieldToHex(t *testing.T) {
-	value, err := convertPsidField(*newTestDHCPOptionField(PsidField, 1000, 12), false)
-	require.NoError(t, err)
-	require.Equal(t, "03E80C", value)
-}
-
-// Test that PSID option field is converted to text format.
-func TestPsidFieldToText(t *testing.T) {
-	value, err := convertPsidField(*newTestDHCPOptionField(PsidField, 1000, 12), true)
-	require.NoError(t, err)
-	require.Equal(t, "1000/12", value)
-}
-
-// Test that conversion of a malformed PSID option field yields an error.
-func TestPsidFieldMalformed(t *testing.T) {
-	// No PSID length.
-	_, err := convertPsidField(*newTestDHCPOptionField(PsidField, 1000), false)
-	require.Error(t, err)
-
-	// PSID is not a number.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, "1000", 12), false)
-	require.Error(t, err)
-
-	// PSID length is not a number.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1000, "12"), false)
-	require.Error(t, err)
-
-	// PSID length is too high.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1000, 1200), false)
-	require.Error(t, err)
-
-	// PSID is too high.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 165535, 12), false)
-	require.Error(t, err)
-
-	// PSID is negative.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, -1, 12), false)
-	require.Error(t, err)
-
-	// PSID length is negative.
-	_, err = convertPsidField(*newTestDHCPOptionField(PsidField, 1, -2), false)
-	require.Error(t, err)
-}
-
-// Test that FQDN option field is converted to hex format.
-func TestFqdnFieldToHex(t *testing.T) {
-	value, err := convertFqdnField(*newTestDHCPOptionField(FqdnField, "foobar.example.org."), false)
-	require.NoError(t, err)
-	require.Equal(t, "06666F6F626172076578616D706C65036F726700", value)
-}
-
-// Test that FQDN option field is converted to text format.
-func TestFqdnFieldToText(t *testing.T) {
-	value, err := convertFqdnField(*newTestDHCPOptionField(FqdnField, "foobar.example.org."), true)
-	require.NoError(t, err)
-	require.Equal(t, "foobar.example.org.", value)
-}
-
-// Test that conversion of a malformed FQDN option field yields an error.
-func TestFqdnFieldMalformed(t *testing.T) {
-	_, err := convertFqdnField(*newTestDHCPOptionField(FqdnField, "foobar.example.org.", "foo"), false)
-	require.Error(t, err)
-
-	_, err = convertFqdnField(*newTestDHCPOptionField(FqdnField), false)
-	require.Error(t, err)
-
-	_, err = convertFqdnField(*newTestDHCPOptionField(FqdnField, 123), false)
-	require.Error(t, err)
-
-	_, err = convertFqdnField(*newTestDHCPOptionField("invalid...fqdn"), false)
-	require.Error(t, err)
-}
-
 // Test that an option received from Kea is correctly parsed into the Stork's
 // representation of an option.
 func TestCreateDHCPOptionCSV(t *testing.T) {
@@ -701,7 +290,8 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 		Name:       "foo",
 		Space:      "bar",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.True(t, option.IsAlwaysSend())
 	require.EqualValues(t, 244, option.GetCode())
 	require.Equal(t, "foo", option.GetName())
@@ -757,7 +347,8 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 		Name:       "foobar",
 		Space:      "baz",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 2048, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
@@ -781,7 +372,8 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 		Name:      "foobar",
 		Space:     "baz",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 333, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
@@ -797,7 +389,8 @@ func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
 		Code:  253,
 		Space: DHCPv4OptionSpace,
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.Equal(t, "option-253", option.GetEncapsulate())
 }
 
@@ -807,7 +400,8 @@ func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
 		Code:  1,
 		Space: "option-253",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.Equal(t, "option-253.1", option.GetEncapsulate())
 }
 
@@ -817,7 +411,8 @@ func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
 		Code:  1024,
 		Space: DHCPv6OptionSpace,
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.Equal(t, "option-1024", option.GetEncapsulate())
 }
 
@@ -827,7 +422,8 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 		Code:  1,
 		Space: "option-1024",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.Equal(t, "option-1024.1", option.GetEncapsulate())
 }
 
@@ -837,10 +433,12 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 	optionData := SingleOptionData{
 		Code:      89,
 		CSVFormat: true,
+		Data:      "10, 9, 6, 192.0.2.1, 3000::/64",
 		Name:      "s46-rule",
 		Space:     "s46-cont-mape-options",
 	}
-	option := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
 	require.NotNil(t, option)
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 89, option.GetCode())
@@ -848,4 +446,23 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 	require.Equal(t, "s46-cont-mape-options", option.GetSpace())
 	require.Equal(t, "s46-rule-options", option.GetEncapsulate())
 	require.Equal(t, storkutil.IPv6, option.GetUniverse())
+
+	fields := option.GetFields()
+	require.Len(t, fields, 5)
+	require.Equal(t, Uint8Field, fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.EqualValues(t, 10, fields[0].GetValues()[0])
+	require.Equal(t, Uint8Field, fields[1].GetFieldType())
+	require.Len(t, fields[1].GetValues(), 1)
+	require.EqualValues(t, 9, fields[1].GetValues()[0])
+	require.Equal(t, Uint8Field, fields[2].GetFieldType())
+	require.Len(t, fields[2].GetValues(), 1)
+	require.EqualValues(t, 6, fields[2].GetValues()[0])
+	require.Equal(t, IPv4AddressField, fields[3].GetFieldType())
+	require.Len(t, fields[3].GetValues(), 1)
+	require.Equal(t, "192.0.2.1", fields[3].GetValues()[0])
+	require.Equal(t, IPv6PrefixField, fields[4].GetFieldType())
+	require.Len(t, fields[4].GetValues(), 2)
+	require.Equal(t, "3000::", fields[4].GetValues()[0])
+	require.Equal(t, 64, fields[4].GetValues()[1])
 }

@@ -307,7 +307,10 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 		universe = storkutil.IPv6
 	}
 	for _, d := range reservation.OptionData {
-		option := keaconfig.CreateDHCPOption(d, universe, lookup)
+		option, err := keaconfig.CreateDHCPOption(d, universe, lookup)
+		if err != nil {
+			return nil, err
+		}
 		hostOption := DHCPOption{
 			AlwaysSend:  option.IsAlwaysSend(),
 			Code:        option.GetCode(),
