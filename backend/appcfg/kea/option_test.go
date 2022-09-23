@@ -428,7 +428,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 }
 
 // Test that a standard option definition is used for setting the
-// encapsulated option space.
+// encapsulated option space and setting the option field types.
 func TestCreateStandardDHCPOption(t *testing.T) {
 	optionData := SingleOptionData{
 		Code:      89,
