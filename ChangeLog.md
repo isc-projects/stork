@@ -1,3 +1,13 @@
+* 240 [func] marcin
+
+    Allow three levels of DHCP options encapsulation when a new host
+    reservation is created or an existing host reservation is updated.
+    Preliminary support for standard DHCP option definitions has been added.
+    A few standard DHCPv6 option definitions have been defined in Stork,
+    allowing to recognize option fields returned by the Kea servers
+    accurately.
+    (Gitlab #837)
+
 Stork 1.6.0 released on 2022-09-07.
 
 * 239 [build] slawek
