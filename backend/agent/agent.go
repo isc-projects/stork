@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/host"
@@ -29,13 +30,13 @@ import (
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Settings   *cli.Context
-	AppMonitor AppMonitor
-
+	Settings       *cli.Context
+	AppMonitor     AppMonitor
 	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
 	server         *grpc.Server
 	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
+	shutdownOnce   sync.Once
 
 	agentapi.UnimplementedAgentServer
 }
@@ -72,7 +73,7 @@ func getRootCertificates(params *advancedtls.GetRootCAsParams) (*advancedtls.Get
 		log.Errorf("%+v", err)
 		return nil, err
 	}
-	log.Printf("loaded CA cert: %s\n", RootCAFile)
+	log.Printf("Loaded CA cert: %s\n", RootCAFile)
 	return &advancedtls.GetRootCAsResults{
 		TrustCerts: certPool,
 	}, nil
@@ -98,7 +99,7 @@ func getIdentityCertificatesForServer(info *tls.ClientHelloInfo) ([]*tls.Certifi
 		log.Errorf("%+v", err)
 		return nil, err
 	}
-	log.Printf("loaded server cert: %s and key: %s\n", CertPEMFile, KeyPEMFile)
+	log.Printf("Loaded server cert: %s and key: %s\n", CertPEMFile, KeyPEMFile)
 	return []*tls.Certificate{&certificate}, nil
 }
 
@@ -422,16 +423,23 @@ func (sa *StorkAgent) Serve() error {
 	// Start serving gRPC
 	log.WithFields(log.Fields{
 		"address": lis.Addr(),
-	}).Infof("started serving Stork Agent")
+	}).Infof("Started serving Stork Agent")
 	if err := sa.server.Serve(lis); err != nil {
 		return errors.Wrapf(err, "Failed to serve on: %s", addr)
 	}
 	return nil
 }
 
-func (sa *StorkAgent) Shutdown() {
-	log.Infof("stopping StorkAgent")
-	if sa.server != nil {
-		sa.server.GracefulStop()
-	}
+// Shuts down Stork Agent. The reload flag indicates if the Shutdown is called
+// as part of the agent reload (reload=true) or the process is terminating
+// (reload=false).
+func (sa *StorkAgent) Shutdown(reload bool) {
+	sa.shutdownOnce.Do(func() {
+		if !reload {
+			log.Info("Stopping Stork Agent")
+		}
+		if sa.server != nil {
+			sa.server.GracefulStop()
+		}
+	})
 }

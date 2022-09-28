@@ -358,7 +358,7 @@ func (r *RestAPI) Serve() (err error) {
 
 	log.WithFields(log.Fields{
 		"address": scheme + lstnr.Addr().String(),
-	}).Infof("started serving Stork Server")
+	}).Infof("Started serving Stork Server")
 	if err := httpServer.Serve(lstnr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return pkgerrors.Wrap(err, "problem serving")
 	}

@@ -30,7 +30,7 @@ const InactiveInterval int64 = 60
 // This function is executed within a goroutine periodically according to the timer
 // interval calculated by `getIntervalFunc`. It accepts previous interval and returns next value.
 func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc func() (int64, error)) (*PeriodicExecutor, error) {
-	log.Printf("starting %s", name)
+	log.Printf("Starting %s", name)
 
 	interval, err := getIntervalFunc()
 	if err != nil {

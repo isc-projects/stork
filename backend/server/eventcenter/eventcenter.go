@@ -114,7 +114,7 @@ func (ec *eventCenter) addEvent(level int, text string, objects ...interface{}) 
 // manually or using CreateEvent function. The event is stored in
 // database and dispatched to subscribers.
 func (ec *eventCenter) AddEvent(event *dbmodel.Event) {
-	log.Printf("event '%s'", event.Text)
+	log.Printf("Event '%s'", event.Text)
 	ec.events <- event
 }
 

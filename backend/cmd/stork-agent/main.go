@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -16,13 +17,33 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Sighup error is used to indicate that Stork Agent  received a
+// SIGHUP signal.
+type sighupError struct{}
+
+// Returns sighupError error text.
+func (e *sighupError) Error() string {
+	return "received SIGHUP signal"
+}
+
+// Error used to indicate that Ctrl-C was pressed to terminate the
+// Stork Agent.
+type ctrlcError struct{}
+
+// Returns ctrlcError error text.
+func (e *ctrlcError) Error() string {
+	return "received Ctrl-C signal"
+}
+
 // Helper function that starts agent, apps monitor and prometheus exports
 // if they are enabled.
-func runAgent(settings *cli.Context) {
-	// We need to print this statement only after we check if the only purpose is to print a version.
-	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
+func runAgent(settings *cli.Context, reload bool) error {
+	if !reload {
+		// We need to print this statement only after we check if the only purpose is to print a version.
+		log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
+	}
 
-	// try register agent in the server using agent token
+	// Try registering the agent in the server using the agent token
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
 		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
@@ -64,13 +85,25 @@ func runAgent(settings *cli.Context) {
 				log.Fatalf("Failed to serve the Stork Agent: %+v", err)
 			}
 		}()
-		defer storkAgent.Shutdown()
+		defer storkAgent.Shutdown(reload)
 	}
 
-	// We wait for ctl-c
+	// Handle signals.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGINT)
-	<-c
+	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGHUP)
+	sig := <-c
+	switch sig {
+	case syscall.SIGHUP:
+		log.Info("Reloading Stork Agent after receiving SIGHUP signal")
+		// Trigger shutdown with setting the reload flag. It doesn't
+		// matter we have deferred another shutdown already. It will
+		// be executed only once.
+		storkAgent.Shutdown(true)
+		return &sighupError{}
+	default:
+		log.Info("Received Ctrl-C signal")
+		return &ctrlcError{}
+	}
 }
 
 // Helper function that checks command line options and runs registration.
@@ -103,7 +136,7 @@ func runRegister(cfg *cli.Context) {
 }
 
 // Prepare urfave cli app with all flags and commands defined.
-func setupApp() *cli.App {
+func setupApp(reload bool) *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Println(c.App.Version)
 	}
@@ -198,8 +231,8 @@ func setupApp() *cli.App {
 				log.Fatalf("Use --host option or the STORK_AGENT_HOST environment variable")
 			}
 
-			runAgent(c)
-			return nil
+			err := runAgent(c, reload)
+			return err
 		},
 		Commands: []*cli.Command{
 			{
@@ -242,13 +275,25 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 	return app
 }
 
+// Main stork-agent function.
 func main() {
-	// Setup logging
-	storkutil.SetupLogging()
-
-	app := setupApp()
-	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	reload := false
+	for {
+		storkutil.SetupLogging()
+		app := setupApp(reload)
+		err := app.Run(os.Args)
+		switch {
+		case err == nil:
+			return
+		case errors.Is(err, &ctrlcError{}):
+			// Ctrl-C pressed.
+			os.Exit(130)
+		case !errors.Is(err, &sighupError{}):
+			// Error occurred.
+			log.Fatal(err)
+		default:
+			// SIGHUP signal received.
+			reload = true
+		}
 	}
 }

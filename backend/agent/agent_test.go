@@ -712,7 +712,7 @@ func TestHostAndPortParams(t *testing.T) {
 
 	// We shut down the server before starting. It causes the serve
 	// call fails and doesn't block the execution.
-	sa.Shutdown()
+	sa.Shutdown(false)
 
 	// Act
 	var serveErr error

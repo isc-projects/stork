@@ -226,11 +226,22 @@ func TestBootstrap(t *testing.T) {
 	server.DBSettings.User = db.Options().User
 
 	// Act
-	err := server.Bootstrap()
-	defer server.Shutdown()
+	err := server.Bootstrap(false)
+	defer server.Shutdown(false)
 
 	// Assert
 	require.NoError(t, err)
+
+	// Check that appropriate events have been generated. Events are added
+	// to the database asynchronously, so it may take a few attempts before
+	// they appear.
+	var events []dbmodel.Event
+	require.Eventually(t, func() bool {
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+		return len(events) > 0
+	}, 5*time.Second, time.Second)
+	require.Len(t, events, 1)
+	require.Contains(t, events[0].Text, "started Stork Server")
 
 	// Checks if the config review checker states were loaded from the database.
 	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemons[0])
@@ -244,4 +255,19 @@ func TestBootstrap(t *testing.T) {
 	require.False(t, configReviewCheckerPreferences[3].GloballyEnabled)
 	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
 	require.True(t, configReviewCheckerPreferences[4].GloballyEnabled)
+
+	// Clear events before we get them again after shutdown.
+	events = []dbmodel.Event{}
+
+	// Run actual shutdown. It doesn't matter we have already deferred one Shutdown().
+	// It will be executed only once.
+	server.Shutdown(false)
+
+	// Make sure that the shutdown event has been added.
+	require.Eventually(t, func() bool {
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+		return len(events) > 0
+	}, 5*time.Second, time.Second)
+	require.Len(t, events, 2)
+	require.Contains(t, events[1].Text, "shutting down Stork Server")
 }

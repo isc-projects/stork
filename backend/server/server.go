@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/go-pg/pg/v10"
 	flags "github.com/jessevdk/go-flags"
@@ -34,28 +35,20 @@ const (
 
 // Global Stork Server state.
 type StorkServer struct {
-	DBSettings dbops.DatabaseSettings
-	DB         *dbops.PgDB
-
-	AgentsSettings agentcomm.AgentsSettings
-	Agents         agentcomm.ConnectedAgents
-
-	RestAPISettings restservice.RestAPISettings
-	RestAPI         *restservice.RestAPI
-
-	Pullers *apps.Pullers
-
-	EnableMetricsEndpoint bool
-	MetricsCollector      metrics.Collector
-
-	EventCenter eventcenter.EventCenter
-
-	ReviewDispatcher configreview.Dispatcher
-	// Configuration manager instance. Note that it inherits some fields
-	// maintained by the server.
-	ConfigManager config.Manager
-	// Provides lookup functionality for DHCP option definitions.
+	DBSettings                 dbops.DatabaseSettings
+	DB                         *dbops.PgDB
+	AgentsSettings             agentcomm.AgentsSettings
+	Agents                     agentcomm.ConnectedAgents
+	RestAPISettings            restservice.RestAPISettings
+	RestAPI                    *restservice.RestAPI
+	Pullers                    *apps.Pullers
+	EnableMetricsEndpoint      bool
+	MetricsCollector           metrics.Collector
+	EventCenter                eventcenter.EventCenter
+	ReviewDispatcher           configreview.Dispatcher
+	ConfigManager              config.Manager
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
+	shutdownOnce               sync.Once
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
@@ -124,8 +117,9 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 }
 
 // Establishes a database connection, runs the background pullers, and
-// prepares the REST API.
-func (ss *StorkServer) Bootstrap() (err error) {
+// prepares the REST API. The reload flag indicates if the server is
+// starting up (reload=false) or it is being reloaded (reload=true).
+func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	// setup database connection
 	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)
 	if err != nil {
@@ -247,7 +241,10 @@ func (ss *StorkServer) Bootstrap() (err error) {
 	}
 	ss.RestAPI = r
 
-	ss.EventCenter.AddInfoEvent("started Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
+	// Do not issue the event if we're only reloading the server.
+	if !reload {
+		ss.EventCenter.AddInfoEvent("started Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
+	}
 
 	return nil
 }
@@ -261,24 +258,37 @@ func (ss *StorkServer) Serve() {
 	}
 }
 
-// Shutdown for Stork Server state.
-func (ss *StorkServer) Shutdown() {
-	ss.EventCenter.AddInfoEvent("shutting down Stork Server")
-	log.Println("Shutting down Stork Server")
-	ss.RestAPI.Shutdown()
-	ss.Pullers.HAStatusPuller.Shutdown()
-	ss.Pullers.KeaHostsPuller.Shutdown()
-	ss.Pullers.KeaStatsPuller.Shutdown()
-	ss.Pullers.Bind9StatsPuller.Shutdown()
-	ss.Pullers.AppsStatePuller.Shutdown()
-	ss.Agents.Shutdown()
-	ss.EventCenter.Shutdown()
-	ss.ReviewDispatcher.Shutdown()
-	if ss.MetricsCollector != nil {
-		ss.MetricsCollector.Shutdown()
-	}
-	ss.DB.Close()
-	log.Println("Stork Server shut down")
+// Shutdown for Stork Server state. The reload flag indicates if the
+// Shutdown is called as part of the server reload (reload=true) or
+// the process is terminating (reload=false).
+func (ss *StorkServer) Shutdown(reload bool) {
+	// If this function is called multiple times, make sure we shutdown
+	// only once.
+	ss.shutdownOnce.Do(func() {
+		// Do not issue the event when we're reloading instead of terminating
+		// the server process.
+		if !reload {
+			ss.EventCenter.AddInfoEvent("shutting down Stork Server")
+			log.Println("Shutting down Stork Server")
+		}
+		ss.RestAPI.Shutdown()
+		ss.Pullers.HAStatusPuller.Shutdown()
+		ss.Pullers.KeaHostsPuller.Shutdown()
+		ss.Pullers.KeaStatsPuller.Shutdown()
+		ss.Pullers.Bind9StatsPuller.Shutdown()
+		ss.Pullers.AppsStatePuller.Shutdown()
+		ss.Agents.Shutdown()
+		ss.EventCenter.Shutdown()
+		ss.ReviewDispatcher.Shutdown()
+		if ss.MetricsCollector != nil {
+			ss.MetricsCollector.Shutdown()
+		}
+		ss.DB.Close()
+
+		if !reload {
+			log.Println("Stork Server shut down")
+		}
+	})
 }
 
 // Returns an instance of the database handler used by the configuration manager.

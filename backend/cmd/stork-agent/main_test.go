@@ -136,3 +136,15 @@ func TestRegistrationParams(t *testing.T) {
 
 	require.Contains(t, string(stdout), "127.4.5.6")
 }
+
+// Test that the SIGHUP error text is correct.
+func TestSighupError(t *testing.T) {
+	err := &sighupError{}
+	require.Equal(t, "received SIGHUP signal", err.Error())
+}
+
+// Test that the Ctrl-C error text is correct.
+func TestCtrlCError(t *testing.T) {
+	err := &ctrlcError{}
+	require.Equal(t, "received Ctrl-C signal", err.Error())
+}
