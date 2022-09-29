@@ -1,3 +1,10 @@
+* 242 [bug] marcin
+
+    Fixed a bug in the Stork server causing stale HA services when the HA
+    configuration has been updated in Kea. It could sometimes result in
+    showing outdated HA status on the dashboard page.
+    (Gitlab #818)
+
 * 241 [build] slawek
 
     Integrated Storybook framework with the Stork build system for faster and
