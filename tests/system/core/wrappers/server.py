@@ -121,6 +121,16 @@ class Server(ComposeServiceWrapper):
         second_date = Server._parse_date(second_date)
         return first_date < second_date
 
+    # Process
+
+    def get_stork_server_pid(self):
+        """Returns PID of the stork-server process."""
+        return self._get_pid('stork-server')
+
+    def reload_stork_server(self):
+        """Sends SIGHUP to the stork-server."""
+        self._reload_supervisor_service('stork-server')
+
     # Authentication
 
     def log_in(self, username: str, password: str) -> User:

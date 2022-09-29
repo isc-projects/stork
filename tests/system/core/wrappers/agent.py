@@ -75,6 +75,10 @@ class Agent(ComposeServiceWrapper):
         """
         self._restart_supervisor_service('stork-agent')
 
+    def reload_stork_agent(self):
+        """Sends SIGHUP to the stork-agent."""
+        self._reload_supervisor_service('stork-agent')
+
     def is_registered(self):
         """True if an agent was successfuly registered. Otherwise False."""
         if self._server_service is None:
@@ -88,3 +92,8 @@ class Agent(ComposeServiceWrapper):
         """Block the execution until registration passes."""
         if not self.is_registered():
             raise NoSuccessException()
+
+
+    def get_stork_agent_pid(self):
+        """Returns PID of the stork-agent process."""
+        return self._get_pid('stork-agent')

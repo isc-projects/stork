@@ -136,8 +136,16 @@ EXPOSE 9119
 
 # Server container
 FROM debian-base AS server
+RUN apt-get update \
+        && apt-get install \
+        -y \
+        --no-install-recommends \
+        supervisor=4.2.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
 COPY --from=server-builder /app/dist/server/ /
-ENTRYPOINT [ "/usr/bin/stork-server" ]
+ENTRYPOINT [ "/bin/sh", "-c", \
+      "supervisord -c /etc/supervisor/supervisord.conf" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 

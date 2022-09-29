@@ -29,6 +29,11 @@ class ComposeServiceWrapper:
         self._compose.exec(self._service_name, cmd)
         self._compose.wait_for_operational(self._service_name)
 
+    def _reload_supervisor_service(self, name: str):
+        cmd = ["supervisorctl", "signal", "HUP", "all"]
+        self._compose.exec(self._service_name, cmd)
+        self._compose.wait_for_operational(self._service_name)
+
     def _read_file(self, path: str):
         """Read a content of a given file from the container."""
         cmd = ["cat", path]
@@ -53,3 +58,7 @@ class ComposeServiceWrapper:
         """
         return self._compose.get_service_ip_address(self._service_name,
                                                     subnet_name, family=family)
+
+    def _get_pid(self, process_name: str):
+        """Returns a PID of the specfified process."""
+        return self._compose._get_pid(self._service_name, process_name)

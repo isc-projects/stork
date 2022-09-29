@@ -119,3 +119,16 @@ def test_communication_with_kea_using_basic_auth(server_service: Server, kea_ser
     # Check communication
     leases = server_service.list_leases('192.0.2.1')
     assert leases['total'] == 1
+
+@kea_parametrize("agent-kea")
+def test_reload_agent_with_sighup(server_service: Server, kea_service: Kea):
+    # Remember current agent's PID.
+    pid_before = kea_service.get_stork_agent_pid()
+    # Send SIGHUP.
+    kea_service.reload_stork_agent()
+    # The PID should not change and the process should not be restarted.
+    pid_after = kea_service.get_stork_agent_pid()
+    assert pid_before == pid_after
+    # Capture the logs and make sure that the agent has been reloaded.
+    stdout, _ = kea_service._compose.logs()
+    assert "Reloading Stork Agent after receiving SIGHUP signal" in stdout

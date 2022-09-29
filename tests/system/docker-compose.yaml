@@ -21,6 +21,9 @@ services:
       STORK_DATABASE_PASSWORD: stork
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
+    volumes:
+      - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - $PWD/docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
     healthcheck:
       interval: 250ms
       timeout: 1s

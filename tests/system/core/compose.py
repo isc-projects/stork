@@ -562,3 +562,9 @@ class DockerCompose(object):
             stderr: str = stderr.decode("utf-8").rstrip()
             return result.returncode, stdout, stderr
         return result.returncode, None, None
+
+    def _get_pid(self, service_name, process_name):
+        """Returns PID of the selected process belonging to the service."""
+        cmd = ["supervisorctl", "pid"]
+        _, stdout, _ = self.exec(service_name, cmd)
+        return int(stdout)
