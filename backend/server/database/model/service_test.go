@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -171,7 +172,8 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 	return apps
 }
 
-// This function adds two services, each including 5 Kea applications.
+// This function adds four services and ten apps. It associates each app
+// with two services.
 func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	service1 := &Service{
 		BaseService: BaseService{
@@ -184,14 +186,28 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		},
 	}
 
+	service3 := &Service{
+		BaseService: BaseService{
+			Name: "service3",
+		},
+	}
+
+	service4 := &Service{
+		BaseService: BaseService{
+			Name: "service4",
+		},
+	}
+
 	apps := addTestApps(t, db)
 	for i := range apps {
 		apps[i].Daemons[0].App = apps[i]
-		// 5 apps added to service 1, and 5 added to service 2.
+		// 5 apps added to service 1 and 3. 5 added to service 2 and 4.
 		if i%2 == 0 {
 			service1.Daemons = append(service1.Daemons, apps[i].Daemons[0])
+			service3.Daemons = append(service3.Daemons, apps[i].Daemons[0])
 		} else {
 			service2.Daemons = append(service2.Daemons, apps[i].Daemons[0])
+			service4.Daemons = append(service4.Daemons, apps[i].Daemons[0])
 		}
 	}
 
@@ -232,8 +248,14 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	err = AddService(db, service2)
 	require.NoError(t, err)
 
+	err = AddService(db, service3)
+	require.NoError(t, err)
+
+	err = AddService(db, service4)
+	require.NoError(t, err)
+
 	// Return the services to the unit test.
-	services := []*Service{service1, service2}
+	services := []*Service{service1, service2, service3, service4}
 	return services
 }
 
@@ -243,7 +265,7 @@ func TestUpdateBaseService(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Modify one of the services.
 	service := services[0]
@@ -264,7 +286,7 @@ func TestUpdateBaseHAService(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Modify HA information.
 	service := services[1].HAService
@@ -286,7 +308,7 @@ func TestUpdateService(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Update the existing service by adding HA specific information to it.
 	services[0].HAService = &BaseHAService{
@@ -334,7 +356,7 @@ func TestGetServiceById(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Get the first service. It should lack HA specific info.
 	service, err := GetDetailedService(db, services[0].ID)
@@ -381,12 +403,15 @@ func TestGetServicesByAppID(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Get a service instance to which the forth application of the service1 belongs.
 	appServices, err := GetDetailedServicesByAppID(db, services[0].Daemons[3].AppID)
 	require.NoError(t, err)
-	require.Len(t, appServices, 1)
+	require.Len(t, appServices, 2)
+	sort.Slice(appServices, func(i, j int) bool {
+		return appServices[i].Name < appServices[j].Name
+	})
 	require.Len(t, appServices[0].Daemons[0].App.AccessPoints, 1)
 
 	// Validate that the service returned is the service1.
@@ -397,8 +422,11 @@ func TestGetServicesByAppID(t *testing.T) {
 
 	// Repeat the same test for the fifth application belonging to the service2.
 	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[4].AppID)
+	sort.Slice(appServices, func(i, j int) bool {
+		return appServices[i].Name < appServices[j].Name
+	})
 	require.NoError(t, err)
-	require.Len(t, appServices, 1)
+	require.Len(t, appServices, 2)
 
 	// Validate that the returned service is the service2.
 	service = appServices[0]
@@ -406,18 +434,28 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.Equal(t, services[1].Name, service.Name)
 	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons))
 
+	// Second one is service4.
+	service = appServices[1]
+	require.Len(t, service.Daemons, 5)
+	require.Equal(t, services[3].Name, service.Name)
+	require.True(t, daemonArraysMatch(service.Daemons, services[3].Daemons))
+
 	// Finally, make one of the application shared between two services.
 	err = AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
 	require.NoError(t, err)
 
-	// When querying the services for this app, both service1 and 2 should
+	// When querying the services for this app service1, 2 and 4 should
 	// be returned.
 	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[0].AppID)
 	require.NoError(t, err)
-	require.Len(t, appServices, 2)
+	require.Len(t, appServices, 3)
+	sort.Slice(appServices, func(i, j int) bool {
+		return appServices[i].Name < appServices[j].Name
+	})
 
 	require.Equal(t, services[0].Name, appServices[0].Name)
 	require.Equal(t, services[1].Name, appServices[1].Name)
+	require.Equal(t, services[3].Name, appServices[2].Name)
 }
 
 // Test that it is possible to get apps by type and get the services
@@ -427,7 +465,7 @@ func TestGetAppWithServices(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	apps, err := GetAppsByType(db, AppTypeKea)
 	require.NoError(t, err)
@@ -436,7 +474,7 @@ func TestGetAppWithServices(t *testing.T) {
 	// Make sure that all returned apps contain references to the services.
 	for _, app := range apps {
 		require.Len(t, app.Daemons, 1)
-		require.Len(t, app.Daemons[0].Services, 1, "Failed for daemon id %d", app.Daemons[0].ID)
+		require.Len(t, app.Daemons[0].Services, 2, "Failed for daemon id %d", app.Daemons[0].ID)
 	}
 }
 
@@ -446,15 +484,16 @@ func TestGetAllServices(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
-	// There should be two services returned.
+	// There should be four services returned.
 	allServices, err := GetDetailedAllServices(db)
 	require.NoError(t, err)
-	require.Len(t, allServices, 2)
+	require.Len(t, allServices, 4)
+	sort.Slice(allServices, func(i, j int) bool {
+		return allServices[i].Name < allServices[j].Name
+	})
 
-	// Services are sorted by ascending ID, so the first returned
-	// service should be the one inserted.
 	service := allServices[0]
 	require.Len(t, service.Daemons, 5)
 	require.Nil(t, service.HAService)
@@ -468,6 +507,14 @@ func TestGetAllServices(t *testing.T) {
 	// second service.
 	require.NotNil(t, service.HAService)
 	require.Equal(t, "dhcp4", service.HAService.HAType)
+
+	service = allServices[2]
+	require.Len(t, service.Daemons, 5)
+	require.Nil(t, service.HAService)
+
+	service = allServices[3]
+	require.Len(t, service.Daemons, 5)
+	require.Nil(t, service.HAService)
 }
 
 // Test that the service can be deleted.
@@ -476,7 +523,7 @@ func TestDeleteService(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Delete the second service.
 	err := DeleteService(db, services[1].ID)
@@ -500,7 +547,7 @@ func TestAddAppToService(t *testing.T) {
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Try to add a daemon which belongs to the second service to the
 	// first service. It should succeed.
@@ -513,21 +560,44 @@ func TestAddAppToService(t *testing.T) {
 	require.Len(t, service.Daemons, 6)
 }
 
-// Test that a single app can be dissociated from the service.
-func TestDeleteAppFromService(t *testing.T) {
+// Test that a single daemon can be dissociated from the service.
+func TestDeleteDaemonFromService(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
+	require.GreaterOrEqual(t, len(services), 4)
 
 	// Delete association of one of the daemons with the first service.
 	ok, err := DeleteDaemonFromService(db, services[0].ID, services[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	// The service should now include 4 apps.
-	service, err := GetDetailedService(db, 1)
+	// The service should now include 4 daemons. One has been removed.
+	service, err := GetDetailedService(db, services[0].ID)
+	require.NoError(t, err)
+	require.Len(t, service.Daemons, 4)
+}
+
+// Test that a daemon can be dissociated from all services.
+func TestDeleteDaemonFromServices(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 4)
+
+	// Delete association of one of the daemons with the first service.
+	rows, err := DeleteDaemonFromServices(db, services[0].Daemons[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, rows)
+
+	// First and third service should now include only 4 daemons.
+	service, err := GetDetailedService(db, services[0].ID)
+	require.NoError(t, err)
+	require.Len(t, service.Daemons, 4)
+
+	service, err = GetDetailedService(db, services[2].ID)
 	require.NoError(t, err)
 	require.Len(t, service.Daemons, 4)
 }

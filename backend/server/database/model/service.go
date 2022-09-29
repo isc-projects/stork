@@ -179,6 +179,19 @@ func DeleteDaemonFromService(dbi dbops.DBI, serviceID, daemonID int64) (bool, er
 	return rows.RowsAffected() > 0, nil
 }
 
+// Dissociates a daemon from the services. The first returned value indicates
+// how many rows have been removed from the daemon_to_service table.
+func DeleteDaemonFromServices(dbi dbops.DBI, daemonID int64) (int64, error) {
+	result, err := dbi.Model((*DaemonToService)(nil)).
+		Where("daemon_id = ?", daemonID).
+		Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem deleting daemon %d from services", daemonID)
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
+}
+
 // Adds new service to the database and associates the daemons with it
 // in a transaction.
 func addService(tx *pg.Tx, service *Service) error {

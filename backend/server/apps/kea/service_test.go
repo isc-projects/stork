@@ -8,6 +8,7 @@ import (
 	require "github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // Returns DHCP server configuration created from a template. The template
@@ -425,4 +426,63 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 	// no meaningful information to make such determination. In that case
 	// it is up to the administrator to explicitly add the daemon to the service.
 	require.False(t, daemonBelongsToHAService(app.Daemons[0], service))
+}
+
+// Test that a daemon can be dissociated with all services it belongs to.
+func TestReduceHAServices(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine.
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
+	keaApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Machine:      m,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
+						"server1", "server2", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+
+	// This call, apart from adding the app to the machine, will also associate the
+	// app with the HA services.
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	// Modify the HA configuration. It should replace the existing service with
+	// a new one.
+	keaApp.Daemons[0].KeaDaemon.Config = getHATestConfig("Dhcp4", "server1", "hot-standby",
+		"server1", "server2", "server3")
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	// Make sure that new service has been created.
+	services, err := dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 1)
+	require.NotNil(t, services[0].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
 }

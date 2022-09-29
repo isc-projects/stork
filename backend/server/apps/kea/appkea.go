@@ -497,6 +497,13 @@ func deleteDaemonAssociations(tx *pg.Tx, daemon *dbmodel.Daemon) error {
 		return err
 	}
 
+	// Remove associations between the daemon and the services. We will
+	// recreate the associations using new configuration.
+	_, err = dbmodel.DeleteDaemonFromServices(tx, daemon.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
