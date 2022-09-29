@@ -1,3 +1,8 @@
+* 245 [func] marcin
+
+    Stork server and agent reload upon receiving the SIGHUP signal.
+    (Gitlab #703)
+
 * 244 [bug] marcin
 
     Fixed a bug on the application page causing wrong daemon tab selection.
