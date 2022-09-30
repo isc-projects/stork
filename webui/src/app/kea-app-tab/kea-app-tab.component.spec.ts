@@ -1,6 +1,6 @@
-import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { fakeAsync, flush, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { KeaAppTabComponent } from './kea-app-tab.component'
-import { RouterModule, Router, ActivatedRoute } from '@angular/router'
+import { Router, ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
@@ -59,6 +59,20 @@ class Details {
                 },
             ],
         },
+        {
+            id: 2,
+            pid: 2345,
+            name: 'dhcp6',
+            active: false,
+            monitored: true,
+            version: '1.9.5',
+            extendedVersion: '1.9.5-extended',
+            uptime: 100,
+            reloadedAt: 10000,
+            hooks: [],
+            files: [],
+            backends: [],
+        },
     ]
 }
 
@@ -82,12 +96,12 @@ describe('KeaAppTabComponent', () => {
     let fixture: ComponentFixture<KeaAppTabComponent>
     let servicesApi: ServicesService
     let serverData: ServerDataService
+    let route: ActivatedRoute
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
             imports: [
-                RouterModule,
                 RouterTestingModule,
                 TableModule,
                 TabViewModule,
@@ -122,6 +136,7 @@ describe('KeaAppTabComponent', () => {
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
         const appTab = new AppTab()
         component.refreshedAppTab = new BehaviorSubject(appTab)
         component.appTab = appTab
@@ -238,5 +253,13 @@ describe('KeaAppTabComponent', () => {
         fixture.detectChanges()
         const dataStorage = fixture.debugElement.query(By.css('#data-storage-div'))
         expect(dataStorage).toBeNull()
+    })
+
+    it('should select tab according to the daemon parameter', () => {
+        spyOn(route.snapshot.queryParamMap, 'get').and.returnValue('dhcp6')
+        component.ngOnInit()
+        expect(component.activeTabIndex).toBe(1)
+        fixture.detectChanges()
+        expect(fixture.debugElement.nativeElement.innerText).toContain('1.9.5')
     })
 })

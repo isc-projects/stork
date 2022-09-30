@@ -47,7 +47,7 @@
         <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
             <p-tabPanel
                 *ngFor="let daemon of daemons; let i = index"
-                [selected]="i === 0"
+                [selected]="i === activeTabIndex ? true : false"
                 styleClass="daemon-tabs"
                 class="daemon-tabs"
                 ngClass="daemon-tabs"
