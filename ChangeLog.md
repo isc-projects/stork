@@ -1,3 +1,8 @@
+* 243 [doc] marcin
+
+    Described the configuration review usage in the ARM.
+    (Gitlab #847)
+
 * 242 [bug] marcin
 
     Fixed a bug in the Stork server causing stale HA services when the HA
