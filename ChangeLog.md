@@ -1,3 +1,8 @@
+* 244 [bug] marcin
+
+    Fixed a bug on the application page causing wrong daemon tab selection.
+    (Gitlab #772)
+
 * 243 [doc] marcin
 
     Described the configuration review usage in the ARM.
