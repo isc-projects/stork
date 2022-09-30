@@ -38,7 +38,7 @@ func TestFactoryProducesTheUniqueDumps(t *testing.T) {
 	dumps := factory.createAll()
 
 	// Assert
-	require.Len(t, dumps, 4)
+	require.Len(t, dumps, 5)
 
 	for _, dump := range dumps {
 		dumpType := reflect.TypeOf(dump)
