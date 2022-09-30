@@ -1,3 +1,9 @@
+* 246 [func] marcin
+
+    DHCP high availability state is included in the troubleshooting dump
+    tarball.
+    (Gitlab #819)
+
 * 245 [func] marcin
 
     Stork server and agent reload upon receiving the SIGHUP signal.
