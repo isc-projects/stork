@@ -144,9 +144,10 @@ navigate to the selected machine's page and click on the ``Dump Troubleshooting 
 button at the bottom of the page. In both cases, the Stork server will
 automatically gather useful diagnostics information and offer it for download as a
 ``tar.gz`` file. The downloaded package contains configurations, log tails,
-``stork-server`` settings, warning and error-level events, etc.
+``stork-server`` settings, warning and error-level events, high availability
+services' states etc.
 
-..note:
+.. note::
 
   Stork sanitizes passwords and other sensitive information when it creates
   the package.
