@@ -827,10 +827,12 @@ Stork build system has integrated
 `Storybook <https://storybook.js.org/docs/angular/get-started/introduction>`_ for
 development purposes.
 
-> Storybook is a tool for UI development. It makes development faster and easier
-> by isolating components. This allows you to work on one component at a time.
-> You can develop entire UIs without needing to start up a complex dev stack,
-> force certain data into your database, or navigate around your application.
+    “Storybook is a tool for UI development. It makes development faster and easier
+    by isolating components. This allows you to work on one component at a time.
+    You can develop entire UIs without needing to start up a complex dev stack,
+    force certain data into your database, or navigate around your application.”
+
+    -- Storybook documentation
 
 To run Storybook, type:
 
