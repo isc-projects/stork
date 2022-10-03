@@ -192,7 +192,25 @@ func getTestConfigWithIPv6GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
                     "duid": "ff:ff:ff:ff",
                     "ip-addresses": [ "2001:db8:1::11" ],
                     "prefixes": [ "3001::/64" ],
-                    "hostname": "foo.example.org"
+                    "hostname": "foo.example.org",
+					"option-data": [
+						{
+							"code": 1024,
+							"space": "dhcp6"
+						},
+						{
+							"code": 1025,
+							"space": "option-1024"
+						},
+						{
+							"code": 1026,
+							"space": "option-1024.1025"
+						},
+						{
+							"code": 1027,
+							"space": "option-1024.1025.1026"
+						}
+					]
                 }
             ],
             "hooks-libraries": [
