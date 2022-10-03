@@ -841,14 +841,10 @@ To run Storybook, type:
 
 and wait for opening a web browser.
 
-Writing a story
+Writing a Story
 ---------------
 
-The Storybook stories for a given component should be located in the file with
-the `.stories.ts` extension.
-
-The file should start with the Story metadata:
-
+To create a new story for a component, create a new file with the `.stories.ts` extension in the component's directory. It must begin with the story metadata:
 .. code-block:: typescript
 
     export default {
@@ -867,16 +863,16 @@ The file should start with the Story metadata:
         },
     } as Meta
 
-There is a provided title and the main component of the story.
-The most important part is the declaration of the ``moduleMetadata`` decorator.
+It specifies a title and the main component of the story.
+The declaration of the ``moduleMetadata`` decorator is the key part of the file.
 It contains all related modules, components, and services. It should have similar
 content to the dictionary passed to the ``TestBed.configureTestingModule`` in a
 ``.spec.ts`` file.  
 The ``imports`` list should contain all used PrimeNG modules (including these
-from the sub-components) and Angular modules. Unlike unit tests, you can
-use the standard Angular modules instead of testing ones. Especially use:
+from the sub-components) and Angular modules. Unlike in unit tests, you can
+use the standard Angular modules instead of the testing modules. Especially:
     
-    - ``HttpClientModule`` instead of ``HttpClientTestingModule`` to working HTTP mocks.
+    - ``HttpClientModule`` instead of ``HttpClientTestingModule`` to work with the HTTP mocks.
     - ``BrowserAnimationsModule`` instead of ``NoopAnimationsModule`` to enable animations.
 
 The ``declarations`` list should contain all Stork-owned components used in the
@@ -884,19 +880,18 @@ story. The ``providers`` list should contain all needed services.
 
 .. note::
 
-    There is no easy way to mock the services. Instead of it, you should use
-    HTTP mocks.
+    There is no easy way to mock the services. Use the HTTP mocks instead.
 
 If your component accepts the arguments, specify them using the ``argTypes``.
-It allows you to change the values from the Storybook UI.
+It allows you to change their values from the Storybook UI.
 
 .. warning::
 
-    Storybook has a possibility to discover the component properties but this
-    feature is disabled due to [bug in Storybook for Angular](https://github.com/storybookjs/storybook/issues/17004).
+    Storybook can discover the component's properties automatically but this
+    feature is currently disabled due to the `bug in Storybook for Angular <https://github.com/storybookjs/storybook/issues/17004>`_.
 
-Next, you need to create an instance of the template object. You need to pass
-the component type as a generic type:
+Next, create the template object instance by passing the component type as
+generic type:
 
 .. code-block:: typescript
 
@@ -904,8 +899,7 @@ the component type as a generic type:
         props: args,
     })
 
-The story is created by binding to the template object and providing the
-component arguments:
+Finally, bind the template object and provide its arguments:
 
 .. code-block:: typescript
 
@@ -918,7 +912,7 @@ component arguments:
         }
     }
 
-HTTP mocks
+HTTP Mocks
 ----------
 
 The easiest way to mock the REST API is using the [``storybook-addon-mock``](https://storybook.js.org/addons/storybook-addon-mock)
