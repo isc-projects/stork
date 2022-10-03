@@ -16,7 +16,7 @@ type dhcpStdOptionDefinitionLookup struct {
 // Interface to a lookup mechanism for finding DHCP standard options.
 type DHCPStdOptionDefinitionLookup interface {
 	// Finds DHCP option definition by code and space.
-	FindByCodeSpace(uint16, string, storkutil.IPType) DHCPOptionDefinition
+	FindByCodeSpace(code uint16, space string, universe storkutil.IPType) DHCPOptionDefinition
 }
 
 // Creates standard DHCP option definition lookup instance. It prepares
