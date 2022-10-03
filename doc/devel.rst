@@ -817,15 +817,14 @@ are present, e.g., deb and rpm tools on a Debian-based system, a specific
 packaging format can be enforced using the PKG_TYPE variable. The available
 package types will be prompted on a console.
 
-Internally, these packages are built by FPM
-(https://fpm.readthedocs.io/). It is installed automatically, but it requires
+Internally, these packages are built by `FPM <https://fpm.readthedocs.io/>`_. It is installed automatically, but it requires
 the ``ruby-dev``, ``gnutar``, and ``make`` to build.
 
 Storybook
 =========
 
 Stork build system has integrated
-[Storybook](https://storybook.js.org/docs/angular/get-started/introduction) for
+`Storybook <https://storybook.js.org/docs/angular/get-started/introduction>`_ for
 development purposes.
 
 > Storybook is a tool for UI development. It makes development faster and easier
@@ -844,7 +843,9 @@ and wait for opening a web browser.
 Writing a Story
 ---------------
 
-To create a new story for a component, create a new file with the `.stories.ts` extension in the component's directory. It must begin with the story metadata:
+To create a new story for a component, create a new file with the ``.stories.ts``
+extension in the component's directory. It must begin with the story metadata:
+
 .. code-block:: typescript
 
     export default {
@@ -915,7 +916,7 @@ Finally, bind the template object and provide its arguments:
 HTTP Mocks
 ----------
 
-The easiest way to mock the REST API is using the [``storybook-addon-mock``](https://storybook.js.org/addons/storybook-addon-mock)
+The easiest way to mock the REST API is using the `storybook-addon-mock <https://storybook.js.org/addons/storybook-addon-mock>`_
 First, you need to import it:
 
 .. code-block:: typescript
