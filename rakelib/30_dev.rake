@@ -472,16 +472,6 @@ task :storybook => [NPM] + WEBUI_CODEBASE do
 end
 
 
-namespace :storybook do
-    desc 'Run any command on storybook'
-    task :exec => [STORYBOOK] do |t, args|
-        Dir.chdir("webui") do
-            sh STORYBOOK, "--disable-telemetry", *args
-        end
-    end
-end
-
-
 namespace :gen do
     namespace :ui do
         desc 'Generate Angular component
@@ -520,7 +510,7 @@ namespace :update do
     desc 'Update Storybook to the latest version'
     task :storybook => [STORYBOOK] do
         Dir.chdir("webui") do
-            sh STORYBOOK, "upgrade"
+            sh STORYBOOK, "--disable-telemetry", "upgrade"
         end
     end
 end
