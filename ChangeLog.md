@@ -1,3 +1,9 @@
+* 241 [build] slawek
+
+    Integrated Storybook framework with the Stork build system for faster and
+    easier UI development.
+    (Gitlab #845)
+
 * 240 [func] marcin
 
     Allow three levels of DHCP options encapsulation when a new host
@@ -42,7 +48,7 @@ Stork 1.6.0 released on 2022-09-07.
 
     Added scripts for building native APK packages with Stork Server and
     Stork Agent. They are prepared for Alpine 3.15.
-    (#736)
+    (Gitlab #736)
 
 * 233 [func] slawek
 
@@ -60,7 +66,7 @@ Stork 1.6.0 released on 2022-09-07.
 
     Added a system test validating Stork upgrade to the most recent version
     using Cloudsmith repository.
-    (Gitalb #746)
+    (Gitlab #746)
 
 * 230 [bug] slawek
 
