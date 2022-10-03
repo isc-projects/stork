@@ -958,11 +958,15 @@ Toast messages
 --------------
 
 The Stork components often use ``MessageService`` to present temporary messages
-to the user. The component that displays the toast message is a part of the root
-Stork component; it doesn't exist in the isolated Storybook environment.
+to the user. The messages are passed into a dedicated, top-level component
+responsible for displaying them as temporary rectangles (so-called toasts) in
+the upper right corner.  
+Due to this top-level component isn't related to any other component, it doesn't
+exist in the isolated Storybook environment. It causes the toasts aren't presented.
 
-To workaround this problem, the ``toastDecorator`` can be used. It will be
-prepended with the component to handle toasts.
+To workaround this problem, the ``toastDecorator`` can be used. It injects
+additional HTML  while rendering the Story. The extra code contains the top-level
+component to handle toasts and ensures they are correctly displayed. 
 
 First, you need to import the decorator:
 
