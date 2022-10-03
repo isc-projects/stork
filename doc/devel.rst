@@ -974,7 +974,7 @@ First, you need to import the decorator:
     
     import { toastDecorator } from '../utils.stories'
 
-and append it to the ``decorator`` property of the metadata object:
+and append it to the ``decorators`` property of the metadata object:
 
 .. code-block:: typescript
 
