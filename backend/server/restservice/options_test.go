@@ -1,7 +1,6 @@
 package restservice
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -279,7 +278,6 @@ func TestFlattenDHCPv6Options(t *testing.T) {
 	sort.Slice(options, func(i, j int) bool {
 		return options[i].Code < options[j].Code
 	})
-	fmt.Printf("%+v\n", options)
 	require.False(t, options[0].AlwaysSend)
 	require.EqualValues(t, 89, options[0].Code)
 	require.Len(t, options[0].Fields, 1)
