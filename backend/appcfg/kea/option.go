@@ -169,7 +169,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 					break
 				}
 				// We know option definition so we expect that our option
-				// adheres tho the specific format. Try to parse the option
+				// adheres to the specific format. Try to parse the option
 				// field with checking whether or not its value has that
 				// format.
 				var err error
