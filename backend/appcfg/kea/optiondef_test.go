@@ -123,3 +123,16 @@ func TestDHCPOptionDefinitionFieldTypeRecordArray(t *testing.T) {
 		require.Equal(t, Uint32Field, fieldType)
 	}
 }
+
+// Check that false is returned for the record option that lacks
+// actual record.
+func TestDHCPOptionDefinitionFieldTypeRecordNoRecordTypes(t *testing.T) {
+	def := &dhcpOptionDefinition{
+		OptionType:  RecordOption,
+		RecordTypes: []DHCPOptionType{},
+	}
+
+	fieldType, ok := GetDHCPOptionDefinitionFieldType(def, 0)
+	require.False(t, ok)
+	require.Empty(t, fieldType)
+}

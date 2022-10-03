@@ -87,7 +87,7 @@ func (def dhcpOptionDefinition) GetType() DHCPOptionType {
 
 // Given the option definition, find field type at specified position.
 // First option field has position 0. If the position is out of bounds,
-// the second returned paramerter is false and the option field type
+// the second returned parameter is false and the option field type
 // is empty. For an empty option this function always returns false and
 // empty option field type.
 func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (DHCPOptionFieldType, bool) {
@@ -96,8 +96,11 @@ func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (D
 		return "", false
 	case RecordOption:
 		recordTypes := def.GetRecordTypes()
-		arrayIndex := position / len(recordTypes)
-		if !def.GetArray() && arrayIndex > 0 {
+		// Empty record types is theoretically impossible because Kea doesn't
+		// allow it. However, let's be safe and check because it may cause
+		// division by 0. Also, if it is not an array and the position is
+		// out of the record boundaries, return false.
+		if len(recordTypes) == 0 || (!def.GetArray() && (position > len(recordTypes)-1)) {
 			return "", false
 		}
 		recordPosition := position % len(recordTypes)
