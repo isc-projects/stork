@@ -686,8 +686,9 @@ the ``-s`` and ``-k`` flags to ``pytest``.
 
 Even if the test execution is stopped on a breakpoint, the Docker containers
 are still running in the background. You can check their logs using
-``rake systemtest:logs SERVICE=foobar`` or run the console inside the container
-by ``rake systemtest:shell SERVICE=foobar``. To check the service status
+``rake systemtest:logs SERVICE=<service name>`` or run the console inside the container
+by ``rake systemtest:shell SERVICE=<service name>`` where the ``<service name>``
+is a service name from the ``docker-compose.yaml`` file (e.g., ``agent-kea``). To check the service status
 in the container console, type ``supervisorctl status``. These tools should
 suffice to troubleshoot most problems with misconfigured Kea or Bind9 daemons.
 
