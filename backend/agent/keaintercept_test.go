@@ -3,9 +3,9 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -253,7 +253,7 @@ func TestKeaInterceptorSyncHandleReturnError(t *testing.T) {
 	// Arrange
 	interceptor := newKeaInterceptor()
 	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
-		return fmt.Errorf("Expected error")
+		return errors.New("Expected error")
 	}, "foobar")
 	callCount := 0
 	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
