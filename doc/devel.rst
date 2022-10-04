@@ -883,7 +883,9 @@ story. The ``providers`` list should contain all needed services.
 
 .. note::
 
-    There is no easy way to mock the services. Use the HTTP mocks instead.
+    There are different ways to mock the services communicating over the REST
+    API, but the easiest and most convenient is simply to mock the actual HTTP
+    calls.
 
 If your component accepts the arguments, specify them using the ``argTypes``.
 It allows you to change their values from the Storybook UI.
