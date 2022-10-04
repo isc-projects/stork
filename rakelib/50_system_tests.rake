@@ -117,7 +117,7 @@ namespace :systemtest do
         
             major_separator_index = kea_version.index('.')
             if major_separator_index.nil?
-                fail "You need to specify at least MAJOR.MINOR components of KEA_VER variable - missing dot separator"
+                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - missing dot separator"
             end
             kea_version_major = kea_version[0..major_separator_index-1]
         
@@ -129,7 +129,7 @@ namespace :systemtest do
                 kea_version_minor = kea_version[major_separator_index+1..-1]
             end
             if kea_version_minor == ""
-                fail "You need to specify at least MAJOR.MINOR components of KEA_VER variable - empty minor component"
+                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - empty minor component"
             end
         
             # Enhance the Kea version with wildcard if the full package is not provided.
