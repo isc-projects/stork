@@ -669,10 +669,6 @@ reliably.
 Debugging System Tests
 -------------------------
 
-.. note:: 
-    
-    This section is under construction.
-
 The system test debugging may be performed at different levels. You can debug
 the test execution itself or connect the debugger to an executable running in
 the Docker container.
