@@ -104,6 +104,6 @@ func TestPullerSavesLastExecutionTime(t *testing.T) {
 	// Assert
 	puller.Shutdown()
 	pullTime := pullTimeWrapper.Load().(*time.Time)
-	require.Less(t, startTime, *pullTime)
-	require.Less(t, *pullTime, executionTime)
+	require.LessOrEqual(t, startTime, *pullTime)
+	require.LessOrEqual(t, *pullTime, executionTime)
 }
