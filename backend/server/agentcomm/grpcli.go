@@ -608,7 +608,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 func (agents *connectedAgentsData) rewriteCommandResponse(command keactrl.SerializableCommand, response reflect.Value) {
 	if command.GetCommand() == "reservation-get-page" {
 		// Kea 2.2 and below return a general error response if RADIUS is used as
-		// the host backend. It causes Stork generates a false disconnect event
+		// the host backend. It causes Stork to generate a false disconnect event
 		// and block pulling host reservations from other host backends.
 		// See: https://gitlab.isc.org/isc-projects/stork/-/issues/792 and
 		// https://gitlab.isc.org/isc-projects/kea/-/issues/2566 .

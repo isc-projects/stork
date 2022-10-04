@@ -414,7 +414,7 @@ Similarly, to run test cases with a specific BIND9 version, provide it in the BI
     
     $ rake systemtest BIND9_VERSION=9.16
 
-Expected version format is: MAJOR.MINOR. No more components are accepted.
+Expected version format is: ``MAJOR.MINOR``.
 
 System Tests Framework Structure
 --------------------------------
@@ -664,14 +664,14 @@ to the ``eth0`` (the first) interface, and the ``subnet_00`` network to the
 ``eth1`` interface. Our experiments show that this assumption works
 reliably.
 
-Debugging in system tests
+Debugging System Tests
 -------------------------
 
 .. note:: 
     
     This section is under construction.
 
-The system test debugging may be performed on different levels. You can debug
+The system test debugging may be performed at different levels. You can debug
 the test execution itself or connect the debugger to an executable running in
 the Docker container.
 
@@ -681,7 +681,7 @@ configuration, as the debugger is running on the same machine as debugged binary
 It allows you to break the test execution at any point and inject custom commands
 or preview the runtime variables.
 
-Another possibility to use the Python debugger is running the ``pytest``
+Another possibility to use the Python debugger is by running the ``pytest``
 executable directly by ``pdb``. You need manually call the ``rake systemtest:build``
 to generate all needed artifacts before running tests. It's recommended to pass
 the ``-s`` and ``-k`` flags to ``pytest``.
@@ -689,18 +689,18 @@ the ``-s`` and ``-k`` flags to ``pytest``.
 Even if the test execution is stopped on a breakpoint, the Docker containers
 are still running in the background. You can check their logs using
 ``rake systemtest:logs SERVICE=foobar`` or run the console inside the container
-by ``rake systemtest:shell SERVICE=foobar``. (Hint: to check the service status
-in the container console, type ``supervisorctl status``.) These tools should
-troubleshoot most problems with misconfigured Kea or Bind9 daemons.
+by ``rake systemtest:shell SERVICE=foobar``. To check the service status
+in the container console, type ``supervisorctl status``. These tools should
+suffice to troubleshoot most problems with misconfigured Kea or Bind9 daemons.
 
 It is possible to attach the local debugger to the executable running in the Docker
 container for more complex cases. This possibility is currently implemented only
-for Stork Server. To use it, you must be sure that the codebase on a host is
+for the Stork Server. To use it, you must be sure that the codebase on a host is
 the same as on the container. In system tests, the server is started by the ``dlv``
 Go debugger and listens on the 45678 host port. You can use the
-``rake utils:connect_dbg`` command to attach the ``gdlv`` debugger. The recommended
-way is first to attach the Python debugger and stop the test execution, and next,
-attach the Golang debugger to the server.
+``rake utils:connect_dbg`` command to attach the ``gdlv`` debugger.
+It is recommended to attach the Python debugger and stop the test
+execution first. Then, attach the Golang debugger to the server.
 
 System Test Commands
 --------------------

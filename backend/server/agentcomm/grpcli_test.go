@@ -300,7 +300,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	require.Zero(t, appCommStats.CurrentErrorsDaemons["dhcp6"])
 }
 
-// Test that the expected but invalid responses are fixing.
+// Test that the expected but invalid responses are fixed.
 func TestForwardToKeaOverHTTPRewriteResponse(t *testing.T) {
 	// Arrange
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)

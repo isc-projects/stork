@@ -105,7 +105,7 @@ task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files, "syst
 end
 
 namespace :systemtest do
-    # Setups the environment variables with Kea and Bind9 versions. Internal task.
+    # Sets up the environment variables with Kea and Bind9 versions. Internal task.
     task :setup_version_envvars do
         # Parse Kea version
         if !ENV["KEA_VERSION"].nil?
