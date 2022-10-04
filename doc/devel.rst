@@ -377,7 +377,7 @@ CS_REPO_ACCESS_TOKEN variable.
 
 .. code-block:: console
 
-    $ rake systemtest CS_REPO_ACCESS_TOKEN=AbCdEfGh01234567
+    $ rake systemtest CS_REPO_ACCESS_TOKEN=<access token>
 
 Test results for individual test cases are shown at the end of the tests execution.
 
@@ -403,9 +403,11 @@ To run the test cases with a specific Kea version, provide it in the KEA_VERSION
 
 .. code-block:: console
 
-    $ rake systemtest KEA_VERSION=2.2
+    $ rake systemtest KEA_VERSION=2.0
+    $ rake systemtest KEA_VERSION=2.0.2
+    $ rake systemtest KEA_VERSION=2.0.2-isc20220227221539
 
-Accepted version format is: MAJOR.MINOR[.PATCH][-REVISION]. The version must
+Accepted version format is: ``MAJOR.MINOR[.PATCH][-REVISION]``. The version must
 contain at least major and minor components.
 
 Similarly, to run test cases with a specific BIND9 version, provide it in the BIND9_VERSION variable:
