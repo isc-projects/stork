@@ -580,11 +580,6 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 				daemonName = "ca"
 			}
 
-			// Overwrites the Kea response. It allows change, fix, or refill
-			// the data if some Kea versions return invalid or out-of-specification
-			// responses.
-			agents.rewriteCommandResponse(commands[i], cmdRespItem)
-
 			// If error was returned, let's bump up the number of errors
 			// for this daemon. Otherwise, let's reset the counter.
 			if resultField.Int() == keactrl.ResponseError {
@@ -600,31 +595,6 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 
 	// Everything was fine, so return no error.
 	return result, nil
-}
-
-// Changes the Kea responses in place. It applies fixes to Kea responses that
-// are invalid or out-of-specification. It is called after validating the
-// response structure but before counting errors.
-func (agents *connectedAgentsData) rewriteCommandResponse(command keactrl.SerializableCommand, response reflect.Value) {
-	if command.GetCommand() == "reservation-get-page" {
-		// Kea 2.2 and below return a general error response if RADIUS is used as
-		// the host backend. It causes Stork to generate a false disconnect event
-		// and block pulling host reservations from other host backends.
-		// See: https://gitlab.isc.org/isc-projects/stork/-/issues/792 and
-		// https://gitlab.isc.org/isc-projects/kea/-/issues/2566 .
-		resultField := response.FieldByName("Result")
-		if resultField.Int() == keactrl.ResponseError {
-			textField := response.FieldByName("Text")
-			if textField.IsValid() {
-				text := textField.String()
-				if text == "not supported by the RADIUS backend" {
-					// Change the response status to unsupported.
-					// The response will just drop without any side effects.
-					resultField.SetInt(keactrl.ResponseCommandUnsupported)
-				}
-			}
-		}
-	}
 }
 
 func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, caAddress string, caPort int64, app ControlledApp, caErrorsCount int64, addrPort, caURL string, fdReq *agentapi.ForwardToKeaOverHTTPReq, caErrorStr string, daemonErrorsCount map[string]int64) {

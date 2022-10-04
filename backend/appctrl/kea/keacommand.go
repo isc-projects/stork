@@ -139,6 +139,13 @@ func (c Command) GetDaemonsList() []string {
 	return c.Daemons
 }
 
+// Converts parsed response from the Kea Control Agent to JSON. The "parsed"
+// argument should be a slice of Response, HashedResponse or similar structures.
+func MarshalResponseList(parsed interface{}) ([]byte, error) {
+	// All computed fields are ignored internally by the json package.
+	return json.Marshal(parsed)
+}
+
 // Parses response received from the Kea Control Agent. The "parsed" argument
 // should be a slice of Response, HashedResponse or similar structures.
 func UnmarshalResponseList(request SerializableCommand, response []byte, parsed interface{}) error {
@@ -155,7 +162,7 @@ func UnmarshalResponseList(request SerializableCommand, response []byte, parsed 
 	daemonNames := request.GetDaemonsList()
 	if (len(daemonNames) > 0) && (parsedList.Len() > 0) {
 		for i, daemon := range daemonNames {
-			if i+1 > parsedList.Len() {
+			if i >= parsedList.Len() {
 				break
 			}
 			parsedElem := parsedList.Index(i)
@@ -198,7 +205,7 @@ func UnmarshalResponseList(request SerializableCommand, response []byte, parsed 
 			}
 		}
 		// This should not happen but let's be safe.
-		if i > len(hashers) {
+		if i >= len(hashers) {
 			break
 		}
 		// Let's copy the hash value to the response if the hash exists. It may

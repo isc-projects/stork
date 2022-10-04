@@ -300,63 +300,6 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	require.Zero(t, appCommStats.CurrentErrorsDaemons["dhcp6"])
 }
 
-// Test that the expected but invalid responses are fixed.
-func TestForwardToKeaOverHTTPRewriteResponse(t *testing.T) {
-	// Arrange
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
-
-	rsp := agentapi.ForwardToKeaOverHTTPRsp{
-		Status: &agentapi.Status{
-			Code: 0,
-		},
-		KeaResponses: []*agentapi.KeaResponse{{
-			Status: &agentapi.Status{
-				Code: 0,
-			},
-			Response: doGzip(`[
-				{
-					"result": 1,
-					"text": "not supported by the RADIUS backend"
-				}
-			]`),
-		}},
-	}
-
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
-		Return(&rsp, nil)
-
-	dbApp := &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			Address:   "127.0.0.1",
-			AgentPort: 8080,
-		},
-		AccessPoints: []*dbmodel.AccessPoint{{
-			Type:    dbmodel.AccessPointControl,
-			Address: "localhost",
-			Port:    8000,
-			Key:     "",
-		}},
-	}
-
-	ctx := context.Background()
-	command := keactrl.NewCommand("reservation-get-page", nil, nil)
-	actualResponses := keactrl.ResponseList{}
-
-	// Act
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &actualResponses)
-
-	// Assert
-	require.NoError(t, err)
-	require.NoError(t, cmdsResult.Error)
-	require.Len(t, cmdsResult.CmdsErrors, 1)
-	require.Nil(t, cmdsResult.CmdsErrors[0])
-
-	require.Len(t, actualResponses, 1)
-	// Check if the command result was changed.
-	require.EqualValues(t, keactrl.ResponseCommandUnsupported, actualResponses[0].Result)
-}
-
 // Test that the error is returned when the response to the forwarded Kea command
 // is malformed.
 func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {

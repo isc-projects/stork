@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,13 +16,14 @@ func TestNewKeaInterceptor(t *testing.T) {
 	interceptor := newKeaInterceptor()
 	require.NotNil(t, interceptor)
 	require.NotNil(t, interceptor.asyncTargets)
+	require.NotNil(t, interceptor.syncTargets)
 	require.Empty(t, interceptor.asyncTargets)
 }
 
-// Test that it is possible to register callbacks to intercept selected
+// Test that it is possible to register async callbacks to intercept selected
 // commands and that these callbacks are invoked when the commands are
 // received.
-func TestKeaInterceptorHandle(t *testing.T) {
+func TestKeaInterceptorAsyncHandle(t *testing.T) {
 	interceptor := newKeaInterceptor()
 	require.NotNil(t, interceptor)
 
@@ -29,14 +33,14 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	var capturedResponses []*keactrl.Response
 
 	// Register callback to be invoked for config-get commands.
-	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
+	interceptor.registerAsync(func(agent *StorkAgent, resp *keactrl.Response) error {
 		commandInvoked = "config-get"
 		capturedResponses = append(capturedResponses, resp)
 		return nil
 	}, "config-get")
 
 	// Register callback to be invoked for the subnet4-get.
-	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
+	interceptor.registerAsync(func(agent *StorkAgent, resp *keactrl.Response) error {
 		commandInvoked = "subnet4-get"
 		capturedResponses = append(capturedResponses, resp)
 		return nil
@@ -83,13 +87,13 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	require.Equal(t, "subnet4-get", commandInvoked)
 }
 
-// Test that intercepting commands sent to Kea Control Agent works.
-func TestKeaInterceptorHandleControlAgent(t *testing.T) {
+// Test that async intercepting commands sent to Kea Control Agent works.
+func TestKeaInterceptorAsyncHandleControlAgent(t *testing.T) {
 	interceptor := newKeaInterceptor()
 	require.NotNil(t, interceptor)
 
 	var capturedResponses []*keactrl.Response
-	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
+	interceptor.registerAsync(func(agent *StorkAgent, resp *keactrl.Response) error {
 		capturedResponses = append(capturedResponses, resp)
 		return nil
 	}, "config-get")
@@ -115,22 +119,22 @@ func TestKeaInterceptorHandleControlAgent(t *testing.T) {
 	require.Empty(t, capturedResponses[0].Daemon)
 }
 
-// Test that it is possible to register multiple handlers for a single
+// Test that it is possible to register multiple async handlers for a single
 // command.
-func TestKeaInterceptorMultipleHandlers(t *testing.T) {
+func TestKeaInterceptorMultipleAsyncHandlers(t *testing.T) {
 	interceptor := newKeaInterceptor()
 	require.NotNil(t, interceptor)
 
 	// Register first handler
 	func1Invoked := false
-	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
+	interceptor.registerAsync(func(agent *StorkAgent, resp *keactrl.Response) error {
 		func1Invoked = true
 		return nil
 	}, "config-get")
 
 	// Register second handler.
 	func2Invoked := false
-	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
+	interceptor.registerAsync(func(agent *StorkAgent, resp *keactrl.Response) error {
 		func2Invoked = true
 		return nil
 	}, "config-get")
@@ -151,4 +155,129 @@ func TestKeaInterceptorMultipleHandlers(t *testing.T) {
 	interceptor.asyncHandle(nil, request, response)
 	require.True(t, func1Invoked)
 	require.True(t, func2Invoked)
+}
+
+// Test that it is possible to register sync callbacks to intercept selected
+// commands.
+func TestKeaInterceptorSyncHandleRegister(t *testing.T) {
+	// Arrange
+	interceptor := newKeaInterceptor()
+	callback := func(agent *StorkAgent, resp *keactrl.Response) error {
+		return nil
+	}
+
+	// Act
+	// Register callback to be invoked for config-get commands.
+	interceptor.registerSync(callback, "foobar")
+
+	// Assert
+	require.Len(t, interceptor.syncTargets["foobar"].handlers, 1)
+}
+
+// Test that the registered sync callbacks are invoked when the commands are
+// received.
+func TestKeaInterceptorSyncHandleExecute(t *testing.T) {
+	// Arrange
+	interceptor := newKeaInterceptor()
+	callCount := 0
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		callCount++
+		return nil
+	}, "foobar")
+
+	command := keactrl.NewCommand("foobar", []string{"dhcp4"}, nil)
+	request := &agentapi.KeaRequest{
+		Request: command.Marshal(),
+	}
+	inResponse := []byte(`[
+		{
+			"result": 0,
+			"text": "fine"
+		}
+	]`)
+	var buffer bytes.Buffer
+	_ = json.Compact(&buffer, inResponse)
+	expectedOutResponse := buffer.Bytes()
+
+	// Act
+	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, expectedOutResponse, outResponse)
+	require.EqualValues(t, 1, callCount)
+}
+
+// Test that the sync callback can rewrite the response.
+func TestKeaInterceptorSyncHandleRewriteResponse(t *testing.T) {
+	// Arrange
+	interceptor := newKeaInterceptor()
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		r.Text = "barfoo"
+		r.Result = 42
+		return nil
+	}, "foobar")
+
+	command := keactrl.NewCommand("foobar", []string{"dhcp4"}, nil)
+	request := &agentapi.KeaRequest{
+		Request: command.Marshal(),
+	}
+
+	inResponse := []byte(`[
+		{
+			"result": 0,
+			"text": "fine"
+		}
+	]`)
+
+	expectedOutResponse := []byte(`[
+		{
+			"result": 42,
+			"text": "barfoo"
+		}
+	]`)
+	var buffer bytes.Buffer
+	_ = json.Compact(&buffer, expectedOutResponse)
+	expectedOutResponse = buffer.Bytes()
+
+	// Act
+	outResponse, _ := interceptor.syncHandle(nil, request, inResponse)
+
+	// Assert
+	require.EqualValues(t, expectedOutResponse, outResponse)
+}
+
+// Test that the error throwing in the sync handler breaks an execution and is
+// returned.
+func TestKeaInterceptorSyncHandleReturnError(t *testing.T) {
+	// Arrange
+	interceptor := newKeaInterceptor()
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		return fmt.Errorf("Expected error")
+	}, "foobar")
+	callCount := 0
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		callCount++
+		return nil
+	}, "foobar")
+
+	command := keactrl.NewCommand("foobar", []string{"dhcp4"}, nil)
+	request := &agentapi.KeaRequest{
+		Request: command.Marshal(),
+	}
+
+	inResponse := []byte(`[
+		{
+			"result": 0,
+			"text": "fine"
+		}
+	]`)
+
+	// Act
+	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+
+	// Assert
+	require.Nil(t, outResponse)
+	require.Error(t, err)
+	require.Zero(t, callCount)
 }

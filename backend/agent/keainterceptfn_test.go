@@ -75,3 +75,24 @@ func TestIcptConfigGetLoggers(t *testing.T) {
 	require.False(t, sa.logTailer.allowed("stderr"))
 	require.False(t, sa.logTailer.allowed("syslog:1"))
 }
+
+// Test that the result code is changed if the reservation-get-page command
+// returns an unsupported error.
+func TestReservationGetPageUnsupported(t *testing.T) {
+	// Arrange
+	sa, _ := setupAgentTest()
+
+	rsp := &keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: keactrl.ResponseError,
+			Text:   "not supported by the RADIUS backend",
+		},
+	}
+
+	// Act
+	err := reservationGetPageUnsupported(sa, rsp)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, keactrl.ResponseCommandUnsupported, rsp.Result)
+}

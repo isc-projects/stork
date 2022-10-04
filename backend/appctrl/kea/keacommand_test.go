@@ -428,6 +428,75 @@ func TestUnmarshalResponseNotList(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test that the Kea response is serialized properly.
+func TestMarshalStandardResponseList(t *testing.T) {
+	// Arrange
+	responses := ResponseList{
+		{
+			ResponseHeader: ResponseHeader{
+				Result: 42,
+				Text:   "foo",
+				Daemon: "bar",
+			},
+			Arguments: &map[string]interface{}{
+				"baz": 24,
+			},
+		},
+	}
+
+	// Act
+	serialized, err := MarshalResponseList(responses)
+
+	// Assert
+	require.NoError(t, err)
+
+	var data any
+	_ = json.Unmarshal(serialized, &data)
+
+	dataList := data.([]any)
+	require.Len(t, dataList, 1)
+
+	dataItem := dataList[0].(map[string]any)
+	require.EqualValues(t, 42, dataItem["result"])
+	require.EqualValues(t, "foo", dataItem["text"])
+	require.NotContains(t, "daemon", dataItem)
+
+	dataArguments := dataItem["arguments"].(map[string]any)
+	require.EqualValues(t, 24, dataArguments["baz"])
+}
+
+// Test that the hashed Kea response is serialized properly.
+func TestMarshalHashedResponseList(t *testing.T) {
+	// Arrange
+	responses := HashedResponseList{
+		{
+			ResponseHeader: ResponseHeader{
+				Result: 42,
+				Text:   "foo",
+				Daemon: "bar",
+			},
+			Arguments: &map[string]interface{}{
+				"baz": 24,
+			},
+			ArgumentsHash: "foobar",
+		},
+	}
+
+	// Act
+	serialized, err := MarshalResponseList(responses)
+
+	// Assert
+	require.NoError(t, err)
+
+	var data any
+	_ = json.Unmarshal(serialized, &data)
+	dataList := data.([]any)
+	dataItem := dataList[0].(map[string]any)
+
+	require.EqualValues(t, 42, dataItem["result"])
+	require.NotContains(t, dataItem, "argumentHash")
+}
+
 // Test that GetCommand() function returns the command name.
 func TestGetCommand(t *testing.T) {
 	command := NewCommand("list-commands", nil, nil)
