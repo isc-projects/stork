@@ -3,11 +3,11 @@
 #################
 
 ARG KEA_REPO=public/isc/kea-2-0
-ARG KEA_VER=2.0.2-isc20220227221539
+ARG KEA_VERSION=2.0.2-isc20220227221539
 # Indicate if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
-ARG BIND9_VER=9.18
+ARG BIND9_VERSION=9.18
 
 ###################
 ### Base images ###
@@ -209,18 +209,18 @@ RUN apt-get update \
 # Install Kea from Cloudsmith
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 ARG KEA_REPO
-ARG KEA_VER
+ARG KEA_VERSION
 RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        python3-isc-kea-connector=${KEA_VER} \
-        isc-kea-ctrl-agent=${KEA_VER} \
-        isc-kea-dhcp4-server=${KEA_VER} \
-        isc-kea-dhcp6-server=${KEA_VER} \
-        isc-kea-admin=${KEA_VER} \
-        isc-kea-common=${KEA_VER} \
+        python3-isc-kea-connector=${KEA_VERSION} \
+        isc-kea-ctrl-agent=${KEA_VERSION} \
+        isc-kea-dhcp4-server=${KEA_VERSION} \
+        isc-kea-dhcp6-server=${KEA_VERSION} \
+        isc-kea-admin=${KEA_VERSION} \
+        isc-kea-common=${KEA_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
@@ -234,17 +234,17 @@ RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bas
 # to this, the image builds correctly when the token is unknown.
 FROM kea-base AS keapremium-base
 ARG KEA_PREMIUM
-ARG KEA_VER
+ARG KEA_VERSION
 # Execute only if the premium is enabled
 RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        isc-kea-premium-host-cmds=${KEA_VER} \
-        isc-kea-premium-forensic-log=${KEA_VER} \
-        isc-kea-premium-host-cache=${KEA_VER} \
-        isc-kea-premium-radius=${KEA_VER} \
+        isc-kea-premium-host-cmds=${KEA_VERSION} \
+        isc-kea-premium-forensic-log=${KEA_VERSION} \
+        isc-kea-premium-host-cache=${KEA_VERSION} \
+        isc-kea-premium-radius=${KEA_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
@@ -283,14 +283,14 @@ HEALTHCHECK CMD [ "supervisorctl", "status" ]
 # Stork Agent files: /etc/stork
 
 # Bind9 with Stork Agent container
-FROM internetsystemsconsortium/bind9:${BIND9_VER} AS bind
+FROM internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
 # Install Bind9 dependencies
 RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
-                supervisor=4.* \
-                prometheus-node-exporter=* \
+        supervisor=4.* \
+        prometheus-node-exporter=* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # Puts empty database file to allow mounting it as a volume.
@@ -346,14 +346,14 @@ RUN apt-get update \
         # workaround for this missing command.
         && touch /usr/bin/systemctl \
         && chmod a+x /usr/bin/systemctl
-ARG STORK_CS_VER
+ARG STORK_CS_VERSION
 RUN wget -q -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        isc-stork-agent=${STORK_CS_VER} \
-        isc-stork-server=${STORK_CS_VER} \
+        isc-stork-agent=${STORK_CS_VERSION} \
+        isc-stork-server=${STORK_CS_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb

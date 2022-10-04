@@ -246,7 +246,7 @@ def bind9_service(request):
 
     build_args = {}
     if param["bind9_version"] is not None:
-        build_args['BIND9_VER'] = param["bind9_version"]
+        build_args['BIND9_VERSION'] = param["bind9_version"]
 
     # Setup wrapper
     service_name = param['service_name']

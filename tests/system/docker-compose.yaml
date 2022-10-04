@@ -57,8 +57,8 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
       args:
-        KEA_REPO: public/isc/kea-${KEA_VER_MAJOR:-2}-${KEA_VER_MINOR:-0}
-        KEA_VER: ${KEA_VER:-2.0.2-isc20220227221539}
+        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-0}
+        KEA_VERSION: ${KEA_VERSION:-2.0.2-isc20220227221539}
 
   agent-kea:
     extends: agent-kea-base
@@ -165,7 +165,7 @@ services:
     extends: agent-kea
     build:
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VER_MAJOR:-2}-${KEA_VER_MINOR:-0}-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-0}-prv
         KEA_PREMIUM: "premium"
     profiles:
       - premium
@@ -207,7 +207,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: bind
       args:
-        BIND9_VER: ${BIND9_VER:-9.18}
+        BIND9_VERSION: ${BIND9_VERSION:-9.18}
     hostname: agent-bind9
     networks:
       storknet:
@@ -256,7 +256,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: external-packages
       args:
-        STORK_CS_VER: ${STORK_CLOUDSMITH_VERSION-}*
+        STORK_CS_VERSION: ${STORK_CLOUDSMITH_VERSION-}*
     ports:
       - "42080:8080"
     networks:

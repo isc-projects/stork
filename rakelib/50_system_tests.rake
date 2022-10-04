@@ -141,13 +141,9 @@ namespace :systemtest do
                 kea_version += "-*"
             end
         
-            ENV["KEA_VER"] = kea_version
-            ENV["KEA_VER_MAJOR"] = kea_version_major
-            ENV["KEA_VER_MINOR"] = kea_version_minor
-        end
-
-        if ENV["BIND9_VERSION"].nil?
-            ENV["BIND9_VER"] = ENV["BIND9_VERSION"]
+            ENV["KEA_VERSION"] = kea_version
+            ENV["KEA_VERSION_MAJOR"] = kea_version_major
+            ENV["KEA_VERSION_MINOR"] = kea_version_minor
         end
     end
 
