@@ -201,7 +201,8 @@ RUN apt-get update \
         python3-setuptools=40.8.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
-        && python3.7 -m pip install --no-cache-dir supervisor==4.2
+        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
+        && mkdir -p /var/log/supervisor
 
 # Kea with Stork Agent container
 FROM supervisor-base AS kea-base
