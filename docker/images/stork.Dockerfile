@@ -190,15 +190,26 @@ COPY docker/tools/gen-kea-config.py .
 ENTRYPOINT [ "python3", "/app/docker/tools/gen-kea-config.py", "-o", "/etc/kea/kea-dhcp4.conf" ]
 CMD [ "7000" ]
 
+# Container with a modern Supervisord installled.
+FROM debian-base AS supervisor-base
+RUN apt-get update \
+        && apt-get install \
+        -y \
+        --no-install-recommends \
+        python3.7=3.7.* \
+        python3-pip=18.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && python3.7 -m pip install --no-cache-dir supervisor==4.2
+
 # Kea with Stork Agent container
-FROM debian-base AS kea-base
+FROM supervisor-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
         curl=7.64.* \
-        supervisor=3.3.* \
         prometheus-node-exporter=0.17.* \
         default-mysql-client=1.0.* \ 
         postgresql-client=11+* \
@@ -332,12 +343,11 @@ RUN rake build:server_pkg && rake utils:remove_last_package_suffix
 FROM agent-builder AS agent_package_builder
 RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
 
-FROM debian-base AS external-packages
+FROM supervisor-base AS external-packages
 RUN apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        supervisor=3.3.* \
         curl=7.64.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
