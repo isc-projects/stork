@@ -326,12 +326,12 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 
 .. note::
 
-   The Stork Agent must trust the REST TLS certificate presented by Stork Server.
+   The Stork agent must trust the REST TLS certificate presented by Stork server.
    Otherwise, the registration process fails due to invalid Stork Server
    certificate verification. We strongly recommend using proper, trusted
-   certificates for security reasons. If you need to use the self-signed
+   certificates for security reasons. If you need to use a self-signed
    certificate (e.g., for deployment in the Docker environment), then you can
-   add its CA certificate to the system certificates on the Stork Agent machine.
+   add its CA certificate to the system certificates on the Stork agent machine.
    See [SO thread](https://stackoverflow.com/a/42292623) and
    [discussion in #859](https://gitlab.isc.org/isc-projects/stork/-/issues/859).
 
