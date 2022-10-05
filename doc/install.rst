@@ -332,8 +332,8 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
    certificates for security reasons. If you need to use a self-signed
    certificate (e.g., for deployment in the Docker environment), then you can
    add its CA certificate to the system certificates on the Stork agent machine.
-   See [SO thread](https://stackoverflow.com/a/42292623) and
-   [discussion in #859](https://gitlab.isc.org/isc-projects/stork/-/issues/859).
+   See `Stack Overflow thread <https://stackoverflow.com/a/42292623>`_ and
+   `discussion in #859 <https://gitlab.isc.org/isc-projects/stork/-/issues/859>`_.
 
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
