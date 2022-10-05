@@ -198,6 +198,7 @@ RUN apt-get update \
         --no-install-recommends \
         python3.7=3.7.* \
         python3-pip=18.* \
+        python3-setuptools=40.8.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && python3.7 -m pip install --no-cache-dir supervisor==4.2
