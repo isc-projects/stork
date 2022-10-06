@@ -2,7 +2,7 @@
 
 case "$1" in
     0) # This is a yum/dnf remove.
-        if [ -x "$(command -v systemctl)" ]; then
+        if [ "$(systemctl is-system-running)" -eq 0 ]; then
             systemctl disable isc-stork-agent
             systemctl stop isc-stork-agent
         fi
