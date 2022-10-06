@@ -1,4 +1,4 @@
-import { fakeAsync, flush, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { KeaAppTabComponent } from './kea-app-tab.component'
 import { Router, ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
