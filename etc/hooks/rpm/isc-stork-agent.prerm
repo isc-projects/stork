@@ -2,8 +2,10 @@
 
 case "$1" in
     0) # This is a yum/dnf remove.
-        systemctl disable isc-stork-agent
-        systemctl stop isc-stork-agent
+        if [ -x "$(command -v systemctl)" ]; then
+            systemctl disable isc-stork-agent
+            systemctl stop isc-stork-agent
+        fi
 
         # remove stork-agent from any extra groups like e.g. bind
         usermod -G "" stork-agent
