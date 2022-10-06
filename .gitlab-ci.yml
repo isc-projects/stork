@@ -225,6 +225,18 @@ packages:
       - isc-stork-*
     expire_in: 1 week
 
+### install packages ###
+install_debs:
+  extends: .base_build_debian
+  stage: build
+  script:
+    - "dpkg -i isc-stork-*.deb"
+    - "stork-agent --version"
+    - "stork-server --version"
+    - "stork-tool --version"
+  needs:
+    - build_debs
+
 ### system testing ###
 
 system_testing:
