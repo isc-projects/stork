@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case "$1" in
+    0) # This is a yum/dnf remove.
+        userdel stork-agent >/dev/null || /bin/true
+        ;;
+    1)  # This is a yum/dnf upgrade.
+        # do nothing
+        ;;
+esac

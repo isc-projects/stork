@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+# create folders for storing certs and agent token,
+# they should be available to owner ie. stork-agent user
+home_dir=/var/lib/stork-agent
+mkdir -p -m 700 $home_dir/certs
+mkdir -p -m 700 $home_dir/tokens
+
+pw group add stork-agent || /bin/true
+pw user add -n stork-agent -c "Stork Agent User" -g stork-agent -G bind || /bin/true
+
+# change ownership of all folders and files in home dir to stork-agent user
+chown -R stork-agent $home_dir

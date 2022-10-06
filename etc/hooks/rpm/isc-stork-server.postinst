@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+# add stork-server user if does not exists
+if [ ! $(getent passwd stork-server) ]; then
+    useradd --system --home-dir /var/lib/ stork-server
+fi

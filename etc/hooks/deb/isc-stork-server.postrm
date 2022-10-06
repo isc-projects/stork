@@ -1,0 +1,3 @@
+#!/bin/sh
+
+deluser --system stork-server >/dev/null || /bin/true

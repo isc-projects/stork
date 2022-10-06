@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -x "$(command -v systemctl)" ]; then
+    systemctl disable isc-stork-agent
+    systemctl stop isc-stork-agent
+fi
+
+usermod -G "" stork-agent
