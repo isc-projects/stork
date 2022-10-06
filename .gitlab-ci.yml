@@ -259,7 +259,7 @@ install_rpms:
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
-    - "rpm -U isc-stork-*.rpm"
+    - "rpm -U --force isc-stork-*.rpm"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
