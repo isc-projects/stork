@@ -142,7 +142,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *                      data structure.
      */
     private initDaemons(appTabDaemons) {
-        const activeDaemonTabName = this.route.snapshot.queryParamMap.get('daemon') || null
+        const activeDaemonTabName = this.route.snapshot.queryParamMap.get('daemon')
         const daemonMap = []
         for (const d of appTabDaemons) {
             daemonMap[d.name] = d
