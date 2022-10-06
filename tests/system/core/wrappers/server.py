@@ -375,7 +375,35 @@ class Server(ComposeServiceWrapper):
         return worker()
 
     def _wait_for_puller(self, puller_id: str, start: datetime = None):
-        """Waits for finishing the next execution of a given puller."""
+        """
+        Waits for finishing the next execution of a given puller.
+
+        It uses invoked and executed time to ensure that pulling was completely
+        performed after the start time.
+
+        The below example shows the three sequential pulls on the timeline.
+        The given start time is marked on the timeline. The 'I' letter means
+        an invoked time for a specific pull and the 'E' letter the execution
+        time.
+
+        Pull 1 is completely performed before the start time.
+
+        Pull 2 began before the start time. If we consider only the execution
+        time, the waiting lock will be released when this pull is finished. If
+        any change was provided between the invoked time of pull and start time,
+        it would not be reflected yet when the waiting lock is gone.
+
+        Only pull 3 guarantees that the pulled data will be updated after the
+        start time because the pull was invoked after the start time, and the
+        execution time is after the invoked time.
+
+                              start
+        time   .................|.................
+        pull 1    I######E
+        pull 2              I######E
+        pull 3                        I######E
+
+        """
         if start is None:
             start = datetime.now(timezone.utc)
 
@@ -385,12 +413,27 @@ class Server(ComposeServiceWrapper):
         if puller_id.endswith(interval_suffix):
             friendly_puller_name = puller_id[:-len(interval_suffix)]
 
+        pulling_started_at = None
+
         @wait_for_success(wait_msg=f'Waiting to next "{friendly_puller_name}" execution...')
         def worker():
+            nonlocal pulling_started_at
+
             puller = self._read_puller(puller_id)
+
+            last_invoked_at = puller["last_invoked_at"]
             last_executed_at = puller["last_executed_at"]
-            if Server._is_before(last_executed_at, start):
+
+            # Wait for start new pulling
+            if pulling_started_at is None:
+                if Server._is_before(last_invoked_at, start):
+                    raise NoSuccessException("the puller not invoked")
+                pulling_started_at = last_invoked_at
+
+            # Wait for finish pulling
+            if Server._is_before(last_executed_at, pulling_started_at):
                 raise NoSuccessException("the puller not executed")
+
         return worker()
 
     def wait_for_host_reservation_pulling(self, start: datetime = None):

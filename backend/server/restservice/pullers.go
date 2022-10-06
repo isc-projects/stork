@@ -19,6 +19,7 @@ type pullerMetadata interface {
 	GetName() string
 	GetIntervalSettingName() string
 	GetInterval() int64
+	GetLastInvokedAt() time.Time
 	GetLastExecutedAt() time.Time
 }
 
@@ -44,6 +45,7 @@ func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersPara
 			Name:           puller.GetName(),
 			ID:             puller.GetIntervalSettingName(),
 			Interval:       puller.GetInterval(),
+			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
 			LastExecutedAt: strfmt.DateTime(puller.GetLastExecutedAt()),
 		}
 
@@ -82,6 +84,7 @@ func (r *RestAPI) GetPuller(ctx context.Context, params settings.GetPullerParams
 			Name:           puller.GetName(),
 			ID:             puller.GetIntervalSettingName(),
 			Interval:       puller.GetInterval(),
+			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
 			LastExecutedAt: strfmt.DateTime(puller.GetLastExecutedAt()),
 		}
 

@@ -30,6 +30,10 @@
       interval:
         type: integer
         readOnly: true
+      lastInvokedAt:
+        type: string
+        format: date-time
+        readOnly: true
       lastExecutedAt:
         type: string
         format: date-time

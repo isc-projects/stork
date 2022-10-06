@@ -107,3 +107,37 @@ func TestPullerSavesLastExecutionTime(t *testing.T) {
 	require.LessOrEqual(t, startTime, *pullTime)
 	require.LessOrEqual(t, *pullTime, executionTime)
 }
+
+// Test that the puller returns properly last invoked time.
+func TestPullerSavesLastInvokedTime(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
+	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
+
+	var pullTimeWrapper atomic.Value
+	pullTimeWrapper.Store((*time.Time)(nil))
+
+	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
+		func() error {
+			if pullTimeWrapper.Load() == (*time.Time)(nil) {
+				current := time.Now()
+				pullTimeWrapper.Swap(&current)
+			}
+			return nil
+		})
+	startTime := time.Now()
+
+	// Act
+	require.Eventually(t, func() bool {
+		return pullTimeWrapper.Load() != (*time.Time)(nil)
+	}, 5*time.Second, 500*time.Millisecond)
+	invokedTime := puller.GetLastInvokedAt()
+
+	// Assert
+	puller.Shutdown()
+	pullTime := pullTimeWrapper.Load().(*time.Time)
+	require.LessOrEqual(t, startTime, *pullTime)
+	require.LessOrEqual(t, invokedTime, *pullTime)
+}
