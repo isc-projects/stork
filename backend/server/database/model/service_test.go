@@ -87,7 +87,7 @@ func daemonsMatch(daemon1, daemon2 *Daemon, appCompare bool) bool {
 	if !appCompare {
 		return true
 	}
-	if (daemon1.App == nil && daemon2.App != nil) || (daemon1.App != nil && daemon2.App == nil) {
+	if (daemon1.App == nil) != (daemon2.App == nil) {
 		return false
 	}
 	if daemon1.App != nil {
