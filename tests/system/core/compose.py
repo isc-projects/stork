@@ -537,6 +537,33 @@ class DockerCompose(object):
                 # break
                 raise ContainerUnhealthyException(health)
 
+    def get_pid(self, service_name, process_name):
+        """
+        Returns PID of the selected process belonging to the service.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the service
+        process_name: str
+            Name of the process which PID should be returned
+
+        Returns
+        -------
+        int
+            found PID or None
+        """
+        cmd = ["supervisorctl", "pid", process_name]
+        result, stdout, _ = self.exec(service_name, cmd)
+        if result != 0:
+            return None
+        try:
+            pid = int(stdout)
+        except:
+            return None
+        return pid
+            
+    
     def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
         env = os.environ.copy()
         if self._env_vars is not None:
@@ -563,8 +590,3 @@ class DockerCompose(object):
             return result.returncode, stdout, stderr
         return result.returncode, None, None
 
-    def _get_pid(self, service_name, process_name):
-        """Returns PID of the selected process belonging to the service."""
-        cmd = ["supervisorctl", "pid"]
-        _, stdout, _ = self.exec(service_name, cmd)
-        return int(stdout)

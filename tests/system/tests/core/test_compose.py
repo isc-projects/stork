@@ -694,6 +694,44 @@ def test_wait_for_operational_exited():
         # Assert
         pass
 
+def test_get_pid():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    call_command_mock = MagicMock()
+    call_command_mock.return_value = (0, "123", "")
+    compose._call_command = call_command_mock
+    # Act
+    pid = compose.get_pid("stork-agent", "kea-dhcp4")
+    # Assert
+    assert pid == 123
+    cmd = call_command_mock.call_args.kwargs["cmd"]
+    assert len(cmd) > 4
+    assert cmd[-4] == "stork-agent"
+    assert cmd[-3] == "supervisorctl"
+    assert cmd[-2] == "pid"
+    assert cmd[-1] == "kea-dhcp4"
+
+def test_get_pid_no_process():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    call_command_mock = MagicMock()
+    call_command_mock.return_value = (1, "123", "")
+    compose._call_command = call_command_mock
+    # Act
+    pid = compose.get_pid("stork-agent", "kea-dhcp4")
+    # Assert
+    assert pid == None
+
+def test_get_pid_unparsable_pid():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    call_command_mock = MagicMock()
+    call_command_mock.return_value = (0, "abc", "")
+    compose._call_command = call_command_mock
+    # Act
+    pid = compose.get_pid("stork-agent", "kea-dhcp4")
+    # Assert
+    assert pid == None
 
 @patch("subprocess.run")
 def test_call_command_passes_command(patch: MagicMock):
@@ -702,7 +740,6 @@ def test_call_command_passes_command(patch: MagicMock):
     patch.assert_called_once()
     cmd = patch.call_args.args[0]
     assert tuple(cmd) == ("foo", "bar")
-
 
 @patch("subprocess.run")
 def test_call_command_adds_env_vars(patch: MagicMock):

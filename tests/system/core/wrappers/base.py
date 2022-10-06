@@ -30,7 +30,7 @@ class ComposeServiceWrapper:
         self._compose.wait_for_operational(self._service_name)
 
     def _reload_supervisor_service(self, name: str):
-        cmd = ["supervisorctl", "signal", "HUP", "all"]
+        cmd = ["supervisorctl", "signal", "HUP", name]
         self._compose.exec(self._service_name, cmd)
         self._compose.wait_for_operational(self._service_name)
 
@@ -61,4 +61,4 @@ class ComposeServiceWrapper:
 
     def _get_pid(self, process_name: str):
         """Returns a PID of the specfified process."""
-        return self._compose._get_pid(self._service_name, process_name)
+        return self._compose.get_pid(self._service_name, process_name)
