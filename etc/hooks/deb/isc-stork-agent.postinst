@@ -18,5 +18,10 @@ if [ $(getent group bind) ]; then
     usermod -aG bind stork-agent
 fi
 
+# add stork-agent user to kea so it can read its config files
+if [ $(getent group _kea) ]; then
+    usermod -aG _kea stork-agent
+fi
+
 # change ownership of all folders and files in home dir to stork-agent user
 chown -R stork-agent $home_dir

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$(systemctl is-system-running)" -eq 0 ]; then
+if [ -x "$(command -v systemctl)" ] && [ "$(systemctl is-system-running)" -eq 0 ]; then
     systemctl disable isc-stork-server
     systemctl stop isc-stork-server
 fi
