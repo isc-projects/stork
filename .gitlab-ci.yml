@@ -20,9 +20,9 @@ variables:
 
 # stages order
 stages:
-  - build
   - checks
   - system_tests
+  - build
   - deploy
 
 # cache
