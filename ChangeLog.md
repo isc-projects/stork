@@ -1,3 +1,11 @@
+* 247 [bug] slawek
+
+    Fixed a bug in the post-install hook when Stork was installed from the
+    packages on Debian with busybox. The package hooks now treat SystemD as
+    an optional dependency. The Stork user is joined to the Kea group by
+    default. Added installation CI checks for all package types.
+    (Gitlab #749, #860, #867, #869)
+
 * 246 [func] marcin
 
     DHCP high availability state is included in the troubleshooting dump
