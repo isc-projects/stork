@@ -256,12 +256,18 @@ func TestBootstrap(t *testing.T) {
 	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
 	require.True(t, configReviewCheckerPreferences[4].GloballyEnabled)
 
-	// Clear events before we get them again after shutdown.
-	events = []dbmodel.Event{}
+	// Run Bootstrap again with the reload flag set. It should not emit any new events.
+	err = server.Bootstrap(true)
+	require.NoError(t, err)
+	events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+	require.Len(t, events, 1)
 
 	// Run actual shutdown. It doesn't matter we have already deferred one Shutdown().
 	// It will be executed only once.
 	server.Shutdown(false)
+
+	// Clear events before we get them again after shutdown.
+	events = []dbmodel.Event{}
 
 	// Make sure that the shutdown event has been added.
 	require.Eventually(t, func() bool {

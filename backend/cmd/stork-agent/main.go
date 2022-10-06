@@ -288,12 +288,12 @@ func main() {
 		case errors.Is(err, &ctrlcError{}):
 			// Ctrl-C pressed.
 			os.Exit(130)
-		case !errors.Is(err, &sighupError{}):
-			// Error occurred.
-			log.Fatal(err)
-		default:
+		case errors.Is(err, &sighupError{}):
 			// SIGHUP signal received.
 			reload = true
+		default:
+			// Error occurred.
+			log.Fatal(err)
 		}
 	}
 }
