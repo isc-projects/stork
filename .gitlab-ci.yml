@@ -261,7 +261,7 @@ install_rpms:
     - build_rpms
 
 install_apks:
-  image: alpine3.15
+  image: alpine:3.15
   tags:
     - linux
     - amd64
