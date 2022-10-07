@@ -26,6 +26,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 		dbmodel.MachineRelationDaemonLogTargets,
 		dbmodel.MachineRelationAppAccessPoints,
 		dbmodel.MachineRelationKeaDHCPConfigs,
+		dbmodel.MachineRelationDaemonHAServices,
 	)
 	if err != nil {
 		return nil, err

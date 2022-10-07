@@ -62,7 +62,7 @@ func accessPointArraysMatch(pts1, pts2 []*AccessPoint) bool {
 
 // daemonsMatch compares two daemons and returns true if they match,
 // false otherwise.
-func daemonsMatch(daemon1, daemon2 *Daemon, appCompare bool) bool {
+func daemonsMatch(daemon1, daemon2 *Daemon) bool {
 	if daemon1.Pid != daemon2.Pid {
 		return false
 	}
@@ -84,10 +84,7 @@ func daemonsMatch(daemon1, daemon2 *Daemon, appCompare bool) bool {
 	if daemon1.CreatedAt != daemon2.CreatedAt {
 		return false
 	}
-	if !appCompare {
-		return true
-	}
-	if (daemon1.App == nil) != (daemon2.App == nil) {
+	if (daemon1.App == nil && daemon2.App != nil) || (daemon1.App != nil && daemon2.App == nil) {
 		return false
 	}
 	if daemon1.App != nil {
@@ -114,7 +111,7 @@ func daemonsMatch(daemon1, daemon2 *Daemon, appCompare bool) bool {
 // ordered differently, as long as the elements in the array are identical,
 // the two arrays are considered to match.  If so, this function returns
 // true, false otherwise.
-func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon, appCompare bool) bool {
+func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon) bool {
 	if len(daemonArray1) != len(daemonArray2) {
 		return false
 	}
@@ -127,7 +124,7 @@ func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon, appCompare bool) bo
 
 	for i := 0; i < len(daemonArray1); i++ {
 		for j := 0; j < len(daemonArray2); j++ {
-			if daemonsMatch(daemonArray1[i], daemonArray2[j], appCompare) {
+			if daemonsMatch(daemonArray1[i], daemonArray2[j]) {
 				found[i] = true
 				break
 			}
@@ -421,7 +418,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	service := appServices[0]
 	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[0].Name, service.Name)
-	require.True(t, daemonArraysMatch(service.Daemons, services[0].Daemons, true))
+	require.True(t, daemonArraysMatch(service.Daemons, services[0].Daemons))
 
 	// Repeat the same test for the fifth application belonging to the service2.
 	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[4].AppID)
@@ -435,7 +432,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	service = appServices[0]
 	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[1].Name, service.Name)
-	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons, true))
+	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons))
 
 	// Second one is service4.
 	service = appServices[1]
@@ -459,50 +456,6 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.Equal(t, services[0].Name, appServices[0].Name)
 	require.Equal(t, services[1].Name, appServices[1].Name)
 	require.Equal(t, services[3].Name, appServices[2].Name)
-}
-
-// Test getting services for a machine.
-func TestGetServicesByMachineID(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
-
-	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetDetailedServicesByMachineID(db, services[0].Daemons[3].App.MachineID)
-	require.NoError(t, err)
-	require.Len(t, appServices, 1)
-
-	// Validate that the service returned is the service1.
-	service := appServices[0]
-	require.Len(t, service.Daemons, 5)
-	require.Equal(t, services[0].Name, service.Name)
-	require.True(t, daemonArraysMatch(service.Daemons, services[0].Daemons, false))
-
-	// Repeat the same test for the fifth application belonging to the service2.
-	appServices, err = GetDetailedServicesByMachineID(db, services[1].Daemons[4].App.MachineID)
-	require.NoError(t, err)
-	require.Len(t, appServices, 1)
-
-	// Validate that the returned service is the service2.
-	service = appServices[0]
-	require.Len(t, service.Daemons, 5)
-	require.Equal(t, services[1].Name, service.Name)
-	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons, false))
-
-	// Finally, make one of the application shared between two services.
-	err = AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
-	require.NoError(t, err)
-
-	// When querying the services for the machine running this application,
-	// both service1 and 2 should be returned.
-	appServices, err = GetDetailedServicesByMachineID(db, services[1].Daemons[0].App.MachineID)
-	require.NoError(t, err)
-	require.Len(t, appServices, 2)
-
-	require.Equal(t, services[0].Name, appServices[0].Name)
-	require.Equal(t, services[1].Name, appServices[1].Name)
 }
 
 // Test that it is possible to get apps by type and get the services

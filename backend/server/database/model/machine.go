@@ -54,6 +54,7 @@ const (
 	MachineRelationDaemonLogTargets MachineRelation = "Apps.Daemons.LogTargets"
 	MachineRelationAppAccessPoints  MachineRelation = "Apps.AccessPoints"
 	MachineRelationKeaDHCPConfigs   MachineRelation = "Apps.Daemons.KeaDaemon.KeaDHCPDaemon"
+	MachineRelationDaemonHAServices MachineRelation = "Apps.Daemons.Services.HAService"
 )
 
 // MachineTag is an interface implemented by the dbmodel.Machine exposing functions

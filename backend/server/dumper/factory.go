@@ -29,6 +29,5 @@ func (f *factory) createAll() []dump.Dump {
 		dump.NewEventsDump(f.db, f.m),
 		dump.NewLogsDump(f.m, f.connectedAgents),
 		dump.NewSettingsDump(f.db),
-		dump.NewServicesDump(f.db, f.m),
 	}
 }

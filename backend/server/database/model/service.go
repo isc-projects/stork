@@ -345,29 +345,6 @@ func GetDetailedServicesByAppID(dbi dbops.DBI, appID int64) ([]Service, error) {
 	return services, nil
 }
 
-// Fetches all services to which belong apps running on the specified machine.
-func GetDetailedServicesByMachineID(dbi dbops.DBI, machineID int64) ([]Service, error) {
-	var services []Service
-
-	err := dbi.Model(&services).
-		Join("INNER JOIN daemon_to_service AS dtos ON dtos.service_id = service.id").
-		Join("INNER JOIN daemon AS d ON d.id = dtos.daemon_id").
-		Join("INNER JOIN app AS a ON d.app_id = a.ID").
-		Join("INNER JOIN machine AS m ON a.machine_id = m.ID").
-		Relation("HAService").
-		Relation("Daemons").
-		Where("machine_id = ?", machineID).
-		OrderExpr("service.id ASC").
-		Select()
-
-	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem getting services for machine ID %d", machineID)
-		return services, err
-	}
-
-	return services, nil
-}
-
 // Fetches all services from the database.
 func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 	var services []Service

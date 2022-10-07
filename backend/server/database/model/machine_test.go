@@ -2,11 +2,29 @@ package dbmodel
 
 import (
 	"fmt"
+	"sort"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
 )
+
+// Sort daemons in the machine apps by name. It is used by the unit
+// test to ensure the predictable order of daemons to validate.
+func sortMachineDaemonsByName(machine *Machine) {
+	if len(machine.Apps) == 0 {
+		return
+	}
+	for i := range machine.Apps {
+		if len(machine.Apps[i].Daemons) == 0 {
+			continue
+		}
+		sort.Slice(machine.Apps[i].Daemons, func(j, k int) bool {
+			return machine.Apps[i].Daemons[j].Name < machine.Apps[i].Daemons[k].Name
+		})
+	}
+}
 
 // Check if adding machine to database works.
 func TestAddMachine(t *testing.T) {
@@ -240,6 +258,33 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
     }`)
 	_ = UpdateDaemon(db, d)
 
+	service := &Service{
+		BaseService: BaseService{
+			Name: "service",
+			Daemons: []*Daemon{
+				{
+					ID: a.Daemons[0].ID,
+				},
+			},
+		},
+		HAService: &BaseHAService{
+			HAType:                     "dhcp4",
+			PrimaryID:                  a.Daemons[0].ID,
+			PrimaryStatusCollectedAt:   time.Now(),
+			SecondaryStatusCollectedAt: time.Now(),
+			PrimaryReachable:           true,
+			SecondaryReachable:         true,
+			PrimaryLastState:           "load-balancing",
+			SecondaryLastState:         "syncing",
+			PrimaryLastScopes:          []string{"server1", "server2"},
+			SecondaryLastScopes:        []string{},
+			PrimaryLastFailoverAt:      time.Now(),
+		},
+	}
+
+	err := AddService(db, service)
+	require.NoError(t, err)
+
 	// Act
 	machine, machineErr := GetMachineByIDWithRelations(db, 42)
 	machineApps, machineAppsErr := GetMachineByIDWithRelations(db, 42, MachineRelationApps)
@@ -250,6 +295,7 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	machineAppAccessPoints, machineAppAccessPointsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints)
 	machineKeaDHCPConfigs, machineKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationKeaDHCPConfigs)
 	machineAppAccessPointsKeaDHCPConfigs, machineAppAccessPointsKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints, MachineRelationKeaDHCPConfigs)
+	machineDaemonHAServices, machineDaemonHAServicesErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonHAServices)
 
 	// Assert
 	require.NoError(t, machineErr)
@@ -261,40 +307,68 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	require.NoError(t, machineAppAccessPointsErr)
 	require.NoError(t, machineKeaDHCPConfigsErr)
 	require.NoError(t, machineAppAccessPointsKeaDHCPConfigsErr)
+	require.NoError(t, machineDaemonHAServicesErr)
 
 	// Just machine
 	require.NotNil(t, machine.State)
 	require.Len(t, machine.Apps, 0)
 	// Machine with apps
+	require.Len(t, machineApps.Apps, 1)
 	require.Nil(t, machineApps.Apps[0].AccessPoints)
 	require.Nil(t, machineApps.Apps[0].Daemons)
 	// Machine with daemons
+	require.Len(t, machineDaemons.Apps, 1)
 	require.Nil(t, machineDaemons.Apps[0].AccessPoints)
 	require.Len(t, machineDaemons.Apps[0].Daemons, 2)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[1].LogTargets)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[1].KeaDaemon)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[0].Bind9Daemon)
+	sortMachineDaemonsByName(machineDaemons)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[0].LogTargets)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[0].KeaDaemon)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[1].Bind9Daemon)
 	// Machine with kea daemons
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].Bind9Daemon)
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].LogTargets)
+	require.Len(t, machineKeaDaemons.Apps, 1)
+	require.Len(t, machineKeaDaemons.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineKeaDaemons)
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].LogTargets)
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].Bind9Daemon)
 	// Machine with Bind9 daemons
-	require.NotNil(t, machineBind9Daemons.Apps[0].Daemons[0].Bind9Daemon)
-	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[1].KeaDaemon)
-	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[1].LogTargets)
+	require.Len(t, machineBind9Daemons.Apps, 1)
+	require.Len(t, machineBind9Daemons.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineBind9Daemons)
+	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[0].KeaDaemon)
+	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[0].LogTargets)
+	require.NotNil(t, machineBind9Daemons.Apps[0].Daemons[1].Bind9Daemon)
 	// Machine with daemon log targets
-	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons[0].LogTargets, 2)
-	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[1].KeaDaemon)
-	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[0].Bind9Daemon)
+	require.Len(t, machineDaemonLogTargets.Apps, 1)
+	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineDaemonLogTargets)
+	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[0].KeaDaemon)
+	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons[1].LogTargets, 2)
+	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[1].Bind9Daemon)
 	require.Nil(t, machineDaemonLogTargets.Apps[0].AccessPoints)
 	// Machine with the access points
+	require.Len(t, machineAppAccessPoints.Apps, 1)
+	sortMachineDaemonsByName(machineAppAccessPoints)
 	require.NotNil(t, machineAppAccessPoints.Apps[0].AccessPoints)
 	require.Nil(t, machineAppAccessPoints.Apps[0].Daemons)
 	// Machine with Kea DHCP configurations
-	require.NotNil(t, machineKeaDHCPConfigs.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, machineKeaDHCPConfigs.Apps, 1)
+	require.Len(t, machineKeaDHCPConfigs.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineKeaDHCPConfigs)
+	require.NotNil(t, machineKeaDHCPConfigs.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	// Machine with the access points and Kea DHCP configurations
-	require.NotNil(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps, 1)
+	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineAppAccessPointsKeaDHCPConfigs)
+	require.NotNil(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].AccessPoints, 1)
+	// Machine with the HA services
+	require.Len(t, machineDaemonHAServices.Apps, 1)
+	require.Len(t, machineDaemonHAServices.Apps[0].Daemons, 2)
+	sortMachineDaemonsByName(machineDaemonHAServices)
+	require.Len(t, machineDaemonHAServices.Apps[0].Daemons[0].Services, 1)
+	require.NotNil(t, machineDaemonHAServices.Apps[0].Daemons[0].Services[0].HAService)
+	require.Empty(t, machineDaemonHAServices.Apps[0].Daemons[1].Services)
 }
 
 // Basic check if getting machines by pages works.
