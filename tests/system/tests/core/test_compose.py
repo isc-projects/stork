@@ -711,17 +711,6 @@ def test_get_pid():
     assert cmd[-2] == "pid"
     assert cmd[-1] == "kea-dhcp4"
 
-def test_get_pid_no_process():
-    # Arrange
-    compose = DockerCompose("project-dir")
-    call_command_mock = MagicMock()
-    call_command_mock.return_value = (1, "123", "")
-    compose._call_command = call_command_mock
-    # Act
-    pid = compose.get_pid("stork-agent", "kea-dhcp4")
-    # Assert
-    assert pid is None
-
 def test_get_pid_unparsable_pid():
     # Arrange
     compose = DockerCompose("project-dir")
