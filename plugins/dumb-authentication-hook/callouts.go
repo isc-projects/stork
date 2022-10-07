@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"errors"
+	"net/http"
+
 	"isc.org/stork/hooks/server/authenticationcallout"
-	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/gen/restapi/operations/users"
 )
 
 type callouts struct{}
@@ -16,24 +16,21 @@ func (c *callouts) Close() error {
 	return nil
 }
 
-func (c *callouts) Authenticate(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
-	if params.Credentials.Useremail == nil || params.Credentials.Userpassword == nil {
-		return nil, errors.Errorf("missing email or password")
+func (c *callouts) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallout.User, error) {
+	if email == nil || password == nil {
+		return nil, errors.New("missing email or password")
 	}
-	if *params.Credentials.Useremail != "secret" || *params.Credentials.Userpassword != "secret" {
-		return nil, errors.Errorf("invalid user or password")
+	if *email != "secret" || *password != "secret" {
+		return nil, errors.New("invalid user or password")
 	}
 
-	return &dbmodel.SystemUser{
+	return &authenticationcallout.User{
 		ID:       1,
 		Login:    "Secretary",
 		Email:    "secretary@office.com",
 		Lastname: "Bob",
 		Name:     "Alice",
-		Password: "",
-		Groups: []*dbmodel.SystemGroup{
-			&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID},
-		},
+		Groups:   []int{1},
 	}, nil
 }
 

@@ -81,7 +81,25 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	var err error
 
 	if r.HookManager.HasAuthenticationHook() {
-		user, err = r.HookManager.Authenticate(ctx, params)
+		calloutUser, calloutErr := r.HookManager.Authenticate(ctx, params.HTTPRequest, params.Credentials.Useremail, params.Credentials.Userpassword)
+		err = calloutErr
+
+		var groups []*dbmodel.SystemGroup
+		for _, g := range calloutUser.Groups {
+			groups = append(groups, &dbmodel.SystemGroup{
+				ID: g,
+			})
+		}
+
+		user = &dbmodel.SystemUser{
+			ID:       int(calloutUser.ID),
+			Login:    calloutUser.Login,
+			Email:    calloutUser.Email,
+			Lastname: calloutUser.Lastname,
+			Name:     calloutUser.Name,
+			Groups:   groups,
+		}
+
 	} else {
 		user, err = r.defaultAuthentication(params)
 	}
@@ -166,7 +184,7 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 	su, err := dbmodel.GetUserByID(r.DB, id)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"userid": id,
+			"userID": id,
 		}).WithError(err).Errorf("Failed to fetch user with ID %d from the database", id)
 
 		msg := fmt.Sprintf("Failed to fetch user with ID %d from the database", id)
@@ -178,7 +196,7 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 	}
 	if su == nil {
 		msg := fmt.Sprintf("Failed to find user with ID %d in the database", id)
-		log.WithField("userid", id).Error(msg)
+		log.WithField("userID", id).Error(msg)
 
 		rspErr := models.APIError{
 			Message: &msg,
@@ -293,7 +311,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 	con, err := dbmodel.UpdateUser(r.DB, su)
 	if con {
-		log.WithField("userid", *u.ID).WithError(err).Infof("Failed to update user account for user %s", su.Identity())
+		log.WithField("userID", *u.ID).WithError(err).Infof("Failed to update user account for user %s", su.Identity())
 
 		msg := "User account with provided login/email already exists"
 		rspErr := models.APIError{
@@ -303,7 +321,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		return rsp
 	} else if err != nil {
 		log.WithFields(log.Fields{
-			"userid": *u.ID,
+			"userID": *u.ID,
 			"login":  *u.Login,
 			"email":  *u.Email,
 		}).WithError(err).Errorf("Failed to update user account for user %s", su.Identity())

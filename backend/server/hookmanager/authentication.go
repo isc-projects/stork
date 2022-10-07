@@ -2,12 +2,11 @@ package hookmanager
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 
 	"isc.org/stork/hooks/server/authenticationcallout"
 	"isc.org/stork/hooksutil"
-	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/gen/restapi/operations/users"
 )
 
 // Interface checks.
@@ -17,14 +16,14 @@ func (hm *HookManager) HasAuthenticationHook() bool {
 	return hm.executor.HasRegistered(reflect.TypeOf((*authenticationcallout.AuthenticationCallout)(nil)).Elem())
 }
 
-func (hm *HookManager) Authenticate(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallout.User, error) {
 	data := hooksutil.CallSingle(hm.executor, func(callout authenticationcallout.AuthenticationCallout) struct {
-		user *dbmodel.SystemUser
+		user *authenticationcallout.User
 		err  error
 	} {
-		user, err := callout.Authenticate(ctx, params)
+		user, err := callout.Authenticate(ctx, request, email, password)
 		return struct {
-			user *dbmodel.SystemUser
+			user *authenticationcallout.User
 			err  error
 		}{
 			user: user,
