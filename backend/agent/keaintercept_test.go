@@ -208,6 +208,48 @@ func TestKeaInterceptorSyncHandleExecute(t *testing.T) {
 	require.EqualValues(t, 1, callCount)
 }
 
+// Test that the multiple registered sync callbacks are invoked sequentially
+//  when the commands are received.
+func TestKeaInterceptorMultipleSyncHandlesExecute(t *testing.T) {
+	// Arrange
+	interceptor := newKeaInterceptor()
+	callCount := map[string]int64{
+		"foo": 0,
+		"bar": 0,
+	}
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		callCount["foo"]++
+		return nil
+	}, "foobar")
+	interceptor.registerSync(func(sa *StorkAgent, r *keactrl.Response) error {
+		callCount["bar"]++
+		return nil
+	}, "foobar")
+
+	command := keactrl.NewCommand("foobar", []string{"dhcp4"}, nil)
+	request := &agentapi.KeaRequest{
+		Request: command.Marshal(),
+	}
+	inResponse := []byte(`[
+		{
+			"result": 0,
+			"text": "fine"
+		}
+	]`)
+	var buffer bytes.Buffer
+	_ = json.Compact(&buffer, inResponse)
+	expectedOutResponse := buffer.Bytes()
+
+	// Act
+	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, expectedOutResponse, outResponse)
+	require.EqualValues(t, 1, callCount["foo"])
+	require.EqualValues(t, 1, callCount["bar"])
+}
+
 // Test that the sync callback can rewrite the response.
 func TestKeaInterceptorSyncHandleRewriteResponse(t *testing.T) {
 	// Arrange
