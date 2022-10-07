@@ -554,14 +554,12 @@ class DockerCompose(object):
             found PID or None
         """
         cmd = ["supervisorctl", "pid", process_name]
-        result, stdout, _ = self.exec(service_name, cmd)
-        if result != 0:
-            return None
+        _, stdout, _ = self.exec(service_name, cmd)
+
         try:
-            pid = int(stdout)
-        except:
+            return int(stdout)
+        except Exception:
             return None
-        return pid
             
     
     def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):

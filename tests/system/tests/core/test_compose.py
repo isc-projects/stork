@@ -720,7 +720,7 @@ def test_get_pid_no_process():
     # Act
     pid = compose.get_pid("stork-agent", "kea-dhcp4")
     # Assert
-    assert pid == None
+    assert pid is None
 
 def test_get_pid_unparsable_pid():
     # Arrange
@@ -731,7 +731,7 @@ def test_get_pid_unparsable_pid():
     # Act
     pid = compose.get_pid("stork-agent", "kea-dhcp4")
     # Assert
-    assert pid == None
+    assert pid is None
 
 @patch("subprocess.run")
 def test_call_command_passes_command(patch: MagicMock):
