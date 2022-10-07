@@ -247,8 +247,8 @@ func TestKeaInterceptorSyncHandleRewriteResponse(t *testing.T) {
 	require.EqualValues(t, expectedOutResponse, outResponse)
 }
 
-// Test that the error throwing in the sync handler breaks an execution and is
-// returned.
+// Test that the error throwing in the sync handler breaks execution and
+// returns.
 func TestKeaInterceptorSyncHandleReturnError(t *testing.T) {
 	// Arrange
 	interceptor := newKeaInterceptor()

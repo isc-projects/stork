@@ -46,7 +46,7 @@ func newKeaInterceptor() *keaInterceptor {
 	return interceptor
 }
 
-// Registers an async callback function and associates it with a given command.
+// Registers an asynchronous callback function and associates it with a given command.
 // It is possible to register multiple callbacks for the same command.
 func (i *keaInterceptor) registerAsync(callback func(*StorkAgent, *keactrl.Response) error, commandName string) {
 	var (
@@ -74,7 +74,7 @@ func (i *keaInterceptor) registerAsync(callback func(*StorkAgent, *keactrl.Respo
 	target.handlers = append(target.handlers, h)
 }
 
-// Registers an sync callback function and associates it with a given command.
+// Registers a synchronous callback function and associates it with a given command.
 // It is possible to register multiple callbacks for the same command.
 func (i *keaInterceptor) registerSync(callback func(*StorkAgent, *keactrl.Response) error, commandName string) {
 	var (

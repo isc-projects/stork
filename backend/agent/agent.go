@@ -347,8 +347,8 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			continue
 		}
 
-		// Push Kea response for sync processing. It may to change the response
-		// body.
+		// Push Kea response for synchronous processing. It may modify the
+		// response body.
 		body, err = sa.keaInterceptor.syncHandle(sa, req, body)
 		if err != nil {
 			log.WithFields(log.Fields{
