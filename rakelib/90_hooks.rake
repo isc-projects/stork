@@ -91,6 +91,25 @@ namespace :hook do
             end
         end
     end
+
+    desc "List dependencies of a given callout package
+        KIND - callout kind - required, choice: agent or server
+        CALLOUT - callout package name - required"
+    task :list_callout_deps => [GO] do
+        kind = ENV["KIND"]
+        if kind != "server" && kind != "agent"
+            fail "You need to provide the callout kind in KIND variable: agent or server"
+        end
+
+        callout = ENV["CALLOUT"]
+        if callout.nil?
+            fail "You need to provide the callout name in CALLOUT variable."
+        end
+
+        package_rel = "hooks/#{kind}/#{callout}"
+        ENV["REL"] = package_rel
+        Rake::Task["utils:list_package_deps"].invoke
+    end
 end
 
 namespace :run do

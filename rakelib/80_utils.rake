@@ -20,6 +20,54 @@ namespace :utils do
     task :connect_dbg => [GDLV] do
         sh GDLV, "connect", "127.0.0.1:45678"
     end
+
+    desc "List dependencies of a given package
+        Choose one:
+            ABS - full absolute package import path
+            REL - package path relative to main Stork directory"
+    task :list_package_deps => [GO] do
+        Dir.chdir "backend" do
+            if !ENV["ABS"].nil?
+                package = ENV["ABS"]
+            elsif !ENV["REL"].nil?
+                if ENV["REL"].start_with? "backend/"
+                    ENV["REL"] = ENV["REL"].delete_prefix "backend/"
+                end
+                
+                package = File.join("isc.org/stork", ENV["REL"])
+            else
+                fail "You need to provide the ABS or REL variable"
+            end
+     
+            stdout, _ = Open3.capture2 GO, "list", "-f", '# Package - import: {{ .ImportPath }} name: {{ .Name }}', package
+            puts stdout
+
+            stdout, _ = Open3.capture2 GO, "list", "-f", '{{ join .Deps "\n" }}', package
+
+            std_deps = []
+            external_deps = []
+
+            stdout.split("\n").each do |d|
+                stdout, _ = Open3.capture2 GO, "list", "-f", '{{ .Standard }}', d
+                if stdout.strip == "true"
+                    std_deps.append d
+                else
+                    external_deps.append d
+                end
+            end
+
+            puts "# Dependency packages from standard library"
+            std_deps.each do |d|
+                puts d
+            end
+
+            puts
+            puts "# External dependency packages"
+            external_deps.each do |d|
+                puts d
+            end
+        end
+    end
 end
 
 
