@@ -167,7 +167,6 @@ func TestKeaInterceptorSyncHandleRegister(t *testing.T) {
 	}
 
 	// Act
-	// Register callback to be invoked for config-get commands.
 	interceptor.registerSync(callback, "foobar")
 
 	// Assert
