@@ -5,18 +5,18 @@ package main
 //	"isc.org/stork/hooks/server/[PROVIDE-ME]callout"
 // )
 
-// Callouts structure
+// Callouts structure.
 type callouts struct{}
 
-// Closer interface implementation
+// Closer interface implementation.
 func (c *callouts) Close() error {
 	// ToDo: Implement close method. You should clean all used resources here.
 	return nil
 }
 
-// Interface checks
+// Interface checks.
 // ToDo: Add an interface check below for all imported callouts.
 // var _ [PROVIDE-ME]callout.[PROVIDE-ME]Callout = (*callouts)(nil)
 
-// Interface implementations
+// Interface implementations.
 // ToDo: Implement all imported interfaces.
