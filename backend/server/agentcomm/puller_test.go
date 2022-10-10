@@ -74,7 +74,7 @@ func TestGetIntervalName(t *testing.T) {
 	require.EqualValues(t, "kea_hosts_puller_interval", intervalName)
 }
 
-// Test that the puller returns properly last execution time.
+// Test that the puller returns properly last finished time.
 func TestPullerSavesLastExecutionTime(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -99,13 +99,13 @@ func TestPullerSavesLastExecutionTime(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return pullTimeWrapper.Load() != (*time.Time)(nil)
 	}, 5*time.Second, 500*time.Millisecond)
-	executionTime := puller.GetLastExecutedAt()
+	finishTime := puller.GetLastFinishedAt()
 
 	// Assert
 	puller.Shutdown()
 	pullTime := pullTimeWrapper.Load().(*time.Time)
 	require.LessOrEqual(t, startTime, *pullTime)
-	require.LessOrEqual(t, *pullTime, executionTime)
+	require.LessOrEqual(t, *pullTime, finishTime)
 }
 
 // Test that the puller returns properly last invoked time.

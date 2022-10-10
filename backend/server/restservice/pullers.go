@@ -20,7 +20,7 @@ type pullerMetadata interface {
 	GetIntervalSettingName() string
 	GetInterval() int64
 	GetLastInvokedAt() time.Time
-	GetLastExecutedAt() time.Time
+	GetLastFinishedAt() time.Time
 }
 
 var _ pullerMetadata = (*agentcomm.PeriodicPuller)(nil)
@@ -46,7 +46,7 @@ func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersPara
 			ID:             puller.GetIntervalSettingName(),
 			Interval:       puller.GetInterval(),
 			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
-			LastExecutedAt: strfmt.DateTime(puller.GetLastExecutedAt()),
+			LastFinishedAt: strfmt.DateTime(puller.GetLastFinishedAt()),
 		}
 
 		pullers = append(pullers, metadata)
@@ -85,7 +85,7 @@ func (r *RestAPI) GetPuller(ctx context.Context, params settings.GetPullerParams
 			ID:             puller.GetIntervalSettingName(),
 			Interval:       puller.GetInterval(),
 			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
-			LastExecutedAt: strfmt.DateTime(puller.GetLastExecutedAt()),
+			LastFinishedAt: strfmt.DateTime(puller.GetLastFinishedAt()),
 		}
 
 		rsp := settings.NewGetPullerOK().WithPayload(metadata)

@@ -19,7 +19,7 @@ type PeriodicPuller struct {
 	*storkutil.PeriodicExecutor
 	intervalSettingName string
 	lastInvokedAt       *atomic.Value
-	lastExecutedAt      *atomic.Value
+	lastFinishedAt      *atomic.Value
 	DB                  *dbops.PgDB
 	Agents              ConnectedAgents
 }
@@ -31,16 +31,16 @@ type PeriodicPuller struct {
 // setting in the database. The pullerName is used for logging purposes.
 func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, intervalSettingName string, pullFunc func() error) (*PeriodicPuller, error) {
 	var lastInvokedAt atomic.Value
-	var lastExecutedAt atomic.Value
+	var lastFinishedAt atomic.Value
 	lastInvokedAt.Store(time.Time{})
-	lastExecutedAt.Store(time.Time{})
+	lastFinishedAt.Store(time.Time{})
 
 	periodicExecutor, err := storkutil.NewPeriodicExecutor(
 		pullerName,
 		func() error {
 			lastInvokedAt.Store(time.Now())
 			err := pullFunc()
-			lastExecutedAt.Store(time.Now())
+			lastFinishedAt.Store(time.Now())
 			return err
 		},
 		func() (int64, error) {
@@ -57,7 +57,7 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 		PeriodicExecutor:    periodicExecutor,
 		intervalSettingName: intervalSettingName,
 		lastInvokedAt:       &lastInvokedAt,
-		lastExecutedAt:      &lastExecutedAt,
+		lastFinishedAt:      &lastFinishedAt,
 		DB:                  db,
 		Agents:              agents,
 	}
@@ -71,8 +71,8 @@ func (p *PeriodicPuller) GetIntervalSettingName() string {
 }
 
 // Return time when the last execution finished.
-func (p *PeriodicPuller) GetLastExecutedAt() time.Time {
-	return p.lastExecutedAt.Load().(time.Time)
+func (p *PeriodicPuller) GetLastFinishedAt() time.Time {
+	return p.lastFinishedAt.Load().(time.Time)
 }
 
 // Return time when the last execution started.

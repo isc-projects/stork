@@ -378,7 +378,7 @@ class Server(ComposeServiceWrapper):
         """
         Waits for finishing the next execution of a given puller.
 
-        It uses invoked and executed time to ensure that pulling was completely
+        It uses invoked and finished time to ensure that pulling was completely
         performed after the start time.
 
         The below example shows the three sequential pulls on the timeline.
@@ -388,14 +388,14 @@ class Server(ComposeServiceWrapper):
 
         Pull 1 is completely performed before the start time.
 
-        Pull 2 began before the start time. If we consider only the execution
-        time, the waiting lock will be released when this pull is finished. If
+        Pull 2 began before the start time. If we consider only the finish
+        time, the waiting lock will be released when this pull is ended. If
         any change was provided between the invoked time of pull and start time,
         it would not be reflected yet when the waiting lock is gone.
 
         Only pull 3 guarantees that the pulled data will be updated after the
         start time because the pull was invoked after the start time, and the
-        execution time is after the invoked time.
+        finish time is after the invoked time.
 
                               start
         time   .................|.................
@@ -422,7 +422,7 @@ class Server(ComposeServiceWrapper):
             puller = self._read_puller(puller_id)
 
             last_invoked_at = puller["last_invoked_at"]
-            last_executed_at = puller["last_executed_at"]
+            last_finished_at = puller["last_finished_at"]
 
             # Wait for start new pulling
             if pulling_started_at is None:
@@ -431,8 +431,8 @@ class Server(ComposeServiceWrapper):
                 pulling_started_at = last_invoked_at
 
             # Wait for finish pulling
-            if Server._is_before(last_executed_at, pulling_started_at):
-                raise NoSuccessException("the puller not executed")
+            if Server._is_before(last_finished_at, pulling_started_at):
+                raise NoSuccessException("the puller not finished")
 
         return worker()
 
