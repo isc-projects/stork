@@ -1,3 +1,9 @@
+* 248 [bug] slawek
+
+    Fixed a bug continuously producing false disconnect and reconnect events
+    when Kea used a host backend without support for listing (e.g., RADIUS).
+    (Gitlab #817)
+
 * 247 [bug] slawek
 
     Fixed a bug in the post-install hook when Stork was installed from the
