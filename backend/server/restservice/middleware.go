@@ -104,7 +104,7 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 		} else {
 			pth := path.Join(staticFilesDir, r.URL.Path)
 			if _, err := os.Stat(pth); os.IsNotExist(err) {
-				// if file does not exists then return content of index.html
+				// if file does not exist then return content of index.html
 				http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
 			} else {
 				// if file exists then serve it

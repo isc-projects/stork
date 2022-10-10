@@ -8,7 +8,7 @@ home_dir=/var/lib/stork-agent
 mkdir -p -m 700 $home_dir/certs
 mkdir -p -m 700 $home_dir/tokens
 
-# add stork-agent user if does not exists
+# add stork-agent user if does not exist
 if [ ! $(getent passwd stork-agent) ]; then
     useradd --system --home-dir $home_dir stork-agent
 fi
