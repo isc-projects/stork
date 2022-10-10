@@ -99,7 +99,6 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			Name:     calloutUser.Name,
 			Groups:   groups,
 		}
-
 	} else {
 		user, err = r.defaultAuthentication(params)
 	}

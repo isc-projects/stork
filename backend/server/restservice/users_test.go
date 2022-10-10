@@ -10,7 +10,6 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
-	"isc.org/stork/server/hookmanager"
 )
 
 // Tests that create user account without necessary fields is rejected via REST API.
@@ -587,6 +586,20 @@ func TestUpdateUser(t *testing.T) {
 	returned, err := dbmodel.GetUserByID(db, su.ID)
 	require.NoError(t, err)
 	require.Equal(t, su.Lastname, returned.Lastname)
+
+	// An attempt to update non-existing user (non matching ID) should
+	// result in an error 409.
+	su.ID = 123
+	params = users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: models.Password("pass"),
+		},
+	}
+	rsp = rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
 // Tests that update user password with missing data is rejected via REST API.
@@ -798,8 +811,7 @@ func TestCreateSessionEmptyParams(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	hookManager := hookmanager.NewHookManagerFromCallouts([]interface{}{})
-	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+	rapi, _ := NewRestAPI(dbSettings, db)
 
 	user := &dbmodel.SystemUser{
 		Email:    "jan@example.org",
