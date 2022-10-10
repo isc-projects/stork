@@ -25,6 +25,20 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
 
+# Container with a modern Supervisord installled.
+FROM debian-base AS supervisor-base
+RUN apt-get update \
+        && apt-get install \
+        -y \
+        --no-install-recommends \
+        python3.7=3.7.* \
+        python3-pip=18.* \
+        python3-setuptools=40.8.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
+        && mkdir -p /var/log/supervisor
+
 # Install system-wide dependencies
 FROM debian-base AS base
 ENV DEBIAN_FRONTEND=noninteractive
@@ -134,25 +148,30 @@ EXPOSE 9547
 EXPOSE 9119
 
 # Server containers
-FROM debian-base AS server
-RUN apt-get update \
-        && apt-get install \
-        -y \
-        --no-install-recommends \
-        supervisor=4.2.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/*
+FROM supervisor-base AS server
 COPY --from=server-builder /app/dist/server/ /
 ENTRYPOINT [ "/bin/sh", "-c", \
-      "supervisord -c /etc/supervisor/supervisord.conf" ]
+        "supervisord -c /etc/supervisor/supervisord.conf" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 FROM server-builder AS server-debug
+RUN apt-get update \
+        && apt-get install \
+        -y \
+        --no-install-recommends \
+        python3.7=3.7.* \
+        python3-pip=18.* \
+        python3-setuptools=40.8.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
+        && mkdir -p /var/log/supervisor
 WORKDIR /app/rakelib
 COPY rakelib/30_dev.rake ./
 WORKDIR /app
-ENTRYPOINT ["rake", "run:server_debug", "HEADLESS=true", "UI_MODE=none"]
+ENTRYPOINT [ "/bin/sh", "-c", \
+        "supervisord -c /etc/supervisor/supervisord.conf" ]
 EXPOSE 8080
 EXPOSE 45678
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
@@ -189,20 +208,6 @@ WORKDIR /app/docker/tools
 COPY docker/tools/gen-kea-config.py .
 ENTRYPOINT [ "python3", "/app/docker/tools/gen-kea-config.py", "-o", "/etc/kea/kea-dhcp4.conf" ]
 CMD [ "7000" ]
-
-# Container with a modern Supervisord installled.
-FROM debian-base AS supervisor-base
-RUN apt-get update \
-        && apt-get install \
-        -y \
-        --no-install-recommends \
-        python3.7=3.7.* \
-        python3-pip=18.* \
-        python3-setuptools=40.8.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
-        && mkdir -p /var/log/supervisor
 
 # Kea with Stork Agent container
 FROM supervisor-base AS kea-base

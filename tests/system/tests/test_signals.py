@@ -1,7 +1,8 @@
-from core.fixtures import kea_parametrize
+from core.fixtures import kea_parametrize, server_parametrize
 from core.wrappers import Server, Kea
-import time
 
+
+@server_parametrize("server-non-debug")
 def test_reload_server_with_sighup(server_service: Server):
     # Remember current server's PID.
     pid_before = server_service.get_stork_server_pid()
@@ -14,7 +15,9 @@ def test_reload_server_with_sighup(server_service: Server):
     stdout, _ = server_service._compose.logs()
     assert "Reloading Stork Server after receiving SIGHUP signal" in stdout
 
+
 @kea_parametrize("agent-kea")
+@server_parametrize("server-non-debug")
 def test_reload_agent_with_sighup(server_service: Server, kea_service: Kea):
     # Remember current agent's PID.
     pid_before = kea_service.get_stork_agent_pid()
