@@ -1,3 +1,5 @@
+Stork 1.7.0 released on 2022-10-12.
+
 * 248 [bug] slawek
 
     Fixed a bug continuously producing false disconnect and reconnect events
