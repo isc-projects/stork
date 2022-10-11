@@ -1,6 +1,14 @@
 #!/bin/sh
 
-if [ -x "$(command -v systemctl)" ] && [ "$(systemctl is-system-running)" -eq 0 ]; then
-    systemctl disable isc-stork-server
+has_active_systemd=0
+if [ -x "$(command -v systemctl)" ]; then
+    status=$(systemctl is-system-running)
+    if [ $status="running" ] || [ $status="degraded" ] || [ $status="maintenance" ]; then
+        has_active_systemd=1
+    fi
+fi
+
+if [ $has_active_systemd -eq 1 ]; then
+    systemctl disable isc-stork-server 
     systemctl stop isc-stork-server
 fi
