@@ -3,7 +3,7 @@
 has_active_systemd=0
 if [ -x "$(command -v systemctl)" ]; then
     status=$(systemctl is-system-running)
-    if [ $status="running" ] || [ $status="degraded" ] || [ $status="maintenance" ]; then
+    if [ $status="running" ] || [ $status="degraded" ]; then
         has_active_systemd=1
     fi
 fi
