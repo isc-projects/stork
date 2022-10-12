@@ -46,7 +46,7 @@ func LoadAllHooks(program string, directory string) []any {
 		if err != nil {
 			logrus.
 				WithError(err).
-				WithField("library", library.Path()).
+				WithField("library", library.GetPath()).
 				Error("cannot extract callouts from library")
 			continue
 		}
