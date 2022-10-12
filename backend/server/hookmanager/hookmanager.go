@@ -8,6 +8,8 @@ import (
 	"isc.org/stork/hooksutil"
 )
 
+// Constructs a new hook executor and register the callouts supported by the
+// Stork server.
 func newHookExecutor() *hooksutil.HookExecutor {
 	executor := hooksutil.NewHookExecutor([]reflect.Type{
 		reflect.TypeOf((*authenticationcallout.AuthenticationCallout)(nil)).Elem(),
@@ -15,22 +17,28 @@ func newHookExecutor() *hooksutil.HookExecutor {
 	return executor
 }
 
+// Facade for all callout points. It defines the specific calling method for
+// each callout point.
 type HookManager struct {
 	executor *hooksutil.HookExecutor
 }
 
+// Constructs the hook manager.
 func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
 	return &HookManager{
 		executor: executor,
 	}
 }
 
+// Loads all hooks from a given hook directory and construct the hook manager.
 func NewHookManagerFromDirectory(directory string) *HookManager {
 	allCallouts := hooksutil.LoadAllHooks(hooks.HookProgramServer, directory)
 	return NewHookManagerFromCallouts(allCallouts)
 }
 
-func NewHookManagerFromCallouts(allCallouts []interface{}) *HookManager {
+// Constructs the hook manager using a list of the objects with callout points
+// implementations.
+func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
 	executor := newHookExecutor()
 	for _, callouts := range allCallouts {
 		executor.RegisterCallouts(callouts)
@@ -38,6 +46,7 @@ func NewHookManagerFromCallouts(allCallouts []interface{}) *HookManager {
 	return newHookManager(executor)
 }
 
+// Unregisters all callout objects.
 func (hm *HookManager) Close() {
 	hm.executor.UnregisterAllCallouts()
 }
