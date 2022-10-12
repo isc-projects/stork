@@ -17,15 +17,14 @@ func (hm *HookManager) HasAuthenticationHook() bool {
 }
 
 func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallout.User, error) {
-	data := hooksutil.CallSingle(hm.executor, func(callout authenticationcallout.AuthenticationCallout) struct {
+	type output struct {
 		user *authenticationcallout.User
 		err  error
-	} {
+	}
+
+	data := hooksutil.CallSingle(hm.executor, func(callout authenticationcallout.AuthenticationCallout) output {
 		user, err := callout.Authenticate(ctx, request, email, password)
-		return struct {
-			user *authenticationcallout.User
-			err  error
-		}{
+		return output{
 			user: user,
 			err:  err,
 		}
