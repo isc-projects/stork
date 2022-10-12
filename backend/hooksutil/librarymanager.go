@@ -38,16 +38,18 @@ func (lm *LibraryManager) Load() (io.Closer, error) {
 	return callouts, err
 }
 
-func (lm *LibraryManager) Version() (string, string, error) {
+func (lm *LibraryManager) Version() (program string, version string, err error) {
 	symbolName := hooks.HookVersionFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
+		err = errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
+		return
 	}
 	versionFunction, ok := symbol.(hooks.HookVersionFunction)
 	if !ok {
-		return "", "", errors.Errorf("symbol %s has unexpected signature", symbolName)
+		err = errors.Errorf("symbol %s has unexpected signature", symbolName)
+		return
 	}
-	program, version := versionFunction()
-	return program, version, nil
+	program, version = versionFunction()
+	return
 }

@@ -8,17 +8,17 @@ import (
 	"isc.org/stork"
 )
 
-func LoadAllHooks(program string, directory string) []interface{} {
+func LoadAllHooks(program string, directory string) []any {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		logrus.
 			WithError(err).
 			WithField("path", directory).
 			Error("cannot list hook directory")
-		return []interface{}{}
+		return []any{}
 	}
 
-	allCallouts := []interface{}{}
+	allCallouts := []any{}
 
 	for _, file := range files {
 		if file.IsDir() {

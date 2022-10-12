@@ -7,14 +7,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Caller = func(callouts interface{})
+type Caller = func(callouts any)
 
 type HookExecutor struct {
-	registeredCallouts map[reflect.Type][]interface{}
+	registeredCallouts map[reflect.Type][]any
 }
 
 func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
-	callouts := make(map[reflect.Type][]interface{}, len(calloutTypes))
+	callouts := make(map[reflect.Type][]any, len(calloutTypes))
 	for _, calloutType := range calloutTypes {
 		if calloutType.Kind() != reflect.Interface {
 			// It should never happen.
@@ -26,14 +26,14 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 			// 2. .Elem() call at the end.
 			panic("non-interface type passed")
 		}
-		callouts[calloutType] = make([]interface{}, 0)
+		callouts[calloutType] = make([]any, 0)
 	}
 	return &HookExecutor{
 		registeredCallouts: callouts,
 	}
 }
 
-func (he *HookExecutor) RegisterCallouts(callouts interface{}) {
+func (he *HookExecutor) RegisterCallouts(callouts any) {
 	for calloutType, registeredCallouts := range he.registeredCallouts {
 		if reflect.TypeOf(callouts).Implements(calloutType) {
 			he.registeredCallouts[calloutType] = append(registeredCallouts, callouts)
@@ -51,10 +51,10 @@ func (he *HookExecutor) UnregisterAllCallouts() {
 			}
 		}
 	}
-	he.registeredCallouts = make(map[reflect.Type][]interface{})
+	he.registeredCallouts = make(map[reflect.Type][]any)
 }
 
-func (he *HookExecutor) GetCallouts(calloutType reflect.Type) ([]interface{}, bool) {
+func (he *HookExecutor) GetCallouts(calloutType reflect.Type) ([]any, bool) {
 	callouts, ok := he.registeredCallouts[calloutType]
 	return callouts, ok
 }
@@ -65,27 +65,27 @@ func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
 }
 
 // It can monitor performance.
-func callCallout[C interface{}, O interface{}](callout C, caller func(C) O) O {
+func callCallout[TCallout any, TOutput any](callout TCallout, caller func(TCallout) TOutput) TOutput {
 	return caller(callout)
 }
 
-func CallSequential[C interface{}, O interface{}](he *HookExecutor, caller func(C) O) []O {
-	t := reflect.TypeOf((*C)(nil)).Elem()
+func CallSequential[TCallout any, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) []TOutput {
+	t := reflect.TypeOf((*TCallout)(nil)).Elem()
 	allCallouts, ok := he.GetCallouts(t)
 	if !ok {
 		return nil
 	}
 
-	var results []O
+	var results []TOutput
 	for _, callouts := range allCallouts {
-		result := callCallout(callouts.(C), caller)
+		result := callCallout(callouts.(TCallout), caller)
 		results = append(results, result)
 	}
 	return results
 }
 
-func CallSingle[C interface{}, O interface{}](he *HookExecutor, caller func(C) O) (output O) {
-	t := reflect.TypeOf((*C)(nil)).Elem()
+func CallSingle[TCallout any, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) (output TOutput) {
+	t := reflect.TypeOf((*TCallout)(nil)).Elem()
 	allCallouts, ok := he.GetCallouts(t)
 	if !ok {
 		return
@@ -98,5 +98,5 @@ func CallSingle[C interface{}, O interface{}](he *HookExecutor, caller func(C) O
 			WithField("callout", t.Name()).
 			Warn("there are many registered callouts but expected a single one")
 	}
-	return callCallout(allCallouts[0].(C), caller)
+	return callCallout(allCallouts[0].(TCallout), caller)
 }
