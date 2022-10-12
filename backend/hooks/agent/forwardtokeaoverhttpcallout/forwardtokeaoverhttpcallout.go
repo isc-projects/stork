@@ -5,5 +5,6 @@ import (
 )
 
 type BeforeForwardToKeaOverHTTPCallout interface {
+	// Called before forwarding a command to Kea over HTTP.
 	OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq)
 }

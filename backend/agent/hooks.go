@@ -9,7 +9,7 @@ import (
 	"isc.org/stork/hooksutil"
 )
 
-// Hook executor.
+// Constructs the hook executor and register the callouts supported by Stork agent.
 func newHookExecutor() *hooksutil.HookExecutor {
 	executor := hooksutil.NewHookExecutor([]reflect.Type{
 		reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem(),
@@ -17,6 +17,8 @@ func newHookExecutor() *hooksutil.HookExecutor {
 	return executor
 }
 
+// Facade for all callout points. It defines the specific calling method for
+// each callout point.
 type HookManager struct {
 	executor *hooksutil.HookExecutor
 }
@@ -24,18 +26,22 @@ type HookManager struct {
 // Interface checks.
 var _ forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
 
+// Constructs new hook manager.
 func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
 	return &HookManager{
 		executor: executor,
 	}
 }
 
+// Loads the hooks from a given directory and constructs the hook manager.
 func NewHookManagerFromDirectory(directory string) *HookManager {
 	allCallouts := hooksutil.LoadAllHooks(hooks.HookProgramAgent, directory)
 	return NewHookManagerFromCallouts(allCallouts)
 }
 
-func NewHookManagerFromCallouts(allCallouts []interface{}) *HookManager {
+// Constructs the hook manager using the list of objects with the callout
+// points implementations.
+func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
 	executor := newHookExecutor()
 	for _, callouts := range allCallouts {
 		executor.RegisterCallouts(callouts)
@@ -43,10 +49,12 @@ func NewHookManagerFromCallouts(allCallouts []interface{}) *HookManager {
 	return newHookManager(executor)
 }
 
+// Unregisters all callout objects.
 func (hm *HookManager) Close() {
 	hm.executor.UnregisterAllCallouts()
 }
 
+// Callout point executed before forwarding a command to Kea over HTTP.
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
 	hooksutil.CallSequential(hm.executor, func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
 		callout.OnBeforeForwardToKeaOverHTTP(in)
