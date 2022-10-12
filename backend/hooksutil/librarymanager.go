@@ -11,7 +11,8 @@ import (
 // Wrapper for a raw Go plugin to easier extraction of expected symbols
 // (functions).
 type LibraryManager struct {
-	p *plugin.Plugin
+	path string
+	p    *plugin.Plugin
 }
 
 // Opens a hook file and constructs the library manager object. Returns an
@@ -24,7 +25,7 @@ func NewLibraryManager(path string) (*LibraryManager, error) {
 		return nil, errors.Wrapf(err, "cannot open a plugin: %s", path)
 	}
 
-	return &LibraryManager{p}, nil
+	return &LibraryManager{path, p}, nil
 }
 
 // Extracts and calls the load function of the Stork hook. Returns an error if
@@ -69,4 +70,9 @@ func (lm *LibraryManager) Version() (program string, version string, err error) 
 
 	program, version = versionFunction()
 	return
+}
+
+// Returns a path to the hook file.
+func (lm *LibraryManager) Path() string {
+	return lm.path
 }
