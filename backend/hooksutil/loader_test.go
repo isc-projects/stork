@@ -8,15 +8,29 @@ import (
 	"isc.org/stork"
 )
 
-// Test that the function to load all hooks returns an empty list if the
+// Test that the function to load all hooks returns an error if the
 // directory doesn't exist.
-func TestLoadAllHooksReturnEmptyResultForInvalidDirectory(t *testing.T) {
+func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
 	callouts, err := LoadAllHooks("", "/non/exist/directory")
 
 	// Assert
 	require.Nil(t, callouts)
+	require.ErrorContains(t, err, "cannot find plugin paths")
+	require.ErrorContains(t, err, "no such file or directory")
+}
+
+// Test that the function to load all hooks returns an error if the directory
+// contains a non-plugin file.
+func TestLoadAllHooksReturnErrorForNonPluginFile(t *testing.T) {
+	// Arrange & Act
+	callouts, err := LoadAllHooks("", "templates")
+
+	// Assert
+	require.Nil(t, callouts)
 	require.Error(t, err)
+	require.ErrorContains(t, err, "cannot open hook library")
+	require.ErrorContains(t, err, "invalid ELF header")
 }
 
 // Test that the extract callouts function returns an error if the Version
