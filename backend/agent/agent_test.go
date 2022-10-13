@@ -120,7 +120,7 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, fam)
+	sa := NewStorkAgent(settings, fam, NewHookManagerFromCallouts([]any{}))
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
 }
