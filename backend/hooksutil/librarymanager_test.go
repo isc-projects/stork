@@ -17,18 +17,23 @@ type pluginMock struct {
 	err     error
 }
 
+// Constructs the plugin mock instance.
 func newPluginMock(content any, err error) *pluginMock {
 	return &pluginMock{content, err}
 }
 
+// Implements the plugin interface. Returns the fixed values.
 func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
 	return p.content, p.err
 }
 
+// Function with a signature non-matching to Load and Version.
 func invalidSignature(int64) bool {
 	return false
 }
 
+// Creates a valid Load function that returns the given output.
+// If the string content is empty, the function will return nil instead.
 func validLoad(s string, err error) hooks.HookLoadFunction {
 	return func() (hooks.Closer, error) {
 		if s == "" {
@@ -38,6 +43,7 @@ func validLoad(s string, err error) hooks.HookLoadFunction {
 	}
 }
 
+// Creates a valid Version function that returns the given output.
 func validVersion(program, version string) hooks.HookVersionFunction {
 	return func() (string, string) {
 		return program, version
