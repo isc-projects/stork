@@ -25,22 +25,24 @@ func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
 	return p.content, p.err
 }
 
-func invalidLoad(int64) bool {
+func invalidSignature(int64) bool {
 	return false
 }
 
-func validLoadWithoutError() (hooks.Closer, error) {
-	obj := io.NopCloser(strings.NewReader("foobar"))
-	return obj, nil
+func validLoad(s string, err error) hooks.HookLoadFunction {
+	return func() (hooks.Closer, error) {
+		if s == "" {
+			return nil, err
+		}
+		return io.NopCloser(strings.NewReader(s)), err
+	}
 }
 
-func validLoadWithError() (hooks.Closer, error) {
-	return nil, errors.New("error in load")
+func validVersion(program, version string) hooks.HookVersionFunction {
+	return func() (string, string) {
+		return program, version
+	}
 }
-
-var _ hooks.HookLoadFunction = validLoadWithError
-
-var _ hooks.HookLoadFunction = validLoadWithoutError
 
 // Test that the library constructor returns an error for an unknown file.
 func TestNewLibraryManagerReturnErrorForInvalidPath(t *testing.T) {
@@ -69,7 +71,7 @@ func TestNewLibraryManager(t *testing.T) {
 // contain the load function.
 func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("foo", newPluginMock(nil, errors.New("symbol not found")))
+	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
 	callouts, err := library.Load()
@@ -83,9 +85,7 @@ func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 // function has unexpected signature.
 func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("foo", newPluginMock(
-		invalidLoad, nil),
-	)
+	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
 	callouts, err := library.Load()
@@ -99,9 +99,13 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 // function returns and error.
 func TestLoadReturnErrorOnFail(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("foo", newPluginMock(
-		validLoadWithError, nil),
-	)
+	library := newLibraryManager("", newPluginMock(
+		validLoad(
+			"",
+			errors.New("error in load"),
+		),
+		nil,
+	))
 
 	// Act
 	callouts, err := library.Load()
@@ -114,9 +118,9 @@ func TestLoadReturnErrorOnFail(t *testing.T) {
 // Test that the load library function returns a callout object on success.
 func TestLoadReturnCalloutsOnSuccess(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("foo", newPluginMock(
-		validLoadWithoutError, nil),
-	)
+	library := newLibraryManager("", newPluginMock(
+		validLoad("bar", nil), nil,
+	))
 
 	// Act
 	callouts, err := library.Load()
@@ -130,40 +134,54 @@ func TestLoadReturnCalloutsOnSuccess(t *testing.T) {
 // contain the version function.
 func TestVersionReturnErrorForMissingFunction(t *testing.T) {
 	// Arrange
+	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
+	program, version, err := library.Version()
 
 	// Assert
-
+	require.Empty(t, program)
+	require.Empty(t, version)
+	require.Error(t, err)
 }
 
 // Test that the version library function returns an error if the version plugin
 // function has unexpected signature.
 func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
+	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
+	program, version, err := library.Version()
 
 	// Assert
-
+	require.Empty(t, program)
+	require.Empty(t, version)
+	require.ErrorContains(t, err, "symbol Version has unexpected signature")
 }
 
 // Test that the version library function returns a callout object on success.
 func TestVersionReturnCalloutsOnSuccess(t *testing.T) {
 	// Arrange
+	library := newLibraryManager("", newPluginMock(validVersion("bar", "baz"), nil))
 
 	// Act
+	program, version, err := library.Version()
 
 	// Assert
-
+	require.EqualValues(t, "bar", program)
+	require.EqualValues(t, "baz", version)
+	require.NoError(t, err)
 }
 
 // Test that the path is returned properly.
 func TestGetPath(t *testing.T) {
 	// Arrange
+	library := newLibraryManager("foo", nil)
 
 	// Act
+	path := library.GetPath()
 
 	// Assert
-
+	require.EqualValues(t, "foo", path)
 }
