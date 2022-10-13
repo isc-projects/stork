@@ -48,15 +48,27 @@ func (he *HookExecutor) RegisterCallouts(callouts any) {
 }
 
 // Unregisters all callout objects by calling their Close methods.
-func (he *HookExecutor) UnregisterAllCallouts() {
+func (he *HookExecutor) UnregisterAllCallouts() []error {
+	errs := []error{}
+
 	for _, registeredCallouts := range he.registeredCallouts {
 		for _, callout := range registeredCallouts {
-			if closer, ok := callout.(io.Closer); ok {
-				closer.Close()
+			closer, ok := callout.(io.Closer)
+			if !ok {
+				continue
+			}
+
+			err := closer.Close()
+
+			if err != nil {
+				errs = append(errs, err)
 			}
 		}
 	}
+
 	he.registeredCallouts = make(map[reflect.Type][]any)
+
+	return errs
 }
 
 // Returns all callout objects that implements a given callout type.
