@@ -43,7 +43,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
+func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, hookManager *HookManager) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -52,7 +52,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 		HTTPClient:     NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
 		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
-		hookManager:    NewHookManagerFromDirectory(settings.Path("hook-directory")),
+		hookManager:    hookManager,
 	}
 
 	registerKeaInterceptFns(sa)

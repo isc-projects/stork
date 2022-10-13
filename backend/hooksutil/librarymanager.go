@@ -11,7 +11,7 @@ import (
 // It is impossible to mock the `plugin.Plugin` struct directly. It's an
 // interface that defines the same method as the plugin struct. It may be used
 // to instantiate the library manager without a physical plugin file.
-type pluginContent interface {
+type pluginInterface interface {
 	Lookup(string) (plugin.Symbol, error)
 }
 
@@ -19,7 +19,7 @@ type pluginContent interface {
 // (functions).
 type LibraryManager struct {
 	path string
-	p    pluginContent
+	p    pluginInterface
 }
 
 // Opens a hook file and constructs the library manager object. Returns an
@@ -35,10 +35,10 @@ func NewLibraryManager(path string) (*LibraryManager, error) {
 	return newLibraryManager(path, p), nil
 }
 
-// Internal constructor that accepts in-memory plugin content (opened plugin
+// Internal constructor that accepts in-memory plugin (opened plugin
 // or mock).
-func newLibraryManager(path string, content pluginContent) *LibraryManager {
-	return &LibraryManager{path, content}
+func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
+	return &LibraryManager{path, plugin}
 }
 
 // Extracts and calls the load function of the Stork hook. Returns an error if

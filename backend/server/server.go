@@ -177,7 +177,10 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 // prepares the REST API. The reload flag indicates if the server is
 // starting up (reload=false) or it is being reloaded (reload=true).
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
-	ss.HookManager = hookmanager.NewHookManagerFromDirectory(ss.GeneralSettings.HookDirectory)
+	ss.HookManager, err = hookmanager.NewHookManagerFromDirectory(ss.GeneralSettings.HookDirectory)
+	if err != nil {
+		return err
+	}
 
 	// setup database connection
 	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)

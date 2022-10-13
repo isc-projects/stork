@@ -13,18 +13,40 @@ import (
 
 // Plugin mock.
 type pluginMock struct {
-	content any
-	err     error
+	// General lookup results
+	lookupResult         any
+	lookupErr            error
+	specificLookupOutput map[string]struct {
+		result any
+		err    error
+	}
 }
 
 // Constructs the plugin mock instance.
-func newPluginMock(content any, err error) *pluginMock {
-	return &pluginMock{content, err}
+func newPluginMock(lookupResult any, lookupErr error) *pluginMock {
+	return &pluginMock{lookupResult, lookupErr, make(map[string]struct {
+		result any
+		err    error
+	})}
 }
 
 // Implements the plugin interface. Returns the fixed values.
 func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
-	return p.content, p.err
+	if output, ok := p.specificLookupOutput[symName]; ok {
+		return output.result, output.err
+	}
+	return p.lookupResult, p.lookupErr
+}
+
+// Add a dedicated lookup output for a specific symbol.
+func (p *pluginMock) addLookupOutput(symName string, result any, err error) {
+	p.specificLookupOutput[symName] = struct {
+		result any
+		err    error
+	}{
+		result: result,
+		err:    err,
+	}
 }
 
 // Function with a signature non-matching to Load and Version.

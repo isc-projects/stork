@@ -51,17 +51,25 @@ func runAgent(settings *cli.Context, reload bool) error {
 		}
 	}
 
+	// Read the hook libraries.
+	hookManager, err := agent.NewHookManagerFromDirectory(settings.Path("hook-directory"))
+	if err != nil {
+		log.
+			WithError(err).
+			Fatal("Problem with loading hook libraries")
+	}
+
 	// Start app monitor
 	appMonitor := agent.NewAppMonitor()
 
 	// Prepare agent gRPC handler
-	storkAgent := agent.NewStorkAgent(settings, appMonitor)
+	storkAgent := agent.NewStorkAgent(settings, appMonitor, hookManager)
 
 	// Prepare Prometheus exporters
 	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor)
 	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor)
 
-	err := storkAgent.Setup()
+	err = storkAgent.Setup()
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}

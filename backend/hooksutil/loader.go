@@ -1,13 +1,9 @@
 package hooksutil
 
 import (
-	"io/ioutil"
-	"path/filepath"
-	"sort"
-
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"isc.org/stork"
+	storkutil "isc.org/stork/util"
 )
 
 // Loads all hook files from a given directory for a specific program (server
@@ -15,72 +11,35 @@ import (
 // The hook must be compiled with a matching version and application name.
 // Otherwise, it's skipped.
 // The hooks are loaded in the lexicographic order of hook file names.
-func LoadAllHooks(program string, directory string) []any {
+func LoadAllHooks(program string, directory string) ([]any, error) {
 	// Search for files.
-	paths, err := findFilePaths(directory)
+	paths, err := storkutil.ListFilePaths(directory, true)
 	if err != nil {
-		logrus.
-			WithError(err).
-			Error("cannot find plugin paths")
-		return []any{}
+		err = errors.WithMessagef(err, "cannot find plugin paths in: %s", directory)
+		return nil, err
 	}
 
-	// Extract the Go plugins.
-	libraries := []*LibraryManager{}
+	allCallouts := []any{}
+
 	for _, path := range paths {
+		// Extract the Go plugins.
 		library, err := NewLibraryManager(path)
 		if err != nil {
-			logrus.
-				WithError(err).
-				WithField("library", path).
-				Error("cannot open hook library")
-			continue
+			err = errors.WithMessagef(err, "cannot open hook library: %s", path)
+			return nil, err
 		}
-		libraries = append(libraries, library)
-	}
 
-	// Load the hook callouts.
-	allCallouts := []any{}
-	for _, library := range libraries {
+		// Load the hook callouts.
 		callouts, err := extractCallouts(library, program)
 		if err != nil {
-			logrus.
-				WithError(err).
-				WithField("library", library.GetPath()).
-				Error("cannot extract callouts from library")
-			continue
+			err = errors.WithMessagef(err, "cannot extract callouts from library: %s", path)
+			return nil, err
 		}
 
 		allCallouts = append(allCallouts, callouts)
 	}
 
-	return allCallouts
-}
-
-// Finds all file paths in a given directory. It looks only at the top level.
-// Returned paths are sorted lexicographically.
-func findFilePaths(directory string) ([]string, error) {
-	entries, err := ioutil.ReadDir(directory)
-	if err != nil {
-		err = errors.Wrapf(err, "cannot list hook directory: %s", directory)
-		return nil, err
-	}
-
-	files := []string{}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		files = append(files, filepath.Join(directory, entry.Name()))
-	}
-
-	// Sorts files by name
-	sort.Slice(files, func(i, j int) bool {
-		return files[i] < files[j]
-	})
-
-	return files, nil
+	return allCallouts, nil
 }
 
 // Extracts the object with callout points implementations from a given library
@@ -89,7 +48,7 @@ func findFilePaths(directory string) ([]string, error) {
 func extractCallouts(library *LibraryManager, expectedProgram string) (any, error) {
 	hookProgram, hookVersion, err := library.Version()
 	if err != nil {
-		err = errors.WithMessage(err, "cannot check version of hook library")
+		err = errors.WithMessage(err, "cannot call version of hook library")
 		return nil, err
 	}
 

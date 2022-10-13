@@ -19,8 +19,9 @@ import (
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
+	hm := NewHookManagerFromCallouts([]any{})
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am)
+	sa := NewStorkAgent(settings, am, hm)
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -208,8 +209,9 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 
 func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
+	hm := NewHookManagerFromCallouts([]any{})
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am)
+	sa := NewStorkAgent(settings, am, hm)
 	am.detectApps(sa)
 }
 
@@ -230,8 +232,10 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 		HTTPClient: NewHTTPClient(false),
 	})
 
+	hm := NewHookManagerFromCallouts([]any{})
+
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am)
+	sa := NewStorkAgent(settings, am, hm)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
