@@ -17,11 +17,6 @@ type mockCalloutBar interface {
 	Bar() bool
 }
 
-type mockCalloutFooBar interface {
-	Foo() int
-	Bar() bool
-}
-
 // Foo mock callout implementation.
 type mockCalloutFooImpl struct {
 	fooCount int
@@ -265,9 +260,9 @@ func TestHasRegisteredForUnsupportedCallout(t *testing.T) {
 // Test that the callout points are called in the sequential order properly.
 func TestCallSequential(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
 	})
 
 	fooMocks := []*mockCalloutFooImpl{
@@ -321,14 +316,16 @@ func TestCallSequential(t *testing.T) {
 // was registered.
 func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
 	})
 
-	mock := newMockCalloutFoo()
+	fooMock := newMockCalloutFoo()
+	barMock := newMockCalloutBar()
 
-	executor.RegisterCallouts(mock)
+	executor.RegisterCallouts(fooMock)
+	executor.RegisterCallouts(barMock)
 
 	// Act
 	result := CallSingle(executor, func(callout mockCalloutFoo) int {
@@ -336,17 +333,18 @@ func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	})
 
 	// Assert
-	require.EqualValues(t, 1, mock.fooCount)
-	require.EqualValues(t, mock.fooTotalCount, result)
+	require.EqualValues(t, 1, fooMock.fooCount)
+	require.EqualValues(t, fooMock.fooTotalCount, result)
+	require.Zero(t, barMock.barCount)
 }
 
 // Test that only the first callout point is executed if more than one callout
 // object was registered.
 func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
 	})
 
 	mocks := []*mockCalloutFooImpl{
@@ -358,6 +356,12 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	for _, mock := range mocks {
 		executor.RegisterCallouts(mock)
 	}
+
+	barMock := newMockCalloutBar()
+	fooBarMock := newMockCalloutFooBar()
+
+	executor.RegisterCallouts(fooBarMock)
+	executor.RegisterCallouts(barMock)
 
 	// Act
 	result := CallSingle(executor, func(callout mockCalloutFoo) int {
@@ -373,14 +377,19 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 
 		require.Zero(t, mock.fooCount)
 	}
+
+	require.Zero(t, barMock.barCount)
+	require.Zero(t, fooBarMock.fooCount)
+	require.Zero(t, fooBarMock.barCount)
 }
 
 // Test that the default result is returned if no callout object was
 // registered.
 func TestCallSingleForNoRegisteredCallouts(t *testing.T) {
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
 	})
 
 	// Act

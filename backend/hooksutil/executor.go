@@ -59,7 +59,6 @@ func (he *HookExecutor) UnregisterAllCallouts() []error {
 			}
 
 			err := closer.Close()
-
 			if err != nil {
 				errs = append(errs, err)
 			}
