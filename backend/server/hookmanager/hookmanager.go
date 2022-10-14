@@ -6,6 +6,7 @@ import (
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallout"
 	"isc.org/stork/hooksutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Constructs a new hook executor and register the callouts supported by the
@@ -46,7 +47,7 @@ func NewHookManagerFromDirectory(directory string) (*HookManager, error) {
 
 // Constructs the hook manager using a list of the objects with callout points
 // implementations.
-func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
+func NewHookManagerFromCallouts(allCallouts []hooks.Callout) *HookManager {
 	executor := newHookExecutor()
 	for _, callouts := range allCallouts {
 		executor.RegisterCallouts(callouts)
@@ -55,6 +56,7 @@ func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
 }
 
 // Unregisters all callout objects.
-func (hm *HookManager) Close() {
-	hm.executor.UnregisterAllCallouts()
+func (hm *HookManager) Close() error {
+	errs := hm.executor.UnregisterAllCallouts()
+	return storkutil.CombineErrors("some hooks failed to close", errs)
 }

@@ -304,7 +304,9 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 			ss.MetricsCollector.Shutdown()
 		}
 
+		ss.HookManager.Close()
 		ss.DB.Close()
+
 		return err
 	}
 	ss.RestAPI = r
@@ -352,6 +354,7 @@ func (ss *StorkServer) Shutdown(reload bool) {
 		if ss.MetricsCollector != nil {
 			ss.MetricsCollector.Shutdown()
 		}
+		ss.HookManager.Close()
 		ss.DB.Close()
 
 		if !reload {

@@ -3,31 +3,23 @@ package agent
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	gomock "github.com/golang/mock/gomock"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/hooks"
 )
-
-type TestCalloutOnBeforeForwardToKeaOverHTTP struct {
-	t          *testing.T
-	callCounts uint64
-}
-
-func newTestCalloutOnBeforeForwardToKeaOverHTTP(t *testing.T) *TestCalloutOnBeforeForwardToKeaOverHTTP {
-	return &TestCalloutOnBeforeForwardToKeaOverHTTP{
-		t:          t,
-		callCounts: 0,
-	}
-}
-
-func (tc *TestCalloutOnBeforeForwardToKeaOverHTTP) OnBeforeForwardToKeaOverHTTP(r *agentapi.ForwardToKeaOverHTTPReq) {
-	require.NotNil(tc.t, r)
-	tc.callCounts++
-}
 
 func TestOnBeforeForwardToKeaOverHTTPHook(t *testing.T) {
 	// Arrange
-	callout := newTestCalloutOnBeforeForwardToKeaOverHTTP(t)
-	sa, ctx := setupAgentTestWithCallouts([]interface{}{callout})
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mock.
+		EXPECT().
+		OnBeforeForwardToKeaOverHTTP(gomock.Any()).
+		Times(1)
+
+	sa, ctx := setupAgentTestWithCallouts([]hooks.Callout{mock})
 	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:         "http://localhost:45634/",
 		KeaRequests: []*agentapi.KeaRequest{{Request: "{ \"command\": \"list-commands\"}"}},
@@ -36,6 +28,6 @@ func TestOnBeforeForwardToKeaOverHTTPHook(t *testing.T) {
 	// Act
 	_, _ = sa.ForwardToKeaOverHTTP(ctx, req)
 
-	// Arrange
-	require.EqualValues(t, 1, callout.callCounts)
+	// Assert
+	// Call assertion inside a mock.
 }

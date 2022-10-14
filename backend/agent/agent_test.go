@@ -23,6 +23,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
 )
 
@@ -63,7 +64,7 @@ func setupAgentTest() (*StorkAgent, context.Context) {
 	return setupAgentTestWithCallouts(nil)
 }
 
-func setupAgentTestWithCallouts(callouts []interface{}) (*StorkAgent, context.Context) {
+func setupAgentTestWithCallouts(callouts []hooks.Callout) (*StorkAgent, context.Context) {
 	httpClient := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
 

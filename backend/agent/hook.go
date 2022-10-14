@@ -7,6 +7,7 @@ import (
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
 	"isc.org/stork/hooksutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Constructs the hook executor and register the callouts supported by Stork agent.
@@ -49,7 +50,7 @@ func NewHookManagerFromDirectory(directory string) (*HookManager, error) {
 
 // Constructs the hook manager using the list of objects with the callout
 // points implementations.
-func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
+func NewHookManagerFromCallouts(allCallouts []hooks.Callout) *HookManager {
 	executor := newHookExecutor()
 	for _, callouts := range allCallouts {
 		executor.RegisterCallouts(callouts)
@@ -58,8 +59,9 @@ func NewHookManagerFromCallouts(allCallouts []any) *HookManager {
 }
 
 // Unregisters all callout objects.
-func (hm *HookManager) Close() {
-	hm.executor.UnregisterAllCallouts()
+func (hm *HookManager) Close() error {
+	errs := hm.executor.UnregisterAllCallouts()
+	return storkutil.CombineErrors("some hooks failed to close", errs)
 }
 
 // Callout point executed before forwarding a command to Kea over HTTP.

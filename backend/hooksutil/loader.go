@@ -3,6 +3,7 @@ package hooksutil
 import (
 	"github.com/pkg/errors"
 	"isc.org/stork"
+	"isc.org/stork/hooks"
 	storkutil "isc.org/stork/util"
 )
 
@@ -11,7 +12,7 @@ import (
 // The hook must be compiled with a matching version and application name.
 // Otherwise, it's skipped.
 // The hooks are loaded in the lexicographic order of hook file names.
-func LoadAllHooks(program string, directory string) ([]any, error) {
+func LoadAllHooks(program string, directory string) ([]hooks.Callout, error) {
 	// Search for files.
 	paths, err := storkutil.ListFilePaths(directory, true)
 	if err != nil {
@@ -19,7 +20,7 @@ func LoadAllHooks(program string, directory string) ([]any, error) {
 		return nil, err
 	}
 
-	allCallouts := []any{}
+	allCallouts := []hooks.Callout{}
 
 	for _, path := range paths {
 		// Extract the Go plugins.
@@ -45,7 +46,7 @@ func LoadAllHooks(program string, directory string) ([]any, error) {
 // Extracts the object with callout points implementations from a given library
 // (Go plugin). The library is validated. The version and program name must match
 // the caller application.
-func extractCallouts(library *LibraryManager, expectedProgram string) (any, error) {
+func extractCallouts(library *LibraryManager, expectedProgram string) (hooks.Callout, error) {
 	hookProgram, hookVersion, err := library.Version()
 	if err != nil {
 		err = errors.WithMessage(err, "cannot call version of hook library")

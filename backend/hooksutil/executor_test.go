@@ -11,10 +11,12 @@ import (
 // Mock callout interfaces.
 type mockCalloutFoo interface {
 	Foo() int
+	Close() error
 }
 
 type mockCalloutBar interface {
 	Bar() bool
+	Close() error
 }
 
 // Foo mock callout implementation.
@@ -22,10 +24,22 @@ type mockCalloutFooImpl struct {
 	fooCount int
 	// The call count including calls from all mock instances.
 	fooTotalCount int
+	closeCount    int
+	closeErr      error
 }
 
 // The Foo call counter shared between all mock instances.
 var sharedFooCount int //nolint:gochecknoglobals
+
+// Constructs an instance of the mock callout implementation.
+func newMockCalloutFoo() *mockCalloutFooImpl {
+	return &mockCalloutFooImpl{
+		fooCount:      0,
+		fooTotalCount: 0,
+		closeCount:    0,
+		closeErr:      nil,
+	}
+}
 
 // Counts the call count.
 func (c *mockCalloutFooImpl) Foo() int {
@@ -35,51 +49,34 @@ func (c *mockCalloutFooImpl) Foo() int {
 	return c.fooTotalCount
 }
 
-// Constructs an instance of the mock callout implementation.
-func newMockCalloutFoo() *mockCalloutFooImpl {
-	return &mockCalloutFooImpl{
-		fooCount: 0,
-	}
-}
-
-// Mock callout implementation that implement the mock callout interface
-// and io.Closer.
-type mockCalloutFooClosableImpl struct {
-	mockCalloutFooImpl
-
-	closeCount int
-	closeErr   error
-}
-
 // It counts the call count and returns the mocked error.
-func (c *mockCalloutFooClosableImpl) Close() error {
+func (c *mockCalloutFooImpl) Close() error {
 	c.closeCount++
 	return c.closeErr
 }
 
-// Constructs the mock callout. Accepts an error returned by the Close method.
-func newClosableCallout(closeErr error) *mockCalloutFooClosableImpl {
-	return &mockCalloutFooClosableImpl{
-		mockCalloutFooImpl: *newMockCalloutFoo(),
-		closeCount:         0,
-		closeErr:           closeErr,
-	}
-}
-
 // Bar mock implementation.
 type mockCalloutBarImpl struct {
-	barCount int
-}
-
-// Counts the calls. Return parity of an actual value.
-func (m *mockCalloutBarImpl) Bar() bool {
-	m.barCount++
-	return m.barCount%2 == 0
+	barCount   int
+	closeCount int
+	closeErr   error
 }
 
 // Constructs the Bar mock.
 func newMockCalloutBar() *mockCalloutBarImpl {
 	return &mockCalloutBarImpl{}
+}
+
+// Counts the calls. Return parity of an actual value.
+func (c *mockCalloutBarImpl) Bar() bool {
+	c.barCount++
+	return c.barCount%2 == 0
+}
+
+// It counts the call count and returns the mocked error.
+func (c *mockCalloutBarImpl) Close() error {
+	c.closeCount++
+	return c.closeErr
 }
 
 // FooBar mock implementation.
@@ -91,6 +88,10 @@ type mockCalloutFooBarImpl struct {
 // Constructs the FooBar mock.
 func newMockCalloutFooBar() *mockCalloutFooBarImpl {
 	return &mockCalloutFooBarImpl{}
+}
+
+func (c *mockCalloutFooBarImpl) Close() error {
+	return c.mockCalloutFooImpl.Close()
 }
 
 // Test that the hook executor is constructed properly.
@@ -154,7 +155,7 @@ func TestRegisterUnsupportedCallouts(t *testing.T) {
 // Test that all callouts are unregistered.
 func TestUnregisterAllCallouts(t *testing.T) {
 	// Arrange
-	callout := newClosableCallout(nil)
+	callout := newMockCalloutFoo()
 	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
 		calloutType,
@@ -170,30 +171,13 @@ func TestUnregisterAllCallouts(t *testing.T) {
 	require.Empty(t, errs)
 }
 
-// Test that callout without Close method causes no error.
-// Note that the Close function is mandatory in the standard flow.
-func TestUnregisterCalloutWithoutClose(t *testing.T) {
-	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
-	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
-	})
-	executor.RegisterCallouts(newMockCalloutFoo())
-
-	// Act
-	errs := executor.UnregisterAllCallouts()
-
-	// Assert
-	require.Empty(t, executor.registeredCallouts)
-	require.Empty(t, errs)
-}
-
 // Test that if one callout object returns an error, other are unregistered
 // properly.
 func TestUnregisterAllCalloutsWithError(t *testing.T) {
 	// Arrange
-	successCallout := newClosableCallout(nil)
-	failedCallout := newClosableCallout(errors.New("Close failed"))
+	successCallout := newMockCalloutFoo()
+	failedCallout := newMockCalloutFoo()
+	failedCallout.closeErr = errors.New("Close failed")
 
 	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{

@@ -57,7 +57,7 @@ func invalidSignature(int64) bool {
 // Creates a valid Load function that returns the given output.
 // If the string content is empty, the function will return nil instead.
 func validLoad(s string, err error) hooks.HookLoadFunction {
-	return func() (hooks.Closer, error) {
+	return func() (hooks.Callout, error) {
 		if s == "" {
 			return nil, err
 		}

@@ -454,7 +454,13 @@ func (sa *StorkAgent) Shutdown(reload bool) {
 		if !reload {
 			log.Info("Stopping Stork Agent")
 		}
-		sa.hookManager.Close()
+		err := sa.hookManager.Close()
+		if err != nil {
+			log.
+				WithError(err).
+				Error("Hook closing failed")
+		}
+
 		if sa.server != nil {
 			sa.server.GracefulStop()
 		}

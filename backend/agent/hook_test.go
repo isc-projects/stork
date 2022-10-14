@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
 )
 
@@ -52,11 +54,74 @@ func TestHookManagerFromCallouts(t *testing.T) {
 	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
 
 	// Act
-	hookManager := NewHookManagerFromCallouts([]any{
+	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
 		mock,
 	})
 
 	// Assert
 	require.NotNil(t, hookManager)
 	require.True(t, hookManager.executor.HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
+}
+
+// Test that the hook manager is closing properly.
+func TestHookManagerClose(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mock.
+		EXPECT().
+		Close().
+		Return(nil).
+		Times(1)
+
+	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
+		mock,
+	})
+
+	// Act
+	err := hookManager.Close()
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that the hook manager pass through the error from callouts and
+// the error raising doesn't interrupt the close operation.
+func TestHookManagerCloseWithErrors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockWithoutErr1 := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithoutErr1.
+		EXPECT().
+		Close().
+		Return(nil).
+		Times(1)
+
+	mockWithoutErr2 := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithoutErr2.
+		EXPECT().
+		Close().
+		Return(nil).
+		Times(1)
+
+	mockWithErr := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithErr.
+		EXPECT().
+		Close().
+		Return(errors.New("foo")).
+		Times(1)
+
+	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
+		mockWithoutErr1,
+		mockWithErr,
+		mockWithoutErr2,
+	})
+
+	// Act
+	err := hookManager.Close()
+
+	// Assert
+	require.ErrorContains(t, err, "foo")
 }
