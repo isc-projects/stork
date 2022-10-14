@@ -190,28 +190,53 @@ go_common_codebase = FileList["backend/**/*"]
     .include(std_option_defs4_go_file)
     .include(std_option_defs6_go_file)
 
-GO_SERVER_API_MOCK = "backend/server/agentcomm/api_mock.go"
+go_server_mocks = FileList[
+    "backend/server/agentcomm/api_mock.go",
+]
+
+go_agent_mocks = FileList[
+    "backend/agent/hook_mock.go",
+]
+
+GO_MOCKS = go_server_mocks + go_agent_mocks
 
 GO_SERVER_CODEBASE = go_server_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-server/stork-server")
-        .exclude(GO_SERVER_API_MOCK)
+        .exclude(go_server_mocks)
 
 GO_AGENT_CODEBASE = go_agent_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-agent/stork-agent")
+        .exclude(go_agent_mocks)
 
 GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-tool/stork-tool")
 
-file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
+def gen_mocks()
     Dir.chdir("backend") do
         sh GO, "generate", "./..."
     end
-    sh "touch", "-c", GO_SERVER_API_MOCK
+
+    GO_MOCKS.each do |mock_file|
+        sh "touch", "-c", mock_file
+    end
 end
-CLEAN.append GO_SERVER_API_MOCK
+
+go_server_mocks.each do |mock_file|
+    file mock_file => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
+        gen_mocks()
+    end
+end
+
+go_agent_mocks.each do |mock_file|
+    file mock_file => [GO, MOCKERY, MOCKGEN] + GO_AGENT_CODEBASE do
+        gen_mocks()
+    end
+end
+
+CLEAN.append *GO_MOCKS
     
 #####################
 ### Documentation ###
