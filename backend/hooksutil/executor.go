@@ -86,7 +86,7 @@ func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
 }
 
 // Calls the specific callout point using the caller object.
-// It can be used to monitor performance.
+// It can be used to monitor performance in the future.
 func callCallout[TCallout any, TOutput any](callout TCallout, caller func(TCallout) TOutput) TOutput {
 	return caller(callout)
 }
