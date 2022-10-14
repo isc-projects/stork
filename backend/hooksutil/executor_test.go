@@ -257,6 +257,26 @@ func TestHasRegisteredForUnsupportedCallout(t *testing.T) {
 	require.False(t, isRegistered)
 }
 
+// Test that the supported callout types are returned properly.
+func TestGetSupportedCalloutTypes(t *testing.T) {
+	// Arrange
+	fooType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	barType := reflect.TypeOf((*mockCalloutBar)(nil)).Elem()
+
+	executor := NewHookExecutor([]reflect.Type{
+		fooType,
+		barType,
+	})
+
+	// Act
+	supportedTypes := executor.GetSupportedCalloutTypes()
+
+	// Assert
+	require.Len(t, supportedTypes, 2)
+	require.Contains(t, supportedTypes, fooType)
+	require.Contains(t, supportedTypes, barType)
+}
+
 // Test that the callout points are called in the sequential order properly.
 func TestCallSequential(t *testing.T) {
 	// Arrange

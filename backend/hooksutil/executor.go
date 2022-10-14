@@ -77,6 +77,17 @@ func (he *HookExecutor) getCallouts(calloutType reflect.Type) ([]any, bool) {
 	return callouts, ok
 }
 
+// Returns a slice of the supported callout types.
+func (he *HookExecutor) GetSupportedCalloutTypes() []reflect.Type {
+	supportedTypes := make([]reflect.Type, len(he.registeredCallouts))
+	i := 0
+	for t := range he.registeredCallouts {
+		supportedTypes[i] = t
+		i++
+	}
+	return supportedTypes
+}
+
 // Returns true if a given callout type is supported and has at least one
 // callout object registered.
 func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
