@@ -30,6 +30,11 @@ func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
 	}
 }
 
+// Constructs the hook manager without registering any callout points.
+func NewHookManager() *HookManager {
+	return newHookManager(newHookExecutor())
+}
+
 // Loads all hooks from a given hook directory and construct the hook manager.
 func NewHookManagerFromDirectory(directory string) (*HookManager, error) {
 	allCallouts, err := hooksutil.LoadAllHooks(hooks.HookProgramServer, directory)

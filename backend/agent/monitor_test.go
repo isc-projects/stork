@@ -19,7 +19,7 @@ import (
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
-	hm := NewHookManagerFromCallouts([]any{})
+	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	sa := NewStorkAgent(settings, am, hm)
 	am.Start(sa)
@@ -209,7 +209,7 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 
 func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
-	hm := NewHookManagerFromCallouts([]any{})
+	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	sa := NewStorkAgent(settings, am, hm)
 	am.detectApps(sa)
@@ -232,7 +232,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 		HTTPClient: NewHTTPClient(false),
 	})
 
-	hm := NewHookManagerFromCallouts([]any{})
+	hm := NewHookManager()
 
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	sa := NewStorkAgent(settings, am, hm)

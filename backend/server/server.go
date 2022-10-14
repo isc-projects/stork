@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"sync"
 
 	"github.com/go-pg/pg/v10"
@@ -178,7 +179,12 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 // starting up (reload=false) or it is being reloaded (reload=true).
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	ss.HookManager, err = hookmanager.NewHookManagerFromDirectory(ss.GeneralSettings.HookDirectory)
-	if err != nil {
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		log.
+			WithError(err).
+			Warnf("The hook directory: '%s' doesn't exist", ss.GeneralSettings.HookDirectory)
+		ss.HookManager = hookmanager.NewHookManager()
+	} else if err != nil {
 		return err
 	}
 

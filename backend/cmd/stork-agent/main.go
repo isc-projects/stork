@@ -53,7 +53,12 @@ func runAgent(settings *cli.Context, reload bool) error {
 
 	// Read the hook libraries.
 	hookManager, err := agent.NewHookManagerFromDirectory(settings.Path("hook-directory"))
-	if err != nil {
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		log.
+			WithError(err).
+			Warnf("The hook directory: '%s' doesn't exist", settings.Path("hook-directory"))
+		hookManager = agent.NewHookManager()
+	} else if err != nil {
 		log.
 			WithError(err).
 			Fatal("Problem with loading hook libraries")
