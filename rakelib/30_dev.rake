@@ -146,15 +146,17 @@ namespace :unittest do
                         next
                     end
 
-                    # Skips the mock files.
-                    if GO_MOCKS.any? { |m| line.gsub("isc.org/stork/", "backend/").include? m }
-                        next
-                    end
-
                     items = line.gsub(/\s+/m, ' ').strip.split(" ")
                     file = items[0]
                     func = items[1]
                     cov = items[2].strip()[0..-2].to_f
+                    rel_path = file.gsub("isc.org/stork/", "backend/")
+
+                    # Skips the mock files.
+                    if GO_MOCKS.any? { |m| rel_path.include? m }
+                        next
+                    end
+
                     ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
                                 'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
                                 'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
@@ -203,7 +205,7 @@ namespace :unittest do
                             end
                         }
                         if not should_ignore
-                            puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
+                            puts "FAIL: %-80s %5s%% < 35%%" % ["#{rel_path} #{func}", "#{cov}"]
                             problem = true
                         end
                     end
