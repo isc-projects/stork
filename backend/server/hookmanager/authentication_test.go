@@ -1,6 +1,7 @@
 package hookmanager
 
 import (
+	"context"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
@@ -56,7 +57,7 @@ func TestAuthenticate(t *testing.T) {
 	hookManager.RegisterCallouts([]hooks.Callout{mock})
 
 	// Act
-	user, err := hookManager.Authenticate(nil, nil, &username, &password)
+	user, err := hookManager.Authenticate(context.Background(), nil, &username, &password)
 
 	// Assert
 	require.NoError(t, err)
@@ -85,7 +86,7 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(nil, nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -114,7 +115,7 @@ func TestAuthenticateReturnError(t *testing.T) {
 	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(nil, nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
 
 	// Assert
 	require.ErrorContains(t, err, "foo")
@@ -128,7 +129,7 @@ func TestAuthenticateDefault(t *testing.T) {
 	hookManager := NewHookManager()
 
 	// Act
-	user, err := hookManager.Authenticate(nil, nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -157,7 +158,7 @@ func TestUnauthenticate(t *testing.T) {
 	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
 
 	// Act
-	err := hookManager.Unauthenticate(nil)
+	err := hookManager.Unauthenticate(context.Background())
 
 	// Assert
 	require.NoError(t, err)
@@ -185,7 +186,7 @@ func TestUnauthenticateError(t *testing.T) {
 	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
 
 	// Act
-	err := hookManager.Unauthenticate(nil)
+	err := hookManager.Unauthenticate(context.Background())
 
 	// Assert
 	require.ErrorContains(t, err, "foo")

@@ -270,7 +270,6 @@ func runInspectPlugins(settings *cli.Context) error {
 			Infof("Hook is compatible with %s@%s", hookProgram, hookVersion)
 		return true
 	})
-
 	if err != nil {
 		log.
 			WithField("directory", directory).
