@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallout"
@@ -91,6 +92,35 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	require.NotNil(t, user)
 }
 
+// Test that the error is returned if the authentication fails.
+func TestAuthenticateReturnError(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock1 := NewMockAuthenticationCallout(ctrl)
+	mock1.EXPECT().
+		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("foo")).
+		Times(1)
+
+	mock2 := NewMockAuthenticationCallout(ctrl)
+	mock2.EXPECT().
+		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("bar")).
+		Times(0)
+
+	hookManager := NewHookManager()
+	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
+
+	// Act
+	user, err := hookManager.Authenticate(nil, nil, nil, nil)
+
+	// Assert
+	require.ErrorContains(t, err, "foo")
+	require.Nil(t, user)
+}
+
 // Test that the authentication callout returns a default value if no callouts
 // are registered.
 func TestAuthenticateDefault(t *testing.T) {
@@ -103,4 +133,60 @@ func TestAuthenticateDefault(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Nil(t, user)
+}
+
+// Test that the unauthenticate function is called only once.
+func TestUnauthenticate(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock1 := NewMockAuthenticationCallout(ctrl)
+	mock1.EXPECT().
+		Unauthenticate(gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	mock2 := NewMockAuthenticationCallout(ctrl)
+	mock2.EXPECT().
+		Unauthenticate(gomock.Any()).
+		Return(nil).
+		Times(0)
+
+	hookManager := NewHookManager()
+	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
+
+	// Act
+	err := hookManager.Unauthenticate(nil)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that the unauthenticate function returns an error properly.
+func TestUnauthenticateError(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock1 := NewMockAuthenticationCallout(ctrl)
+	mock1.EXPECT().
+		Unauthenticate(gomock.Any()).
+		Return(errors.New("foo")).
+		Times(1)
+
+	mock2 := NewMockAuthenticationCallout(ctrl)
+	mock2.EXPECT().
+		Unauthenticate(gomock.Any()).
+		Return(errors.New("bar")).
+		Times(0)
+
+	hookManager := NewHookManager()
+	hookManager.RegisterCallouts([]hooks.Callout{mock1, mock2})
+
+	// Act
+	err := hookManager.Unauthenticate(nil)
+
+	// Assert
+	require.ErrorContains(t, err, "foo")
 }
