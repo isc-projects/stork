@@ -38,14 +38,14 @@ func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
 	return p.lookupResult, p.lookupErr
 }
 
-// Add a dedicated lookup output for a specific symbol.
-func (p *pluginMock) addLookupOutput(symName string, result any, err error) {
-	p.specificLookupOutput[symName] = struct {
+// Add a dedicated lookup output for the Version symbol.
+func (p *pluginMock) addLookupVersion(result any) {
+	p.specificLookupOutput["Version"] = struct {
 		result any
 		err    error
 	}{
 		result: result,
-		err:    err,
+		err:    nil,
 	}
 }
 

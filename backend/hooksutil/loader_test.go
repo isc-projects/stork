@@ -95,7 +95,7 @@ func TestExtractCalloutsNonMatchingVersion(t *testing.T) {
 func TestExtractCalloutsMissingLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(nil, errors.New("symbol not found"))
-	plugin.addLookupOutput("Version", validVersion("foo", stork.Version), nil)
+	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -112,7 +112,7 @@ func TestExtractCalloutsMissingLoad(t *testing.T) {
 func TestExtractCalloutsInvalidLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(invalidSignature, nil)
-	plugin.addLookupOutput("Version", validVersion("foo", stork.Version), nil)
+	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -128,7 +128,7 @@ func TestExtractCalloutsInvalidLoad(t *testing.T) {
 func TestExtractCalloutsLoadFails(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(validLoad("", errors.New("error in load")), nil)
-	plugin.addLookupOutput("Version", validVersion("foo", stork.Version), nil)
+	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -143,7 +143,7 @@ func TestExtractCalloutsLoadFails(t *testing.T) {
 func TestExtractCallouts(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(validLoad("bar", nil), nil)
-	plugin.addLookupOutput("Version", validVersion("foo", stork.Version), nil)
+	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
