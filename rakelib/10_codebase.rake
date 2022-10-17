@@ -192,6 +192,7 @@ go_common_codebase = FileList["backend/**/*"]
 
 go_server_mocks = FileList[
     "backend/server/agentcomm/api_mock.go",
+    "backend/server/hookmanager/hookmanager_mock.go"
 ]
 
 go_agent_mocks = FileList[
@@ -366,6 +367,9 @@ namespace :gen do
 
         desc 'Generate Swagger API files'
         task :swagger => [open_api_generator_webui_dir]
+
+        desc 'Generate all Go mocks'
+        task :mocks => GO_MOCKS
     end
 
     desc 'Generate standard DHCP option definitions for the backend and the UI'
