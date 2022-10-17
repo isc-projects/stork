@@ -388,10 +388,14 @@ func IsWholeNumber(value interface{}) bool {
 
 // Combine multiple errors into a single one.
 func CombineErrors(topErrorMsg string, errs []error) error {
+	if len(errs) == 0 {
+		return nil
+	}
+
 	combinedErr := errors.New(topErrorMsg)
 
 	for _, err := range errs {
-		combinedErr = errors.Wrap(combinedErr, err.Error())
+		combinedErr = errors.WithMessage(combinedErr, err.Error())
 	}
 
 	return combinedErr

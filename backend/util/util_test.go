@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
@@ -383,4 +384,19 @@ func TestLoggingLevel(t *testing.T) {
 			require.Equal(t, test.lv, log.GetLevel())
 		})
 	}
+}
+
+// Test that the errors are combined properly.
+func TestCombineErrors(t *testing.T) {
+	// Arrange
+	err1 := errors.New("foo")
+	err2 := errors.New("bar")
+
+	// Act
+	combinedErr := CombineErrors("baz", []error{err1, err2})
+
+	// Assert
+	require.ErrorContains(t, combinedErr, "baz")
+	require.ErrorContains(t, combinedErr, "bar")
+	require.ErrorContains(t, combinedErr, "foo")
 }
