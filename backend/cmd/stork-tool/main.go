@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
-	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -251,38 +249,35 @@ func runCertImport(settings *cli.Context) error {
 func runInspectPlugins(settings *cli.Context) error {
 	directory := settings.String("directory")
 
-	files, err := ioutil.ReadDir(directory)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		library, err := hooksutil.NewLibraryManager(filepath.Join(directory, file.Name()))
+	err := hooksutil.WalkPluginLibraries(directory, func(path string, library *hooksutil.LibraryManager, err error) bool {
 		if err != nil {
 			log.
-				WithField("file", file.Name()).
+				WithField("file", path).
 				Error(err)
-			continue
+			return true
 		}
 
 		hookProgram, hookVersion, err := library.Version()
 		if err != nil {
 			log.
-				WithField("file", file.Name()).
+				WithField("file", path).
 				Error(err)
-			continue
+			return true
 		}
 
 		log.
-			WithField("file", file.Name()).
+			WithField("file", path).
 			Infof("Hook is compatible with %s@%s", hookProgram, hookVersion)
+		return true
+	})
+
+	if err != nil {
+		log.
+			WithField("directory", directory).
+			Error(err)
 	}
 
-	return nil
+	return err
 }
 
 // Prepare urfave cli app with all flags and commands defined.

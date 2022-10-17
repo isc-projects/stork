@@ -7,40 +7,64 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Loads all hook files from a given directory for a specific program (server
-// or agent). Returns a list of extracted callout objects.
-// The hook must be compiled with a matching version and application name.
-// Otherwise, it's skipped.
-// The hooks are loaded in the lexicographic order of hook file names.
-func LoadAllHooks(program string, directory string) ([]hooks.Callout, error) {
-	// Search for files.
+// Iterates over the plugins in a given directory. Every entry in the directory
+// (file or folder) calls the callback function. It accepts a path, library
+// wrapper (if no error), and error. The callback should return true to
+// continue. The function returns true on the general fail in access to the
+// directory. It isn't guaranteed that the open library is a valid Stork hook.
+// The libraries are loaded in the lexicographic order of hook file names.
+func WalkPluginLibraries(directory string, callback func(path string, library *LibraryManager, err error) bool) error {
 	paths, err := storkutil.ListFilePaths(directory, true)
 	if err != nil {
 		err = errors.WithMessagef(err, "cannot find plugin paths in: %s", directory)
-		return nil, err
+		return err
 	}
-
-	allCallouts := []hooks.Callout{}
 
 	for _, path := range paths {
 		// Extract the Go plugins.
 		library, err := NewLibraryManager(path)
+		err = errors.WithMessagef(err, "cannot open hook library: %s", path)
+		if !callback(path, library, err) {
+			break
+		}
+	}
+
+	return nil
+}
+
+// Loads all hook files from a given directory for a specific program (server
+// or agent). Returns a list of extracted callout objects.
+// The hook must be compiled with a matching version and application name.
+// Otherwise, the loading is stopped.
+// The hooks are loaded in the lexicographic order of hook file names.
+func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, error) {
+	var (
+		allCallouts []hooks.Callout
+		callout     hooks.Callout
+		libraryErr  error
+	)
+
+	err := WalkPluginLibraries(directory, func(path string, library *LibraryManager, err error) bool {
 		if err != nil {
-			err = errors.WithMessagef(err, "cannot open hook library: %s", path)
-			return nil, err
+			libraryErr = errors.WithMessagef(err, "cannot open hook library: %s", path)
+			return false
 		}
 
 		// Load the hook callouts.
-		callouts, err := extractCallouts(library, program)
-		if err != nil {
-			err = errors.WithMessagef(err, "cannot extract callouts from library: %s", path)
-			return nil, err
+		callout, libraryErr = extractCallouts(library, program)
+		if libraryErr != nil {
+			libraryErr = errors.WithMessagef(err, "cannot extract callouts from library: %s", path)
+			return false
 		}
 
-		allCallouts = append(allCallouts, callouts)
+		allCallouts = append(allCallouts, callout)
+		return true
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return allCallouts, nil
+	return allCallouts, libraryErr
 }
 
 // Extracts the object with callout points implementations from a given library

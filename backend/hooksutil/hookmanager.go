@@ -22,7 +22,7 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
-	allCallouts, err := LoadAllHooks(hooks.HookProgramServer, directory)
+	allCallouts, err := LoadAllHookCallouts(hooks.HookProgramServer, directory)
 	if err != nil {
 		return err
 	}
