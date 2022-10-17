@@ -32,16 +32,16 @@ func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
 	return nil
 }
 
-// Get accessor of the executor to use with the Call functions.
-func (hm *HookManager) GetExecutor() *HookExecutor {
-	return hm.executor
-}
-
 // Register callouts.
 func (hm *HookManager) RegisterCallouts(callouts []hooks.Callout) {
 	for _, callout := range callouts {
 		hm.executor.registerCallouts(callout)
 	}
+}
+
+// Get accessor of the executor to use with the Call functions.
+func (hm *HookManager) GetExecutor() *HookExecutor {
+	return hm.executor
 }
 
 // Unregisters all callout objects.

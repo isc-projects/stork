@@ -35,7 +35,6 @@ func TestHookManagerFromDirectoryReturnErrorOnInvalidDirectory(t *testing.T) {
 
 	// Assert
 	require.Error(t, err)
-	require.Nil(t, hookManager)
 }
 
 // Test that the hook manager is constructed properly from the callout objects.
