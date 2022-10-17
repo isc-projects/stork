@@ -74,8 +74,10 @@ func setupAgentTestWithCallouts(callouts []hooks.Callout) (*StorkAgent, context.
 		HTTPClient:     httpClient,
 		logTailer:      newLogTailer(),
 		keaInterceptor: newKeaInterceptor(),
-		hookManager:    NewHookManagerFromCallouts(callouts),
+		hookManager:    NewHookManager(),
 	}
+
+	sa.hookManager.RegisterCallouts(callouts)
 	sa.Setup()
 	ctx := context.Background()
 	return sa, ctx

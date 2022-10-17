@@ -40,7 +40,7 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 
 // Registers a callout object in the hook executor. If the given type is
 // unsupported, then it's silently ignored.
-func (he *HookExecutor) RegisterCallouts(callouts hooks.Callout) {
+func (he *HookExecutor) registerCallouts(callouts hooks.Callout) {
 	for calloutType, registeredCallouts := range he.registeredCallouts {
 		if reflect.TypeOf(callouts).Implements(calloutType) {
 			he.registeredCallouts[calloutType] = append(registeredCallouts, callouts)
@@ -49,7 +49,7 @@ func (he *HookExecutor) RegisterCallouts(callouts hooks.Callout) {
 }
 
 // Unregisters all callout objects by calling their Close methods.
-func (he *HookExecutor) UnregisterAllCallouts() []error {
+func (he *HookExecutor) unregisterAllCallouts() []error {
 	var errs []error
 
 	for _, registeredCallouts := range he.registeredCallouts {

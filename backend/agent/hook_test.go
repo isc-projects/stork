@@ -13,17 +13,6 @@ import (
 
 //go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout BeforeForwardToKeaOverHTTPCallout
 
-// Test that the hook executor is constructed with all supported callout types
-// registered.
-func TestHookExecutorHasRegisteredCalloutTypes(t *testing.T) {
-	// Arrange
-	hookExecutor := newHookExecutor()
-
-	// Assert
-	supportedTypes := hookExecutor.GetSupportedCalloutTypes()
-	require.Len(t, supportedTypes, 1)
-}
-
 // Test that the hook manager is constructed properly.
 func TestNewHookManager(t *testing.T) {
 	// Arrange & Act
@@ -31,14 +20,18 @@ func TestNewHookManager(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	require.NotNil(t, hookManager.executor)
+	supportedTypes := hookManager.HookManager.GetExecutor().GetSupportedCalloutTypes()
+	require.Len(t, supportedTypes, 1)
 }
 
 // Test that constructing the hook manager from the directory fails if the
 // directory doesn't exist.
 func TestHookManagerFromDirectoryReturnErrorOnInvalidDirectory(t *testing.T) {
+	// Arrange
+	hookManager := NewHookManager()
+
 	// Arrange & Act
-	hookManager, err := NewHookManagerFromDirectory("/non/exist/dir")
+	err := hookManager.RegisterCalloutsFromDirectory("/non/exist/dir")
 
 	// Assert
 	require.Error(t, err)
@@ -53,14 +46,15 @@ func TestHookManagerFromCallouts(t *testing.T) {
 
 	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
 
+	hookManager := NewHookManager()
+
 	// Act
-	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
+	hookManager.RegisterCallouts([]hooks.Callout{
 		mock,
 	})
 
 	// Assert
-	require.NotNil(t, hookManager)
-	require.True(t, hookManager.executor.HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
+	require.True(t, hookManager.GetExecutor().HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
 }
 
 // Test that the hook manager is closing properly.
@@ -75,7 +69,8 @@ func TestHookManagerClose(t *testing.T) {
 		Return(nil).
 		Times(1)
 
-	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
+	hookManager := NewHookManager()
+	hookManager.RegisterCallouts([]hooks.Callout{
 		mock,
 	})
 
@@ -113,7 +108,8 @@ func TestHookManagerCloseWithErrors(t *testing.T) {
 		Return(errors.New("foo")).
 		Times(1)
 
-	hookManager := NewHookManagerFromCallouts([]hooks.Callout{
+	hookManager := NewHookManager()
+	hookManager.RegisterCallouts([]hooks.Callout{
 		mockWithoutErr1,
 		mockWithErr,
 		mockWithoutErr2,

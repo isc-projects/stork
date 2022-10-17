@@ -4,69 +4,31 @@ import (
 	"reflect"
 
 	agentapi "isc.org/stork/api"
-	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
 	"isc.org/stork/hooksutil"
-	storkutil "isc.org/stork/util"
 )
-
-// Constructs the hook executor and register the callouts supported by Stork agent.
-func newHookExecutor() *hooksutil.HookExecutor {
-	executor := hooksutil.NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem(),
-	})
-	return executor
-}
 
 // Facade for all callout points. It defines the specific calling method for
 // each callout point.
 type HookManager struct {
-	executor *hooksutil.HookExecutor
+	hooksutil.HookManager
 }
 
 // Interface checks.
 var _ forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
 
 // Constructs new hook manager.
-func newHookManager(executor *hooksutil.HookExecutor) *HookManager {
-	return &HookManager{
-		executor: executor,
-	}
-}
-
-// Constructs the hook manager without registering any callout points.
 func NewHookManager() *HookManager {
-	return newHookManager(newHookExecutor())
-}
-
-// Loads the hooks from a given directory and constructs the hook manager.
-func NewHookManagerFromDirectory(directory string) (*HookManager, error) {
-	allCallouts, err := hooksutil.LoadAllHooks(hooks.HookProgramAgent, directory)
-	if err != nil {
-		return nil, err
+	return &HookManager{
+		HookManager: *hooksutil.NewHookManager([]reflect.Type{
+			reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem(),
+		}),
 	}
-	return NewHookManagerFromCallouts(allCallouts), nil
-}
-
-// Constructs the hook manager using the list of objects with the callout
-// points implementations.
-func NewHookManagerFromCallouts(allCallouts []hooks.Callout) *HookManager {
-	executor := newHookExecutor()
-	for _, callouts := range allCallouts {
-		executor.RegisterCallouts(callouts)
-	}
-	return newHookManager(executor)
-}
-
-// Unregisters all callout objects.
-func (hm *HookManager) Close() error {
-	errs := hm.executor.UnregisterAllCallouts()
-	return storkutil.CombineErrors("some hooks failed to close", errs)
 }
 
 // Callout point executed before forwarding a command to Kea over HTTP.
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
-	hooksutil.CallSequential(hm.executor, func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
+	hooksutil.CallSequential(hm.GetExecutor(), func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
 		callout.OnBeforeForwardToKeaOverHTTP(in)
 		return 0
 	})
