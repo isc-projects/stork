@@ -142,9 +142,15 @@ namespace :unittest do
 
                 problem = false
                 out.each_line do |line|
-                    if line.start_with? 'total:' or line.include? 'api_mock.go'
+                    if line.start_with? 'total:'
                         next
                     end
+
+                    # Skips the mock files.
+                    if GO_MOCKS.any? { |m| line.gsub("isc.org/stork/", "backend/").include? m }
+                        next
+                    end
+
                     items = line.gsub(/\s+/m, ' ').strip.split(" ")
                     file = items[0]
                     func = items[1]
