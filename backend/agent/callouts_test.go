@@ -8,7 +8,7 @@ import (
 	"isc.org/stork/hooks"
 )
 
-func TestOnBeforeForwardToKeaOverHTTPHook(t *testing.T) {
+func TestOnBeforeForwardToKeaOverHTTPCallout(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
