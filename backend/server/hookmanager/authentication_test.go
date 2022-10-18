@@ -8,9 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
+	"isc.org/stork/hooks/server/authenticationcallout"
 )
 
-//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go isc.org/stork/server/callouts/authenticationcallout AuthenticationCallout,User
+//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go isc.org/stork/hooks/server/authenticationcallout AuthenticationCallout
 
 // Test that the authentication hook is detected properly.
 func TestHasAuthenticationHook(t *testing.T) {
@@ -39,30 +40,28 @@ func TestAuthenticate(t *testing.T) {
 	username := "foo"
 	password := "bar"
 
-	mockUser := NewMockUser(ctrl)
-	mockUserRecorder := mockUser.EXPECT()
-	mockUserRecorder.GetEmail().Return("foo@example.com")
-	mockUserRecorder.GetGroups().Return([]int{1, 2, 3})
-	mockUserRecorder.GetID().Return(42)
-	mockUserRecorder.GetLastName().Return("oof")
-	mockUserRecorder.GetLogin().Return("foo")
-	mockUserRecorder.GetName().Return("ofo")
-
-	mockCallout := NewMockAuthenticationCallout(ctrl)
-	mockCallout.EXPECT().
+	mock := NewMockAuthenticationCallout(ctrl)
+	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), &username, &password).
-		Return(mockUser, nil).
+		Return(&authenticationcallout.User{
+			ID:       42,
+			Login:    "foo",
+			Email:    "foo@example.com",
+			Lastname: "oof",
+			Name:     "ofo",
+			Groups:   []int{1, 2, 3},
+		}, nil).
 		Times(1)
 
 	hookManager := NewHookManager()
-	hookManager.RegisterCallouts([]hooks.Callout{mockCallout})
+	hookManager.RegisterCallouts([]hooks.Callout{mock})
 
 	// Act
 	user, err := hookManager.Authenticate(context.Background(), nil, &username, &password)
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, "foo@example.com", user.GetEmail())
+	require.EqualValues(t, "foo@example.com", user.Email)
 }
 
 // Test that only first authentication callout is called.
@@ -74,13 +73,13 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	mock1 := NewMockAuthenticationCallout(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(NewMockUser(ctrl), nil).
+		Return(&authenticationcallout.User{}, nil).
 		Times(1)
 
 	mock2 := NewMockAuthenticationCallout(ctrl)
 	mock2.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(NewMockUser(ctrl), nil).
+		Return(&authenticationcallout.User{}, nil).
 		Times(0)
 
 	hookManager := NewHookManager()

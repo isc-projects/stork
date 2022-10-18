@@ -85,18 +85,18 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		err = calloutErr
 
 		var groups []*dbmodel.SystemGroup
-		for _, g := range calloutUser.GetGroups() {
+		for _, g := range calloutUser.Groups {
 			groups = append(groups, &dbmodel.SystemGroup{
 				ID: g,
 			})
 		}
 
 		user = &dbmodel.SystemUser{
-			ID:       int(calloutUser.GetID()),
-			Login:    calloutUser.GetLogin(),
-			Email:    calloutUser.GetEmail(),
-			Lastname: calloutUser.GetLastName(),
-			Name:     calloutUser.GetName(),
+			ID:       int(calloutUser.ID),
+			Login:    calloutUser.Login,
+			Email:    calloutUser.Email,
+			Lastname: calloutUser.Lastname,
+			Name:     calloutUser.Name,
 			Groups:   groups,
 		}
 	} else {

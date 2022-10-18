@@ -1,8 +1,9 @@
-package hooks
+package hooksutil
 
 import (
 	"reflect"
 
+	"isc.org/stork/hooks"
 	storkutil "isc.org/stork/util"
 )
 
@@ -21,7 +22,7 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
-	callouts, err := LoadAllHookCallouts(HookProgramServer, directory)
+	callouts, err := LoadAllHookCallouts(hooks.HookProgramServer, directory)
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
 }
 
 // Register callouts.
-func (hm *HookManager) RegisterCallouts(callouts []Callout) {
+func (hm *HookManager) RegisterCallouts(callouts []hooks.Callout) {
 	for _, callout := range callouts {
 		hm.executor.registerCallout(callout)
 	}

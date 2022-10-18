@@ -1,13 +1,19 @@
 package main
 
-type Callout interface {
-	Close() error
-}
+import (
+	"isc.org/stork/hooks"
+)
 
-func Load() (any, error) {
+func Load() (hooks.Callout, error) {
 	return &callout{}, nil
 }
 
 func Version() (string, string) {
-	return "Stork Server", "1.7.0"
+	return hooks.HookProgramServer, hooks.StorkVersion
 }
+
+// Type guards.
+var (
+	_ hooks.HookLoadFunction    = Load
+	_ hooks.HookVersionFunction = Version
+)

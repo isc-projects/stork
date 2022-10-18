@@ -1,9 +1,10 @@
-package hooks
+package hooksutil
 
 import (
 	"reflect"
 
 	"github.com/sirupsen/logrus"
+	"isc.org/stork/hooks"
 )
 
 // Function that calls a specific callout point in the callout object.
@@ -12,24 +13,24 @@ type Caller = func(callout any)
 // Manages all loaded hooks and allows to call their callout points.
 // The caller may choose different calling strategies.
 type HookExecutor struct {
-	registeredCallouts map[reflect.Type][]Callout
+	registeredCallouts map[reflect.Type][]hooks.Callout
 }
 
 // Constructs the hook executor using a list of supported callout types.
 func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
-	callouts := make(map[reflect.Type][]Callout, len(calloutTypes))
+	callouts := make(map[reflect.Type][]hooks.Callout, len(calloutTypes))
 	for _, calloutType := range calloutTypes {
 		if calloutType.Kind() != reflect.Interface {
 			// It should never happen.
 			// If you got this panic message, check if your callout types are
 			// defined as follow:
-			// reflect.TypeOf((*FooCallout)(nil)).Elem()
+			// reflect.TypeOf((*hooks.FooCallout)(nil)).Elem()
 			// remember about:
 			// 1. pointer (star *) before the callout type.
 			// 2. .Elem() call at the end.
 			panic("non-interface type passed")
 		}
-		callouts[calloutType] = make([]Callout, 0)
+		callouts[calloutType] = make([]hooks.Callout, 0)
 	}
 	return &HookExecutor{
 		registeredCallouts: callouts,
@@ -38,7 +39,7 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 
 // Registers a callout object in the hook executor. If the given type is
 // unsupported, then it's silently ignored.
-func (he *HookExecutor) registerCallout(callout Callout) {
+func (he *HookExecutor) registerCallout(callout hooks.Callout) {
 	for calloutType, callouts := range he.registeredCallouts {
 		if reflect.TypeOf(callout).Implements(calloutType) {
 			he.registeredCallouts[calloutType] = append(callouts, callout)
@@ -59,7 +60,7 @@ func (he *HookExecutor) unregisterAllCallouts() []error {
 		}
 	}
 
-	he.registeredCallouts = make(map[reflect.Type][]Callout)
+	he.registeredCallouts = make(map[reflect.Type][]hooks.Callout)
 
 	return errs
 }
@@ -84,12 +85,12 @@ func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
 
 // Calls the specific callout point using the caller object.
 // It can be used to monitor performance in the future.
-func callCallout[TCallout Callout, TOutput any](callout TCallout, caller func(TCallout) TOutput) TOutput {
+func callCallout[TCallout hooks.Callout, TOutput any](callout TCallout, caller func(TCallout) TOutput) TOutput {
 	return caller(callout)
 }
 
 // Calls the specific callout point for all callout objects sequentially, one by one.
-func CallSequential[TCallout Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) []TOutput {
+func CallSequential[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) []TOutput {
 	t := reflect.TypeOf((*TCallout)(nil)).Elem()
 	callouts, ok := he.registeredCallouts[t]
 	if !ok {
@@ -108,7 +109,7 @@ func CallSequential[TCallout Callout, TOutput any](he *HookExecutor, caller func
 // registered. It is dedicated to cases when only one hook with a given callout
 // point is expected.
 // Returns a default value if no callout point was called.
-func CallSingle[TCallout Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) (output TOutput) {
+func CallSingle[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) (output TOutput) {
 	t := reflect.TypeOf((*TCallout)(nil)).Elem()
 	callouts, ok := he.registeredCallouts[t]
 	if !ok || len(callouts) == 0 {

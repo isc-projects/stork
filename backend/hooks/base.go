@@ -5,9 +5,8 @@ import "isc.org/stork"
 type Callout interface {
 	Close() error
 }
-
 type (
-	HookLoadFunction    = func() (any, error)
+	HookLoadFunction    = func() (Callout, error)
 	HookVersionFunction = func() (string, string)
 )
 
