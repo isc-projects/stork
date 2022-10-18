@@ -79,8 +79,14 @@ namespace :hook do
 
         forEachHook(lambda { |path|
             filename = File.basename(path)
+            output_path = File.join("..", filename + ".so")
+
             sh GO, "mod", "tidy"
-            sh GO, "build", *flags, "-buildmode=plugin", "-o", File.join("..", filename + ".so")
+            sh GO, "build", *flags, "-buildmode=plugin", "-o", output_path
+
+            size = File.size output_path
+            size /= 1024.0 * 1024.0
+            puts "Hook: '#{output_path}' size: #{'%.2f' % size} MiB"
         })
     end
 
@@ -96,7 +102,7 @@ namespace :hook do
         end
 
         forEachHook(lambda { |path|
-            sh GOLANGCILINT, "run", *opts 
+            sh GOLANGCILINT, "run", *opts
         })
     end
 
