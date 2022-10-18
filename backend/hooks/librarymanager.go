@@ -1,10 +1,9 @@
-package hooksutil
+package hooks
 
 import (
 	"plugin"
 
 	"github.com/pkg/errors"
-	"isc.org/stork/hooks"
 )
 
 // It is impossible to mock the `plugin.Plugin` struct directly. It's an
@@ -45,20 +44,28 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 // callout point implementations. On success, it returns an object with the
 // callout point implementations. The object also implements the Closer interface
 // that must be called to unload the hook.
-func (lm *LibraryManager) Load() (hooks.Callout, error) {
-	symbolName := hooks.HookLoadFunctionName
+func (lm *LibraryManager) Load() (Callout, error) {
+	symbolName := HookLoadFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
 	}
 
-	load, ok := symbol.(hooks.HookLoadFunction)
+	load, ok := symbol.(HookLoadFunction)
 	if !ok {
 		return nil, errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}
 
-	callout, err := load()
-	err = errors.Wrap(err, "cannot load the hook")
+	calloutAny, err := load()
+	if err != nil {
+		err = errors.Wrap(err, "cannot load the hook")
+		return nil, err
+	}
+
+	callout, ok := calloutAny.(Callout)
+	if !ok {
+		return nil, errors.New("Invalid callout")
+	}
 
 	return callout, err
 }
@@ -67,14 +74,14 @@ func (lm *LibraryManager) Load() (hooks.Callout, error) {
 // the function is missing or fails. The output contains the compatible
 // application name (agent or server) and the expected Stork version.
 func (lm *LibraryManager) Version() (program string, version string, err error) {
-	symbolName := hooks.HookVersionFunctionName
+	symbolName := HookVersionFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		err = errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
 		return
 	}
 
-	versionFunction, ok := symbol.(hooks.HookVersionFunction)
+	versionFunction, ok := symbol.(HookVersionFunction)
 	if !ok {
 		err = errors.Errorf("symbol %s has unexpected signature", symbolName)
 		return

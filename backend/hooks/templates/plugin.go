@@ -5,7 +5,7 @@ import (
 )
 
 // Loads an object with the callout points implementations.
-func Load() (hooks.Callout, error) {
+func Load() (any, error) {
 	return &callout{}, nil
 }
 

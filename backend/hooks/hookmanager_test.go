@@ -1,4 +1,4 @@
-package hooksutil
+package hooks
 
 import (
 	"io"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/hooks"
 )
 
 // Test that the hook manager is constructed properly.
@@ -61,7 +60,7 @@ func TestRegisterCallouts(t *testing.T) {
 	})
 
 	// Act
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCallouts([]Callout{
 		io.NopCloser(nil),
 	})
 
@@ -91,7 +90,7 @@ func TestClose(t *testing.T) {
 		calloutType,
 	})
 
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCallouts([]Callout{
 		mock,
 	})
 
@@ -118,7 +117,7 @@ func TestCloseCombineErrors(t *testing.T) {
 		calloutType,
 	})
 
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCallouts([]Callout{
 		mock1,
 		mock2,
 	})

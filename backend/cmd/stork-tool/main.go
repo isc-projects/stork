@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"isc.org/stork"
-	"isc.org/stork/hooksutil"
+	"isc.org/stork/hooks"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -249,7 +249,7 @@ func runCertImport(settings *cli.Context) error {
 func runInspectPlugins(settings *cli.Context) error {
 	directory := settings.String("directory")
 
-	err := hooksutil.WalkPluginLibraries(directory, func(path string, library *hooksutil.LibraryManager, err error) bool {
+	err := hooks.WalkPluginLibraries(directory, func(path string, library *hooks.LibraryManager, err error) bool {
 		if err != nil {
 			log.
 				WithField("file", path).

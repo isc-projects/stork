@@ -1,4 +1,4 @@
-package hooksutil
+package hooks
 
 import (
 	"testing"

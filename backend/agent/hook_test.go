@@ -8,10 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
-	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
 )
 
-//go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout BeforeForwardToKeaOverHTTPCallout
+//go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/agent BeforeForwardToKeaOverHTTPCallout
 
 // Test that the hook manager is constructed properly.
 func TestNewHookManager(t *testing.T) {
@@ -53,7 +52,7 @@ func TestHookManagerFromCallouts(t *testing.T) {
 	})
 
 	// Assert
-	require.True(t, hookManager.GetExecutor().HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
+	require.True(t, hookManager.GetExecutor().HasRegistered(reflect.TypeOf((*BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
 }
 
 // Test that the hook manager is closing properly.

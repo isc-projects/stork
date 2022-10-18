@@ -1,4 +1,4 @@
-package hooksutil
+package hooks
 
 import (
 	"io"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/hooks"
 )
 
 // Plugin mock.
@@ -56,8 +55,8 @@ func invalidSignature(int64) bool {
 
 // Creates a valid Load function that returns the given output.
 // If the string content is empty, the function will return nil instead.
-func validLoad(s string, err error) hooks.HookLoadFunction {
-	return func() (hooks.Callout, error) {
+func validLoad(s string, err error) HookLoadFunction {
+	return func() (any, error) {
 		if s == "" {
 			return nil, err
 		}
@@ -66,7 +65,7 @@ func validLoad(s string, err error) hooks.HookLoadFunction {
 }
 
 // Creates a valid Version function that returns the given output.
-func validVersion(program, version string) hooks.HookVersionFunction {
+func validVersion(program, version string) HookVersionFunction {
 	return func() (string, string) {
 		return program, version
 	}

@@ -1,4 +1,4 @@
-package forwardtokeaoverhttpcallout
+package agent
 
 import (
 	agentapi "isc.org/stork/api"
