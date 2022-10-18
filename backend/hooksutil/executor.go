@@ -1,7 +1,6 @@
 package hooksutil
 
 import (
-	"io"
 	"reflect"
 
 	"github.com/sirupsen/logrus"
@@ -9,7 +8,7 @@ import (
 )
 
 // Function that calls a specific callout point in the callout object.
-type Caller = func(callouts any)
+type Caller = func(callout any)
 
 // Manages all loaded hooks and allows to call their callout points.
 // The caller may choose different calling strategies.
@@ -40,10 +39,10 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 
 // Registers a callout object in the hook executor. If the given type is
 // unsupported, then it's silently ignored.
-func (he *HookExecutor) registerCallouts(callouts hooks.Callout) {
-	for calloutType, registeredCallouts := range he.registeredCallouts {
-		if reflect.TypeOf(callouts).Implements(calloutType) {
-			he.registeredCallouts[calloutType] = append(registeredCallouts, callouts)
+func (he *HookExecutor) registerCallout(callout hooks.Callout) {
+	for calloutType, callouts := range he.registeredCallouts {
+		if reflect.TypeOf(callout).Implements(calloutType) {
+			he.registeredCallouts[calloutType] = append(callouts, callout)
 		}
 	}
 }
@@ -52,14 +51,9 @@ func (he *HookExecutor) registerCallouts(callouts hooks.Callout) {
 func (he *HookExecutor) unregisterAllCallouts() []error {
 	var errs []error
 
-	for _, registeredCallouts := range he.registeredCallouts {
-		for _, callout := range registeredCallouts {
-			closer, ok := callout.(io.Closer)
-			if !ok {
-				continue
-			}
-
-			err := closer.Close()
+	for _, callouts := range he.registeredCallouts {
+		for _, callout := range callouts {
+			err := callout.Close()
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -69,13 +63,6 @@ func (he *HookExecutor) unregisterAllCallouts() []error {
 	he.registeredCallouts = make(map[reflect.Type][]hooks.Callout)
 
 	return errs
-}
-
-// Returns all callout objects that implements a given callout type.
-// If the callout type is not supported, returns false.
-func (he *HookExecutor) getCallouts(calloutType reflect.Type) ([]hooks.Callout, bool) {
-	callouts, ok := he.registeredCallouts[calloutType]
-	return callouts, ok
 }
 
 // Returns a slice of the supported callout types.
@@ -105,14 +92,14 @@ func callCallout[TCallout hooks.Callout, TOutput any](callout TCallout, caller f
 // Calls the specific callout point for all callout objects sequentially, one by one.
 func CallSequential[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) []TOutput {
 	t := reflect.TypeOf((*TCallout)(nil)).Elem()
-	allCallouts, ok := he.getCallouts(t)
+	callouts, ok := he.registeredCallouts[t]
 	if !ok {
 		return nil
 	}
 
 	var results []TOutput
-	for _, callouts := range allCallouts {
-		result := callCallout(callouts.(TCallout), caller)
+	for _, callout := range callouts {
+		result := callCallout(callout.(TCallout), caller)
 		results = append(results, result)
 	}
 	return results
@@ -124,13 +111,13 @@ func CallSequential[TCallout hooks.Callout, TOutput any](he *HookExecutor, calle
 // Returns a default value if no callout point was called.
 func CallSingle[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) (output TOutput) {
 	t := reflect.TypeOf((*TCallout)(nil)).Elem()
-	allCallouts, ok := he.getCallouts(t)
-	if !ok || len(allCallouts) == 0 {
+	callouts, ok := he.registeredCallouts[t]
+	if !ok || len(callouts) == 0 {
 		return
-	} else if len(allCallouts) > 1 {
+	} else if len(callouts) > 1 {
 		logrus.
 			WithField("callout", t.Name()).
-			Warn("there are many registered callouts but expected a single one")
+			Warn("there are many registered callout objects but expected a single one")
 	}
-	return callCallout(allCallouts[0].(TCallout), caller)
+	return callCallout(callouts[0].(TCallout), caller)
 }

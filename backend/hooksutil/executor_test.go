@@ -125,8 +125,8 @@ func TestNewHookExecutorInvalidType(t *testing.T) {
 	})
 }
 
-// Test that the supported callouts object is registered properly.
-func TestRegisterSupportedCallouts(t *testing.T) {
+// Test that the supported callout object is registered properly.
+func TestRegisterSupportedCallout(t *testing.T) {
 	// Arrange
 	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
@@ -134,25 +134,25 @@ func TestRegisterSupportedCallouts(t *testing.T) {
 	})
 
 	// Act
-	executor.registerCallouts(newMockCalloutFoo())
+	executor.registerCallout(newMockCalloutFoo())
 
 	// Assert
 	require.NotEmpty(t, executor.registeredCallouts[calloutType])
 }
 
-// Test that the unsupported callouts object is not registered.
-func TestRegisterUnsupportedCallouts(t *testing.T) {
+// Test that the unsupported callout object is not registered.
+func TestRegisterUnsupportedCallout(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{})
 
 	// Act
-	executor.registerCallouts(newMockCalloutFoo())
+	executor.registerCallout(newMockCalloutFoo())
 
 	// Assert
 	require.Empty(t, executor.registeredCallouts)
 }
 
-// Test that all callouts are unregistered.
+// Test that all callouts are unregistering.
 func TestUnregisterAllCallouts(t *testing.T) {
 	// Arrange
 	callout := newMockCalloutFoo()
@@ -160,7 +160,7 @@ func TestUnregisterAllCallouts(t *testing.T) {
 	executor := NewHookExecutor([]reflect.Type{
 		calloutType,
 	})
-	executor.registerCallouts(callout)
+	executor.registerCallout(callout)
 
 	// Act
 	errs := executor.unregisterAllCallouts()
@@ -184,8 +184,8 @@ func TestUnregisterAllCalloutsWithError(t *testing.T) {
 		calloutType,
 	})
 
-	executor.registerCallouts(successCallout)
-	executor.registerCallouts(failedCallout)
+	executor.registerCallout(successCallout)
+	executor.registerCallout(failedCallout)
 
 	// Act
 	errs := executor.unregisterAllCallouts()
@@ -204,7 +204,7 @@ func TestHasRegisteredForRegisteredCallout(t *testing.T) {
 		calloutType,
 	})
 
-	executor.registerCallouts(newMockCalloutFoo())
+	executor.registerCallout(newMockCalloutFoo())
 
 	// Act
 	isRegistered := executor.HasRegistered(calloutType)
@@ -278,10 +278,10 @@ func TestCallSequential(t *testing.T) {
 	fooBarMock := newMockCalloutFooBar()
 
 	for _, mock := range fooMocks {
-		executor.registerCallouts(mock)
+		executor.registerCallout(mock)
 	}
-	executor.registerCallouts(barMock)
-	executor.registerCallouts(fooBarMock)
+	executor.registerCallout(barMock)
+	executor.registerCallout(fooBarMock)
 
 	// Act
 	results := CallSequential(executor, func(callout mockCalloutFoo) int {
@@ -328,8 +328,8 @@ func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	fooMock := newMockCalloutFoo()
 	barMock := newMockCalloutBar()
 
-	executor.registerCallouts(fooMock)
-	executor.registerCallouts(barMock)
+	executor.registerCallout(fooMock)
+	executor.registerCallout(barMock)
 
 	// Act
 	result := CallSingle(executor, func(callout mockCalloutFoo) int {
@@ -358,14 +358,14 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	}
 
 	for _, mock := range mocks {
-		executor.registerCallouts(mock)
+		executor.registerCallout(mock)
 	}
 
 	barMock := newMockCalloutBar()
 	fooBarMock := newMockCalloutFooBar()
 
-	executor.registerCallouts(fooBarMock)
-	executor.registerCallouts(barMock)
+	executor.registerCallout(fooBarMock)
+	executor.registerCallout(barMock)
 
 	// Act
 	result := CallSingle(executor, func(callout mockCalloutFoo) int {

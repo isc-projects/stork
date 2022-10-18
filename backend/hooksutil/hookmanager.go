@@ -22,12 +22,12 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
-	allCallouts, err := LoadAllHookCallouts(hooks.HookProgramServer, directory)
+	callouts, err := LoadAllHookCallouts(hooks.HookProgramServer, directory)
 	if err != nil {
 		return err
 	}
 
-	hm.RegisterCallouts(allCallouts)
+	hm.RegisterCallouts(callouts)
 
 	return nil
 }
@@ -35,7 +35,7 @@ func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
 // Register callouts.
 func (hm *HookManager) RegisterCallouts(callouts []hooks.Callout) {
 	for _, callout := range callouts {
-		hm.executor.registerCallouts(callout)
+		hm.executor.registerCallout(callout)
 	}
 }
 

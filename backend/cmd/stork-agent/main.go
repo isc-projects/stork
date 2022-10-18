@@ -58,7 +58,6 @@ func runAgent(settings *cli.Context, reload bool) error {
 		log.
 			WithError(err).
 			Warnf("The hook directory: '%s' doesn't exist", settings.Path("hook-directory"))
-		hookManager = agent.NewHookManager()
 	} else if err != nil {
 		log.
 			WithError(err).

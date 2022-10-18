@@ -1,7 +1,6 @@
 package hooksutil
 
 import (
-	"io"
 	"plugin"
 
 	"github.com/pkg/errors"
@@ -46,7 +45,7 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 // callout point implementations. On success, it returns an object with the
 // callout point implementations. The object also implements the Closer interface
 // that must be called to unload the hook.
-func (lm *LibraryManager) Load() (io.Closer, error) {
+func (lm *LibraryManager) Load() (hooks.Callout, error) {
 	symbolName := hooks.HookLoadFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
@@ -58,10 +57,10 @@ func (lm *LibraryManager) Load() (io.Closer, error) {
 		return nil, errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}
 
-	callouts, err := load()
+	callout, err := load()
 	err = errors.Wrap(err, "cannot load the hook")
 
-	return callouts, err
+	return callout, err
 }
 
 // Extracts and calls the version function of the Stork hook. Returns an error if

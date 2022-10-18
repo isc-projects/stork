@@ -102,10 +102,10 @@ func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
-	callouts, err := library.Load()
+	callout, err := library.Load()
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.Error(t, err)
 }
 
@@ -116,10 +116,10 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
-	callouts, err := library.Load()
+	callout, err := library.Load()
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "symbol Load has unexpected signature")
 }
 
@@ -136,25 +136,25 @@ func TestLoadReturnErrorOnFail(t *testing.T) {
 	))
 
 	// Act
-	callouts, err := library.Load()
+	callout, err := library.Load()
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "error in load")
 }
 
 // Test that the load library function returns a callout object on success.
-func TestLoadReturnCalloutsOnSuccess(t *testing.T) {
+func TestLoadReturnCalloutOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(
 		validLoad("bar", nil), nil,
 	))
 
 	// Act
-	callouts, err := library.Load()
+	callout, err := library.Load()
 
 	// Assert
-	require.NotNil(t, callouts)
+	require.NotNil(t, callout)
 	require.NoError(t, err)
 }
 
@@ -188,8 +188,9 @@ func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 	require.ErrorContains(t, err, "symbol Version has unexpected signature")
 }
 
-// Test that the version library function returns a callout object on success.
-func TestVersionReturnCalloutsOnSuccess(t *testing.T) {
+// Test that the version library function returns an application name and
+// version string on success.
+func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(validVersion("bar", "baz"), nil))
 

@@ -33,123 +33,123 @@ func TestLoadAllHookCalloutsReturnErrorForNonPluginFile(t *testing.T) {
 	require.ErrorContains(t, err, "invalid ELF header")
 }
 
-// Test that the extract callouts function returns an error if the Version
+// Test that the extract callout function returns an error if the Version
 // function is missing in the hook.
-func TestExtractCalloutsMissingVersion(t *testing.T) {
+func TestExtractCalloutMissingVersion(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "symbol not found")
 	require.ErrorContains(t, err, "lookup for symbol: Version")
 }
 
-// Test that the extract callouts function returns an error if the Version
+// Test that the extract callout function returns an error if the Version
 // function has an invalid signature.
-func TestExtractCalloutsInvalidVersion(t *testing.T) {
+func TestExtractCalloutInvalidVersion(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "symbol Version has unexpected signature")
 }
 
-// Test that the extract callouts function returns an error if the hook is
+// Test that the extract callout function returns an error if the hook is
 // dedicated for another application.
-func TestExtractCalloutsNonMatchingApplication(t *testing.T) {
+func TestExtractCalloutNonMatchingApplication(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(validVersion("bar", ""), nil))
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "hook library dedicated for another program: bar")
 }
 
-// Test that the extract callouts function returns an error if the hook is
+// Test that the extract callout function returns an error if the hook is
 // dedicated for another Stork version.
-func TestExtractCalloutsNonMatchingVersion(t *testing.T) {
+func TestExtractCalloutNonMatchingVersion(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(validVersion("foo", "non.matching.version"), nil))
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "incompatible hook version: non.matching.version")
 }
 
-// Test that the extract callouts function returns an error if the Load
+// Test that the extract callout function returns an error if the Load
 // function is missing in the hook.
-func TestExtractCalloutsMissingLoad(t *testing.T) {
+func TestExtractCalloutMissingLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(nil, errors.New("symbol not found"))
 	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "symbol not found")
 	require.ErrorContains(t, err, "lookup for symbol: Load")
 }
 
-// Test that the extract callouts function returns an error if the Load
+// Test that the extract callout function returns an error if the Load
 // function has an invalid signature.
-func TestExtractCalloutsInvalidLoad(t *testing.T) {
+func TestExtractCalloutInvalidLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(invalidSignature, nil)
 	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "symbol Load has unexpected signature")
 }
 
-// Test that the extract callouts function returns an error if the Load
+// Test that the extract callout function returns an error if the Load
 // function fails.
-func TestExtractCalloutsLoadFails(t *testing.T) {
+func TestExtractCalloutLoadFails(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(validLoad("", errors.New("error in load")), nil)
 	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
-	require.Nil(t, callouts)
+	require.Nil(t, callout)
 	require.ErrorContains(t, err, "error in load")
 }
 
-// Test that the extract callouts function return a proper output on success.
-func TestExtractCallouts(t *testing.T) {
+// Test that the extract callout function return a proper output on success.
+func TestExtractCallout(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock(validLoad("bar", nil), nil)
 	plugin.addLookupVersion(validVersion("foo", stork.Version))
 	library := newLibraryManager("", plugin)
 
 	// Act
-	callouts, err := extractCallouts(library, "foo")
+	callout, err := extractCallout(library, "foo")
 
 	// Assert
 	require.NoError(t, err)
-	require.NotNil(t, callouts)
+	require.NotNil(t, callout)
 }

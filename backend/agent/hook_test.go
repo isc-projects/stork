@@ -80,7 +80,7 @@ func TestHookManagerClose(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the hook manager pass through the error from callouts and
+// Test that the hook manager pass through the error from the callout and
 // the error raising doesn't interrupt the close operation.
 func TestHookManagerCloseWithErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)

@@ -8,15 +8,15 @@ import (
 	"isc.org/stork/hooks/server/authenticationcallout"
 )
 
-type callouts struct{}
+type callout struct{}
 
-var _ authenticationcallout.AuthenticationCallout = (*callouts)(nil)
+var _ authenticationcallout.AuthenticationCallout = (*callout)(nil)
 
-func (c *callouts) Close() error {
+func (c *callout) Close() error {
 	return nil
 }
 
-func (c *callouts) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallout.User, error) {
+func (c *callout) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallout.User, error) {
 	if email == nil || password == nil {
 		return nil, errors.New("missing email or password")
 	}
@@ -34,6 +34,6 @@ func (c *callouts) Authenticate(ctx context.Context, request *http.Request, emai
 	}, nil
 }
 
-func (c *callouts) Unauthenticate(ctx context.Context) error {
+func (c *callout) Unauthenticate(ctx context.Context) error {
 	return nil
 }

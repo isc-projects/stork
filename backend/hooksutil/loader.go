@@ -39,9 +39,9 @@ func WalkPluginLibraries(directory string, callback func(path string, library *L
 // The hooks are loaded in the lexicographic order of hook file names.
 func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, error) {
 	var (
-		allCallouts []hooks.Callout
-		callout     hooks.Callout
-		libraryErr  error
+		callouts   []hooks.Callout
+		callout    hooks.Callout
+		libraryErr error
 	)
 
 	err := WalkPluginLibraries(directory, func(path string, library *LibraryManager, err error) bool {
@@ -51,26 +51,26 @@ func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, err
 		}
 
 		// Load the hook callouts.
-		callout, libraryErr = extractCallouts(library, program)
+		callout, libraryErr = extractCallout(library, program)
 		if libraryErr != nil {
 			libraryErr = errors.WithMessagef(err, "cannot extract callouts from library: %s", path)
 			return false
 		}
 
-		allCallouts = append(allCallouts, callout)
+		callouts = append(callouts, callout)
 		return true
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return allCallouts, libraryErr
+	return callouts, libraryErr
 }
 
 // Extracts the object with callout points implementations from a given library
 // (Go plugin). The library is validated. The version and program name must match
 // the caller application.
-func extractCallouts(library *LibraryManager, expectedProgram string) (hooks.Callout, error) {
+func extractCallout(library *LibraryManager, expectedProgram string) (hooks.Callout, error) {
 	hookProgram, hookVersion, err := library.Version()
 	if err != nil {
 		err = errors.WithMessage(err, "cannot call version of hook library")
@@ -85,11 +85,11 @@ func extractCallouts(library *LibraryManager, expectedProgram string) (hooks.Cal
 		return nil, errors.Errorf("incompatible hook version: %s", hookVersion)
 	}
 
-	callouts, err := library.Load()
+	callout, err := library.Load()
 	if err != nil {
 		err = errors.WithMessage(err, "cannot load hook library")
 		return nil, err
 	}
 
-	return callouts, nil
+	return callout, nil
 }

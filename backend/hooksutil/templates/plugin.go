@@ -6,7 +6,7 @@ import (
 
 // Loads an object with the callout points implementations.
 func Load() (hooks.Callout, error) {
-	return &callouts{}, nil
+	return &callout{}, nil
 }
 
 // Returns an application name and expected version.
