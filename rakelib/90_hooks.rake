@@ -2,9 +2,35 @@
 # The file contains tasks to write and build the Stork hook libraries
 # (GO plugins)
 
+#############
+### Files ###
+#############
 
 CLEAN.append *FileList["plugins/*.so"]
 
+#################
+### Functions ###
+#################
+
+def forEachHook(f)
+    hook_directory = "plugins"
+    if !ENV["HOOK_DIR"].nil?
+        hook_directory = ENV["HOOK_DIR"]
+    end
+
+    Dir.foreach(hook_directory) do |filename|
+        path = File.join(hook_directory, filename)
+        next if filename == '.' or filename == '..' or !File.directory? path
+
+        Dir.chdir(path) do
+            f.call(path)
+        end
+    end
+end
+
+#############
+### Tasks ###
+#############
 
 namespace :hook do
     desc "Init new hook directory
@@ -46,26 +72,42 @@ namespace :hook do
         DEBUG - build plugins in debug mode - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
     task :build => [GO] do
-        hook_directory = "plugins"
-        if !ENV["HOOK_DIR"].nil?
-            hook_directory = ENV["HOOK_DIR"]
+        flags = []
+        if ENV["DEBUG"] == "true"
+            flags.append "-gcflags", "all=-N -l"
         end
 
-        Dir.foreach(hook_directory) do |filename|
-            path = File.join(hook_directory, filename)
-            next if filename == '.' or filename == '..' or !File.directory? path
-
-            flags = []
-            if ENV["DEBUG"] == "true"
-                flags.append "-gcflags", "all=-N -l"
-            end
-
-            Dir.chdir(path) do
-                sh GO, "mod", "tidy"
-                sh GO, "build", *flags, "-buildmode=plugin", "-o", File.join("..", filename + ".so")
-            end
-        end
+        forEachHook(lambda { |path|
+            filename = File.basename(path)
+            sh GO, "mod", "tidy"
+            sh GO, "build", *flags, "-buildmode=plugin", "-o", File.join("..", filename + ".so")
+        })
     end
+
+    desc "Lint the hooks
+        HOOK_DIR - the hook (plugin) directory - optional, default: plugins
+        FIX - fix linting issues - default: false"
+    task :lint => [GO] do
+        config_path = File.expand_path "backend/.golangci.yml"
+
+        opts = ["-c", config_path]
+        if ENV["FIX"] == "true"
+            opts += ["--fix"]
+        end
+
+        forEachHook(lambda { |path|
+            sh GOLANGCILINT, "run", *opts 
+        })
+    end
+
+    desc "Run hooks unit tests
+        HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
+    task :unittest => [RICHGO] do
+        forEachHook(lambda { |path|
+            sh RICHGO, "test", "-race", "-v", "./..." 
+        })
+    end
+
 
     desc "Fix relative paths to the Stork core. It should be used if the hook
     directory was moved or if the external plugin was fetched.
