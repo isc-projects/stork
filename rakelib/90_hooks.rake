@@ -18,12 +18,12 @@ def forEachHook(f)
         hook_directory = ENV["HOOK_DIR"]
     end
 
-    Dir.foreach(hook_directory) do |filename|
-        path = File.join(hook_directory, filename)
-        next if filename == '.' or filename == '..' or !File.directory? path
+    Dir.foreach(hook_directory) do |dir_name|
+        path = File.join(hook_directory, dir_name)
+        next if dir_name == '.' or dir_name == '..' or !File.directory? path
 
         Dir.chdir(path) do
-            f.call(path)
+            f.call(dir_name)
         end
     end
 end
@@ -77,9 +77,8 @@ namespace :hook do
             flags.append "-gcflags", "all=-N -l"
         end
 
-        forEachHook(lambda { |path|
-            filename = File.basename(path)
-            output_path = File.join("..", filename + ".so")
+        forEachHook(lambda { |dir_name|
+            output_path = File.join("..", dir_name + ".so")
 
             sh GO, "mod", "tidy"
             sh GO, "build", *flags, "-buildmode=plugin", "-o", output_path
@@ -101,7 +100,7 @@ namespace :hook do
             opts += ["--fix"]
         end
 
-        forEachHook(lambda { |path|
+        forEachHook(lambda { |dir_name|
             sh GOLANGCILINT, "run", *opts
         })
     end
@@ -109,35 +108,60 @@ namespace :hook do
     desc "Run hooks unit tests
         HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
     task :unittest => [RICHGO] do
-        forEachHook(lambda { |path|
+        forEachHook(lambda { |dir_name|
             sh RICHGO, "test", "-race", "-v", "./..." 
         })
     end
 
 
-    desc "Fix relative paths to the Stork core. It should be used if the hook
-    directory was moved or if the external plugin was fetched.
-        HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
-    task :fix_core_rel => [GO] do
-        hook_directory = "plugins"
-        if !ENV["HOOK_DIR"].nil?
-            hook_directory = ENV["HOOK_DIR"]
-        end
+    desc "Remap the dependency path to the Stork core. It specifies the source
+        of the core dependency - remote repository or local directory. The
+        remote repository may be fetched by tag or commit hash.
+        HOOK_DIR - the hook (plugin) directory - optional, default: plugins
+        COMMIT - use the given commit from the remote repository, if specified but empty use the current hash - optional
+        TAG - use the given tag from the remote repository, if specified but empty use the current version as tag - optional
+        If no COMMIT or TAG are specified then it remaps to use the local project."
+    task :remap_core => [GO] do
+        main_package = "isc.org/stork"
+        main_package_directory_abs = File.expand_path "backend"
+        remote_url = "gitlab.isc.org/isc-projects/stork/backend"
 
-        Dir.foreach(hook_directory) do |filename|
-            path = File.join(hook_directory, filename)
-            next if filename == '.' or filename == '..' or !File.directory? path
+        forEachHook(lambda { |dir_name|
+            target = nil
 
-            require 'pathname'
-            main_package = "isc.org/stork@v0.0.0"
-            main_package_directory_abs = Pathname.new('backend').realdirpath
-            package_directory_abs = Pathname.new(path).realdirpath
-            package_directory_rel = main_package_directory_abs.relative_path_from package_directory_abs
+            if !ENV["COMMIT"].nil?
+                puts "Remap to use a specific commit"
+                commit = ENV["COMMIT"]
+                if commit == ""
+                    commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
+                end
 
-            Dir.chdir(path) do
-                sh GO, "mod", "edit", "-replace", "#{main_package}=#{package_directory_rel}"
+                target = "#{remote_url}@#{commit}"
+            elsif !ENV["TAG"].nil?
+                puts "Remap to use a specific tag"
+                tag = ENV["TAG"]
+                if tag == ""
+                    tag = STORK_VERSION
+                end
+
+                if !tag.start_with? "v"
+                    tag = "v" + tag
+                end
+
+                target = "#{remote_url}@#{tag}"
+            else
+                puts "Remap to use the local directory"
+                require 'pathname'
+                main_directory_abs_obj = Pathname.new(main_package_directory_abs)
+                package_directory_abs_obj = Pathname.new(".").realdirpath
+                package_directory_rel_obj = main_directory_abs_obj.relative_path_from package_directory_abs_obj
+
+                target = package_directory_rel_obj.to_s
             end
-        end
+
+            sh GO, "mod", "edit", "-replace", "#{main_package}=#{target}"
+            sh GO, "mod", "tidy"
+        })
     end
 
     desc "List dependencies of a given callout package
