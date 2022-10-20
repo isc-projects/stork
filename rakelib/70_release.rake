@@ -86,12 +86,15 @@ namespace :release do
 
 
     desc 'Prepare release notes'
-    task :notes => [SED, PERL, FOLD] do
+    task :notes => [WGET, SED, PERL, FOLD] do
         release_notes_filename = "Stork-#{STORK_VERSION}-ReleaseNotes.txt"
+        release_notes_filename_in = release_notes_filename + ".in"
         release_notes_file = File.new(release_notes_filename, 'w' )
+
+        fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md", release_notes_filename_in)
+
         Open3.pipeline [
-            # Downloads the latest release notes.
-            *WGET, '-q', '-O-', "https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md"
+            "cat", release_notes_filename_in
         ], [
             # Removes the triple backticks.
             SED, '/^```/d'
@@ -105,6 +108,8 @@ namespace :release do
             # Wraps rows to a specific width.
             FOLD, '-sw', '73'
         ], :out => release_notes_file
+
+        sh "rm", "-f", release_notes_filename_in
     end
 
     desc 'Prepare release tarball with Stork sources'

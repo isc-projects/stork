@@ -251,6 +251,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the build'
     task :build do
-        check_deps(__FILE__, "wget")
+        check_deps(__FILE__)
     end
 end

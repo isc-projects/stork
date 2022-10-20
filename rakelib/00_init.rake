@@ -263,6 +263,35 @@ def require_manual_install_on(task_name, *conditions)
     return newTask.name
 end
 
+# Fetches the file from the network. You should add the WGET to the
+# prerequisites of the task that uses this function.
+# The file is saved in the target location.
+def fetch_file(url, target)
+    # extract wget version
+    stdout, _, status = Open3.capture3(WGET, "--version")
+    wget = [WGET]
+
+    # BusyBox edition has no version switch and supports only basic features.
+    if status == 0
+        wget.append "--tries=inf", "--waitretry=3"
+        wget_version = stdout.split("\n")[0]
+        wget_version = wget_version[/[0-9]+\.[0-9]+/]
+        # versions prior to 1.19 lack support for --retry-on-http-error
+        if wget_version.empty? or wget_version >= "1.19"
+            wget.append "--retry-on-http-error=429,500,503,504"
+        end
+    end
+
+    if ENV["CI"] == "true" || target.nil?
+        wget.append "-q"
+    end
+
+    wget.append url
+    wget.append "-O", target
+
+    sh *wget
+end
+
 ### Recognize the operating system
 uname=`uname -s`
 
@@ -290,30 +319,6 @@ libc_musl_system = detect_libc_musl()
 freebsd_system = OS == "FreeBSD"
 openbsd_system = OS == "OpenBSD"
 any_system = true
-
-### Detect wget
-if which("wget").nil?
-    abort("wget is not installed on this system")
-end
-# extract wget version
-stdout, _, status = Open3.capture3("wget", "--version")
-wget = ["wget"]
-
-# BusyBox edition has no version switch and supports only basic features.
-if status == 0
-    wget.append "--tries=inf", "--waitretry=3"
-    wget_version = stdout.split("\n")[0]
-    wget_version = wget_version[/[0-9]+\.[0-9]+/]
-    # versions prior to 1.19 lack support for --retry-on-http-error
-    if wget_version.empty? or wget_version >= "1.19"
-        wget.append "--retry-on-http-error=429,500,503,504"
-    end
-end
-
-if ENV["CI"] == "true"
-    wget.append "-q"
-end
-WGET = wget
 
 ### Define package versions
 go_ver='1.18.8'
@@ -461,6 +466,7 @@ file ENV['CHROME_BIN']
 CHROME = require_manual_install_on(ENV['CHROME_BIN'], any_system)
 
 # System tools
+WGET = require_manual_install_on("wget", any_system)
 PYTHON3_SYSTEM = require_manual_install_on("python3", any_system)
 JAVA = require_manual_install_on("java", any_system)
 UNZIP = require_manual_install_on("unzip", any_system)
@@ -528,18 +534,18 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
 end
 
 npm = File.join(node_bin_dir, "npm")
-file npm => [TAR, node_dir] do
+file npm => [TAR, WGET, node_dir] do
     Dir.chdir(node_dir) do
         FileUtils.rm_rf(FileList["*"])
-        sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
+        fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "node.tar.xz"
         sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
         sh "rm", "node.tar.xz"
     end
-    sh NPM, "--version"
+    sh npm, "--version"
+    sh "touch", "-c", npm
 end
 NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(NPM, node_ver)
-puts NPM
 
 npx = File.join(node_bin_dir, "npx")
 file npx => [NPM] do
@@ -588,7 +594,7 @@ add_version_guard(STORYBOOK, storybook_ver)
 # puts "WARNING: There are no chrome drv packages built for FreeBSD"
 #
 # CHROME_DRV = File.join(tools_dir, "chromedriver")
-# file CHROME_DRV => [tools_dir] do
+# file CHROME_DRV => [WGET, UNZIP, tools_dir] do
 #     if !ENV['CHROME_BIN']
 #         puts "Missing Chrome/Chromium binary. It is required for UI unit tests and system tests."
 #         next
@@ -614,8 +620,8 @@ add_version_guard(STORYBOOK, storybook_ver)
 #     end
 
 #     Dir.chdir(tools_dir) do
-#         sh *WGET, "https://chromedriver.storage.googleapis.com/#{chrome_drv_version}/chromedriver_#{chrome_drv_suffix}.zip", "-O", "chromedriver.zip"
-#         sh "unzip", "-o", "chromedriver.zip"
+#         fetch_file "https://chromedriver.storage.googleapis.com/#{chrome_drv_version}/chromedriver_#{chrome_drv_suffix}.zip", "chromedriver.zip"
+#         sh UNZIP, "-o", "chromedriver.zip"
 #         sh "rm", "chromedriver.zip"
 #     end
 
@@ -624,16 +630,16 @@ add_version_guard(STORYBOOK, storybook_ver)
 # end
 
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
-file OPENAPI_GENERATOR => [tools_dir] do
-    sh *WGET, "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", "-O", OPENAPI_GENERATOR
+file OPENAPI_GENERATOR => [WGET, tools_dir] do
+    fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", OPENAPI_GENERATOR
 end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
 go = File.join(gobin, "go")
-file go => [go_tools_dir] do
+file go => [WGET, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         FileUtils.rm_rf("go")
-        sh *WGET, "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "-O", "go.tar.gz"
+        fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "go.tar.gz"
         sh "tar", "-zxf", "go.tar.gz" 
         sh "rm", "go.tar.gz"
     end
@@ -644,14 +650,14 @@ GO = require_manual_install_on(go, libc_musl_system, openbsd_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
-file GOSWAGGER => [GO, TAR, go_tools_dir] do
+file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
     if OS != 'FreeBSD' && OS != "OpenBSD"
         goswagger_suffix = "linux_amd64"
         if OS == 'macos'
             # GoSwagger fails to build on macOS due to https://gitlab.isc.org/isc-projects/stork/-/issues/848.
             goswagger_suffix="darwin_amd64"
         end
-        sh *WGET, "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", "-O", GOSWAGGER
+        fetch_file "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", GOSWAGGER
         sh "chmod", "u+x", GOSWAGGER
     else
         # GoSwagger lacks the packages for BSD-like systems then it must be
@@ -659,7 +665,7 @@ file GOSWAGGER => [GO, TAR, go_tools_dir] do
         goswagger_archive = "#{GOSWAGGER}.tar.gz"
         goswagger_dir = "#{GOSWAGGER}-sources"
         sh "mkdir", goswagger_dir
-        sh *WGET, "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", "-O", goswagger_archive
+        fetch_file "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", goswagger_archive
         sh TAR, "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
         goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
         Dir.chdir(goswagger_build_dir) do
@@ -676,9 +682,9 @@ end
 add_version_guard(GOSWAGGER, goswagger_ver)
 
 protoc = File.join(protoc_dir, "protoc")
-file protoc => [UNZIP, go_tools_dir] do
+file protoc => [WGET, UNZIP, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
-        sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
+        fetch_file "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "protoc.zip"
         sh UNZIP, "-o", "-j", "protoc.zip", "bin/protoc"
         sh "rm", "protoc.zip"
     end
@@ -703,9 +709,9 @@ end
 add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
 
 golangcilint = File.join(go_tools_dir, "golangci-lint")
-file golangcilint => [GO, TAR, go_tools_dir] do
+file golangcilint => [WGET, GO, TAR, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
-        sh *WGET, "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "-O", "golangci-lint.tar.gz"
+        fetch_file "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "golangci-lint.tar.gz"
         sh "mkdir", "tmp"
         sh TAR, "-zxf", "golangci-lint.tar.gz", "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/golangci-lint", "."
@@ -794,5 +800,5 @@ end
 
 desc 'Check all system-level dependencies'
 task :check do
-    check_deps(__FILE__, "wget")
+    check_deps(__FILE__)
 end

@@ -256,6 +256,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the codebase'
     task :codebase do
-        check_deps(__FILE__, "wget")
+        check_deps(__FILE__)
     end
 end
