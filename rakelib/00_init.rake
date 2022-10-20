@@ -113,9 +113,8 @@ def find_and_prepare_deps(file)
 end
 
 # Searches for the prerequisites from the init file in the provided file and
-# checks if they exist. It accepts the system-wide dependencies list and tests
-# if they are in PATH.
-def check_deps(file, *system_deps)
+# checks if they exist.
+def check_deps(file)
     def print_status(name, path, ok)
         status = "[ OK ]"
         if !ok
@@ -146,7 +145,7 @@ def check_deps(file, *system_deps)
         prerequisites_tasks.delete t
     end
 
-    puts "Prerequisites:"
+    puts "Self-installed dependencies:"
     prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
         if t.class != Rake::FileTask
             next
@@ -159,16 +158,11 @@ def check_deps(file, *system_deps)
         print_status(name, path, File.exist?(path))
     end
 
-    puts "System dependencies:"
+    puts "\nManual-installed dependencies:"
 
-    system_deps
-        .map { |d| [d.to_s, which(d)] }
-        .map { |d, path| [d, path, !path.nil?] }
-        .concat(
-            manual_install_prerequisites_tasks
-            .map { |p| [p.to_s().rpartition("/")[2], p.to_s() ] }
-            .map { |p, path| [p, path, File.exist?(path)] }
-        )
+    manual_install_prerequisites_tasks
+        .map { |p| [p.to_s().rpartition("/")[2], p.to_s() ] }
+        .map { |p, path| [p, path, File.exist?(path)] }
         .sort_by{ |name, _, _| name }
         .each { |args| print_status(*args) }
 end
