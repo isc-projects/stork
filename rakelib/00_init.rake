@@ -170,7 +170,7 @@ def check_deps(file)
         print_status(name, path, File.exist?(path))
     end
 
-    puts "\nManual-installed dependencies:"
+    puts "\nManually-installed dependencies:"
 
     manual_install_prerequisites_tasks
         .map { |p| [p.to_s().rpartition("/")[2], p.to_s() ] }
@@ -223,6 +223,19 @@ Rake::Task[:phony].tap do |task|
   end
 end
 
+# Task name should be a path to file or an executable name.
+#
+# If the path is used, it must be name of the existing path. If all conditions
+# are false, the function leaves the task and task name untouched.
+#
+# If the task name is a name of the executable (no slashes) then it may not
+# have related file task. If all conditions are false, the function creates
+# a dump/phony task and leaves the task name untouched.
+#
+# If any condition is true, the original task is removed. It is replaced with
+# a new one that fails if the task target doesn't exist. The task has a property
+# that indicates that it requires a manual install. Function returns a new name
+# that depends on the which command output.
 def require_manual_install_on(task_name, *conditions)
     task = nil
     if Rake::Task.task_defined? task_name
