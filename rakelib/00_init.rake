@@ -213,15 +213,30 @@ def require_manual_install_on(task_name, *conditions)
     end
 
     if !conditions.any?
-        return
+        return task_name
     end
 
-    task.instance_variable_set(:@manuall_install, true)
-    task.clear_actions()
-    task.clear_prerequisites()
-    task.enhance do
-        fail "#{task.to_s} must be installed manually on your operating system"
+    # Remove the self-installed task due to it is unsupported.
+    task.clear()
+    Rake.application.instance_variable_get('@tasks').delete(task_name)
+
+    # Search in PATH for executable.
+    program = File.basename task_name
+    system_path = which(program)
+    if !system_path.nil?
+        program = system_path
     end
+
+    # Create a new task that fails if the executable doesn't exist.
+    file program do
+        fail "#{newTask.to_s} must be installed manually on your operating system"
+    end
+
+    # Add a magic variable to indicate that it's a manually installed file.
+    newTask = Rake::Task[program]
+    newTask.instance_variable_set(:@manuall_install, true)
+
+    return newTask.name
 end
 
 ### Recognize the operating system
@@ -394,17 +409,6 @@ pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
-default_os_binary_directory = "/usr/bin"
-if freebsd_system || openbsd_system
-    default_os_binary_directory = "/usr/local/bin"
-end
-DEFAULT_OS_BINARY_DIRECTORY = default_os_binary_directory
-
-if libc_musl_system || freebsd_system || openbsd_system
-    protoc_dir = DEFAULT_OS_BINARY_DIRECTORY
-    node_bin_dir = DEFAULT_OS_BINARY_DIRECTORY
-end
-
 if libc_musl_system || openbsd_system
     gobin = ENV["GOBIN"]
     goroot = ENV["GOROOT"]
@@ -413,7 +417,7 @@ if libc_musl_system || openbsd_system
         if !gobin.nil?
             gobin = File.dirname gobin
         else
-            gobin = DEFAULT_OS_BINARY_DIRECTORY
+            gobin = ""
         end
     end
 end
@@ -469,8 +473,8 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
     sh DANGER, "--version"
 end
 
-NPM = File.join(node_bin_dir, "npm")
-file NPM => [node_dir] do
+npm = File.join(node_bin_dir, "npm")
+file npm => [node_dir] do
     Dir.chdir(node_dir) do
         FileUtils.rm_rf(FileList["*"])
         sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
@@ -479,15 +483,16 @@ file NPM => [node_dir] do
     end
     sh NPM, "--version"
 end
-require_manual_install_on(NPM, libc_musl_system, freebsd_system, openbsd_system)
+NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(NPM, node_ver)
+puts NPM
 
-NPX = File.join(node_bin_dir, "npx")
-file NPX => [NPM] do
-    sh NPX, "--version"
-    sh "touch", "-c", NPX
+npx = File.join(node_bin_dir, "npx")
+file npx => [NPM] do
+    sh npx, "--version"
+    sh "touch", "-c", npx
 end
-require_manual_install_on(NPX, libc_musl_system)
+NPX = require_manual_install_on(npx, libc_musl_system)
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
@@ -570,18 +575,18 @@ file OPENAPI_GENERATOR => [tools_dir] do
 end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
-GO = File.join(gobin, "go")
-file GO => [go_tools_dir] do
+go = File.join(gobin, "go")
+file go => [go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         FileUtils.rm_rf("go")
         sh *WGET, "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "-O", "go.tar.gz"
         sh "tar", "-zxf", "go.tar.gz" 
         sh "rm", "go.tar.gz"
     end
-    sh "touch", "-c", GO
-    sh GO, "version"
+    sh "touch", "-c", go
+    sh go, "version"
 end
-require_manual_install_on(GO, libc_musl_system, openbsd_system)
+GO = require_manual_install_on(go, libc_musl_system, openbsd_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
@@ -616,17 +621,17 @@ file GOSWAGGER => [GO, go_tools_dir] do
 end
 add_version_guard(GOSWAGGER, goswagger_ver)
 
-PROTOC = File.join(protoc_dir, "protoc")
-file PROTOC => [go_tools_dir] do
+protoc = File.join(protoc_dir, "protoc")
+file protoc => [go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
         sh "unzip", "-o", "-j", "protoc.zip", "bin/protoc"
         sh "rm", "protoc.zip"
     end
-    sh PROTOC, "--version"
-    sh "touch", "-c", PROTOC
+    sh protoc, "--version"
+    sh "touch", "-c", protoc
 end
-require_manual_install_on(PROTOC, libc_musl_system, freebsd_system, openbsd_system)
+PROTOC = require_manual_install_on(protoc, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
@@ -643,8 +648,8 @@ file PROTOC_GEN_GO_GRPC => [GO] do
 end
 add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
 
-GOLANGCILINT = File.join(go_tools_dir, "golangci-lint")
-file GOLANGCILINT => [go_tools_dir] do
+golangcilint = File.join(go_tools_dir, "golangci-lint")
+file golangcilint => [GO, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "-O", "golangci-lint.tar.gz"
         sh "mkdir", "tmp"
@@ -653,9 +658,9 @@ file GOLANGCILINT => [go_tools_dir] do
         sh "rm", "-rf", "tmp"
         sh "rm", "-f", "golangci-lint.tar.gz"
     end
-    sh GOLANGCILINT, "--version"
+    sh golangcilint, "--version"
 end
-require_manual_install_on(GOLANGCILINT, openbsd_system)
+GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
 add_version_guard(GOLANGCILINT, golangcilint_ver)
 
 RICHGO = "#{gobin}/richgo"
