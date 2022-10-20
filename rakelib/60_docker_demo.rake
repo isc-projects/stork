@@ -149,8 +149,8 @@ namespace :demo do
         ENV["DOCKER_BUILDKIT"] = "1"
         
         # Execute the docker-compose commands
-        sh "docker-compose", *opts, "build", *build_opts, *services, *additional_services
-        sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
+        sh DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
+        sh DOCKER_COMPOSE, *opts, "up", *up_opts, *services, *additional_services
     end
     
     ##################
@@ -166,39 +166,39 @@ namespace :demo do
     default - Use default service configuration from the compose file (default)
     CACHE - Use the Docker cache - default: true
     '
-    task :up do
+    task :up => [DOCKER_COMPOSE] do
         docker_up_services()
     end
     
     namespace :up do
         desc 'Build and run container with Stork Agent and Kea
         See "up" command for arguments.'
-        task :kea do
+        task :kea => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea")
         end
         
         desc 'Build and run container with Stork Agent and Kea with many subnets in the configuration.
         See "up" command for arguments.'
-        task :kea_many_subnets do
+        task :kea_many_subnets => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea-many-subnets")
         end
         
         desc 'Build and run container with Stork Agent and Kea DHCPv6 server
         See "up" command for arguments.'
-        task :kea6 do
+        task :kea6 => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea6")
         end
         
         desc 'Build and run two containers with Stork Agent and Kea HA pair
         See "up" command for arguments.'
-        task :kea_ha do
+        task :kea_ha => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea-ha1", "agent-kea-ha2")
         end
         
         desc 'Build and run container with Stork Agent and Kea with host reseverations in db
         CS_REPO_ACCESS_TOKEN - CloudSmith token - required
         See "up" command for more arguments.'
-        task :kea_premium do
+        task :kea_premium => [DOCKER_COMPOSE] do
             if !ENV["CS_REPO_ACCESS_TOKEN"]
                 fail 'You need to provide the CloudSmith access token in CS_REPO_ACCESS_TOKEN environment variable.'
             end
@@ -207,32 +207,32 @@ namespace :demo do
         
         desc 'Build and run container with Stork Agent and BIND 9
         See "up" command for arguments.'
-        task :bind9 do
+        task :bind9 => [DOCKER_COMPOSE] do
             docker_up_services("agent-bind9")
         end
         
         desc 'Build and run container with Postgres'
-        task :postgres do
+        task :postgres => [DOCKER_COMPOSE] do
             docker_up_services("postgres")
         end
         
         desc 'Build and run Docker DNS Proxy Server to resolve internal Docker hostnames'
         # Source: https://stackoverflow.com/a/45071285
-        task :dns_proxy_server do
+        task :dns_proxy_server => [DOCKER_COMPOSE] do
             docker_up_services("dns-proxy-server")
         end
 
         desc 'Build and run container with simulator'
-        task :simulator do
+        task :simulator => [DOCKER_COMPOSE] do
             docker_up_services("simulator")
         end
     end
     
     desc 'Down all containers and remove all volumes'
-    task :down do
+    task :down => [DOCKER_COMPOSE] do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
-        sh "docker-compose", *opts, "down",
+        sh DOCKER_COMPOSE, *opts, "down",
         "--volumes",
         "--remove-orphans",
         "--rmi", "local"
@@ -245,34 +245,34 @@ namespace :demo do
 
     desc 'Print logs of a given service
         SERVICE - service name - optional'
-    task :logs do
+    task :logs => [DOCKER_COMPOSE] do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         services = []
         if !ENV["SERVICE"].nil?
             services.append ENV["SERVICE"]
         end
-        sh "docker-compose", *opts, "logs", *services
+        sh DOCKER_COMPOSE, *opts, "logs", *services
     end
 
     desc 'Run shell inside specific service
         SERVICE - service name - required
         SERVICE_USER - user to login - optional, default: root'
-    task :shell do
+    task :shell => [DOCKER_COMPOSE] do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         exec_opts = []
         if !ENV["SERVICE_USER"].nil?
             exec_opts.append "--user", ENV["SERVICE_USER"]
         end
-        sh "docker-compose", *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
+        sh DOCKER_COMPOSE, *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
     end
 
     desc "Build the demo containers
         CS_REPO_ACCESS_TOKEN - CloudSmith token - optional
         SERVICE - service name - optional
         CACHE - doesn't rebuild the containers if present - default: true"
-    task :build do
+    task :build => [DOCKER_COMPOSE] do
         services = []
         if !ENV["SERVICE"].nil?
             services.append ENV["SERVICE"]
@@ -289,7 +289,7 @@ namespace :demo do
         ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
         ENV["DOCKER_BUILDKIT"] = "1"
 
-        sh "docker-compose", *opts, "build", *build_opts, *services, *additional_services
+        sh DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
     end
     
     #######################
@@ -298,8 +298,8 @@ namespace :demo do
     
     # ToDo: This task is not refactored.
     desc 'Prepare containers that are using in GitLab CI processes'
-    task :build_ci_containers do
-        sh "docker build",
+    task :build_ci_containers => [DOCKER] do
+        sh DOCKER, "build",
         "--no-cache",
         "-f", "docker/images/ci/ubuntu-18.04.Dockerfile",
         "-t", "registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/"
@@ -331,7 +331,7 @@ end
 # Waits for a given docker-compose service be operational (Up and Healthy status)
 def wait_to_be_operational(service)
     opts, _, _, _ = get_docker_opts(nil, false, false, [service])
-    contener_id, _, status = Open3.capture3("docker-compose", *opts, "ps", "-q")
+    contener_id, _, status = Open3.capture3(DOCKER_COMPOSE, *opts, "ps", "-q")
     if status != 0
         fail "Unknown container"
     end
@@ -342,7 +342,7 @@ def wait_to_be_operational(service)
 
     loop do
         status_text, _, _ = Open3.capture3(
-            "docker", "ps", "--format", "{{ .Status }}",
+            DOCKER, "ps", "--format", "{{ .Status }}",
             "-f", "id=" + container_id
         )
         status_text = status_text.rstrip
@@ -391,5 +391,12 @@ namespace :unittest do
         Rake::Task["demo:up:postgres"].invoke()
         wait_to_be_operational("postgres")
         Rake::Task["unittest:backend"].invoke()
+    end
+end
+
+namespace :check do
+    desc 'Check the external dependencies related to the demo'
+    task :demo do
+        check_deps(__FILE__)
     end
 end

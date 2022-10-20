@@ -53,7 +53,7 @@ namespace :unittest do
                 when a path to directory is provided, all spec files ending ".spec.@(ts|tsx)" will be included
                 when a path to a file is provided, and a matching spec file exists it will be included instead
         DEBUG - run the tests in debug mode (no headless) - default: false'
-    task :ui => [NPX] + WEBUI_CODEBASE do
+    task :ui => [CHROME, NPX] + WEBUI_CODEBASE do
         debug = "false"
         if ENV["DEBUG"] == "true"
             debug = "true"
@@ -235,10 +235,10 @@ end
 
 namespace :build do
     desc 'Builds Stork documentation continuously whenever source files change'
-    task :doc_live => DOC_CODEBASE do
+    task :doc_live => [ENTR] + DOC_CODEBASE do
         Open3.pipeline(
             ['printf', '%s\\n', *DOC_CODEBASE],
-            ['entr', '-d', 'rake', 'build:doc']
+            [ENTR, '-d', 'rake', 'build:doc']
         )
     end
 
@@ -246,7 +246,7 @@ namespace :build do
     task :backend_live => go_codebase do
         Open3.pipeline(
             ['printf', '%s\\n', *go_codebase],
-            ['entr', '-d', 'rake', 'build:backend']
+            [ENTR, '-d', 'rake', 'build:backend']
         )
     end
 
@@ -394,7 +394,7 @@ namespace :db do
         DB_MAINTENANCE_NAME - maintenance DB name used to create the provided DB - default: postgres
         SUPPRESS_DB_MAINTENANCE - do not run creation DB operation - default: false
         See db:setup_envvars task for more options.'
-    task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
+    task :migrate => [CREATEDB, PSQL, :setup_envvars, TOOL_BINARY_FILE] do
         dbhost = ENV["STORK_DATABASE_HOST"]
         dbport = ENV["STORK_DATABASE_PORT"]
         dbuser = ENV["STORK_DATABASE_USER_NAME"]
@@ -403,7 +403,7 @@ namespace :db do
         dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
 
         if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
-            stdout, stderr, status = Open3.capture3 "psql",
+            stdout, stderr, status = Open3.capture3 PSQL,
                 "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
                 "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
 
@@ -414,7 +414,7 @@ namespace :db do
             has_db = stdout.rstrip == "1"
 
             if !has_db
-                sh "createdb",
+                sh CREATEDB,
                     "-h", dbhost,
                     "-p", dbport,
                     "-U", dbuser,
@@ -431,7 +431,7 @@ namespace :db do
     desc "Remove remaining test databases and users
         SUPPRESS_DB_MAINTENANCE - do not run this stage (no removing) - default: false
         See db:setup_envvars task for more options."
-    task :remove_remaining => [:setup_envvars] do
+    task :remove_remaining => [PSQL, DROPUSER, DROPDB, :setup_envvars] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] == "true"
             puts "DB maintenance suppressed (removing)"
             next
@@ -463,17 +463,17 @@ namespace :db do
         end
 
         Open3.pipeline([
-            "psql", *psql_select_opts, *psql_access_opts, dbmaintenance,
+            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
             "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
         ], [
-            "xargs", "-P", "16", "-n", "1", "-r", "dropdb", *psql_access_opts 
+            "xargs", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts 
         ])
 
         Open3.pipeline([
-            "psql", *psql_select_opts, *psql_access_opts, dbmaintenance,
+            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
             "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
         ], [
-            "xargs", "-P", "16", "-n", "1", "-r", "dropuser", *psql_access_opts 
+            "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts 
         ])
     end
 end
@@ -547,11 +547,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the development'
     task :dev do
-        system_specific_deps = []
-        if OS == "OpenBSD"
-            system_specific_deps.append "clang++"
-        end
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr",
-            "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "gem", *system_specific_deps)
+        check_deps(__FILE__, "wget")
     end
 end

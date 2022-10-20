@@ -5,8 +5,8 @@
 
 namespace :utils do
     desc 'Generate ctags for Emacs'
-    task :ctags do
-        sh "etags.ctags",
+    task :ctags => [ETAGS_CTAGS] do
+        sh ETAGS_CTAGS,
         "-f", "TAGS",
         "-R",
         "--exclude=webui/node_modules",
@@ -17,7 +17,7 @@ namespace :utils do
     
     
     desc 'Connect gdlv GUI Go debugger to waiting dlv debugger'
-    task :connect_dbg => GDLV do
+    task :connect_dbg => [GDLV] do
         sh GDLV, "connect", "127.0.0.1:45678"
     end
 end

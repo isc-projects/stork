@@ -205,20 +205,44 @@ def add_version_guard(task_name, version)
     end 
 end
 
+# Defines a :phony task that you can use as a dependency. This allows
+# file-based tasks to use non-file-based tasks as prerequisites
+# without forcing them to rebuild.
+# Adopted from: https://github.com/ruby/rake/blob/master/lib/rake/phony.rb
+task :phony
+
+Rake::Task[:phony].tap do |task|
+  def task.timestamp # :nodoc:
+    Time.at 0
+  end
+end
 
 def require_manual_install_on(task_name, *conditions)
-    task = Rake::Task[task_name]
-    if task.class != Rake::FileTask
+    task = nil
+    if Rake::Task.task_defined? task_name
+        task = Rake::Task[task_name]
+    end
+
+    # The task may not exist for the executables that must be found in PATH.
+    # Other files must have assigned file tasks.
+    if (!task.nil? && task.class != Rake::FileTask) || (task.nil? && task_name.include?("/"))
         fail "file task required"
     end
 
     if !conditions.any?
+        if task.nil?
+            # Create an empty file task to prevent failure due to a non-exist
+            # file if the file isn't required.
+            file task_name => [:phony]
+        end
         return task_name
     end
 
     # Remove the self-installed task due to it is unsupported.
-    task.clear()
-    Rake.application.instance_variable_get('@tasks').delete(task_name)
+    if !task.nil?
+        task.clear()
+        Rake.application.instance_variable_get('@tasks').delete(task_name)
+    end
 
     # Search in PATH for executable.
     program = File.basename task_name
@@ -265,6 +289,7 @@ libc_musl_system = detect_libc_musl()
 # systems.
 freebsd_system = OS == "FreeBSD"
 openbsd_system = OS == "OpenBSD"
+any_system = true
 
 ### Detect wget
 if which("wget").nil?
@@ -331,37 +356,6 @@ when "OpenBSD"
 else
   puts "ERROR: Unknown/unsupported OS: %s" % UNAME
   fail
-end
-
-### Detect Chrome
-# CHROME_BIN is required for UI unit tests and system tests. If it is
-# not provided by a user, try to locate Chrome binary and set
-# environment variable to its location.
-if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
-    location = which("chromium")
-    if location.nil?
-        location = which("chrome")
-    end
-    if !location.nil?
-        ENV['CHROME_BIN'] = location
-    else    
-        ENV['CHROME_BIN'] = "chromium"
-        chrome_locations = []
-
-        if OS == 'linux'
-            chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
-        elsif OS == 'macos'
-            chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
-        end
-        # For each possible location check if the binary exists.
-        chrome_locations.each do |loc|
-            if File.exist?(loc)
-                # Found Chrome binary.
-                ENV['CHROME_BIN'] = loc
-                break
-            end
-        end
-    end
 end
 
 ### Define dependencies
@@ -433,10 +427,70 @@ ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 ENV["VIRTUAL_ENV"] = python_tools_dir
 
+### Detect Chrome
+# CHROME_BIN is required for UI unit tests and system tests. If it is
+# not provided by a user, try to locate Chrome binary and set
+# environment variable to its location.
+if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
+    location = which("chromium")
+    if location.nil?
+        location = which("chrome")
+    end
+    if !location.nil?
+        ENV['CHROME_BIN'] = location
+    else    
+        ENV['CHROME_BIN'] = "chromium"
+        chrome_locations = []
+
+        if OS == 'linux'
+            chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
+        elsif OS == 'macos'
+            chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
+        end
+        # For each possible location check if the binary exists.
+        chrome_locations.each do |loc|
+            if File.exist?(loc)
+                # Found Chrome binary.
+                ENV['CHROME_BIN'] = loc
+                break
+            end
+        end
+    end
+end
+file ENV['CHROME_BIN']
+CHROME = require_manual_install_on(ENV['CHROME_BIN'], any_system)
+
+# System tools
+PYTHON3_SYSTEM = require_manual_install_on("python3", any_system)
+JAVA = require_manual_install_on("java", any_system)
+UNZIP = require_manual_install_on("unzip", any_system)
+ENTR = require_manual_install_on("entr", any_system)
+GIT = require_manual_install_on("git", any_system)
+CREATEDB = require_manual_install_on("createdb", any_system)
+PSQL = require_manual_install_on("psql", any_system)
+DROPDB = require_manual_install_on("dropdb", any_system)
+DROPUSER = require_manual_install_on("dropuser", any_system)
+DOCKER = require_manual_install_on("docker", any_system)
+DOCKER_COMPOSE = require_manual_install_on("docker-compose", any_system)
+file DOCKER_COMPOSE => [DOCKER]
+OPENSSL = require_manual_install_on("openssl", any_system)
+GEM = require_manual_install_on("gem", any_system)
+MAKE = require_manual_install_on("make", any_system)
+GCC = require_manual_install_on("gcc", any_system)
+TAR = require_manual_install_on("tar", any_system)
+SED = require_manual_install_on("sed", any_system)
+PERL = require_manual_install_on("perl", any_system)
+FOLD = require_manual_install_on("fold", any_system)
+SSH = require_manual_install_on("ssh", any_system)
+SCP = require_manual_install_on("scp", any_system)
+CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
+ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
+CLANG = require_manual_install_on("clang++", openbsd_system)
+
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
-file BUNDLE => [ruby_tools_dir, ruby_tools_bin_dir] do
-    sh "gem", "install",
+file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
+    sh GEM, "install",
             "--minimal-deps",
             "--no-document",
             "--install-dir", ruby_tools_dir,
@@ -474,11 +528,11 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
 end
 
 npm = File.join(node_bin_dir, "npm")
-file npm => [node_dir] do
+file npm => [TAR, node_dir] do
     Dir.chdir(node_dir) do
         FileUtils.rm_rf(FileList["*"])
         sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
-        sh "tar", "-Jxf", "node.tar.xz", "--strip-components=1"
+        sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
         sh "rm", "node.tar.xz"
     end
     sh NPM, "--version"
@@ -590,7 +644,7 @@ GO = require_manual_install_on(go, libc_musl_system, openbsd_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
-file GOSWAGGER => [GO, go_tools_dir] do
+file GOSWAGGER => [GO, TAR, go_tools_dir] do
     if OS != 'FreeBSD' && OS != "OpenBSD"
         goswagger_suffix = "linux_amd64"
         if OS == 'macos'
@@ -606,7 +660,7 @@ file GOSWAGGER => [GO, go_tools_dir] do
         goswagger_dir = "#{GOSWAGGER}-sources"
         sh "mkdir", goswagger_dir
         sh *WGET, "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", "-O", goswagger_archive
-        sh "tar", "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
+        sh TAR, "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
         goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
         Dir.chdir(goswagger_build_dir) do
             sh GO, "build", "-ldflags=-X 'github.com/go-swagger/go-swagger/cmd/swagger/commands.Version=#{goswagger_ver}'"
@@ -622,10 +676,10 @@ end
 add_version_guard(GOSWAGGER, goswagger_ver)
 
 protoc = File.join(protoc_dir, "protoc")
-file protoc => [go_tools_dir] do
+file protoc => [UNZIP, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "-O", "protoc.zip"
-        sh "unzip", "-o", "-j", "protoc.zip", "bin/protoc"
+        sh UNZIP, "-o", "-j", "protoc.zip", "bin/protoc"
         sh "rm", "protoc.zip"
     end
     sh protoc, "--version"
@@ -649,11 +703,11 @@ end
 add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
 
 golangcilint = File.join(go_tools_dir, "golangci-lint")
-file golangcilint => [GO, go_tools_dir] do
+file golangcilint => [GO, TAR, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         sh *WGET, "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "-O", "golangci-lint.tar.gz"
         sh "mkdir", "tmp"
-        sh "tar", "-zxf", "golangci-lint.tar.gz", "-C", "tmp", "--strip-components=1"
+        sh TAR, "-zxf", "golangci-lint.tar.gz", "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/golangci-lint", "."
         sh "rm", "-rf", "tmp"
         sh "rm", "-f", "golangci-lint.tar.gz"
@@ -701,8 +755,8 @@ end
 add_version_guard(GDLV, gdlv_ver)
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
-file PYTHON do
-    sh "python3", "-m", "venv", python_tools_dir
+file PYTHON => [PYTHON3_SYSTEM] do
+    sh PYTHON3_SYSTEM, "-m", "venv", python_tools_dir
     sh PYTHON, "--version"
 end
 
@@ -740,12 +794,5 @@ end
 
 desc 'Check all system-level dependencies'
 task :check do
-    system_specific_deps = []
-    if OS == "OpenBSD"
-        system_specific_deps.append "clang++"
-    end
-    check_deps(__FILE__, "wget", "python3", "java", "unzip", "entr", "git",
-        "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
-        "docker", "openssl", "gem", "make", "gcc", "tar", "sed", "perl", "fold",
-        "ssh", "scp", *system_specific_deps)
+    check_deps(__FILE__, "wget")
 end

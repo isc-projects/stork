@@ -157,9 +157,9 @@ DOC_CODEBASE = FileList["doc", "doc/**/*"]
 ################
 
 open_api_generator_webui_dir = "webui/src/app/backend"
-file open_api_generator_webui_dir => [SWAGGER_FILE, OPENAPI_GENERATOR] do
+file open_api_generator_webui_dir => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
     sh "rm", "-rf", open_api_generator_webui_dir
-    sh "java", "-jar", OPENAPI_GENERATOR, "generate",
+    sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
     "-i", SWAGGER_FILE,
     "-g", "typescript-angular",
     "-o", open_api_generator_webui_dir,
@@ -256,10 +256,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the codebase'
     task :codebase do
-        system_specific_deps = []
-        if OS == "OpenBSD"
-            system_specific_deps.append "clang++"
-        end
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", *system_specific_deps)
+        check_deps(__FILE__, "wget")
     end
 end

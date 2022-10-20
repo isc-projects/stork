@@ -15,7 +15,7 @@ system_tests_dir = "tests/system"
 kea_many_subnets_dir = "tests/system/config/kea-many-subnets"
 directory kea_many_subnets_dir
 kea_many_subnets_config_file = File.join(kea_many_subnets_dir, "kea-dhcp4.conf")
-file kea_many_subnets_config_file => [kea_many_subnets_dir] do
+file kea_many_subnets_config_file => [PYTHON, kea_many_subnets_dir] do
     sh PYTHON, "docker/tools/gen-kea-config.py", "7000",
         "-o", kea_many_subnets_config_file,
         "--interface", "eth1"
@@ -45,8 +45,8 @@ key_file = File.join(tls_dir, "key.pem")
 ca_dir = File.join(tls_dir, "CA")
 directory ca_dir
 
-file cert_file => [ca_dir] do
-    sh "openssl", "req", "-x509", "-newkey", "rsa:4096",
+file cert_file => [OPENSSL, ca_dir] do
+    sh OPENSSL, "req", "-x509", "-newkey", "rsa:4096",
         "-sha256", "-days", "3650", "-nodes",
         "-keyout", key_file, "-out", cert_file,
         "-subj", "/CN=kea.isc.org", "-addext",
@@ -58,9 +58,9 @@ volume_files.append cert_file, key_file, ca_dir
 
 # Server API
 open_api_generator_python_dir = "tests/system/openapi_client"
-file open_api_generator_python_dir => [SWAGGER_FILE, OPENAPI_GENERATOR] do
+file open_api_generator_python_dir => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
     sh "rm", "-rf", open_api_generator_python_dir
-    sh "java", "-jar", OPENAPI_GENERATOR, "generate",
+    sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
         "-i", SWAGGER_FILE,
         "-g", "python",
         "-o", "tests/system",
@@ -92,7 +92,7 @@ desc 'Run system tests
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
     BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR'
-task :systemtest => [PYTEST, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
+task :systemtest => [PYTEST, DOCKER_COMPOSE, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
     if !ENV["TEST"].nil?
@@ -197,7 +197,7 @@ namespace :systemtest do
                 - MAJOR.MINOR.PATCH-REVISION
         BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     '
-    task :sh => volume_files + [:setup_version_envvars] do |t, args|
+    task :sh => volume_files + [DOCKER_COMPOSE, :setup_version_envvars] do |t, args|
         if ENV["USE_BUILD_KIT"] != "false"
             ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
             ENV["DOCKER_BUILDKIT"] = "1"
@@ -211,7 +211,7 @@ namespace :systemtest do
             profiles.append "--profile", "premium"
         end
 
-        sh "docker-compose",
+        sh DOCKER_COMPOSE,
             "-f", File.expand_path(File.join(system_tests_dir, "docker-compose.yaml")),
             "--project-directory", File.expand_path("."),
             "--project-name", "stork_tests",
@@ -245,7 +245,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the system tests'
     task :systemtest do
-        check_deps(__FILE__, "python3", "docker", "docker-compose",
-            "openssl", "java")
+        check_deps(__FILE__)
     end
 end

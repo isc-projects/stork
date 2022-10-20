@@ -251,10 +251,6 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the build'
     task :build do
-        system_specific_deps = []
-        if OS == "OpenBSD"
-            system_specific_deps.append "clang++"
-        end
-        check_deps(__FILE__, "wget", "python3", "java", "unzip", *system_specific_deps)
+        check_deps(__FILE__, "wget")
     end
 end

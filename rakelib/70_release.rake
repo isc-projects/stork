@@ -86,7 +86,7 @@ namespace :release do
 
 
     desc 'Prepare release notes'
-    task :notes do
+    task :notes => [SED, PERL, FOLD] do
         release_notes_filename = "Stork-#{STORK_VERSION}-ReleaseNotes.txt"
         release_notes_file = File.new(release_notes_filename, 'w' )
         Open3.pipeline [
@@ -94,22 +94,22 @@ namespace :release do
             *WGET, '-q', '-O-', "https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md"
         ], [
             # Removes the triple backticks.
-            'sed', '/^```/d'
+            SED, '/^```/d'
         ], [
             # Removes backslashes prepending square brackets.
-            'sed', 's/\\\[/[/g;s/\\\]/]/g'
+            SED, 's/\\\[/[/g;s/\\\]/]/g'
         ], [
             # Replaces square brackets with round brackets for hyperlinks.
-            'perl', '-pe', 's|\[(http.*?)\]\(http.*\)|\1|',
+            PERL, '-pe', 's|\[(http.*?)\]\(http.*\)|\1|',
         ], [
             # Wraps rows to a specific width.
-            'fold', '-sw', '73'
+            FOLD, '-sw', '73'
         ], :out => release_notes_file
     end
 
     desc 'Prepare release tarball with Stork sources'
-    task :tarball do
-        sh "git", "archive",
+    task :tarball => [GIT] do
+        sh GIT, "archive",
             "--prefix", "stork-#{STORK_VERSION}/",
             "-o", "stork-#{STORK_VERSION}.tar.gz", "HEAD"
     end
@@ -120,7 +120,7 @@ namespace :release do
         desc 'Upload tarball and release notes to given host and path
             HOST - the SSH host - required
             TARGET - the target path for tarball file - required'
-        task :upload do
+        task :upload => [SSH, SCP] do
             host = ENV["HOST"]
             target = ENV["TARGET"]
             if host.nil?
@@ -130,12 +130,12 @@ namespace :release do
             end
 
             path = "#{target}/#{STORK_VERSION}"
-            sh "ssh", "-4", host, "--", "mkdir", "-p", path
-            sh "scp", "-4", "-p",
+            sh SSH, "-4", host, "--", "mkdir", "-p", path
+            sh SCP, "-4", "-p",
                        "./stork-#{STORK_VERSION}.tar.gz",
                        "./Stork-#{STORK_VERSION}-ReleaseNotes.txt",
                        "#{host}:#{path}"
-            sh "ssh", "-4", host, "--", "chmod", "-R", "g+w", path
+            sh SSH, "-4", host, "--", "chmod", "-R", "g+w", path
         end
     end
 
@@ -143,7 +143,7 @@ namespace :release do
         desc 'Upload packages to Cloudsmith
             CS_API_KEY - the Cloudsmith API key - required
             REPO - the Cloudsmith repository - required'
-        task :upload do
+        task :upload => [CLOUDSMITH] do
             key = ENV["CS_API_KEY"]
             repo = ENV["REPO"]
             if key.nil?
@@ -151,8 +151,8 @@ namespace :release do
             elsif repo.nil?
                 fail "You need to provide the REPO variable"
             end
-            sh "cloudsmith", "check", "service"
-            sh "cloudsmith", "whoami", "-k", "#{key}"
+            sh CLOUDSMITH, "check", "service"
+            sh CLOUDSMITH, "whoami", "-k", "#{key}"
             for package_type in ['deb', 'rpm'] do
                 for component in ['isc-stork-agent', 'isc-stork-server'] do
                     pattern = component + '*\.' + package_type
@@ -162,7 +162,7 @@ namespace :release do
                     elsif files.length > 1
                       fail 'ERROR: expected a single file, found multiple files matching ' + pattern + ': ' + files.join(' ')
                     end
-                    sh "cloudsmith", "upload", package_type, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/any-distro/any-version", files[0]
+                    sh CLOUDSMITH, "upload", package_type, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/any-distro/any-version", files[0]
                 end
             end
         end
@@ -172,7 +172,7 @@ end
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
     task :release do
-        check_deps(__FILE__, "git", "sed", "perl", "fold", "ssh", "scp")
+        check_deps(__FILE__)
     end
 end
 
