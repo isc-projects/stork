@@ -514,7 +514,7 @@ SSH = require_manual_install_on("ssh", any_system)
 SCP = require_manual_install_on("scp", any_system)
 CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
 ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
-CLANG = require_manual_install_on("clang++", openbsd_system)
+CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
@@ -574,7 +574,7 @@ file npx => [NPM] do
     sh npx, "--version"
     sh "touch", "-c", npx
 end
-NPX = require_manual_install_on(npx, libc_musl_system)
+NPX = require_manual_install_on(npx, libc_musl_system, freebsd_system, openbsd_system)
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do

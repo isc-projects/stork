@@ -169,7 +169,7 @@ end
 CLEAN.append open_api_generator_webui_dir
 
 node_module_dir = "webui/node_modules"
-file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] do
+file node_module_dir => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-lock.json"] do
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-audit", "--no-progress"]
@@ -181,7 +181,7 @@ file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] d
         if OS == "OpenBSD"
             # The clang++ is required but instead what is actually used is g++.
             # See: https://obsd.solutions/en/blog/2022/02/23/node-sass-build-fails-on-openbsd-how-to-fix/
-            ENV["CXX"] = which("clang++")
+            ENV["CXX"] = CLANGPLUSPLUS
         end
 
         sh NPM, "ci",
