@@ -107,6 +107,18 @@ def find_and_prepare_deps(file)
         if t.class != Rake::FileTask
             next
         end
+        if t.instance_variable_get(:@manuall_install)
+            # Skips the missing top-level manually-installed prerequisites
+            # to avoid interrupting preparing operation. If the
+            # manually-installed prerequisite is a dependency of any
+            # prerequisites and it's missing, then the preparing operation is
+            # stopped anyway.
+            if which(t.to_s).nil?
+                puts "Preparing: #{t}... must be manually installed"
+                next
+            end
+        end
+
         print "Preparing: ", t, "...\n"
         t.invoke()
     end
@@ -247,7 +259,11 @@ def require_manual_install_on(task_name, *conditions)
 
     # Create a new task that fails if the executable doesn't exist.
     file program do
-        fail "#{newTask.to_s} must be installed manually on your operating system"
+        # This check allows to use manually installed tasks as prerequisities of
+        # other manually installed tasks.
+        if which(program).nil?
+            fail "#{program} must be installed manually on your operating system"
+        end
     end
 
     # Add a magic variable to indicate that it's a manually installed file.
@@ -536,7 +552,6 @@ file npm => [TAR, WGET, node_dir] do
         sh "rm", "node.tar.xz"
     end
     sh npm, "--version"
-    sh "touch", "-c", npm
 end
 NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
 add_version_guard(NPM, node_ver)
@@ -626,6 +641,7 @@ add_version_guard(STORYBOOK, storybook_ver)
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
 file OPENAPI_GENERATOR => [WGET, tools_dir] do
     fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", OPENAPI_GENERATOR
+    sh "touch", "-c", OPENAPI_GENERATOR
 end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
@@ -712,6 +728,7 @@ file golangcilint => [WGET, GO, TAR, go_tools_dir] do
         sh "rm", "-rf", "tmp"
         sh "rm", "-f", "golangci-lint.tar.gz"
     end
+    sh "touch", "-c", golangcilint
     sh golangcilint, "--version"
 end
 GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
