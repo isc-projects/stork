@@ -87,6 +87,19 @@ namespace :hook do
             puts "Reverting remap operation..."
             sh "git", "checkout", "go.mod", "go.sum"
         })
+
+        # The plugin filenames after remap doesn't contain the version.
+        # We need to append it.
+        commit, _ = Open3.capture2 "git", "rev-parse", "--short", "HEAD"
+        commit = commit.strip()
+
+        Dir[File.join(plugin_dir, "*.so")].each do |path|
+            new_path = File.join(
+                File.dirname(path),
+                "#{File.basename(path, ".so")}#{STORK_VERSION}-#{commit}.so"
+            )
+            sh "mv", path, new_path
+        end
     end
 
     desc "Remap the dependency path to the Stork core. It specifies the source
