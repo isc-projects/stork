@@ -251,7 +251,7 @@ def require_manual_install_on(task_name, *conditions)
     if !conditions.any?
         if task.nil?
             # Create an empty file task to prevent failure due to a non-exist
-            # file if the file isn't required.
+            # file if the executable isn't prerequisite.
             file task_name => [:phony]
         end
         return task_name
@@ -279,7 +279,7 @@ def require_manual_install_on(task_name, *conditions)
         end
     end
 
-    # Add a magic variable to indicate that it's a manually installed file.
+    # Add a property to indicate that it's a manually installed file.
     newTask = Rake::Task[program]
     newTask.instance_variable_set(:@manuall_install, true)
 
