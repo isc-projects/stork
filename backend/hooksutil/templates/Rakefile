@@ -1,3 +1,18 @@
+# Constructs the hook filename
+def construct_filename()
+    gomod_content = IO.read("go.mod")
+    # Finds the row that starts with "replace isc.org/stork",
+    # next has "=>" operator delimited by white characters,
+    # then the target dependency delimited by white characters,
+    # and the version at the end. Captures the version.
+    match = gomod_content.match(/^replace isc\.org\/stork\s+=>\s+\S+\s+(\S*)$/)
+    version = match[1]
+
+    dir_name = File.basename(Dir.getwd)
+
+    return "#{dir_name}_#{version}.so"
+end
+
 desc "Build the hook
     DEBUG - build plugins in debug mode - default: false"
 task :build do
@@ -6,12 +21,12 @@ task :build do
         flags.append "-gcflags", "all=-N -l"
     end
 
-    hook_name = File.basename(Dir.getwd())
+    hook_name = construct_filename()
     
     build_dir = "build"
     sh "mkdir", "-p", build_dir
 
-    output_path = File.join(build_dir, hook_name + ".so")
+    output_path = File.join(build_dir, hook_name)
 
     sh "go", "mod", "tidy"
     sh "go", "build", *flags, "-buildmode=plugin", "-o", output_path
