@@ -1,5 +1,11 @@
 Stork 1.8.0 released on 2022-12-07.
 
+* 260 [build] slawek
+
+     Improved the system dependencies detection. The build system searches now
+     in PATH instead of relying on fixed paths.
+     (Gitlab #821)
+
 * 259 [func] slawek
 
     Upgraded Angular to version 14.2.10.
