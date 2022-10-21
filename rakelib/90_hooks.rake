@@ -6,17 +6,17 @@
 ### Files ###
 #############
 
-CLEAN.append *FileList["plugins/*.so"]
+DEFAULT_HOOK_DIRECTORY = File.expand_path "plugins"
+
+CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
+
 
 #################
 ### Functions ###
 #################
 
 def forEachHook(f)
-    hook_directory = "plugins"
-    if !ENV["HOOK_DIR"].nil?
-        hook_directory = ENV["HOOK_DIR"]
-    end
+    hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
 
     Dir.foreach(hook_directory) do |dir_name|
         path = File.join(hook_directory, dir_name)
@@ -42,10 +42,7 @@ namespace :hook do
             fail "You must provide the PACKAGE variable with the package name"
         end
 
-        hook_directory = "plugins"
-        if !ENV["HOOK_DIR"].nil?
-            hook_directory = ENV["HOOK_DIR"]
-        end
+        hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
         
         package_directory_name = package.gsub(/[^\w\.-]/, '_')
 
@@ -72,16 +69,16 @@ namespace :hook do
         DEBUG - build plugins in debug mode - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: plugins'
     task :build => [GO, :remap_core] do
-        plugin_dir = File.expand_path(ENV["HOOK_DIR"] || "plugins")
+        hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
 
         # Removes old plugins
         puts "Removing old compiled hooks..."
-        sh "rm", "-f", *FileList[File.join(plugin_dir, "*.so")]
+        sh "rm", "-f", *FileList[File.join(hook_directory, "*.so")]
 
         forEachHook(lambda { |dir_name|
             puts "Building #{dir_name}..."
             sh "rake", "build"
-            sh "cp", *FileList["build/*.so"], plugin_dir
+            sh "cp", *FileList["build/*.so"], hook_directory
 
             # Back the changes in Go mod files.
             puts "Reverting remap operation..."
@@ -93,7 +90,7 @@ namespace :hook do
         commit, _ = Open3.capture2 "git", "rev-parse", "--short", "HEAD"
         commit = commit.strip()
 
-        Dir[File.join(plugin_dir, "*.so")].each do |path|
+        Dir[File.join(hook_directory, "*.so")].each do |path|
             new_path = File.join(
                 File.dirname(path),
                 "#{File.basename(path, ".so")}#{STORK_VERSION}-#{commit}.so"
@@ -173,9 +170,11 @@ namespace :hook do
 end
 
 namespace :run do
-    desc "Run Stork Server with hooks"
+    desc "Run Stork Server with hooks
+        HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
     task :server_hooks => ["hook:build"] do
-        ENV["STORK_SERVER_HOOK_DIRECTORY"] = File.expand_path "plugins"
+        hook_directory = ENV["HOOK_DIR"] || ENV["STORK_SERVER_HOOK_DIRECTORY"] || DEFAULT_HOOK_DIRECTORY
+        ENV["STORK_SERVER_HOOK_DIRECTORY"] = hook_directory
         Rake::Task["run:server"].invoke()
     end
 end
