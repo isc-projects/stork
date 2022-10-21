@@ -1,4 +1,4 @@
-.. _hooks:
+.. _hook:
 
 *************
 Hooks's Guide
