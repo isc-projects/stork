@@ -91,4 +91,4 @@ webui/src/app/std-dhcpv4-option-defs.ts
 webui/src/app/std-dhcpv6-option-defs.ts
 
 # Plugins
-plugins/*.so
+plugins/**/*.so
