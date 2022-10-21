@@ -4,6 +4,86 @@
 Hooks's Guide
 *************
 
+The hook is an additional file (plugin) that extends the standard Stork
+functionalities. It contains functions that are called during handling of
+various operations and can change the typical flow or run parallel. Independent
+developers may create the hooks and enhance the Stork applications with new,
+optional features.
+
+The basis of the Stork hook solution has been discussed in
+`this design <https://gitlab.isc.org/isc-projects/stork/-/wikis/designs/Hooks>`_.
+
+How to use the hooks?
+=====================
+
+The hooks are distributed as binary files with the ``.so`` extension. These
+files must be placed in the hook directory. The default location is
+``/var/lib/stork-agent/hooks`` for Stork agent and
+``/var/lib/stork-server/hooks`` for Stork server. You can change it using
+the ``--hook-directory`` CLI option or setting the
+``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_Server_HOOK_DIRECTORY`` environment
+variable.
+
+All the hooks must be compiled for the used Stork application (agent or server)
+and its exact version. If the hook directory contains non-hook files or
+out-of-date hooks, then Stork will not run.
+
+End-user troubleshooting
+========================
+
+1. Directory contains non-hook files
+2. Directory contains out-of-date hook (wrong version)
+3. Directory contains Go plugin but no hook
+4. Directory contains hook for another application
+5. Directory doesn't exist
+6. Directory is not readable
+7. Hook doesn't contain required symbol
+8. Hook was compiled with different interfaces than core
+9. Directory is a file
+
+Hook To Do list
+===============
+
+The list of hook-related features that should be implemented:
+
+- ☑ Version check
+- ☑ Application check
+- ☑ Static type checking of callout points
+- ☑ Calling the callout points through a proxy to hide the number of registered hooks from core
+- ☑ Loading and validating the hooks
+- ☑ Customizable hook location
+- ☑ Calling hooks sequentially
+- ☑ Calling single hook
+- ☑ Separating callouts to minimize the dependencies footprint
+- ☑ Possibility to use Stork-specific data types
+- ☑ Exchange data via context
+- ☑ Receive output from hook
+- ☑ Task to initialize new hook
+- ☑ Task to list dependencies of a given callout
+- ☑ Task to change Stork core dependency location in go.mod
+- ☑ Develop example hook
+- ☐ Documentation
+- ☐ Handling hook CLI
+- ☐ Exchange data between hooks (excluding context)
+- ☐ Demo with hooks
+- ☐ Unify the hook and core toolkits and standards (for ISC hooks, e.g., linting, unit testing)
+- ☐ Support UI hooks
+- ☐ Tool for inspecting hooks
+    - ☑ Check if file is Go plugin
+    - ☑ Check if file has the mandatory functions
+    - ☐ Check if file returns a proper callout object
+- ☐ Specify good practices to minimize output size of binary
+- ☐ Configure CI for hooks
+- ☐ Distributing the compiled hooks in release
+- ☐ Reload and unload hooks
+- ☐ Measure hook execution time, CPU and memory usage
+- ☐ Hook monitoring
+- ☐ Allow storing hook settings in the database
+- ☐ Hook RESTApi endpoint
+- ☐ Test hooks on various operating systems
+
+and adding more and more callout points.
+
 Glossary
 ========
 
@@ -79,3 +159,17 @@ library manager
     The wrapper for the library allows calling the functions defined by the
     hook specification. The library manager instance may be created from any
     compatible plugin (library).
+
+Hook architecture
+=================
+
+Hook development
+================
+
+1. Init
+2. Repository
+3. Build
+4. Lint&test
+5. Remap
+6. Size&dependencies
+7. Other tools
