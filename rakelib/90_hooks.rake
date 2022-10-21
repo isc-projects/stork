@@ -68,51 +68,26 @@ namespace :hook do
         sh "cp", *FileList["backend/hooksutil/templates/*"], destination
     end
 
-    desc "Build the hooks
+    desc 'Build all hooks. Remap plugins to use the current codebase.
         DEBUG - build plugins in debug mode - default: false
-        HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
-    task :build => [GO] do
-        flags = []
-        if ENV["DEBUG"] == "true"
-            flags.append "-gcflags", "all=-N -l"
-        end
+        HOOK_DIR - the hook (plugin) directory - optional, default: plugins'
+    task :build => [GO, :remap_core] do
+        plugin_dir = File.expand_path(ENV["HOOK_DIR"] || "plugins")
+
+        # Removes old plugins
+        puts "Removing old compiled hooks..."
+        sh "rm", "-f", *FileList[File.join(plugin_dir, "*.so")]
 
         forEachHook(lambda { |dir_name|
-            output_path = File.join("..", dir_name + ".so")
+            puts "Building #{dir_name}..."
+            sh "rake", "build"
+            sh "cp", *FileList["build/*.so"], plugin_dir
 
-            sh GO, "mod", "tidy"
-            sh GO, "build", *flags, "-buildmode=plugin", "-o", output_path
-
-            size = File.size output_path
-            size /= 1024.0 * 1024.0
-            puts "Hook: '#{output_path}' size: #{'%.2f' % size} MiB"
+            # Back the changes in Go mod files.
+            puts "Reverting remap operation..."
+            sh "git", "checkout", "go.mod", "go.sum"
         })
     end
-
-    desc "Lint the hooks
-        HOOK_DIR - the hook (plugin) directory - optional, default: plugins
-        FIX - fix linting issues - default: false"
-    task :lint => [GO] do
-        config_path = File.expand_path "backend/.golangci.yml"
-
-        opts = ["-c", config_path]
-        if ENV["FIX"] == "true"
-            opts += ["--fix"]
-        end
-
-        forEachHook(lambda { |dir_name|
-            sh GOLANGCILINT, "run", *opts
-        })
-    end
-
-    desc "Run hooks unit tests
-        HOOK_DIR - the hook (plugin) directory - optional, default: plugins"
-    task :unittest => [RICHGO] do
-        forEachHook(lambda { |dir_name|
-            sh RICHGO, "test", "-race", "-v", "./..." 
-        })
-    end
-
 
     desc "Remap the dependency path to the Stork core. It specifies the source
         of the core dependency - remote repository or local directory. The
