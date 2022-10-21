@@ -689,7 +689,9 @@ file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
         goswagger_dir = "#{GOSWAGGER}-sources"
         sh "mkdir", goswagger_dir
         fetch_file "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", goswagger_archive
-        sh TAR, "-zxf", goswagger_archive, "-C", goswagger_dir, "--strip-components=1"
+        sh TAR, "-zxf", goswagger_archive, "-C", goswagger_dir
+        # We cannot use --strip-components because OpenBSD tar doesn't support it.
+        goswagger_dir = File.join(goswagger_dir, "go-swagger-#{goswagger_ver[1..-1]}") # Trim 'v' letter
         goswagger_build_dir = File.join(goswagger_dir, "cmd", "swagger")
         Dir.chdir(goswagger_build_dir) do
             sh GO, "build", "-ldflags=-X 'github.com/go-swagger/go-swagger/cmd/swagger/commands.Version=#{goswagger_ver}'"
