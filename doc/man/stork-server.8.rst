@@ -35,6 +35,9 @@ Arguments
 ``-v|--version``
    Returns the ``stork-server`` version.
 
+``--hook-directory``
+   The path to the hook directory. ``[$STORK_SERVER_HOOK_DIRECTORY]``
+
 ``--env-file``
    Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/server.env``.
 

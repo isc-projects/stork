@@ -166,6 +166,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--rest-tls-ca", "tlsca",
 		"--rest-static-files-dir", "staticdir",
 		"--initial-puller-interval", "54",
+		"--hook-directory", "hookdir",
 	)
 
 	// Act
@@ -199,6 +200,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
+	require.EqualValues(t, "hookdir", ss.GeneralSettings.HookDirectory)
 }
 
 // Test that the Stork Server is not constructed if the arguments are wrong.

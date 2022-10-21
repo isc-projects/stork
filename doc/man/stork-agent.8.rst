@@ -38,8 +38,20 @@ Equivalent environment variables are listed in square brackets, where applicable
 ``--listen-prometheus-only``
    Instructs ``stork-agent`` to listen for Prometheus requests, but not for commands from the Stork server. ``[$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]``
 
+``--hook-directory``
+   The path to the hook directory. ``[$STORK_AGENT_HOOK_DIRECTORY]``
+
+``--env-file``
+   Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/agent.env``.
+
+``--use-env-file``
+   Read the environment variables from the environment file. The default is ``false``.
+
 ``-v|--version``
    Returns the software version.
+
+``-h`` or ``--help``
+   Returns the list of available parameters.
 
 Stork server flags:
 
@@ -76,15 +88,6 @@ Prometheus BIND 9 Exporter flags:
 
 ``--prometheus-bind9-exporter-interval=``
    Specifies how often the agent collects statistics from BIND 9, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]``
-
-``--env-file``
-   Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/agent.env``.
-
-``--use-env-file``
-   Read the environment variables from the environment file. The default is ``false``.
-
-``-h`` or ``--help``
-   Returns the list of available parameters.
 
 Stork logs on INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.

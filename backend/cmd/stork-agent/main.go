@@ -43,14 +43,6 @@ func runAgent(settings *cli.Context, reload bool) error {
 		log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 	}
 
-	// Try registering the agent in the server using the agent token
-	if settings.String("server-url") != "" {
-		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
-			log.Fatalf("Problem with agent registration in Stork Server, exiting")
-		}
-	}
-
 	// Read the hook libraries.
 	hookManager := agent.NewHookManager()
 	err := hookManager.RegisterCalloutsFromDirectory(settings.Path("hook-directory"))
@@ -62,6 +54,14 @@ func runAgent(settings *cli.Context, reload bool) error {
 		log.
 			WithError(err).
 			Fatal("Problem with loading hook libraries")
+	}
+
+	// Try registering the agent in the server using the agent token
+	if settings.String("server-url") != "" {
+		portStr := strconv.FormatInt(settings.Int64("port"), 10)
+		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
+			log.Fatalf("Problem with agent registration in Stork Server, exiting")
+		}
 	}
 
 	// Start app monitor
@@ -249,6 +249,12 @@ func setupApp(reload bool) *cli.App {
 				Name:    "server-url",
 				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
+			},
+			&cli.PathFlag{
+				Name:    "hook-directory",
+				Usage:   "The path to the hook directory",
+				EnvVars: []string{"STORK_AGENT_HOOK_DIRECTORY"},
+				Value:   "/var/lib/stork-agent/hooks",
 			},
 			&cli.BoolFlag{
 				Name:  "use-env-file",

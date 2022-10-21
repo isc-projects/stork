@@ -83,7 +83,7 @@ type Settings struct {
 	Version               bool   `short:"v" long:"version" description:"Show software version"`
 	EnableMetricsEndpoint bool   `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
 	InitialPullerInterval int64  `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea; if not provided the recommended values for each puller are used" env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
-	HookDirectory         string `long:"hook-directory" description:"Hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/var/lib/stork-server/hooks"`
+	HookDirectory         string `long:"hook-directory" description:"The path to the hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/var/lib/stork-server/hooks"`
 }
 
 // Parse the command line arguments into GO structures.
