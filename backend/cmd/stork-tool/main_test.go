@@ -223,11 +223,11 @@ func TestRunDBGenPassword(*testing.T) {
 	main()
 }
 
-// Test that the plugin inspect command is running properly.
-func TestRunInspectPlugins(*testing.T) {
+// Test that the hook inspect command is running properly.
+func TestRunHookInspect(*testing.T) {
 	directory, _ := os.Getwd()
 	os.Args = []string{
-		"stork-tool", "plugin-inspect", "-d", directory,
+		"stork-tool", "hook-inspect", "-d", directory,
 	}
 
 	main()

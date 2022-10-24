@@ -363,6 +363,16 @@ callout interface):
 The ``KIND`` means a target application of callout (``agent`` or ``server``).
 The ``CALLOUT`` specifies name of the callout package.
 
+Hook inspector
+--------------
+
+Some basic information (target application and version) can be listed using
+the ``hook-inspect`` command of the Stork tool.
+
+.. code-block:: shell
+
+    $ stork-tool hook-inspect -d /var/lib/stork-server/hooks
+
 Other tools
 -----------
 

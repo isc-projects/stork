@@ -245,8 +245,8 @@ func runCertImport(settings *cli.Context) error {
 	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
 
-// Execute plugin inspect command.
-func runInspectPlugins(settings *cli.Context) error {
+// Execute inspect hook command.
+func runHookInspect(settings *cli.Context) error {
 	directory := settings.String("directory")
 
 	err := hooksutil.WalkPluginLibraries(directory, func(path string, library *hooksutil.LibraryManager, err error) bool {
@@ -461,7 +461,7 @@ func setupApp() *cli.App {
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
 
-	pluginInspectFlags := []cli.Flag{
+	hookInspectFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "directory",
 			Usage:    "The hook directory path",
@@ -627,12 +627,12 @@ func setupApp() *cli.App {
 				Action:      runCertImport,
 			},
 			{
-				Name:        "plugin-inspect",
-				Usage:       "Prints details about hook plugins",
-				UsageText:   "stork-tool plugin-inspect -d directory",
+				Name:        "hook-inspect",
+				Usage:       "Prints details about hooks",
+				UsageText:   "stork-tool hook-inspect -d directory",
 				Description: "",
-				Flags:       pluginInspectFlags,
-				Action:      runInspectPlugins,
+				Flags:       hookInspectFlags,
+				Action:      runHookInspect,
 			},
 		},
 	}
