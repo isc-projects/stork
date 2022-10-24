@@ -1,3 +1,8 @@
+* 281 [func] slawek
+
+    Added a preliminary implementation of the hook framework.
+    (Gitlab #779)
+
 * 280 [func] slawek
 
     Implemented a new Kea configuration checker to detect if the subnet
