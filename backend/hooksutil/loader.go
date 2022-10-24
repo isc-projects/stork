@@ -53,7 +53,7 @@ func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, err
 		// Load the hook callouts.
 		callout, libraryErr = extractCallout(library, program)
 		if libraryErr != nil {
-			libraryErr = errors.WithMessagef(err, "cannot extract callouts from library: %s", path)
+			libraryErr = errors.WithMessagef(libraryErr, "cannot extract callouts from library: %s", path)
 			return false
 		}
 
