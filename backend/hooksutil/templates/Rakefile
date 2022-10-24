@@ -36,8 +36,7 @@ task :build do
     puts "Hook: '#{output_path}' size: #{'%.2f' % size} MiB"
 end
 
-desc "Lint the hook
-    FIX - fix linting issues - default: false"
+desc "Lint the hook"
 task :lint do
     sh "go", "vet"
 end
