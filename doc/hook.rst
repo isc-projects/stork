@@ -63,7 +63,8 @@ The list of hook-related features that should be implemented:
 - ☑ Task to change Stork core dependency location in go.mod
 - ☑ Develop example hook
 - ☐ Documentation
-- ☐ Handling hook CLI
+- ☐ Handle hook CLI parameters
+- ☐ Handle hook environment variables by dedicated component
 - ☐ Exchange data between hooks (excluding context)
 - ☐ Demo with hooks
 - ☐ Unify the hook and core toolkits and standards (for ISC hooks, e.g., linting, unit testing)
@@ -160,8 +161,18 @@ library manager
     hook specification. The library manager instance may be created from any
     compatible plugin (library).
 
-Hook architecture
-=================
+Hook structure
+==============
+
+Stork hook is a Go plugin that contains fallowing symbols:
+
+- ``Load`` function that accepts no arguments (yet?) and returns the callout
+  object or error.
+- ``Version`` function that accepts no arguments and returns the target 
+  application name and version string.
+
+The callout object must implement the ``io.Closer`` interface and should
+implement one or more callout interfaces.
 
 Hook development
 ================
@@ -173,3 +184,72 @@ Hook development
 5. Remap
 6. Size&dependencies
 7. Other tools
+
+Steps to implement hook
+=======================
+
+1. Look for needed callout points in the hook module
+
+    .. code-block:: go
+
+        type Foo interface {
+            int Foo(x int)
+        }
+
+2. Prepare a structure that will implement the callouts
+
+    .. code-block:: go
+
+        type callouts struct {}
+
+3. Write interface checks to ensure that the callouts will have a correct signature. It would cause compilation errors if the callout point changed.
+
+    .. code-block:: go
+
+        var _ hooks.Foo = (*callouts)(nil)
+
+4. Implement callout function
+
+    .. code-block:: go
+
+        func (c *callouts) Foo(x int) int {
+            return 42
+        }
+
+5. Prepare top-level version function using the constants from the shared module
+
+    .. code-block:: go
+
+        func Version() (string, string) {
+            return hooks.AgentName, hooks.CurrentVersion
+        }
+
+6. Prepare top-level load function
+
+    .. code-block:: go
+
+        func Load() (hooks.Callout, error) {
+            return &callouts{}, nil
+        }
+
+7. Prepare callout close function
+
+    .. code-block:: go
+
+        func (c *callout) Close() error {
+            return nil
+        }
+
+8. Compile to a plugin file
+
+    .. code-block:: console
+    
+        $ go build -buildmode=plugin -o foo-hook.so
+
+9. Copy the plugin file to the hook directory
+
+    .. code-block:: console
+
+        $ cp foo-hook.so /var/lib/stork-server/hooks
+
+10. Run the Stork. Enjoy!
