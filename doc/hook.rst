@@ -102,7 +102,6 @@ The list of hook-related features that should be implemented:
 - ☑ Task to list dependencies of a given callout
 - ☑ Task to change Stork core dependency location in go.mod
 - ☑ Develop example hook
-- ☐ Documentation
 - ☐ Handle hook CLI parameters
 - ☐ Handle hook environment variables by dedicated component
 - ☐ Exchange data between hooks (excluding context)
