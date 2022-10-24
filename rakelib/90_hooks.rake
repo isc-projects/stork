@@ -110,6 +110,7 @@ namespace :hook do
         main_package = "isc.org/stork"
         main_package_directory_abs = File.expand_path "backend"
         remote_url = "gitlab.isc.org/isc-projects/stork/backend"
+        core_commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
 
         forEachHook(lambda { |dir_name|
             target = nil
@@ -118,7 +119,7 @@ namespace :hook do
                 puts "Remap to use a specific commit"
                 commit = ENV["COMMIT"]
                 if commit == ""
-                    commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
+                    commit = core_commit
                 end
 
                 target = "#{remote_url}@#{commit}"
