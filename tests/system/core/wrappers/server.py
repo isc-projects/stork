@@ -545,7 +545,7 @@ class Server(ComposeServiceWrapper):
         """
         self._wait_for_puller("apps_state_puller_interval", start)
 
-    @wait_for_success(wait_msg="Wait to fetch next machine state...")
+    @wait_for_success(wait_msg="Waiting to fetch next machine state...")
     def wait_for_next_machine_state(self, machine_id: int,
                                     start: datetime = None, wait_for_apps=True) -> Machine:
         """
@@ -560,7 +560,7 @@ class Server(ComposeServiceWrapper):
             raise NoSuccessException("the apps are missing")
         return state
 
-    @wait_for_success(wait_msg="Wait to fetch next machine states...")
+    @wait_for_success(wait_msg="Waiting to fetch next machine states...")
     def wait_for_next_machine_states(self, start: datetime = None, wait_for_apps=True) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
