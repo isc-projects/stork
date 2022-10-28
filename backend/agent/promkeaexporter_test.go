@@ -251,6 +251,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 		Persist().
 		Reply(200).
 		BodyString(`[{"result":0, "arguments": {
+					"cumulative-assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
 	            }}]`)
@@ -291,12 +292,14 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	gock.InterceptClient(pke.HTTPClient.client)
 	pke.Start()
 
-	// Act
-	// wait 1.5 seconds that collecting is invoked at least once
-	time.Sleep(1500 * time.Millisecond)
+	// Act & Assert
+	// Wait for collecting.
+	require.Eventually(t, func() bool {
+		return testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]) > 0
+	}, 2*time.Second, 500*time.Millisecond)
+
 	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "10.0.0.0/8"})
 
-	// Assert
 	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 }
 
@@ -482,4 +485,50 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 
 	// Has no unnecessary calls
 	require.False(t, gock.HasUnmatchedRequest())
+}
+
+// Test that the global statistics are collected properly.
+func TestCollectingGlobalStatistics(t *testing.T) {
+	// Arrange
+	defer gock.Off()
+	gock.New("http://0.1.2.3:1234/").
+		Post("/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4", "dhcp6"},
+			"arguments": map[string]interface{}{},
+		}).
+		Persist().
+		Reply(200).
+		BodyString(`[{"result":0, "arguments": {
+			"cumulative-assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
+			"declined-addresses": [ [ 14, "2019-07-29 10:04:28.386740" ] ],
+			"cumulative-assigned-nas": [ [ 15, "2019-07-28 10:04:28.386740" ] ],
+			"cumulative-assigned-pds": [ [ 16, "2019-07-27 10:04:28.386740" ] ]
+		}}]`)
+
+	fam := &PromFakeAppMonitor{}
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+
+	pke := NewPromKeaExporter(settings, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(pke.HTTPClient.client)
+	pke.Start()
+
+	// Act & Assert
+	// Wait for collecting.
+	require.Eventually(t, func() bool {
+		return testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]) > 0
+	}, 2*time.Second, 500*time.Millisecond)
+
+	require.Equal(t, 13.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]))
+	require.Equal(t, 14.0, testutil.ToFloat64(pke.GlobalStatMap["declined-addresses"]))
+	require.Equal(t, 15.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-nas"]))
+	require.Equal(t, 16.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-pds"]))
 }
