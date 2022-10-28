@@ -331,10 +331,11 @@ type PromKeaExporter struct {
 	DoneCollector chan bool
 	Wg            *sync.WaitGroup
 
-	Registry     *prometheus.Registry
-	PktStatsMap  map[string]statisticDescriptor
-	Adr4StatsMap map[string]*prometheus.GaugeVec
-	Adr6StatsMap map[string]*prometheus.GaugeVec
+	Registry      *prometheus.Registry
+	PktStatsMap   map[string]statisticDescriptor
+	Adr4StatsMap  map[string]*prometheus.GaugeVec
+	Adr6StatsMap  map[string]*prometheus.GaugeVec
+	GlobalStatMap map[string]prometheus.Gauge
 }
 
 // Create new Prometheus Kea Exporter.
@@ -348,9 +349,39 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		Registry:      prometheus.NewRegistry(),
 		Adr4StatsMap:  nil,
 		Adr6StatsMap:  nil,
+		GlobalStatMap: nil,
 	}
 
 	factory := promauto.With(pke.Registry)
+
+	// global stats
+	pke.GlobalStatMap = map[string]prometheus.Gauge{
+		"cumulative-assigned-addresses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "global_cumulative_addresses_assigned_total",
+			Help:      "Cumulative number of assigned addresses since server startup from all subnets",
+		}),
+		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			// DHCPv4 and DHCPv6 share the same counter for declined addresses.
+			Subsystem: "dhcp",
+			Name:      "global_addresses_declined_total",
+			Help:      "Declined counts from all subnets",
+		}),
+		"cumulative-assigned-nas": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "global_cumulative_nas_assigned_total",
+			Help:      "Cumulative number of assigned NA addresses since server startup from all subnets",
+		}),
+		"cumulative-assigned-pds": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "cumulative_pds_assigned_total",
+			Help:      "Cumulative number of assigned PD prefixes since server startup",
+		}),
+	}
 
 	// packets dhcp4
 	packets4SentTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
@@ -615,6 +646,9 @@ func (pke *PromKeaExporter) Shutdown() {
 	for _, stat := range pke.Adr6StatsMap {
 		pke.Registry.Unregister(stat)
 	}
+	for _, stat := range pke.GlobalStatMap {
+		pke.Registry.Unregister(stat)
+	}
 
 	log.Printf("Stopped Prometheus Kea Exporter")
 }
@@ -682,7 +716,11 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				log.Printf("Encountered unsupported stat: %s", metricName)
 			}
 		default:
-			log.Printf("Encountered unsupported stat: %s", statName)
+			if globalGauge, ok := pke.GlobalStatMap[statName]; ok {
+				globalGauge.Set(statEntry.Value)
+			} else {
+				log.Printf("Encountered unsupported stat: %s", statName)
+			}
 		}
 	}
 }
