@@ -713,7 +713,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			if stat, ok := (*dhcpStatMap)[metricName]; ok {
 				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statEntry.Value)
 			} else {
-				log.Printf("Encountered unsupported stat: %s", metricName)
+				log.Printf("Encountered unsupported stat: %s", statName)
 			}
 		default:
 			if globalGauge, ok := pke.GlobalStatMap[statName]; ok {
