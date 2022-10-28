@@ -295,7 +295,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	// Act & Assert
 	// Wait for collecting.
 	require.Eventually(t, func() bool {
-		return testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]) > 0
+		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
 	}, 2*time.Second, 500*time.Millisecond)
 
 	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "10.0.0.0/8"})
@@ -503,8 +503,14 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 		BodyString(`[{"result":0, "arguments": {
 			"cumulative-assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 			"declined-addresses": [ [ 14, "2019-07-29 10:04:28.386740" ] ],
-			"cumulative-assigned-nas": [ [ 15, "2019-07-28 10:04:28.386740" ] ],
-			"cumulative-assigned-pds": [ [ 16, "2019-07-27 10:04:28.386740" ] ]
+			"reclaimed-leases": [ [ 15, "2019-07-28 10:04:28.386740" ] ],
+			"reclaimed-declined-addresses": [ [ 16, "2019-07-27 10:04:28.386740" ] ]
+		}}, {"result":0, "arguments": {
+			"declined-addresses": [ [ 17, "2019-07-26 10:04:28.386740" ] ],
+			"cumulative-assigned-nas": [ [ 18, "2019-07-25 10:04:28.386740" ] ],
+			"cumulative-assigned-pds": [ [ 19, "2019-07-24 10:04:28.386740" ] ],
+			"reclaimed-leases": [ [ 20, "2019-07-23 10:04:28.386740" ] ],
+			"reclaimed-declined-addresses": [ [ 21, "2019-07-22 10:04:28.386740" ] ]
 		}}]`)
 
 	fam := &PromFakeAppMonitor{}
@@ -524,11 +530,17 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	// Act & Assert
 	// Wait for collecting.
 	require.Eventually(t, func() bool {
-		return testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]) > 0
+		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
 	}, 2*time.Second, 500*time.Millisecond)
 
-	require.Equal(t, 13.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-addresses"]))
-	require.Equal(t, 14.0, testutil.ToFloat64(pke.GlobalStatMap["declined-addresses"]))
-	require.Equal(t, 15.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-nas"]))
-	require.Equal(t, 16.0, testutil.ToFloat64(pke.GlobalStatMap["cumulative-assigned-pds"]))
+	require.Equal(t, 13.0, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
+	require.Equal(t, 14.0, testutil.ToFloat64(pke.Global4StatMap["declined-addresses"]))
+	require.Equal(t, 15.0, testutil.ToFloat64(pke.Global4StatMap["reclaimed-leases"]))
+	require.Equal(t, 16.0, testutil.ToFloat64(pke.Global4StatMap["reclaimed-declined-addresses"]))
+
+	require.Equal(t, 17.0, testutil.ToFloat64(pke.Global6StatMap["declined-addresses"]))
+	require.Equal(t, 18.0, testutil.ToFloat64(pke.Global6StatMap["cumulative-assigned-nas"]))
+	require.Equal(t, 19.0, testutil.ToFloat64(pke.Global6StatMap["cumulative-assigned-pds"]))
+	require.Equal(t, 20.0, testutil.ToFloat64(pke.Global6StatMap["reclaimed-leases"]))
+	require.Equal(t, 21.0, testutil.ToFloat64(pke.Global6StatMap["reclaimed-declined-addresses"]))
 }

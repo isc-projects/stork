@@ -331,55 +331,90 @@ type PromKeaExporter struct {
 	DoneCollector chan bool
 	Wg            *sync.WaitGroup
 
-	Registry      *prometheus.Registry
-	PktStatsMap   map[string]statisticDescriptor
-	Adr4StatsMap  map[string]*prometheus.GaugeVec
-	Adr6StatsMap  map[string]*prometheus.GaugeVec
-	GlobalStatMap map[string]prometheus.Gauge
+	Registry       *prometheus.Registry
+	PktStatsMap    map[string]statisticDescriptor
+	Adr4StatsMap   map[string]*prometheus.GaugeVec
+	Adr6StatsMap   map[string]*prometheus.GaugeVec
+	Global4StatMap map[string]prometheus.Gauge
+	Global6StatMap map[string]prometheus.Gauge
 }
 
 // Create new Prometheus Kea Exporter.
 func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaExporter {
 	pke := &PromKeaExporter{
-		Settings:      settings,
-		AppMonitor:    appMonitor,
-		HTTPClient:    NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
-		DoneCollector: make(chan bool),
-		Wg:            &sync.WaitGroup{},
-		Registry:      prometheus.NewRegistry(),
-		Adr4StatsMap:  nil,
-		Adr6StatsMap:  nil,
-		GlobalStatMap: nil,
+		Settings:       settings,
+		AppMonitor:     appMonitor,
+		HTTPClient:     NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
+		DoneCollector:  make(chan bool),
+		Wg:             &sync.WaitGroup{},
+		Registry:       prometheus.NewRegistry(),
+		Adr4StatsMap:   nil,
+		Adr6StatsMap:   nil,
+		Global4StatMap: nil,
+		Global6StatMap: nil,
 	}
 
 	factory := promauto.With(pke.Registry)
 
 	// global stats
-	pke.GlobalStatMap = map[string]prometheus.Gauge{
+	pke.Global4StatMap = map[string]prometheus.Gauge{
 		"cumulative-assigned-addresses": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp4",
-			Name:      "global_cumulative_addresses_assigned_total",
+			Name:      "global4_cumulative_addresses_assigned_total",
 			Help:      "Cumulative number of assigned addresses since server startup from all subnets",
 		}),
 		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "global4_addresses_declined_total",
+			Help:      "Declined counts from all subnets",
+		}),
+		"reclaimed-declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "global4_addresses_declined_reclaimed_total",
+			Help:      "Declined addresses that were reclaimed for all subnets",
+		}),
+		"reclaimed-leases": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "global4_addresses_reclaimed_total",
+			Help:      "Expired addresses that were reclaimed for all subnets",
+		}),
+	}
+
+	pke.Global6StatMap = map[string]prometheus.Gauge{
+		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
 			// DHCPv4 and DHCPv6 share the same counter for declined addresses.
-			Subsystem: "dhcp",
-			Name:      "global_addresses_declined_total",
+			Subsystem: "dhcp6",
+			Name:      "global6_addresses_declined_total",
 			Help:      "Declined counts from all subnets",
 		}),
 		"cumulative-assigned-nas": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp6",
-			Name:      "global_cumulative_nas_assigned_total",
+			Name:      "global6_cumulative_nas_assigned_total",
 			Help:      "Cumulative number of assigned NA addresses since server startup from all subnets",
 		}),
 		"cumulative-assigned-pds": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp6",
-			Name:      "global_cumulative_pds_assigned_total",
+			Name:      "global6_cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
+		}),
+		"reclaimed-declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "global6_addresses_declined_reclaimed_total",
+			Help:      "Declined addresses that were reclaimed for all subnets",
+		}),
+		"reclaimed-leases": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "global6_addresses_reclaimed_total",
+			Help:      "Expired addresses that were reclaimed for all subnets",
 		}),
 	}
 
@@ -646,7 +681,10 @@ func (pke *PromKeaExporter) Shutdown() {
 	for _, stat := range pke.Adr6StatsMap {
 		pke.Registry.Unregister(stat)
 	}
-	for _, stat := range pke.GlobalStatMap {
+	for _, stat := range pke.Global4StatMap {
+		pke.Registry.Unregister(stat)
+	}
+	for _, stat := range pke.Global6StatMap {
 		pke.Registry.Unregister(stat)
 	}
 
@@ -672,7 +710,7 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.GaugeVec, response map[string]GetAllStatisticResponseItemValue, ignoredStats map[string]bool, nameLookup subnetNameLookup) {
+func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response map[string]GetAllStatisticResponseItemValue, ignoredStats map[string]bool, nameLookup subnetNameLookup) {
 	for statName, statEntry := range response {
 		// skip ignored stats
 		if ignoredStats[statName] {
@@ -716,7 +754,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				log.Warningf("Encountered unsupported stat: %s", statName)
 			}
 		default:
-			if globalGauge, ok := pke.GlobalStatMap[statName]; ok {
+			if globalGauge, ok := globalStatMap[statName]; ok {
 				globalGauge.Set(statEntry.Value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
@@ -785,11 +823,11 @@ func (pke *PromKeaExporter) collectStats() error {
 		// required commands.
 		if response.Dhcp4 != nil {
 			subnetNameLookup.setFamily(4)
-			pke.setDaemonStats(&pke.Adr4StatsMap, response.Dhcp4, ignoredStats, subnetNameLookup)
+			pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, response.Dhcp4, ignoredStats, subnetNameLookup)
 		}
 		if response.Dhcp6 != nil {
 			subnetNameLookup.setFamily(6)
-			pke.setDaemonStats(&pke.Adr6StatsMap, response.Dhcp6, ignoredStats, subnetNameLookup)
+			pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, response.Dhcp6, ignoredStats, subnetNameLookup)
 		}
 	}
 	return lastErr

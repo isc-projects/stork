@@ -36,3 +36,6 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
     # ToDo: Add support for generation IPv6 traffic.
     # assert int(data['dhcp6_stats']['assignedNAs']) > 9
     # assert data['subnets6']['items'] is not None
+
+    # Check if Stork Agent handles all metrics returned by Kea.
+    assert not kea_service.has_encountered_unsupported_statistic()

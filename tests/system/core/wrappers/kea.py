@@ -51,3 +51,9 @@ class Kea(Agent):
         """Checks if any TLS handshake fail occurs."""
         stdout, _ = self._compose.logs(self._service_name)
         return "HTTP_CONNECTION_HANDSHAKE_FAILED" in stdout
+
+    def has_encountered_unsupported_statistic(self):
+        """Check if the Stork Agent Prometheus Exporter has encountered any
+        unsupported statistics."""
+        stdout, _ = self._compose.logs(self._service_name)
+        return "Encountered unsupported stat" in stdout
