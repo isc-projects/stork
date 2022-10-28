@@ -687,7 +687,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			if ok {
 				statisticDescriptor.Stat.With(prometheus.Labels{"operation": statisticDescriptor.Operation}).Set(statEntry.Value)
 			} else {
-				log.Printf("Encountered unsupported stat: %s", statName)
+				log.Warningf("Encountered unsupported stat: %s", statName)
 			}
 		case strings.HasPrefix(statName, "subnet["):
 			// Check if collecting the per-subnet metrics is enabled.
@@ -713,13 +713,13 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			if stat, ok := (*dhcpStatMap)[metricName]; ok {
 				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statEntry.Value)
 			} else {
-				log.Printf("Encountered unsupported stat: %s", statName)
+				log.Warningf("Encountered unsupported stat: %s", statName)
 			}
 		default:
 			if globalGauge, ok := pke.GlobalStatMap[statName]; ok {
 				globalGauge.Set(statEntry.Value)
 			} else {
-				log.Printf("Encountered unsupported stat: %s", statName)
+				log.Warningf("Encountered unsupported stat: %s", statName)
 			}
 		}
 	}
