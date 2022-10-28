@@ -378,7 +378,7 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		"cumulative-assigned-pds": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp6",
-			Name:      "cumulative_pds_assigned_total",
+			Name:      "global_cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
 		}),
 	}
