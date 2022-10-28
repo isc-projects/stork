@@ -387,7 +387,6 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 	pke.Global6StatMap = map[string]prometheus.Gauge{
 		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
-			// DHCPv4 and DHCPv6 share the same counter for declined addresses.
 			Subsystem: "dhcp6",
 			Name:      "global6_addresses_declined_total",
 			Help:      "Declined counts from all subnets",

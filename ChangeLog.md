@@ -1,3 +1,9 @@
+* 255 [func] slawek
+
+    Extended Kea Prometheus exporter to handle counters with summarized lease
+    statistics.
+    (Gitlab #839)
+
 * 254 [func] slawek
 
     Added a command line switch to the Stork programs to specify that they
