@@ -377,8 +377,10 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	} else {
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
+			log.Debugf("Looking for BIND 9 config file in %s", f)
 			if _, err := os.Stat(f); err == nil {
 				bind9ConfPath = f
+				log.Infof("Found BIND 9 config file in %s", f)
 				break
 			}
 		}
