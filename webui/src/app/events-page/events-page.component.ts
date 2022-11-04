@@ -15,6 +15,7 @@ export class EventsPageComponent implements OnInit {
     appType = null
     daemonType = null
     userId = null
+    breadcrumbs = [{ label: 'Monitoring' }, { label: 'Events' }]
 
     constructor(private route: ActivatedRoute) {}
 

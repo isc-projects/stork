@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page.component'
 import { EventsService } from '../backend/api/events.service'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
@@ -33,7 +34,7 @@ describe('EventsPageComponent', () => {
                 },
                 MessageService,
             ],
-            declarations: [EventsPageComponent, EventsPageComponent, EventsPanelComponent],
+            declarations: [BreadcrumbsComponent, EventsPageComponent, EventsPageComponent, EventsPanelComponent],
             imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule],
         }).compileComponents()
     }))
