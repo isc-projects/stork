@@ -20,6 +20,12 @@ This section describes the solutions for some common issues with the Stork agent
 
               - Kea Control Agent, Kea DHCPv4 server, and/or Kea DHCPv6 server
               - BIND 9
+
+              Stork looks for the processes named ``kea-ctrl-agent`` (for Kea) or ``named`` (for BIND 9). Make
+              sure those processes are running and are named appropriately. You may use the ``ps aux`` (or similar)
+              command to debug if the processes are running. Currently Stork does not support detecting off-line
+              services.
+
 :Explanation: If the "Last Refreshed" column has a value, and the "Error" column value has no errors,
               the communication between ``stork-server`` and ``stork-agent`` works correctly, which implies that
               the cause of the problem is between the Stork agent and the daemons. The most likely issue is that none of
