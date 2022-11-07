@@ -151,6 +151,35 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	return conflict, err
 }
 
+// Deletes existing user from the database. The returned error value indicates if
+// the deleted user information does not match any existing user in the
+// database.
+func DeleteUser(db *pg.DB, user *SystemUser) (existing bool, err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to delete user %s", user.Identity())
+		return false, err
+	}
+	defer dbops.RollbackOnError(tx, &err)
+
+	_, err = db.Model(user).WherePK().Delete()
+
+	if err != nil {
+		var pgError pg.Error
+		if errors.As(err, &pgError) {
+			existing = pgError.IntegrityViolation()
+		}
+
+		err = pkgerrors.Wrapf(err, "database operation error while trying to delete user %s", user.Identity())
+	}
+
+	if err == nil {
+		err = tx.Commit()
+	}
+
+	return existing, err
+}
+
 // Sets new password for the given user id.
 func SetPassword(db *pg.DB, id int, password string) (err error) {
 	user := SystemUser{

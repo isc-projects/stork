@@ -154,6 +154,29 @@ func TestCreateConflict(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test that the password is successfully changed if the current password
+// is valid and that the password is not changed if the current password
+// specified is invalid.
+func TestDeleteUser(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create new user.
+	user := &SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	con, err := DeleteUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+}
+
 // Tests that password can be modified.
 func TestSetPassword(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

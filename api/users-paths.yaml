@@ -78,7 +78,6 @@
           description: New user account including user information and password
           schema:
             $ref: "#/definitions/UserAccount"
-
       responses:
         200:
           description: User account successfully created.
@@ -88,7 +87,6 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
-
     put:
       summary: Updates existing user account.
       description: >-
@@ -134,6 +132,28 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+    delete:
+      summary: Delete the specific user.
+      description: Deletes user by id.
+      operationId: deleteUser
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Delete user in the database.
+      responses:
+        200:
+          description: User account successfully deleted.
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /users/{id}/password:
     put:
       summary: Updates user password.
@@ -152,7 +172,6 @@
           description: Old and new password
           schema:
             $ref: "#/definitions/PasswordChange"
-
       responses:
         200:
           description: Password updated successfully.

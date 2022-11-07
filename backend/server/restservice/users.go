@@ -302,6 +302,66 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	return users.NewUpdateUserOK()
 }
 
+// Deletes existing user account from the database.
+func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams) middleware.Responder {
+	id := int(params.ID)
+	su, err := dbmodel.GetUserByID(r.DB, id)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Errorf("Failed to fetch user with ID %v from the database with error: %s", id,
+			err.Error())
+
+		msg := "Failed to fetch user with ID %v from the database"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	} else if su == nil {
+		msg := fmt.Sprintf("Failed to find user with ID %v in the database", id)
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Error(msg)
+
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusNotFound).WithPayload(&rspErr)
+		return rsp
+	}
+
+	con, err := dbmodel.DeleteUser(r.DB, su)
+	if con {
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Infof("Failed to delete user account for user %s: %s", su.Identity(), err.Error())
+
+		msg := "User account with provided login/email does not exist"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusConflict).WithPayload(&rspErr)
+		return rsp
+	} else if err != nil {
+		log.WithFields(log.Fields{
+			"userid": id,
+			"login":  su.Login,
+			"email":  su.Email,
+		}).Errorf("Failed to delete user account for user %s: %s",
+			su.Identity(), err.Error())
+
+		msg := fmt.Sprintf("Failed to delete user account for user %s", su.Identity())
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
+
+	return users.NewDeleteUserOK()
+}
+
 // Updates password of the given user in the database.
 func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
 	id := int(params.ID)

@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { UntypedFormBuilder, FormControl, UntypedFormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
-import { MenuItem, MessageService, SelectItem } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -122,7 +122,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         private usersApi: UsersService,
         private msgSrv: MessageService,
         private serverData: ServerDataService,
-        public auth: AuthService
+        public auth: AuthService,
+        private confirmService: ConfirmationService
     ) {}
 
     ngOnDestroy(): void {
@@ -492,7 +493,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
-
         this.usersApi
             .updateUser(account)
             .toPromise()
@@ -510,6 +510,49 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     severity: 'error',
                     summary: 'Failed to update user account',
                     detail: 'Updating user account failed: ' + msg,
+                    sticky: true,
+                })
+            })
+    }
+
+    /*
+     * Displays a dialog to confirm user deletion.
+     */
+    confirmDeleteUser() {
+        this.confirmService.confirm({
+            message: 'Are you sure that you want to permanently delete this user?',
+            header: 'Delete User',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.deleteUser()
+            },
+        })
+    }
+
+    /**
+     * Action invoked when existing user form is being deleted
+     *
+     * As a result of this action an existing user account is attempted to be
+     * deleted.
+     */
+    deleteUser() {
+        this.usersApi
+            .deleteUser(this.userTab.user.id)
+            .toPromise()
+            .then((data) => {
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'Existing user account deleted',
+                    detail: 'Deleting existing user account succeeded.',
+                })
+                this.closeActiveTab()
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Failed to delete existing user account',
+                    detail: 'Deleting existing user account failed: ' + msg,
                     sticky: true,
                 })
             })
