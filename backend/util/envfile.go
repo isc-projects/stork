@@ -18,7 +18,7 @@ type EnvironmentVariableSetter interface {
 func LoadEnvironmentFileToSetter(path string, setter EnvironmentVariableSetter) error {
 	data, err := LoadEnvironmentFile(path)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	for key, value := range data {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"isc.org/stork"
@@ -224,6 +224,21 @@ func setupApp(reload bool) *cli.App {
 				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
+			&cli.GenericFlag{
+				Name:  "env-file",
+				Usage: "Read the environment variables from the environment file; applicable only if the flag is set",
+				Value: storkutil.NewOptionalStringFlag("/etc/stork/agent.env"),
+			},
+		},
+		Before: func(c *cli.Context) error {
+			if c.IsSet("env-file") {
+				err := storkutil.LoadEnvironmentFileToSetter(c.Path("env-file"), c)
+				if err != nil {
+					err = errors.WithMessagef(err, "the '%s' environment file is invalid", c.String("env-file"))
+					return err
+				}
+			}
+			return nil
 		},
 		Action: func(c *cli.Context) error {
 			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
