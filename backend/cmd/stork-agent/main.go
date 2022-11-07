@@ -232,11 +232,21 @@ func setupApp(reload bool) *cli.App {
 		},
 		Before: func(c *cli.Context) error {
 			if c.IsSet("env-file") {
-				err := storkutil.LoadEnvironmentFileToSetter(c.Path("env-file"), c)
+				err := storkutil.LoadEnvironmentFileToSetter(
+					c.Path("env-file"),
+					// Loads environment variables into context.
+					c,
+					// Loads environment variables into process.
+					storkutil.NewProcessEnvironmentVariableSetter(),
+				)
+
 				if err != nil {
 					err = errors.WithMessagef(err, "the '%s' environment file is invalid", c.String("env-file"))
 					return err
 				}
+
+				// Reconfigures logging.
+				storkutil.SetupLogging()
 			}
 			return nil
 		},

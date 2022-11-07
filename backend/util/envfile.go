@@ -14,18 +14,35 @@ type EnvironmentVariableSetter interface {
 	Set(key, value string) error
 }
 
+// Setter that configure the environment variable for a current process.
+type ProcessEnvironmentVariableSetter struct{}
+
+// Constructs the process setter.
+func NewProcessEnvironmentVariableSetter() EnvironmentVariableSetter {
+	return &ProcessEnvironmentVariableSetter{}
+}
+
+// Implements the environment variable setter interface.
+func (s *ProcessEnvironmentVariableSetter) Set(key, value string) error {
+	err := os.Setenv(key, value)
+	err = errors.Wrap(err, "cannot set environment variable for process")
+	return err
+}
+
 // Loads all entries from the environment file into the setter object.
-func LoadEnvironmentFileToSetter(path string, setter EnvironmentVariableSetter) error {
+func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSetter) error {
 	data, err := LoadEnvironmentFile(path)
 	if err != nil {
 		return err
 	}
 
 	for key, value := range data {
-		err = setter.Set(key, value)
-		if err != nil {
-			err = errors.WithMessagef(err, "cannot set value for key: '%s'", key)
-			return err
+		for _, setter := range setters {
+			err = setter.Set(key, value)
+			if err != nil {
+				err = errors.WithMessagef(err, "cannot set value for key: '%s'", key)
+				return err
+			}
 		}
 	}
 
