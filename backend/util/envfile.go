@@ -9,50 +9,78 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Loads all entries from the environment file and uses them as environment
-// variables for a current process.
-func LoadEnvironmentFile(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return errors.Wrapf(err, "cannot open the '%s' environment file", path)
-	}
-	defer file.Close()
-	return loadEnvironmentEntries(file)
+// Defines an interfaces that accepts the environment variables.
+type EnvironmentVariableSetter interface {
+	Set(key, value string) error
 }
 
-// Loads all entries from a given reader and uses them as environment variable
-// for a current process.
-func loadEnvironmentEntries(reader io.Reader) error {
-	scanner := bufio.NewScanner(reader)
+// Loads all entries from the environment file into the setter object.
+func LoadEnvironmentFileToSetter(path string, setter EnvironmentVariableSetter) error {
+	data, err := LoadEnvironmentFile(path)
+	if err != nil {
+		return nil
+	}
 
-	lineIdx := 0
-	for scanner.Scan() {
-		lineIdx++
-		err := loadEnvironmentLine(scanner.Text())
+	for key, value := range data {
+		err = setter.Set(key, value)
 		if err != nil {
-			return errors.WithMessagef(err, "invalid line %d of environment file", lineIdx)
+			err = errors.WithMessagef(err, "cannot set value for key: '%s'", key)
+			return err
 		}
 	}
 
 	return nil
 }
 
-// Parses a line of the environment file. The parsed key and value is used as
-// environment variable for a current process.
-func loadEnvironmentLine(line string) error {
+// Loads all entries from the environment file.
+func LoadEnvironmentFile(path string) (map[string]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot open the '%s' environment file", path)
+	}
+	defer file.Close()
+	return loadEnvironmentEntries(file)
+}
+
+// Loads all entries from a given reader.
+func loadEnvironmentEntries(reader io.Reader) (map[string]string, error) {
+	data := make(map[string]string)
+	scanner := bufio.NewScanner(reader)
+
+	lineIdx := 0
+	for scanner.Scan() {
+		lineIdx++
+		key, value, err := loadEnvironmentLine(scanner.Text())
+		if err != nil {
+			return nil, errors.WithMessagef(err, "invalid line %d of environment file", lineIdx)
+		}
+		if key == "" {
+			// Comment.
+			continue
+		}
+		data[key] = value
+	}
+
+	return data, nil
+}
+
+// Parses a line of the environment file.
+func loadEnvironmentLine(line string) (string, string, error) {
 	line = strings.TrimSpace(line)
 
 	if strings.HasPrefix(line, "#") {
 		// Comment - skip.
-		return nil
+		return "", "", nil
 	}
 
 	key, value, ok := strings.Cut(line, "=")
 	if !ok {
-		return errors.Errorf("line must contain the key and value separated by the '=' sign")
+		return "", "", errors.Errorf("line must contain the key and value separated by the '=' sign")
 	}
 
-	err := os.Setenv(key, value)
-	err = errors.Wrap(err, "invalid key or value")
-	return err
+	if key == "" {
+		return "", "", errors.Errorf("key cannot be empty")
+	}
+
+	return key, value, nil
 }
