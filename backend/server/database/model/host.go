@@ -95,6 +95,7 @@ type LocalHost struct {
 	Host       *Host   `pg:"rel:has-one"`
 	DataSource HostDataSource
 
+	ClientClasses     []string `pg:",array"`
 	DHCPOptionSet     []DHCPOption
 	DHCPOptionSetHash string
 }
@@ -508,6 +509,7 @@ func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
 		q := dbi.Model(&host.LocalHosts[i]).
 			OnConflict("(daemon_id, host_id) DO UPDATE").
 			Set("data_source = EXCLUDED.data_source").
+			Set("client_classes = EXCLUDED.client_classes").
 			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
 			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
 
@@ -901,6 +903,17 @@ func (host Host) GetIPReservations() (ips []string) {
 // Returns reserved hostname.
 func (host Host) GetHostname() string {
 	return host.Hostname
+}
+
+// Returns reserved client classes.
+func (host Host) GetClientClasses(daemonID int64) (clientClasses []string) {
+	for _, lh := range host.LocalHosts {
+		if lh.DaemonID == daemonID {
+			clientClasses = lh.ClientClasses
+			break
+		}
+	}
+	return
 }
 
 // Returns DHCP options associated with the host and for a specified

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -56,11 +57,12 @@ func (r *RestAPI) convertFromHost(dbHost *dbmodel.Host) *models.Host {
 	// daemons and DHCP options.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
-			AppID:       dbLocalHost.Daemon.AppID,
-			AppName:     dbLocalHost.Daemon.App.Name,
-			DaemonID:    dbLocalHost.Daemon.ID,
-			DataSource:  dbLocalHost.DataSource.String(),
-			OptionsHash: dbLocalHost.DHCPOptionSetHash,
+			AppID:         dbLocalHost.Daemon.AppID,
+			AppName:       dbLocalHost.Daemon.App.Name,
+			DaemonID:      dbLocalHost.Daemon.ID,
+			DataSource:    dbLocalHost.DataSource.String(),
+			ClientClasses: dbLocalHost.ClientClasses,
+			OptionsHash:   dbLocalHost.DHCPOptionSetHash,
 		}
 		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
@@ -109,8 +111,9 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 		}
 
 		localHost := dbmodel.LocalHost{
-			DaemonID:   lh.DaemonID,
-			DataSource: ds,
+			DaemonID:      lh.DaemonID,
+			DataSource:    ds,
+			ClientClasses: lh.ClientClasses,
 		}
 		localHost.DHCPOptionSet, err = r.flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {
@@ -205,34 +208,50 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 }
 
 // Common function for executed when creating a new transaction for when the
-// host is created or updated. It fetches available DHCP daemons and subnets.
-// It also creates transaction context. If an error occurs, an http error code
-// and message are returned.
-func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.Subnet, context.Context, int, string) {
+// host is created or updated. It fetches available DHCP daemons, subnets and
+// client classes. It also creates transaction context. If an error occurs,
+// an http error code and message are returned.
+func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.Subnet, []string, context.Context, int, string) {
 	// A list of Kea DHCP daemons will be needed in the user form,
 	// so the user can select which servers send the reservation to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
 		msg := "problem with fetching Kea daemons from the database"
 		log.Error(err)
-		return nil, nil, nil, http.StatusInternalServerError, msg
+		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
-	// Convert daemons list to REST API format.
+	// Convert daemons list to REST API format and extract their configured
+	// client classes.
 	respDaemons := []*models.KeaDaemon{}
+	respClientClasses := []string{}
+	clientClassesMap := make(map[string]bool)
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Filter the daemons with host_cmds hook library.
 			if _, _, exists := daemons[i].KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); exists {
 				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
 			}
+			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
+			for _, c := range clientClasses {
+				// Avoid duplicated class names.
+				if _, ok := clientClassesMap[c.Name]; !ok {
+					clientClassesMap[c.Name] = true
+				}
+			}
 		}
 	}
+	// Turn the class map to a slice and sort it by a class name.
+	for c := range clientClassesMap {
+		respClientClasses = append(respClientClasses, c)
+	}
+	sort.Strings(respClientClasses)
+
 	// If there are no daemons with host_cmds hooks library loaded there is no way
 	// to add new host reservation. In that case, we don't begin a transaction.
 	if len(respDaemons) == 0 {
 		msg := "unable to begin transaction for adding new host because there are no Kea servers with host_cmds hooks library available"
 		log.Error(msg)
-		return nil, nil, nil, http.StatusBadRequest, msg
+		return nil, nil, nil, nil, http.StatusBadRequest, msg
 	}
 	// Host reservations are typically associated with subnets. The
 	// user needs a current list of available subnets.
@@ -240,7 +259,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	if err != nil {
 		msg := "problem with fetching subnets from the database"
 		log.Error(err)
-		return nil, nil, nil, http.StatusInternalServerError, msg
+		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	// Convert subnets list to REST API format.
 	respSubnets := []*models.Subnet{}
@@ -252,24 +271,24 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	if !ok {
 		msg := "unable to begin transaction because user is not logged in"
 		log.Error("problem with creating transaction context because user has no session")
-		return nil, nil, nil, http.StatusForbidden, msg
+		return nil, nil, nil, nil, http.StatusForbidden, msg
 	}
 	// Create configuration context.
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "problem with creating transaction context"
 		log.Error(err)
-		return nil, nil, nil, http.StatusInternalServerError, msg
+		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
-	return respDaemons, respSubnets, cctx, 0, ""
+	return respDaemons, respSubnets, respClientClasses, cctx, 0, ""
 }
 
 // Implements the POST call to create new transaction for adding a new host
 // reservation (hosts/new/transaction).
 func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves,
-	// daemons, subnets and creates the transaction context.
-	respDaemons, respSubnets, cctx, code, msg := r.commonCreateOrUpdateHostBegin(ctx)
+	// daemons, subnets, client classes and creates the transaction context.
+	respDaemons, respSubnets, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateHostBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewCreateHostBeginDefault(code).WithPayload(&models.APIError{
@@ -303,9 +322,10 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.CreateHostBeginResponse{
-		ID:      cctxID,
-		Daemons: respDaemons,
-		Subnets: respSubnets,
+		ID:            cctxID,
+		Daemons:       respDaemons,
+		Subnets:       respSubnets,
+		ClientClasses: respClientClasses,
 	}
 	rsp := dhcp.NewCreateHostBeginOK().WithPayload(contents)
 	return rsp
@@ -441,8 +461,8 @@ func (r *RestAPI) CreateHostDelete(ctx context.Context, params dhcp.CreateHostDe
 // existing host reservation (hosts/{hostId}/transaction).
 func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves,
-	// daemons, subnets and creates the transaction context.
-	respDaemons, respSubnets, cctx, code, msg := r.commonCreateOrUpdateHostBegin(ctx)
+	// daemons, subnets, client classes and creates the transaction context.
+	respDaemons, respSubnets, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateHostBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateHostBeginDefault(code).WithPayload(&models.APIError{
@@ -504,10 +524,11 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.UpdateHostBeginResponse{
-		ID:      cctxID,
-		Host:    r.convertFromHost(&host),
-		Daemons: respDaemons,
-		Subnets: respSubnets,
+		ID:            cctxID,
+		Host:          r.convertFromHost(&host),
+		Daemons:       respDaemons,
+		Subnets:       respSubnets,
+		ClientClasses: respClientClasses,
 	}
 	rsp := dhcp.NewUpdateHostBeginOK().WithPayload(contents)
 	return rsp

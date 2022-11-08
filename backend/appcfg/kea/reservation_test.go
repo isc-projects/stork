@@ -17,6 +17,7 @@ type testHost struct {
 		id  int64
 		err error
 	}
+	clientClasses []string
 }
 
 // Creates a test host with default values.
@@ -54,6 +55,9 @@ func createDefaultTestHost() *testHost {
 			id:  123,
 			err: nil,
 		},
+		clientClasses: []string{
+			"foo", "bar",
+		},
 	}
 }
 
@@ -78,6 +82,11 @@ func (host testHost) GetHostname() string {
 // Returns static subnet ID.
 func (host testHost) GetSubnetID(int64) (int64, error) {
 	return host.subnetIDTuple.id, host.subnetIDTuple.err
+}
+
+// Returns static client classes.
+func (host testHost) GetClientClasses(int64) []string {
+	return host.clientClasses
 }
 
 // Returns static DHCP options.
@@ -125,6 +134,9 @@ func TestCreateReservation(t *testing.T) {
 	require.Equal(t, "3000::/16", reservation.Prefixes[0])
 	require.Equal(t, "3001::/16", reservation.Prefixes[1])
 	require.Equal(t, "hostname.example.org", reservation.Hostname)
+	require.Len(t, reservation.ClientClasses, 2)
+	require.Equal(t, "foo", reservation.ClientClasses[0])
+	require.Equal(t, "bar", reservation.ClientClasses[1])
 	require.Len(t, reservation.OptionData, 2)
 }
 
@@ -146,6 +158,9 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 	require.Equal(t, "3000::/16", reservation.Prefixes[0])
 	require.Equal(t, "3001::/16", reservation.Prefixes[1])
 	require.Equal(t, "hostname.example.org", reservation.Hostname)
+	require.Len(t, reservation.ClientClasses, 2)
+	require.Equal(t, "foo", reservation.ClientClasses[0])
+	require.Equal(t, "bar", reservation.ClientClasses[1])
 	require.EqualValues(t, 123, reservation.SubnetID)
 }
 

@@ -526,3 +526,11 @@ func IsInAnyReservationModes(condition func(modes ReservationModes) (bool, bool)
 	}
 	return false
 }
+
+// Returns a list of configured client classes.
+func (c *Map) GetClientClasses() (clientClasses []ClientClass) {
+	if classList, ok := c.GetTopLevelList("client-classes"); ok {
+		_ = mapstructure.Decode(classList, &clientClasses)
+	}
+	return
+}

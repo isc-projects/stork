@@ -286,7 +286,8 @@ func TestNewHostFromKea(t *testing.T) {
 			"3000:1::/64",
 			"3000:2::/64",
 		},
-		"hostname": "hostname.example.org",
+		"hostname":       "hostname.example.org",
+		"client-classes": []string{"foo", "bar"},
 		"option-data": []interface{}{
 			map[string]interface{}{
 				"always-send": true,
@@ -318,6 +319,11 @@ func TestNewHostFromKea(t *testing.T) {
 	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
 	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
 	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
+
+	// Client classes
+	require.Len(t, parsedHost.LocalHosts[0].ClientClasses, 2)
+	require.Equal(t, "foo", parsedHost.LocalHosts[0].ClientClasses[0])
+	require.Equal(t, "bar", parsedHost.LocalHosts[0].ClientClasses[1])
 
 	// DHCP options
 	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet, 1)

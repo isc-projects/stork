@@ -937,3 +937,26 @@ func TestHideSensitiveData(t *testing.T) {
 	require.EqualValues(t, nil, second["tokeN"])
 	require.EqualValues(t, nil, second["secreT"])
 }
+
+// Test that client classes list can be extracted from the
+// Kea configuration.
+func TestGetClientClasses(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "client-classes": [
+				{
+					"name": "foo"
+				},
+				{
+					"name": "bar"
+				}
+			]
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	clientClasses := cfg.GetClientClasses()
+	require.Len(t, clientClasses, 2)
+}

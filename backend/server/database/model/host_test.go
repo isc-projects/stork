@@ -738,6 +738,10 @@ func TestAddHostLocalHosts(t *testing.T) {
 	host.LocalHosts = append(host.LocalHosts, LocalHost{
 		DaemonID:   apps[0].Daemons[0].ID,
 		DataSource: HostDataSourceAPI,
+		ClientClasses: []string{
+			"foo",
+			"bar",
+		},
 		DHCPOptionSet: []DHCPOption{
 			{
 				Code:  254,
@@ -783,10 +787,17 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
+	require.Len(t, returnedList[0].LocalHosts[0].ClientClasses, 2)
+	require.ElementsMatch(t, returnedList[0].LocalHosts[0].ClientClasses, []string{"foo", "bar"})
 	// When fetching all hosts, the detailed app and daemon information
 	// should be returned as well.
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon)
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon.App)
+
+	// Make sure that client classes are returned.
+	require.Len(t, returnedList[0].LocalHosts[0].ClientClasses, 2)
+	require.Equal(t, "foo", returnedList[0].LocalHosts[0].ClientClasses[0])
+	require.Equal(t, "bar", returnedList[0].LocalHosts[0].ClientClasses[1])
 
 	// Make sure that DHCP options are returned.
 	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet, 1)
@@ -1419,6 +1430,10 @@ func TestKeaConfigHostInterface(t *testing.T) {
 		LocalHosts: []LocalHost{
 			{
 				DaemonID: 1,
+				ClientClasses: []string{
+					"foo",
+					"bar",
+				},
 				DHCPOptionSet: []DHCPOption{
 					{
 						Code:        123,
@@ -1446,6 +1461,11 @@ func TestKeaConfigHostInterface(t *testing.T) {
 	require.EqualValues(t, 234, subnetID)
 	_, err = host.GetSubnetID(3)
 	require.Error(t, err)
+	clientClasses := host.GetClientClasses(1)
+	require.Len(t, clientClasses, 2)
+	require.Equal(t, "foo", clientClasses[0])
+	require.Equal(t, "bar", clientClasses[1])
+	require.Empty(t, host.GetClientClasses(1024))
 	options := host.GetDHCPOptions(1)
 	require.Len(t, options, 1)
 	require.EqualValues(t, 123, options[0].GetCode())

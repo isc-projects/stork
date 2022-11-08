@@ -150,6 +150,10 @@
       dataSource:
         type: string
         readOnly: true
+      clientClasses:
+        type: array
+        items:
+          type: string
       options:
         type: array
         items:
@@ -209,6 +213,10 @@
         type: array
         items:
           $ref: '#/definitions/Subnet'
+      clientClasses:
+        type: array
+        items:
+          type: string
 
   UpdateHostBeginResponse:
     type: object
@@ -226,6 +234,10 @@
         type: array
         items:
           $ref: '#/definitions/Subnet'
+      clientClasses:
+        type: array
+        items:
+          type: string
 
 # Subnet
 

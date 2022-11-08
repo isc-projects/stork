@@ -14,21 +14,23 @@ type Host interface {
 	GetIPReservations() []string
 	GetHostname() string
 	GetSubnetID(int64) (int64, error)
+	GetClientClasses(int64) []string
 	GetDHCPOptions(int64) []DHCPOption
 }
 
 // Represents host reservation within Kea configuration.
 type Reservation struct {
-	HWAddress   string             `mapstructure:"hw-address" json:"hw-address,omitempty"`
-	DUID        string             `mapstructure:"duid" json:"duid,omitempty"`
-	CircuitID   string             `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
-	ClientID    string             `mapstructure:"client-id" json:"client-id,omitempty"`
-	FlexID      string             `mapstructure:"flex-id" json:"flex-id,omitempty"`
-	IPAddress   string             `mapstructure:"ip-address" json:"ip-address,omitempty"`
-	IPAddresses []string           `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
-	Prefixes    []string           `mapstructure:"prefixes" json:"prefixes,omitempty"`
-	Hostname    string             `mapstructure:"hostname" json:"hostname,omitempty"`
-	OptionData  []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
+	HWAddress     string             `mapstructure:"hw-address" json:"hw-address,omitempty"`
+	DUID          string             `mapstructure:"duid" json:"duid,omitempty"`
+	CircuitID     string             `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
+	ClientID      string             `mapstructure:"client-id" json:"client-id,omitempty"`
+	FlexID        string             `mapstructure:"flex-id" json:"flex-id,omitempty"`
+	IPAddress     string             `mapstructure:"ip-address" json:"ip-address,omitempty"`
+	IPAddresses   []string           `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
+	Prefixes      []string           `mapstructure:"prefixes" json:"prefixes,omitempty"`
+	Hostname      string             `mapstructure:"hostname" json:"hostname,omitempty"`
+	ClientClasses []string           `mapstructure:"client-classes" json:"client-classes,omitempty"`
+	OptionData    []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
 }
 
 // Represents host reservation returned and sent via Kea host commands hook library.
@@ -49,7 +51,8 @@ type HostCmdsDeletedReservation struct {
 // in Kea configuration. The lookup interface must not be nil.
 func CreateReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host Host) (*Reservation, error) {
 	reservation := &Reservation{
-		Hostname: host.GetHostname(),
+		Hostname:      host.GetHostname(),
+		ClientClasses: host.GetClientClasses(daemonID),
 	}
 	for _, id := range host.GetHostIdentifiers() {
 		value := storkutil.BytesToHex(id.Value)

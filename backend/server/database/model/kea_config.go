@@ -299,8 +299,9 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 	}
 	// Finally, store server specific host information including DHCP options.
 	lh := LocalHost{
-		DaemonID:   daemon.ID,
-		DataSource: source,
+		DaemonID:      daemon.ID,
+		DataSource:    source,
+		ClientClasses: reservation.ClientClasses,
 	}
 	universe := storkutil.IPv4
 	if daemon.Name == DaemonNameDHCPv6 {

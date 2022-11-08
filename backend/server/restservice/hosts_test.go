@@ -192,6 +192,40 @@ func TestGetHost(t *testing.T) {
 	require.IsType(t, &dhcp.GetHostDefault{}, rsp)
 }
 
+// Test that fetched host includes client classes.
+func TestGetHostWithClientClasses(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add hosts.
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
+
+	// Add LocalHost instance comprising client classes.
+	err = dbmodel.AddHostLocalHosts(db, &hosts[4])
+	require.NoError(t, err)
+
+	// Get the host over the API.
+	params := dhcp.GetHostParams{
+		ID: hosts[4].ID,
+	}
+	rsp := rapi.GetHost(ctx, params)
+	require.IsType(t, &dhcp.GetHostOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostOK)
+	returnedHost := okRsp.Payload
+
+	// Make sure that the client classes have been returned.
+	require.Len(t, returnedHost.LocalHosts, 2)
+	for _, lh := range returnedHost.LocalHosts {
+		require.Len(t, lh.ClientClasses, 2)
+		require.Equal(t, "foo", lh.ClientClasses[0])
+		require.Equal(t, "bar", lh.ClientClasses[1])
+	}
+}
+
 // Test that fetched host includes DHCP options.
 func TestGetHostWithOptions(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -281,11 +315,14 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	okRsp := rsp.(*dhcp.CreateHostBeginOK)
 	contents := okRsp.Payload
 
-	// Make sure the server returned transaction ID, daemons and subnets.
+	// Make sure the server returned transaction ID, daemons, subnets and
+	// client classes.
 	transactionID := contents.ID
 	require.NotZero(t, transactionID)
 	require.Len(t, contents.Daemons, 4)
 	require.Len(t, contents.Subnets, 2)
+	require.Len(t, contents.ClientClasses, 3)
+	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
 
 	// Submit transaction.
 	params2 := dhcp.CreateHostSubmitParams{
@@ -301,12 +338,14 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 			},
 			LocalHosts: []*models.LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI.String(),
+					DaemonID:      apps[0].Daemons[0].ID,
+					DataSource:    dbmodel.HostDataSourceAPI.String(),
+					ClientClasses: []string{"class1"},
 				},
 				{
-					DaemonID:   apps[1].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI.String(),
+					DaemonID:      apps[1].Daemons[0].ID,
+					DataSource:    dbmodel.HostDataSourceAPI.String(),
+					ClientClasses: []string{"class1"},
 				},
 			},
 		},
@@ -325,7 +364,8 @@ func TestCreateHostBeginSubmit(t *testing.T) {
                 "reservation": {
                     "hw-address": "010203040506",
                     "subnet-id": 111,
-                    "hostname": "example.org"
+                    "hostname": "example.org",
+					"client-classes": ["class1"]
                 }
             }
         }`, c.Marshal())
@@ -341,6 +381,68 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		cm.Done(cctx)
 	}
 	require.Nil(t, cctx)
+}
+
+// Test the calls for creating transaction when daemon contains no client
+// classes in its configuration.
+func TestCreateHostBeginNoClientClasses(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
+
+	// Delete client classes from some of the configurations.
+	for i := range apps {
+		apps[i].Daemons[1].KeaDaemon.Config.DeleteClientClasses()
+		_, _, err := dbmodel.UpdateApp(db, &apps[i])
+		require.NoError(t, err)
+	}
+
+	// Begin transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, daemons, subnets and
+	// client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Daemons, 4)
+	require.Len(t, contents.Subnets, 2)
+	require.Len(t, contents.ClientClasses, 2)
 }
 
 // Test error case when a user attempts to begin new transaction when the
@@ -798,12 +900,15 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	okRsp := rsp.(*dhcp.UpdateHostBeginOK)
 	contents := okRsp.Payload
 
-	// Make sure the server returned transaction ID, host, daemons and subnets.
+	// Make sure the server returned transaction ID, host, daemons, subnets
+	// and client classes.
 	transactionID := contents.ID
 	require.NotZero(t, transactionID)
 	require.NotNil(t, contents.Host)
 	require.Len(t, contents.Daemons, 4)
 	require.Len(t, contents.Subnets, 2)
+	require.Len(t, contents.ClientClasses, 3)
+	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
 
 	// Submit transaction.
 	params2 := dhcp.UpdateHostSubmitParams{
@@ -819,12 +924,14 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 			},
 			LocalHosts: []*models.LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI.String(),
+					DaemonID:      apps[0].Daemons[0].ID,
+					DataSource:    dbmodel.HostDataSourceAPI.String(),
+					ClientClasses: []string{"class1"},
 				},
 				{
-					DaemonID:   apps[1].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI.String(),
+					DaemonID:      apps[1].Daemons[0].ID,
+					DataSource:    dbmodel.HostDataSourceAPI.String(),
+					ClientClasses: []string{"class1"},
 				},
 			},
 		},
@@ -857,7 +964,8 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
                     "reservation": {
                         "hw-address": "010203040506",
                         "subnet-id": 111,
-                        "hostname": "updated.example.org"
+                        "hostname": "updated.example.org",
+						"client-classes": ["class1"]
                     }
                 }
              }`, c.Marshal())

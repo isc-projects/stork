@@ -41,6 +41,14 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 		}
 		err = a.Daemons[0].SetConfigFromJSON(`{
             "Dhcp4": {
+				"client-classes": [
+					{
+						"name": "class2"
+					},
+					{
+						"name": "class1"
+					}
+				],
                 "subnet4": [
                     {
                         "id": 111,
@@ -58,6 +66,14 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 
 		err = a.Daemons[1].SetConfigFromJSON(`{
             "Dhcp6": {
+				"client-classes": [
+					{
+						"name": "class2"
+					},
+					{
+						"name": "class3"
+					}
+				],
                 "subnet6": [
                     {
                         "id": 222,
@@ -233,6 +249,10 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					ClientClasses: []string{
+						"foo",
+						"bar",
+					},
 					DHCPOptionSet: []dbmodel.DHCPOption{
 						{
 							Code: 23,
@@ -256,6 +276,10 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					ClientClasses: []string{
+						"foo",
+						"bar",
+					},
 					DHCPOptionSet: []dbmodel.DHCPOption{
 						{
 							Code: 23,
