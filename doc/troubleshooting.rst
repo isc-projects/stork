@@ -112,19 +112,48 @@ This section describes the solutions for some common issues with the Stork agent
 ---------------
 
 :Issue:       The values in ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed,
-              but ``stork-agent`` does not register the changes.
-:Solution:    Restart the daemon.
-:Explanation: ``stork-agent`` reads configurations only at startup.
+              but ``stork-agent`` does not noticed the changes.
+:Solution 1.: Restart the daemon.
+:Solution 2.: Send the SIGHUP signal to the daemon.
+:Explanation: ``stork-agent`` reads configurations at startup or after receiving the SIGHUP signal.
 
 --------------
 
-:Issue:       The values in ``/etc/stork/agent.env`` were changed and the daemon was restarted, but
-              the agent still uses the default values.
+:Issue:       The values in ``/etc/stork/agent.env`` were changed and the Stork agent was restarted, but
+              it still uses the default values.
 :Description: The agent is running using the ``stork-agent`` command. It uses the parameters passed
               from the command line but ignores the ``/etc/stork/agent.env`` file entries.
               If the agent is running as the systemd daemon, it uses the expected values.
-:Solution:    Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
+:Solution 1.: Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
               For example, run ``. /etc/stork/agent.env``.
+:Solution 2.: Run the Stork agent with the ``--env-file`` switch.
 :Explanation: The ``/etc/stork/agent.env`` file contains the environment variables, but ``stork-agent`` does not automatically
-              load them; the file must be loaded manually. The default systemd service unit is configured to
-              load this file before starting the agent.
+              load them, unless you use ``--env-file flag``; the file must be loaded manually. The default systemd service
+              unit is configured to load this file before starting the agent.
+
+``stork-server``
+================
+
+This section describes the solutions for some common issues with the Stork server.
+
+---------------
+
+:Issue:       The values in ``/etc/stork/server.env`` were changed,
+              but ``stork-server`` does not noticed the changes.
+:Solution 1.: Restart the daemon.
+:Solution 2.: Send the SIGHUP signal to the daemon.
+:Explanation: ``stork-server`` reads configurations at startup or after receiving the SIGHUP signal.
+
+--------------
+
+:Issue:       The values in ``/etc/stork/server.env`` were changed and the Stork server was restarted, but
+              it still uses the default values.
+:Description: The server is running using the ``stork-server`` command. It uses the parameters passed
+              from the command line but ignores the ``/etc/stork/server.env`` file entries.
+              If the server is running as the systemd daemon, it uses the expected values.
+:Solution 1.: Load the environment variables from the ``/etc/stork/server.env`` file before running the CLI tool.
+              For example, run ``. /etc/stork/server.env``.
+:Solution 2.: Run the Stork server with the ``--env-file`` switch.
+:Explanation: The ``/etc/stork/server.env`` file contains the environment variables, but ``stork-server`` does not automatically
+              load them, unless you use ``--env-file`` flag; the file must be loaded manually. The default systemd service
+              unit is configured to load this file before starting the agent.

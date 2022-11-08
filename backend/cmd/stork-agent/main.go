@@ -226,7 +226,7 @@ func setupApp(reload bool) *cli.App {
 			},
 			&cli.GenericFlag{
 				Name:  "env-file",
-				Usage: "Read the environment variables from the environment file; applicable only if the flag is set",
+				Usage: "Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file",
 				Value: storkutil.NewOptionalStringFlag("/etc/stork/agent.env"),
 			},
 		},
