@@ -293,6 +293,14 @@ Setup
 The following steps are common for Debian-based and RPM-based distributions
 using ``systemd``.
 
+.. note::
+
+   The environment file **IS NOT** read by default if you run the Stork server
+   manually (without using ``systemd``). To load the environment variables from
+   this file you should call the ``. /etc/stork/server.env`` command before
+   executing the binary (in the same shell instance) or run Stork with
+   the ``--env-file`` switch.
+
 Configure the Stork server settings in ``/etc/stork/server.env``. The following
 settings are required for the database connection (they have a common ``STORK_DATABASE_`` prefix):
 
@@ -436,6 +444,16 @@ Agent Configuration Settings
 The following are the Stork agent configuration settings available in the
 ``/etc/stork/agent.env`` file after installing the package. All these settings use
 the ``STORK_AGENT_`` prefix to indicate that they configure the Stork agent.
+Configuring Stork using the environment variables is recommended for deployments
+using ``systemd``.
+
+.. note::
+
+   The environment file **IS NOT** read by default if you run the Stork agent
+   manually (without using ``systemd``). To load the environment variables from
+   this file you should call the ``. /etc/stork/agent.env`` command before
+   executing the binary (in the same shell instance) or run Stork with
+   the ``--env-file`` switch.
 
 The general settings:
 
