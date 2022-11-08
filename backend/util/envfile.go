@@ -85,6 +85,11 @@ func loadEnvironmentEntries(reader io.Reader) (map[string]string, error) {
 func loadEnvironmentLine(line string) (string, string, error) {
 	line = strings.TrimSpace(line)
 
+	if line == "" {
+		// Empty line - skip
+		return "", "", nil
+	}
+
 	if strings.HasPrefix(line, "#") {
 		// Comment - skip.
 		return "", "", nil

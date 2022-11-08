@@ -1,11 +1,11 @@
 package server
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/go-pg/pg/v10"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -22,6 +22,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/metrics"
 	"isc.org/stork/server/restservice"
+	storkutil "isc.org/stork/util"
 )
 
 type Command string
@@ -66,14 +67,45 @@ type Settings struct {
 	InitialPullerInterval int64 `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used." env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
 }
 
+// Read environment file settings. It's parsed before the above settings.
+type EnvironmentFileSettings struct {
+	EnvFile *string `long:"env-file" description:"Read the environment variables from the environment file; applicable only if the flag is set" optional:"true" optional-value:"/etc/stork/server.env"`
+}
+
 // Parse the command line arguments into GO structures.
 // Returns the expected command to run and error.
 func (ss *StorkServer) ParseArgs() (command Command, err error) {
+	shortDescription := "Stork Server"
+	longDescription := "Stork Server is a Kea and BIND 9 dashboard"
+
 	// Process command line flags.
+	// Process the environment file flag.
+	var envFileSettings EnvironmentFileSettings
+	parser := flags.NewParser(&envFileSettings, flags.IgnoreUnknown)
+	parser.ShortDescription = shortDescription
+	parser.LongDescription = longDescription
+
+	if _, err := parser.Parse(); err != nil {
+		err = errors.Wrap(err, "invalid CLI argument")
+		return NoneCommand, err
+	}
+
+	if envFileSettings.EnvFile != nil {
+		err = storkutil.LoadEnvironmentFileToSetter(
+			*envFileSettings.EnvFile,
+			storkutil.NewProcessEnvironmentVariableSetter(),
+		)
+		if err != nil {
+			err = errors.WithMessagef(err, "invalid environment file: '%s'", *envFileSettings.EnvFile)
+			return NoneCommand, err
+		}
+	}
+
+	// Process the rest of the flags.
 	var serverSettings Settings
-	parser := flags.NewParser(&serverSettings, flags.Default)
-	parser.ShortDescription = "Stork Server"
-	parser.LongDescription = "Stork Server is a Kea and BIND 9 dashboard"
+	parser = flags.NewParser(&serverSettings, flags.Default)
+	parser.ShortDescription = shortDescription
+	parser.LongDescription = longDescription
 
 	// Process Database specific args.
 	_, err = parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)

@@ -123,6 +123,23 @@ func TestLoadEnvironmentContentWithComments(t *testing.T) {
 	require.False(t, ok)
 }
 
+// Test that the empty lines are skipped.
+func TestLoadEnvironmentContentWithEmptyLine(t *testing.T) {
+	// Arrange
+	content := `TEST_STORK_KEY1=VALUE1
+
+				TEST_STORK_KEY2=VALUE2`
+
+	// Act
+	data, err := loadEnvironmentEntries(strings.NewReader(content))
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "VALUE1", data["TEST_STORK_KEY1"])
+	require.EqualValues(t, "VALUE2", data["TEST_STORK_KEY2"])
+	require.Len(t, data, 2)
+}
+
 // Test that the trailing whitespaces are trimmed.
 func TestLoadEnvironmentContentWithTrailingCharacters(t *testing.T) {
 	// Arrange
