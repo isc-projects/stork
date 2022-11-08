@@ -7,28 +7,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 )
-
-// Cleans all environment variables used in the test cases.
-func clearTestEnvironmentVariables() {
-	variables := []string{"TEST_STORK_KEY"}
-
-	for _, variable := range variables {
-		os.Unsetenv(variable)
-	}
-}
 
 // Executes the test case body with additional setup and teardown steps.
 func TestMain(m *testing.M) {
 	// Setup
-	clearTestEnvironmentVariables()
+	restore := testutil.CreateEnvironmentRestorePoint()
+	// Teardown
+	defer restore()
 
 	// Test case execution.
 	code := m.Run()
-
-	// Teardown
-	clearTestEnvironmentVariables()
-
 	os.Exit(code)
 }
 
@@ -211,7 +201,10 @@ func (s *setterMock) Set(key, value string) error {
 func TestLoadEnvironmentVariablesToSetter(t *testing.T) {
 	// Arrange
 	file, _ := os.CreateTemp("", "stork-envfile-test-*")
-	defer file.Close()
+	defer (func() {
+		file.Close()
+		os.Remove(file.Name())
+	})()
 
 	content := `TEST_STORK_KEY=VALUE`
 	_, _ = file.WriteString(content)
@@ -230,7 +223,10 @@ func TestLoadEnvironmentVariablesToSetter(t *testing.T) {
 func TestLoadEnvironmentVariablesToSetterWithError(t *testing.T) {
 	// Arrange
 	file, _ := os.CreateTemp("", "stork-envfile-test-*")
-	defer file.Close()
+	defer (func() {
+		file.Close()
+		os.Remove(file.Name())
+	})()
 
 	content := `TEST_STORK_KEY1=VALUE1
 				TEST_STORK_KEY2=VALUE2`

@@ -78,3 +78,38 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 	err = errors.Wrapf(err, "cannot parse a timestamp: %s for: %s", raw, filename)
 	return
 }
+
+func CreateEnvironmentRestorePoint() func() {
+	originalEnv := os.Environ()
+
+	return func() {
+		originalEnvDict := make(map[string]string, len(originalEnv))
+		for _, pair := range originalEnv {
+			key, value, _ := strings.Cut(pair, "=")
+			originalEnvDict[key] = value
+		}
+
+		actualEnv := os.Environ()
+		actualKeys := make(map[string]bool, len(actualEnv))
+		for _, actualPair := range actualEnv {
+			actualKey, actualValue, _ := strings.Cut(actualPair, "=")
+			actualKeys[actualKey] = true
+			originalValue, exist := originalEnvDict[actualKey]
+
+			if !exist {
+				// Environment variable was added.
+				os.Unsetenv(actualKey)
+			} else if actualValue != originalValue {
+				// Environment variable was changed.
+				os.Setenv(actualKey, originalValue)
+			}
+		}
+
+		for originalKey, originalValue := range originalEnvDict {
+			if _, exist := actualKeys[originalKey]; !exist {
+				// Environment variable was removed.
+				os.Setenv(originalKey, originalValue)
+			}
+		}
+	}
+}

@@ -60,16 +60,17 @@ type StorkServer struct {
 	shutdownOnce               sync.Once
 }
 
-// Global server settings (called application settings in go-flags nomenclature).
-type Settings struct {
-	Version               bool  `short:"v" long:"version" description:"Show software version"`
-	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
-	InitialPullerInterval int64 `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used." env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
-}
-
 // Read environment file settings. It's parsed before the above settings.
 type EnvironmentFileSettings struct {
 	EnvFile *string `long:"env-file" description:"Read the environment variables from the environment file; applicable only if the flag is set" optional:"true" optional-value:"/etc/stork/server.env"`
+}
+
+// Global server settings (called application settings in go-flags nomenclature).
+type Settings struct {
+	EnvironmentFileSettings
+	Version               bool  `short:"v" long:"version" description:"Show software version"`
+	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
+	InitialPullerInterval int64 `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea. If not provided the recommended values for each puller are used." env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
 }
 
 // Parse the command line arguments into GO structures.

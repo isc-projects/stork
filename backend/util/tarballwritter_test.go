@@ -96,8 +96,10 @@ func TestTarballAddFile(t *testing.T) {
 	var buffer bytes.Buffer
 	writer := NewTarballWriter(&buffer)
 	file, _ := os.CreateTemp("", "*")
-	defer os.Remove(file.Name())
-	defer file.Close()
+	defer (func() {
+		file.Close()
+		os.Remove(file.Name())
+	})()
 	file.WriteString("Hello World!")
 	stat, _ := file.Stat()
 

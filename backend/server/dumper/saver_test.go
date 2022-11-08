@@ -127,6 +127,11 @@ func TestSavedTarballToFile(t *testing.T) {
 		},
 	)
 	file, _ := os.CreateTemp("", "*")
+	defer (func() {
+		file.Close()
+		os.Remove(file.Name())
+	})()
+
 	bufferWriter := bufio.NewWriter(file)
 
 	// Act

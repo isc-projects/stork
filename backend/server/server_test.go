@@ -35,6 +35,7 @@ func getExpectedSwitches() []string {
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
+		"--env-file",
 	}
 }
 
@@ -278,4 +279,45 @@ func TestBootstrap(t *testing.T) {
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 2)
 	require.Contains(t, events[1].Text, "shutting down Stork Server")
+}
+
+// Test that the environment file may be considered while initializing the server.
+func TestNewStorkServerFromEnvFile(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	t.Cleanup(restore)
+
+	content := `
+		STORK_DATABASE_HOST=foo
+		STORK_DATABASE_PORT=42
+		STORK_DATABASE_NAME=bar
+		STORK_REST_HOST=baz
+		STORK_SERVER_ENABLE_METRICS=true
+	`
+	file, _ := os.CreateTemp("", "stork-test-server-*")
+	defer (func() {
+		file.Close()
+		os.Remove(file.Name())
+	})()
+	_, _ = file.WriteString(content)
+
+	os.Args = make([]string, 0)
+	os.Args = append(os.Args, "stork-server",
+		// The environment file path must be specified using the '=' sign.
+		// It's limitation of the go-flag library.
+		fmt.Sprintf("--env-file=%s", file.Name()),
+	)
+
+	// Act
+	ss, command, err := NewStorkServer()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, RunCommand, command)
+
+	require.EqualValues(t, "foo", ss.DBSettings.Host)
+	require.EqualValues(t, 42, ss.DBSettings.Port)
+	require.EqualValues(t, "bar", ss.DBSettings.DBName)
+	require.EqualValues(t, "baz", ss.RestAPISettings.Host)
+	require.True(t, ss.EnableMetricsEndpoint)
 }
