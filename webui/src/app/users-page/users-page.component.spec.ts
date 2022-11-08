@@ -6,7 +6,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router'
 import { UntypedFormBuilder } from '@angular/forms'
 import { ServicesService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { TabMenuModule } from 'primeng/tabmenu'
@@ -47,6 +47,7 @@ describe('UsersPageComponent', () => {
                 UsersService,
                 ServicesService,
                 MessageService,
+                ConfirmationService,
                 {
                     provide: ActivatedRoute,
                     useValue: {
