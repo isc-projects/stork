@@ -1,3 +1,10 @@
+* 254 [func] slawek
+
+    Added the possibility to read the environment file by the Stork binaries on
+    demand, allowing avoiding common mistakes in deployments without the
+    systemd.
+    (Gitlab #830)
+
 * 253 [build] slawek
 
     Extended system tests of host reservations.
