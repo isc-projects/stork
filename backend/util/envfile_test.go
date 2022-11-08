@@ -9,6 +9,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Cleans all environment variables used in the test cases.
+func clearTestEnvironmentVariables() {
+	variables := []string{"TEST_STORK_KEY"}
+
+	for _, variable := range variables {
+		os.Unsetenv(variable)
+	}
+}
+
+// Executes the test case body with additional setup and teardown steps.
+func TestMain(m *testing.M) {
+	// Setup
+	clearTestEnvironmentVariables()
+
+	// Test case execution.
+	code := m.Run()
+
+	// Teardown
+	clearTestEnvironmentVariables()
+
+	os.Exit(code)
+}
+
 // Test that loading a missing environment file causes an error.
 func TestLoadMissingEnvironmentFile(t *testing.T) {
 	// Arrange & Act
@@ -82,6 +105,19 @@ func TestLoadEnvironmentContentWithEmptyValue(t *testing.T) {
 func TestLoadEnvironmentContentWithoutSeparator(t *testing.T) {
 	// Arrange
 	content := "TEST_STORK_KEY/VALUE"
+
+	// Act
+	data, err := loadEnvironmentEntries(strings.NewReader(content))
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, data)
+}
+
+// Test that the missing key in the environment file content causes an error.
+func TestLoadEnvironmentContentWithoutKey(t *testing.T) {
+	// Arrange
+	content := "=VALUE"
 
 	// Act
 	data, err := loadEnvironmentEntries(strings.NewReader(content))
@@ -208,4 +244,48 @@ func TestLoadEnvironmentVariablesToSetterWithError(t *testing.T) {
 	// Assert
 	require.ErrorContains(t, err, "foo")
 	require.NotContains(t, mock.data, "TEST_STORK_KEY2")
+}
+
+// Test that the process setter is constructed properly.
+func TestNewProcessEnvironmentVariableSetter(t *testing.T) {
+	// Act
+	setter := NewProcessEnvironmentVariableSetter()
+
+	// Assert
+	require.NotNil(t, setter)
+}
+
+// Test that the no test environment variables are set at test case startup.
+func TestClearEnvironment(t *testing.T) {
+	// Act
+	_, ok := os.LookupEnv("TEST_STORK_KEY")
+
+	// Assert
+	require.False(t, ok)
+}
+
+// Test that the process setter sets the key-value pair properly.
+func TestProcessEnvironmentVariableSetterAcceptsValidPair(t *testing.T) {
+	// Arrange
+	setter := NewProcessEnvironmentVariableSetter()
+
+	// Act
+	err := setter.Set("TEST_STORK_KEY", "VALUE")
+
+	// Assert
+	require.NoError(t, err)
+	_, ok := os.LookupEnv("TEST_STORK_KEY")
+	require.True(t, ok)
+}
+
+// Test that process setter returns an error on invalid key-value pair.
+func TestProcessEnvironmentVariableSetterRejectInvalidPair(t *testing.T) {
+	// Arrange
+	setter := NewProcessEnvironmentVariableSetter()
+
+	// Act
+	err := setter.Set("", "VALUE")
+
+	// Assert
+	require.Error(t, err)
 }
