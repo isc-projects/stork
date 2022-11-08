@@ -15,7 +15,7 @@ import (
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	testutil "isc.org/stork/testutil"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 	storkutil "isc.org/stork/util"
 )
 
@@ -557,7 +557,7 @@ func TestBeginHostUpdate(t *testing.T) {
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
 
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -1194,7 +1194,7 @@ func TestCommitHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -1258,7 +1258,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 

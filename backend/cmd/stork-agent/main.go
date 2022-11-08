@@ -239,7 +239,6 @@ func setupApp(reload bool) *cli.App {
 					// Loads environment variables into process.
 					storkutil.NewProcessEnvironmentVariableSetter(),
 				)
-
 				if err != nil {
 					err = errors.WithMessagef(err, "the '%s' environment file is invalid", c.String("env-file"))
 					return err

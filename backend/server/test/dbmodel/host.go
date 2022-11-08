@@ -1,4 +1,4 @@
-package testutil
+package storktestdbmodel
 
 import (
 	"fmt"

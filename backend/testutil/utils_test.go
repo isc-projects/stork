@@ -170,7 +170,7 @@ func TestParseTimestampFilenameTimestampForValid(t *testing.T) {
 	require.EqualValues(t, ".ext", extension)
 }
 
-// Function for a duble extension should return a full extension.
+// Function for a double extension should return a full extension.
 func TestParseTimestampFilenameDoubleExtension(t *testing.T) {
 	// Arrange
 	timestamp := time.Time{}.Format(time.RFC3339)

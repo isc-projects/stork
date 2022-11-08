@@ -42,7 +42,7 @@ func getExpectedSwitches() []string {
 // Location of the stork-server man page.
 const Man = "../../doc/man/stork-server.8.rst"
 
-// This test checks if stork-agent -h reports all expected command-line switches.
+// This test checks if stork-server -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
 	// Arrange
 	os.Args = make([]string, 2)
@@ -60,7 +60,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.EqualValues(t, HelpCommand, command)
 	require.NoError(t, err)
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-agent -h output"))
+	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-server -h output"))
 }
 
 // This test checks if all expected command-line switches are documented.
@@ -72,7 +72,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
-	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-agent.8.rst"))
+	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-server.8.rst"))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.

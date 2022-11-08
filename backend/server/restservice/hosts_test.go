@@ -14,7 +14,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
-	testutil "isc.org/stork/testutil"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
 
 func mockStatusError(commandName string, cmdResponses []interface{}) {
@@ -38,7 +38,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceConfig)
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	subnetID := int64(2)
 	params := dhcp.GetHostsParams{
@@ -148,7 +148,7 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	filteringText := "2001:db"
 	params := dhcp.GetHostsParams{
@@ -171,7 +171,7 @@ func TestGetHost(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts, _ := testutil.AddTestHosts(t, db)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	params := dhcp.GetHostParams{
 		ID: hosts[0].ID,
@@ -202,7 +202,7 @@ func TestGetHostWithOptions(t *testing.T) {
 	ctx := context.Background()
 
 	// Add hosts.
-	hosts, _ := testutil.AddTestHosts(t, db)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Add LocalHost instances comprising DHCP options.
 	err = dbmodel.AddHostLocalHosts(db, &hosts[4])
@@ -272,7 +272,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, apps := testutil.AddTestHosts(t, db)
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -373,7 +373,7 @@ func TestCreateHostBeginNoSession(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -466,7 +466,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, apps := testutil.AddTestHosts(t, db)
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
 	// test that relies on the existence of the transaction.
@@ -636,7 +636,7 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}
@@ -706,7 +706,7 @@ func TestCreateHostDeleteError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
 	// test that relies on the existence of the transaction.
@@ -783,7 +783,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -906,7 +906,7 @@ func TestUpdateHostBeginNoSession(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, _ := testutil.AddTestHosts(t, db)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
 	params := dhcp.UpdateHostBeginParams{
@@ -955,7 +955,7 @@ func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure there are some daemons in the database.
-	_, _ = testutil.AddTestHosts(t, db)
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction for non-existing host.
 	params := dhcp.UpdateHostBeginParams{
@@ -1006,7 +1006,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps an hosts in the database.
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
 	// test that relies on the existence of the transaction.
@@ -1178,7 +1178,7 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, _ := testutil.AddTestHosts(t, db)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 	err = dbmodel.AddHostLocalHosts(db, &hosts[0])
 	require.NoError(t, err)
 
@@ -1274,7 +1274,7 @@ func TestDeleteHost(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add test hosts and associate them with the daemons.
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -1346,7 +1346,7 @@ func TestDeleteHostError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, apps := testutil.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)

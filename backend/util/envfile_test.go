@@ -14,11 +14,13 @@ import (
 func TestMain(m *testing.M) {
 	// Setup
 	restore := testutil.CreateEnvironmentRestorePoint()
-	// Teardown
-	defer restore()
 
 	// Test case execution.
 	code := m.Run()
+
+	// Teardown
+	restore()
+
 	os.Exit(code)
 }
 
