@@ -200,7 +200,8 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
     })
 
-    it('should have breadcrumbs', () => {
+    it('should have breadcrumbs', async () => {
+        await fixture.whenStable()
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
         const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
