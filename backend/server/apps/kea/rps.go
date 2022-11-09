@@ -27,16 +27,17 @@ type StatSample struct {
 
 // Represents a response from the single Kea server to the statistic-get
 // for pkt4-ack-sent:
-// {
-//    "command": "statistic-get",
-//    "arguments": {
-//        "pkt4-ack-sent": [
-//          [ 125, "2019-07-30 10:11:19.498739" ],
-//            ...
-//          ]
-//    },
-//    "result": 0
-// }.
+//
+//	{
+//		"command": "statistic-get",
+//		"arguments": {
+//			"pkt4-ack-sent": [
+//				[ 125, "2019-07-30 10:11:19.498739" ],
+//					...
+//				]
+//		},
+//		"result": 0
+//	}
 type StatGetResponse4 struct {
 	keactrl.ResponseHeader
 	Arguments *ResponseArguments4 `json:"arguments,omitempty"`
@@ -50,16 +51,17 @@ type ResponseArguments4 struct {
 
 // Represents a response from the single Kea server to the statistic-get
 // for pkt6-reply-sent:
-// {
-//    "command": "statistic-get",
-//    "arguments": {
-//        "pkt6-reply-sent": [
-//          [ 125, "2019-07-30 10:11:19.498739" ],
-//            ...
-//          ]
-//    },
-//    "result": 0
-// }.
+//
+//	{
+//		"command": "statistic-get",
+//		"arguments": {
+//			"pkt6-reply-sent": [
+//				[ 125, "2019-07-30 10:11:19.498739" ],
+//					...
+//				]
+//		},
+//		"result": 0
+//	}
 type StatGetResponse6 struct {
 	keactrl.ResponseHeader
 	Arguments *ResponseArguments6 `json:"arguments,omitempty"`

@@ -503,9 +503,9 @@ func hideSensitiveData(obj *map[string]interface{}) {
 // argument is a function implementing a condition to be checked for
 // each ReservationModes. The example condition is:
 //
-// func (modes ReservationModes) (bool, bool) {
-//     return modes.IsOutOfPool()
-// }
+//	func (modes ReservationModes) (bool, bool) {
+//		return modes.IsOutOfPool()
+//	}
 //
 // The function returns true when the condition function returns
 // (true, true) for one of the N-1 reservation modes. If it doesn't,

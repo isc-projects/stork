@@ -97,10 +97,10 @@ func (option dhcpOption) GetSpace() string {
 // format used in Stork. The resulting format comprises an option field type
 // and the corresponding field value(s). It has some limitations:
 //
-// - It is unable to recognize an exact integer type, therefore it returns
-//   all numbers as uint32 fields.
-// - It is unable to differentiate between partial FQDN and a regular string,
-//   therefore it returns string field for partial FQDNs.
+//   - It is unable to recognize an exact integer type, therefore it returns
+//     all numbers as uint32 fields.
+//   - It is unable to differentiate between partial FQDN and a regular string,
+//     therefore it returns string field for partial FQDNs.
 //
 // The function is used temporarily until we add support for Kea option
 // definitions. However, even then, this function may be useful in cases when

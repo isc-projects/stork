@@ -123,11 +123,10 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 //
 // Example key clause:
 //
-//    key "name" {
-//        algorithm "hmac-sha256";
-//        secret "OmItW1lOyLVUEuvv+Fme+Q==";
-//    };
-//
+//	key "name" {
+//		algorithm "hmac-sha256";
+//		secret "OmItW1lOyLVUEuvv+Fme+Q==";
+//	};
 func getRndcKey(contents, name string) (controlKey string) {
 	ptrn := regexp.MustCompile(`(?s)keys\s+\"(\S+)\"\s+\{(.*)\}\s*;`)
 	keys := ptrn.FindAllStringSubmatch(contents, -1)
@@ -164,9 +163,9 @@ func getRndcKey(contents, name string) (controlKey string) {
 // parseInetSpec parses an inet statement from a named configuration excerpt.
 // The inet statement is defined by inet_spec:
 //
-//    inet_spec = ( ip_addr | * ) [ port ip_port ]
-//                allow { address_match_list }
-//                keys { key_list };
+//	inet_spec = ( ip_addr | * ) [ port ip_port ]
+//				allow { address_match_list }
+//				keys { key_list };
 //
 // This function returns the ip_addr, port and the first key that is
 // referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
@@ -237,10 +236,10 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // a single controls clause, but this function currently only matches the
 // first in the list.  A controls clause may look like this:
 //
-//    controls {
-//        inet 127.0.0.1 allow {localhost;};
-//        inet * port 7766 allow {"rndc-users";} keys {"rndc-remote";};
-//    };
+//	controls {
+//		inet 127.0.0.1 allow {localhost;};
+//		inet * port 7766 allow {"rndc-users";} keys {"rndc-remote";};
+//	};
 //
 // In this example, "rndc-users" and "rndc-remote" refer to an acl and key
 // clauses.
@@ -279,10 +278,10 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 // inside a single controls clause, but this function currently only matches
 // the first in the list.  A statistics-channels clause may look like this:
 //
-//    statistics-channels {
-//        inet 10.1.10.10 port 8080 allow { 192.168.2.10; 10.1.10.2; };
-//        inet 127.0.0.1  port 8080 allow { "stats-clients" };
-//    };
+//	statistics-channels {
+//		inet 10.1.10.10 port 8080 allow { 192.168.2.10; 10.1.10.2; };
+//		inet 127.0.0.1  port 8080 allow { "stats-clients" };
+//	};
 //
 // In this example, "stats-clients" refers to an acl clause.
 //

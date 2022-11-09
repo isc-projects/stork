@@ -7,7 +7,7 @@ import (
 	storktest "isc.org/stork/server/test/dbmodel"
 )
 
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 var CACertPEM = []byte(`-----BEGIN CERTIFICATE-----
 MIIFFjCCAv6gAwIBAgIBATANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJVUzES
 MBAGA1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMB4XDTIwMTIwODA4
@@ -93,7 +93,7 @@ RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
 // qi9Usgn7km03+rY9jAWHze0lWQye2274Ew==
 // -----END PRIVATE KEY-----`)
 
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 var ServerCertPEM = []byte(`-----BEGIN CERTIFICATE-----
 MIIGLTCCBBWgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJVUzES
 MBAGA1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMB4XDTIwMTIwODA4
@@ -131,7 +131,7 @@ TjJxMspTfL1UmI4vXP68tYRvThQbNNJxOviNmV0XBiKgQW5bD01j/KwpAD3/8ean
 wQ==
 -----END CERTIFICATE-----`)
 
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 var ServerKeyPEM = []byte(`-----BEGIN PRIVATE KEY-----
 MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQDR8yndmAonFo0d
 KWS3WQ3r60lIwKPOZwsdJy+2+eNrmZixYJ+CdlvH3/AVSBRJfYx14NFrHcRUsbW+

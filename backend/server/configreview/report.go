@@ -31,10 +31,10 @@ type IntermediateReport Report
 // specified daemon. The report must not be used until create() function
 // is called which sanity checks the report contents. An example usage:
 //
-// report, err := newReport(ctx, "some issue for {daemon} and {daemon}").
-//     referencingDaemon(daemon1).
-//     referencingDaemon(daemon2).
-//     create()
+//	report, err := newReport(ctx, "some issue for {daemon} and {daemon}").
+//					referencingDaemon(daemon1).
+//					referencingDaemon(daemon2).
+//					create()
 //
 // When the report is later fetched from the database it is possible to
 // use the referenced daemons to replace the {daemon} placeholders with

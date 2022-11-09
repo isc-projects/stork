@@ -208,7 +208,7 @@ func TestKeaInterceptorSyncHandleExecute(t *testing.T) {
 }
 
 // Test that the multiple registered sync callbacks are invoked sequentially
-//  when the commands are received.
+// when the commands are received.
 func TestKeaInterceptorMultipleSyncHandlesExecute(t *testing.T) {
 	// Arrange
 	interceptor := newKeaInterceptor()
