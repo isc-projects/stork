@@ -79,7 +79,7 @@ Prometheus BIND 9 Exporter flags:
    Specifies how often the agent collects statistics from BIND 9, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]``
 
 ``--env-file``
-   Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file. The default is ``/etc/stork/agent.env``.
+   Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator. The default is ``/etc/stork/agent.env``.
 
 ``-h`` or ``--help``
    Returns the list of available parameters.

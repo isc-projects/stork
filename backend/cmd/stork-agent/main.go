@@ -226,7 +226,7 @@ func setupApp(reload bool) *cli.App {
 			},
 			&cli.GenericFlag{
 				Name:  "env-file",
-				Usage: "Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file",
+				Usage: "Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator",
 				Value: storkutil.NewOptionalStringFlag("/etc/stork/agent.env"),
 			},
 		},
@@ -244,7 +244,7 @@ func setupApp(reload bool) *cli.App {
 					return err
 				}
 
-				// Reconfigures logging.
+				// Reconfigures logging using new environment variables.
 				storkutil.SetupLogging()
 			}
 			return nil

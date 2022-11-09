@@ -29,7 +29,7 @@ func (f *OptionalStringFlag) String() string {
 }
 
 // Implements the Boolean flag interface because only boolean flag can accept
-// no arguments.
+// no arguments in the go-flags library.
 func (f *OptionalStringFlag) IsBoolFlag() bool {
 	return true
 }

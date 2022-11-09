@@ -193,11 +193,11 @@ func TestCreateEnvironmentRestorePoint(t *testing.T) {
 	os.Setenv("STORK_TEST_KEY3", "bar")
 
 	// Act
-	restorePoint := CreateEnvironmentRestorePoint()
+	restore := CreateEnvironmentRestorePoint()
 	os.Setenv("STORK_TEST_KEY1", "baz")
 	os.Unsetenv("STORK_TEST_KEY2")
 	os.Setenv("STORK_TEST_KEY3", "boz")
-	restorePoint()
+	restore()
 
 	// Assert
 	_, existKey1 := os.LookupEnv("STORK_TEST_KEY1")

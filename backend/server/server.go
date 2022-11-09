@@ -100,6 +100,9 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 			err = errors.WithMessagef(err, "invalid environment file: '%s'", *envFileSettings.EnvFile)
 			return NoneCommand, err
 		}
+
+		// Reconfigures logging using new environment variables.
+		storkutil.SetupLogging()
 	}
 
 	// Process the rest of the flags.
