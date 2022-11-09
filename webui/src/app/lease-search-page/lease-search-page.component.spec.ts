@@ -709,4 +709,14 @@ describe('LeaseSearchPageComponent', () => {
         expect(component.invalidSearchText).toBeFalse()
         expect(route.snapshot.queryParamMap.has('text')).toBeFalse()
     }))
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Leases Search')
+    })
 })

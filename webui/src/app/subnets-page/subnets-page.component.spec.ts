@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
@@ -163,5 +164,15 @@ describe('SubnetsPageComponent', () => {
         // Assert
         expect(component.subnets[0].stats).toBeUndefined()
         // No throw
+    })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Subnets')
     })
 })

@@ -770,7 +770,7 @@ setting (i.e., globally enabled or globally disabled). The global settings
 control the checker states for all daemons for which explicit states are not
 selected.
 
-Select ``Configuration -> Review checkers`` from the main menu to modify the
+Select ``Configuration -> Review Checkers`` from the main menu to modify the
 global states. Use the checkboxes in the ``State`` column to modify the global
 states for respective checkers.
 

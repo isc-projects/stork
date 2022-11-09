@@ -256,4 +256,14 @@ describe('MachinesPageComponent', () => {
         expect(downloadSpy).toHaveBeenCalledTimes(1)
         expect(downloadSpy.calls.first().args[0].id).toBe(1)
     })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('Services')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Machines')
+    })
 })

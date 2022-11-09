@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 
@@ -47,5 +48,15 @@ describe('EventsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('Monitoring')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Events')
     })
 })

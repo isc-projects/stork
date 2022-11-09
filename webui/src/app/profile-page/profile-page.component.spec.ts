@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
@@ -60,5 +61,14 @@ describe('ProfilePageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(1)
+        expect(breadcrumbsComponent.items[0].label).toEqual('User Profile')
     })
 })

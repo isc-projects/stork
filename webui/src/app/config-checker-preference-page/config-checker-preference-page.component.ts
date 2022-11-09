@@ -10,7 +10,7 @@ import { Component } from '@angular/core'
     styleUrls: ['./config-checker-preference-page.component.sass'],
 })
 export class ConfigCheckerPreferencePageComponent {
-    breadcrumbs = [{ label: 'Configuration' }, { label: 'Review checkers' }]
+    breadcrumbs = [{ label: 'Configuration' }, { label: 'Review Checkers' }]
 
     constructor() {}
 }

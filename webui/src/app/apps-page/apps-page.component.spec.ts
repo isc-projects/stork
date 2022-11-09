@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { AppsPageComponent } from './apps-page.component'
@@ -115,5 +116,15 @@ describe('AppsPageComponent', () => {
         expect(component.tabs.length).toEqual(2)
         expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
         expect(component.tabs[1].label).toBe('kea@@machine2')
+    })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('Services')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
     })
 })

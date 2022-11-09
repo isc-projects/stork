@@ -62,4 +62,14 @@ describe('SettingsPageComponent', () => {
         const intervalsConfigMsg = fixture.debugElement.query(By.css('#intervals-config-msg'))
         expect(intervalsConfigMsg).toBeTruthy()
     })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(2)
+        expect(breadcrumbsComponent.items[0].label).toEqual('Configuration')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Settings')
+    })
 })

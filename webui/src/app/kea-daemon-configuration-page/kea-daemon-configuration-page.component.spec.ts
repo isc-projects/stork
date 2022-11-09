@@ -199,4 +199,18 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(messageElement).not.toBeNull()
         expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
     })
+
+    it('should have breadcrumbs', () => {
+        const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+        expect(breadcrumbsElement).not.toBeNull()
+        const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
+        expect(breadcrumbsComponent).not.toBeNull()
+        expect(breadcrumbsComponent.items).toHaveSize(6)
+        expect(breadcrumbsComponent.items[0].label).toEqual('Services')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
+        expect(breadcrumbsComponent.items[2].label).toEqual('foo')
+        expect(breadcrumbsComponent.items[3].label).toEqual('Daemons')
+        expect(breadcrumbsComponent.items[4].label).toEqual('DHCPv6')
+        expect(breadcrumbsComponent.items[5].label).toEqual('Configuration')
+    })
 })
