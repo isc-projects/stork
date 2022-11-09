@@ -62,7 +62,7 @@ type StorkServer struct {
 
 // Read environment file settings. It's parsed before the above settings.
 type EnvironmentFileSettings struct {
-	EnvFile *string `long:"env-file" description:"Read the environment variables from the environment file; applicable only if the flag is set" optional:"true" optional-value:"/etc/stork/server.env"`
+	EnvFile *string `long:"env-file" description:"Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator" optional:"true" optional-value:"/etc/stork/server.env"`
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
