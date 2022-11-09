@@ -546,6 +546,8 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 	mux.Handle("/metrics", handler)
 	pke.HTTPServer = &http.Server{
 		Handler: mux,
+		// Protection against Slowloris Attack (G112).
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	return pke

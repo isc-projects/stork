@@ -378,6 +378,8 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	mux.Handle("/metrics", hdlr)
 	pbe.HTTPServer = &http.Server{
 		Handler: mux,
+		// Protection against Slowloris Attack (G112).
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	return pbe
