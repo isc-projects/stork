@@ -238,7 +238,7 @@ namespace :prepare do
     end
     
     desc 'Trigger the backend (GO) dependencies installation.'
-    task :backend_deps do
+    task :backend_deps => [GO] do
         Dir.chdir("backend") do
             sh GO, "mod", "download"
         end
