@@ -1,3 +1,8 @@
+* 250 [build] slawek
+
+    Upgraded go-related dependencies.
+    (Gitlab #883)
+
 * 249 [bug] andrei
 
     Added breadcrumbs to the events page.
