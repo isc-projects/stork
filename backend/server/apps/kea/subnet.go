@@ -104,7 +104,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 				} else {
 					// Subnet already exists and may contain some hosts. Let's
 					// merge the hosts from the new subnet into the existing subnet.
-					hosts, err := mergeSubnetHosts(dbi, existingSubnet, &subnet, daemon)
+					hosts, err := mergeSubnetHosts(dbi, existingSubnet, &subnet)
 					if err != nil {
 						log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 							subnet.Prefix, err)
@@ -168,7 +168,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 
 				// Subnet already exists and may contain some hosts. Let's
 				// merge the hosts from the new subnet into the existing subnet.
-				hosts, err := mergeSubnetHosts(dbi, existingSubnet, subnet, daemon)
+				hosts, err := mergeSubnetHosts(dbi, existingSubnet, subnet)
 				if err != nil {
 					log.Warnf("Skipping hosts for subnet %s after hosts merge failure: %v",
 						subnet.Prefix, err)
