@@ -92,8 +92,8 @@ func (puller *HostsPuller) pull() error {
 	// from them via the host_cmds hooks library. Next, update the
 	// hosts in the Stork database.
 	for i := range apps {
-		succ, skip, e := puller.pullFromApp(&apps[i])
-		successCount += succ
+		success, skip, e := puller.pullFromApp(&apps[i])
+		successCount += success
 		skippedCount += skip
 		erredCount += e
 	}
@@ -534,7 +534,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 		if mergedHosts, err = mergeHosts(tx, int64(0), hosts, daemon); err != nil {
 			return
 		}
-		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, dbmodel.HostDataSourceAPI); err != nil {
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon); err != nil {
 			return
 		}
 		// We're done with global hosts, so let's get the next chunk of
@@ -559,7 +559,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	// new hosts into the subnet instance and commit everything to the
 	// database.
 	subnet.Hosts = mergedHosts
-	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, dbmodel.HostDataSourceAPI); err != nil {
+	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon); err != nil {
 		return
 	}
 	return nil

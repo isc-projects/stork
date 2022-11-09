@@ -29,7 +29,7 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
-// It holds common and BIND 9 specifc runtime information.
+// It holds common and BIND 9 specific runtime information.
 type Bind9App struct {
 	BaseApp
 	RndcClient *RndcClient // to communicate with BIND 9 via rndc
@@ -47,7 +47,7 @@ func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
-// List of BIND 9 executables used durint app detection.
+// List of BIND 9 executables used during app detection.
 const (
 	namedCheckconfExec = "named-checkconf"
 	rndcExec           = "rndc"
@@ -128,8 +128,8 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 //		secret "OmItW1lOyLVUEuvv+Fme+Q==";
 //	};
 func getRndcKey(contents, name string) (controlKey string) {
-	ptrn := regexp.MustCompile(`(?s)keys\s+\"(\S+)\"\s+\{(.*)\}\s*;`)
-	keys := ptrn.FindAllStringSubmatch(contents, -1)
+	pattern := regexp.MustCompile(`(?s)keys\s+\"(\S+)\"\s+\{(.*)\}\s*;`)
+	keys := pattern.FindAllStringSubmatch(contents, -1)
 	if len(keys) == 0 {
 		return ""
 	}
@@ -138,15 +138,15 @@ func getRndcKey(contents, name string) (controlKey string) {
 		if key[1] != name {
 			continue
 		}
-		ptrn = regexp.MustCompile(`(?s)algorithm\s+\"(\S+)\";`)
-		algorithm := ptrn.FindStringSubmatch(key[2])
+		pattern = regexp.MustCompile(`(?s)algorithm\s+\"(\S+)\";`)
+		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
 			log.Warnf("no key algorithm found for name %s", name)
 			return ""
 		}
 
-		ptrn = regexp.MustCompile(`(?s)secret\s+\"(\S+)\";`)
-		secret := ptrn.FindStringSubmatch(key[2])
+		pattern = regexp.MustCompile(`(?s)secret\s+\"(\S+)\";`)
+		secret := pattern.FindStringSubmatch(key[2])
 		if len(secret) < 2 {
 			log.Warnf("no key secret found for name %s", name)
 			return ""
@@ -177,8 +177,8 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	// - allow\s*                - allow
 	// - \{(?:\s*\S+\s*;\s*)+)\} - address_match_list
 	// - (.*);                   - keys { key_list }; (pattern matched below)
-	ptrn := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{(?:\s*\S+\s*;\s*)+\}(.*);`)
-	match := ptrn.FindStringSubmatch(excerpt)
+	pattern := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{(?:\s*\S+\s*;\s*)+\}(.*);`)
+	match := pattern.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
 		log.Warnf("cannot parse BIND 9 inet configuration: no match (%+v)", config)
 		return "", 0, ""
@@ -214,8 +214,8 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 		// \"(\S+)\"\s*;          - key_list (first)
 		// (?:\s*\"\S+\"\s*;\s*)* - key_list (remainder)
 		// \s}\s*                 - }
-		ptrn = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;(?:\s*\"\S+\"\s*;\s*)*\}\s*`)
-		keyName := ptrn.FindStringSubmatch(match[2])
+		pattern = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;(?:\s*\"\S+\"\s*;\s*)*\}\s*`)
+		keyName := pattern.FindStringSubmatch(match[2])
 		if len(keyName) > 1 {
 			key = getRndcKey(config, keyName[1])
 		}
@@ -252,8 +252,8 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	//     controls {
 	//         inet inet_spec [inet_spec] ;
 	//     };
-	ptrn := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
-	controls := ptrn.FindStringSubmatch(text)
+	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
+	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
 		return "", 0, ""
 	}
@@ -293,8 +293,8 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	//     statistics-channels {
 	//         inet inet_spec [inet_spec] ;
 	//     };
-	ptrn := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
-	channels := ptrn.FindStringSubmatch(text)
+	pattern := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
+	channels := pattern.FindStringSubmatch(text)
 	if len(channels) == 0 {
 		return "", 0, ""
 	}
@@ -303,7 +303,7 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	// can list multiple control access points.
 	statsAddress, statsPort, statsKey = parseInetSpec(text, channels[1])
 	if statsAddress != "" {
-		// If no port was provided, use the default statschannel port.
+		// If no port was provided, use the default statistics channel port.
 		if statsPort == 0 {
 			statsPort = StatsChannelDefaultPort
 		}
@@ -353,8 +353,8 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 	bind9ConfPath := ""
 
 	// look for config file in cmd params
-	paramsPtrn := regexp.MustCompile(`-c\s+(\S+)`)
-	m := paramsPtrn.FindStringSubmatch(bind9Params)
+	paramsPattern := regexp.MustCompile(`-c\s+(\S+)`)
+	m := paramsPattern.FindStringSubmatch(bind9Params)
 	if m != nil {
 		bind9ConfPath = m[1]
 		// if path to config is not absolute then join it with CWD of named

@@ -167,12 +167,12 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 			return pkgerrors.Errorf("problem with arguments: %+v", item)
 		}
 
-		for statName, statValueOutterList := range *item.Arguments {
-			if len(statValueOutterList) == 0 {
+		for statName, statValueOuterList := range *item.Arguments {
+			if len(statValueOuterList) == 0 {
 				log.Errorf("Empty list of stat values")
 				continue
 			}
-			statValueInnerList := statValueOutterList[0]
+			statValueInnerList := statValueOuterList[0]
 
 			if len(statValueInnerList) == 0 {
 				log.Errorf("Empty list of stat values")
@@ -206,7 +206,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 
 // Stats descriptor that holds reference to prometheus stats
 // and its 'operation' label.
-type statDescr struct {
+type statisticDescriptor struct {
 	Stat      *prometheus.GaugeVec
 	Operation string
 }
@@ -332,7 +332,7 @@ type PromKeaExporter struct {
 	Wg            *sync.WaitGroup
 
 	Registry     *prometheus.Registry
-	PktStatsMap  map[string]statDescr
+	PktStatsMap  map[string]statisticDescriptor
 	Adr4StatsMap map[string]*prometheus.GaugeVec
 	Adr6StatsMap map[string]*prometheus.GaugeVec
 }
@@ -392,48 +392,48 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		Help:      "DHCPv4-over-DHCPv6 packets received",
 	}, []string{"operation"})
 
-	pktStatsMap := make(map[string]statDescr)
+	pktStatsMap := make(map[string]statisticDescriptor)
 
 	// packets4ReceivedTotal
-	pktStatsMap["pkt4-nak-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "nak"}
-	pktStatsMap["pkt4-ack-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "ack"}
-	pktStatsMap["pkt4-decline-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "decline"}
-	pktStatsMap["pkt4-discover-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "discover"}
-	pktStatsMap["pkt4-inform-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "inform"}
-	pktStatsMap["pkt4-offer-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "offer"}
-	pktStatsMap["pkt4-receive-drop"] = statDescr{Stat: packets4ReceivedTotal, Operation: "drop"}
-	pktStatsMap["pkt4-parse-failed"] = statDescr{Stat: packets4ReceivedTotal, Operation: "parse-failed"}
-	pktStatsMap["pkt4-release-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "release"}
-	pktStatsMap["pkt4-request-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "request"}
-	pktStatsMap["pkt4-unknown-received"] = statDescr{Stat: packets4ReceivedTotal, Operation: "unknown"}
+	pktStatsMap["pkt4-nak-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "nak"}
+	pktStatsMap["pkt4-ack-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "ack"}
+	pktStatsMap["pkt4-decline-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "decline"}
+	pktStatsMap["pkt4-discover-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "discover"}
+	pktStatsMap["pkt4-inform-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "inform"}
+	pktStatsMap["pkt4-offer-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "offer"}
+	pktStatsMap["pkt4-receive-drop"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "drop"}
+	pktStatsMap["pkt4-parse-failed"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "parse-failed"}
+	pktStatsMap["pkt4-release-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "release"}
+	pktStatsMap["pkt4-request-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "request"}
+	pktStatsMap["pkt4-unknown-received"] = statisticDescriptor{Stat: packets4ReceivedTotal, Operation: "unknown"}
 
 	// packets4SentTotal
-	pktStatsMap["pkt4-offer-sent"] = statDescr{Stat: packets4SentTotal, Operation: "offer"}
-	pktStatsMap["pkt4-nak-sent"] = statDescr{Stat: packets4SentTotal, Operation: "nak"}
-	pktStatsMap["pkt4-ack-sent"] = statDescr{Stat: packets4SentTotal, Operation: "ack"}
+	pktStatsMap["pkt4-offer-sent"] = statisticDescriptor{Stat: packets4SentTotal, Operation: "offer"}
+	pktStatsMap["pkt4-nak-sent"] = statisticDescriptor{Stat: packets4SentTotal, Operation: "nak"}
+	pktStatsMap["pkt4-ack-sent"] = statisticDescriptor{Stat: packets4SentTotal, Operation: "ack"}
 
 	// packets6ReceivedTotal
-	pktStatsMap["pkt6-receive-drop"] = statDescr{Stat: packets6ReceivedTotal, Operation: "drop"}
-	pktStatsMap["pkt6-parse-failed"] = statDescr{Stat: packets6ReceivedTotal, Operation: "parse-failed"}
-	pktStatsMap["pkt6-solicit-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "solicit"}
-	pktStatsMap["pkt6-advertise-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "advertise"}
-	pktStatsMap["pkt6-request-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "request"}
-	pktStatsMap["pkt6-reply-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "reply"}
-	pktStatsMap["pkt6-renew-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "renew"}
-	pktStatsMap["pkt6-rebind-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "rebind"}
-	pktStatsMap["pkt6-release-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "release"}
-	pktStatsMap["pkt6-decline-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "decline"}
-	pktStatsMap["pkt6-infrequest-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "infrequest"}
-	pktStatsMap["pkt6-unknown-received"] = statDescr{Stat: packets6ReceivedTotal, Operation: "unknown"}
+	pktStatsMap["pkt6-receive-drop"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "drop"}
+	pktStatsMap["pkt6-parse-failed"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "parse-failed"}
+	pktStatsMap["pkt6-solicit-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "solicit"}
+	pktStatsMap["pkt6-advertise-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "advertise"}
+	pktStatsMap["pkt6-request-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "request"}
+	pktStatsMap["pkt6-reply-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "reply"}
+	pktStatsMap["pkt6-renew-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "renew"}
+	pktStatsMap["pkt6-rebind-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "rebind"}
+	pktStatsMap["pkt6-release-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "release"}
+	pktStatsMap["pkt6-decline-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "decline"}
+	pktStatsMap["pkt6-infrequest-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "infrequest"}
+	pktStatsMap["pkt6-unknown-received"] = statisticDescriptor{Stat: packets6ReceivedTotal, Operation: "unknown"}
 
 	// packets6SentTotal
-	pktStatsMap["pkt6-advertise-sent"] = statDescr{Stat: packets6SentTotal, Operation: "advertise"}
-	pktStatsMap["pkt6-reply-sent"] = statDescr{Stat: packets6SentTotal, Operation: "reply"}
+	pktStatsMap["pkt6-advertise-sent"] = statisticDescriptor{Stat: packets6SentTotal, Operation: "advertise"}
+	pktStatsMap["pkt6-reply-sent"] = statisticDescriptor{Stat: packets6SentTotal, Operation: "reply"}
 
 	// packets4o6SentTotal & packets4o6ReceivedTotal
-	pktStatsMap["pkt6-dhcpv4-response-sent"] = statDescr{Stat: packets4o6SentTotal, Operation: "response"}
-	pktStatsMap["pkt6-dhcpv4-query-received"] = statDescr{Stat: packets4o6ReceivedTotal, Operation: "query"}
-	pktStatsMap["pkt6-dhcpv4-response-received"] = statDescr{Stat: packets4o6ReceivedTotal, Operation: "response"}
+	pktStatsMap["pkt6-dhcpv4-response-sent"] = statisticDescriptor{Stat: packets4o6SentTotal, Operation: "response"}
+	pktStatsMap["pkt6-dhcpv4-query-received"] = statisticDescriptor{Stat: packets4o6ReceivedTotal, Operation: "query"}
+	pktStatsMap["pkt6-dhcpv4-response-received"] = statisticDescriptor{Stat: packets4o6ReceivedTotal, Operation: "response"}
 
 	pke.PktStatsMap = pktStatsMap
 
@@ -542,8 +542,8 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 
 	// prepare http handler
 	mux := http.NewServeMux()
-	hdlr := promhttp.HandlerFor(pke.Registry, promhttp.HandlerOpts{})
-	mux.Handle("/metrics", hdlr)
+	handler := promhttp.HandlerFor(pke.Registry, promhttp.HandlerOpts{})
+	mux.Handle("/metrics", handler)
 	pke.HTTPServer = &http.Server{
 		Handler: mux,
 	}
@@ -647,9 +647,9 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 		switch {
 		case strings.HasPrefix(statName, "pkt"):
 			// if this is pkt stat
-			statDescr, ok := pke.PktStatsMap[statName]
+			statisticDescriptor, ok := pke.PktStatsMap[statName]
 			if ok {
-				statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statEntry.Value)
+				statisticDescriptor.Stat.With(prometheus.Labels{"operation": statisticDescriptor.Operation}).Set(statEntry.Value)
 			} else {
 				log.Printf("Encountered unsupported stat: %s", statName)
 			}

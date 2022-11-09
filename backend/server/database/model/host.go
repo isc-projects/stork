@@ -392,11 +392,11 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 	q := dbi.Model(&hosts)
 
 	// prepare distinct on expression to include sort field, otherwise distinct on will fail
-	distingOnFields := "host.id"
+	distinctOnFields := "host.id"
 	if sortField != "" && sortField != "id" && sortField != "host.id" {
-		distingOnFields = sortField + ", " + distingOnFields
+		distinctOnFields = sortField + ", " + distinctOnFields
 	}
-	q = q.DistinctOn(distingOnFields)
+	q = q.DistinctOn(distinctOnFields)
 
 	// When filtering by appID we also need the local_host table as it holds the
 	// application identifier.
@@ -561,7 +561,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 // can be associated with a subnet or can be made global. The committed hosts
 // must already include associations with the daemons and other information
 // specific to daemons, e.g., DHCP options.
-func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon, source HostDataSource) (err error) {
+func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		for j := range hosts[i].LocalHosts {
@@ -590,20 +590,20 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daem
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source HostDataSource) (err error) {
+func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon) (err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return commitHostsIntoDB(dbi, hosts, 0, daemon, source)
+			return commitHostsIntoDB(dbi, hosts, 0, daemon)
 		})
 		return
 	}
-	return commitHostsIntoDB(dbi, hosts, 0, daemon, source)
+	return commitHostsIntoDB(dbi, hosts, 0, daemon)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet, daemon *Daemon, source HostDataSource) (err error) {
-	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID, daemon, source)
+func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet, daemon *Daemon) (err error) {
+	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID, daemon)
 }
 
 // This function checks if the given host includes a reservation for the

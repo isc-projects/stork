@@ -30,7 +30,7 @@ type SubnetStats map[string]interface{}
 // All the numeric statistics are serialized to string and next deserialized using
 // a custom function to avoid losing the precision.
 //
-// It doesn't use the pointer to receiver type for compatibility with gopg serialization
+// It doesn't use the pointer to receiver type for compatibility with go-pg serialization
 // during inserting to the database.
 func (s SubnetStats) MarshalJSON() ([]byte, error) {
 	if s == nil {
@@ -118,7 +118,7 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 // DHCP server apps may be configured to serve leases in the same subnet.
 // For the same subnet configured on different DHCP server there will be
 // a separate instance of the LocalSubnet structure. Apart from possibly
-// different local subnet id between different apos there will also be
+// different local subnet id between different apps there will also be
 // other information stored here, e.g. statistics for the particular
 // subnet retrieved from the given app. Multiple local subnets can be
 // associated with a single global subnet depending on how many daemons
@@ -587,7 +587,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, daemon, HostDataSourceConfig)
+		err = CommitSubnetHostsIntoDB(tx, subnet, daemon)
 		if err != nil {
 			return nil, err
 		}

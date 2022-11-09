@@ -170,7 +170,7 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response in
 	return nil
 }
 
-// Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
+// Extract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
 func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]interface{}, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")
@@ -195,7 +195,7 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]int
 	return statsResp[0].Arguments.Samples, nil
 }
 
-// Exract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
+// Extract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
 func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]interface{}, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")

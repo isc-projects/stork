@@ -663,7 +663,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
-			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, dbmodel.HostDataSourceConfig); err != nil {
+			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon); err != nil {
 				return err
 			}
 

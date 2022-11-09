@@ -162,7 +162,7 @@ func generateV4Subnet(rangeOfOuterScope int, rangeOfInnerScope int) interface{} 
 		netmask = 16
 	}
 
-	optiondata4 := []interface{}{
+	optionData4 := []interface{}{
 		map[string]interface{}{"code": 2, "data": "50", "name": "time-offset", "space": "dhcp4"},
 		map[string]interface{}{"code": 3, "data": "100.100.100.10,50.50.50.5", "name": "routers", "space": "dhcp4"},
 		map[string]interface{}{"code": 4, "data": "199.199.199.1,199.199.199.2", "name": "time-servers", "space": "dhcp4"},
@@ -189,7 +189,7 @@ func generateV4Subnet(rangeOfOuterScope int, rangeOfInnerScope int) interface{} 
 					},
 				},
 				"subnet":       fmt.Sprintf("%d.%d.0.0/%d", outerScope, innerScope, netmask),
-				"option-data":  optiondata4[rand.Intn(len(optiondata4))], //nolint:gosec
+				"option-data":  optionData4[rand.Intn(len(optionData4))], //nolint:gosec
 				"client-class": "class-00-00",
 				"relay": map[string]interface{}{
 					"ip-addresses": []string{"172.100.0.200"},
