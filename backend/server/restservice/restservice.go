@@ -263,9 +263,6 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		log.Fatalf("No certificate was configured for TLS")
 	}
 
-	// must have at least one certificate or panics
-	httpServer.TLSConfig.BuildNameToCertificate()
-
 	return nil
 }
 
