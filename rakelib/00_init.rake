@@ -276,22 +276,22 @@ end
 WGET = wget
 
 ### Define package versions
-go_ver='1.18.3'
-openapi_generator_ver='5.2.0'
+go_ver='1.18.8'
+openapi_generator_ver='5.4.0'
 goswagger_ver='v0.23.0'
-protoc_ver='3.18.1'
+protoc_ver='3.20.3'
 protoc_gen_go_ver='v1.26.0'
 protoc_gen_go_grpc_ver='v1.1.0'
 richgo_ver='v0.3.10'
 mockery_ver='v2.13.1'
 mockgen_ver='v1.6.0'
-golangcilint_ver='1.46.2'
+golangcilint_ver='1.50.1'
 yamlinc_ver='0.1.10'
-node_ver='14.18.2'
+node_ver='18.12.1'
 dlv_ver='v1.8.3'
 gdlv_ver='v1.8.0'
 bundler_ver='2.3.8'
-storybook_ver='6.5.10'
+storybook_ver='6.5.13'
 
 # System-dependent variables
 case OS
@@ -472,7 +472,7 @@ end
 NPM = File.join(node_bin_dir, "npm")
 file NPM => [node_dir] do
     Dir.chdir(node_dir) do
-        FileUtils.rm_rf("*")
+        FileUtils.rm_rf(FileList["*"])
         sh *WGET, "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "-O", "node.tar.xz"
         sh "tar", "-Jxf", "node.tar.xz", "--strip-components=1"
         sh "rm", "node.tar.xz"
