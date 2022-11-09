@@ -10,20 +10,6 @@ import (
 	"isc.org/stork/testutil"
 )
 
-// Executes the test case body with additional setup and teardown steps.
-func TestMain(m *testing.M) {
-	// Setup
-	restore := testutil.CreateEnvironmentRestorePoint()
-
-	// Test case execution.
-	code := m.Run()
-
-	// Teardown
-	restore()
-
-	os.Exit(code)
-}
-
 // Test that loading a missing environment file causes an error.
 func TestLoadMissingEnvironmentFile(t *testing.T) {
 	// Arrange & Act
@@ -253,18 +239,10 @@ func TestNewProcessEnvironmentVariableSetter(t *testing.T) {
 	require.NotNil(t, setter)
 }
 
-// Test that the no test environment variables are set at test case startup.
-func TestClearEnvironment(t *testing.T) {
-	// Act
-	_, ok := os.LookupEnv("TEST_STORK_KEY")
-
-	// Assert
-	require.False(t, ok)
-}
-
 // Test that the process setter sets the key-value pair properly.
 func TestProcessEnvironmentVariableSetterAcceptsValidPair(t *testing.T) {
 	// Arrange
+	t.Cleanup(testutil.CreateEnvironmentRestorePoint())
 	setter := NewProcessEnvironmentVariableSetter()
 
 	// Act
@@ -279,6 +257,7 @@ func TestProcessEnvironmentVariableSetterAcceptsValidPair(t *testing.T) {
 // Test that process setter returns an error on invalid key-value pair.
 func TestProcessEnvironmentVariableSetterRejectInvalidPair(t *testing.T) {
 	// Arrange
+	t.Cleanup(testutil.CreateEnvironmentRestorePoint())
 	setter := NewProcessEnvironmentVariableSetter()
 
 	// Act

@@ -79,6 +79,9 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 	return
 }
 
+// Allows reverting the changes in the environment variables to a previous
+// state. It remembers the current environment variables and returns a function
+// that must be called to restore these values.
 func CreateEnvironmentRestorePoint() func() {
 	originalEnv := os.Environ()
 
