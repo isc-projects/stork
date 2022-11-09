@@ -1,3 +1,8 @@
+* 249 [bug] andrei
+
+    Added breadcrumbs to the events page.
+    (Gitlab #541)
+
 Stork 1.7.0 released on 2022-10-12.
 
 * 248 [bug] slawek
@@ -1698,36 +1703,36 @@ Stork 0.1.0 released on 2019-11-06.
 
 * 3 [func] godfryd
 
-   Added Swagger-based API for defining ReST API to Stork server.
-   Added initial Web UI based on Angular and PrimeNG. Added Rakefile
-   for building whole solution. Removed gin-gonic dependency.
-   (Gitlab #19)
+    Added Swagger-based API for defining ReST API to Stork server.
+    Added initial Web UI based on Angular and PrimeNG. Added Rakefile
+    for building whole solution. Removed gin-gonic dependency.
+    (Gitlab #19)
 
 * 2 [build] godfryd
 
-   Added initial framework for backend, using go and gin-gonic.
-   (Gitlab #missing)
+    Added initial framework for backend, using go and gin-gonic.
+    (Gitlab #missing)
 
 * 1 [func] franek
 
-   Added initial proposal for Grafana dashboard.
-   (Gitlab #6)
+    Added initial proposal for Grafana dashboard.
+    (Gitlab #6)
 
 
 For complete code revision history, see
-	http://gitlab.isc.org/isc-projects/stork
+    http://gitlab.isc.org/isc-projects/stork
 
 LEGEND
 * [bug]   General bug fix.  This is generally a backward compatible change,
           unless it's deemed to be impossible or very hard to keep
-	      compatibility to fix the bug.
+          compatibility to fix the bug.
 * [build] Compilation and installation infrastructure change.
 * [doc]   Update to documentation. This shouldn't change run time behavior.
-* [func]  new feature.  In some cases this may be a backward incompatible
-	      change, which would require a bump of major version.
+* [func]  New feature.  In some cases this may be a backward incompatible
+          change, which would require a bump of major version.
 * [sec]   Security hole fix. This is no different than a general bug
           fix except that it will be handled as confidential and will cause
- 	      security patch releases.
+          security patch releases.
 * [perf]  Performance related change.
 * [ui]    User Interface change.
 
