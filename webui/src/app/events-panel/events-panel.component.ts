@@ -397,4 +397,12 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         }
         this.applyFilter()
     }
+
+    get isBare(): boolean {
+        return this.ui === 'bare'
+    }
+
+    get isTable(): boolean {
+        return this.ui === 'table'
+    }
 }

@@ -1,177 +1,143 @@
-<div *ngIf="ui === 'bare'" class="events-panel">
-    <table class="events-table">
-        <ng-container *ngFor="let ev of events.items; index as i">
-            <tr [class.odd-row]="i % 2 === 0">
-                <td *ngIf="ev.level === undefined || ev.level === 0" style="color: #9db2d3; width: 1em">
-                    <i class="pi pi-info-circle" style="font-size: 1.2rem"></i>
-                </td>
-                <td *ngIf="ev.level === 1" style="color: orange; width: 1em">
-                    <i class="pi pi-exclamation-triangle" style="font-size: 1.2rem"></i>
-                </td>
-                <td *ngIf="ev.level === 2" style="color: red; width: 1em">
-                    <i class="pi pi-exclamation-circle" style="font-size: 1.2rem"></i>
-                </td>
-                <td style="width: 6em">{{ ev.createdAt | localtime }}</td>
-                <td>
-                    <app-event-text [text]="ev.text"></app-event-text>
-                    <a *ngIf="ev.details" (click)="expandEvent(ev)" style="cursor: pointer">
-                        <i
-                            *ngIf="!ev.showDetails"
-                            class="pi pi-angle-double-down"
-                            style="vertical-align: text-bottom"
-                        ></i>
-                        <i *ngIf="ev.showDetails" class="pi pi-angle-double-up" style="vertical-align: text-bottom"></i>
-                    </a>
-                </td>
-            </tr>
-            <tr *ngIf="ev.showDetails" [class.odd-row]="i % 2 === 0">
-                <td></td>
-                <td colspan="2" [innerHTML]="ev.details"></td>
-            </tr>
-        </ng-container>
-    </table>
-    <ng-template #paginatorText>
-        <a
-            routerLink="/events"
-            [queryParams]="{ machine: filter.machine, appType: filter.appType, daemonType: filter.daemonType }"
-            >more events</a
-        >
-    </ng-template>
-    <p-paginator
-        class="ev-pager"
-        [rows]="limit"
-        [totalRecords]="events.total"
-        pageLinkSize="3"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{first} - {last} of {totalRecords}"
-        (onPageChange)="paginate($event)"
-        [templateRight]="paginatorText"
-    >
-    </p-paginator>
-</div>
+<!-- filter bar -->
+<div *ngIf="isTable" style="margin: 10px 0; display: flex; flex-wrap: wrap">
+    <div style="width: 20em">
+        <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)">
+            <ng-template let-item>
+                <i [ngClass]="item.icon" style="margin-right: 6px; font-size: 1.2em"></i>
+                <span>{{ item.label }}</span>
+            </ng-template>
+        </p-selectButton>
+    </div>
 
-<div *ngIf="ui === 'table'">
-    <!-- filter bar -->
-    <div style="margin: 10px 0; display: flex; flex-wrap: wrap">
-        <div style="width: 20em">
-            <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)">
-                <ng-template let-item>
-                    <i [ngClass]="item.icon" style="margin-right: 6px; font-size: 1.2em"></i>
-                    <span>{{ item.label }}</span>
-                </ng-template>
-            </p-selectButton>
-        </div>
-
-        <div style="display: flex">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">Machine:</div>
-            <div>
-                <p-dropdown
-                    [options]="machines"
-                    [(ngModel)]="selectedMachine"
-                    optionLabel="address"
-                    id="machines-events"
-                    placeholder="any"
-                    showClear="true"
-                    tooltip="Show events related to selected machine"
-                    [style]="{ width: '12em' }"
-                    (onChange)="onMachineSelect($event)"
-                ></p-dropdown>
-            </div>
-        </div>
-
-        <div style="display: flex">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">App Type:</div>
-            <div>
-                <p-dropdown
-                    [options]="appTypes"
-                    [(ngModel)]="selectedAppType"
-                    optionLabel="name"
-                    id="app-events"
-                    placeholder="any"
-                    showClear="true"
-                    tooltip="Show events related to selected app type"
-                    [style]="{ width: '10em' }"
-                    (onChange)="onAppTypeSelect($event)"
-                ></p-dropdown>
-            </div>
-        </div>
-
-        <div style="display: flex">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">Daemon:</div>
-            <div>
-                <p-dropdown
-                    [options]="daemonTypes"
-                    [(ngModel)]="selectedDaemonType"
-                    optionLabel="name"
-                    id="daemon-events"
-                    placeholder="any"
-                    showClear="true"
-                    tooltip="Show events related to selected daemon type"
-                    [style]="{ width: '10em' }"
-                    (onChange)="onDaemonTypeSelect($event)"
-                ></p-dropdown>
-            </div>
-        </div>
-
-        <div style="display: flex" *ngIf="auth.superAdmin()">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
-            <div>
-                <p-dropdown
-                    [options]="users"
-                    [(ngModel)]="selectedUser"
-                    optionLabel="login"
-                    id="user-events"
-                    placeholder="any"
-                    showClear="true"
-                    tooltip="Show events related to selected user"
-                    [style]="{ width: '10em' }"
-                    (onChange)="onUserSelect($event)"
-                ></p-dropdown>
-            </div>
+    <div style="display: flex">
+        <div style="margin: 0 10px 0 30px; padding-top: 5px">Machine:</div>
+        <div>
+            <p-dropdown
+                [options]="machines"
+                [(ngModel)]="selectedMachine"
+                optionLabel="address"
+                id="machines-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected machine"
+                [style]="{ width: '12em' }"
+                (onChange)="onMachineSelect($event)"
+            ></p-dropdown>
         </div>
     </div>
 
-    <!-- events table -->
-    <p-table
-        [value]="events.items"
-        class="ev-table"
-        [paginator]="true"
-        [rows]="10"
-        [lazy]="true"
-        (onLazyLoad)="refreshEvents($event)"
-        [totalRecords]="events.total"
-        [rowsPerPageOptions]="[10, 30, 100]"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{currentPage} of {totalPages} pages"
-    >
-        <ng-template pTemplate="header">
-            <tr>
-                <th style="width: 3em">Lvl</th>
-                <th style="width: 11em">Created At</th>
-                <th style="width: 30%">Event Text</th>
-                <th>Details</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-ev>
-            <tr>
-                <td *ngIf="ev.level === undefined || ev.level === 0" style="color: #9db2d3; width: 2em">
-                    <i class="pi pi-info-circle" style="font-size: 1.2rem"></i>
-                </td>
-                <td *ngIf="ev.level === 1" style="color: orange; width: 2em">
-                    <i class="pi pi-exclamation-triangle" style="font-size: 1.2rem"></i>
-                </td>
-                <td *ngIf="ev.level === 2" style="color: red; width: 2em">
-                    <i class="pi pi-exclamation-circle" style="font-size: 1.2rem"></i>
-                </td>
+    <div style="display: flex">
+        <div style="margin: 0 10px 0 30px; padding-top: 5px">App Type:</div>
+        <div>
+            <p-dropdown
+                [options]="appTypes"
+                [(ngModel)]="selectedAppType"
+                optionLabel="name"
+                id="app-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected app type"
+                [style]="{ width: '10em' }"
+                (onChange)="onAppTypeSelect($event)"
+            ></p-dropdown>
+        </div>
+    </div>
 
-                <td style="width: 11em">{{ ev.createdAt | localtime }}</td>
+    <div style="display: flex">
+        <div style="margin: 0 10px 0 30px; padding-top: 5px">Daemon:</div>
+        <div>
+            <p-dropdown
+                [options]="daemonTypes"
+                [(ngModel)]="selectedDaemonType"
+                optionLabel="name"
+                id="daemon-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected daemon type"
+                [style]="{ width: '10em' }"
+                (onChange)="onDaemonTypeSelect($event)"
+            ></p-dropdown>
+        </div>
+    </div>
 
-                <td><app-event-text [text]="ev.text"></app-event-text></td>
-                <td [innerHTML]="ev.details"></td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-            <div style="margin: 10px; font-size: 1.2em">No events found</div>
-        </ng-template>
-    </p-table>
+    <div style="display: flex" *ngIf="auth.superAdmin()">
+        <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
+        <div>
+            <p-dropdown
+                [options]="users"
+                [(ngModel)]="selectedUser"
+                optionLabel="login"
+                id="user-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected user"
+                [style]="{ width: '10em' }"
+                (onChange)="onUserSelect($event)"
+            ></p-dropdown>
+        </div>
+    </div>
 </div>
+
+<!-- events table -->
+<p-table
+    [value]="events.items"
+    class="events-table"
+    styleClass="p-datatable-striped"
+    [ngClass]="{
+        'events-table--table': isTable,
+        'events-table--bare': isBare
+    }"
+    [paginator]="true"
+    [rows]="10"
+    [lazy]="true"
+    (onLazyLoad)="refreshEvents($event)"
+    [totalRecords]="events.total"
+    [rowsPerPageOptions]="[10, 30, 100]"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    dataKey="id"
+    stateStorage="session"
+    stateKey="events-table-session"
+>
+    <ng-template *ngIf="isTable" pTemplate="header">
+        <tr>
+            <th class="events-table__level">Lvl</th>
+            <th class="events-table__date">Created At</th>
+            <th class="events-table__text">Event Text</th>
+            <th class="events-table__details">Details</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-ev let-expanded="expanded">
+        <tr>
+            <td class="events-table__level events-table__level--info" *ngIf="ev.level === undefined || ev.level === 0">
+                <i class="pi pi-info-circle"></i>
+            </td>
+            <td class="events-table__level events-table__level--warning" *ngIf="ev.level === 1">
+                <i class="pi pi-exclamation-triangle"></i>
+            </td>
+            <td class="events-table__level events-table__level--error" *ngIf="ev.level === 2" style="color: red;">
+                <i class="pi pi-exclamation-circle"></i>
+            </td>
+
+            <td class="events-table__date">{{ ev.createdAt | localtime }}</td>
+
+            <td class="events-table__text"><app-event-text [text]="ev.text"></app-event-text></td>
+            <td class="events-table__details" *ngIf="isTable" [innerHTML]="ev.details"></td>
+            <td class="events-table__details" *ngIf="isBare && ev.details">
+                <button type="button" pButton pRipple [pRowToggler]="ev" class="p-button-text p-button-plain p-button-sm" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></button>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template *ngIf="isBare" pTemplate="rowexpansion" let-ev>
+        <tr>
+            <td colspan="4">
+                <div class="events-table__expanded-details" [innerHTML]="ev.details"></div>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="4"><div class="events-table__empty">No events found</div></td>
+        </tr>
+    </ng-template>
+</p-table>

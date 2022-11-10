@@ -1,28 +1,58 @@
-.ev-table tr > td
-  padding: 5px 6px
-  vertical-align: top
+:host ::ng-deep .events-table--bare
+  .p-paginator
+    border: 0px
+    margin-top: 5px
 
-:host ::ng-deep .ev-pager .p-paginator
-  border: 0px
-  margin-top: 5px
+  .p-datatable
+    .p-datatable-tbody > tr > td
+      border: none
 
+.events-table--bare
+  td
+    padding: 5px 0 10px 0
+    vertical-align: top
 
+  .events-table__level
+    width: 1.5em
+  .event-table__date
+    width: 6em
+  .events-table__text
+    width: auto
+  .events-table__details
+    max-width: 1em
 
-.events-table
-  border-collapse: collapse
-  width: 100%
+.events-table--table
+  td
+    padding: 5px 6px
+    vertical-align: top
 
-.events-table tr.odd-row
-  background: #f6f6f6
+  .events-table__level
+    width: 3em
+  .events-table__date
+    width: 11em
+  .events-table__text
+    width: 30%
 
-.events-table td
-  padding: 5px 0 10px 0
-  vertical-align: top
+.events-table__expanded-details
+  margin-left: 1em
+  margin-right: 1em
 
-.events-table td:first-child, .events-table td:last-child
-  padding: 5px 5px 10px 5px
+.events-table__level
+  i
+    font-size: 1.2rem
 
+.events-table__level--info
+  color: #9db2d3
 
+.events-table__level--warning
+  color: orange
+
+.events-table__level--error
+  color: red
+
+.events-table__empty
+  text-align: center
+  font-size: 1.2em
 
 // format right content in paginator
 ::ng-deep .p-paginator .p-paginator-right-content
