@@ -45,6 +45,7 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { InputTextareaModule } from 'primeng/inputtextarea'
 import { TreeModule } from 'primeng/tree'
+import { ChipsModule } from 'primeng/chips'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -101,6 +102,7 @@ import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-prefer
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker/config-checker-preference-picker.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
+import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -159,6 +161,7 @@ export function cfgFactory() {
         ConfigCheckerPreferencePickerComponent,
         ConfigCheckerPreferenceUpdaterComponent,
         ConfigCheckerPreferencePageComponent,
+        DhcpClientClassSetFormComponent,
     ],
     imports: [
         BrowserModule,
@@ -207,6 +210,7 @@ export function cfgFactory() {
         InputTextareaModule,
         TreeModule,
         ChipModule,
+        ChipsModule,
     ],
     providers: [
         {
