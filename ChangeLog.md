@@ -1,3 +1,9 @@
+* 252 [func] slawek
+
+    Fixed a problem resetting pagination while browsing the resources (subnets,
+    shared networks, machines, applications) pages.
+    (Gitlab #881)
+
 * 251 [func] andrei
 
     The Kea app page now shows the name of the hook libraries instead of their
