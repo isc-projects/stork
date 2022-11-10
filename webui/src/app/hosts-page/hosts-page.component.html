@@ -124,6 +124,8 @@
             [totalRecords]="totalHosts"
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
+            stateStorage="session"
+            stateKey="hosts-table-session"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
         >
             <ng-template pTemplate="header">

@@ -73,6 +73,8 @@
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            stateStorage="session"
+            stateKey="subnets-table-session"
         >
             <ng-template pTemplate="header">
                 <tr>

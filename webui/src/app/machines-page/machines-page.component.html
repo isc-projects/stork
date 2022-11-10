@@ -254,6 +254,8 @@ sudo ./stork-install-agent.sh</textarea
         [totalRecords]="totalMachines"
         [rowsPerPageOptions]="[10, 30, 100]"
         [showCurrentPageReport]="true"
+        stateStorage="session"
+        stateKey="machines-table-session"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
     >
         <ng-template pTemplate="emptymessage" let-columns>
