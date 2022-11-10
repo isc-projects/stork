@@ -3,9 +3,14 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, Router, RouterModule } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
+import { ButtonModule } from 'primeng/button'
 import { PaginatorModule } from 'primeng/paginator'
+import { TableModule } from 'primeng/table'
+import { ToastModule } from 'primeng/toast'
 
 import { EventsService, ServicesService, UsersService } from '../backend'
+import { EventTextComponent } from '../event-text/event-text.component'
+import { LocaltimePipe } from '../localtime.pipe'
 import { EventsPanelComponent } from './events-panel.component'
 
 /**
@@ -55,8 +60,15 @@ describe('EventsPanelComponent', () => {
                     useValue: {},
                 },
             ],
-            imports: [HttpClientTestingModule, PaginatorModule, RouterTestingModule],
-            declarations: [EventsPanelComponent],
+            imports: [
+                HttpClientTestingModule,
+                PaginatorModule,
+                RouterTestingModule,
+                TableModule,
+                ToastModule,
+                ButtonModule,
+            ],
+            declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
         }).compileComponents()
     }))
 
