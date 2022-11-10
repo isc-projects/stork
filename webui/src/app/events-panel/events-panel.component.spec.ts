@@ -168,4 +168,13 @@ describe('EventsPanelComponent', () => {
         component.ngOnDestroy()
         expect(component.eventSource.readyState).toBe(EventSource.CLOSED)
     })
+
+    it('should recognize the layout type', () => {
+        component.ui = "table"
+        expect(component.isBare).toBeFalse()
+        expect(component.isTable).toBeTrue()
+        component.ui = "bare"
+        expect(component.isBare).toBeTrue()
+        expect(component.isTable).toBeFalse()
+    })
 })

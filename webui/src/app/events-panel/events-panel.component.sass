@@ -1,60 +1,73 @@
+// PrimeNG style modifications for the bare layout.
 :host ::ng-deep .events-table--bare
   .p-paginator
+    // Disable the border around the pagination element.
     border: 0px
+    // Add a small vertical spacing between the panel and the pagination bar.
     margin-top: 5px
 
   .p-datatable
     .p-datatable-tbody > tr > td
+      // Disable borders around cells.
       border: none
 
+// Style changes related to the bare layout.
 .events-table--bare
   td
+    // Small bottom and right margins. No top and left margins.
     padding: 5px 0 10px 0
+    // Align the content to the top edge of the cell.
     vertical-align: top
 
   .events-table__level
+    // Wide icon cell.
     width: 1.5em
   .event-table__date
+    // Displays the date in two rows. The first contains the date, and the second time.
     width: 6em
-  .events-table__text
-    width: auto
-  .events-table__details
-    max-width: 1em
 
+// Style changes related to the table layout.
 .events-table--table
   td
+    // Full ceil padding.
     padding: 5px 6px
+    // Align the content to the top ceil edge.
     vertical-align: top
 
   .events-table__level
+    // Icon with a little right margin.
     width: 3em
   .events-table__date
+    // One-line date and time.
     width: 11em
   .events-table__text
+    // Space for the text. The rest of the area is for detail.
     width: 30%
 
 .events-table__expanded-details
+  // Detail text indentation.
   margin-left: 1em
   margin-right: 1em
 
 .events-table__level
   i
+    // Minimize the icon width and height.
     font-size: 1.2rem
 
 .events-table__level--info
+  // Blue color for the info level.
   color: #9db2d3
 
 .events-table__level--warning
+  // Orange color for the warning level.
   color: orange
 
 .events-table__level--error
+  // Red color for the error level.
   color: red
 
 .events-table__empty
+  // Center the empty placeholder text.
   text-align: center
+  // Use the same font size as in the standard ceils.
   font-size: 1.2em
-
-// format right content in paginator
-::ng-deep .p-paginator .p-paginator-right-content
-  margin-left: 20px
-  color: #848484

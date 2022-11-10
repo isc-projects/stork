@@ -22,8 +22,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     errorCnt = 0
     start = 0
     limit = 10
+    loading = false
 
-    @Input() ui = 'bare'
+    @Input() ui: 'bare' | 'table' = 'bare'
 
     @Input() filter = {
         level: 0,
@@ -151,6 +152,13 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
 
         this.applyFilter()
 
+        if (this.isBare) {
+            // Bare layout doesn't support data filtration
+            this.users = []
+            this.machines = []
+            return
+        }
+
         if (this.auth.superAdmin()) {
             this.subscriptions.add(
                 this.usersApi.getUsers(0, 1000, null).subscribe(
@@ -227,6 +235,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             this.limit = event.rows
         }
 
+        this.loading = true
+
         this.eventsApi
             .getEvents(
                 this.start,
@@ -249,6 +259,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                     detail: 'Error getting events: ' + msg,
                     life: 10000,
                 })
+            })
+            .finally(() => {
+                this.loading = false
             })
     }
 
@@ -345,23 +358,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.events.total += 1
     }
 
-    expandEvent(ev) {
-        if (ev.showDetails === undefined) {
-            ev.details = ev.details.replace(/\n/g, '<br>')
-        }
-        if (ev.showDetails) {
-            ev.showDetails = false
-        } else {
-            ev.showDetails = true
-        }
-    }
-
-    paginate(event) {
-        this.start = event.first
-        this.limit = event.rows
-        this.refreshEvents(null)
-    }
-
     onMachineSelect(event) {
         if (event.value === null) {
             this.filter.machine = null
@@ -398,10 +394,16 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
     }
 
+    /**
+     * Returns true if the bare layout is enabled.
+     */
     get isBare(): boolean {
         return this.ui === 'bare'
     }
 
+    /**
+     * Returns true if the table layout is enabled.
+     */
     get isTable(): boolean {
         return this.ui === 'table'
     }

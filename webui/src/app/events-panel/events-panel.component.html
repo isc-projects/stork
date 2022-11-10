@@ -90,14 +90,14 @@
     [paginator]="true"
     [rows]="10"
     [lazy]="true"
+    [loading]="loading"
     (onLazyLoad)="refreshEvents($event)"
     [totalRecords]="events.total"
     [rowsPerPageOptions]="[10, 30, 100]"
-    [showCurrentPageReport]="true"
+    [showCurrentPageReport]="isTable"
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
     dataKey="id"
-    stateStorage="session"
-    stateKey="events-table-session"
+    paginatorDropdownAppendTo="body"
 >
     <ng-template *ngIf="isTable" pTemplate="header">
         <tr>
