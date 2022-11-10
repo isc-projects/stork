@@ -374,8 +374,8 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 
 	// prepare http handler
 	mux := http.NewServeMux()
-	hdlr := promhttp.HandlerFor(pbe.Registry, promhttp.HandlerOpts{})
-	mux.Handle("/metrics", hdlr)
+	handler := promhttp.HandlerFor(pbe.Registry, promhttp.HandlerOpts{})
+	mux.Handle("/metrics", handler)
 	pbe.HTTPServer = &http.Server{
 		Handler: mux,
 		// Protection against Slowloris Attack (G112).
