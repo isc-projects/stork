@@ -170,10 +170,10 @@ describe('EventsPanelComponent', () => {
     })
 
     it('should recognize the layout type', () => {
-        component.ui = "table"
+        component.ui = 'table'
         expect(component.isBare).toBeFalse()
         expect(component.isTable).toBeTrue()
-        component.ui = "bare"
+        component.ui = 'bare'
         expect(component.isBare).toBeTrue()
         expect(component.isTable).toBeFalse()
     })
