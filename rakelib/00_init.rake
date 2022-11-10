@@ -277,7 +277,7 @@ WGET = wget
 
 ### Define package versions
 go_ver='1.18.8'
-openapi_generator_ver='5.4.0'
+openapi_generator_ver='5.2.0'
 goswagger_ver='v0.23.0'
 protoc_ver='3.20.3'
 protoc_gen_go_ver='v1.26.0'
