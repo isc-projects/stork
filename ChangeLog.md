@@ -1,3 +1,10 @@
+* 251 [func] andrei
+
+    The Kea app page now only shows the name of the hook libraries instead of
+    their entire path. Additionally, a link to documentation is shown beside
+    each hook library.
+    (Gitlab #142)
+
 * 250 [build] slawek
 
     Upgraded go-related dependencies.
