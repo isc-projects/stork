@@ -1,6 +1,6 @@
-import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { KeaAppTabComponent } from './kea-app-tab.component'
-import { Router, ActivatedRoute } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
@@ -261,5 +261,19 @@ describe('KeaAppTabComponent', () => {
         expect(component.activeTabIndex).toBe(1)
         fixture.detectChanges()
         expect(fixture.debugElement.nativeElement.innerText).toContain('1.9.5')
+    })
+
+    it('should know how to take the base name out of a path', () => {
+        expect(component.basename('')).toBe('')
+        expect(component.basename('base')).toBe('base')
+        expect(component.basename('/base')).toBe('base')
+        expect(component.basename('/path/to/base')).toBe('base')
+    })
+
+    it('should know how to convert hook libraries to Kea documentation anchors', () => {
+        expect(component.docAnchorFromHookLbrary('')).toBe('')
+        expect(component.docAnchorFromHookLbrary('libdhcp_user_chk.so')).toBe('user-chk-user-check')
+        expect(component.docAnchorFromHookLbrary('libdhcp_fake.so')).toBe('')
+        expect(component.docAnchorFromHookLbrary('kea-dhcp4')).toBe('')
     })
 })
