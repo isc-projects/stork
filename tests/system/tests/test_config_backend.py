@@ -1,8 +1,6 @@
 from core.wrappers import Server, Kea, Perfdhcp
 from core.fixtures import kea_parametrize
 
-from openapi_client.model.host import Host
-
 
 @kea_parametrize("agent-kea-premium-host-database")
 def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Server):
@@ -24,7 +22,7 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     assert local_host["data_source"] == "api"
 
     # Add host
-    host = {
+    raw_host = {
         "host_identifiers": [{
             "id_type": "flex-id",
             "id_hex_value": "01:02:03:04:05:06"
@@ -36,14 +34,14 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
         "local_hosts": []
     }
 
-    with server_service.transaction_add_host_reservation() as (ctx, submit, _):
+    with server_service.transaction_create_host_reservation() as (ctx, submit, _):
         daemon = [d for d in ctx["daemons"] if d["name"] == "dhcp4"][0]
-        host["local_hosts"].append({
+        raw_host["local_hosts"].append({
             "daemon_id": daemon["id"]
         })
-        submit(host)
+        submit(raw_host)
 
-    with server_service.transaction_add_host_reservation() as (ctx, _, cancel):
+    with server_service.transaction_create_host_reservation() as (ctx, _, cancel):
         cancel()
 
     server_service.wait_for_host_reservation_pulling()
@@ -55,6 +53,31 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     identifier = host.host_identifiers[0]
     assert identifier.id_type == "flex-id"
     assert identifier.id_hex_value == "01:02:03:04:05:06"
+
+    # Update host
+    with server_service.transaction_update_host_reservation(host.id) as (_, submit, _):
+        raw_host["id"] = host.id
+        raw_host["hostname"] = "barfoo"
+        raw_host["host_identifiers"][0] = {
+            "id_type": "client-id",
+            "id_hex_value": "06:05:04:03:02:01"
+        }
+        raw_host["address_reservations"][0]["address"] = "10.24.24.24"
+        submit(raw_host)
+
+    server_service.wait_for_host_reservation_pulling()
+
+    hosts = server_service.list_hosts("10.42.42.42")
+    assert hosts.items is None
+
+    hosts = server_service.list_hosts("10.24.24.24")
+    assert hosts.total == 1
+    host = hosts.items[0]
+    assert host.hostname == "barfoo"
+    assert host.address_reservations[0].address == "10.24.24.24"
+    identifier = host.host_identifiers[0]
+    assert identifier.id_type == "client-id"
+    assert identifier.id_hex_value == "06:05:04:03:02:01"
 
 
 @kea_parametrize("agent-kea-premium-radius")

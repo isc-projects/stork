@@ -1,7 +1,7 @@
 import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, TypeVar
 
 import openapi_client
 from core.compose import DockerCompose
@@ -18,11 +18,17 @@ from openapi_client.api.users_api import (Groups, User, UserAccount, Users,
                                           UsersApi)
 from openapi_client.model.create_host_begin_response import \
     CreateHostBeginResponse
+from openapi_client.model.update_host_begin_response import \
+    UpdateHostBeginResponse
 from openapi_client.model.event import Event
 from openapi_client.model.host import Host
 from openapi_client.model.puller import Puller
 
 import openapi_client.model_utils
+
+
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
 
 
 class Server(ComposeServiceWrapper):
@@ -303,6 +309,11 @@ class Server(ComposeServiceWrapper):
         api_instance = UsersApi(self._api_client)
         return api_instance.create_user(account=account)
 
+    def create_host_reservation(self, host: Host):
+        """Shorthand to add a host reservation."""
+        with self.transaction_add_host_reservation() as (_, submit, _):
+            submit(host)
+
     # Read
 
     def read_machine_state(self, machine_id: int) -> Machine:
@@ -337,18 +348,87 @@ class Server(ComposeServiceWrapper):
             **self._no_validate_kwargs()
         )
 
+    def update_host_reservation(self, host: Host):
+        """Shorthand to update a host reservation."""
+        with self.transaction_update_host_reservation(host.id) as (_, submit, _):
+            submit(host)
+
     # Transactional
 
-    @contextmanager
-    def transaction_add_host_reservation(self):
+    def transaction_create_host_reservation(self):
+        """Creates a transaction context to add the host reservation."""
         api_instance = DHCPApi(self._api_client)
-        # Begin transaction response contains the daemons without related app
-        # access points.
 
-        with allow_nulls():
-            rsp: CreateHostBeginResponse = api_instance.create_host_begin()
+        def on_begin() -> CreateHostBeginResponse:
+            # Begin transaction response contains the daemons without related
+            # app access points.
+            with allow_nulls():
+                return api_instance.create_host_begin()
 
-        transaction_id = rsp.id
+        def on_submit(transaction_id: int, host: Host):
+            api_instance.create_host_submit(id=transaction_id, host=host)
+
+        def on_cancel(transaction_id: int):
+            api_instance.create_host_delete(id=transaction_id)
+
+        return self._api_transaction(
+            on_begin, on_submit, on_cancel
+        )
+
+    def transaction_update_host_reservation(self, host_id: int):
+        """Creates a transaction context to update the host reservation."""
+        api_instance = DHCPApi(self._api_client)
+
+        def on_begin() -> UpdateHostBeginResponse:
+            # Begin transaction response contains the daemons without related
+            # app access points.
+            with allow_nulls():
+                return api_instance.update_host_begin(host_id=host_id)
+
+        def on_submit(transaction_id: int, host: Host):
+            api_instance.update_host_submit(
+                id=transaction_id,
+                host_id=host_id,
+                host=host
+            )
+
+        def on_cancel(transaction_id: int):
+            api_instance.update_host_delete(
+                id=transaction_id,
+                host_id=host_id
+            )
+
+        return self._api_transaction(on_begin, on_submit, on_cancel)
+
+    @contextmanager
+    def _api_transaction(
+            self, on_begin: Callable[[], T1],
+            on_submit: Callable[[int, T2], None],
+            on_cancel: Callable[[int], None],
+            transaction_id_extractor: Callable[[T1], int] = lambda ctx: ctx.id
+    ):
+        """
+        Helper function to send requests in the transaction context. If the
+        transaction is not submitted, it will be canceled automatically.
+        
+        Parameters
+        ----------
+        on_begin: callable
+            Called to start the transaction. It accepts no arguments and
+            returns the transaction context.
+        on_submit: callable
+            Called to submit the transaction. It accepts the transaction ID and
+            submitted data. Returns nothing.
+        on_cancel: callable
+            Called to cancel the transaction. It accepts the transaction ID.
+            Returns nothing.
+        transaction_id_extractor: callable
+            Extracts the transaction ID from the transaction context. By
+            default uses the ID property.
+        """
+
+        ctx = on_begin()
+        transaction_id = transaction_id_extractor(ctx)
 
         state = "pending"
 
@@ -359,20 +439,20 @@ class Server(ComposeServiceWrapper):
             elif state == "submitted":
                 raise Exception("transaction already submitted")
 
-            api_instance.create_host_delete(id=transaction_id)
+            on_cancel(transaction_id)
             state = "canceled"
 
-        def submit(host: Host):
+        def submit(data: T2):
             nonlocal state
             if state == "canceled":
                 raise Exception("transaction already canceled")
             elif state == "submitted":
                 raise Exception("transaction already submitted")
 
-            api_instance.create_host_submit(id=transaction_id, host=host)
+            on_submit(transaction_id, data)
             state = "submitted"
 
-        yield (rsp, submit, cancel)
+        yield (ctx, submit, cancel)
 
         if state == "pending":
             cancel()
