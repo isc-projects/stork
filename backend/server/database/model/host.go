@@ -34,7 +34,7 @@ func (s HostDataSource) String() string {
 func ParseHostDataSource(s string) (hds HostDataSource, err error) {
 	hds = HostDataSource(s)
 	if hds != HostDataSourceConfig && hds != HostDataSourceAPI {
-		err = pkgerrors.Errorf("unsupported host data source %s", s)
+		err = pkgerrors.Errorf("unsupported host data source '%s'", s)
 	}
 	return
 }

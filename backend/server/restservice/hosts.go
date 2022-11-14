@@ -335,6 +335,18 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
+
+	// Data source is readonly property.
+	for _, localHost := range restHost.LocalHosts {
+		if localHost.DataSource == "" {
+			localHost.DataSource = string(dbmodel.HostDataSourceAPI)
+		} else if localHost.DataSource != string(dbmodel.HostDataSourceAPI) {
+			msg := "invalid local host data source (required: 'api' or empty)"
+			log.Error(msg)
+			return http.StatusBadRequest, msg
+		}
+	}
+
 	// Convert host information from REST API to database format.
 	host, err := r.convertToHost(restHost)
 	if err != nil {

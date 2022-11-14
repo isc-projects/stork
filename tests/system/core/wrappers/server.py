@@ -1,24 +1,28 @@
-from datetime import datetime, timezone
 import re
-from time import time
-from typing import Callable, List, Optional
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from typing import Callable, List, Optional
 
 import openapi_client
-from openapi_client.api.users_api import UsersApi, User, Users, Groups, UserAccount
-from openapi_client.api.services_api import ServicesApi, Machine, Machines, ConfigReports
-from openapi_client.api.dhcp_api import DHCPApi, Subnets, Leases, Hosts, DhcpOverview
-from openapi_client.api.events_api import EventsApi, Events
-from openapi_client.api.general_api import GeneralApi, Version
-from openapi_client.api.settings_api import SettingsApi
-from openapi_client.model.event import Event
-from openapi_client.model.subnet import Subnet
-from openapi_client.model.local_subnet import LocalSubnet
-from openapi_client.model.puller import Puller
-
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.base import ComposeServiceWrapper
+from openapi_client.api.dhcp_api import (DHCPApi, DhcpOverview, Hosts, Leases,
+                                         Subnets)
+from openapi_client.api.events_api import Events, EventsApi
+from openapi_client.api.general_api import GeneralApi, Version
+from openapi_client.api.services_api import (ConfigReports, Machine, Machines,
+                                             ServicesApi)
+from openapi_client.api.settings_api import SettingsApi
+from openapi_client.api.users_api import (Groups, User, UserAccount, Users,
+                                          UsersApi)
+from openapi_client.model.create_host_begin_response import \
+    CreateHostBeginResponse
+from openapi_client.model.event import Event
+from openapi_client.model.host import Host
+from openapi_client.model.puller import Puller
+
+import openapi_client.model_utils
 
 
 class Server(ComposeServiceWrapper):
@@ -238,9 +242,9 @@ class Server(ComposeServiceWrapper):
             List of leases
         """
         params = {}
-        if text != None:
+        if text is not None:
             params["text"] = text
-        if host_id != None:
+        if host_id is not None:
             params["host_id"] = host_id
 
         api_instance = DHCPApi(self._api_client)
@@ -251,10 +255,11 @@ class Server(ComposeServiceWrapper):
         params = {
             'limit': 100
         }
-        if text != None:
+        if text is not None:
             params["text"] = text
         api_instance = DHCPApi(self._api_client)
-        return api_instance.get_hosts(**params, **self._no_validate_kwargs())
+        with allow_nulls():
+            return api_instance.get_hosts(**params)
 
     def list_config_reports(self, daemon_id: int,
                             limit=10, start=0) -> Optional[ConfigReports]:
@@ -331,6 +336,46 @@ class Server(ComposeServiceWrapper):
             # This endpoint doesn't return the applications.
             **self._no_validate_kwargs()
         )
+
+    # Transactional
+
+    @contextmanager
+    def transaction_add_host_reservation(self):
+        api_instance = DHCPApi(self._api_client)
+        # Begin transaction response contains the daemons without related app
+        # access points.
+
+        with allow_nulls():
+            rsp: CreateHostBeginResponse = api_instance.create_host_begin()
+
+        transaction_id = rsp.id
+
+        state = "pending"
+
+        def cancel():
+            nonlocal state
+            if state == "canceled":
+                raise Exception("transaction already canceled")
+            elif state == "submitted":
+                raise Exception("transaction already submitted")
+
+            api_instance.create_host_delete(id=transaction_id)
+            state = "canceled"
+
+        def submit(host: Host):
+            nonlocal state
+            if state == "canceled":
+                raise Exception("transaction already canceled")
+            elif state == "submitted":
+                raise Exception("transaction already submitted")
+
+            api_instance.create_host_submit(id=transaction_id, host=host)
+            state = "submitted"
+
+        yield (rsp, submit, cancel)
+
+        if state == "pending":
+            cancel()
 
     # Complex
 
@@ -573,3 +618,12 @@ class Server(ComposeServiceWrapper):
         self._api_client.call_api = original_call
         self._api_client.configuration.discard_unknown_keys = original_discard_unknown_types
         self._api_client.configuration.disabled_client_side_validations = original_validation_rules
+
+@contextmanager
+def allow_nulls():
+    """Creates a context within which the unexpected nulls (Nones) are allowed
+    in API requests and responses."""
+    original = openapi_client.model_utils.is_type_nullable
+    openapi_client.model_utils.is_type_nullable = lambda x: True
+    yield
+    openapi_client.model_utils.is_type_nullable = original

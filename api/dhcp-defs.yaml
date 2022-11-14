@@ -146,8 +146,10 @@
         type: integer
       appName:
         type: string
+        readOnly: true
       dataSource:
         type: string
+        readOnly: true
       options:
         type: array
         items:
