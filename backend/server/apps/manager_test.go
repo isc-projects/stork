@@ -575,6 +575,64 @@ func TestCommitDueErrors(t *testing.T) {
 	}
 }
 
+// Test that due changes from the database are committed.
+func TestCommitDueDeleteError(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Scheduled config changes must be associated with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+		Password: "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NotNil(t, manager)
+
+	_, err = dbmodel.DeleteUser(db, user)
+	require.NoError(t, err)
+
+	// Replace the interface for committing changes in the Kea
+	// configuration module for the fake one.
+	impl := manager.(*configManagerImpl)
+	require.NotNil(t, impl)
+	fkm := newFakeKeaModuleCommit()
+	impl.keaCommit = fkm
+
+	// Add a config changes to the database. The user is deleted before the
+	// change is applied which is still in the future.
+	changes := []dbmodel.ScheduledConfigChange{
+		{
+			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
+			UserID:     int64(user.ID),
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "config_edit"),
+			},
+		},
+	}
+	for i := range changes {
+		err := dbmodel.AddScheduledConfigChange(db, &changes[i])
+		require.Error(t, err)
+	}
+	// Commit due changes.
+	err = manager.CommitDue()
+	require.NoError(t, err)
+	require.Len(t, fkm.ops, 0)
+	require.Len(t, fkm.contexts, 0)
+
+	// We have processed due config changes. They should no longer be returned.
+	changes, err = dbmodel.GetDueConfigChanges(db)
+	require.NoError(t, err)
+	require.Empty(t, changes)
+}
+
 // Test that it is ok to call CommitDue() when there are no due changes.
 func TestCommitDueNoChanges(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

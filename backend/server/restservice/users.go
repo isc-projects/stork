@@ -359,7 +359,8 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 		return rsp
 	}
 
-	return users.NewDeleteUserOK()
+	u := newRestUser(*su)
+	return users.NewDeleteUserOK().WithPayload(u)
 }
 
 // Updates password of the given user in the database.

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	faker "github.com/brianvoe/gofakeit"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
@@ -154,9 +155,7 @@ func TestCreateConflict(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that the password is successfully changed if the current password
-// is valid and that the password is not changed if the current password
-// specified is invalid.
+// Test that the user is successfully deleted.
 func TestDeleteUser(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -172,9 +171,15 @@ func TestDeleteUser(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	con, err := DeleteUser(db, user)
+	con, err = DeleteUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
+
+	// An attempt to delete the same user should result in an error.
+	con, err = DeleteUser(db, user)
+	require.False(t, con)
+	require.Error(t, err)
+	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
 }
 
 // Tests that password can be modified.

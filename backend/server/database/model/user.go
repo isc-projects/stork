@@ -162,7 +162,7 @@ func DeleteUser(db *pg.DB, user *SystemUser) (existing bool, err error) {
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
-	_, err = db.Model(user).WherePK().Delete()
+	result, err := db.Model(user).WherePK().Delete()
 
 	if err != nil {
 		var pgError pg.Error
@@ -171,6 +171,8 @@ func DeleteUser(db *pg.DB, user *SystemUser) (existing bool, err error) {
 		}
 
 		err = pkgerrors.Wrapf(err, "database operation error while trying to delete user %s", user.Identity())
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "user with ID %s does not exist", user.Identity())
 	}
 
 	if err == nil {
