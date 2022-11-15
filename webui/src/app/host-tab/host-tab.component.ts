@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfirmationService, MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
+import { hasDifferentLocalHostData } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
 
 enum HostReservationUsage {
@@ -466,6 +467,6 @@ export class HostTabComponent {
      *          otherwise.
      */
     allDaemonsHaveEqualDhcpOptions(): boolean {
-        return this.host.localHosts.every((lh) => lh.optionsHash === this.host.localHosts[0].optionsHash)
+        return !hasDifferentLocalHostData(this.host)
     }
 }

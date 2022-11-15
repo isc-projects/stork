@@ -1,11 +1,15 @@
 <div class="flex align-items-center">
-    <p-chips
-        placeholder="type class names and/or pick them from a list"
-        [allowDuplicate]="false"
-        [addOnBlur]="true"
-        [formControl]="classFormControl"
-    >
-    </p-chips>
+    <span class="p-float-label">
+        <p-chips
+            ngDefaultControl
+            inputId="{{ inputId }}"
+            [allowDuplicate]="false"
+            [addOnBlur]="true"
+            [formControl]="classFormControl"
+        >
+        </p-chips>
+        <label for="{{ inputId }}">Type or Select Class Names from List</label>
+    </span>
     <p-overlayPanel #op [dismissable]="false">
         <ng-template pTemplate>
             <div

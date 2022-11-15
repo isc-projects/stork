@@ -4,6 +4,7 @@ import { KeaDaemon } from '../backend/model/keaDaemon'
 import { Subnet } from '../backend/model/subnet'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { IPType } from '../iptype'
+import { SelectableClientClass } from './selectable-client-class'
 
 /**
  * Holds the state of the form created by the HostFormComponent.
@@ -70,6 +71,11 @@ export class HostForm {
      * array comprises only the subnets served by this server.
      */
     filteredSubnets: Subnet[]
+
+    /**
+     * An array of client classes.
+     */
+    clientClasses: SelectableClientClass[]
 
     /**
      * A flag set to true when DHCPv4 servers have been selected.

@@ -7,6 +7,7 @@ import {
     ValidatorFn,
     Validators,
     ValidationErrors,
+    UntypedFormControl,
 } from '@angular/forms'
 import { MessageService, SelectItem } from 'primeng/api'
 import { map } from 'rxjs/operators'
@@ -17,7 +18,6 @@ import { CreateHostBeginResponse } from '../backend/model/createHostBeginRespons
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { Host } from '../backend/model/host'
 import { IPReservation } from '../backend/model/iPReservation'
-import { KeaDaemon } from '../backend/model/keaDaemon'
 import { LocalHost } from '../backend/model/localHost'
 import { UpdateHostBeginResponse } from '../backend/model/updateHostBeginResponse'
 import { Subnet } from '../backend/model/subnet'
@@ -27,6 +27,8 @@ import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { IPType } from '../iptype'
 import { getErrorMessage, stringToHex } from '../utils'
+import { SelectableClientClass } from '../forms/selectable-client-class'
+import { hasDifferentLocalHostData } from '../hosts'
 
 /**
  * A form validator checking if a subnet has been selected for
@@ -161,6 +163,7 @@ export interface MappedHostBeginData {
     id: number
     subnets: Array<Subnet>
     daemons: Array<SelectableDaemon>
+    clientClasses: Array<SelectableClientClass>
     host?: Host
 }
 
@@ -256,24 +259,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
     ipv6Placeholder = HostFormComponent.defaultIPv6Placeholder
 
     /**
-     * Indicates whether the user chose to specify some configuration data
-     * for the servers respectively.
-     *
-     * Stork data layout allows for specifying some host reservation data
-     * (e.g., DHCP options) for the servers individually. As a result,
-     * different servers may receive different set of DHCP options for the
-     * same host reservation. By default, a user specifies a single set
-     * of the DHCP options and the same options are assigned to each server.
-     * However, if the user explicitly enables the 'split-mode' or Stork
-     * finds that the host reservation comprises different DHCP option sets
-     * for different servers, the form provides a way to specify the options
-     * individually.
-     *
-     * This flag enables the described mode.
-     */
-    splitFormMode: boolean = false
-
-    /**
      * Holds the received server's response to the updateHostBegin call.
      *
      * It is required to revert host reservation edits.
@@ -342,6 +327,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this.formGroup = this._formBuilder.group(
             {
                 globalReservation: [false],
+                splitFormMode: [false],
                 selectedDaemons: ['', Validators.required],
                 selectedSubnet: [null],
                 hostIdGroup: this._formBuilder.group(
@@ -357,6 +343,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 ),
                 ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
                 hostname: ['', StorkValidators.fqdn],
+                clientClasses: this._formBuilder.array([this._formBuilder.control(null)]),
                 // The outer array holds different option sets for different servers.
                 // The inner array holds the actual option sets. If the split-mode
                 // is disabled, there is only one outer array.
@@ -462,10 +449,17 @@ export class HostFormComponent implements OnInit, OnDestroy {
             }
             daemons.push(daemon)
         }
+        const clientClasses: Array<SelectableClientClass> = []
+        for (const c of data.clientClasses) {
+            clientClasses.push({
+                name: c,
+            })
+        }
         const mappedData: MappedHostBeginData = {
             id: data.id,
             subnets: data.subnets,
             daemons: daemons,
+            clientClasses: clientClasses,
         }
         if ('host' in data) {
             mappedData.host = data.host
@@ -495,6 +489,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this.form.filteredDaemons = this.form.allDaemons
         // Initially, show all subnets.
         this.form.filteredSubnets = this.form.allSubnets
+        // Client classes.
+        this.form.clientClasses = data.clientClasses
         // Initialize host-specific controls if the host information is available.
         if (this.hostId && 'host' in data && data.host) {
             this.savedUpdateHostBeginData = data
@@ -560,12 +556,11 @@ export class HostFormComponent implements OnInit, OnDestroy {
 
         // Split form mode is only set when there are multiple servers associated
         // with the edited host and at least one of the servers has different
-        // set of DHCP options.
-        this.splitFormMode =
-            host.localHosts?.length > 1 &&
-            host.localHosts.slice(1).some((lh) => lh.optionsHash !== host.localHosts[0].optionsHash)
+        // set of DHCP options or client classes.
+        const splitFormMode = hasDifferentLocalHostData(host)
+        this.formGroup.get('splitFormMode').setValue(splitFormMode)
 
-        for (let i = 0; i < (this.splitFormMode ? host.localHosts.length : 1); i++) {
+        for (let i = 0; i < (splitFormMode ? host.localHosts.length : 1); i++) {
             let converted = this._optionSetFormService.convertOptionsToForm(
                 this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
                 host.localHosts[i].options
@@ -574,6 +569,13 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this.optionsArray.setControl(0, converted)
             } else {
                 this.optionsArray.push(converted)
+            }
+
+            const clientClasses = host.localHosts[i].clientClasses ? [...host.localHosts[i].clientClasses] : []
+            if (this.clientClassesArray.length > i) {
+                this.clientClassesArray.setControl(0, this._formBuilder.control(clientClasses))
+            } else {
+                this.clientClassesArray.push(this._formBuilder.control(clientClasses))
             }
         }
     }
@@ -762,6 +764,40 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Convenience function returning the form array with client class sets.
+     *
+     * Each item in the array comprises a form control with an array of
+     * client classes as strings for one of the servers (when split edit
+     * mode enabled) or for all servers (when split edit mode disabled.)
+     *
+     * @returns Form array comprising client classes for different servers.
+     */
+    get clientClassesArray(): UntypedFormArray {
+        return this.formGroup.get('clientClasses') as UntypedFormArray
+    }
+
+    /**
+     * Convenience function returning form control with client classes.
+     *
+     * @param index index of the control to return.
+     * @returns form control with client classes.
+     */
+    getClientClassSetControl(index: number): UntypedFormControl {
+        return this.clientClassesArray.at(index) as UntypedFormControl
+    }
+
+    /**
+     * Resets the part of the form comprising client classes.
+     *
+     * It removes all existing client class form controls and re-creates
+     * the default one.
+     */
+    private _resetClientClassesArray() {
+        this.clientClassesArray.clear()
+        this.clientClassesArray.push(this._formBuilder.control(null))
+    }
+
+    /**
      * Convenience function returning the form array with DHCP option sets.
      *
      * Each item in the array comprises another form array representing a
@@ -777,6 +813,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
     /**
      * Convenience function returning the form array with DHCP options.
      *
+     * @param index index of the form array to return.
      * @returns form array with DHCP options.
      */
     getOptionSetArray(index: number): UntypedFormArray {
@@ -802,16 +839,19 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * one form, common for all servers.
      */
     onSplitModeChange(): void {
-        if (this.splitFormMode) {
+        const splitFormMode = this.formGroup.get('splitFormMode').value
+        if (splitFormMode) {
             const selectedDaemons = this.formGroup.get('selectedDaemons').value
             const itemsToAdd = selectedDaemons.length - this.optionsArray.length
             if (selectedDaemons.length >= this.optionsArray.length) {
                 for (let i = 0; i < itemsToAdd; i++) {
+                    this.clientClassesArray.push(this._optionSetFormService.cloneControl(this.clientClassesArray.at(0)))
                     this.optionsArray.push(this._optionSetFormService.cloneControl(this.optionsArray.at(0)))
                 }
             }
         } else {
             for (let i = this.optionsArray.length; i >= 1; i--) {
+                this.clientClassesArray.removeAt(i)
                 this.optionsArray.removeAt(i)
             }
         }
@@ -848,6 +888,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             // no longer matches the servers selection. Let's reset the option
             // data.
             this._resetOptionsArray()
+            this._resetClientClassesArray()
         }
 
         // Selectable host identifier types depend on the selected server types.
@@ -892,11 +933,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
             this.formGroup.get('selectedSubnet').patchValue(null)
         }
 
-        if (this.splitFormMode) {
+        const splitFormMode = this.formGroup.get('splitFormMode').value
+        if (splitFormMode) {
+            let clientClassSets: UntypedFormControl[] = []
             let optionSets: UntypedFormArray[] = []
             for (let i = 0; i < selectedDaemons.length; i++) {
+                clientClassSets.push(this._formBuilder.control(null))
                 optionSets.push(this._formBuilder.array([]))
             }
+            this.formGroup.setControl('clientClasses', this._formBuilder.array(clientClassSets))
             this.formGroup.setControl('options', this._formBuilder.array(optionSets))
         }
     }
@@ -976,6 +1021,21 @@ export class HostFormComponent implements OnInit, OnDestroy {
             ? 0
             : this.formGroup.get('selectedSubnet').value
 
+        // Client classes.
+        let clientClasses: Array<Array<string>> = []
+        for (let ctrl of this.clientClassesArray.controls) {
+            let clientClass: Array<string> = []
+            if (Array.isArray(ctrl.value)) {
+                for (let c of ctrl.value) {
+                    clientClass.push(c)
+                }
+            }
+            clientClasses.push(clientClass)
+            if (!this.formGroup.get('splitFormMode').value) {
+                break
+            }
+        }
+
         // DHCP options.
         let options: Array<Array<DHCPOption>> = []
         for (let arr of this.optionsArray.controls) {
@@ -987,7 +1047,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                     )
                 )
                 // There should be only one option set when the split mode is disabled.
-                if (!this.splitFormMode) {
+                if (!this.formGroup.get('splitFormMode').value) {
                     break
                 }
             } catch (err) {
@@ -1008,7 +1068,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
             localHosts.push({
                 daemonId: selectedDaemons[i],
                 dataSource: 'api',
-                options: this.splitFormMode ? options[i] : options[0],
+                clientClasses: this.formGroup.get('splitFormMode').value ? clientClasses[i] : clientClasses[0],
+                options: this.formGroup.get('splitFormMode').value ? options[i] : options[0],
             })
         }
 
@@ -1134,6 +1195,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * A function called when user clicks the button to revert host edit changes.
      */
     onRevert(): void {
+        console.info(this.savedUpdateHostBeginData)
         this._createDefaultFormGroup()
         this._initializeForm(this.savedUpdateHostBeginData)
     }

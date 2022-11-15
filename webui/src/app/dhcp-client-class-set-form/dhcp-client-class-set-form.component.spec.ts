@@ -52,7 +52,8 @@ describe('DhcpClientClassSetFormComponent', () => {
                 name: 'DROP',
             },
         ]
-        component.ngOnInit()
+        fixture.detectChanges()
+
         expect(component.sortedClientClasses).toBeTruthy()
         expect(component.sortedClientClasses.length).toBe(3)
         expect(component.sortedClientClasses[0].name).toBe('DROP')
@@ -72,7 +73,8 @@ describe('DhcpClientClassSetFormComponent', () => {
                 name: 'DROP',
             },
         ]
-        component.ngOnInit()
+        fixture.detectChanges()
+
         const listButton = fixture.debugElement.query(By.css('[label=List]'))
         expect(listButton).toBeTruthy()
         listButton.nativeElement.click()
@@ -103,7 +105,8 @@ describe('DhcpClientClassSetFormComponent', () => {
                 name: 'DROP',
             },
         ]
-        component.ngOnInit()
+        fixture.detectChanges()
+
         const listButton = fixture.debugElement.query(By.css('[label=List]'))
         expect(listButton).toBeTruthy()
         listButton.nativeElement.click()

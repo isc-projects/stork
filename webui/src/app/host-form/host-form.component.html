@@ -1,16 +1,23 @@
-<p-fieldset legend="Form Settings" styleClass="mt-4">
-    <div class="flex align-items-center">
-        <p-inputSwitch ngDefaultControl [(ngModel)]="splitFormMode" (onChange)="onSplitModeChange()"></p-inputSwitch>
-        <div class="flex ml-2">Toggle editing DHCP options individually for each server.</div>
-    </div>
-</p-fieldset>
 <form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup">
+    <p-fieldset legend="Form Settings" styleClass="mt-4">
+        <div class="flex flex-column">
+            <div class="flex align-items-center">
+                <p-inputSwitch
+                    ngDefaultControl
+                    formControlName="splitFormMode"
+                    (onChange)="onSplitModeChange()"
+                ></p-inputSwitch>
+                <div class="flex ml-2">Configure individual server values.</div>
+            </div>
+            <div class="flex align-items-center mt-2">
+                <p-inputSwitch ngDefaultControl formControlName="globalReservation"></p-inputSwitch>
+                <div class="flex ml-2">Global reservation.</div>
+            </div>
+        </div>
+    </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="grid host-form-abs-width">
-            <div class="col-12 mb-3">
-                <p-checkbox label="Global reservation" formControlName="globalReservation" [binary]="true"></p-checkbox>
-            </div>
-            <div class="col-10 mb-3">
+            <div class="col-10 mt-4">
                 <span class="p-float-label mb-2">
                     <p-multiSelect
                         inputId="servers-select"
@@ -36,7 +43,7 @@
                 </small>
             </div>
             <div *ngIf="!formGroup.get('globalReservation').value" class="col-8">
-                <span class="p-float-label mb-2">
+                <span class="p-float-label mt-2">
                     <p-dropdown
                         inputId="subnets-dropdown"
                         optionLabel="subnet"
@@ -64,7 +71,7 @@
     </p-fieldset>
 
     <p-fieldset legend="DHCP Identifier" styleClass="mt-4">
-        <div formGroupName="hostIdGroup" class="grid host-form-abs-width">
+        <div formGroupName="hostIdGroup" class="grid host-form-abs-width mt-3">
             <div class="col-3">
                 <p-dropdown
                     [options]="hostIdTypes"
@@ -133,111 +140,130 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="IP Reservations" styleClass="mt-4">
-        <div formArrayName="ipGroups" class="grid host-form-abs-width">
-            <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="mt-3">
-                <ng-container [formGroup]="ipGroup" class="flex align-items-start">
-                    <div class="col-3">
-                        <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width"> </p-dropdown>
-                    </div>
-                    <ng-container [ngSwitch]="ipGroup.value.ipType">
-                        <ng-container *ngSwitchCase="'ipv4'">
-                            <div class="col-8">
-                                <input
-                                    *ngSwitchCase="'ipv4'"
-                                    pInputText
-                                    formControlName="inputIPv4"
-                                    class="full-width"
-                                    [placeholder]="ipv4Placeholder"
-                                />
-                            </div>
-                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
-                            <div
-                                *ngIf="
-                                    ipGroup.get('inputIPv4').invalid &&
-                                    (ipGroup.get('inputIPv4').dirty || ipGroup.get('inputIPv4').touched)
-                                "
-                                class="col-offset-3 col-9 pt-0"
-                            >
-                                <small class="p-error block">
-                                    {{
-                                        ipGroup.get('inputIPv4').hasError('ip-subnet-range')
-                                            ? ipGroup.get('inputIPv4').errors['ip-subnet-range']
-                                            : 'Please specify a valid IPv4 address.'
-                                    }}
-                                </small>
-                            </div>
-                        </ng-container>
-                        <ng-container *ngSwitchCase="'ia_na'">
-                            <div class="col-8">
-                                <input
-                                    *ngSwitchCase="'ia_na'"
-                                    pInputText
-                                    formControlName="inputNA"
-                                    class="full-width"
-                                    [placeholder]="ipv6Placeholder"
-                                />
-                            </div>
-                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
-                            <div
-                                *ngIf="
-                                    ipGroup.get('inputNA').invalid &&
-                                    (ipGroup.get('inputNA').dirty || ipGroup.get('inputNA').touched)
-                                "
-                                class="col-offset-3 col-9 pt-0"
-                            >
-                                <small class="p-error block">
-                                    {{
-                                        ipGroup.get('inputNA').hasError('ip-subnet-range')
-                                            ? ipGroup.get('inputNA').errors['ip-subnet-range']
-                                            : 'Please specify a valid IPv6 address.'
-                                    }}
-                                </small>
-                            </div>
-                        </ng-container>
-                        <ng-container *ngSwitchCase="'ia_pd'">
-                            <div class="col-6">
-                                <input
-                                    pInputText
-                                    formControlName="inputPD"
-                                    class="full-width"
-                                    placeholder="e.g. 3000:1::"
-                                />
-                            </div>
-                            <div class="col-2">
-                                <p-inputNumber
-                                    ngDefaultControl
-                                    min="1"
-                                    max="128"
-                                    inputStyleClass="full-width"
-                                    formControlName="inputPDLength"
-                                >
-                                </p-inputNumber>
-                            </div>
-                            <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
-                            <div
-                                *ngIf="
-                                    ipGroup.get('inputPD').invalid &&
-                                    (ipGroup.get('inputPD').dirty || ipGroup.get('inputPD').touched)
-                                "
-                                class="col-offset-3 col-9 pt-0"
-                            >
-                                <small class="p-error block">Please specify a valid IPv6 prefix. </small>
-                            </div>
-                        </ng-container>
-                    </ng-container>
-                    <ng-template #ipDeleteButton>
-                        <div class="col-1">
-                            <button
-                                pButton
-                                pRipple
-                                type="button"
-                                icon="pi pi-times"
-                                class="full-width mr-2 p-button-rounded p-button-danger p-button-text"
-                                (click)="deleteIPInput(i)"
-                            ></button>
+    <p-fieldset legend="Host Reservations" styleClass="mt-4">
+        <div class="grid host-form-abs-width mt-2">
+            <div class="col-11">
+                <span class="p-float-label">
+                    <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
+                    <label for="hostname-input">Hostname</label>
+                </span>
+            </div>
+            <div class="col-11 pt-0">
+                <small
+                    *ngIf="
+                        formGroup.get('hostname').invalid &&
+                        (formGroup.get('hostname').dirty || formGroup.get('hostname').touched)
+                    "
+                    class="p-error block"
+                    >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
+                </small>
+            </div>
+            <ng-container formArrayName="ipGroups">
+                <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i">
+                    <ng-container [formGroup]="ipGroup" class="flex align-items-start">
+                        <div class="col-3">
+                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width">
+                            </p-dropdown>
                         </div>
-                    </ng-template>
+                        <ng-container [ngSwitch]="ipGroup.value.ipType">
+                            <ng-container *ngSwitchCase="'ipv4'">
+                                <div class="col-8">
+                                    <input
+                                        *ngSwitchCase="'ipv4'"
+                                        pInputText
+                                        formControlName="inputIPv4"
+                                        class="full-width"
+                                        [placeholder]="ipv4Placeholder"
+                                    />
+                                </div>
+                                <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                                <div
+                                    *ngIf="
+                                        ipGroup.get('inputIPv4').invalid &&
+                                        (ipGroup.get('inputIPv4').dirty || ipGroup.get('inputIPv4').touched)
+                                    "
+                                    class="col-offset-3 col-9 pt-0"
+                                >
+                                    <small class="p-error block">
+                                        {{
+                                            ipGroup.get('inputIPv4').hasError('ip-subnet-range')
+                                                ? ipGroup.get('inputIPv4').errors['ip-subnet-range']
+                                                : 'Please specify a valid IPv4 address.'
+                                        }}
+                                    </small>
+                                </div>
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'ia_na'">
+                                <div class="col-8">
+                                    <input
+                                        *ngSwitchCase="'ia_na'"
+                                        pInputText
+                                        formControlName="inputNA"
+                                        class="full-width"
+                                        [placeholder]="ipv6Placeholder"
+                                    />
+                                </div>
+                                <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                                <div
+                                    *ngIf="
+                                        ipGroup.get('inputNA').invalid &&
+                                        (ipGroup.get('inputNA').dirty || ipGroup.get('inputNA').touched)
+                                    "
+                                    class="col-offset-3 col-9 pt-0"
+                                >
+                                    <small class="p-error block">
+                                        {{
+                                            ipGroup.get('inputNA').hasError('ip-subnet-range')
+                                                ? ipGroup.get('inputNA').errors['ip-subnet-range']
+                                                : 'Please specify a valid IPv6 address.'
+                                        }}
+                                    </small>
+                                </div>
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'ia_pd'">
+                                <div class="col-6">
+                                    <input
+                                        pInputText
+                                        formControlName="inputPD"
+                                        class="full-width"
+                                        placeholder="e.g. 3000:1::"
+                                    />
+                                </div>
+                                <div class="col-2">
+                                    <p-inputNumber
+                                        ngDefaultControl
+                                        min="1"
+                                        max="128"
+                                        inputStyleClass="full-width"
+                                        formControlName="inputPDLength"
+                                    >
+                                    </p-inputNumber>
+                                </div>
+                                <ng-container *ngTemplateOutlet="ipDeleteButton"></ng-container>
+                                <div
+                                    *ngIf="
+                                        ipGroup.get('inputPD').invalid &&
+                                        (ipGroup.get('inputPD').dirty || ipGroup.get('inputPD').touched)
+                                    "
+                                    class="col-offset-3 col-9 pt-0"
+                                >
+                                    <small class="p-error block">Please specify a valid IPv6 prefix. </small>
+                                </div>
+                            </ng-container>
+                        </ng-container>
+                        <ng-template #ipDeleteButton>
+                            <div class="col-1">
+                                <button
+                                    pButton
+                                    pRipple
+                                    type="button"
+                                    icon="pi pi-times"
+                                    class="full-width mr-2 p-button-rounded p-button-danger p-button-text"
+                                    (click)="deleteIPInput(i)"
+                                ></button>
+                            </div>
+                        </ng-template>
+                    </ng-container>
                 </ng-container>
             </ng-container>
         </div>
@@ -252,44 +278,55 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="Non-IP Reservations" styleClass="mt-4">
-        <div class="grid host-form-abs-width">
-            <div class="col-10">
-                <span class="p-float-label mt-3">
-                    <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
-                    <label for="hostname-input">Hostname</label>
-                </span>
-            </div>
-            <div class="col-10 pt-0">
-                <small
-                    *ngIf="
-                        formGroup.get('hostname').invalid &&
-                        (formGroup.get('hostname').dirty || formGroup.get('hostname').touched)
+    <ng-template #splittableFieldsetHeaderTemplate let-configuredName="configuredName" let-i="index">
+        <span class="p-fieldset-legend-text"
+            >{{ configuredName }}
+            <span
+                *ngIf="formGroup.get('splitFormMode').value && selectedDaemons.value?.length >= i + 1"
+                class="font-normal"
+                >&nbsp;/&nbsp;
+                <a
+                    routerLink="/apps/{{ form.getDaemonById(selectedDaemons.value[i]).appType }}/{{
+                        form.getDaemonById(selectedDaemons.value[i]).appId
+                    }}"
+                >
+                    {{ form.getDaemonById(selectedDaemons.value[i]).label }}
+                </a>
+            </span>
+        </span>
+    </ng-template>
+
+    <ng-container *ngFor="let clientClassesSet of clientClassesArray.controls; let i = index">
+        <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="mt-4">
+            <ng-template pTemplate="header">
+                <ng-container
+                    *ngTemplateOutlet="
+                        splittableFieldsetHeaderTemplate;
+                        context: { configuredName: 'Client Classes', index: i }
                     "
-                    class="p-error block"
-                    >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
-                </small>
+                ></ng-container>
+            </ng-template>
+            <div class="grid host-form-abs-width">
+                <div class="col-10 mt-3">
+                    <app-dhcp-client-class-set-form
+                        [clientClasses]="form.clientClasses"
+                        [classFormControl]="clientClassesSet"
+                    ></app-dhcp-client-class-set-form>
+                </div>
             </div>
-        </div>
-    </p-fieldset>
+        </p-fieldset>
+    </ng-container>
 
     <ng-container formArrayName="options">
         <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index" styleClass="mt-4">
-            <p-fieldset *ngIf="i === 0 || splitFormMode" styleClass="mt-4">
+            <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="mt-4">
                 <ng-template pTemplate="header">
-                    <span
-                        >DHCP Options
-                        <span *ngIf="splitFormMode && selectedDaemons.value?.length >= i + 1" class="font-normal"
-                            >&nbsp;/&nbsp;
-                            <a
-                                routerLink="/apps/{{ form.getDaemonById(selectedDaemons.value[i]).appType }}/{{
-                                    form.getDaemonById(selectedDaemons.value[i]).appId
-                                }}"
-                            >
-                                {{ form.getDaemonById(selectedDaemons.value[i]).label }}
-                            </a>
-                        </span>
-                    </span>
+                    <ng-container
+                        *ngTemplateOutlet="
+                            splittableFieldsetHeaderTemplate;
+                            context: { configuredName: 'DHCP Options', index: i }
+                        "
+                    ></ng-container>
                 </ng-template>
                 <div class="mb-3 mt-3 host-form-abs-width" [formGroupName]="i">
                     <app-dhcp-option-set-form

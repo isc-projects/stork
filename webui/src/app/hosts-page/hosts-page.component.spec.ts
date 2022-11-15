@@ -29,11 +29,13 @@ import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HostFormComponent } from '../host-form/host-form.component'
-import { Hosts } from '../backend/model/hosts'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { ChipsModule } from 'primeng/chips'
+import { Button } from 'protractor'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -56,6 +58,8 @@ describe('HostsPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [DHCPService, UntypedFormBuilder, ConfirmationService, MessageService],
             imports: [
+                ButtonModule,
+                ChipsModule,
                 FormsModule,
                 TableModule,
                 HttpClientTestingModule,
@@ -78,6 +82,7 @@ describe('HostsPageComponent', () => {
                 FormsModule,
                 FieldsetModule,
                 ProgressSpinnerModule,
+                TableModule,
                 ToggleButtonModule,
                 ButtonModule,
                 CheckboxModule,
@@ -96,6 +101,7 @@ describe('HostsPageComponent', () => {
                 HostTabComponent,
                 IdentifierComponent,
                 HostFormComponent,
+                DhcpClientClassSetFormComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
                 DhcpOptionSetViewComponent,
@@ -650,6 +656,7 @@ describe('HostsPageComponent', () => {
                     },
                 },
             ],
+            clientClasses: ['router', 'cable-modem'],
         }
         const okResp: any = {
             status: 200,
@@ -701,6 +708,7 @@ describe('HostsPageComponent', () => {
                     },
                 },
             ],
+            clientClasses: ['router', 'cable-modem'],
         }
         const okResp: any = {
             status: 200,
@@ -752,6 +760,7 @@ describe('HostsPageComponent', () => {
                     },
                 },
             ],
+            clientClasses: ['router', 'cable-modem'],
         }
         const okResp: any = {
             status: 200,
@@ -843,6 +852,7 @@ describe('HostsPageComponent', () => {
                     },
                 },
             ],
+            clientClasses: ['router', 'cable-modem'],
             host: component.hosts[0],
         }
         const okResp: any = {
@@ -934,6 +944,7 @@ describe('HostsPageComponent', () => {
                     },
                 },
             ],
+            clientClasses: ['router', 'cable-modem'],
             host: component.hosts[0],
         }
         const okResp: any = {

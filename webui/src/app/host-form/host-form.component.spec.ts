@@ -1,6 +1,12 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
-import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import {
+    UntypedFormArray,
+    UntypedFormBuilder,
+    FormsModule,
+    ReactiveFormsModule,
+    SelectMultipleControlValueAccessor,
+} from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -22,9 +28,10 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HostForm } from '../forms/host-form'
 import { DHCPService } from '../backend'
-import { Host } from '../backend/model/host'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { ChipsModule } from 'primeng/chips'
+import { TableModule } from 'primeng/table'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -116,6 +123,7 @@ describe('HostFormComponent', () => {
                 },
             },
         ],
+        clientClasses: ['router', 'cable-modem'],
     }
 
     beforeEach(async () => {
@@ -124,6 +132,7 @@ describe('HostFormComponent', () => {
             imports: [
                 ButtonModule,
                 CheckboxModule,
+                ChipsModule,
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
@@ -137,9 +146,16 @@ describe('HostFormComponent', () => {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 SplitButtonModule,
+                TableModule,
                 ToggleButtonModule,
             ],
-            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent, HostFormComponent],
+            declarations: [
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                HelpTipComponent,
+                HostFormComponent,
+            ],
         }).compileComponents()
     })
 
@@ -773,6 +789,7 @@ describe('HostFormComponent', () => {
         component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
         component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
         component.formGroup.get('hostname').setValue('example.org')
+        component.getClientClassSetControl(0).setValue(['cable-modem', 'router'])
         component.getOptionSetArray(0).push(
             formBuilder.group({
                 optionCode: [5],
@@ -816,6 +833,7 @@ describe('HostFormComponent', () => {
             hostname: 'example.org',
             localHosts: [
                 {
+                    clientClasses: ['cable-modem', 'router'],
                     daemonId: 1,
                     dataSource: 'api',
                     options: [
@@ -879,6 +897,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    clientClasses: [],
                     options: [],
                 },
             ],
@@ -946,6 +965,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 5,
                     dataSource: 'api',
+                    clientClasses: [],
                     options: [],
                 },
             ],
@@ -997,6 +1017,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 5,
                     dataSource: 'api',
+                    clientClasses: [],
                     options: [],
                 },
             ],
@@ -1006,7 +1027,7 @@ describe('HostFormComponent', () => {
         expect(messageService.add).toHaveBeenCalled()
     }))
 
-    it('should submit new dhcpv6 host with different opion sets', fakeAsync(() => {
+    it('should submit new dhcpv6 host with different local hosts', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
@@ -1024,7 +1045,7 @@ describe('HostFormComponent', () => {
         component.formGroup.get('hostIdGroup.idFormat').setValue('text')
         component.formGroup.get('hostIdGroup.idInputText').setValue(' foobar ')
 
-        component.splitFormMode = true
+        component.formGroup.get('splitFormMode').setValue(true)
         component.onSplitModeChange()
         fixture.detectChanges()
 
@@ -1056,6 +1077,9 @@ describe('HostFormComponent', () => {
             })
         )
 
+        component.getClientClassSetControl(0).setValue(['foo', 'bar'])
+        component.getClientClassSetControl(1).setValue(['baz', 'bar'])
+
         expect(component.formGroup.valid).toBeTrue()
 
         const okResp: any = {
@@ -1083,6 +1107,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 4,
                     dataSource: 'api',
+                    clientClasses: ['foo', 'bar'],
                     options: [
                         {
                             alwaysSend: true,
@@ -1102,6 +1127,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 5,
                     dataSource: 'api',
+                    clientClasses: ['baz', 'bar'],
                     options: [
                         {
                             alwaysSend: true,
@@ -1205,19 +1231,33 @@ describe('HostFormComponent', () => {
         expect(optionsForm.componentInstance.v6).toBeTrue()
     }))
 
-    it('should enable split editing mode of options', fakeAsync(() => {
+    it('should include client classes form', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        component.splitFormMode = true
+        const clientClassesForm = fixture.debugElement.query(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassesForm).toBeTruthy()
+    }))
+
+    it('should enable split editing mode', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('splitFormMode').setValue(true)
         component.onSplitModeChange()
         fixture.detectChanges()
 
         let optionForms = fixture.debugElement.queryAll(By.css('app-dhcp-option-set-form'))
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(1)
+
+        let clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassForms).toBeTruthy()
+        expect(clientClassForms.length).toBe(1)
 
         component.formGroup.get('selectedDaemons').setValue([2])
         component.onDaemonsChange()
@@ -1227,6 +1267,10 @@ describe('HostFormComponent', () => {
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(1)
 
+        clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassForms).toBeTruthy()
+        expect(clientClassForms.length).toBe(1)
+
         component.formGroup.get('selectedDaemons').setValue([2, 1])
         component.onDaemonsChange()
         fixture.detectChanges()
@@ -1235,9 +1279,16 @@ describe('HostFormComponent', () => {
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(2)
 
+        clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassForms).toBeTruthy()
+        expect(clientClassForms.length).toBe(2)
+
         expect(component.optionsArray.length).toBe(2)
         expect((component.optionsArray.at(0) as UntypedFormArray).length).toBe(0)
         expect((component.optionsArray.at(1) as UntypedFormArray).length).toBe(0)
+
+        expect(component.clientClassesArray.length).toBe(2)
+        expect(component.clientClassesArray.get('0').value).toBeFalsy()
 
         component.formGroup.get('selectedDaemons').setValue([1])
         component.onDaemonsChange()
@@ -1247,6 +1298,10 @@ describe('HostFormComponent', () => {
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(1)
 
+        clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassForms).toBeTruthy()
+        expect(clientClassForms.length).toBe(1)
+
         component.formGroup.get('selectedDaemons').setValue([])
         component.onDaemonsChange()
         fixture.detectChanges()
@@ -1254,9 +1309,13 @@ describe('HostFormComponent', () => {
         optionForms = fixture.debugElement.queryAll(By.css('app-dhcp-option-set-form'))
         expect(optionForms).toBeTruthy()
         expect(optionForms.length).toBe(1)
+
+        clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(clientClassForms).toBeTruthy()
+        expect(clientClassForms.length).toBe(1)
     }))
 
-    it('should toggle split editing mode of options', fakeAsync(() => {
+    it('should toggle split editing mode', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
@@ -1268,7 +1327,7 @@ describe('HostFormComponent', () => {
         expect(component.optionsArray.length).toBe(1)
         expect(component.formGroup.get('selectedDaemons').value.length).toBe(3)
 
-        component.splitFormMode = true
+        component.formGroup.get('splitFormMode').setValue(true)
         component.onSplitModeChange()
         fixture.detectChanges()
 
@@ -1277,7 +1336,7 @@ describe('HostFormComponent', () => {
         expect(optionForms.length).toBe(3)
 
         const optionSetLeft = component.optionsArray.at(0)
-        component.splitFormMode = false
+        component.formGroup.get('splitFormMode').setValue(false)
         component.onSplitModeChange()
         fixture.detectChanges()
 
@@ -1287,7 +1346,7 @@ describe('HostFormComponent', () => {
         expect(component.optionsArray.at(0)).toBe(optionSetLeft)
     }))
 
-    it('should clone options upon switching to split mode', fakeAsync(() => {
+    it('should clone local host values upon switching to split mode', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
@@ -1309,9 +1368,10 @@ describe('HostFormComponent', () => {
                 suboptions: formBuilder.array([]),
             })
         )
+        component.getClientClassSetControl(0).setValue(['foo', 'bar'])
         fixture.detectChanges()
 
-        component.splitFormMode = true
+        component.formGroup.get('splitFormMode').setValue(true)
         component.onSplitModeChange()
         fixture.detectChanges()
 
@@ -1322,6 +1382,10 @@ describe('HostFormComponent', () => {
         expect(component.getOptionSetArray(1).get('0.optionCode')).toBeTruthy()
         expect(component.getOptionSetArray(0).get('0.optionCode').value).toBe(5)
         expect(component.getOptionSetArray(1).get('0.optionCode').value).toBe(5)
+
+        expect(component.clientClassesArray.length).toBe(2)
+        expect(component.getClientClassSetControl(0).value).toEqual(['foo', 'bar'])
+        expect(component.getClientClassSetControl(1).value).toEqual(['foo', 'bar'])
     }))
 
     it('should open a form for editing dhcpv4 host', fakeAsync(() => {
@@ -1349,6 +1413,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    clientClasses: ['foo'],
                     options: [
                         {
                             alwaysSend: true,
@@ -1369,6 +1434,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 2,
                     dataSource: 'api',
+                    clientClasses: ['bar'],
                     options: [
                         {
                             alwaysSend: true,
@@ -1395,7 +1461,7 @@ describe('HostFormComponent', () => {
 
         expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
         expect(component.formGroup.valid).toBeTrue()
-        expect(component.splitFormMode).toBeTrue()
+        expect(component.formGroup.get('splitFormMode').value).toBeTrue()
         expect(component.formGroup.get('globalReservation').value).toBeFalse()
         expect(component.formGroup.get('selectedDaemons').value.length).toBe(2)
         expect(component.formGroup.get('selectedSubnet').value).toBe(1)
@@ -1415,6 +1481,9 @@ describe('HostFormComponent', () => {
         optionFields = component.getOptionSetArray(1).get('0.optionFields') as UntypedFormArray
         expect(optionFields.length).toBe(1)
         expect(optionFields.get('0.control').value).toBe('192.0.2.2')
+        expect(component.clientClassesArray.length).toBe(2)
+        expect(component.getClientClassSetControl(0).value).toEqual(['foo'])
+        expect(component.getClientClassSetControl(1).value).toEqual(['bar'])
 
         const okResp: any = {
             status: 200,
@@ -1446,6 +1515,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    clientClasses: ['foo'],
                     options: [
                         {
                             alwaysSend: true,
@@ -1465,6 +1535,7 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 2,
                     dataSource: 'api',
+                    clientClasses: ['bar'],
                     options: [
                         {
                             alwaysSend: true,

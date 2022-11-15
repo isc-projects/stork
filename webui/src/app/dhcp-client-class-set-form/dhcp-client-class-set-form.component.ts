@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core'
 import { UntypedFormControl } from '@angular/forms'
+import { v4 as uuidv4 } from 'uuid'
 import { OverlayPanel } from 'primeng/overlaypanel'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 
@@ -30,9 +31,9 @@ export class DhcpClientClassSetFormComponent implements OnInit {
     @Input() classFormControl: UntypedFormControl
 
     /**
-     * A list of client classes that can be selected from the overlay panel.
+     * Generated input box identifier.
      */
-    @Input() clientClasses: SelectableClientClass[] = []
+    inputId: string
 
     /**
      * A sorted list of classes that can be selected in the overlay.
@@ -55,10 +56,21 @@ export class DhcpClientClassSetFormComponent implements OnInit {
      * It sorts the list of client classes specified as an input.
      */
     ngOnInit(): void {
-        if (!this.clientClasses) {
+        this.inputId = uuidv4()
+    }
+
+    /**
+     * Sorts and sets client classes displayed in the overlay panel.
+     *
+     * @param clientClasses unordered list of client classes.
+     */
+    @Input()
+    set clientClasses(clientClasses: SelectableClientClass[]) {
+        if (!clientClasses) {
+            this.sortedClientClasses = []
             return
         }
-        this.sortedClientClasses = this.clientClasses
+        this.sortedClientClasses = clientClasses
         this.sortedClientClasses.sort((c1, c2) => {
             return c1.name > c2.name ? 1 : c1.name === c2.name ? 0 : -1
         })
