@@ -74,45 +74,6 @@ class Server(ComposeServiceWrapper):
         """
         self.close()
 
-    def _no_validate_kwargs(self, input=True, output=True):
-        """
-        Open API client arguments that disable the input and
-        output validation for a specific call.
-
-        Open API client for Python has built-in arguments that disable the
-        validation: _check_input_type for input and _check_return_type for
-        output. If the _check_input_type is False, the non-nullable check is
-        performed instead of it. It recognizes that the _host_index (optional)
-        parameter is None and raises the false alarm. To work around it, we
-        need to specify this argument. But defining the host id suppresses
-        using the URL from the configuration. Instead, the "/api" (from the
-        Swagger file) is used. I didn't find an easy, legal way to inject the
-        correct value. This hack overrides the method that produces the host
-        list with a valid one.
-
-        Parameters
-        ----------
-        input : bool, optional
-            Suppress the input types validation, by default True
-        output : bool, optional
-            Suppress the output types validation, by default True
-
-        Returns
-        -------
-        dict
-            Parameters that disable the input and output validation
-        """
-        params = {}
-        if input:
-            configuration = self._api_client.configuration
-            configuration.get_host_settings = lambda: [
-                {'url': configuration._base_path}
-            ]
-            params.update(_host_index=0, _check_input_type=False)
-        if output:
-            params.update(_check_return_type=False)
-        return params
-
     @staticmethod
     def _parse_date(date):
         """
@@ -254,7 +215,8 @@ class Server(ComposeServiceWrapper):
             params["host_id"] = host_id
 
         api_instance = DHCPApi(self._api_client)
-        return api_instance.get_leases(**params, **self._no_validate_kwargs())
+        with _allow_nulls():
+            return api_instance.get_leases(**params)
 
     def list_hosts(self, text=None) -> Hosts:
         """Lists the hosts based on the host identifier."""
@@ -264,7 +226,7 @@ class Server(ComposeServiceWrapper):
         if text is not None:
             params["text"] = text
         api_instance = DHCPApi(self._api_client)
-        with allow_nulls():
+        with _allow_nulls():
             return api_instance.get_hosts(**params)
 
     def list_config_reports(self, daemon_id: int,
@@ -296,7 +258,8 @@ class Server(ComposeServiceWrapper):
         partially deserializes the response. The nested keys don't follow the
         convention, and raw types aren't converted. See Gitlab #727."""
         api_instance = DHCPApi(self._api_client)
-        return api_instance.get_dhcp_overview(**self._no_validate_kwargs())
+        with _allow_nulls():
+            return api_instance.get_dhcp_overview()
 
     # Create
 
@@ -341,12 +304,12 @@ class Server(ComposeServiceWrapper):
         """Updates the machine. It must to contain the valid ID."""
         api_instance = ServicesApi(self._api_client)
 
-        return api_instance.update_machine(
-            id=machine["id"],
-            machine=machine,
-            # This endpoint doesn't return the applications.
-            **self._no_validate_kwargs()
-        )
+        # This endpoint doesn't return the applications.
+        with _allow_nulls():
+            return api_instance.update_machine(
+                id=machine["id"],
+                machine=machine,
+            )
 
     def update_host_reservation(self, host: Host):
         """Shorthand to update a host reservation."""
@@ -362,7 +325,7 @@ class Server(ComposeServiceWrapper):
         def on_begin() -> CreateHostBeginResponse:
             # Begin transaction response contains the daemons without related
             # app access points.
-            with allow_nulls():
+            with _allow_nulls():
                 return api_instance.create_host_begin()
 
         def on_submit(transaction_id: int, host: Host):
@@ -382,7 +345,7 @@ class Server(ComposeServiceWrapper):
         def on_begin() -> UpdateHostBeginResponse:
             # Begin transaction response contains the daemons without related
             # app access points.
-            with allow_nulls():
+            with _allow_nulls():
                 return api_instance.update_host_begin(host_id=host_id)
 
         def on_submit(transaction_id: int, host: Host):
@@ -700,7 +663,7 @@ class Server(ComposeServiceWrapper):
         self._api_client.configuration.disabled_client_side_validations = original_validation_rules
 
 @contextmanager
-def allow_nulls():
+def _allow_nulls():
     """Creates a context within which the unexpected nulls (Nones) are allowed
     in API requests and responses."""
     original = openapi_client.model_utils.is_type_nullable

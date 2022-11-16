@@ -31,7 +31,7 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
     data = server_service.overview()
 
     # 9 leases are initially store in the lease database
-    assert int(data['dhcp4_stats']['assignedAddresses']) > 9
+    assert int(data['dhcp4_stats']['assigned_addresses']) > 9
     assert data['subnets4']['items'] is not None
     # ToDo: Add support for generation IPv6 traffic.
     # assert int(data['dhcp6_stats']['assignedNAs']) > 9

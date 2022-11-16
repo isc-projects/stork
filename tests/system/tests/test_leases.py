@@ -9,33 +9,33 @@ def test_search_leases(kea_service: Kea, server_service: Server):
     # Search by IPv4 address..
     data = server_service.list_leases('192.0.2.1')
     assert data['total'] == 1
-    assert data['items'][0]['ipAddress'] == '192.0.2.1'
+    assert data['items'][0]['ip_address'] == '192.0.2.1'
     assert data['conflicts'] is None
 
     # Search by IPv6 address.
     data = server_service.list_leases('3001:db8:1:42::1')
     assert data['total'] == 1
-    assert data['items'][0]['ipAddress'] == '3001:db8:1:42::1'
+    assert data['items'][0]['ip_address'] == '3001:db8:1:42::1'
     assert data['conflicts'] is None
 
     # Search by MAC.
     data = server_service.list_leases('00:01:02:03:04:02')
     assert data['total'] == 1
-    assert data['items'][0]['ipAddress'] == '192.0.2.2'
+    assert data['items'][0]['ip_address'] == '192.0.2.2'
     assert data['conflicts'] is None
 
     # Search by client id and DUID.
     data = server_service.list_leases('01:02:03:04')
     assert data['total'] == 2
-    assert data['items'][0]['ipAddress'] == '192.0.2.4'
-    assert data['items'][1]['ipAddress'] == '3001:db8:1:42::4'
+    assert data['items'][0]['ip_address'] == '192.0.2.4'
+    assert data['items'][1]['ip_address'] == '3001:db8:1:42::4'
     assert data['conflicts'] is None
 
     # Search by hostname.
     data = server_service.list_leases('host-6.example.org')
     assert data['total'] == 2
-    assert data['items'][0]['ipAddress'] == '192.0.2.6'
-    assert data['items'][1]['ipAddress'] == '3001:db8:1:42::6'
+    assert data['items'][0]['ip_address'] == '192.0.2.6'
+    assert data['items'][1]['ip_address'] == '3001:db8:1:42::6'
     assert data['conflicts'] is None
 
     # Search declined leases.
@@ -49,10 +49,10 @@ def test_search_leases(kea_service: Kea, server_service: Server):
         # The state is declined.
         assert lease['state'] == 1
         # An address should be set.
-        assert 'ipAddress' in lease
+        assert 'ip_address' in lease
     # Sanity check addresses returned.
-    assert data['items'][0]['ipAddress'] == '192.0.2.1'
-    assert data['items'][10]['ipAddress'] == '3001:db8:1:42::1'
+    assert data['items'][0]['ip_address'] == '192.0.2.1'
+    assert data['items'][10]['ip_address'] == '3001:db8:1:42::1'
     assert data['conflicts'] is None
 
     # Blank search text should return none leases
@@ -72,7 +72,7 @@ def test_get_host_leases(kea_service: Kea, server_service: Server):
     # Find the leases for the host.
     leases = server_service.list_leases(host_id=host['id'])
     assert leases['total'] == 1
-    assert leases['items'][0]['ipAddress'] == '192.0.2.2'
+    assert leases['items'][0]['ip_address'] == '192.0.2.2'
     assert leases['conflicts'] is None
 
     # Find the host reservation for IPv6 address.
@@ -82,7 +82,7 @@ def test_get_host_leases(kea_service: Kea, server_service: Server):
     # Find leases for the IPv6 host reservation.
     leases = server_service.list_leases(host_id=host['id'])
     assert leases['total'] == 1
-    assert leases['items'][0]['ipAddress'] == '3001:db8:1:42::2'
+    assert leases['items'][0]['ip_address'] == '3001:db8:1:42::2'
 
     # The lease was assigned to a different client. There should be
     # a conflict returned.
