@@ -345,22 +345,16 @@ def finish(request):
         with open(test_dir / "stderr.log", 'wt') as f:
             f.write(stderr)
 
-        # Collect inspect for non-operational services
-        has_non_operational_service = False
         for service_name in service_names:
-            if compose.is_operational(service_name):
-                continue
-            has_non_operational_service = True
             inspect_stdout = compose.inspect_raw(service_name)
             filename = "inspect-%s.json" % service_name
             with open(test_dir / filename, "wt") as f:
                 f.write(inspect_stdout)
 
-        if has_non_operational_service:
-            # Collect service statuses
-            ps_stdout = compose.ps()
-            with open(test_dir / "ps.out", "wt") as f:
-                f.write(ps_stdout)
+        # Collect service statuses
+        ps_stdout = compose.ps()
+        with open(test_dir / "ps.out", "wt") as f:
+            f.write(ps_stdout)
 
     def collect_logs_and_down_all():
         collect_logs()

@@ -26,7 +26,6 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 
 import os
-import profile
 from typing import Dict, List, Tuple
 import subprocess
 import sys
@@ -34,6 +33,7 @@ import sys
 import yaml
 
 from core.utils import setup_logger, memoize, wait_for_success
+from core.service_state import ServiceState
 
 
 logger = setup_logger(__name__)
@@ -43,18 +43,14 @@ class NoSuchPortExposed(Exception):
     pass
 
 
-class ContainerExitedException(Exception):
-    pass
-
-
 class ContainerNotRunningException(Exception):
     def __init__(self, status):
         super().__init__("status=%s" % status)
 
 
-class ContainerUnhealthyException(Exception):
-    def __init__(self, status):
-        super().__init__("status=%s" % status)
+class ContainerBrokenException(Exception):
+    def __init__(self, state: str):
+        super().__init__(state)
 
 
 _INSPECT_DELIMITER = ";"
@@ -97,12 +93,18 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
 
     Examples
     --------
-    >>> _construct_inspect_format([".State.Status", ".State.Optional?.Status"])
-    {{ .State.Status }};{{ if index .State "Optional" }}{{ .State.Optional.Status }}{{ else }}<@NONE@>{{ end }}
+    >>> _construct_inspect_format([".State.Status", ".State.Optional?.Status", "json .State.Complex"])
+    {{ .State.Status }};{{ if index .State "Optional" }}{{ .State.Optional.Status }}{{ else }}<@NONE@>{{ end }}{{ json .State.Complex }}
     """
     formats = []
     component_delimiter = "."
+    json_prefix = "json "
     for property in properties:
+        as_json = False
+        if property.startswith(json_prefix):
+            as_json = True
+            property = property[len(json_prefix):]
+
         components = property.split(component_delimiter)
         begins = []
         path: List[str] = []
@@ -114,8 +116,9 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
                 ))
             path.append(component)
 
-        format_property = "%s{{ %s }}%s" % (
+        format_property = "%s{{ %s%s }}%s" % (
             "".join(begins),
+            json_prefix if as_json else "",
             component_delimiter.join(path),
             "".join(["{{ else }}%s{{ end }}" %
                     _INSPECT_NONE_MARK, ] * len(begins))
@@ -469,9 +472,10 @@ class DockerCompose(object):
             return None
         return container_id
 
-    def get_service_status(self, service_name):
+    def get_service_state(self, service_name) -> ServiceState:
         """
-        Returns the container and health (if available) status for the service.
+        Returns the container state (status and health (if available)) for the
+        service.
 
         Parameters
         ----------
@@ -480,21 +484,24 @@ class DockerCompose(object):
 
         Returns
         -------
-        tuple[str, str]
-            container status, health status or None
+        ServiceState
+            container state
         """
-        status, health = self.inspect(service_name, ".State.Status",
-                                      ".State.Health?.Status")
-        return status, health
+        data = self.inspect(service_name,
+                            ".State.Status",
+                            ".State.ExitCode",
+                            ".State.Health?.Status",
+                            "json .State.Health?")
+        return ServiceState(*data)
 
     def is_operational(self, service_name):
         """Return true if the service is in the running state and healthy
         (if the HEALTHCHECK is specified)"""
         try:
-            status, health = self.get_service_status(service_name)
+            state = self.get_service_state(service_name)
         except LookupError:
             return False
-        return status == "running" and (health is None or health == "healthy")
+        return state.is_operational()
 
     def get_created_services(self):
         """Return the list of names of services that were created (includes
@@ -525,20 +532,11 @@ class DockerCompose(object):
             Name of the service from the compose file
         """
 
-        status, health = self.get_service_status(service_name)
-        if status == "exited":
-            # break
-            raise ContainerExitedException()
-        if status != "running":
-            # continue
-            raise ContainerNotRunningException(status)
-        if health is not None:
-            if health == "starting":
-                # continue
-                raise ContainerNotRunningException(health)
-            if health == "unhealthy":
-                # break
-                raise ContainerUnhealthyException(health)
+        state = self.get_service_state(service_name)
+        if state.is_broken():
+            raise ContainerBrokenException(str(state))
+        if not state.is_operational():
+            raise ContainerNotRunningException(str(state))
 
     def get_pid(self, service_name, process_name):
         """

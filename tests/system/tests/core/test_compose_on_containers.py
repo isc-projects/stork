@@ -13,9 +13,9 @@ def test_server_instance():
     compose = create_docker_compose()
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    status, health = compose.get_service_status(service_name)
-    assert status == "running"
-    assert health == "healthy"
+    state = compose.get_service_state(service_name)
+    assert state.is_running()
+    assert state.is_healthy()
     compose.stop()
 
 
@@ -25,7 +25,7 @@ def test_kea_only_instance():
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    status, health = compose.get_service_status(service_name)
-    assert status == "running"
-    assert health == "healthy"
+    state = compose.get_service_state(service_name)
+    assert state.is_running()
+    assert state.is_healthy()
     compose.stop()
