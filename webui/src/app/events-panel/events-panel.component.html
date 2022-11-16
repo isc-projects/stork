@@ -123,8 +123,9 @@
 
             <td class="events-table__text"><app-event-text [text]="ev.text"></app-event-text></td>
             <td class="events-table__details" *ngIf="isTable" [innerHTML]="ev.details"></td>
-            <td class="events-table__details" *ngIf="isBare && ev.details">
+            <td class="events-table__details" *ngIf="isBare">
                 <button
+                    *ngIf="ev.details"
                     type="button"
                     pButton
                     pRipple
