@@ -101,7 +101,7 @@
 >
     <ng-template *ngIf="isTable" pTemplate="header">
         <tr>
-            <th class="events-table__level">Lvl</th>
+            <th class="events-table__level">Level</th>
             <th class="events-table__date">Created At</th>
             <th class="events-table__text">Event Text</th>
             <th class="events-table__details">Details</th>
@@ -115,7 +115,7 @@
             <td class="events-table__level events-table__level--warning" *ngIf="ev.level === 1">
                 <i class="pi pi-exclamation-triangle"></i>
             </td>
-            <td class="events-table__level events-table__level--error" *ngIf="ev.level === 2" style="color: red">
+            <td class="events-table__level events-table__level--error" *ngIf="ev.level === 2">
                 <i class="pi pi-exclamation-circle"></i>
             </td>
 
