@@ -171,20 +171,23 @@
                                         </p-fieldset>
                                     </div>
                                     <div class="col-6">
-                                        <p-fieldset legend="Hooks">
+                                        <p-fieldset id="hooks-fieldset" legend="Hooks">
                                             <div *ngFor="let hook of daemon.hooks">
-                                                {{ basename(hook) }}
-                                                <a
-                                                    *ngIf="docAnchorFromHookLbrary(basename(hook)) !== ''"
-                                                    [attr.href]="
-                                                        'https://kea.readthedocs.io/en/' +
-                                                        daemon.version +
-                                                        '/arm/hooks.html#' +
-                                                        docAnchorFromHookLbrary(basename(hook))
-                                                    "
-                                                >
-                                                    [doc]
-                                                </a>
+                                                <div pTooltip="{{ hook }}" style="display: inline-block">
+                                                    {{ basename(hook) }}
+                                                    <a
+                                                        *ngIf="docAnchorFromHookLbrary(basename(hook)) !== ''"
+                                                        [attr.href]="
+                                                            'https://kea.readthedocs.io/en/' +
+                                                            daemon.version +
+                                                            '/arm/hooks.html#' +
+                                                            docAnchorFromHookLbrary(basename(hook))
+                                                        "
+                                                    >
+                                                        [doc]
+                                                    </a>
+                                                </div>
+                                                <br />
                                             </div>
                                             <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">no hooks</div>
                                         </p-fieldset>
