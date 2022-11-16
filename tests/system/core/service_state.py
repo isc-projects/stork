@@ -29,6 +29,7 @@ class ServiceState:
         return self._status == "running"
 
     def has_healthcheck(self):
+        """True if the health status is available."""
         return self._health is None
 
     def is_healthy(self):
