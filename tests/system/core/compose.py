@@ -48,7 +48,7 @@ class ContainerNotRunningException(Exception):
         super().__init__("status=%s" % status)
 
 
-class ContainerBrokenException(Exception):
+class ContainerExitedException(Exception):
     def __init__(self, state: str):
         super().__init__(state)
 
@@ -533,8 +533,8 @@ class DockerCompose(object):
         """
 
         state = self.get_service_state(service_name)
-        if state.is_broken():
-            raise ContainerBrokenException(str(state))
+        if state.is_exited():
+            raise ContainerExitedException(str(state))
         if not state.is_operational():
             raise ContainerNotRunningException(str(state))
 

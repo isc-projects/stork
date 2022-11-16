@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from core.compose import ContainerBrokenException, DockerCompose
+from core.compose import ContainerExitedException, DockerCompose
 from core.service_state import ServiceState
 from tests.core.commons import subprocess_result_mock
 
@@ -559,7 +559,7 @@ def test_is_operational_for_running_healthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;healthy", "")
+    mock.return_value = (0, "running;0;healthy;", "")
     compose._call_command = mock
     # Act & Assert
     assert compose.is_operational("service")
@@ -569,7 +569,7 @@ def test_is_not_operational_for_running_unhealthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;unhealthy", "")
+    mock.return_value = (0, "running;0;unhealthy;", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
@@ -579,7 +579,7 @@ def test_is_not_operational_for_not_running_but_healthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "stopping;healthy", "")
+    mock.return_value = (0, "stopping;0;healthy;", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
@@ -589,7 +589,7 @@ def test_is_operational_for_running_without_health():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;<@NONE@>", "")
+    mock.return_value = (0, "running;0;<@NONE@>;<@NONE@>", "")
     compose._call_command = mock
     # Act & Assert
     assert compose.is_operational("service")
@@ -599,7 +599,7 @@ def test_is_not_operational_for_not_running_without_health():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "stopping;<@NONE@>", "")
+    mock.return_value = (0, "stopping;42;<@NONE@>;<@NONE@>", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
@@ -638,7 +638,7 @@ def test_wait_for_operational_instant_success():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = ("running", "healthy")
+    mock.return_value = ServiceState("running", 0, "healthy", None)
     compose.get_service_state = mock
     # Act
     compose.wait_for_operational("service")
@@ -679,11 +679,15 @@ def test_wait_for_operational_unhealthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = ServiceState("running", 0, "unhealthy", None)
+    mock.side_effect = [
+        ServiceState("running", 0, "unhealthy", None),
+        ServiceState("running", 0, "healthy", None)
+    ]
     compose.get_service_state = mock
-    # Act & Assert
-    with pytest.raises(ContainerBrokenException):
-        compose.wait_for_operational("service")
+    # Act
+    compose.wait_for_operational("service")
+    # Assert
+    assert mock.call_count == 2
 
 
 def test_wait_for_operational_exited():
@@ -693,7 +697,7 @@ def test_wait_for_operational_exited():
     mock.return_value = ServiceState("exited", 42, None, None)
     compose.get_service_state = mock
     # Act & Assert
-    with pytest.raises(ContainerBrokenException):
+    with pytest.raises(ContainerExitedException):
         compose.wait_for_operational("service")
 
 

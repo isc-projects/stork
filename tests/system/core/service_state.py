@@ -30,11 +30,13 @@ class ServiceState:
 
     def has_healthcheck(self):
         """True if the health status is available."""
-        return self._health is None
+        return self._health is not None
 
     def is_healthy(self):
         """True if container is healthy or healthcheck is not defined."""
-        return not self.has_healthcheck() or self._health == "healthy"
+        if not self.has_healthcheck():
+            return True
+        return self._health == "healthy"
 
     def is_unhealthy(self):
         """True if container is unhealthy."""
@@ -52,11 +54,6 @@ class ServiceState:
         """Complex status. True if container is running and healthy
         (if available)."""
         return self.is_running() and self.is_healthy()
-
-    def is_broken(self):
-        """Complex status. True if the container is not running, broken or down
-        and will not be recovered."""
-        return self.is_exited() or self.is_unhealthy()
 
     def __str__(self):
         """Converts state to string."""
