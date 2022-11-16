@@ -276,4 +276,41 @@ describe('KeaAppTabComponent', () => {
         expect(component.docAnchorFromHookLbrary('libdhcp_fake.so')).toBe('')
         expect(component.docAnchorFromHookLbrary('kea-dhcp4')).toBe('')
     })
+
+    it('should display no hooks when no app is loaded', () => {
+        const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
+        expect(hooksFieldset).toBeTruthy()
+        expect(hooksFieldset.attributes['legend']).toEqual('Hooks')
+
+        const div = hooksFieldset.query(By.css('div'))
+        expect(div).toBeTruthy()
+        const divElement = div.nativeElement
+        expect(divElement).toBeTruthy()
+        expect(divElement.innerText).toEqual('no hooks')
+    })
+
+    it('should display hook libraries', () => {
+        component.appTab.app.details.daemons[0].hooks = [
+            '/libdhcp_cb_cmds.so',
+            '/lib/libdhcp_custom.so',
+            '/usr/lib/libdhcp_fake.so',
+            '/usr/local/lib/libdhcp_lease_cmds.so',
+        ]
+        fixture.detectChanges()
+
+        const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
+        expect(hooksFieldset).toBeTruthy()
+        expect(hooksFieldset.attributes['legend']).toEqual('Hooks')
+
+        const div = hooksFieldset.query(By.css('div'))
+        expect(div).toBeTruthy()
+        const innerDiv = div.query(By.css('div'))
+        expect(innerDiv).toBeTruthy()
+        const childNodes = innerDiv.nativeNode.childNodes
+        expect(childNodes).toBeTruthy()
+        expect(childNodes[0].innerText).toContain('libdhcp_cb_cmds.so [doc]')
+        expect(childNodes[1].innerText).toContain('libdhcp_custom.so')
+        expect(childNodes[2].innerText).toContain('libdhcp_fake.so')
+        expect(childNodes[3].innerText).toContain('libdhcp_lease_cmds.so [doc]')
+    })
 })
