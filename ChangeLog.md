@@ -1,3 +1,8 @@
+* 253 [build] slawek
+
+    Extended system tests of host reservations.
+    (Gitlab #836)
+
 * 252 [func] slawek
 
     Fixed a problem resetting pagination while browsing the resources (subnets,
