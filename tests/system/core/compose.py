@@ -53,7 +53,7 @@ class ContainerExitedException(Exception):
         super().__init__(state)
 
 
-_INSPECT_DELIMITER = ";"
+_INSPECT_DELIMITER = "<@;@>"
 _INSPECT_NONE_MARK = "<@NONE@>"
 
 

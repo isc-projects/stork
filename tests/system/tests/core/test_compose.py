@@ -417,7 +417,7 @@ def test_inspect_calls_proper_command():
     compose = DockerCompose("project-dir")
     mock = MagicMock()
     mock.side_effect = [(0, "container-id", ""),
-                        (0, "value-foo;value-bar", "")]
+                        (0, "value-foo<@;@>value-bar", "")]
     compose._call_command = mock
     # Act
     result = compose.inspect("service", "foo", "bar")
@@ -433,7 +433,7 @@ def test_inspect_supports_none():
     compose = DockerCompose("project-dir")
     mock = MagicMock()
     mock.side_effect = [(0, "container-id", ""),
-                        (0, "value-foo;<@NONE@>", "")]
+                        (0, "value-foo<@;@><@NONE@>", "")]
     compose._call_command = mock
     # Act
     result = compose.inspect("service", "foo", "bar?")
@@ -547,19 +547,47 @@ def test_get_service_state():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;0;healthy;", "")
+    mock.return_value = (0, "running<@;@>0<@;@>healthy<@;@>", "")
     compose._call_command = mock
     # Act
     state = compose.get_service_state("service")
     assert state.is_running()
     assert state.is_healthy()
+    assert state.has_healthcheck()
+
+
+def test_get_service_state_with_health_dump():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    mock.return_value = (0, 'running<@;@>0<@;@>unhealthy<@;@>{"Status":"unhealthy","FailingStreak":0,"Log":[{"Start":"2022-11-17T11:58:42.751125837+01:00","End":"2022-11-17T11:58:42.814409318+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.076064297+01:00","End":"2022-11-17T11:58:43.137608828+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.399211966+01:00","End":"2022-11-17T11:58:43.466869471+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.719447396+01:00","End":"2022-11-17T11:58:43.779880777+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:44.032315268+01:00","End":"2022-11-17T11:58:44.102159649+01:00","ExitCode":0,"Output":""}]', "")
+    compose._call_command = mock
+    # Act
+    state = compose.get_service_state("service")
+    assert state.is_running()
+    assert not state.is_healthy()
+    assert state.has_healthcheck()
+    assert '"Output":""' in str(state)
+
+
+def test_get_service_state_with_health_dump_semicolon():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    mock.return_value = (0, 'running<@;@>0<@;@>unhealthy<@;@>{"Log":[{"Output":"foo;bar"}]', "")
+    compose._call_command = mock
+    # Act
+    state = compose.get_service_state("service")
+    assert state.is_running()
+    assert not state.is_healthy()
+    assert state.has_healthcheck()
 
 
 def test_is_operational_for_running_healthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;0;healthy;", "")
+    mock.return_value = (0, "running<@;@>0<@;@>healthy<@;@>", "")
     compose._call_command = mock
     # Act & Assert
     assert compose.is_operational("service")
@@ -569,7 +597,7 @@ def test_is_not_operational_for_running_unhealthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;0;unhealthy;", "")
+    mock.return_value = (0, "running<@;@>0<@;@>unhealthy<@;@>", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
@@ -579,7 +607,7 @@ def test_is_not_operational_for_not_running_but_healthy():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "stopping;0;healthy;", "")
+    mock.return_value = (0, "stopping<@;@>0<@;@>healthy<@;@>", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
@@ -589,7 +617,7 @@ def test_is_operational_for_running_without_health():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "running;0;<@NONE@>;<@NONE@>", "")
+    mock.return_value = (0, "running<@;@>0<@;@><@NONE@><@;@><@NONE@>", "")
     compose._call_command = mock
     # Act & Assert
     assert compose.is_operational("service")
@@ -599,7 +627,7 @@ def test_is_not_operational_for_not_running_without_health():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, "stopping;42;<@NONE@>;<@NONE@>", "")
+    mock.return_value = (0, "stopping<@;@>42<@;@><@NONE@><@;@><@NONE@>", "")
     compose._call_command = mock
     # Act & Assert
     assert not compose.is_operational("service")
