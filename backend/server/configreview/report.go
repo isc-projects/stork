@@ -15,9 +15,13 @@ import (
 // the referenced daemons may trigger cascaded/internal reviews. See
 // the dispatcher documentation.
 type Report struct {
-	content      string
+	content      *string
 	daemonID     int64
 	refDaemonIDs []int64
+}
+
+func (r *Report) IsIssueFound() bool {
+	return r.content != nil
 }
 
 // Represents an intermediate report which hasn't been validated yet.
@@ -41,10 +45,24 @@ type IntermediateReport Report
 // the detailed daemon information. See the similar mechanism implemented
 // in the eventcenter.
 func NewReport(ctx *ReviewContext, content string) *IntermediateReport {
+	content = strings.TrimSpace(content)
 	return &IntermediateReport{
-		content:  strings.TrimSpace(content),
+		content:  &content,
 		daemonID: ctx.subjectDaemon.ID,
 	}
+}
+
+func NewEmptyReport(ctx *ReviewContext) (*Report, error) {
+	// Ensure that the subject daemon has non-zero ID.
+	if ctx.subjectDaemon.ID == 0 {
+		return nil, pkgerrors.New("ID of the daemon for which a config report is created must not be 0")
+	}
+
+	return &Report{
+		content:      nil,
+		daemonID:     ctx.subjectDaemon.ID,
+		refDaemonIDs: []int64{},
+	}, nil
 }
 
 // Associates a report with a daemon. Do not associate the same daemon
@@ -60,7 +78,7 @@ func (r *IntermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *Intermed
 // generating the reports are implemented properly.
 func (r *IntermediateReport) create() (*Report, error) {
 	// Ensure that the content is not blank.
-	if len(r.content) == 0 {
+	if r.content == nil || len(*r.content) == 0 {
 		return nil, pkgerrors.New("config review report must not be blank")
 	}
 

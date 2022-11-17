@@ -412,12 +412,17 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 					log.Errorf("Malformed report created by the config review checker %s: %+v",
 						checker.name, err)
 				}
-				if report != nil {
-					ctx.reports = append(ctx.reports, taggedReport{
-						checkerName: checker.name,
-						report:      report,
-					})
+				if report == nil {
+					report, err = NewEmptyReport(ctx)
+					if err != nil {
+						log.Errorf("Malformed report created for none issue")
+					}
 				}
+
+				ctx.reports = append(ctx.reports, taggedReport{
+					checkerName: checker.name,
+					report:      report,
+				})
 			}
 		}
 	}
@@ -584,7 +589,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 		cr := &dbmodel.ConfigReport{
 			CheckerName: r.checkerName,
-			Content:     &r.report.content,
+			Content:     r.report.content,
 			DaemonID:    r.report.daemonID,
 			RefDaemons:  assoc,
 		}
