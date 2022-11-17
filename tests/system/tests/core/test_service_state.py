@@ -111,13 +111,13 @@ def test_to_string_unhealthy():
 
 def test_to_string_exited():
     # Arrange
-    state_starting = ServiceState("starting", 42, "healthy", "foobar")
+    state_exited = ServiceState("exited", 42, "healthy", "foobar")
 
     # Act
-    string = str(state_starting)
+    string = str(state_exited)
 
     # Assert
-    assert "starting" in string
+    assert "exited" in string
     assert "healthy" not in string
     assert "foobar" not in string
     assert "42" in string
