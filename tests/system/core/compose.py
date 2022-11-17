@@ -44,8 +44,8 @@ class NoSuchPortExposed(Exception):
 
 
 class ContainerNotRunningException(Exception):
-    def __init__(self, status):
-        super().__init__("status=%s" % status)
+    def __init__(self, state):
+        super().__init__(state)
 
 
 class ContainerExitedException(Exception):
@@ -63,6 +63,8 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
     Prepares the format string in Docker (Go Templates) format.
     The properties with question mark at the end are optional. It means
     that Docker inspect will not raise exception if they are missing.
+    The property prepended with the "json" keyword will be serialized to JSON
+    format.
 
     The constructed format string is cached to improve the performance. It
     causes that the properties container must be hashable.
@@ -534,6 +536,7 @@ class DockerCompose(object):
 
         state = self.get_service_state(service_name)
         if state.is_exited():
+            # Container cannot be recovered.
             raise ContainerExitedException(str(state))
         if not state.is_operational():
             raise ContainerNotRunningException(str(state))

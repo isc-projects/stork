@@ -667,6 +667,6 @@ def _allow_nulls():
     """Creates a context within which the unexpected nulls (Nones) are allowed
     in API requests and responses."""
     original = openapi_client.model_utils.is_type_nullable
-    openapi_client.model_utils.is_type_nullable = lambda x: True
+    openapi_client.model_utils.is_type_nullable = lambda _: True
     yield
     openapi_client.model_utils.is_type_nullable = original
