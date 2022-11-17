@@ -220,7 +220,7 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
-	require.Equal(t, "DHCPv4 test output", reports[0].Content)
+	require.Equal(t, "DHCPv4 test output", *reports[0].Content)
 
 	review, err := dbmodel.GetConfigReviewByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
@@ -307,7 +307,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
 	require.Equal(t, "test_checker", reports[0].CheckerName)
-	require.Equal(t, "Bind9 test output", reports[0].Content)
+	require.Equal(t, "Bind9 test output", *reports[0].Content)
 }
 
 // Tests the scenario when another review for the same daemon is scheduled
@@ -499,7 +499,7 @@ func TestCascadeReview(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
-	require.Equal(t, "DHCPv4 test output", reports[0].Content)
+	require.Equal(t, "DHCPv4 test output", *reports[0].Content)
 
 	// The first daemon's checker references the second daemon. Therefore,
 	// this review should cause the review of the second daemon's
@@ -509,7 +509,7 @@ func TestCascadeReview(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
 	require.Equal(t, "ca_test_checker", reports[0].CheckerName)
-	require.Equal(t, "CA test output", reports[0].Content)
+	require.Equal(t, "CA test output", *reports[0].Content)
 
 	// Now, start the review for the second daemon. It should result in the
 	// cascaded review as well.
@@ -525,13 +525,13 @@ func TestCascadeReview(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
-	require.Equal(t, "DHCPv4 test output", reports[0].Content)
+	require.Equal(t, "DHCPv4 test output", *reports[0].Content)
 
 	reports, total, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
-	require.Equal(t, "CA test output", reports[0].Content)
+	require.Equal(t, "CA test output", *reports[0].Content)
 }
 
 // Test that the dispatcher accepts different trigger types and schedules

@@ -24,11 +24,16 @@ type ConfigReport struct {
 	ID          int64
 	CreatedAt   time.Time
 	CheckerName string
-	Content     string
+	Content     *string `pg:",use_zero"`
 
 	DaemonID int64
 
 	RefDaemons []*Daemon `pg:"many2many:daemon_to_config_report,fk:config_report_id,join_fk:daemon_id"`
+}
+
+// Returns true if an issue was found.
+func (r *ConfigReport) IsIssueFound() bool {
+	return r.Content != nil
 }
 
 // Structure representing a many-to-many relationship between daemons
@@ -42,6 +47,10 @@ type DaemonToConfigReport struct {
 // Adds a single configuration report and its relationships with the
 // daemons to the database in a transaction.
 func addConfigReport(tx *pg.Tx, configReport *ConfigReport) error {
+	if configReport.IsIssueFound() && *configReport.Content == "" {
+		return pkgerrors.Errorf("config review content cannot be empty")
+	}
+
 	// Insert the config_report entry.
 	_, err := tx.Model(configReport).Insert()
 
@@ -145,10 +154,15 @@ func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
 // to the daemons.
 func (r *ConfigReport) AfterSelect(ctx context.Context) error {
 	for _, daemon := range r.RefDaemons {
-		r.Content = strings.Replace(r.Content, "{daemon}",
+		if !r.IsIssueFound() {
+			continue
+		}
+
+		content := strings.Replace(*r.Content, "{daemon}",
 			fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">",
 				daemon.ID, daemon.Name, daemon.AppID, daemon.App.Type),
 			1)
+		r.Content = &content
 	}
 	return nil
 }

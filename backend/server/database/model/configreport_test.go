@@ -8,6 +8,12 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Returns a pointer to a given value. It is helpful to create a pointer from
+// the constants.
+func newPtr[T any](value T) *T {
+	return &value
+}
+
 // Test inserting, selecting and deleting configuration reports
 // shared by two daemons.
 func TestConfigReportSharingDaemons(t *testing.T) {
@@ -38,7 +44,7 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	// Add a configuration report shared by both daemons.
 	configReport := &ConfigReport{
 		CheckerName: "test",
-		Content:     "Here is the test report for {daemon}, {daemon} and {daemon}",
+		Content:     newPtr("Here is the test report for {daemon}, {daemon} and {daemon}"),
 		DaemonID:    daemons[0].ID,
 		RefDaemons:  daemons,
 	}
@@ -100,7 +106,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 	configReports := []ConfigReport{
 		{
 			CheckerName: "test",
-			Content:     "Here is the first test report",
+			Content:     newPtr("Here is the first test report"),
 			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -108,7 +114,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 		},
 		{
 			CheckerName: "test",
-			Content:     "Here is the second test report",
+			Content:     newPtr("Here is the second test report"),
 			DaemonID:    daemons[1].ID,
 			RefDaemons: []*Daemon{
 				daemons[1],
@@ -177,7 +183,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		configReport := &ConfigReport{
 			CheckerName: fmt.Sprintf("test%d", i),
-			Content:     fmt.Sprintf("Here is the test report no %d", i),
+			Content:     newPtr(fmt.Sprintf("Here is the test report no %d", i)),
 			DaemonID:    daemons[0].ID,
 			RefDaemons:  daemons,
 		}
@@ -267,7 +273,7 @@ func TestInvalidConfigReport(t *testing.T) {
 	configReports := []*ConfigReport{
 		{
 			CheckerName: "",
-			Content:     "Here is the first test report",
+			Content:     newPtr("Here is the first test report"),
 			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -275,7 +281,7 @@ func TestInvalidConfigReport(t *testing.T) {
 		},
 		{
 			CheckerName: "test",
-			Content:     "",
+			Content:     newPtr(""),
 			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -283,7 +289,7 @@ func TestInvalidConfigReport(t *testing.T) {
 		},
 		{
 			CheckerName: "test",
-			Content:     "contents",
+			Content:     newPtr("contents"),
 			DaemonID:    111111,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -339,7 +345,7 @@ func TestDeleteAppWithConfigReview(t *testing.T) {
 	// Add config report for the daemon.
 	configReport := &ConfigReport{
 		CheckerName: "test",
-		Content:     "Here is the first test report",
+		Content:     newPtr("Here is the first test report"),
 		DaemonID:    daemons[0].ID,
 		RefDaemons: []*Daemon{
 			daemons[0],

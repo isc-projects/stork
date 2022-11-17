@@ -584,7 +584,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 		cr := &dbmodel.ConfigReport{
 			CheckerName: r.checkerName,
-			Content:     r.report.content,
+			Content:     &r.report.content,
 			DaemonID:    r.report.daemonID,
 			RefDaemons:  assoc,
 		}

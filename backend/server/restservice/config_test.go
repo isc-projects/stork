@@ -552,10 +552,13 @@ func TestGetDaemonConfigReports(t *testing.T) {
 
 	// Create several config reports - two for first daemon and one for the
 	// second daemon.
+	content1 := "funny review contents for {daemon} and {daemon}"
+	content2 := "another funny review contents for {daemon}"
+	content3 := "review contents for another daemon"
 	configReports := []dbmodel.ConfigReport{
 		{
 			CheckerName: "name 1",
-			Content:     "funny review contents for {daemon} and {daemon}",
+			Content:     &content1,
 			DaemonID:    app.Daemons[0].ID,
 			RefDaemons: []*dbmodel.Daemon{
 				{
@@ -568,7 +571,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 		},
 		{
 			CheckerName: "name 2",
-			Content:     "another funny review contents for {daemon}",
+			Content:     &content2,
 			DaemonID:    app.Daemons[0].ID,
 			RefDaemons: []*dbmodel.Daemon{
 				{
@@ -578,7 +581,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 		},
 		{
 			CheckerName: "name 3",
-			Content:     "review contents for another daemon",
+			Content:     &content3,
 			DaemonID:    app.Daemons[1].ID,
 			RefDaemons: []*dbmodel.Daemon{
 				{
@@ -626,10 +629,10 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
-		okRsp.Payload.Items[0].Content)
+		*okRsp.Payload.Items[0].Content)
 
 	require.EqualValues(t, "name 2", okRsp.Payload.Items[1].Checker)
-	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", okRsp.Payload.Items[1].Content)
+	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", *okRsp.Payload.Items[1].Content)
 
 	// Test getting the paged result.
 	params.Start = new(int64)
@@ -645,7 +648,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
-		okRsp.Payload.Items[0].Content)
+		*okRsp.Payload.Items[0].Content)
 	require.NotNil(t, okRsp.Payload.Review)
 	require.NotZero(t, okRsp.Payload.Review.ID)
 
@@ -660,7 +663,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 2", okRsp.Payload.Items[0].Checker)
-	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", okRsp.Payload.Items[0].Content)
+	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", *okRsp.Payload.Items[0].Content)
 
 	// Try to fetch the config report for the second daemon.
 	params = services.GetDaemonConfigReportsParams{
@@ -673,7 +676,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
-	require.Equal(t, "review contents for another daemon", okRsp.Payload.Items[0].Content)
+	require.Equal(t, "review contents for another daemon", *okRsp.Payload.Items[0].Content)
 
 	// If the config review is in progress it should return HTTP Accepted.
 	fd.InProgress = true
