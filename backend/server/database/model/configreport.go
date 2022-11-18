@@ -153,11 +153,12 @@ func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
 // daemon placeholders with the tags that can be later turned into the links
 // to the daemons.
 func (r *ConfigReport) AfterSelect(ctx context.Context) error {
-	for _, daemon := range r.RefDaemons {
-		if !r.IsIssueFound() {
-			continue
-		}
+	if !r.IsIssueFound() {
+		// No issue report has no content.
+		return nil
+	}
 
+	for _, daemon := range r.RefDaemons {
 		content := strings.Replace(*r.Content, "{daemon}",
 			fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">",
 				daemon.ID, daemon.Name, daemon.AppID, daemon.App.Type),
