@@ -123,3 +123,15 @@ func TestCreateEmptyReportZeroSubjectDaemonID(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, report)
 }
+
+// Test that the issue is indicated properly.
+func TestReportIsIssueFound(t *testing.T) {
+	// Arrange
+	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, ConfigModified, nil)
+	report, _ := NewReport(ctx, "foobar").create()
+	emptyReport, _ := newEmptyReport(ctx)
+
+	// Act & Assert
+	require.True(t, report.IsIssueFound())
+	require.False(t, emptyReport.IsIssueFound())
+}

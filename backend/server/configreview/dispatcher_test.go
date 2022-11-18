@@ -178,6 +178,9 @@ func TestPopulateKeaReports(t *testing.T) {
 		report, err := NewReport(ctx, "DHCPv6 test output").create()
 		return report, err
 	})
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "dhcp_test_checker", GetDefaultTriggers(), func(rc *ReviewContext) (*Report, error) {
+		return nil, nil
+	})
 
 	// Start the dispatcher worker.
 	dispatcher.Start()
@@ -217,10 +220,12 @@ func TestPopulateKeaReports(t *testing.T) {
 	// Ensure that the reports for the first daemon have been inserted.
 	reports, total, err := dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
-	require.EqualValues(t, 1, total)
-	require.Len(t, reports, 1)
-	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
-	require.Equal(t, "DHCPv4 test output", *reports[0].Content)
+	require.EqualValues(t, 2, total)
+	require.Len(t, reports, 2)
+	require.Equal(t, "dhcp_test_checker", reports[0].CheckerName)
+	require.Nil(t, reports[0].Content)
+	require.Equal(t, "dhcp4_test_checker", reports[1].CheckerName)
+	require.Equal(t, "DHCPv4 test output", *reports[1].Content)
 
 	review, err := dbmodel.GetConfigReviewByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
