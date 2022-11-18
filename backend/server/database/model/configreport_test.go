@@ -51,11 +51,21 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
+	// Add an empty configuration report.
+	configReport = &ConfigReport{
+		CheckerName: "empty",
+		Content:     nil,
+		DaemonID:    daemons[0].ID,
+		RefDaemons:  []*Daemon{},
+	}
+	err = AddConfigReport(db, configReport)
+	require.NoError(t, err)
+
 	// Try to get the configuration report.
 	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
-	require.EqualValues(t, 1, total)
-	require.Len(t, configReports, 1)
+	require.EqualValues(t, 2, total)
+	require.Len(t, configReports, 2)
 	require.NotZero(t, configReports[0].DaemonID)
 	require.Len(t, configReports[0].RefDaemons, 2)
 	require.Equal(t, "dhcp4", configReports[0].RefDaemons[0].Name)
@@ -63,6 +73,8 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.Equal(t, "dhcp6", configReports[0].RefDaemons[1].Name)
 	require.NotNil(t, configReports[0].RefDaemons[1].App)
 	require.Equal(t, "Here is the test report for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\">, <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\"> and {daemon}", *configReports[0].Content)
+	require.Equal(t, "empty", configReports[1].CheckerName)
+	require.Nil(t, configReports[1].Content)
 
 	// Delete the configuration report.
 	err = DeleteConfigReportsByDaemonID(db, daemons[0].ID)
