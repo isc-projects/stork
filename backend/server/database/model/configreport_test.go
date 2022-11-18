@@ -62,7 +62,7 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to get the configuration report.
-	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
+	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, configReports, 2)
@@ -81,10 +81,65 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.NoError(t, err)
 
 	// The report is no longer returned.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, configReports)
+}
+
+// Test that the config reports containing no issues are skipped if a specific
+// flag is provided.
+func TestGetConfigReportsExceptEmpty(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add an app with two daemons.
+	app := &App{
+		Type:      AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+
+	// Add a configuration report shared by both daemons.
+	configReport := &ConfigReport{
+		CheckerName: "test",
+		Content:     newPtr("Here is the test report for {daemon}, {daemon} and {daemon}"),
+		DaemonID:    daemons[0].ID,
+		RefDaemons:  daemons,
+	}
+	err = AddConfigReport(db, configReport)
+	require.NoError(t, err)
+
+	// Add an empty configuration report.
+	configReport = &ConfigReport{
+		CheckerName: "empty",
+		Content:     nil,
+		DaemonID:    daemons[0].ID,
+		RefDaemons:  []*Daemon{},
+	}
+	err = AddConfigReport(db, configReport)
+	require.NoError(t, err)
+	// Act
+	reports, total, err := GetConfigReportsByDaemonID(db, 0, 10, daemons[0].ID, true)
+
+	// Assert
+	require.Len(t, reports, 1)
+	require.EqualValues(t, 1, total)
+	require.NoError(t, err)
 }
 
 // Test inserting, selecting and deleting configuration reports associated
@@ -140,7 +195,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 
 	// Select configuration reports for both daemons.
 	for i, daemon := range daemons {
-		returnedConfigReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemon.ID)
+		returnedConfigReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemon.ID, false)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, total)
 		require.Len(t, returnedConfigReports, 1)
@@ -154,13 +209,13 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 	require.NoError(t, err)
 
 	// The configuration report for the first daemon no longer exists.
-	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
+	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, configReports)
 
 	// It should not affect the report for the second daemon.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, configReports, 1)
@@ -204,7 +259,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	}
 
 	// When specifying the offset and limit of 0, all reports should be returned.
-	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
+	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 10)
@@ -220,7 +275,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, allReportIDs, 10)
 
 	// Get the reports from the first to fifth.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 5, daemons[0].ID)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 5, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 5)
@@ -236,7 +291,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, pagedReportIDs, 5)
 
 	// Get the reports from fifth to the last one.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 5, 10, daemons[0].ID)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 5, 10, daemons[0].ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 5)

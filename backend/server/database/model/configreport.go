@@ -112,11 +112,18 @@ func AddConfigReport(dbi dbops.DBI, configReport *ConfigReport) error {
 // 0 to fetch all reports for a daemon. Besides returning the config
 // reports this function also returns the total number of reports for
 // the daemon (useful when paging the results) and an error.
-func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64) ([]ConfigReport, int64, error) {
+// If the onlyIssues flag is provided, returns the reports containing a
+// detected issues. The reports that detected nothing are skipped.
+func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64, onlyIssues bool) ([]ConfigReport, int64, error) {
 	var configReports []ConfigReport
 	q := db.Model(&configReports).
-		Where("config_report.daemon_id = ?", daemonID).
-		Order("config_report.id ASC").
+		Where("config_report.daemon_id = ?", daemonID)
+
+	if onlyIssues {
+		q = q.Where("config_report.content IS NOT NULL")
+	}
+
+	q = q.Order("config_report.id ASC").
 		Relation("RefDaemons", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("daemon_to_config_report.order_index ASC"), nil
 		}).

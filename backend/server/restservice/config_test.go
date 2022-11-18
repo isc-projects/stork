@@ -589,6 +589,12 @@ func TestGetDaemonConfigReports(t *testing.T) {
 				},
 			},
 		},
+		{
+			CheckerName: "empty 4",
+			Content:     nil,
+			DaemonID:    app.Daemons[1].ID,
+			RefDaemons:  []*dbmodel.Daemon{},
+		},
 	}
 
 	// Add the config reports to the database.
@@ -669,6 +675,21 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	params = services.GetDaemonConfigReportsParams{
 		ID: app.Daemons[1].ID,
 	}
+	rsp = rapi.GetDaemonConfigReports(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
+
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 2)
+	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
+	require.Equal(t, "review contents for another daemon", *okRsp.Payload.Items[0].Content)
+
+	require.EqualValues(t, "empty 4", okRsp.Payload.Items[1].Checker)
+	require.Nil(t, okRsp.Payload.Items[1].Content)
+
+	// If the only issues flag is provided, it should return only one report.
+	onlyIssues := true
+	params.OnlyIssues = &onlyIssues
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
 	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonConfigReportsOK)

@@ -545,6 +545,10 @@
           type: integer
           required: true
           description: Daemon ID
+        - name: onlyIssues
+          in: query
+          type: boolean
+          description: Get only reports containing issues
       responses:
         200:
           description: Daemon configuration review reports list.
