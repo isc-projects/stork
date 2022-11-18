@@ -983,3 +983,42 @@ func TestSetCheckerStateToInvalidValue(t *testing.T) {
 	require.Error(t, err1)
 	require.Error(t, err2)
 }
+
+// Test that the reports count is returned properly.
+func TestReviewContextCounters(t *testing.T) {
+	// Arrange
+	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, ConfigModified, nil)
+
+	report1, _ := NewReport(ctx, "foo").create()
+	report2, _ := NewReport(ctx, "bar").create()
+	report3, _ := NewReport(ctx, "baz").create()
+	report4, _ := newEmptyReport(ctx)
+	report5, _ := newEmptyReport(ctx)
+
+	ctx.reports = []taggedReport{
+		{
+			checkerName: "foo",
+			report:      report1,
+		},
+		{
+			checkerName: "bar",
+			report:      report2,
+		},
+		{
+			checkerName: "baz",
+			report:      report3,
+		},
+		{
+			checkerName: "boz",
+			report:      report4,
+		},
+		{
+			checkerName: "biz",
+			report:      report5,
+		},
+	}
+
+	// Act & Assert
+	require.EqualValues(t, 5, ctx.getReportsCount())
+	require.EqualValues(t, 3, ctx.getIssuesCount())
+}

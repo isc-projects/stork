@@ -2156,9 +2156,9 @@ func TestCanonicalPrefixes(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
-	require.Contains(t, report.content, "Kea {daemon} configuration contains 4 non-canonical prefixes.")
-	require.Contains(t, report.content, "1. [2] 192.168.1.2/24 is invalid prefix, expected: 192.168.1.0/24;")
-	require.Contains(t, report.content, "4. foobar is invalid prefix")
+	require.Contains(t, *report.content, "Kea {daemon} configuration contains 4 non-canonical prefixes.")
+	require.Contains(t, *report.content, "1. [2] 192.168.1.2/24 is invalid prefix, expected: 192.168.1.0/24;")
+	require.Contains(t, *report.content, "4. foobar is invalid prefix")
 }
 
 // Test that the canonical prefixes report is not generated if all prefixes are valid.

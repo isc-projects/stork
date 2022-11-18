@@ -21,7 +21,7 @@ func TestCreateReport(t *testing.T) {
 		create()
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Equal(t, "new report for {daemon}", report.content)
+	require.Equal(t, "new report for {daemon}", *report.content)
 	require.EqualValues(t, 123, report.daemonID)
 	require.Len(t, report.refDaemonIDs, 2)
 	require.EqualValues(t, 567, report.refDaemonIDs[0])
@@ -87,6 +87,39 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 		referencingDaemon(daemons[1]).
 		referencingDaemon(daemons[2]).
 		create()
+	require.Error(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the empty report is constructed properly.
+func TestNewEmptyReport(t *testing.T) {
+	// Arrange
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
+		ID: 123,
+	}, ConfigModified, nil)
+
+	// Act
+	report, err := newEmptyReport(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report.content)
+	require.EqualValues(t, 123, report.daemonID)
+	require.Empty(t, report.refDaemonIDs)
+}
+
+// Test that an attempt to create an empty report with subject daemon ID
+// of 0 is not possible.
+func TestCreateEmptyReportZeroSubjectDaemonID(t *testing.T) {
+	// Arrange
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
+		ID: 0,
+	}, ConfigModified, nil)
+
+	// Act
+	report, err := newEmptyReport(ctx)
+
+	// Assert
 	require.Error(t, err)
 	require.Nil(t, report)
 }

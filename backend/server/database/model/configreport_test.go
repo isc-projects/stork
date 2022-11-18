@@ -62,7 +62,7 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.NotNil(t, configReports[0].RefDaemons[0].App)
 	require.Equal(t, "dhcp6", configReports[0].RefDaemons[1].Name)
 	require.NotNil(t, configReports[0].RefDaemons[1].App)
-	require.Equal(t, "Here is the test report for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\">, <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\"> and {daemon}", configReports[0].Content)
+	require.Equal(t, "Here is the test report for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\">, <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\"> and {daemon}", *configReports[0].Content)
 
 	// Delete the configuration report.
 	err = DeleteConfigReportsByDaemonID(db, daemons[0].ID)

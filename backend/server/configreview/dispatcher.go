@@ -108,6 +108,22 @@ func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, c
 	return ctx
 }
 
+// Returns a number of the generated reports.
+func (c *ReviewContext) getReportsCount() int {
+	return len(c.reports)
+}
+
+// Returns a number of the reports that found the issues.
+func (c *ReviewContext) getIssuesCount() int {
+	issuesCount := 0
+	for _, report := range c.reports {
+		if report.report.content != nil {
+			issuesCount++
+		}
+	}
+	return issuesCount
+}
+
 // Dispatch group selector is used to segregate different configuration
 // review checkers by daemon types.
 type DispatchGroupSelector int
@@ -319,7 +335,8 @@ func (d *dispatcherImpl) awaitReports() {
 				} else {
 					log.WithFields(log.Fields{
 						"daemon_id":     ctx.subjectDaemon.ID,
-						"reports_count": len(ctx.reports),
+						"reports_count": ctx.getReportsCount(),
+						"issues_count":  ctx.getIssuesCount(),
 					}).Info("configuration review completed")
 				}
 				// Notify a caller that the review is finished if the caller
@@ -351,7 +368,8 @@ func (d *dispatcherImpl) awaitReports() {
 						} else {
 							log.WithFields(log.Fields{
 								"daemon_id":     ctx.subjectDaemon.ID,
-								"reports_count": len(ctx.reports),
+								"reports_count": ctx.getReportsCount(),
+								"issues_count":  ctx.getIssuesCount(),
 							}).Info("configuration review completed")
 						}
 						if ctx.callback != nil {
@@ -407,18 +425,23 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 					// Skip disabled checker.
 					continue
 				}
+
+				// Execute checker.
 				report, err := checker.checkFn(ctx)
 				if err != nil {
 					log.Errorf("Malformed report created by the config review checker %s: %+v",
 						checker.name, err)
 				}
+
 				if report == nil {
-					report, err = NewEmptyReport(ctx)
+					// Create an success report.
+					report, err = newEmptyReport(ctx)
 					if err != nil {
 						log.Errorf("Malformed report created for none issue")
 					}
 				}
 
+				// Accumulate reports.
 				ctx.reports = append(ctx.reports, taggedReport{
 					checkerName: checker.name,
 					report:      report,

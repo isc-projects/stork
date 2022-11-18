@@ -52,7 +52,11 @@ func NewReport(ctx *ReviewContext, content string) *IntermediateReport {
 	}
 }
 
-func NewEmptyReport(ctx *ReviewContext) (*Report, error) {
+// Creates a new empty report. This report has nil content that indicates a
+// given checker found no issues.
+// The checkers don't create this report directly. They return a report object
+// only if they have detection. The empty report is created internally by the dispatcher.
+func newEmptyReport(ctx *ReviewContext) (*Report, error) {
 	// Ensure that the subject daemon has non-zero ID.
 	if ctx.subjectDaemon.ID == 0 {
 		return nil, pkgerrors.New("ID of the daemon for which a config report is created must not be 0")
