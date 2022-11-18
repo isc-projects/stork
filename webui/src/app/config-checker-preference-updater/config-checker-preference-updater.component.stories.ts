@@ -18,14 +18,14 @@ import { ButtonModule } from 'primeng/button'
 const mockData: ConfigCheckers = {
     items: [
         {
-            name: 'reservations_out_of_pool',
+            name: 'out_of_pool_reservation',
             selectors: ['each-daemon', 'kea-daemon'],
             state: ConfigChecker.StateEnum.Disabled,
             triggers: ['manual', 'config change'],
             globallyEnabled: false,
         },
         {
-            name: 'subnet_dispensable',
+            name: 'dispensable_subnet',
             selectors: ['each-daemon'],
             state: ConfigChecker.StateEnum.Enabled,
             triggers: ['manual', 'config change'],

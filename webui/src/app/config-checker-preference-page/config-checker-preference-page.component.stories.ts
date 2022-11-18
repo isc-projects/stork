@@ -21,19 +21,26 @@ import { ButtonModule } from 'primeng/button'
 const mockPreferencesData: ConfigCheckers = {
     items: [
         {
-            name: 'reservations_out_of_pool',
+            name: 'out_of_pool_reservation',
             selectors: ['each-daemon', 'kea-daemon'],
             state: ConfigChecker.StateEnum.Disabled,
             triggers: ['manual', 'config change'],
             globallyEnabled: false,
         },
         {
-            name: 'subnet_dispensable',
+            name: 'dispensable_subnet',
             selectors: ['each-daemon'],
             state: ConfigChecker.StateEnum.Enabled,
             triggers: ['manual', 'config change'],
             globallyEnabled: true,
         },
+        {
+            name: 'host_cmds_presence',
+            selectors: ['each-daemon'],
+            state: ConfigChecker.StateEnum.Enabled,
+            triggers: ['manual', 'config change', 'host reservations change'],
+            globallyEnabled: true,
+        }
     ],
     total: 2,
 }
@@ -107,17 +114,22 @@ export default {
                     },
                     items: [
                         {
-                            checker: 'reservations_out_of_pool',
+                            checker: 'out_of_pool_reservation',
                             content: 'Something is wrong',
                             createdAt: '2022-08-25T12:34:56',
                             id: 1,
                         },
                         {
-                            checker: 'subnet_dispensable',
+                            checker: 'dispensable_subnet',
                             content: 'Foobar',
                             createdAt: '2022-08-25T12:34:56',
                             id: 2,
                         },
+                        {
+                            checker: 'host_cmds_presence',
+                            createdAt: '2022-08-25T12:34:56',
+                            id: 3,
+                        }
                     ],
                 } as ConfigReports,
             },

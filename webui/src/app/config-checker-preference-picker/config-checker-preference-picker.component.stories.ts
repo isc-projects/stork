@@ -43,7 +43,7 @@ const Template: Story<ConfigCheckerPreferencePickerComponent> = (args: ConfigChe
 
 const mockData: ConfigChecker[] = [
     {
-        name: 'subnet_dispensable',
+        name: 'dispensable_subnet',
         selectors: [
             'each-daemon',
             'kea-daemon',
@@ -60,7 +60,7 @@ const mockData: ConfigChecker[] = [
         globallyEnabled: true,
     },
     {
-        name: 'reservations_out_of_pool',
+        name: 'out_of_pool_reservation',
         selectors: ['each-daemon', 'kea-daemon'],
         state: ConfigChecker.StateEnum.Inherit,
         triggers: ['manual', 'config change'],

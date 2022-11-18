@@ -23,21 +23,29 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { action } from '@storybook/addon-actions'
 import { ToastModule } from 'primeng/toast'
 import { toastDecorator } from '../utils.stories'
+import { InputSwitchModule } from 'primeng/inputswitch'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
         {
-            name: 'reservations_out_of_pool',
+            name: 'out_of_pool_reservation',
             selectors: ['each-daemon', 'kea-daemon'],
             state: ConfigChecker.StateEnum.Disabled,
             triggers: ['manual', 'config change'],
             globallyEnabled: false,
         },
         {
-            name: 'subnet_dispensable',
+            name: 'dispensable_subnet',
             selectors: ['each-daemon'],
             state: ConfigChecker.StateEnum.Enabled,
             triggers: ['manual', 'config change'],
+            globallyEnabled: true,
+        },
+        {
+            name: 'host_cmds_presence',
+            selectors: ['each-daemon'],
+            state: ConfigChecker.StateEnum.Enabled,
+            triggers: ['manual', 'config change', 'host reservations change'],
             globallyEnabled: true,
         },
     ],
@@ -61,6 +69,7 @@ export default {
                 ChipModule,
                 OverlayPanelModule,
                 ToastModule,
+                InputSwitchModule,
             ],
             declarations: [
                 ConfigReviewPanelComponent,
@@ -121,17 +130,22 @@ export default {
                     },
                     items: [
                         {
-                            checker: 'reservations_out_of_pool',
-                            content: 'Something is wrong',
+                            checker: 'out_of_pool_reservation',
+                            content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
                             createdAt: '2022-08-25T12:34:56',
                             id: 1,
                         },
                         {
-                            checker: 'subnet_dispensable',
-                            content: 'Foobar',
+                            checker: 'dispensable_subnet',
+                            content: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
                             createdAt: '2022-08-25T12:34:56',
                             id: 2,
                         },
+                        {
+                            checker: 'host_cmds_presence',
+                            createdAt: '2022-08-25T12:34:56',
+                            id: 3,
+                        }
                     ],
                 } as ConfigReports,
             },

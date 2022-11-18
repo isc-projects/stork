@@ -6,6 +6,7 @@
                 <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
             <div id="review-buttons">
+                <p-inputSwitch [(ngModel)]="showAllReports" class="inline-flex"></p-inputSwitch>
                 <button
                     #selectCheckersPanelTarget
                     pButton
@@ -45,13 +46,20 @@
     <ng-container *ngIf="reports && reports.length > 0; else elseBlock">
         <div style="margin-bottom: 30px" *ngFor="let report of reports">
             <p-divider styleClass="report-divider" type="solid" align="left">
-                <p-tag>
+                <p-tag [severity]="!report.content ? 'success' : ''">
                     {{ report.checker }}
                 </p-tag>
             </p-divider>
-            <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
+            <span
+                class="fas"
+                [ngClass]="{
+                    'fa-pencil-alt': !!report.content,
+                    'fa-check-double': !report.content
+                }"
+                style="font-size: 0.9rem; padding-right: 4px">
+            </span>
             <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
-                <app-event-text [text]="report.content"></app-event-text>
+                <app-event-text [text]="report.content ? report.content : 'No issue found'"></app-event-text>
             </span>
         </div>
         <p-divider type="solid"></p-divider>

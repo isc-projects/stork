@@ -80,6 +80,12 @@ export class ConfigReviewPanelComponent implements OnInit {
     refreshFailed = false
 
     /**
+     * Boolean flag indicating if all reports should be visible. If false,
+     * only reports that detected the issues are shown.
+     */
+    showAllReports = false
+
+    /**
      * Component constructor.
      *
      * @param msgService a service used to display error messages.

@@ -21,6 +21,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { InputSwitchModule } from 'primeng/inputswitch'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -42,6 +43,7 @@ describe('ConfigReviewPanelComponent', () => {
                 TableModule,
                 ChipModule,
                 OverlayPanelModule,
+                InputSwitchModule
             ],
             declarations: [
                 ConfigReviewPanelComponent,
