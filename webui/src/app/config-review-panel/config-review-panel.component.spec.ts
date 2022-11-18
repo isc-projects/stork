@@ -245,6 +245,7 @@ describe('ConfigReviewPanelComponent', () => {
             component.daemonId,
             event.first,
             event.rows,
+            true,
             observe
         )
     }))
