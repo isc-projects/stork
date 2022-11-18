@@ -1,12 +1,32 @@
-<p-panel>
+<p-dataView
+    [value]="reports"
+    [lazy]="true"
+    (onLazyLoad)="refreshDaemonConfigReports($event)"
+    [paginator]="true"
+    [alwaysShowPaginator]="false"
+    [rows]="limit"
+    [first]="start"
+    [totalRecords]="total"
+    pageLinkSize="3"
+    [showCurrentPageReport]="true"
+    [loading]="loading"
+    layout="list"
+    currentPageReportTemplate="{first} - {last} of {totalRecords}"
+>
     <ng-template pTemplate="header">
         <div class="review-header">
             <div id="review-summary-div" *ngIf="review" class="font-normal">
-                <span class="font-bold"> {{ total || 0 }}</span> report{{ total !== 1 ? 's' : '' }} generated at
+                <span class="font-bold"> {{ issuesCount }}</span> issue{{ total !== 1 ? 's' : '' }} found at
                 <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
             <div id="review-buttons">
-                <p-inputSwitch [(ngModel)]="showAllReports" class="inline-flex"></p-inputSwitch>
+                <p-inputSwitch
+                    [(ngModel)]="onlyIssues"
+                    class="inline-flex"
+                    pTooltip="Show only issues"
+                    tooltipPosition="bottom"
+                    (onChange)="refreshDaemonConfigReports($event)"
+                ></p-inputSwitch>
                 <button
                     #selectCheckersPanelTarget
                     pButton
@@ -43,43 +63,36 @@
             </div>
         </div>
     </ng-template>
-    <ng-container *ngIf="reports && reports.length > 0; else elseBlock">
-        <div style="margin-bottom: 30px" *ngFor="let report of reports">
+    <ng-template let-report pTemplate="listItem">
+        <div class="w-full">
             <p-divider styleClass="report-divider" type="solid" align="left">
                 <p-tag [severity]="!report.content ? 'success' : ''">
                     {{ report.checker }}
                 </p-tag>
             </p-divider>
-            <span
-                class="fas"
-                [ngClass]="{
-                    'fa-pencil-alt': !!report.content,
-                    'fa-check-double': !report.content
-                }"
-                style="font-size: 0.9rem; padding-right: 4px">
-            </span>
-            <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
-                <app-event-text [text]="report.content ? report.content : 'No issue found'"></app-event-text>
-            </span>
+            <div class="ml-4 mr-4">
+                <span
+                    class="fas"
+                    [ngClass]="{
+                        'fa-pencil-alt': !!report.content,
+                        'fa-check-double': !report.content
+                    }"
+                    style="font-size: 0.9rem; padding-right: 4px">
+                </span>
+                <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
+                    <app-event-text [text]="report.content ? report.content : 'No issue found'"></app-event-text>
+                </span>
+            </div>
         </div>
-        <p-divider type="solid"></p-divider>
-        <p-paginator
-            class="config-review-pager"
-            [rows]="limit"
-            [totalRecords]="total"
-            pageLinkSize="3"
-            [showCurrentPageReport]="true"
-            currentPageReportTemplate="{first} - {last} of {totalRecords}"
-            (onPageChange)="paginate($event)"
-        >
-        </p-paginator>
-    </ng-container>
-    <ng-template #elseBlock>
+
+    </ng-template>
+    <ng-template let-report pTemplate="empty">
         <span id="status-text" class="font-italic" style="font-size: 0.9rem">
             {{ getStatusText() }}
         </span>
     </ng-template>
-</p-panel>
+</p-dataView>
+
 <p-overlayPanel #selectCheckersPanel showCloseIcon="true">
     <ng-template pTemplate>
         <div class="checker-panel-wrapper">

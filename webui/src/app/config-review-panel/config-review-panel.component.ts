@@ -74,16 +74,21 @@ export class ConfigReviewPanelComponent implements OnInit {
     busy = false
 
     /**
+     * Boolean flag indicating that loading data is in progress.
+     */
+    loading = false
+
+    /**
      * Boolean flag indicating if fetching the config reports from the
      * server failed.
      */
     refreshFailed = false
 
     /**
-     * Boolean flag indicating if all reports should be visible. If false,
-     * only reports that detected the issues are shown.
+     * Boolean flag indicating if only reports containing reports should be
+     * visible. If false, all reports are shown.
      */
-    showAllReports = false
+    onlyIssues = true
 
     /**
      * Component constructor.
@@ -113,6 +118,8 @@ export class ConfigReviewPanelComponent implements OnInit {
         this.reports = []
         this.review = null
         this.busy = false
+        this.loading = false
+        this.onlyIssues = true
     }
 
     /**
@@ -138,18 +145,22 @@ export class ConfigReviewPanelComponent implements OnInit {
      *        status code.
      */
     refreshDaemonConfigReports(event, useDelay = true) {
+        if (this.loading) {
+            return
+        }
+
         const retries = 5
-        this.busy = true
+        this.loading = true
         if (event) {
-            this.start = event.first
-            this.limit = event.rows
+            this.start = event.first ?? this.start
+            this.limit = event.rows ?? this.limit
         } else {
             this.start = 0
             this.limit = 5
         }
         // Get reports with specifying the limits.
         this.servicesApi
-            .getDaemonConfigReports(this.daemonId, this.start, this.limit, !this.showAllReports, 'response')
+            .getDaemonConfigReports(this.daemonId, this.start, this.limit, this.onlyIssues, 'response')
             .pipe(
                 // Look into the response and extract the status code.
                 map((resp) => {
@@ -258,19 +269,9 @@ export class ConfigReviewPanelComponent implements OnInit {
                 this._resetDefaults()
                 this.refreshFailed = true
             })
-    }
-
-    /**
-     * Event handling function invoked when the user navigates over the
-     * review report pages.
-     *
-     * It fetches a page of review reports.
-     *
-     * @param event an event emitted when user navigates over the pages;
-     * it comprises the offset and limit of reports to fetch.
-     */
-    paginate(event) {
-        this.refreshDaemonConfigReports(event)
+            .finally(() => {
+                this.loading = false
+            })
     }
 
     /**
@@ -310,6 +311,7 @@ export class ConfigReviewPanelComponent implements OnInit {
             .putDaemonConfigReview(this.daemonId, 'response')
             .toPromise()
             .then((resp) => {
+                this.busy = false
                 this.refreshDaemonConfigReports(null, useRefreshDelay)
             })
             .catch((err) => {
@@ -322,5 +324,18 @@ export class ConfigReviewPanelComponent implements OnInit {
                 })
                 this.busy = false
             })
+    }
+
+    /**
+     * Returns a number of reports containing issues.
+     */
+    get issuesCount() {
+        if (!this.reports) {
+            return 0
+        }
+
+        return this.reports
+            .filter(r => !!r.content)
+            .length
     }
 }

@@ -36,3 +36,11 @@
   // The initial width is fixed to a value near to expected target value to
   // prevent this situation.
   min-width: 20rem
+
+::ng-deep .p-dataview.p-dataview-list
+  .p-dataview-content > .p-grid > div
+    border-top: none
+  .p-dataview-content > .p-grid > div:not(:last-child)
+    border-bottom: none
+  .p-dataview-content > .p-grid > div:last-child
+    padding-bottom: 1em

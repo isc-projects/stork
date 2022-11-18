@@ -22,6 +22,8 @@ import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-prefe
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { InputSwitchModule } from 'primeng/inputswitch'
+import { TooltipModule } from 'primeng/tooltip'
+import { DataViewModule } from 'primeng/dataview'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -43,7 +45,9 @@ describe('ConfigReviewPanelComponent', () => {
                 TableModule,
                 ChipModule,
                 OverlayPanelModule,
-                InputSwitchModule
+                InputSwitchModule,
+                TooltipModule,
+                DataViewModule
             ],
             declarations: [
                 ConfigReviewPanelComponent,
@@ -236,7 +240,7 @@ describe('ConfigReviewPanelComponent', () => {
         component.daemonId = 123
         const event = { first: 2, rows: 5 }
         const observe: any = 'response'
-        component.paginate(event)
+        component.refreshDaemonConfigReports(event)
         tick()
 
         // This function should execute getDaemonConfigReports with appropriate

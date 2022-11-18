@@ -24,6 +24,8 @@ import { action } from '@storybook/addon-actions'
 import { ToastModule } from 'primeng/toast'
 import { toastDecorator } from '../utils.stories'
 import { InputSwitchModule } from 'primeng/inputswitch'
+import { TooltipModule } from 'primeng/tooltip'
+import { DataViewModule } from 'primeng/dataview'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -70,6 +72,8 @@ export default {
                 OverlayPanelModule,
                 ToastModule,
                 InputSwitchModule,
+                TooltipModule,
+                DataViewModule
             ],
             declarations: [
                 ConfigReviewPanelComponent,
@@ -117,18 +121,14 @@ export default {
                 },
             },
             {
-                url: 'http://localhost/api/daemons/:daemonId/config-reports?start=0&limit=5',
+                url: 'http://localhost/api/daemons/:daemonId/config-reports?start=0&limit=5&onlyIssues=:onlyIssues',
                 method: 'GET',
                 status: 200,
                 delay: 2000,
-                response: {
-                    total: 2,
-                    review: {
-                        createdAt: '2022-08-25T12:34:56',
-                        daemonId: 1,
-                        id: 1,
-                    },
-                    items: [
+                response: (request) => {
+                    const { searchParams } = request
+
+                    let reports = [
                         {
                             checker: 'out_of_pool_reservation',
                             content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
@@ -146,8 +146,22 @@ export default {
                             createdAt: '2022-08-25T12:34:56',
                             id: 3,
                         }
-                    ],
-                } as ConfigReports,
+                    ]
+
+                    if (searchParams.onlyIssues == "true") {
+                        reports = reports.filter(r => !!r.content)
+                    }
+
+                    return {
+                        total: reports.length,
+                        review: {
+                            createdAt: '2022-08-25T12:34:56',
+                            daemonId: 1,
+                            id: 1,
+                        },
+                        items: reports,
+                    } as ConfigReports
+                }
             },
             {
                 url: 'http://localhost/api/daemons/:daemonID/config-review',

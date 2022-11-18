@@ -45,6 +45,7 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { InputTextareaModule } from 'primeng/inputtextarea'
 import { TreeModule } from 'primeng/tree'
+import { DataViewModule } from 'primeng/dataview'
 import { ChipsModule } from 'primeng/chips'
 
 // Generated API modules
@@ -213,6 +214,7 @@ export function cfgFactory() {
         TreeModule,
         ChipModule,
         ChipsModule,
+        DataViewModule
     ],
     providers: [
         {
