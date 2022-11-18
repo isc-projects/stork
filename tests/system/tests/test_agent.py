@@ -72,30 +72,6 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(server
     assert kea_service.has_failed_TLS_handshake_log_entry()
 
 
-@kea_parametrize("agent-kea-config-review")
-def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Kea):
-    """Test that the Stork server performs Kea configuration review and returns the reports."""
-    server_service.log_in_as_admin()
-    server_service.authorize_all_machines()
-    state, *_ = server_service.wait_for_next_machine_states()
-
-    daemons = state['apps'][0]['details']['daemons']
-    daemons = [d for d in daemons if d['name'] == 'dhcp4']
-    assert len(daemons) == 1
-    daemon_id = daemons[0]['id']
-
-    # Get config reports for the daemon.
-    data = server_service.wait_for_config_reports(daemon_id)
-
-    # Expecting one report indicating that the stat_cmds hooks library
-    # was not loaded.
-    assert data['total'] == 3
-    assert len(data['items']) == 3
-    assert data['items'][0]['checker'] == 'stat_cmds_presence'
-    assert data['items'][1]['checker'] == 'overlapping_subnet'
-    assert data['items'][2]['checker'] == 'canonical_prefix'
-
-
 @kea_parametrize("agent-kea-basic-auth-no-credentials")
 def test_communication_with_kea_using_basic_auth_no_credentials(server_service: Server, kea_service: Kea):
     """The Kea CA is configured to accept requests only with Basic Auth credentials in header.

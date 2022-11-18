@@ -137,7 +137,7 @@ func TestStatCmdsAbsent(t *testing.T) {
 	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "The Kea Statistics Commands library")
+	require.Contains(t, *report.content, "The Kea Statistics Commands library")
 }
 
 // Tests that the checker checking host_cmds hooks library presence
