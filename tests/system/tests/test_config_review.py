@@ -4,7 +4,8 @@ from core.wrappers import Server, Kea
 
 @kea_parametrize("agent-kea-config-review")
 def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Kea):
-    """Test that the Stork server performs Kea configuration review and returns the reports."""
+    """Test that the Stork server performs Kea configuration review and returns
+    the reports."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
@@ -17,11 +18,12 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
     # Get config reports for the daemon.
     data = server_service.wait_for_config_reports(daemon_id)
 
+    # The response should include all generated reports, not only the ones with
+    # issues.
     assert data['total'] > 3
-    issue_reports = {}
-    for report in data['items']:
-        if 'content' in report:
-            issue_reports[report['checker']] = report
+    issue_reports = {report['checker']: report
+                     for report in data['items']
+                     if 'content' in report}
 
     assert len(issue_reports) == 3
 
