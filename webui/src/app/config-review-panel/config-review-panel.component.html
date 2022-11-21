@@ -88,9 +88,15 @@
     </ng-template>
     <ng-template let-report pTemplate="empty">
         <span id="status-text" class="font-italic" style="font-size: 0.9rem">
-            <ng-container *ngIf="refreshFailed">An error occurred while fetching the configuration review reports.</ng-container>
-            <ng-container *ngIf="!refreshFailed && !!review">No configuration issues found for this daemon.</ng-container>
-            <ng-container *ngIf="!refreshFailed && !review">Configuration review was not performed for this daemon.</ng-container>
+            <ng-container *ngIf="refreshFailed"
+                >An error occurred while fetching the configuration review reports.</ng-container
+            >
+            <ng-container *ngIf="!refreshFailed && !!review"
+                >No configuration issues found for this daemon.</ng-container
+            >
+            <ng-container *ngIf="!refreshFailed && !review"
+                >Configuration review was not performed for this daemon.</ng-container
+            >
         </span>
     </ng-template>
 </p-dataView>

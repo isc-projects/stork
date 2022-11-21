@@ -79,7 +79,7 @@ describe('ConfigReviewPanelComponent', () => {
         // error message is displayed over the message service.
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(throwError({ status: 404 }))
         spyOn(msgService, 'add')
-        
+
         // This call should trigger the API call.
         component.loading = false
         component.ngOnInit()
