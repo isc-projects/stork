@@ -66,6 +66,7 @@ describe('ConfigReviewPanelComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
         component.daemonId = 0
+        component.loading = true
         fixture.detectChanges()
     })
 
@@ -78,8 +79,9 @@ describe('ConfigReviewPanelComponent', () => {
         // error message is displayed over the message service.
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(throwError({ status: 404 }))
         spyOn(msgService, 'add')
-
+        
         // This call should trigger the API call.
+        component.loading = false
         component.ngOnInit()
         tick()
 
@@ -92,6 +94,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.total).toBe(0)
         expect(component.reports.length).toBe(0)
         expect(component.refreshFailed).toBeTruthy()
+        expect(component.loading).toBeFalse()
 
         fixture.detectChanges()
 
@@ -118,6 +121,7 @@ describe('ConfigReviewPanelComponent', () => {
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
 
         // Try to get the reports.
+        component.loading = false
         component.ngOnInit()
         tick()
 
@@ -153,6 +157,7 @@ describe('ConfigReviewPanelComponent', () => {
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
 
         // Try to get the reports.
+        component.loading = false
         component.ngOnInit()
         tick()
 
@@ -197,6 +202,7 @@ describe('ConfigReviewPanelComponent', () => {
         component.daemonId = 1
 
         // Try to get the reports.
+        component.loading = false
         component.ngOnInit()
         tick()
 
@@ -216,7 +222,7 @@ describe('ConfigReviewPanelComponent', () => {
         // It should contain the config review summary text.
         const reviewSummaryDiv = fixture.debugElement.query(By.css('#review-summary-div'))
         expect(reviewSummaryDiv).toBeTruthy()
-        expect(reviewSummaryDiv.properties.innerText).toContain('5 reports generated at 2021-11-18')
+        expect(reviewSummaryDiv.properties.innerText).toContain('5 issues found at 2021-11-18')
 
         // It should contain 5 badges with checker names.
         const checkerTags = fixture.debugElement.queryAll(By.css('p-tag'))
@@ -238,6 +244,7 @@ describe('ConfigReviewPanelComponent', () => {
 
         // Set the input for the paginate function.
         component.daemonId = 123
+        component.loading = false
         const event = { first: 2, rows: 5 }
         const observe: any = 'response'
         component.refreshDaemonConfigReports(event)
@@ -265,6 +272,7 @@ describe('ConfigReviewPanelComponent', () => {
             status: HttpStatusCode.NoContent,
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(getResponse))
+        component.loading = false
 
         // Run review with no delays between retries.
         component.runReview(false)
@@ -340,6 +348,7 @@ describe('ConfigReviewPanelComponent', () => {
             status: HttpStatusCode.Accepted,
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValues(of(fakeResponse))
+        component.loading = false
         spyOn(msgService, 'add')
 
         // Try to get the reports.
