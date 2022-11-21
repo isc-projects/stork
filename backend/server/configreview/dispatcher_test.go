@@ -234,6 +234,14 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.NotEmpty(t, review.ConfigHash)
 	require.NotEmpty(t, review.Signature)
 
+	// Filter out the reports without issues.
+	reports, total, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, true)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, reports, 1)
+	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
+	require.Equal(t, "DHCPv4 test output", *reports[0].Content)
+
 	// Ensure that the reports for the second daemon have not been inserted.
 	reports, total, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID, false)
 	require.NoError(t, err)
