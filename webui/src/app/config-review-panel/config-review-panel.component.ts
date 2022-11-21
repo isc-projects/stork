@@ -275,22 +275,6 @@ export class ConfigReviewPanelComponent implements OnInit {
     }
 
     /**
-     * Returns the status text displayed when no reports are available.
-     *
-     * The three different states are: error, no review available and the review
-     * was performed but no issues were found.
-     */
-    getStatusText() {
-        if (this.refreshFailed) {
-            return 'An error occurred while fetching the configuration review reports.'
-        } else if (this.review) {
-            return 'No configuration issues found for this daemon.'
-        } else {
-            return 'Configuration review was not performed for this daemon.'
-        }
-    }
-
-    /**
      * Sends a request to the server to begin a review for a specified daemon.
      *
      * If the request is successful, a request to get the updated configuration
