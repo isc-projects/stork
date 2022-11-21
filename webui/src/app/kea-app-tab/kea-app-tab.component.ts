@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angu
 import { ActivatedRoute, Router } from '@angular/router'
 import { forkJoin, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem } from 'primeng/api'
+import { MessageService } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
@@ -75,7 +75,29 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * Makes lookup as efficient as O(log(n)) instead of the O(n)
      * that would result from an alternative switch-case statement.
      */
-    anchorsByHook = {}
+    anchorsByHook = {
+        'libdhcp_bootp.so': 'bootp-support-for-bootp-clients',
+        'libdhcp_cb_cmds.so': 'cb-cmds-configuration-backend-commands',
+        'libdhcp_class_cmds.so': 'class-cmds-class-commands',
+        'libdhcp_ddns_tuning.so': 'ddns-tuning-ddns-tuning',
+        'libdhcp_flex_id.so': 'flex-id-flexible-identifier-for-host-reservations',
+        'libdhcp_gss_tsig.so': 'gss-tsig-sign-dns-updates-with-gss-tsig',
+        'libdhcp_ha.so': 'ha-high-availability-outage-resilience-for-kea-servers',
+        'libdhcp_host_cache.so': 'host-cache-host-cache-reservations-for-improved-performance',
+        'libdhcp_host_cmds.so': 'host-cmds-host-commands',
+        'libdhcp_lease_cmds.so': 'lease-cmds-lease-commands-for-easier-lease-management',
+        'libdhcp_lease_query.so': 'lease-query-leasequery-support',
+        'libdhcp_legal_log.so': 'legal-log-forensic-logging',
+        'libdhcp_limits.so': 'limits-limits-to-manage-lease-allocation-and-packet-processing',
+        'libdhcp_mysql_cb.so': 'mysql-cb-configuration-backend-for-mysql',
+        'libdhcp_pgsql_cb.so': 'pgsql-cb-configuration-backend-for-postgresql',
+        'libdhcp_radius.so': 'radius-radius-server-support',
+        'libdhcp_rbac.so': 'rbac-role-based-access-control',
+        'libdhcp_run_script.so': 'run-script-run-script-support-for-external-hook-scripts',
+        'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
+        'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
+        'libdhcp_user_chk.so': 'user-chk-user-check',
+    }
 
     /**
      * Event emitter sending an event to the parent component when an app is
@@ -176,30 +198,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
             }
         }
         this.daemons = daemons
-
-        this.anchorsByHook = {
-            'libdhcp_bootp.so': 'bootp-support-for-bootp-clients',
-            'libdhcp_cb_cmds.so': 'cb-cmds-configuration-backend-commands',
-            'libdhcp_class_cmds.so': 'class-cmds-class-commands',
-            'libdhcp_ddns_tuning.so': 'ddns-tuning-ddns-tuning',
-            'libdhcp_flex_id.so': 'flex-id-flexible-identifier-for-host-reservations',
-            'libdhcp_gss_tsig.so': 'gss-tsig-sign-dns-updates-with-gss-tsig',
-            'libdhcp_ha.so': 'ha-high-availability-outage-resilience-for-kea-servers',
-            'libdhcp_host_cache.so': 'host-cache-host-cache-reservations-for-improved-performance',
-            'libdhcp_host_cmds.so': 'host-cmds-host-commands',
-            'libdhcp_lease_cmds.so': 'lease-cmds-lease-commands-for-easier-lease-management',
-            'libdhcp_lease_query.so': 'lease-query-leasequery-support',
-            'libdhcp_legal_log.so': 'legal-log-forensic-logging',
-            'libdhcp_limits.so': 'limits-limits-to-manage-lease-allocation-and-packet-processing',
-            'libdhcp_mysql_cb.so': 'mysql-cb-configuration-backend-for-mysql',
-            'libdhcp_pgsql_cb.so': 'pgsql-cb-configuration-backend-for-postgresql',
-            'libdhcp_radius.so': 'radius-radius-server-support',
-            'libdhcp_rbac.so': 'rbac-role-based-access-control',
-            'libdhcp_run_script.so': 'run-script-run-script-support-for-external-hook-scripts',
-            'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
-            'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
-            'libdhcp_user_chk.so': 'user-chk-user-check',
-        }
     }
 
     /**
@@ -459,7 +457,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @returns anchor or empty string if the hook library is not recognized
      */
-    docAnchorFromHookLbrary(hook_library) {
-        return this.anchorsByHook[hook_library] ?? ''
+    docAnchorFromHookLibrary(hook_library) {
+        return this.anchorsByHook[hook_library]
     }
 }

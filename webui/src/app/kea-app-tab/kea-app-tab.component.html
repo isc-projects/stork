@@ -173,20 +173,24 @@
                                     <div class="col-6">
                                         <p-fieldset id="hooks-fieldset" legend="Hooks">
                                             <div *ngFor="let hook of daemon.hooks">
-                                                <div pTooltip="{{ hook }}" style="display: inline-block">
-                                                    {{ basename(hook) }}
-                                                    <a
-                                                        *ngIf="docAnchorFromHookLbrary(basename(hook)) !== ''"
-                                                        [attr.href]="
-                                                            'https://kea.readthedocs.io/en/' +
-                                                            daemon.version +
-                                                            '/arm/hooks.html#' +
-                                                            docAnchorFromHookLbrary(basename(hook))
-                                                        "
-                                                    >
-                                                        [doc]
-                                                    </a>
+                                                <div style="display: inline-block">
+                                                    <p-inplace closable="true" closeIcon="pi pi-chevron-left">
+                                                        <ng-template pTemplate="display">
+                                                            {{ basename(hook) }}
+                                                        </ng-template>
+                                                        <ng-template pTemplate="content">
+                                                            {{ hook }}
+                                                        </ng-template>
+                                                    </p-inplace>
                                                 </div>
+                                                <a
+                                                    *ngIf="docAnchorFromHookLibrary(basename(hook))"
+                                                    href="https://kea.readthedocs.io/en/{{
+                                                        daemon.version
+                                                    }}/arm/hooks.html#{{ docAnchorFromHookLibrary(basename(hook)) }}"
+                                                >
+                                                    [doc]
+                                                </a>
                                                 <br />
                                             </div>
                                             <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">no hooks</div>

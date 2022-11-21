@@ -3,6 +3,7 @@ import { KeaAppTabComponent } from './kea-app-tab.component'
 import { ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
+import { InplaceModule } from 'primeng/inplace'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../localtime.pipe'
@@ -117,6 +118,7 @@ describe('KeaAppTabComponent', () => {
                 PaginatorModule,
                 OverlayPanelModule,
                 ButtonModule,
+                InplaceModule,
             ],
             declarations: [
                 KeaAppTabComponent,
@@ -271,17 +273,19 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should know how to convert hook libraries to Kea documentation anchors', () => {
-        expect(component.docAnchorFromHookLbrary('')).toBe('')
-        expect(component.docAnchorFromHookLbrary('libdhcp_user_chk.so')).toBe('user-chk-user-check')
-        expect(component.docAnchorFromHookLbrary('libdhcp_fake.so')).toBe('')
-        expect(component.docAnchorFromHookLbrary('kea-dhcp4')).toBe('')
+        expect(component.docAnchorFromHookLibrary('')).toBeUndefined()
+        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so')).toBe('user-chk-user-check')
+        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so')).toBeUndefined()
+        expect(component.docAnchorFromHookLibrary('kea-dhcp4')).toBeUndefined()
     })
 
     it('should display no hooks when no app is loaded', () => {
+        // Check legend.
         const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
         expect(hooksFieldset).toBeTruthy()
         expect(hooksFieldset.attributes['legend']).toEqual('Hooks')
 
+        // Check content.
         const div = hooksFieldset.query(By.css('div'))
         expect(div).toBeTruthy()
         const divElement = div.nativeElement
@@ -298,19 +302,37 @@ describe('KeaAppTabComponent', () => {
         ]
         fixture.detectChanges()
 
+        // Check legend.
         const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
         expect(hooksFieldset).toBeTruthy()
         expect(hooksFieldset.attributes['legend']).toEqual('Hooks')
 
+        // Check content.
         const div = hooksFieldset.query(By.css('div'))
         expect(div).toBeTruthy()
-        const innerDiv = div.query(By.css('div'))
-        expect(innerDiv).toBeTruthy()
-        const childNodes = innerDiv.nativeNode.childNodes
+        const fieldsetContent = div.query(By.css('div.p-fieldset-content'))
+        expect(fieldsetContent).toBeTruthy()
+        const childNodes = fieldsetContent.nativeElement.childNodes
         expect(childNodes).toBeTruthy()
-        expect(childNodes[0].innerText).toContain('libdhcp_cb_cmds.so [doc]')
-        expect(childNodes[1].innerText).toContain('libdhcp_custom.so')
-        expect(childNodes[2].innerText).toContain('libdhcp_fake.so')
-        expect(childNodes[3].innerText).toContain('libdhcp_lease_cmds.so [doc]')
+        expect(childNodes.length).toBeGreaterThanOrEqual(4)
+        expect(childNodes[0]).toBeTruthy()
+        expect((childNodes[0] as HTMLElement).tagName).toBe('DIV')
+        expect(childNodes[0].innerText.replace(/\n/g, '')).toBe('libdhcp_cb_cmds.so [doc]')
+        expect(childNodes[1]).toBeTruthy()
+        expect((childNodes[1] as HTMLElement).tagName).toBe('DIV')
+        expect(childNodes[1].innerText.replace(/\n/g, '')).toBe('libdhcp_custom.so')
+        expect(childNodes[2]).toBeTruthy()
+        expect((childNodes[2] as HTMLElement).tagName).toBe('DIV')
+        expect(childNodes[2].innerText.replace(/\n/g, '')).toBe('libdhcp_fake.so')
+        expect(childNodes[3]).toBeTruthy()
+        expect((childNodes[3] as HTMLElement).tagName).toBe('DIV')
+        expect(childNodes[3].innerText.replace(/\n/g, '')).toBe('libdhcp_lease_cmds.so [doc]')
+
+        // There may be other children. Probably comments. Check that they are not divs which
+        // ensures that no other hook libraries are displayed.
+        for (let i = 4; i < childNodes.length; i++) {
+            expect(childNodes[i]).toBeTruthy()
+            expect((childNodes[i] as HTMLElement).tagName).not.toBe('DIV')
+        }
     })
 })

@@ -40,3 +40,16 @@
 
 :host ::ng-deep .app-rename-spinner
   margin-left: 15px
+
+// Remove padding from PrimeNG inplace elements so they don't overlap
+// with each other.
+::ng-deep .p-inplace .p-inplace-display
+  padding: 0
+
+// Align the closing button of a PrimeNG inplace element in the middle, instead
+// of at the default bottom, and make height and width equal to text size so
+// that it doesn't expand the enclosing div.
+::ng-deep .p-button.p-button-icon-only
+  height: 1rem
+  vertical-align: middle
+  width: 1rem
