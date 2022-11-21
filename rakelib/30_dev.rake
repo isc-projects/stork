@@ -445,7 +445,9 @@ namespace :db do
         DB_PORT - database port - default: 5432
         DB_USER - database user - default: env:POSTGRES_USER or storktest
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
-        DB_TRACE - trace SQL queries - default: false'
+        DB_TRACE - trace SQL queries - default: false
+        DB_MAINTENANCE_NAME - maintanance database name - default: postgres
+        DB_MAINTENANCE_USER - maintannce username - default: postgres'
     task :setup_envvars do
         dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
         dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
@@ -454,6 +456,7 @@ namespace :db do
         dbpass = ENV["STORK_DATABASE_PASSWORD"] || ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
         dbtrace = ENV["DB_TRACE"] || "false"
         dbmaintenance = ENV["DB_MAINTENANCE_NAME"] || "postgres"
+        dbmaintenanceuser = ENV["DB_MAINTENANCE_USER"] || "postgres"
 
         if dbhost.include? ':'
             dbhost, dbport = dbhost.split(':')
@@ -465,6 +468,7 @@ namespace :db do
         ENV["STORK_DATABASE_PASSWORD"] = dbpass
         ENV["STORK_DATABASE_NAME"] = dbname
         ENV["DB_MAINTENANCE_NAME"] = dbmaintenance
+        ENV["DB_MAINTENANCE_USER"] = dbmaintenanceuser
 
         if ENV["STORK_DATABASE_TRACE"].nil? && dbtrace == "true"
             ENV["STORK_DATABASE_TRACE"] = "run"
@@ -474,7 +478,6 @@ namespace :db do
     end
 
     desc 'Migrate (and create) database to the newest version
-        DB_MAINTENANCE_NAME - maintenance DB name used to create the provided DB - default: postgres
         SUPPRESS_DB_MAINTENANCE - do not run creation DB operation - default: false
         See db:setup_envvars task for more options.'
     task :migrate => [CREATEDB, PSQL, :setup_envvars, TOOL_BINARY_FILE] do
@@ -558,6 +561,28 @@ namespace :db do
         ], [
             "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts
         ])
+    end
+
+    desc "Initialize stork and storktest users with default passwords on local
+        machine. 
+        See db:setup_envvars task for more options."
+    task :init_default => [:setup_envvars] do
+        dbport = ENV["STORK_DATABASE_PORT"]
+        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
+        dbmaintenanceuser = ENV["MAINTENANCE_USER"] || 'postgres'
+
+        psql_access_opts = [
+            "-p", dbport,
+            "-U", dbmaintenanceuser
+        ]
+
+        sh "psql", *psql_access_opts, dbmaintenance, "-c",
+            "CREATE USER stork WITH PASSWORD 'stork';\n" +
+            "CREATE USER storktest WITH PASSWORD 'storktest';\n" +
+            "ALTER USER storktest CREATEDB;\n" +
+            "ALTER USER storktest CREATEROLE;\n"
+        sh "psql", *psql_access_opts, dbmaintenance, "-c",
+            "CREATE DATABASE stork WITH OWNER stork;"
     end
 end
 
