@@ -10,7 +10,7 @@ Primary developers:
 - Matthijs Mekking (BIND 9, Prometheus)
 - Włodek Wencel (QA, release engineering)
 - Thomas Markwalder (Kea)
-- Andrei Pavel (release engineering)
+- Andrei Pavel (CI, release engineering, UI)
 - Sławek Figiel (server, agent, UI, prometheus)
 - Marcin Godzina (QA)
 - Suzanne Goldlust (documentation)
