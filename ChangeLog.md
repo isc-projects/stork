@@ -1,3 +1,9 @@
+* 257 [func] slawek
+
+    The configuration review checkers generate the reports even if they find no
+    issues. It enables browsing a list of checkers running for a given daemon.
+    (Gitlab #816)
+
 * 256 [func] marcin
 
     Client classes can be specified in the host reservation form.
