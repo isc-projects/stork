@@ -1,8 +1,8 @@
 * 251 [func] andrei
 
-    The Kea app page now only shows the name of the hook libraries instead of
-    their entire path. Additionally, a link to documentation is shown beside
-    each hook library.
+    The Kea app page now shows the name of the hook libraries instead of their
+    entire path. Each item can be clicked to reveal the full path. Additionally,
+    a link to each hook's specific documentation is available inline.
     (Gitlab #142)
 
 * 250 [build] slawek
