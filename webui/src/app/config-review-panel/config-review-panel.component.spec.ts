@@ -47,7 +47,7 @@ describe('ConfigReviewPanelComponent', () => {
                 OverlayPanelModule,
                 InputSwitchModule,
                 TooltipModule,
-                DataViewModule
+                DataViewModule,
             ],
             declarations: [
                 ConfigReviewPanelComponent,

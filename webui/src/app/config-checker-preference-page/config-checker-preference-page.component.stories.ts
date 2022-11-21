@@ -40,7 +40,7 @@ const mockPreferencesData: ConfigCheckers = {
             state: ConfigChecker.StateEnum.Enabled,
             triggers: ['manual', 'config change', 'host reservations change'],
             globallyEnabled: true,
-        }
+        },
     ],
     total: 2,
 }
@@ -129,7 +129,7 @@ export default {
                             checker: 'host_cmds_presence',
                             createdAt: '2022-08-25T12:34:56',
                             id: 3,
-                        }
+                        },
                     ],
                 } as ConfigReports,
             },

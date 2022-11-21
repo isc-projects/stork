@@ -73,7 +73,7 @@ export default {
                 ToastModule,
                 InputSwitchModule,
                 TooltipModule,
-                DataViewModule
+                DataViewModule,
             ],
             declarations: [
                 ConfigReviewPanelComponent,
@@ -131,13 +131,15 @@ export default {
                     let reports = [
                         {
                             checker: 'out_of_pool_reservation',
-                            content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                            content:
+                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
                             createdAt: '2022-08-25T12:34:56',
                             id: 1,
                         },
                         {
                             checker: 'dispensable_subnet',
-                            content: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+                            content:
+                                'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
                             createdAt: '2022-08-25T12:34:56',
                             id: 2,
                         },
@@ -145,11 +147,11 @@ export default {
                             checker: 'host_cmds_presence',
                             createdAt: '2022-08-25T12:34:56',
                             id: 3,
-                        }
+                        },
                     ]
 
-                    if (searchParams.onlyIssues == "true") {
-                        reports = reports.filter(r => !!r.content)
+                    if (searchParams.onlyIssues == 'true') {
+                        reports = reports.filter((r) => !!r.content)
                     }
 
                     return {
@@ -161,7 +163,7 @@ export default {
                         },
                         items: reports,
                     } as ConfigReports
-                }
+                },
             },
             {
                 url: 'http://localhost/api/daemons/:daemonID/config-review',

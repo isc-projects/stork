@@ -214,7 +214,7 @@ export function cfgFactory() {
         TreeModule,
         ChipModule,
         ChipsModule,
-        DataViewModule
+        DataViewModule,
     ],
     providers: [
         {

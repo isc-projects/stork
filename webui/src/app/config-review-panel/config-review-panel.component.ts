@@ -334,8 +334,6 @@ export class ConfigReviewPanelComponent implements OnInit {
             return 0
         }
 
-        return this.reports
-            .filter(r => !!r.content)
-            .length
+        return this.reports.filter((r) => !!r.content).length
     }
 }

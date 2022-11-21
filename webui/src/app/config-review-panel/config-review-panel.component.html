@@ -77,14 +77,14 @@
                         'fa-pencil-alt': !!report.content,
                         'fa-check-double': !report.content
                     }"
-                    style="font-size: 0.9rem; padding-right: 4px">
+                    style="font-size: 0.9rem; padding-right: 4px"
+                >
                 </span>
                 <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
                     <app-event-text [text]="report.content ? report.content : 'No issue found'"></app-event-text>
                 </span>
             </div>
         </div>
-
     </ng-template>
     <ng-template let-report pTemplate="empty">
         <span id="status-text" class="font-italic" style="font-size: 0.9rem">
