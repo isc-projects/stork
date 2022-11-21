@@ -1,5 +1,5 @@
 import { fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
-import { HttpStatusCode } from '@angular/common/http'
+import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button'
 import { MessageService } from 'primeng/api'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
-import { ServicesService } from '../backend'
+import { ConfigReports, ServicesService } from '../backend'
 import { LocaltimePipe } from '../localtime.pipe'
 import { DialogModule } from 'primeng/dialog'
 import { TableModule } from 'primeng/table'
@@ -24,6 +24,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { InputSwitchModule } from 'primeng/inputswitch'
 import { TooltipModule } from 'primeng/tooltip'
 import { DataViewModule } from 'primeng/dataview'
+import { cpuUsage } from 'process'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -240,13 +241,40 @@ describe('ConfigReviewPanelComponent', () => {
     }))
 
     it('should get daemon configs on pagination', fakeAsync(() => {
-        spyOn(servicesApi, 'getDaemonConfigReports').and.callThrough()
+        spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(
+            of(
+                new HttpResponse({
+                    body: {
+                        total: 4,
+                        review: {
+                            id: 2,
+                            createdAt: '2022-02-21T14:09:00',
+                            daemonId: 3,
+                        },
+                        items: [
+                            {
+                                checker: 'foo',
+                                content: 'an issue found',
+                                createdAt: '2022-02-21T14:10:00',
+                                id: 4,
+                            },
+                            {
+                                checker: 'bar',
+                                createdAt: '2022-02-21T14:10:00',
+                                id: 5,
+                            },
+                        ],
+                    } as ConfigReports,
+                })
+            )
+        )
 
         // Set the input for the paginate function.
         component.daemonId = 123
         component.loading = false
         const event = { first: 2, rows: 5 }
         const observe: any = 'response'
+        expect(component.onlyIssues).toBeTrue()
         component.refreshDaemonConfigReports(event)
         tick()
 
@@ -257,6 +285,24 @@ describe('ConfigReviewPanelComponent', () => {
             event.first,
             event.rows,
             true,
+            observe
+        )
+        expect(component.loading).toBeFalse()
+        expect(component.start).toBe(2)
+        expect(component.total).toBe(4)
+        expect(component.limit).toBe(5)
+        expect(component.reports.length).toBe(2)
+
+        component.onlyIssues = false
+
+        component.refreshDaemonConfigReports(event)
+        tick()
+
+        expect(servicesApi.getDaemonConfigReports).toHaveBeenCalledWith(
+            component.daemonId,
+            event.first,
+            event.rows,
+            false,
             observe
         )
     }))
@@ -393,5 +439,28 @@ describe('ConfigReviewPanelComponent', () => {
         const pickerComponent = pickerElement.componentInstance as ConfigCheckerPreferenceUpdaterComponent
         expect(pickerComponent.minimal).toBeTrue()
         expect(pickerComponent.daemonID).not.toBeNull()
+    })
+
+    it('should count issues properly', () => {
+        component.reports = null
+        expect(component.issuesCount).toBe(0)
+
+        component.reports = []
+        expect(component.issuesCount).toBe(0)
+
+        component.reports.push({
+            content: 'foo',
+        })
+        expect(component.issuesCount).toBe(1)
+
+        component.reports.push({
+            content: null,
+        })
+        expect(component.issuesCount).toBe(1)
+
+        component.reports.push({
+            content: 'bar',
+        })
+        expect(component.issuesCount).toBe(2)
     })
 })

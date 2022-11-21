@@ -5,6 +5,7 @@ import { ServicesService } from '../backend/api/api'
 import { of } from 'rxjs'
 import { concatMap, delay, map, retryWhen, take, tap } from 'rxjs/operators'
 import { getErrorMessage } from '../utils'
+import { ConfigReport, ConfigReview } from '../backend'
 
 /**
  * The component comprising a list of configuration review
@@ -55,14 +56,14 @@ export class ConfigReviewPanelComponent implements OnInit {
     /**
      * The currently displayed reports.
      */
-    reports: any[] = []
+    reports: ConfigReport[] = []
 
     /**
      * The currently displayed review summary.
      *
      * It contains the review generation time.
      */
-    review: any = null
+    review: ConfigReview = null
 
     /**
      * Boolean flag indicating that communication with the
