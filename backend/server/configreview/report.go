@@ -7,7 +7,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Represents a single config review report. It contains a description
+// Represents a single config review report. It may contains a description
 // of one issue found during a configuration review. The daemonID field
 // comprises an ID of the daemon for which the review is conducted.
 // The refDaemonIDs slice contain IDs of the daemons referenced in the
@@ -20,6 +20,7 @@ type Report struct {
 	refDaemonIDs []int64
 }
 
+// Indicates that the report contains a found issue.
 func (r *Report) IsIssueFound() bool {
 	return r.content != nil
 }
