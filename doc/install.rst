@@ -293,6 +293,8 @@ Setup
 The following steps are common for Debian-based and RPM-based distributions
 using ``systemd``.
 
+Configure the Stork server settings in ``/etc/stork/server.env``. 
+
 .. note::
 
    The environment file **IS NOT** read by default if you run the Stork server
@@ -301,8 +303,8 @@ using ``systemd``.
    executing the binary (in the same shell instance) or run Stork with
    the ``--env-file`` switch.
 
-Configure the Stork server settings in ``/etc/stork/server.env``. The following
-settings are required for the database connection (they have a common ``STORK_DATABASE_`` prefix):
+The following settings are required for the database connection (they have a
+common ``STORK_DATABASE_`` prefix):
 
 * ``STORK_DATABASE_HOST`` - the address of a PostgreSQL database; the default is ``localhost``
 * ``STORK_DATABASE_PORT`` - the port of a PostgreSQL database; the default is ``5432``
