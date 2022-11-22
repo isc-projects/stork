@@ -114,7 +114,7 @@ This section describes the solutions for some common issues with the Stork agent
 :Issue:       The values in ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed,
               but ``stork-agent`` does not noticed the changes.
 :Solution 1.: Restart the daemon.
-:Solution 2.: Send the SIGHUP signal to the daemon.
+:Solution 2.: Send the SIGHUP signal to the ``stork-agent`` process.
 :Explanation: ``stork-agent`` reads configurations at startup or after receiving the SIGHUP signal.
 
 --------------
@@ -141,7 +141,7 @@ This section describes the solutions for some common issues with the Stork serve
 :Issue:       The values in ``/etc/stork/server.env`` were changed,
               but ``stork-server`` does not noticed the changes.
 :Solution 1.: Restart the daemon.
-:Solution 2.: Send the SIGHUP signal to the daemon.
+:Solution 2.: Send the SIGHUP signal to the ``stork-server`` process.
 :Explanation: ``stork-server`` reads configurations at startup or after receiving the SIGHUP signal.
 
 --------------

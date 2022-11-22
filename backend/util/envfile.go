@@ -9,15 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Defines an interfaces that accepts the environment variables.
+// Defines an interface that accepts the environment variables.
 type EnvironmentVariableSetter interface {
 	Set(key, value string) error
 }
 
-// Setter that configure the environment variable for a current process.
+// Setter that configures the environment variables for a current process.
 type ProcessEnvironmentVariableSetter struct{}
 
-// Constructs the process setter.
+// Constructs the process environment variable setter.
 func NewProcessEnvironmentVariableSetter() EnvironmentVariableSetter {
 	return &ProcessEnvironmentVariableSetter{}
 }
@@ -29,7 +29,7 @@ func (s *ProcessEnvironmentVariableSetter) Set(key, value string) error {
 	return err
 }
 
-// Loads all entries from the environment file into the setter object.
+// Loads all entries from the environment file into one or multiple setters.
 func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSetter) error {
 	data, err := LoadEnvironmentFile(path)
 	if err != nil {
