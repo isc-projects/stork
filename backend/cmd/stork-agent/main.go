@@ -224,14 +224,19 @@ func setupApp(reload bool) *cli.App {
 				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
-			&cli.GenericFlag{
+			&cli.BoolFlag{
+				Name:  "use-env-file",
+				Usage: "Read the environment variables from the environment file",
+				Value: false,
+			},
+			&cli.StringFlag{
 				Name:  "env-file",
-				Usage: "Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator",
-				Value: storkutil.NewOptionalStringFlag("/etc/stork/agent.env"),
+				Usage: "Environment file to read; applicable only if the use-env-file is provided",
+				Value: "/etc/stork/agent.env",
 			},
 		},
 		Before: func(c *cli.Context) error {
-			if c.IsSet("env-file") {
+			if c.Bool("use-env-file") {
 				err := storkutil.LoadEnvironmentFileToSetter(
 					c.Path("env-file"),
 					// Loads environment variables into context.

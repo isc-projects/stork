@@ -35,7 +35,7 @@ func getExpectedSwitches() []string {
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
-		"--env-file",
+		"--env-file", "--use-env-file",
 	}
 }
 
@@ -120,7 +120,8 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 	// CLI arguments - the highest priority.
 	os.Args = []string{
 		"--rest-tls-certificate", "certificate-cli",
-		fmt.Sprintf("--env-file=%s", environmentFile.Name()),
+		"--use-env-file",
+		"--env-file", environmentFile.Name(),
 	}
 
 	// Act
@@ -342,9 +343,8 @@ func TestNewStorkServerFromEnvFile(t *testing.T) {
 
 	os.Args = make([]string, 0)
 	os.Args = append(os.Args, "stork-server",
-		// The environment file path must be specified using the '=' sign.
-		// It's limitation of the go-flag library.
-		fmt.Sprintf("--env-file=%s", file.Name()),
+		"--use-env-file",
+		"--env-file", file.Name(),
 	)
 
 	// Act

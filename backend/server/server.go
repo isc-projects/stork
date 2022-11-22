@@ -62,7 +62,8 @@ type StorkServer struct {
 
 // Read environment file settings. It's parsed before the above settings.
 type EnvironmentFileSettings struct {
-	EnvFile *string `long:"env-file" description:"Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator" optional:"true" optional-value:"/etc/stork/server.env"`
+	EnvFile    string `long:"env-file" description:"Environment file to read; applicable only if the use-env-file is provided" default:"/etc/stork/server.env"`
+	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
@@ -91,13 +92,13 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 		return NoneCommand, err
 	}
 
-	if envFileSettings.EnvFile != nil {
+	if envFileSettings.UseEnvFile {
 		err = storkutil.LoadEnvironmentFileToSetter(
-			*envFileSettings.EnvFile,
+			envFileSettings.EnvFile,
 			storkutil.NewProcessEnvironmentVariableSetter(),
 		)
 		if err != nil {
-			err = errors.WithMessagef(err, "invalid environment file: '%s'", *envFileSettings.EnvFile)
+			err = errors.WithMessagef(err, "invalid environment file: '%s'", envFileSettings.EnvFile)
 			return NoneCommand, err
 		}
 

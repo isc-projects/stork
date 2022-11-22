@@ -36,7 +36,10 @@ Arguments
    Returns the ``stork-server`` version.
 
 ``--env-file``
-   Read the environment variables from the environment file; applicable only if the flag is set; accepts an optional path to the env file, it must be provided after the '=' operator. The default is ``/etc/stork/server.env``.
+   Environment file to read; applicable only if the use-env-file is provided. The default is ``/etc/stork/server.env``.
+
+``--use-env-file``
+   Read the environment variables from the environment file. The default is ``false``.
 
 ``-m|--metrics``
    Enables the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication; it is recommended to restrict external access to it (e.g. using the HTTP proxy). It is disabled by default. ``[$STORK_SERVER_ENABLE_METRICS]``

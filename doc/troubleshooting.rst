@@ -126,9 +126,9 @@ This section describes the solutions for some common issues with the Stork agent
               If the agent is running as the systemd daemon, it uses the expected values.
 :Solution 1.: Load the environment variables from the ``/etc/stork/agent.env`` file before running Stork agent.
               For example, run ``. /etc/stork/agent.env``.
-:Solution 2.: Run the Stork agent with the ``--env-file`` switch.
+:Solution 2.: Run the Stork agent with the ``--use-env-file`` switch.
 :Explanation: The ``/etc/stork/agent.env`` file contains the environment variables, but ``stork-agent`` does not automatically
-              load them, unless you use ``--env-file flag``; the file must be loaded manually. The default systemd service
+              load them, unless you use ``--use-env-file flag``; the file must be loaded manually. The default systemd service
               unit is configured to load this file before starting the agent.
 
 ``stork-server``
@@ -153,7 +153,7 @@ This section describes the solutions for some common issues with the Stork serve
               If the server is running as the systemd daemon, it uses the expected values.
 :Solution 1.: Load the environment variables from the ``/etc/stork/server.env`` file before running Stork server.
               For example, run ``. /etc/stork/server.env``.
-:Solution 2.: Run the Stork server with the ``--env-file`` switch.
+:Solution 2.: Run the Stork server with the ``--use-env-file`` switch.
 :Explanation: The ``/etc/stork/server.env`` file contains the environment variables, but ``stork-server`` does not automatically
-              load them, unless you use ``--env-file`` flag; the file must be loaded manually. The default systemd service
+              load them, unless you use ``--use-env-file`` flag; the file must be loaded manually. The default systemd service
               unit is configured to load this file before starting the agent.

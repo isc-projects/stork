@@ -301,7 +301,7 @@ Configure the Stork server settings in ``/etc/stork/server.env``.
    manually (without using ``systemd``). To load the environment variables from
    this file you should call the ``. /etc/stork/server.env`` command before
    executing the binary (in the same shell instance) or run Stork with
-   the ``--env-file`` switch.
+   the ``--use-env-file`` switch.
 
 The following settings are required for the database connection (they have a
 common ``STORK_DATABASE_`` prefix):
@@ -455,7 +455,7 @@ using ``systemd``.
    manually (without using ``systemd``). To load the environment variables from
    this file you should call the ``. /etc/stork/agent.env`` command before
    executing the binary (in the same shell instance) or run Stork with
-   the ``--env-file`` switch.
+   the ``--use-env-file`` switch.
 
 The general settings:
 
