@@ -9,6 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Stores key-value of the environment variable.
+type keyValuePair struct {
+	key   string
+	value string
+}
+
 // Defines an interface that accepts the environment variables.
 type EnvironmentVariableSetter interface {
 	Set(key, value string) error
@@ -31,16 +37,21 @@ func (s *processEnvironmentVariableSetter) Set(key, value string) error {
 
 // Loads all entries from the environment file into one or multiple setters.
 func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSetter) error {
-	data, err := LoadEnvironmentFile(path)
+	data, err := loadEnvironmentFile(path)
 	if err != nil {
 		return err
 	}
 
-	for key, value := range data {
+	for _, pair := range data {
 		for _, setter := range setters {
-			err = setter.Set(key, value)
+			err = setter.Set(pair.key, pair.value)
 			if err != nil {
-				err = errors.WithMessagef(err, "cannot set value: '%s' for key: '%s'", value, key)
+				err = errors.WithMessagef(
+					err,
+					"cannot set value: '%s' for key: '%s'",
+					pair.value,
+					pair.key,
+				)
 				return err
 			}
 		}
@@ -50,7 +61,7 @@ func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSett
 }
 
 // Loads all entries from the environment file.
-func LoadEnvironmentFile(path string) (map[string]string, error) {
+func loadEnvironmentFile(path string) ([]*keyValuePair, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open the '%s' environment file", path)
@@ -60,8 +71,9 @@ func LoadEnvironmentFile(path string) (map[string]string, error) {
 }
 
 // Loads all entries from a given reader.
-func loadEnvironmentEntries(reader io.Reader) (map[string]string, error) {
-	data := make(map[string]string)
+func loadEnvironmentEntries(reader io.Reader) ([]*keyValuePair, error) {
+	data := []*keyValuePair{}
+	dataIndex := map[string]*keyValuePair{}
 	scanner := bufio.NewScanner(reader)
 
 	lineIdx := 0
@@ -75,7 +87,14 @@ func loadEnvironmentEntries(reader io.Reader) (map[string]string, error) {
 			// Comment.
 			continue
 		}
-		data[key] = value
+
+		if pair, ok := dataIndex[key]; ok {
+			pair.value = value
+		} else {
+			pair := &keyValuePair{key, value}
+			data = append(data, pair)
+			dataIndex[key] = pair
+		}
 	}
 
 	return data, nil
