@@ -25,7 +25,7 @@ func NewProcessEnvironmentVariableSetter() EnvironmentVariableSetter {
 // Implements the environment variable setter interface.
 func (s *processEnvironmentVariableSetter) Set(key, value string) error {
 	err := os.Setenv(key, value)
-	err = errors.Wrap(err, "cannot set environment variable for process")
+	err = errors.Wrapf(err, "cannot set '%s=%s' environment variable for process", key, value)
 	return err
 }
 
@@ -40,7 +40,7 @@ func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSett
 		for _, setter := range setters {
 			err = setter.Set(key, value)
 			if err != nil {
-				err = errors.WithMessagef(err, "cannot set value for key: '%s'", key)
+				err = errors.WithMessagef(err, "cannot set value: '%s' for key: '%s'", value, key)
 				return err
 			}
 		}
