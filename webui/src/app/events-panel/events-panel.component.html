@@ -138,7 +138,9 @@
     </ng-template>
     <ng-template *ngIf="isBare" pTemplate="rowexpansion" let-ev>
         <tr>
-            <td colspan="4">
+            <!-- Align the event details to the event text. -->
+            <td colspan="2"></td>
+            <td colspan="2">
                 <div class="events-table__expanded-details" [innerHTML]="ev.details"></div>
             </td>
         </tr>
