@@ -15,15 +15,15 @@ type EnvironmentVariableSetter interface {
 }
 
 // Setter that configures the environment variables for a current process.
-type ProcessEnvironmentVariableSetter struct{}
+type processEnvironmentVariableSetter struct{}
 
 // Constructs the process environment variable setter.
 func NewProcessEnvironmentVariableSetter() EnvironmentVariableSetter {
-	return &ProcessEnvironmentVariableSetter{}
+	return &processEnvironmentVariableSetter{}
 }
 
 // Implements the environment variable setter interface.
-func (s *ProcessEnvironmentVariableSetter) Set(key, value string) error {
+func (s *processEnvironmentVariableSetter) Set(key, value string) error {
 	err := os.Setenv(key, value)
 	err = errors.Wrap(err, "cannot set environment variable for process")
 	return err
