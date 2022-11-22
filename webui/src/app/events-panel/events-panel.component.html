@@ -121,27 +121,22 @@
 
             <td class="events-table__date">{{ ev.createdAt | localtime }}</td>
 
-            <td class="events-table__text"><app-event-text [text]="ev.text"></app-event-text></td>
-            <td class="events-table__details" *ngIf="isTable" [innerHTML]="ev.details"></td>
-            <td class="events-table__details" *ngIf="isBare">
+            <td class="events-table__text">
+                <app-event-text [text]="ev.text"></app-event-text>
+                <p *ngIf="isBare && expandedEvents.has(ev.id)" [innerHTML]="ev.details"></p>
+            </td>
+
+            <td *ngIf="isTable" [innerHTML]="ev.details"></td>
+            <td *ngIf="isBare">
                 <button
                     *ngIf="ev.details"
                     type="button"
                     pButton
                     pRipple
-                    [pRowToggler]="ev"
+                    (click)="onToggleExpandEventDetails(ev.id)"
                     class="p-button-text p-button-plain p-button-sm"
-                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                    [icon]="expandedEvents.has(ev.id) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                 ></button>
-            </td>
-        </tr>
-    </ng-template>
-    <ng-template *ngIf="isBare" pTemplate="rowexpansion" let-ev>
-        <tr>
-            <!-- Align the event details to the event text. -->
-            <td colspan="2"></td>
-            <td colspan="2">
-                <div class="events-table__expanded-details" [innerHTML]="ev.details"></div>
             </td>
         </tr>
     </ng-template>

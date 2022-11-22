@@ -6,6 +6,7 @@ import { EventsService, UsersService, ServicesService } from '../backend/api/api
 import { AuthService } from '../auth.service'
 import { Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
+import { Events } from '../backend'
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -18,11 +19,16 @@ import { getErrorMessage } from '../utils'
 })
 export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     private subscriptions = new Subscription()
-    events: any = { items: [], total: 0 }
+    events: Events = { items: [], total: 0 }
     errorCnt = 0
     start = 0
     limit = 10
     loading = false
+
+    /**
+     * Contains the IDs of expanded events. Used only in the bare layout.
+     */
+    expandedEvents = new Set<number>()
 
     @Input() ui: 'bare' | 'table' = 'bare'
 
@@ -392,6 +398,16 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             this.filter.user = event.value.id
         }
         this.applyFilter()
+    }
+
+    /**
+     * Toggle the event details expansion. Used only in the bare layout.
+     * @param eventId Event ID
+     */
+     onToggleExpandEventDetails(eventId: number) {
+        if (!this.expandedEvents.delete(eventId)) {
+            this.expandedEvents.add(eventId)
+        }
     }
 
     /**

@@ -189,4 +189,14 @@ describe('EventsPanelComponent', () => {
         expect(component.isBare).toBeTrue()
         expect(component.isTable).toBeFalse()
     })
+
+    it('should toggle event details expansion', () => {
+        expect(component.expandedEvents.size).toBe(0)
+
+        component.onToggleExpandEventDetails(42)
+        expect(component.expandedEvents.has(42)).toBeTrue()
+
+        component.onToggleExpandEventDetails(42)
+        expect(component.expandedEvents.has(42)).toBeFalse()
+    })
 })
