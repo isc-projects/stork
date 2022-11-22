@@ -96,6 +96,45 @@ func TestCommandLineVersion(t *testing.T) {
 	}
 }
 
+// Test that the CLI arguments take precedence over the environment file and
+// that the environment file has higher order than the environment variables.
+func TestParseArgsFromMultipleSources(t *testing.T) {
+	// Arrange
+	// Environment variables - the lowest priority.
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	os.Setenv("STORK_DATABASE_HOST", "database-host-envvar")
+	os.Setenv("STORK_REST_HOST", "rest-host-envvar")
+	os.Setenv("STORK_REST_TLS_CERTIFICATE", "certificate-envvar")
+
+	// Environment file. Takes precedence over the environment variables.
+	environmentFile, _ := os.CreateTemp("", "stork-envfile-test-*")
+	defer func() {
+		environmentFile.Close()
+		os.Remove(environmentFile.Name())
+	}()
+	environmentFile.WriteString("STORK_REST_HOST=rest-host-envfile\n")
+	environmentFile.WriteString("STORK_REST_TLS_CERTIFICATE=certificate-envfile\n")
+
+	// CLI arguments - the highest priority.
+	os.Args = []string{
+		"--rest-tls-certificate", "certificate-cli",
+		fmt.Sprintf("--env-file=%s", environmentFile.Name()),
+	}
+
+	// Act
+	ss := &StorkServer{}
+	command, err := ss.ParseArgs()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, RunCommand, command)
+	require.EqualValues(t, "database-host-envvar", ss.DBSettings.Host)
+	require.EqualValues(t, "rest-host-envfile", ss.RestAPISettings.Host)
+	require.EqualValues(t, "certificate-envfile", ss.RestAPISettings.TLSCertificate)
+}
+
 // Test that the Stork Server is constructed properly.
 func TestNewStorkServer(t *testing.T) {
 	// Arrange
