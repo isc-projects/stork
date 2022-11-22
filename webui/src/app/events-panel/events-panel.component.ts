@@ -404,7 +404,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      * Toggle the event details expansion. Used only in the bare layout.
      * @param eventId Event ID
      */
-     onToggleExpandEventDetails(eventId: number) {
+    onToggleExpandEventDetails(eventId: number) {
         if (!this.expandedEvents.delete(eventId)) {
             this.expandedEvents.add(eventId)
         }
