@@ -563,10 +563,14 @@ namespace :db do
         ])
     end
 
-    desc "Initialize stork and storktest users with default passwords on local
-        machine. 
+    desc "Initialize stork user and database. 
         See db:setup_envvars task for more options."
-    task :init_default => [:setup_envvars] do
+    task :init => [:setup_envvars, TOOL_BINARY_FILE] do
+        sh TOOL_BINARY_FILE, "db-init"
+    end
+
+    desc "Initialize storktest user with a default password on local machine"
+    task :init_testing => [:setup_envvars] do
         dbport = ENV["STORK_DATABASE_PORT"]
         dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
         dbmaintenanceuser = ENV["MAINTENANCE_USER"] || 'postgres'
@@ -577,12 +581,9 @@ namespace :db do
         ]
 
         sh "psql", *psql_access_opts, dbmaintenance, "-c",
-            "CREATE USER stork WITH PASSWORD 'stork';\n" +
             "CREATE USER storktest WITH PASSWORD 'storktest';\n" +
             "ALTER USER storktest CREATEDB;\n" +
             "ALTER USER storktest CREATEROLE;\n"
-        sh "psql", *psql_access_opts, dbmaintenance, "-c",
-            "CREATE DATABASE stork WITH OWNER stork;"
     end
 end
 
