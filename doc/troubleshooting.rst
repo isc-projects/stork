@@ -124,7 +124,7 @@ This section describes the solutions for some common issues with the Stork agent
 :Description: The agent is running using the ``stork-agent`` command. It uses the parameters passed
               from the command line but ignores the ``/etc/stork/agent.env`` file entries.
               If the agent is running as the systemd daemon, it uses the expected values.
-:Solution 1.: Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
+:Solution 1.: Load the environment variables from the ``/etc/stork/agent.env`` file before running Stork agent.
               For example, run ``. /etc/stork/agent.env``.
 :Solution 2.: Run the Stork agent with the ``--env-file`` switch.
 :Explanation: The ``/etc/stork/agent.env`` file contains the environment variables, but ``stork-agent`` does not automatically
@@ -151,7 +151,7 @@ This section describes the solutions for some common issues with the Stork serve
 :Description: The server is running using the ``stork-server`` command. It uses the parameters passed
               from the command line but ignores the ``/etc/stork/server.env`` file entries.
               If the server is running as the systemd daemon, it uses the expected values.
-:Solution 1.: Load the environment variables from the ``/etc/stork/server.env`` file before running the CLI tool.
+:Solution 1.: Load the environment variables from the ``/etc/stork/server.env`` file before running Stork server.
               For example, run ``. /etc/stork/server.env``.
 :Solution 2.: Run the Stork server with the ``--env-file`` switch.
 :Explanation: The ``/etc/stork/server.env`` file contains the environment variables, but ``stork-server`` does not automatically
