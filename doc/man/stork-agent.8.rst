@@ -64,8 +64,7 @@ Prometheus Kea Exporter flags:
    Specifies how often the agent collects statistics from Kea, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]``
 
 ``--prometheus-kea-exporter-per-subnet-stats=``
-  enable or disable collecting per subnet stats from Kea; (default: true)
-  [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]
+   Enable or disable collecting per subnet stats from Kea. The default is true. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]``
 
 Prometheus BIND 9 Exporter flags:
 
@@ -94,7 +93,7 @@ enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` o
 
 The highest priority always have the command line flags. The parameters from the
 environment file take precedence over the environment variables if the
-`--use-env-file` flag is used.
+``--use-env-file`` flag is used.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -110,16 +110,16 @@ Database Creation
 Options specific to ``db-create`` command:
 
 ``-m``, ``--db-maintenance-name``
-   existing maintenance database name. (default: "postgres") [$STORK_DATABASE_MAINTENANCE_NAME]
+   Existing maintenance database name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_NAME]``
 
 ``-a``, ``--db-maintenance-user``
-   database administrator user name. (default: "postgres") [$STORK_DATABASE_MAINTENANCE_USER_NAME]
+   Database administrator user name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_USER_NAME]``
 
 ``--db-maintenance-password``
-   database administrator password; if not specified, the user will be prompted for the password.
+   Database administrator password; if not specified, the user will be prompted for the password.
 
 ``-f``, ``--force``
-   recreate the database and the user if they exist. (default false)
+   Recreate the database and the user if they exist. The default is false.
 
 Examples
 ........
