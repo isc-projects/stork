@@ -269,7 +269,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Begin host add transaction.
 	var err error
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginHostAdd(cctx); err != nil {
-		msg := "problem with initiatlizing transaction for host creating new host"
+		msg := "problem with initializing transaction for host creating new host"
 		log.Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -287,7 +287,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 		})
 		return rsp
 	}
-	// Remember the context, i.e. new transaction has been succcessfully created.
+	// Remember the context, i.e. new transaction has been successfully created.
 	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
 
 	// Return transaction ID, apps and subnets to the user.
@@ -478,7 +478,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 			return rsp
 		default:
 			// Other error.
-			msg := "problem with initiatlizing transaction for host update"
+			msg := "problem with initializing transaction for host update"
 			log.Error(msg)
 			rsp := dhcp.NewUpdateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
@@ -499,7 +499,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 		})
 		return rsp
 	}
-	// Remember the context, i.e. new transaction has been succcessfully created.
+	// Remember the context, i.e. new transaction has been successfully created.
 	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
 
 	// Return transaction ID, apps and subnets to the user.
