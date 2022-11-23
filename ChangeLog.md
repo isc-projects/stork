@@ -1,12 +1,11 @@
 * 254 [func] slawek
 
-    Added a command line switch to the Stork programs to
-    specify that they should read the environment variables
-    from the environment files to configure. Previously,
-    they could only use the environment files when started
-    via systemd. By default, the environment files are
-    located in /etc/stork. The new command line switch
-    allows for reading the files from a custom location.
+    Added a command line switch to the Stork programs to specify that they
+    should read the environment variables from the environment files to
+    configure. Previously, they could only use the environment files when
+    started via systemd. By default, the environment files are located in
+    /etc/stork. The new command line switch allows for reading the files from
+    a custom location.
     (Gitlab #830)
 
 * 253 [build] slawek
