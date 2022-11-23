@@ -529,6 +529,31 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 	})
 
+	// Submit transaction with a local host that has a data source other than
+	// 'api'. It simulates a wrong value sent by the user. The data source
+	// field is marked as read-only; it shouldn't be included in the requests,
+	// but our API doesn't validate this property.
+	t.Run("unexpected data source in local host", func(t *testing.T) {
+		params := dhcp.CreateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: "foobar",
+					},
+					{
+						DaemonID: apps[1].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
 	// Submit transaction with valid ID and host but expect the agent to
 	// return an error code. This is considered a conflict with the state
 	// of the Kea servers.
