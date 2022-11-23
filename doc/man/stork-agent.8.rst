@@ -92,6 +92,10 @@ To control the logging colorization, Stork supports the ``CLICOLOR`` and
 enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
 
+The highest priority always have the command line flags. The parameters from the
+environment file take precedence over the environment variables if the
+`--use-env-file` flag is used.
+
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -384,6 +384,12 @@ configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.con
 
 The logging colorization is configured analogously to the :ref:`Stork Agent logging colorization <colorization-settings>`.
 
+Stork reads the configuration parameters from a few sources simultaneously.
+First are loaded environment variables from the current shell. Entries from the
+environment file may overwrite them if the `--use-env-file` flag is used. The
+highest priority has the command line flags. They take precedence over other
+sources.
+
 Securing the Database Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -506,6 +512,12 @@ using an agent token:
    via an IPv6 link-local address with zone ID (e.g., ``fe80::%eth0``). This means
    that the ``STORK_AGENT_HOST`` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
+
+Stork reads the configuration parameters from a few sources simultaneously.
+First are loaded environment variables from the current shell. Entries from the
+environment file may overwrite them if the `--use-env-file` flag is used. The
+highest priority has the command line flags. They take precedence over other
+sources.
 
 .. _colorization-settings:
 
