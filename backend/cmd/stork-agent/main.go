@@ -231,7 +231,7 @@ func setupApp(reload bool) *cli.App {
 			},
 			&cli.StringFlag{
 				Name:  "env-file",
-				Usage: "Environment file to read; applicable only if the use-env-file is provided",
+				Usage: "Environment file location; applicable only if the use-env-file is provided",
 				Value: "/etc/stork/agent.env",
 			},
 		},

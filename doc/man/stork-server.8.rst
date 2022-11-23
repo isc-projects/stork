@@ -36,7 +36,7 @@ Arguments
    Returns the ``stork-server`` version.
 
 ``--env-file``
-   Environment file to read; applicable only if the use-env-file is provided. The default is ``/etc/stork/server.env``.
+   Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/server.env``.
 
 ``--use-env-file``
    Read the environment variables from the environment file. The default is ``false``.
