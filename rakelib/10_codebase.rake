@@ -143,6 +143,8 @@ CLEAN.append GO_SERVER_API_MOCK
 ### Documentation ###
 #####################
 
+DOC_INDEX = "doc/_build/html/index.html"
+
 DOC_CODEBASE = FileList["doc", "doc/**/*"]
         .include("backend/version.go")
         .exclude("doc/_build")

@@ -309,6 +309,17 @@ namespace :run do
             sh DLV, *opts, "debug"
         end
     end
+
+    desc 'Open the documentation in the browser'
+    task :doc => DOC_CODEBASE do
+        if OS == "macos"
+            system "open", DOC_INDEX
+        elsif OS == "linux" || OS == "FreeBSD" 
+            system "xdg-open", DOC_INDEX
+        else
+            fail "operating system (#{OS}) not supported"
+        end
+    end
 end
 
 
