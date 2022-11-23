@@ -24,6 +24,7 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
 
 @kea_parametrize("agent-kea-premium-host-database")
 def test_add_host_reservation(kea_service: Kea, server_service: Server):
+    """Tests that the new host reservation is inserted properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
@@ -62,6 +63,7 @@ def test_add_host_reservation(kea_service: Kea, server_service: Server):
 
 @kea_parametrize("agent-kea-premium-host-database")
 def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: Server):
+    """Tests that the host reservation transactions are canceled properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
@@ -82,27 +84,34 @@ def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: S
 
 @kea_parametrize("agent-kea-premium-host-database")
 def test_update_host_reservation(kea_service: Kea, server_service: Server):
+    """Tests that the host reservation is updated properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
     server_service.wait_for_host_reservation_pulling()
 
+    # Fetch existing host reservation.
     hosts = server_service.list_hosts("192.0.2.42")
     host = hosts.items[0]
 
+    # Modify the host reservation.
     host["id"] = host.id
     host["hostname"] = "barfoo"
     host["host_identifiers"][0]["id_type"] = "client-id"
     host["host_identifiers"][0]["id_hex_value"] = "06:05:04:03:02:01"
     host["address_reservations"][0]["address"] = "192.0.2.24"
 
+    # Apply changes.
     server_service.update_host_reservation(host)
 
+    # Wait for refresh the host reservation data.
     server_service.wait_for_host_reservation_pulling()
 
+    # Check if the old entry was deleted.
     hosts = server_service.list_hosts("192.0.2.42")
     assert hosts.items is None
 
+    # Check if the modified entry was updated.
     hosts = server_service.list_hosts("192.0.2.24")
     assert hosts.total == 1
     host = hosts.items[0]
