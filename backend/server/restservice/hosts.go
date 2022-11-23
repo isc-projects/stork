@@ -2,12 +2,12 @@ package restservice
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/config"
@@ -93,10 +93,21 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 	}
 	// Convert local hosts containing associations of the host with daemons.
 	for _, lh := range restHost.LocalHosts {
-		ds, err := dbmodel.ParseHostDataSource(lh.DataSource)
-		if err != nil {
+		var ds dbmodel.HostDataSource
+		var err error
+
+		if lh.DataSource == "" {
+			// Default data source for entries created using API.
+			ds = dbmodel.HostDataSourceAPI
+		} else if ds, err = dbmodel.ParseHostDataSource(lh.DataSource); err != nil {
 			return nil, err
 		}
+
+		// Validate data source.
+		if ds != dbmodel.HostDataSourceAPI {
+			return nil, errors.Errorf("invalid local host data source (required: '%s' or empty)", dbmodel.HostDataSourceAPI)
+		}
+
 		localHost := dbmodel.LocalHost{
 			DaemonID:   lh.DaemonID,
 			DataSource: ds,
@@ -334,17 +345,6 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 		msg := "transaction expired"
 		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
-	}
-
-	// Data source is readonly property.
-	for _, localHost := range restHost.LocalHosts {
-		if localHost.DataSource == "" {
-			localHost.DataSource = string(dbmodel.HostDataSourceAPI)
-		} else if localHost.DataSource != string(dbmodel.HostDataSourceAPI) {
-			msg := "invalid local host data source (required: 'api' or empty)"
-			log.Error(msg)
-			return http.StatusBadRequest, msg
-		}
 	}
 
 	// Convert host information from REST API to database format.
