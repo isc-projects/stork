@@ -21,6 +21,14 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     local_host = local_hosts[0]
     assert local_host["data_source"] == "api"
 
+
+@kea_parametrize("agent-kea-premium-host-database")
+def test_add_host_reservation(kea_service: Kea, server_service: Server):
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
+    server_service.wait_for_host_reservation_pulling()
+
     # Add host
     raw_host = {
         "host_identifiers": [{
@@ -41,9 +49,6 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
         })
         submit(raw_host)
 
-    with server_service.transaction_create_host_reservation() as (ctx, _, cancel):
-        cancel()
-
     server_service.wait_for_host_reservation_pulling()
     hosts = server_service.list_hosts("10.42.42.42")
     assert hosts.total == 1
@@ -54,27 +59,55 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     assert identifier.id_type == "flex-id"
     assert identifier.id_hex_value == "01:02:03:04:05:06"
 
-    # Update host
-    with server_service.transaction_update_host_reservation(host.id) as (_, submit, _):
-        raw_host["id"] = host.id
-        raw_host["hostname"] = "barfoo"
-        raw_host["host_identifiers"][0] = {
-            "id_type": "client-id",
-            "id_hex_value": "06:05:04:03:02:01"
-        }
-        raw_host["address_reservations"][0]["address"] = "10.24.24.24"
-        submit(raw_host)
+
+@kea_parametrize("agent-kea-premium-host-database")
+def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: Server):
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
+    server_service.wait_for_host_reservation_pulling()
+
+    host_id = server_service.list_hosts("192.0.2.42")["items"][0]["id"]
+
+    # Only one transaction for a given user may exist. The transaction
+    # recreation after canceling checks if the previous one was correctly
+    # invalidated.
+    for _ in range(2):
+        with server_service.transaction_create_host_reservation() as (_, _, cancel):
+            cancel()
+
+        with server_service.transaction_update_host_reservation(host_id) as (_, _, cancel):
+            cancel()
+
+
+@kea_parametrize("agent-kea-premium-host-database")
+def test_update_host_reservation(kea_service: Kea, server_service: Server):
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
+    server_service.wait_for_host_reservation_pulling()
+
+    hosts = server_service.list_hosts("192.0.2.42")
+    host = hosts.items[0]
+
+    host["id"] = host.id
+    host["hostname"] = "barfoo"
+    host["host_identifiers"][0]["id_type"] = "client-id"
+    host["host_identifiers"][0]["id_hex_value"] = "06:05:04:03:02:01"
+    host["address_reservations"][0]["address"] = "192.0.2.24"
+
+    server_service.update_host_reservation(host)
 
     server_service.wait_for_host_reservation_pulling()
 
-    hosts = server_service.list_hosts("10.42.42.42")
+    hosts = server_service.list_hosts("192.0.2.42")
     assert hosts.items is None
 
-    hosts = server_service.list_hosts("10.24.24.24")
+    hosts = server_service.list_hosts("192.0.2.24")
     assert hosts.total == 1
     host = hosts.items[0]
     assert host.hostname == "barfoo"
-    assert host.address_reservations[0].address == "10.24.24.24"
+    assert host.address_reservations[0].address == "192.0.2.24"
     identifier = host.host_identifiers[0]
     assert identifier.id_type == "client-id"
     assert identifier.id_hex_value == "06:05:04:03:02:01"
