@@ -384,11 +384,11 @@ configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.con
 
 The logging colorization is configured analogously to the :ref:`Stork Agent logging colorization <colorization-settings>`.
 
-Stork reads the configuration parameters from a few sources simultaneously.
-First are loaded environment variables from the current shell. Entries from the
-environment file may overwrite them if the `--use-env-file` flag is used. The
-highest priority has the command line flags. They take precedence over other
-sources.
+Stork can read and combine the configuration parameters from a few sources simultaneously.
+The command line flags have precedence over the environment variables read from the file
+when the `--use-env-file` flag is specified. The environment variables read from the file
+take precedence over the environment variables set in the current shell.
+
 
 Securing the Database Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -513,11 +513,11 @@ using an agent token:
    that the ``STORK_AGENT_HOST`` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
 
-Stork reads the configuration parameters from a few sources simultaneously.
-First are loaded environment variables from the current shell. Entries from the
-environment file may overwrite them if the `--use-env-file` flag is used. The
-highest priority has the command line flags. They take precedence over other
-sources.
+Stork can read and combine the configuration parameters from a few sources simultaneously.
+The command line flags have precedence over the environment variables read from the file
+when the `--use-env-file` flag is specified. The environment variables read from the file
+take precedence over the environment variables set in the current shell.
+
 
 .. _colorization-settings:
 
