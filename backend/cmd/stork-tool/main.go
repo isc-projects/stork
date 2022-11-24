@@ -253,28 +253,28 @@ func setupApp() *cli.App {
 	dbTLSFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-sslmode",
-			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca, or verify-full).",
+			Usage:   "the SSL mode for connecting to the database (i.e., disable, require, verify-ca, or verify-full)",
 			Value:   "disable",
 			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslcert",
-			Usage:   "The location of the SSL certificate used by the server to connect to the database.",
+			Usage:   "the location of the SSL certificate used by the server to connect to the database",
 			EnvVars: []string{"STORK_DATABASE_SSLCERT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslkey",
-			Usage:   "The location of the SSL key used by the server to connect to the database.",
+			Usage:   "the location of the SSL key used by the server to connect to the database",
 			EnvVars: []string{"STORK_DATABASE_SSLKEY"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslrootcert",
-			Usage:   "The location of the root certificate file used to verify the database server's certificate.",
+			Usage:   "the location of the root certificate file used to verify the database server's certificate",
 			EnvVars: []string{"STORK_DATABASE_SSLROOTCERT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-trace-queries",
-			Usage:   "Enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time.",
+			Usage:   "enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time",
 			Value:   "",
 			EnvVars: []string{"STORK_DATABASE_TRACE_QUERIES"},
 		},
@@ -283,37 +283,37 @@ func setupApp() *cli.App {
 	dbFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-url",
-			Usage:   "The URL to locate the Stork PostgreSQL database.",
+			Usage:   "the URL to locate the Stork PostgreSQL database",
 			EnvVars: []string{"STORK_DATABASE_URL"},
 		},
 		&cli.StringFlag{
 			Name:    "db-user",
-			Usage:   "The user name for database connections.",
+			Usage:   "the user name for database connections",
 			Aliases: []string{"u"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-password",
-			Usage:   "The database password for database connections.",
+			Usage:   "the database password for database connections",
 			EnvVars: []string{"STORK_DATABASE_PASSWORD"},
 		},
 		&cli.StringFlag{
 			Name:    "db-host",
-			Usage:   "The name of the host where the database is available.",
+			Usage:   "the name of the host where the database is available",
 			Value:   "localhost",
 			EnvVars: []string{"STORK_DATABASE_HOST"},
 		},
 		&cli.StringFlag{
 			Name:    "db-port",
-			Usage:   "The port on which the database is available.",
+			Usage:   "the port on which the database is available",
 			Aliases: []string{"p"},
 			Value:   "5432",
 			EnvVars: []string{"STORK_DATABASE_PORT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-name",
-			Usage:   "The name of the database to connect to.",
+			Usage:   "the name of the database to connect to",
 			Aliases: []string{"d"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_NAME"},
@@ -325,60 +325,60 @@ func setupApp() *cli.App {
 	dbCreateFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-maintenance-name",
-			Usage:   "The existing maintenance database name.",
+			Usage:   "the existing maintenance database name",
 			Aliases: []string{"m"},
 			Value:   "postgres",
 			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-maintenance-user",
-			Usage:   "The Postgres database administrator user name.",
+			Usage:   "the Postgres database administrator user name",
 			Aliases: []string{"a"},
 			Value:   "postgres",
 			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_USER_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-maintenance-password",
-			Usage:   "The Postgres database administrator password; if not specified, the user will be prompted for the password.",
+			Usage:   "the Postgres database administrator password; if not specified, the user will be prompted for the password",
 			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_PASSWORD"},
 		},
 		&cli.StringFlag{
 			Name:    "db-host",
-			Usage:   "The name of the host where the database is available.",
+			Usage:   "the name of the host where the database is available",
 			Value:   "localhost",
 			EnvVars: []string{"STORK_DATABASE_HOST"},
 		},
 		&cli.StringFlag{
 			Name:    "db-port",
-			Usage:   "The port on which the database is available.",
+			Usage:   "the port on which the database is available",
 			Aliases: []string{"p"},
 			Value:   "5432",
 			EnvVars: []string{"STORK_DATABASE_PORT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-name",
-			Usage:   "The name of the database to be created.",
+			Usage:   "the name of the database to be created",
 			Aliases: []string{"d"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-user",
-			Usage:   "The name of the user to be created and granted privileges to the new database.",
+			Usage:   "the name of the user to be created and granted privileges to the new database",
 			Aliases: []string{"u"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
 		},
 		&cli.StringFlag{
 			Name:  "db-password",
-			Usage: "The user password to the created database; if not specified, a random password is generated.",
+			Usage: "the user password to the created database; if not specified, a random password is generated",
 		},
 	}
 
 	dbCreateFlags = append(dbCreateFlags, dbTLSFlags...)
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
 		Name:    "force",
-		Usage:   "Recreate the database and the user if they exist.",
+		Usage:   "recreate the database and the user if they exist",
 		Aliases: []string{"f"},
 	})
 
@@ -387,7 +387,7 @@ func setupApp() *cli.App {
 	dbVerFlags = append(dbVerFlags,
 		&cli.StringFlag{
 			Name:    "version",
-			Usage:   "Target database schema version (optional).",
+			Usage:   "target database schema version (optional)",
 			Aliases: []string{"t"},
 			EnvVars: []string{"STORK_TOOL_DB_VERSION"},
 		})
@@ -397,14 +397,14 @@ func setupApp() *cli.App {
 	certExportFlags = append(certExportFlags,
 		&cli.StringFlag{
 			Name:     "object",
-			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
+			Usage:    "the object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'",
 			Required: true,
 			Aliases:  []string{"f"},
 			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location where the object should be saved. If not provided, then object is printed to stdout.",
+			Usage:   "the file location where the object should be saved; if not provided, then object is printed to stdout",
 			Aliases: []string{"o"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
@@ -414,14 +414,14 @@ func setupApp() *cli.App {
 	certImportFlags = append(certImportFlags,
 		&cli.StringFlag{
 			Name:     "object",
-			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
+			Usage:    "the object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'",
 			Required: true,
 			Aliases:  []string{"f"},
 			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location from which the object will be read. If not provided, then the object is read from stdin.",
+			Usage:   "the file location from which the object will be read; if not provided, then the object is read from stdin",
 			Aliases: []string{"i"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})

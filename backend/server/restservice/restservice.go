@@ -36,12 +36,12 @@ import (
 type RestAPISettings struct {
 	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"the waiting period before killing idle connections" default:"10s"`
 	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"the waiting period before shutting down the server" default:"15s"`
-	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line. It does not limit the size of the request body." default:"1MiB"`
+	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line; it does not limit the size of the request body" default:"1MiB"`
 
 	Host         string        `long:"rest-host" description:"the IP to listen on" default:"" env:"STORK_REST_HOST"`
 	Port         int           `long:"rest-port" description:"the port to listen on for connections" default:"8080" env:"STORK_REST_PORT"`
 	ListenLimit  int           `long:"rest-listen-limit" description:"limits the number of outstanding requests"`
-	KeepAlive    time.Duration `long:"rest-keep-alive" description:"sets the TCP keep-alive timeouts on accepted connections. It prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
+	KeepAlive    time.Duration `long:"rest-keep-alive" description:"sets the TCP keep-alive timeouts on accepted connections; it prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
 	ReadTimeout  time.Duration `long:"rest-read-timeout" description:"the maximum duration before timing out reading the request" default:"30s"`
 	WriteTimeout time.Duration `long:"rest-write-timeout" description:"the maximum duration before timing out writing the response" default:"60s"`
 
