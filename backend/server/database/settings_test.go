@@ -1,18 +1,17 @@
-package dbtest
+package dbops
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	dbops "isc.org/stork/server/database"
-	testutil "isc.org/stork/testutil"
+	"isc.org/stork/testutil"
 )
 
 // Test that connection string is created when all parameters are specified and
 // none of the values include a space character. Also, make sure that the password
 // with upper case letters is handled correctly.
 func TestConnectionParamsNoSpaces(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123",
@@ -20,13 +19,13 @@ func TestConnectionParamsNoSpaces(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123' host='localhost' port=123 sslmode='disable'", params)
 }
 
 // Test that the password including space character is enclosed in quotes.
 func TestConnectionParamsWithSpaces(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123 567",
@@ -34,13 +33,13 @@ func TestConnectionParamsWithSpaces(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' host='localhost' port=123 sslmode='disable'", params)
 }
 
 // Test that quotes and double quotes are escaped.
 func TestConnectionParamsWithEscapes(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
 		Password: `StOrK123'56"7`,
@@ -48,40 +47,40 @@ func TestConnectionParamsWithEscapes(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, `dbname='stork' user='admin' password='StOrK123\'56\"7' host='localhost' port=123 sslmode='disable'`, params)
 }
 
 // Test that when the host is not specified it is not included in the connection
 // string.
 func TestConnectionParamsWithOptionalHost(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123 567",
 		Port:     123,
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' port=123 sslmode='disable'", params)
 }
 
 // Test that when the port is 0, it is not included in the connection string.
 func TestConnectionParamsWithOptionalPort(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
 		Password: "stork",
 		Host:     "localhost",
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='stork' host='localhost' sslmode='disable'", params)
 }
 
 // Test that sslmode and related parameters are included in the connection string.
 func TestConnectionParamsWithSSLMode(t *testing.T) {
-	settings := dbops.BaseDatabaseSettings{
+	settings := DatabaseSettings{
 		DBName:      "stork",
 		User:        "admin",
 		Password:    "stork",
@@ -91,7 +90,7 @@ func TestConnectionParamsWithSSLMode(t *testing.T) {
 		SSLRootCert: "/tmp/sslroot.crt",
 	}
 
-	params := settings.ConnectionParams()
+	params := settings.ToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='stork' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
 }
 
@@ -100,20 +99,19 @@ func TestPgParamsWithSSLMode(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, _ := createTestCerts(t, sb)
+	serverCert, serverKey, _, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
-	settings := dbops.DatabaseSettings{
-		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DBName:   "stork",
-			User:     "admin",
-			Password: "stork",
-			SSLMode:  "require",
-			SSLCert:  serverCert,
-			SSLKey:   serverKey,
-		},
+	settings := DatabaseSettings{
+		DBName:   "stork",
+		User:     "admin",
+		Password: "stork",
+		SSLMode:  "require",
+		SSLCert:  serverCert,
+		SSLKey:   serverKey,
 	}
 
-	params, _ := settings.PgParams()
+	params, _ := settings.toPgOptions()
 	require.NotNil(t, params)
 	require.NotNil(t, params.TLSConfig)
 
@@ -128,16 +126,14 @@ func TestPgParamsWithWrongSSLModeSettings(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	settings := dbops.DatabaseSettings{
-		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DBName:   "stork",
-			User:     "admin",
-			Password: "stork",
-			SSLMode:  "unsupported",
-		},
+	settings := DatabaseSettings{
+		DBName:   "stork",
+		User:     "admin",
+		Password: "stork",
+		SSLMode:  "unsupported",
 	}
 
-	params, err := settings.PgParams()
+	params, err := settings.toPgOptions()
 	require.Nil(t, params)
 	require.Error(t, err)
 }

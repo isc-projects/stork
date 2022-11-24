@@ -127,37 +127,35 @@ func TestVersion(t *testing.T) {
 
 // Check if a db-* command can be invoked.
 func TestRunDBMigrate(t *testing.T) {
-	_, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	_, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	dbOpts := gOpts.BaseDatabaseSettings
 
 	os.Args = []string{
 		"stork-tool", "db-up",
-		"--db-name", dbOpts.DBName,
-		"--db-user", dbOpts.User,
-		"--db-password", dbOpts.Password,
-		"--db-host", dbOpts.Host,
-		"--db-port", strconv.Itoa(dbOpts.Port),
+		"--db-name", settings.DBName,
+		"--db-user", settings.User,
+		"--db-password", settings.Password,
+		"--db-host", settings.Host,
+		"--db-port", strconv.Itoa(settings.Port),
 	}
 	main()
 }
 
 // Check if cert-export can be invoked.
 func TestRunCertExport(t *testing.T) {
-	db, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	dbOpts := gOpts.BaseDatabaseSettings
 
 	_, err := certs.GenerateServerToken(db)
 	require.NoError(t, err)
 
 	os.Args = []string{
 		"stork-tool", "cert-export",
-		"--db-name", dbOpts.DBName,
-		"--db-user", dbOpts.User,
-		"--db-password", dbOpts.Password,
-		"--db-host", dbOpts.Host,
-		"--db-port", strconv.Itoa(dbOpts.Port),
+		"--db-name", settings.DBName,
+		"--db-user", settings.User,
+		"--db-password", settings.Password,
+		"--db-host", settings.Host,
+		"--db-port", strconv.Itoa(settings.Port),
 		"-f", "srvtkn",
 	}
 	main()
@@ -168,9 +166,8 @@ func TestRunCertImport(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	db, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	dbOpts := gOpts.BaseDatabaseSettings
 
 	_, err := certs.GenerateServerToken(db)
 	require.NoError(t, err)
@@ -182,11 +179,11 @@ func TestRunCertImport(t *testing.T) {
 
 	os.Args = []string{
 		"stork-tool", "cert-import",
-		"--db-name", dbOpts.DBName,
-		"--db-user", dbOpts.User,
-		"--db-password", dbOpts.Password,
-		"--db-host", dbOpts.Host,
-		"--db-port", strconv.Itoa(dbOpts.Port),
+		"--db-name", settings.DBName,
+		"--db-user", settings.User,
+		"--db-password", settings.Password,
+		"--db-host", settings.Host,
+		"--db-port", strconv.Itoa(settings.Port),
 		"-f", "srvtkn",
 		"-i", srvTknFile,
 	}
@@ -195,22 +192,21 @@ func TestRunCertImport(t *testing.T) {
 
 // Check if db-create command can be invoked.
 func TestRunDBCreate(t *testing.T) {
-	_, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	_, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	dbOpts := gOpts.BaseDatabaseSettings
 
 	// Generate unique database name and use the same name for the user.
 	dbName := fmt.Sprintf("storktest%d", rand.Int63())
 	os.Args = []string{
 		"stork-tool", "db-create",
-		"--db-maintenance-name", dbOpts.DBName,
-		"--db-maintenance-user", dbOpts.Password,
-		"--db-maintenance-password", dbOpts.User,
+		"--db-maintenance-name", settings.DBName,
+		"--db-maintenance-user", settings.Password,
+		"--db-maintenance-password", settings.User,
 		"--db-name", dbName,
 		"--db-user", dbName,
-		"--db-password", dbOpts.Password,
-		"--db-host", dbOpts.Host,
-		"--db-port", strconv.Itoa(dbOpts.Port),
+		"--db-password", settings.Password,
+		"--db-host", settings.Host,
+		"--db-port", strconv.Itoa(settings.Port),
 	}
 	main()
 }

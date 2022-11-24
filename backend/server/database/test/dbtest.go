@@ -3,8 +3,6 @@ package dbtest
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -19,45 +17,18 @@ import (
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	// Default configuration
-	dbUser := "storktest"
-	dbPassword := dbUser
-	mainDBName := dbUser
-	dbHost := "localhost"
-	dbPortRaw := "5432"
-	dbMaintenanceName := "postgres"
-
-	// Read the DB credentials from the environment variables.
-	envMapping := map[string]*string{
-		"STORK_DATABASE_USER_NAME": &dbUser,
-		"STORK_DATABASE_PASSWORD":  &dbPassword,
-		"STORK_DATABASE_NAME":      &mainDBName,
-		"STORK_DATABASE_HOST":      &dbHost,
-		"STORK_DATABASE_PORT":      &dbPortRaw,
-		"DB_MAINTENANCE_NAME":      &dbMaintenanceName,
-	}
-
-	for key, value := range envMapping {
-		if envValue, ok := os.LookupEnv(key); ok {
-			*value = envValue
-		}
-	}
-
-	dbPort := 0
-	if parsedDBPort, err := strconv.ParseInt(dbPortRaw, 10, 32); err == nil {
-		dbPort = int(parsedDBPort)
-	}
-
-	// Common set of database connection options which may be converted to a string
-	// of space separated options used by SQL drivers.
-	genericConnOptions := dbops.DatabaseSettings{
-		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DBName:   dbMaintenanceName,
-			User:     dbUser,
-			Password: dbPassword,
-			Host:     dbHost,
-			Port:     dbPort,
+	settings := &dbops.DatabaseSettingsWithMaintenanceCLI{
+		DatabaseSettingsCLI: dbops.DatabaseSettingsCLI{
+			DBName: "storktest",
+			User:   "storktest",
+			Host:   "/var/run/postgres",
 		},
+		MaintenanceDBName:   "storktest",
+		MaintenanceUser:     "storktest",
+		MaintenancePassword: "storktest",
 	}
+
+	settings.ReadFromEnvironment()
 
 	var (
 		t  *testing.T
@@ -72,12 +43,8 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		}
 	}
 
-	// Convert generic options to go-pg options.
-	pgConnOptions, _ := genericConnOptions.PgParams()
-
 	// Connect to maintenance database to be able to create test database.
-	pgConnOptions.Database = dbMaintenanceName
-	db, err := dbops.NewPgDBConn(pgConnOptions, false)
+	db, err := dbops.NewPgDBConn(settings.ConvertToMaintenanceDatabaseSettings())
 	if db == nil {
 		log.Fatalf("Unable to create database instance: %+v", err)
 	}
@@ -88,10 +55,10 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	}
 
 	// Create test database from template. Template db is storktest (no tests should use it directly).
-	// Test database name is storktest + big random number e.g.: storktest9817239871871478571.
+	// Test database name is usually storktest + big random number e.g.: storktest9817239871871478571.
 	rand.Seed(time.Now().UnixNano())
 	//nolint:gosec
-	dbName := fmt.Sprintf("%s%d", mainDBName, rand.Int63())
+	dbName := fmt.Sprintf("%s%d", settings.DBName, rand.Int63())
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
 	_, err = db.Exec(cmd)
@@ -101,7 +68,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		b.Fatalf("%s", err)
 	}
 
-	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, mainDBName)
+	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, settings.DBName)
 	_, err = db.Exec(cmd)
 	if t != nil {
 		require.NoError(t, err)
@@ -112,12 +79,12 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	db.Close()
 
 	// Create an instance of the test database.
-	pgConnOptions.Database = dbName
-	genericConnOptions.BaseDatabaseSettings.DBName = dbName
+	testDBSettings := settings.ConvertToDatabaseSettings()
+	testDBSettings.DBName = dbName
 
-	db, err = dbops.NewPgDBConn(pgConnOptions, false)
+	db, err = dbops.NewPgDBConn(testDBSettings)
 	if db == nil {
-		log.Fatalf("Unable to create database instance: %+v", err)
+		log.Fatalf("Unable to connect to the database instance: %+v", err)
 	}
 	if t != nil {
 		require.NoError(t, err)
@@ -125,12 +92,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		b.Fatalf("%s", err)
 	}
 
-	// enable tracing sql queries if requested
-	if _, ok := os.LookupEnv("STORK_DATABASE_TRACE"); ok {
-		db.AddQueryHook(dbops.DBLogger{})
-	}
-
-	return db, &genericConnOptions, func() {
+	return db, testDBSettings, func() {
 		db.Close()
 	}
 }

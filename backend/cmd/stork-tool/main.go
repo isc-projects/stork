@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"os"
+	"reflect"
+	"strconv"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -23,35 +24,11 @@ const passwordGenRandomLength = 24
 // Specifying db-url is not supported. The maintenance database name,
 // user and password are specified with db-maintenance-name,
 // db-maintenance-user and db-maintenance-password settings.
-func getAdminDBConn(settings *cli.Context) *dbops.PgDB {
-	if !settings.IsSet("db-maintenance-password") {
-		// If password is missing then prompt for it.
-		passwd := storkutil.GetSecretInTerminal("admin password: ")
-		_ = settings.Set("db-maintenance-password", passwd)
-	}
+func getAdminDBConn(rawSettings *cli.Context) *dbops.PgDB {
+	settings := &dbops.DatabaseSettingsWithMaintenanceCLI{}
+	settings.ReadFromCLI(rawSettings)
 
-	addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
-
-	// TLS configuration.
-	tlsConfig, err := dbops.GetTLSConfig(settings.String("db-sslmode"),
-		settings.String("db-host"),
-		settings.String("db-sslcert"),
-		settings.String("db-sslkey"),
-		settings.String("db-sslrootcert"))
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	// Use the provided credentials to connect to the database.
-	opts := &dbops.PgOptions{
-		User:      settings.String("db-maintenance-user"),
-		Password:  settings.String("db-maintenance-password"),
-		Database:  settings.String("db-maintenance-name"),
-		Addr:      addrPort,
-		TLSConfig: tlsConfig,
-	}
-
-	db, err := dbops.NewPgDBConn(opts, settings.String("db-trace-queries") != "")
+	db, err := dbops.NewPgDBConn(settings.ConvertToMaintenanceDatabaseSettings())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
@@ -65,49 +42,11 @@ func getAdminDBConn(settings *cli.Context) *dbops.PgDB {
 }
 
 // Establish connection to a database with opts from command line.
-func getDBConn(settings *cli.Context) *dbops.PgDB {
-	var opts *dbops.PgOptions
-	var err error
+func getDBConn(rawSettings *cli.Context) *dbops.PgDB {
+	settings := &dbops.DatabaseSettingsCLI{}
+	settings.ReadFromCLI(rawSettings)
 
-	dbURL := settings.String("db-url")
-	if dbURL != "" {
-		opts, err = dbops.ParseURL(dbURL)
-		if err != nil {
-			log.Fatalf("Cannot parse database URL: %+v", err)
-		}
-		opts.TLSConfig = nil // ParseURL sets it automatically but we do not use TLS so reset it
-	} else {
-		var passwd string
-		if settings.IsSet("db-password") {
-			passwd = settings.String("db-password")
-		} else {
-			// If password is missing then prompt for it.
-			passwd = storkutil.GetSecretInTerminal("database password: ")
-		}
-
-		addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
-
-		// TLS configuration.
-		tlsConfig, err := dbops.GetTLSConfig(settings.String("db-sslmode"),
-			settings.String("db-host"),
-			settings.String("db-sslcert"),
-			settings.String("db-sslkey"),
-			settings.String("db-sslrootcert"))
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
-		// Use the provided credentials to connect to the database.
-		opts = &dbops.PgOptions{
-			User:      settings.String("db-user"),
-			Password:  passwd,
-			Database:  settings.String("db-name"),
-			Addr:      addrPort,
-			TLSConfig: tlsConfig,
-		}
-	}
-
-	db, err := dbops.NewPgDBConn(opts, settings.String("db-trace-queries") != "")
+	db, err := dbops.NewPgDBConn(settings.ConvertToDatabaseSettings())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
@@ -292,138 +231,62 @@ func runHookInspect(settings *cli.Context) error {
 	}
 }
 
+func createFlagsFromTags(t reflect.Type) []cli.Flag {
+	var dbFlags []cli.Flag
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		name := field.Tag.Get("long")
+		usage := field.Tag.Get("description")
+		value, ok := field.Tag.Lookup("default")
+		if !ok {
+			value = ""
+		}
+		var aliases []string
+		if alias, ok := field.Tag.Lookup("short"); ok {
+			aliases = append(aliases, alias)
+		}
+		var envVars []string
+		if envVar, ok := field.Tag.Lookup("env"); ok {
+			envVars = append(envVars, envVar)
+		}
+
+		switch field.Type.Kind() {
+		case reflect.String:
+			dbFlags = append(dbFlags, &cli.StringFlag{
+				Name:    name,
+				Usage:   usage,
+				Value:   value,
+				EnvVars: envVars,
+				Aliases: aliases,
+			})
+		case reflect.Int:
+			valueInt, _ := strconv.ParseInt(value, 10, 0)
+			dbFlags = append(dbFlags, &cli.Int64Flag{
+				Name:    name,
+				Usage:   usage,
+				Value:   valueInt,
+				EnvVars: envVars,
+				Aliases: aliases,
+			})
+		default:
+			// Unsupported type
+			continue
+		}
+	}
+
+	return dbFlags
+}
+
 // Prepare urfave cli app with all flags and commands defined.
 func setupApp() *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Println(c.App.Version)
 	}
 
-	dbTLSFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:    "db-sslmode",
-			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca, or verify-full)",
-			Value:   "disable",
-			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
-		},
-		&cli.StringFlag{
-			Name:    "db-sslcert",
-			Usage:   "The location of the SSL certificate used by the server to connect to the database",
-			EnvVars: []string{"STORK_DATABASE_SSLCERT"},
-		},
-		&cli.StringFlag{
-			Name:    "db-sslkey",
-			Usage:   "The location of the SSL key used by the server to connect to the database",
-			EnvVars: []string{"STORK_DATABASE_SSLKEY"},
-		},
-		&cli.StringFlag{
-			Name:    "db-sslrootcert",
-			Usage:   "The location of the root certificate file used to verify the database server's certificate",
-			EnvVars: []string{"STORK_DATABASE_SSLROOTCERT"},
-		},
-		&cli.StringFlag{
-			Name:    "db-trace-queries",
-			Usage:   "Enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time",
-			Value:   "",
-			EnvVars: []string{"STORK_DATABASE_TRACE_QUERIES"},
-		},
-	}
+	dbFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseSettingsCLI)(nil)).Elem())
+	dbCreateFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseSettingsWithMaintenanceCLI)(nil)).Elem())
 
-	dbFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:    "db-url",
-			Usage:   "The URL to locate the Stork PostgreSQL database",
-			EnvVars: []string{"STORK_DATABASE_URL"},
-		},
-		&cli.StringFlag{
-			Name:    "db-user",
-			Usage:   "The user name for database connections",
-			Aliases: []string{"u"},
-			Value:   "stork",
-			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
-		},
-		&cli.StringFlag{
-			Name:    "db-password",
-			Usage:   "The database password for database connections",
-			EnvVars: []string{"STORK_DATABASE_PASSWORD"},
-		},
-		&cli.StringFlag{
-			Name:    "db-host",
-			Usage:   "The name of the host where the database is available",
-			Value:   "localhost",
-			EnvVars: []string{"STORK_DATABASE_HOST"},
-		},
-		&cli.StringFlag{
-			Name:    "db-port",
-			Usage:   "The port on which the database is available",
-			Aliases: []string{"p"},
-			Value:   "5432",
-			EnvVars: []string{"STORK_DATABASE_PORT"},
-		},
-		&cli.StringFlag{
-			Name:    "db-name",
-			Usage:   "The name of the database to connect to",
-			Aliases: []string{"d"},
-			Value:   "stork",
-			EnvVars: []string{"STORK_DATABASE_NAME"},
-		},
-	}
-
-	dbFlags = append(dbFlags, dbTLSFlags...)
-
-	dbCreateFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:    "db-maintenance-name",
-			Usage:   "The existing maintenance database name",
-			Aliases: []string{"m"},
-			Value:   "postgres",
-			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_NAME"},
-		},
-		&cli.StringFlag{
-			Name:    "db-maintenance-user",
-			Usage:   "The Postgres database administrator user name",
-			Aliases: []string{"a"},
-			Value:   "postgres",
-			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_USER_NAME"},
-		},
-		&cli.StringFlag{
-			Name:    "db-maintenance-password",
-			Usage:   "The Postgres database administrator password; if not specified, the user will be prompted for the password",
-			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_PASSWORD"},
-		},
-		&cli.StringFlag{
-			Name:    "db-host",
-			Usage:   "The name of the host where the database is available",
-			Value:   "localhost",
-			EnvVars: []string{"STORK_DATABASE_HOST"},
-		},
-		&cli.StringFlag{
-			Name:    "db-port",
-			Usage:   "The port on which the database is available",
-			Aliases: []string{"p"},
-			Value:   "5432",
-			EnvVars: []string{"STORK_DATABASE_PORT"},
-		},
-		&cli.StringFlag{
-			Name:    "db-name",
-			Usage:   "The name of the database to be created",
-			Aliases: []string{"d"},
-			Value:   "stork",
-			EnvVars: []string{"STORK_DATABASE_NAME"},
-		},
-		&cli.StringFlag{
-			Name:    "db-user",
-			Usage:   "The name of the user to be created and granted privileges to the new database",
-			Aliases: []string{"u"},
-			Value:   "stork",
-			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
-		},
-		&cli.StringFlag{
-			Name:  "db-password",
-			Usage: "The user password to the created database; if not specified, a random password is generated",
-		},
-	}
-
-	dbCreateFlags = append(dbCreateFlags, dbTLSFlags...)
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
 		Name:    "force",
 		Usage:   "Recreate the database and the user if they exist",

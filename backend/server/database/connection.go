@@ -11,6 +11,7 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	storkutil "isc.org/stork/util"
 )
 
 // Minimal supported database Postgres server version.
@@ -33,8 +34,19 @@ type TxI interface {
 // It implements the "pg.QueryHook" interface.
 type DBLogger struct{}
 
+// The type used to define context keys for database handling.
+type DBContextKeyword string
+
+const suppressQueryLoggingKeyword DBContextKeyword = "suppress-query-logging"
+
 // Hook run before SQL query execution.
 func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
+	if suppress := c.Value(suppressQueryLoggingKeyword); suppress != nil {
+		if suppressValue, ok := suppress.(bool); ok && suppressValue {
+			return c, nil
+		}
+	}
+
 	// When making queries on the system_user table we want to make sure that
 	// we don't expose actual data in the logs, especially password.
 	if model, ok := q.Model.(orm.TableModel); ok {
@@ -66,34 +78,40 @@ func (d DBLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 }
 
 // Create only new PgDB instance.
-func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
-	db := pg.Connect(pgParams)
+func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
+	pgParams, err := settings.toPgOptions()
+	if err != nil {
+		return nil, err
+	}
 
+	db := pg.Connect(pgParams)
 	// Add tracing hooks if requested.
-	if tracing {
+	if settings.TraceSQL != LoggingQueryPresetNone {
 		db.AddQueryHook(DBLogger{})
 	}
 
 	log.Printf("Checking connection to database")
 	// Test connection to database.
-	var err error
 	for tries := 0; tries < 10; tries++ {
-		var (
-			n       int
-			pgError pg.Error
-		)
-		_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")
+		var pgError pg.Error
+
+		err = db.Ping(db.Context())
 		if err == nil {
 			break
 		}
-		if errors.As(err, &pgError) && pgError.Field('S') == "FATAL" {
-			break
+		if errors.As(err, &pgError) {
+			if pgError.Field('S') == "FATAL" {
+				break
+			} else if pgParams.Password == "" && pgError.Field('X') == "Missing password" {
+				pgParams.Password = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
+				continue
+			}
 		}
 		log.Printf("Problem connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "unable to connect to the database using provided credentials")
+		return nil, pkgerrors.Wrapf(err, "unable to connect to the database using provided settings")
 	}
 
 	// Check that a database version is supported
@@ -120,42 +138,50 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		)
 	}
 
+	log.Infof("Connected to database %s:%d", settings.Host, settings.Port)
+
 	return db, nil
 }
 
-// Create new instance of PgDB and migrate database if necessary to the latest schema version.
-func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
-	// Fetch password from the env variable or prompt for password.
-	Password(settings)
-
-	// Make a connection to DB (tracing is enabled at this stage if set to all (migrations and run-time))
-	params, err := settings.PgParams()
+// Migrate database if necessary to the latest schema version.
+func NewApplicationDatabase(settings *DatabaseSettings) (*PgDB, error) {
+	db, err := NewPgDBConn(settings)
 	if err != nil {
 		return nil, err
 	}
-	db, err := NewPgDBConn(params, settings.TraceSQL == "all")
-	if err != nil {
-		return nil, err
+
+	migrateDB := db
+	if settings.TraceSQL == LoggingQueryPresetRuntime {
+		migrateDB = SuppressQueryLogging(db)
 	}
 
 	// Ensure that the latest database schema is installed.
-	oldVer, newVer, err := MigrateToLatest(db)
-	if err != nil {
+	oldVer, newVer, err := MigrateToLatest(migrateDB)
+	switch {
+	case err != nil:
 		return nil, err
-	} else if oldVer != newVer {
+	case oldVer != newVer:
 		log.WithFields(log.Fields{
 			"old-version": oldVer,
 			"new-version": newVer,
 		}).Info("Successfully migrated database schema")
+	default:
+		log.WithField("version", newVer).Info("Database is up-to-date")
 	}
 
-	// Enable tracing here, if we were told to enable only at run-time
-	if settings.TraceSQL == "run" {
-		db.AddQueryHook(DBLogger{})
-	}
-
-	log.Infof("Connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
 	return db, nil
+}
+
+// Returns a database instance with a changed context to suppress the SQL
+// query logging hook.
+func SuppressQueryLogging(db *PgDB) *PgDB {
+	return db.WithContext(
+		context.WithValue(
+			db.Context(),
+			suppressQueryLoggingKeyword,
+			true,
+		),
+	)
 }
 
 // Fetch the connected Postgres version in numeric format.

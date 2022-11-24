@@ -25,30 +25,14 @@ func certExistsInHomeDir() bool {
 	return false
 }
 
-// Creates the certificate, key and CA certificate for testing
-// secure database connections.
-func createTestCerts(t *testing.T, sb *testutil.Sandbox) (serverCert, serverKey, rootCert string) {
-	serverCert, err := sb.Write("server-cert.pem", string(testutil.GetCertPEMContent()))
-	require.NoError(t, err)
-
-	serverKey, err = sb.Write("server-key.pem", string(testutil.GetKeyPEMContent()))
-	require.NoError(t, err)
-	err = os.Chmod(serverKey, 0o600)
-	require.NoError(t, err)
-
-	rootCert, err = sb.Write("root-cert.pem", string(testutil.GetCACertPEMContent()))
-	require.NoError(t, err)
-
-	return serverCert, serverKey, rootCert
-}
-
 // Test that the server ignores cert and key files when the SSL
 // mode is set to 'disable'.
 func TestGetTLSConfigDisableWithNonBlankFiles(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, rootCert := createTestCerts(t, sb)
+	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", serverCert, serverKey, rootCert)
 	require.NoError(t, err)
@@ -61,7 +45,8 @@ func TestGetTLSConfigRequire(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, _ := createTestCerts(t, sb)
+	serverCert, serverKey, _, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, "")
 	require.NoError(t, err)
@@ -80,7 +65,8 @@ func TestGetTLSConfigRequireVerifyCA(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, rootCert := createTestCerts(t, sb)
+	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, rootCert)
 	require.NoError(t, err)
@@ -128,7 +114,8 @@ func TestGetTLSConfigRequireKeyDoesNotExist(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, _, _ := createTestCerts(t, sb)
+	serverCert, _, _, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, "nonexist", "")
 	require.Error(t, err)
@@ -141,7 +128,8 @@ func TestGetTLSConfigVerifyCA(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, rootCert := createTestCerts(t, sb)
+	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert)
 	require.NoError(t, err)
@@ -160,7 +148,8 @@ func TestGetTLSConfigVerifyFull(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, rootCert := createTestCerts(t, sb)
+	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("verify-full", "bull", serverCert, serverKey, rootCert)
 	require.NoError(t, err)
@@ -195,8 +184,9 @@ func TestGetTLSConfigWrongKeyPermissions(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	serverCert, serverKey, rootCert := createTestCerts(t, sb)
-	err := os.Chmod(serverKey, 0o644)
+	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
+	err = os.Chmod(serverKey, 0o644)
 	require.NoError(t, err)
 
 	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert)

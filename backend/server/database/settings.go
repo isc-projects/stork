@@ -3,7 +3,9 @@ package dbops
 import (
 	"fmt"
 	"os"
+	"path"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/go-pg/pg/v10"
@@ -11,28 +13,6 @@ import (
 
 	storkutil "isc.org/stork/util"
 )
-
-// Represents database connection settings. The field names and values must correspond to the
-// respective libpq parameters.
-// See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
-type BaseDatabaseSettings struct {
-	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
-	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
-	Password    string `description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
-	Host        string `long:"db-host" description:"The name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
-	Port        int    `short:"p" long:"db-port" description:"The port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
-	SSLMode     string `long:"db-sslmode" description:"The SSL mode for connecting to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"` //nolint:staticcheck
-	SSLCert     string `long:"db-sslcert" description:"The location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
-	SSLKey      string `long:"db-sslkey" description:"The location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
-	SSLRootCert string `long:"db-sslrootcert" description:"The location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
-}
-
-// Represents the additional database settings. They are not necessary to
-// perform the connection itself.
-type DatabaseSettings struct {
-	BaseDatabaseSettings
-	TraceSQL string `long:"db-trace-queries" description:"Enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time" env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
-}
 
 // Alias to pg.DB.
 type PgDB = pg.DB
@@ -43,6 +23,18 @@ type PgConn = pg.Conn
 // Alias to pg.Options.
 type PgOptions = pg.Options
 
+// A type for constants defining the supported presets of SQL query logging.
+type LoggingQueryPreset string
+
+const (
+	// Log all SQL queries. Includes runtime and migration queries.
+	LoggingQueryPresetAll LoggingQueryPreset = "all"
+	// Log the runtime SQL queries. Skips the migration queries.
+	LoggingQueryPresetRuntime LoggingQueryPreset = "run"
+	// Disable SQL query logging.
+	LoggingQueryPresetNone LoggingQueryPreset = "none"
+)
+
 // Enables singular SQL table names for go-pg ORM.
 func init() {
 	orm.SetTableNameInflector(func(s string) string {
@@ -50,93 +42,255 @@ func init() {
 	})
 }
 
-// Creates new generic connection structure and sets the port to the default
-// port number used by PostgreSQL.
-func NewDatabaseSettings() *DatabaseSettings {
-	conn := &DatabaseSettings{BaseDatabaseSettings: BaseDatabaseSettings{Port: 5432}}
-	return conn
+// Represents database connection settings. The "pq" tag names and values must correspond to the
+// respective libpq parameters.
+// See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
+type DatabaseSettings struct {
+	DBName      string `pq:"dbname"`
+	User        string `pq:"user"`
+	Password    string `pq:"password"`
+	Host        string `pq:"host"`
+	Port        int    `pq:"port"`
+	SSLMode     string `pq:"sslmode"`
+	SSLCert     string `pq:"sslcert"`
+	SSLKey      string `pq:"sslkey"`
+	SSLRootCert string `pq:"sslrootcert"`
+	TraceSQL    LoggingQueryPreset
 }
 
 // Returns generic connection parameters as a list of space separated name/value pairs.
 // All string values are enclosed in quotes. The quotes and double quotes within the
 // string values are escaped. Empty or zero values are not included in the returned
 // connection string.
-func (c *BaseDatabaseSettings) ConnectionParams() string {
-	// Copy the structure as we don't want to modify the original.
-	settingsCopy := *c
-
+func (s *DatabaseSettings) ToConnectionString() string {
 	// Get the reflect representation of the structure.
-	v := reflect.ValueOf(&settingsCopy).Elem()
+	v := reflect.ValueOf(&s).Elem()
 
 	// Get the types of the fields in the structure.
 	vType := v.Type()
 
 	// Iterate over the fields and append them to the connection string if needed.
-	var s string
+	params := make(map[string]string)
+
 	for i := 0; i < v.NumField(); i++ {
+		field := vType.Field(i)
+
+		// Parameter name
+		paramName, ok := field.Tag.Lookup("pq")
+		if !ok {
+			continue
+		}
+
+		// Parameter value
+		var paramValue string
+
 		// Check the type of the current field.
-		switch vType.Field(i).Type.Kind() {
+		switch field.Type.Kind() {
 		case reflect.String:
 			// Only append the parameter if it is non-empty.
-			fieldValue := v.Field(i).String()
-			if len(fieldValue) == 0 {
+			paramValue = v.Field(i).String()
+			if len(paramValue) == 0 {
 				continue
 			}
 			// Escape quotes and double quotes.
-			fieldValue = strings.ReplaceAll(fieldValue, "'", `\'`)
-			fieldValue = strings.ReplaceAll(fieldValue, `"`, `\"`)
+			paramValue = strings.ReplaceAll(paramValue, "'", `\'`)
+			paramValue = strings.ReplaceAll(paramValue, `"`, `\"`)
 			// Enclose all strings in quotes in case they contain spaces.
-			fieldValue = fmt.Sprintf("'%s'", fieldValue)
-			v.Field(i).SetString(fieldValue)
+			paramValue = fmt.Sprintf("'%s'", paramValue)
+
 		case reflect.Int:
 			// If the int value is zero, do not include it.
-			fieldValue := v.Field(i).Int()
-			if fieldValue == 0 {
+			paramValueInt := v.Field(i).Int()
+			if paramValueInt == 0 {
 				continue
 			}
+			paramValue = fmt.Sprint(paramValueInt)
 		default:
+			// Unsupported type.
+			continue
 		}
-		// If we are not on the first field, add a space after previous field.
-		if i > 0 {
-			s += " "
-		}
-		// Append the parameter in the name=value format.
-		s += fmt.Sprintf("%s=%v", strings.ToLower(vType.Field(i).Name), v.Field(i).Interface())
+
+		params[paramName] = paramValue
 	}
-	if len(c.SSLMode) == 0 {
-		s += " sslmode='disable'"
+	if len(s.SSLMode) == 0 {
+		params["sslmode"] = "disable"
 	}
-	return s
+
+	paramsStr := make([]string, len(params))
+	idx := 0
+	for key, value := range params {
+		paramsStr[idx] = fmt.Sprintf("%s=%s", key, value)
+	}
+
+	return strings.Join(paramsStr, " ")
 }
 
 // Converts generic connection parameters to go-pg specific parameters.
-func (c *DatabaseSettings) PgParams() (*PgOptions, error) {
-	pgopts := &PgOptions{Database: c.DBName, User: c.User, Password: c.Password}
-	pgopts.Addr = fmt.Sprintf("%s:%d", c.Host, c.Port)
-	tlsConfig, err := GetTLSConfig(c.SSLMode, c.Host, c.SSLCert, c.SSLKey, c.SSLRootCert)
-	if err != nil {
-		return nil, err
+func (s *DatabaseSettings) toPgOptions() (*PgOptions, error) {
+	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
+
+	if storkutil.IsSocket(s.Host) {
+		pgopts.Addr = path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
+		pgopts.Network = "unix"
+	} else {
+		pgopts.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
+		pgopts.Network = "unix"
+		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert)
+		if err != nil {
+			return nil, err
+		}
+		pgopts.TLSConfig = tlsConfig
 	}
-	pgopts.TLSConfig = tlsConfig
+
 	return pgopts, nil
 }
 
-// Fetches database password from the environment variable or prompts the user
-// for the password.
-func Password(settings *DatabaseSettings) {
-	if len(settings.Password) != 0 {
-		return
-	}
-	if passwd, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
-		settings.Password = passwd
-	} else {
-		// Prompt the user for database password.
-		pass := storkutil.GetSecretInTerminal("database password: ")
-		settings.Password = pass
+// Sets the member fields of a given object using the structure tags and value
+// lookup object. The function searches for the provided tag in the member tags.
+// If found, the tag value is passed to the value lookup. The output string is
+// set as a member value.
+//
+// The output string is converted to a number if the member type is an integer.
+// The function supports only string and integer (int) data types.
+//
+// If the member doesn't have a specific tag, value lookup returns no value,
+// the member has an unsupported type, or integer conversion fails, then the
+// member is skipped. It has a default value.
+func readMembersFromTags(obj any, tagName string, valueLookup func(string) (string, bool)) {
+	// Get the reflect representation of the structure.
+	v := reflect.ValueOf(&obj).Elem()
+
+	// Get the types of the fields in the structure.
+	vType := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := vType.Field(i)
+
+		// Environment variable key
+		key, ok := field.Tag.Lookup(tagName)
+		if !ok {
+			continue
+		}
+
+		value, ok := valueLookup(key)
+		if !ok {
+			continue
+		}
+
+		// Check the type of the current field.
+		switch field.Type.Kind() {
+		case reflect.String:
+			v.Field(i).SetString(value)
+		case reflect.Int:
+			envValueInt, err := strconv.ParseInt(value, 10, 0)
+			if err != nil {
+				continue
+			}
+			v.Field(i).SetInt(envValueInt)
+		default:
+			// Unsupported type.
+			continue
+		}
 	}
 }
 
-// Parse DB URL to Pg options.
-func ParseURL(url string) (*pg.Options, error) {
-	return pg.ParseURL(url)
+// Sets the member fields of a given object using the structure tags and the
+// environment variables. The function searches for the 'env' tag in the member
+// tags. If found, the tag value is . The output string is set as a member value.
+func readFromEnvironment(obj any) {
+	readMembersFromTags(obj, "env", os.LookupEnv)
+}
+
+// Defines the interface to perform the lookup value of the CLI flags.
+type CLILookup interface {
+	// Check if the CLI flag with a given name exists.
+	IsSet(key string) bool
+	// Returns the value of CLI flag with a given name.
+	String(key string) string
+}
+
+// Sets the member fields of a given object using the structure tags and CLI
+// lookup object. The function searches for the 'long' tag in the member tags
+// for recognize a related CLI flag. If found, the flag value is set as a
+// member value.
+func readFromCLI(obj any, lookup CLILookup) {
+	readMembersFromTags(obj, "long", func(key string) (string, bool) {
+		if lookup.IsSet(key) {
+			return lookup.String(key), true
+		}
+		return "", false
+	})
+}
+
+// The structure defines the database-related CLI flags.
+type DatabaseSettingsCLI struct {
+	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
+	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
+	Password    string `description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
+	Host        string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:"/var/run/postgresql"`
+	Port        int    `short:"p" long:"db-port" description:"The port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
+	SSLMode     string `long:"db-sslmode" description:"The SSL mode for connecting to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"` //nolint:staticcheck
+	SSLCert     string `long:"db-sslcert" description:"The location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
+	SSLKey      string `long:"db-sslkey" description:"The location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
+	SSLRootCert string `long:"db-sslrootcert" description:"The location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
+	TraceSQL    string `long:"db-trace-queries" description:"Enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), or none (no query logging)." env:"STORK_DATABASE_TRACE" choice:"run" choice:"all" choice:"none" default:"none"` //nolint:staticcheck
+}
+
+// Converts the values of CLI flags to the database settings. They don't
+// use the maintenance parameters. The standard user will connect to the
+// standard database.
+func (s *DatabaseSettingsCLI) ConvertToDatabaseSettings() *DatabaseSettings {
+	return &DatabaseSettings{
+		DBName:      s.DBName,
+		User:        s.User,
+		Password:    s.Password,
+		Host:        s.Host,
+		Port:        s.Port,
+		SSLMode:     s.SSLMode,
+		SSLCert:     s.SSLCert,
+		SSLKey:      s.SSLKey,
+		SSLRootCert: s.SSLRootCert,
+		TraceSQL:    LoggingQueryPreset(s.TraceSQL),
+	}
+}
+
+// Reads the database settings (without maintenance) from the environment variables.
+func (s *DatabaseSettingsCLI) ReadFromEnvironment() {
+	readFromEnvironment(s)
+}
+
+// Reads the database settings (without maintenance) from the CLI lookup.
+func (s *DatabaseSettingsCLI) ReadFromCLI(lookup CLILookup) {
+	readFromCLI(s, lookup)
+}
+
+// Converts the values of CLI flags to the database settings. They  include the
+// maintenance parameters.
+type DatabaseSettingsWithMaintenanceCLI struct {
+	DatabaseSettingsCLI
+	MaintenanceDBName   string `short:"m" long:"db-maintenance-name" description:"The existing maintenance database name" env:"STORK_DATABASE_MAINTENANCE_NAME" default:"postgres"`
+	MaintenanceUser     string `short:"a" long:"db-maintenance-user" description:"The Postgres database administrator user name" env:"STORK_DATABASE_MAINTENANCE_USER_NAME" default:"postgres"`
+	MaintenancePassword string `long:"db-maintenance-password" description:"The Postgres database administrator password; if not specified, the user will be prompted for the password" env:"STORK_DATABASE_MAINTENANCE_PASSWORD"`
+}
+
+// Converts the values of CLI flags to the database settings. They use the
+// maintenance parameters. The maintenance user will connect to the maintenance
+// database.
+func (s *DatabaseSettingsWithMaintenanceCLI) ConvertToMaintenanceDatabaseSettings() *DatabaseSettings {
+	settings := s.ConvertToDatabaseSettings()
+	settings.DBName = s.MaintenanceDBName
+	settings.User = s.MaintenanceUser
+	settings.Password = s.MaintenancePassword
+	return settings
+}
+
+// Reads the database settings (with maintenance) from the environment variables.
+func (s *DatabaseSettingsWithMaintenanceCLI) ReadFromEnvironment() {
+	s.DatabaseSettingsCLI.ReadFromEnvironment()
+	readFromEnvironment(s)
+}
+
+// Reads the database settings (with maintenance) from the CLI lookup.
+func (s *DatabaseSettingsWithMaintenanceCLI) ReadFromCLI(lookup CLILookup) {
+	readFromCLI(s, lookup)
 }

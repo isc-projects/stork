@@ -29,7 +29,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	mgr, err := NewSessionMgr(dbSettings)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
@@ -96,7 +96,7 @@ func TestLoad(t *testing.T) {
 	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	mgr, err := NewSessionMgr(dbSettings)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -111,7 +111,7 @@ func TestLogOutUser(t *testing.T) {
 	defer teardown()
 
 	// Create session manager.
-	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	mgr, err := NewSessionMgr(dbSettings)
 	require.NoError(t, err)
 
 	ctx := context.Background()

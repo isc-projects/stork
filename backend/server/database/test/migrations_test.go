@@ -120,7 +120,7 @@ func TestCurrentVersion(t *testing.T) {
 // this database using generated password.
 func TestCreateDatabase(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, dbSettings, teardown := SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
@@ -129,14 +129,12 @@ func TestCreateDatabase(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to connect to this database using the user name.
-	opts := &pg.Options{
-		User:      dbName,
-		Password:  "pass",
-		Database:  dbName,
-		Addr:      db.Options().Addr,
-		TLSConfig: db.Options().TLSConfig,
-	}
-	db2, err := dbops.NewPgDBConn(opts, false)
+	opts := *dbSettings
+	opts.User = dbName
+	opts.Password = "pass"
+	opts.DBName = dbName
+
+	db2, err := dbops.NewPgDBConn(&opts)
 	require.NoError(t, err)
 	require.NotNil(t, db2)
 	db2.Close()
@@ -153,7 +151,7 @@ func TestCreateDatabase(t *testing.T) {
 
 	// Connect to the database again using the second password.
 	opts.Password = "pass2"
-	db2, err = dbops.NewPgDBConn(opts, false)
+	db2, err = dbops.NewPgDBConn(&opts)
 	require.NoError(t, err)
 	require.NotNil(t, db2)
 	db2.Close()
@@ -162,7 +160,7 @@ func TestCreateDatabase(t *testing.T) {
 // Test that the pgcrypto database extension is successfully created.
 func TestCreateCryptoExtension(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, originalSettings, teardown := SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
@@ -171,14 +169,9 @@ func TestCreateCryptoExtension(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to connect to this database using the user name.
-	opts := &pg.Options{
-		User:      db.Options().User,
-		Password:  db.Options().Password,
-		Database:  dbName,
-		Addr:      db.Options().Addr,
-		TLSConfig: db.Options().TLSConfig,
-	}
-	db2, err := dbops.NewPgDBConn(opts, false)
+	opts := *originalSettings
+	opts.DBName = dbName
+	db2, err := dbops.NewPgDBConn(&opts)
 	require.NoError(t, err)
 	require.NotNil(t, db2)
 

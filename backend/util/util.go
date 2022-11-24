@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -418,4 +419,13 @@ func CombineErrors(topErrorMsg string, errs []error) error {
 	}
 
 	return combinedErr
+}
+
+// Checks if the path is a socket.
+func IsSocket(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.Mode().Type() == fs.ModeSocket
 }

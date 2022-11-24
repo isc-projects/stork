@@ -1,5 +1,9 @@
 package testutil
 
+import (
+	"os"
+)
+
 // This function always returns the same content. It is intended
 // to avoid breaking IDE syntax highlighting (problem occurs on vscode).
 func GetCACertPEMContent() []byte {
@@ -131,4 +135,29 @@ TjJxMspTfL1UmI4vXP68tYRvThQbNNJxOviNmV0XBiKgQW5bD01j/KwpAD3/8ean
 7tRAvfllA+b7dbjZ7ZDBFGJ1ie7sVNzvf/DKkgyxZYzrrJmUKZb2o0saAAw9OsTc
 wQ==
 -----END CERTIFICATE-----`)
+}
+
+// Creates the certificate, key and CA certificate for testing
+// secure database connections.
+func CreateTestCerts(sb *Sandbox) (serverCert, serverKey, rootCert string, err error) {
+	serverCert, err = sb.Write("server-cert.pem", string(GetCertPEMContent()))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	serverKey, err = sb.Write("server-key.pem", string(GetKeyPEMContent()))
+	if err != nil {
+		return "", "", "", err
+	}
+	err = os.Chmod(serverKey, 0o600)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	rootCert, err = sb.Write("root-cert.pem", string(GetCACertPEMContent()))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return serverCert, serverKey, rootCert, nil
 }

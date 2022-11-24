@@ -192,7 +192,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 
 	// setup database connection
-	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)
+	ss.DB, err = dbops.NewApplicationDatabase(&ss.DBSettings)
 	if err != nil {
 		return err
 	}
