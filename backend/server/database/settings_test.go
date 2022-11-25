@@ -246,6 +246,10 @@ type mockCLILookup struct {
 	values map[string]string
 }
 
+func newMockCLILookup(values map[string]string) *mockCLILookup {
+	return &mockCLILookup{values: values}
+}
+
 func (m *mockCLILookup) IsSet(key string) bool {
 	_, ok := m.values[key]
 	return ok
@@ -266,11 +270,9 @@ func TestReadFromCLI(t *testing.T) {
 		FieldMissing  string `long:"field-missing"`
 	}
 
-	lookup := &mockCLILookup{
-		values: map[string]string{
-			"field-existing": "value-existing",
-		},
-	}
+	lookup := newMockCLILookup(map[string]string{
+		"field-existing": "value-existing",
+	})
 
 	obj := &mock{}
 
@@ -313,4 +315,37 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
+
+// Test that the CLI flags can be read from an external parameters source using
+// the CLI lookup.
+func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlags{}
+	lookup := newMockCLILookup(map[string]string{
+		"db-name":          "dbname",
+		"db-user":          "user",
+		"db-host":          "host",
+		"db-port":          "42",
+		"db-sslmode":       "sslmode",
+		"db-sslkey":        "sslkey",
+		"db-sslcert":       "sslcert",
+		"db-sslrootcert":   "sslrootcert",
+		"db-trace-queries": "run",
+	})
+
+	// Act
+	cliFlags.ReadFromCLI(lookup)
+
+	// Assert
+	require.EqualValues(t, "dbname", cliFlags.DBName)
+	require.EqualValues(t, "user", cliFlags.User)
+	require.Empty(t, cliFlags.Password)
+	require.EqualValues(t, "host", cliFlags.Host)
+	require.EqualValues(t, 42, cliFlags.Port)
+	require.EqualValues(t, "sslmode", cliFlags.SSLMode)
+	require.EqualValues(t, "sslcert", cliFlags.SSLCert)
+	require.EqualValues(t, "sslkey", cliFlags.SSLKey)
+	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
 }
