@@ -325,7 +325,7 @@ task :pre_docker_db do
     ENV["STORK_DATABASE_PASSWORD"] = "stork"
     ENV["STORK_DATABASE_NAME"] = ENV["STORK_DATABASE_NAME"] || "stork"
     ENV['PGPASSWORD'] = "stork"
-    ENV['DB_MAINTENANCE_NAME'] = "stork"
+    ENV['STORK_DATABASE_MAINTENANCE_NAME'] = "stork"
 end
 
 # Waits for a given docker-compose service be operational (Up and Healthy status)

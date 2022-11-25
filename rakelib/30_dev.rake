@@ -447,7 +447,8 @@ namespace :db do
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
         DB_TRACE - trace SQL queries - default: false
         DB_MAINTENANCE_NAME - maintanance database name - default: postgres
-        DB_MAINTENANCE_USER - maintannce username - default: postgres'
+        DB_MAINTENANCE_USER - maintannce username - default: postgres
+        DB_MAINTENANCE_PASSWORD - maintenance password - default: empty'
     task :setup_envvars do
         dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
         dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
@@ -455,8 +456,9 @@ namespace :db do
         dbuser = ENV["STORK_DATABASE_USER_NAME"] || ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
         dbpass = ENV["STORK_DATABASE_PASSWORD"] || ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
         dbtrace = ENV["DB_TRACE"] || "false"
-        dbmaintenance = ENV["DB_MAINTENANCE_NAME"] || "postgres"
-        dbmaintenanceuser = ENV["DB_MAINTENANCE_USER"] || "postgres"
+        dbmaintenance = ENV["STORK_DATABASE_MAINTENANCE_NAME"] || ENV["DB_MAINTENANCE_NAME"] || "postgres"
+        dbmaintenanceuser = ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] || ENV["DB_MAINTENANCE_USER"] || "postgres"
+        dbmaintenancepassword = ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] || ENV["DB_MAINTENANCE_PASSWORD"]
 
         if dbhost.include? ':'
             dbhost, dbport = dbhost.split(':')
@@ -467,8 +469,9 @@ namespace :db do
         ENV["STORK_DATABASE_USER_NAME"] = dbuser
         ENV["STORK_DATABASE_PASSWORD"] = dbpass
         ENV["STORK_DATABASE_NAME"] = dbname
-        ENV["DB_MAINTENANCE_NAME"] = dbmaintenance
-        ENV["DB_MAINTENANCE_USER"] = dbmaintenanceuser
+        ENV["STORK_DATABASE_MAINTENANCE_NAME"] = dbmaintenance
+        ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] = dbmaintenanceuser
+        ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] = dbmaintenancepassword
 
         if ENV["STORK_DATABASE_TRACE"].nil? && dbtrace == "true"
             ENV["STORK_DATABASE_TRACE"] = "run"
@@ -480,33 +483,9 @@ namespace :db do
     desc 'Migrate (and create) database to the newest version
         SUPPRESS_DB_MAINTENANCE - do not run creation DB operation - default: false
         See db:setup_envvars task for more options.'
-    task :migrate => [CREATEDB, PSQL, :setup_envvars, TOOL_BINARY_FILE] do
-        dbhost = ENV["STORK_DATABASE_HOST"]
-        dbport = ENV["STORK_DATABASE_PORT"]
-        dbuser = ENV["STORK_DATABASE_USER_NAME"]
-        dbpass = ENV["STORK_DATABASE_PASSWORD"]
-        dbname = ENV["STORK_DATABASE_NAME"]
-        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
-
+    task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
-            stdout, stderr, status = Open3.capture3 PSQL,
-                "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
-                "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
-
-            if status != 0
-                fail stderr
-            end
-
-            has_db = stdout.rstrip == "1"
-
-            if !has_db
-                sh CREATEDB,
-                    "-h", dbhost,
-                    "-p", dbport,
-                    "-U", dbuser,
-                    "-O", dbuser,
-                    dbname
-            end
+            sh TOOL_BINARY_FILE, "db-init"
         else
             puts "DB maintenance suppressed (creating)"
         end
@@ -528,7 +507,7 @@ namespace :db do
         dbuser = ENV["STORK_DATABASE_USER_NAME"]
         dbpass = ENV["STORK_DATABASE_PASSWORD"]
         dbname = ENV["STORK_DATABASE_NAME"]
-        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
+        dbmaintenance = ENV["STORK_DATABASE_MAINTENANCE_NAME"]
 
         psql_access_opts = [
             "-h", dbhost,
@@ -572,8 +551,9 @@ namespace :db do
     desc "Initialize storktest user with a default password on local machine"
     task :init_testing => [:setup_envvars] do
         dbport = ENV["STORK_DATABASE_PORT"]
-        dbmaintenance = ENV["DB_MAINTENANCE_NAME"]
-        dbmaintenanceuser = ENV["MAINTENANCE_USER"] || 'postgres'
+        dbmaintenance = ENV["STORK_DATABASE_MAINTENANCE_NAME"]
+        dbmaintenanceuser = ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] || 'postgres'
+        ENV["PGPASSWORD"] = ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"]
 
         psql_access_opts = [
             "-p", dbport,

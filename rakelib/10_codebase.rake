@@ -175,7 +175,9 @@ go_agent_codebase = FileList[
 go_tool_codebase = FileList[
     "backend/cmd/stork-tool",
     "backend/cmd/stork-tool/*",
-    "backend/server/database/migrations/*"
+    "backend/server/database/migrations/*",
+    "backend/server/database/*.go",
+    "backend/server/database/test/*"
 ]
 
 go_common_codebase = FileList["backend/**/*"]
