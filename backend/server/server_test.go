@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -235,7 +234,7 @@ func TestNewStorkServerNoArguments(t *testing.T) {
 // Test that the server is bootstrapped properly.
 func TestBootstrap(t *testing.T) {
 	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Initializes DB.
@@ -262,14 +261,7 @@ func TestBootstrap(t *testing.T) {
 	server, _, _ := NewStorkServer()
 
 	// Switches to test database.
-	server.DBSettings.DBName = db.Options().Database
-	hostAndPort := strings.Split(db.Options().Addr, ":")
-	server.DBSettings.Host = hostAndPort[0]
-	port, _ := strconv.ParseInt(hostAndPort[1], 10, 0)
-	server.DBSettings.Port = int(port)
-	password := db.Options().Password
-	os.Setenv("STORK_DATABASE_PASSWORD", password)
-	server.DBSettings.User = db.Options().User
+	server.DBSettings = *settings
 
 	// Act
 	err := server.Bootstrap(false)

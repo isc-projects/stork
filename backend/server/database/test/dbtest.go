@@ -21,7 +21,8 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		DatabaseCLIFlags: dbops.DatabaseCLIFlags{
 			DBName: "storktest",
 			User:   "storktest",
-			Host:   "/var/run/postgres",
+			Host:   "/var/run/postgresql",
+			Port:   5432,
 		},
 		MaintenanceDBName:   "storktest",
 		MaintenanceUser:     "storktest",
