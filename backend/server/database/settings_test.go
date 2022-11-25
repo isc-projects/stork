@@ -425,3 +425,41 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToMaintenanceSettings(
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
 }
+
+// Test that the CLI flags can be read from an external parameters source using
+// the CLI lookup.
+func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlagsWithMaintenance{}
+	lookup := newMockCLILookup(map[string]string{
+		"db-name":             "dbname",
+		"db-user":             "user",
+		"db-host":             "host",
+		"db-port":             "42",
+		"db-sslmode":          "sslmode",
+		"db-sslkey":           "sslkey",
+		"db-sslcert":          "sslcert",
+		"db-sslrootcert":      "sslrootcert",
+		"db-trace-queries":    "run",
+		"db-maintenance-name": "maintenance-dbname",
+		"db-maintenance-user": "maintenance-user",
+	})
+
+	// Act
+	cliFlags.ReadFromCLI(lookup)
+
+	// Assert
+	require.EqualValues(t, "dbname", cliFlags.DBName)
+	require.EqualValues(t, "user", cliFlags.User)
+	require.Empty(t, cliFlags.Password)
+	require.EqualValues(t, "host", cliFlags.Host)
+	require.EqualValues(t, 42, cliFlags.Port)
+	require.EqualValues(t, "sslmode", cliFlags.SSLMode)
+	require.EqualValues(t, "sslcert", cliFlags.SSLCert)
+	require.EqualValues(t, "sslkey", cliFlags.SSLKey)
+	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
+	require.EqualValues(t, "maintenance-dbname", cliFlags.MaintenanceDBName)
+	require.EqualValues(t, "maintenance-user", cliFlags.MaintenanceUser)
+	require.Empty(t, cliFlags.MaintenancePassword)
+}

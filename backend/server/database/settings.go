@@ -295,5 +295,6 @@ func (s *DatabaseCLIFlagsWithMaintenance) ReadFromEnvironment() {
 
 // Reads the database settings (with maintenance) from the CLI lookup.
 func (s *DatabaseCLIFlagsWithMaintenance) ReadFromCLI(lookup CLILookup) {
+	s.DatabaseCLIFlags.ReadFromCLI(lookup)
 	readFromCLI(s, lookup)
 }
