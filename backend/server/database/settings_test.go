@@ -281,3 +281,36 @@ func TestReadFromCLI(t *testing.T) {
 	require.EqualValues(t, "value-existing", obj.FieldExisting)
 	require.Empty(t, obj.FieldMissing)
 }
+
+// Test that the database CLI flags are converted to the database settings
+// properly.
+func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlags{
+		DBName:      "dbname",
+		User:        "user",
+		Password:    "password",
+		Host:        "host",
+		Port:        42,
+		SSLMode:     "sslmode",
+		SSLCert:     "sslcert",
+		SSLKey:      "sslkey",
+		SSLRootCert: "sslrootcert",
+		TraceSQL:    "run",
+	}
+
+	// Act
+	settings := cliFlags.ConvertToDatabaseSettings()
+
+	// Assert
+	require.EqualValues(t, "dbname", settings.DBName)
+	require.EqualValues(t, "user", settings.User)
+	require.EqualValues(t, "password", settings.Password)
+	require.EqualValues(t, "host", settings.Host)
+	require.EqualValues(t, 42, settings.Port)
+	require.EqualValues(t, "sslmode", settings.SSLMode)
+	require.EqualValues(t, "sslcert", settings.SSLCert)
+	require.EqualValues(t, "sslkey", settings.SSLKey)
+	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
