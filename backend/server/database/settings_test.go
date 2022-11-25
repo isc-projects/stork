@@ -191,3 +191,46 @@ func TestConvertToPgOptionsSocket(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, "unix", options.Network)
 }
+
+// Test that the field tags are handled properly.
+func TestSetFieldsBasedOnTags(t *testing.T) {
+	// Arrange
+	type mock struct {
+		FieldString              string `tag:"field-string"`
+		FieldInt                 int    `tag:"field-int"`
+		FieldWithoutTag          string
+		FieldWithUnexpectedTag   string `unexpected:"tag"`
+		FieldWithMultipleTags    string `tag:"field-multiple" another:"unexpected"`
+		FieldWithUnsupportedType bool   `tag:"field-boolean"`
+		FieldStringUnknown       string `tag:"field-unknown"`
+	}
+
+	lookup := func(key string) (string, bool) {
+		switch key {
+		case "field-string":
+			return "value-string", true
+		case "field-int":
+			return "42", true
+		case "field-multiple":
+			return "value-multiple", true
+		case "field-boolean":
+			return "true", true
+		default:
+			return "", false
+		}
+	}
+
+	obj := &mock{}
+
+	// Act
+	setFieldsBasedOnTags(obj, "tag", lookup)
+
+	// Assert
+	require.EqualValues(t, "value-string", obj.FieldString)
+	require.EqualValues(t, 42, obj.FieldInt)
+	require.Empty(t, obj.FieldWithoutTag)
+	require.Empty(t, obj.FieldWithUnexpectedTag)
+	require.EqualValues(t, "value-multiple", obj.FieldWithMultipleTags)
+	require.False(t, obj.FieldWithUnsupportedType)
+	require.Empty(t, obj.FieldStringUnknown)
+}

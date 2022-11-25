@@ -159,9 +159,9 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 // If the member doesn't have a specific tag, value lookup returns no value,
 // the member has an unsupported type, or integer conversion fails, then the
 // member is skipped. It has a default value.
-func readMembersFromTags(obj any, tagName string, valueLookup func(string) (string, bool)) {
+func setFieldsBasedOnTags(obj any, tagName string, valueLookup func(string) (string, bool)) {
 	// Get the reflect representation of the structure.
-	v := reflect.ValueOf(&obj).Elem()
+	v := reflect.ValueOf(obj).Elem()
 
 	// Get the types of the fields in the structure.
 	vType := v.Type()
@@ -201,7 +201,7 @@ func readMembersFromTags(obj any, tagName string, valueLookup func(string) (stri
 // environment variables. The function searches for the 'env' tag in the member
 // tags. If found, the tag value is . The output string is set as a member value.
 func readFromEnvironment(obj any) {
-	readMembersFromTags(obj, "env", os.LookupEnv)
+	setFieldsBasedOnTags(obj, "env", os.LookupEnv)
 }
 
 // Defines the interface to perform the lookup value of the CLI flags.
@@ -217,7 +217,7 @@ type CLILookup interface {
 // for recognize a related CLI flag. If found, the flag value is set as a
 // member value.
 func readFromCLI(obj any, lookup CLILookup) {
-	readMembersFromTags(obj, "long", func(key string) (string, bool) {
+	setFieldsBasedOnTags(obj, "long", func(key string) (string, bool) {
 		if lookup.IsSet(key) {
 			return lookup.String(key), true
 		}
