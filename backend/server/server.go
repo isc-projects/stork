@@ -127,8 +127,9 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	parser.ShortDescription = shortDescription
 	parser.LongDescription = longDescription
 
+	databaseFlags := &dbops.DatabaseCLIFlags{}
 	// Process Database specific args.
-	_, err = parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)
+	_, err = parser.AddGroup("Database ConnectionFlags", "", databaseFlags)
 	if err != nil {
 		return
 	}
@@ -155,6 +156,8 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 		}
 		return NoneCommand, err
 	}
+
+	ss.DBSettings = *databaseFlags.ConvertToDatabaseSettings()
 
 	if ss.GeneralSettings.Version {
 		// If user specified --version or -v, print the version and quit.

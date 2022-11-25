@@ -451,7 +451,7 @@ namespace :db do
         DB_MAINTENANCE_PASSWORD - maintenance password - default: empty'
     task :setup_envvars do
         dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-        dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
+        dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "/var/run/postgresql"
         dbport = ENV["STORK_DATABASE_PORT"] || ENV["DB_PORT"] || "5432"
         dbuser = ENV["STORK_DATABASE_USER_NAME"] || ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
         dbpass = ENV["STORK_DATABASE_PASSWORD"] || ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
