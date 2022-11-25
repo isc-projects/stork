@@ -140,6 +140,19 @@ func setupApp(reload bool) *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Println(c.App.Version)
 	}
+
+	cli.HelpFlag = &cli.BoolFlag{
+		Name:    "help",
+		Aliases: []string{"h"},
+		Usage:   "Show help",
+	}
+
+	cli.VersionFlag = &cli.BoolFlag{
+		Name:    "version",
+		Aliases: []string{"v"},
+		Usage:   "Print the version",
+	}
+
 	app := &cli.App{
 		Name:     "Stork Agent",
 		Usage:    "This component is required on each machine to be monitored by the Stork Server",
@@ -149,79 +162,79 @@ func setupApp(reload bool) *cli.App {
 			&cli.StringFlag{
 				Name:    "host",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Stork Server connections",
+				Usage:   "The IP or hostname to listen on for incoming Stork Server connections",
 				EnvVars: []string{"STORK_AGENT_HOST"},
 			},
 			&cli.IntFlag{
 				Name:    "port",
 				Value:   8080,
-				Usage:   "the TCP port to listen on for incoming Stork Server connections",
+				Usage:   "The TCP port to listen on for incoming Stork Server connections",
 				EnvVars: []string{"STORK_AGENT_PORT"},
 			},
 			&cli.BoolFlag{
 				Name:    "listen-prometheus-only",
-				Usage:   "listen for Prometheus requests only, but not for commands from the Stork Server",
+				Usage:   "Listen for Prometheus requests only, but not for commands from the Stork Server",
 				EnvVars: []string{"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"},
 			},
 			&cli.BoolFlag{
 				Name:    "listen-stork-only",
-				Usage:   "listen for commands from the Stork Server only, but not for Prometheus requests",
+				Usage:   "Listen for commands from the Stork Server only, but not for Prometheus requests",
 				EnvVars: []string{"STORK_AGENT_LISTEN_STORK_ONLY"},
 			},
 			// Prometheus Kea exporter settings
 			&cli.StringFlag{
 				Name:    "prometheus-kea-exporter-address",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Prometheus connections",
+				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-kea-exporter-port",
 				Value:   9547,
-				Usage:   "the port to listen on for incoming Prometheus connections",
+				Usage:   "The port to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-kea-exporter-interval",
 				Value:   10,
-				Usage:   "how often the Stork Agent collects stats from Kea, in seconds",
+				Usage:   "How often the Stork Agent collects stats from Kea, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"},
 			},
 			&cli.BoolFlag{
 				Name:    "prometheus-kea-exporter-per-subnet-stats",
 				Value:   true,
-				Usage:   "enable or disable collecting per-subnet stats from Kea",
+				Usage:   "Enable or disable collecting per-subnet stats from Kea",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"},
 			},
 			// Prometheus Bind 9 exporter settings
 			&cli.StringFlag{
 				Name:    "prometheus-bind9-exporter-address",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Prometheus connections",
+				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-bind9-exporter-port",
 				Value:   9119,
-				Usage:   "the port to listen on for incoming Prometheus connections",
+				Usage:   "The port to listen on for incoming Prometheus connections",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"},
 			},
 			&cli.IntFlag{
 				Name:    "prometheus-bind9-exporter-interval",
 				Value:   10,
-				Usage:   "how often the Stork Agent collects stats from BIND 9, in seconds",
+				Usage:   "How often the Stork Agent collects stats from BIND 9, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"},
 			},
 			&cli.BoolFlag{
 				Name:    "skip-tls-cert-verification",
 				Value:   false,
-				Usage:   "skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates",
+				Usage:   "Skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates",
 				EnvVars: []string{"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"},
 			},
 			// Registration related settings
 			&cli.StringFlag{
 				Name:    "server-url",
-				Usage:   "the URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
+				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
 			&cli.BoolFlag{
@@ -282,7 +295,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 					},
 					&cli.StringFlag{
 						Name:    "server-token",
-						Usage:   "access token from Stork Server",
+						Usage:   "Access token from Stork Server",
 						Aliases: []string{"t"},
 						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
 					},

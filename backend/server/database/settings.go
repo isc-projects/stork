@@ -16,20 +16,20 @@ import (
 // respective libpq parameters.
 // See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
 type BaseDatabaseSettings struct {
-	DBName      string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
-	User        string `short:"u" long:"db-user" description:"the user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
-	Password    string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
-	Host        string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
-	Port        int    `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
-	SSLMode     string `long:"db-sslmode" description:"the SSL mode for connecting to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"` //nolint:staticcheck
-	SSLCert     string `long:"db-sslcert" description:"the location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
-	SSLKey      string `long:"db-sslkey" description:"the location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
-	SSLRootCert string `long:"db-sslrootcert" description:"the location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
+	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
+	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
+	Password    string `description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
+	Host        string `long:"db-host" description:"The name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
+	Port        int    `short:"p" long:"db-port" description:"The port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
+	SSLMode     string `long:"db-sslmode" description:"The SSL mode for connecting to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"` //nolint:staticcheck
+	SSLCert     string `long:"db-sslcert" description:"The location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
+	SSLKey      string `long:"db-sslkey" description:"The location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
+	SSLRootCert string `long:"db-sslrootcert" description:"The location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
 }
 
 type DatabaseSettings struct {
 	BaseDatabaseSettings
-	TraceSQL string `long:"db-trace-queries" description:"enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time" env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
+	TraceSQL string `long:"db-trace-queries" description:"Enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time" env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
 }
 
 // Alias to pg.DB.

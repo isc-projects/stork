@@ -34,22 +34,22 @@ import (
 )
 
 type RestAPISettings struct {
-	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"the waiting period before killing idle connections" default:"10s"`
-	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"the waiting period before shutting down the server" default:"15s"`
-	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line; it does not limit the size of the request body" default:"1MiB"`
+	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"The waiting period before killing idle connections" default:"10s"`
+	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"The waiting period before shutting down the server" default:"15s"`
+	MaxHeaderSize   flagext.ByteSize `long:"rest-max-header-size" description:"Controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line; it does not limit the size of the request body" default:"1MiB"`
 
-	Host         string        `long:"rest-host" description:"the IP to listen on" default:"" env:"STORK_REST_HOST"`
-	Port         int           `long:"rest-port" description:"the port to listen on for connections" default:"8080" env:"STORK_REST_PORT"`
-	ListenLimit  int           `long:"rest-listen-limit" description:"limits the number of outstanding requests"`
-	KeepAlive    time.Duration `long:"rest-keep-alive" description:"sets the TCP keep-alive timeouts on accepted connections; it prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
-	ReadTimeout  time.Duration `long:"rest-read-timeout" description:"the maximum duration before timing out reading the request" default:"30s"`
-	WriteTimeout time.Duration `long:"rest-write-timeout" description:"the maximum duration before timing out writing the response" default:"60s"`
+	Host         string        `long:"rest-host" description:"The IP to listen on" default:"" env:"STORK_REST_HOST"`
+	Port         int           `long:"rest-port" description:"The port to listen on for connections" default:"8080" env:"STORK_REST_PORT"`
+	ListenLimit  int           `long:"rest-listen-limit" description:"Limits the number of outstanding requests"`
+	KeepAlive    time.Duration `long:"rest-keep-alive" description:"Sets the TCP keep-alive timeouts on accepted connections; it prunes dead TCP connections ( e.g. closing laptop mid-download)" default:"3m"`
+	ReadTimeout  time.Duration `long:"rest-read-timeout" description:"The maximum duration before timing out reading the request" default:"30s"`
+	WriteTimeout time.Duration `long:"rest-write-timeout" description:"The maximum duration before timing out writing the response" default:"60s"`
 
-	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"the certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
-	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"the private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
-	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"the certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
+	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"The certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
+	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"The private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
+	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
-	StaticFilesDir string `long:"rest-static-files-dir" description:"the directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
+	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 }
 
 // Runtime information and settings for RestAPI service.
