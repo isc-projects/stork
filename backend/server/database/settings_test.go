@@ -349,3 +349,79 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
 }
+
+// Test that the CLI flags that contains the maintenance credentials are
+// converted to the standard database settings properly.
+func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToSettings(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlagsWithMaintenance{
+		DatabaseCLIFlags: DatabaseCLIFlags{
+			DBName:      "dbname",
+			User:        "user",
+			Password:    "password",
+			Host:        "host",
+			Port:        42,
+			SSLMode:     "sslmode",
+			SSLCert:     "sslcert",
+			SSLKey:      "sslkey",
+			SSLRootCert: "sslrootcert",
+			TraceSQL:    "run",
+		},
+		MaintenanceDBName:   "maintenance-dbname",
+		MaintenanceUser:     "maintenance-user",
+		MaintenancePassword: "maintenance-password",
+	}
+
+	// Act
+	settings := cliFlags.ConvertToDatabaseSettings()
+
+	// Assert
+	require.EqualValues(t, "dbname", settings.DBName)
+	require.EqualValues(t, "user", settings.User)
+	require.EqualValues(t, "password", settings.Password)
+	require.EqualValues(t, "host", settings.Host)
+	require.EqualValues(t, 42, settings.Port)
+	require.EqualValues(t, "sslmode", settings.SSLMode)
+	require.EqualValues(t, "sslcert", settings.SSLCert)
+	require.EqualValues(t, "sslkey", settings.SSLKey)
+	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
+
+// Test that the CLI flags that contains the maintenance credentials are
+// converted to the maintenance database settings properly.
+func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToMaintenanceSettings(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlagsWithMaintenance{
+		DatabaseCLIFlags: DatabaseCLIFlags{
+			DBName:      "dbname",
+			User:        "user",
+			Password:    "password",
+			Host:        "host",
+			Port:        42,
+			SSLMode:     "sslmode",
+			SSLCert:     "sslcert",
+			SSLKey:      "sslkey",
+			SSLRootCert: "sslrootcert",
+			TraceSQL:    "run",
+		},
+		MaintenanceDBName:   "maintenance-dbname",
+		MaintenanceUser:     "maintenance-user",
+		MaintenancePassword: "maintenance-password",
+	}
+
+	// Act
+	settings := cliFlags.ConvertToMaintenanceDatabaseSettings()
+
+	// Assert
+	require.EqualValues(t, "maintenance-dbname", settings.DBName)
+	require.EqualValues(t, "maintenance-user", settings.User)
+	require.EqualValues(t, "maintenance-password", settings.Password)
+	require.EqualValues(t, "host", settings.Host)
+	require.EqualValues(t, 42, settings.Port)
+	require.EqualValues(t, "sslmode", settings.SSLMode)
+	require.EqualValues(t, "sslcert", settings.SSLCert)
+	require.EqualValues(t, "sslkey", settings.SSLKey)
+	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
