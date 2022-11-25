@@ -234,3 +234,50 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 	require.False(t, obj.FieldWithUnsupportedType)
 	require.Empty(t, obj.FieldStringUnknown)
 }
+
+// Test that the values of the struct members are read from environment
+// variables correctly.
+func TestReadFromEnvironment(t *testing.T) {
+	// We need here a function to restore environment variables developed in #830.
+	t.Fail()
+}
+
+type mockCLILookup struct {
+	values map[string]string
+}
+
+func (m *mockCLILookup) IsSet(key string) bool {
+	_, ok := m.values[key]
+	return ok
+}
+
+func (m *mockCLILookup) String(key string) string {
+	if value, ok := m.values[key]; ok {
+		return value
+	}
+	return ""
+}
+
+// Test that the values of the struct members are read from CLI flags correctly.
+func TestReadFromCLI(t *testing.T) {
+	// Arrange
+	type mock struct {
+		FieldExisting string `long:"field-existing"`
+		FieldMissing  string `long:"field-missing"`
+	}
+
+	lookup := &mockCLILookup{
+		values: map[string]string{
+			"field-existing": "value-existing",
+		},
+	}
+
+	obj := &mock{}
+
+	// Act
+	readFromCLI(obj, lookup)
+
+	// Assert
+	require.EqualValues(t, "value-existing", obj.FieldExisting)
+	require.Empty(t, obj.FieldMissing)
+}
