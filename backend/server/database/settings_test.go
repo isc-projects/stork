@@ -243,16 +243,23 @@ func TestReadFromEnvironment(t *testing.T) {
 }
 
 type mockCLILookup struct {
-	values map[string]string
+	values   map[string]string
+	defaults map[string]bool
 }
 
-func newMockCLILookup(values map[string]string) *mockCLILookup {
+func newMockCLILookup(values map[string]string, defaults ...string) *mockCLILookup {
+	defaultsMap := make(map[string]bool, len(defaults))
+	for _, key := range defaults {
+		defaultsMap[key] = true
+	}
+
 	return &mockCLILookup{values: values}
 }
 
 func (m *mockCLILookup) IsSet(key string) bool {
-	_, ok := m.values[key]
-	return ok
+	_, hasValue := m.values[key]
+	_, isDefault := m.defaults[key]
+	return hasValue && !isDefault
 }
 
 func (m *mockCLILookup) String(key string) string {
@@ -268,11 +275,13 @@ func TestReadFromCLI(t *testing.T) {
 	type mock struct {
 		FieldExisting string `long:"field-existing"`
 		FieldMissing  string `long:"field-missing"`
+		FieldDefault  string `long:"field-default"`
 	}
 
 	lookup := newMockCLILookup(map[string]string{
 		"field-existing": "value-existing",
-	})
+		"field-default":  "value-default",
+	}, "field-default")
 
 	obj := &mock{}
 
@@ -282,6 +291,7 @@ func TestReadFromCLI(t *testing.T) {
 	// Assert
 	require.EqualValues(t, "value-existing", obj.FieldExisting)
 	require.Empty(t, obj.FieldMissing)
+	require.EqualValues(t, "value-default", obj.FieldDefault)
 }
 
 // Test that the database CLI flags are converted to the database settings

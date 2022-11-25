@@ -20,27 +20,6 @@ import (
 // Random hash size in the generated password.
 const passwordGenRandomLength = 24
 
-// Establish connection to a database using admin credentials.
-// Specifying db-url is not supported. The maintenance database name,
-// user and password are specified with db-maintenance-name,
-// db-maintenance-user and db-maintenance-password settings.
-func getAdminDBConn(rawFlags *cli.Context) *dbops.PgDB {
-	flags := &dbops.DatabaseCLIFlagsWithMaintenance{}
-	flags.ReadFromCLI(rawFlags)
-
-	db, err := dbops.NewPgDBConn(flags.ConvertToMaintenanceDatabaseSettings())
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
-
-	// Theoretically, it should not happen but let's make sure in case someone
-	// modifies the NewPgDB function.
-	if db == nil {
-		log.Fatal("Unable to create database instance")
-	}
-	return db
-}
-
 // Establish connection to a database with opts from command line.
 func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 	flags := &dbops.DatabaseCLIFlags{}
@@ -62,18 +41,21 @@ func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
 // a generated or user-specified password and the pgcrypto extension.
-func runDBCreate(settings *cli.Context) {
+func runDBCreate(context *cli.Context) {
+	flags := &dbops.DatabaseCLIFlagsWithMaintenance{}
+	flags.ReadFromCLI(context)
+
 	var err error
 
 	// Prepare logging fields.
 	logFields := log.Fields{
-		"database_name": settings.String("db-name"),
-		"user":          settings.String("db-user"),
+		"database_name": flags.DBName,
+		"user":          flags.User,
 	}
 
 	// Check if the password has been specified explicitly. Otherwise,
 	// generate the password.
-	password := settings.String("db-password")
+	password := flags.Password
 	if len(password) == 0 {
 		password, err = storkutil.Base64Random(passwordGenRandomLength)
 		if err != nil {
@@ -82,14 +64,18 @@ func runDBCreate(settings *cli.Context) {
 		// Only log the password if it has been generated. Otherwise, the
 		// user should know the password.
 		logFields["password"] = password
+		flags.Password = password
 	}
 
 	// Connect to the postgres database using admin credentials.
-	db := getAdminDBConn(settings)
+	db, err := dbops.NewPgDBConn(flags.ConvertToMaintenanceDatabaseSettings())
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+	}
 
 	// Try to create the database and the user with access using
 	// specified password.
-	err = dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"), password, settings.Bool("force"))
+	err = dbops.CreateDatabase(db, flags.DBName, flags.User, flags.Password, context.Bool("force"))
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -99,8 +85,10 @@ func runDBCreate(settings *cli.Context) {
 	db.Close()
 
 	// Re-use all admin credentials but connect to the new database.
-	_ = settings.Set("db-maintenance-name", settings.String("db-name"))
-	db = getAdminDBConn(settings)
+	db, err = dbops.NewPgDBConn(flags.ConvertToDatabaseSettingsAsMaintenance())
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+	}
 
 	// Try to create the pgcrypto extension.
 	err = dbops.CreateExtension(db, "pgcrypto")
@@ -286,6 +274,7 @@ func setupApp() *cli.App {
 
 	dbFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlags)(nil)).Elem())
 	dbCreateFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlagsWithMaintenance)(nil)).Elem())
+	dbCreateFlags = append(dbCreateFlags, dbFlags...)
 
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
 		Name:    "force",

@@ -218,8 +218,9 @@ type CLILookup interface {
 // member value.
 func readFromCLI(obj any, lookup CLILookup) {
 	setFieldsBasedOnTags(obj, "long", func(key string) (string, bool) {
-		if lookup.IsSet(key) {
-			return lookup.String(key), true
+		value := lookup.String(key)
+		if value != "" || lookup.IsSet(key) {
+			return value, true
 		}
 		return "", false
 	})
@@ -229,7 +230,7 @@ func readFromCLI(obj any, lookup CLILookup) {
 type DatabaseCLIFlags struct {
 	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
 	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
-	Password    string `description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
+	Password    string `long:"db-password" description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
 	Host        string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:"/var/run/postgresql"`
 	Port        int    `short:"p" long:"db-port" description:"The port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
 	SSLMode     string `long:"db-sslmode" description:"The SSL mode for connecting to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"` //nolint:staticcheck
@@ -284,6 +285,15 @@ func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings()
 	settings.DBName = s.MaintenanceDBName
 	settings.User = s.MaintenanceUser
 	settings.Password = s.MaintenancePassword
+	return settings
+}
+
+// Converts the values of CLI flags to the database settings. They use the
+// maintenance credentials. The maintenance user will connect to the standard
+// database.
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsAsMaintenance() *DatabaseSettings {
+	settings := s.ConvertToMaintenanceDatabaseSettings()
+	settings.DBName = s.DBName
 	return settings
 }
 

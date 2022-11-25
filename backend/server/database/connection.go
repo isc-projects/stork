@@ -100,11 +100,11 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 			break
 		}
 		if errors.As(err, &pgError) {
-			if pgError.Field('S') == "FATAL" {
-				break
-			} else if pgParams.Password == "" && pgError.Field('X') == "Missing password" {
+			if pgError.Field('R') == "auth_failed" {
 				pgParams.Password = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
 				continue
+			} else if pgError.Field('S') == "FATAL" {
+				break
 			}
 		}
 		log.Printf("Problem connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
@@ -138,7 +138,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		)
 	}
 
-	log.Infof("Connected to database %s:%d", settings.Host, settings.Port)
+	log.Infof("Connected to database %s", pgParams.Addr)
 
 	return db, nil
 }
