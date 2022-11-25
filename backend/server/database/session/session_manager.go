@@ -26,7 +26,7 @@ type SessionMgr struct {
 // Creates new session manager instance. The new connection is created using the
 // lib/pq driver via scs.SessionManager.
 func NewSessionMgr(conn *dbops.DatabaseSettings) (*SessionMgr, error) {
-	connParams := conn.ToConnectionString()
+	connParams := conn.ConvertToConnectionString()
 	db, err := sql.Open("postgres", connParams)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to the database for session management using credentials %s", connParams)

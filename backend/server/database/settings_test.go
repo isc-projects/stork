@@ -13,7 +13,7 @@ import (
 // Test that connection string is created when all parameters are specified and
 // none of the values include a space character. Also, make sure that the password
 // with upper case letters is handled correctly.
-func TestToConnectionStringNoSpaces(t *testing.T) {
+func TestConvertToConnectionStringNoSpaces(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
@@ -22,12 +22,12 @@ func TestToConnectionStringNoSpaces(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123' host='localhost' port=123 sslmode='disable'", params)
 }
 
 // Test that the password including space character is enclosed in quotes.
-func TestToConnectionStringWithSpaces(t *testing.T) {
+func TestConvertToConnectionStringWithSpaces(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
@@ -36,12 +36,12 @@ func TestToConnectionStringWithSpaces(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' host='localhost' port=123 sslmode='disable'", params)
 }
 
 // Test that quotes and double quotes are escaped.
-func TestToConnectionStringWithEscapes(t *testing.T) {
+func TestConvertToConnectionStringWithEscapes(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
@@ -50,13 +50,13 @@ func TestToConnectionStringWithEscapes(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, `dbname='stork' user='admin' password='StOrK123\'56\"7' host='localhost' port=123 sslmode='disable'`, params)
 }
 
 // Test that when the host is not specified it is not included in the connection
 // string.
-func TestToConnectionStringWithOptionalHost(t *testing.T) {
+func TestConvertToConnectionStringWithOptionalHost(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
@@ -64,12 +64,12 @@ func TestToConnectionStringWithOptionalHost(t *testing.T) {
 		Port:     123,
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' port=123 sslmode='disable'", params)
 }
 
 // Test that when the port is 0, it is not included in the connection string.
-func TestToConnectionStringWithOptionalPort(t *testing.T) {
+func TestConvertToConnectionStringWithOptionalPort(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:   "stork",
 		User:     "admin",
@@ -77,12 +77,12 @@ func TestToConnectionStringWithOptionalPort(t *testing.T) {
 		Host:     "localhost",
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='stork' host='localhost' sslmode='disable'", params)
 }
 
 // Test that sslmode and related parameters are included in the connection string.
-func TestToConnectionStringWithSSLMode(t *testing.T) {
+func TestConvertToConnectionStringWithSSLMode(t *testing.T) {
 	settings := DatabaseSettings{
 		DBName:      "stork",
 		User:        "admin",
@@ -93,12 +93,12 @@ func TestToConnectionStringWithSSLMode(t *testing.T) {
 		SSLRootCert: "/tmp/sslroot.crt",
 	}
 
-	params := settings.ToConnectionString()
+	params := settings.ConvertToConnectionString()
 	require.Equal(t, "dbname='stork' user='admin' password='stork' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
 }
 
-// Test that toPgOptions function outputs SSL related parameters.
-func TestToPgOptionsWithSSLMode(t *testing.T) {
+// Test that convertToPgOptions function outputs SSL related parameters.
+func TestConvertToPgOptionsWithSSLMode(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
@@ -114,7 +114,7 @@ func TestToPgOptionsWithSSLMode(t *testing.T) {
 		SSLKey:   serverKey,
 	}
 
-	params, _ := settings.toPgOptions()
+	params, _ := settings.convertToPgOptions()
 	require.NotNil(t, params)
 	require.NotNil(t, params.TLSConfig)
 
@@ -123,9 +123,9 @@ func TestToPgOptionsWithSSLMode(t *testing.T) {
 	require.Empty(t, params.TLSConfig.ServerName)
 }
 
-// Test that ToPgOptions function fails when there is an error in the
+// Test that ConvertToPgOptions function fails when there is an error in the
 // SSL specific configuration.
-func TestToPgOptionsWithWrongSSLModeSettings(t *testing.T) {
+func TestConvertToPgOptionsWithWrongSSLModeSettings(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
@@ -136,13 +136,13 @@ func TestToPgOptionsWithWrongSSLModeSettings(t *testing.T) {
 		SSLMode:  "unsupported",
 	}
 
-	params, err := settings.toPgOptions()
+	params, err := settings.convertToPgOptions()
 	require.Nil(t, params)
 	require.Error(t, err)
 }
 
 // Test that the TCP network kind is recognized properly.
-func TestToPgOptionsTCP(t *testing.T) {
+func TestConvertToPgOptionsTCP(t *testing.T) {
 	// Arrange
 	settings := DatabaseSettings{
 		DBName:   "stork",
@@ -158,7 +158,7 @@ func TestToPgOptionsTCP(t *testing.T) {
 
 		t.Run("host", func(t *testing.T) {
 			// Act
-			options, err := settings.toPgOptions()
+			options, err := settings.convertToPgOptions()
 
 			// Assert
 			require.NoError(t, err)
@@ -168,7 +168,7 @@ func TestToPgOptionsTCP(t *testing.T) {
 }
 
 // Test that the socket is recognized properly.
-func TestToPgOptionsSocket(t *testing.T) {
+func TestConvertToPgOptionsSocket(t *testing.T) {
 	// Arrange
 	// Open a socket.
 	socketDir := os.TempDir()
@@ -185,7 +185,7 @@ func TestToPgOptionsSocket(t *testing.T) {
 	}
 
 	// Act
-	options, err := settings.toPgOptions()
+	options, err := settings.convertToPgOptions()
 
 	// Assert
 	require.NoError(t, err)

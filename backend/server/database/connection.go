@@ -79,7 +79,7 @@ func (d DBLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 
 // Create only new PgDB instance.
 func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
-	pgParams, err := settings.toPgOptions()
+	pgParams, err := settings.convertToPgOptions()
 	if err != nil {
 		return nil, err
 	}

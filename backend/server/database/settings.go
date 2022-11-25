@@ -42,8 +42,8 @@ func init() {
 	})
 }
 
-// Represents database connection settings. The "pq" tag names and values must correspond to the
-// respective libpq parameters.
+// Represents database connection settings. The "pq" tag names and their values
+// must correspond to the respective libpq parameters.
 // See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
 type DatabaseSettings struct {
 	DBName      string `pq:"dbname"`
@@ -62,7 +62,7 @@ type DatabaseSettings struct {
 // All string values are enclosed in quotes. The quotes and double quotes within the
 // string values are escaped. Empty or zero values are not included in the returned
 // connection string.
-func (s *DatabaseSettings) ToConnectionString() string {
+func (s *DatabaseSettings) ConvertToConnectionString() string {
 	// Get the reflect representation of the structure.
 	v := reflect.ValueOf(s).Elem()
 
@@ -128,7 +128,7 @@ func (s *DatabaseSettings) ToConnectionString() string {
 }
 
 // Converts generic connection parameters to go-pg specific parameters.
-func (s *DatabaseSettings) toPgOptions() (*PgOptions, error) {
+func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
 	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 
