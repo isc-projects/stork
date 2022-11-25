@@ -460,10 +460,6 @@ namespace :db do
         dbmaintenanceuser = ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] || ENV["DB_MAINTENANCE_USER"] || "postgres"
         dbmaintenancepassword = ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] || ENV["DB_MAINTENANCE_PASSWORD"]
 
-        if dbhost.include? ':'
-            dbhost, dbport = dbhost.split(':')
-        end
-
         ENV["STORK_DATABASE_HOST"] = dbhost
         ENV["STORK_DATABASE_PORT"] = dbport
         ENV["STORK_DATABASE_USER_NAME"] = dbuser
@@ -503,16 +499,19 @@ namespace :db do
         end
 
         dbhost = ENV["STORK_DATABASE_HOST"]
-        dbport = ENV["STORK_DATABASE_PORT"]
         dbuser = ENV["STORK_DATABASE_USER_NAME"]
-        dbpass = ENV["STORK_DATABASE_PASSWORD"]
+        dbport = ENV["STORK_DATABASE_PORT"]
         dbname = ENV["STORK_DATABASE_NAME"]
-        dbmaintenance = ENV["STORK_DATABASE_MAINTENANCE_NAME"]
+        dbmaintenancename = ENV["STORK_DATABASE_MAINTENANCE_NAME"]
+        dbmaintenanceuser = ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"]
+        dbmaintenancepass = ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"]
+
+        ENV["PGPASSWORD"] = dbmaintenancepass
 
         psql_access_opts = [
             "-h", dbhost,
             "-p", dbport,
-            "-U", dbuser
+            "-U", dbmaintenanceuser
         ]
 
         psql_select_opts = [
@@ -521,22 +520,25 @@ namespace :db do
             "-X",
         ]
 
-        # Don't destroy the maintenance database
-        dbname_pattern = "#{dbname}.*"
-        if dbname == dbmaintenance
-            dbname_pattern = "#{dbname}.+"
-        end
+        # Don't destroy the pattern database
+        dbname_pattern = "#{dbname}.+"
 
         Open3.pipeline([
-            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
+            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenancename,
             "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
+        ], [
+            # Remove empty rows
+            "awk", "NF"
         ], [
             "xargs", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts
         ])
 
         Open3.pipeline([
-            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
+            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenancename,
             "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
+        ], [
+            # Remove empty rows
+            "awk", "NF"
         ], [
             "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts
         ])
@@ -559,6 +561,9 @@ namespace :db do
             "-p", dbport,
             "-U", dbmaintenanceuser
         ]
+
+        sh "psql", *psql_access_opts, dbmaintenance, "-c",
+            "CREATE DATABASE storktest OWNER storktest;"
 
         sh "psql", *psql_access_opts, dbmaintenance, "-c",
             "CREATE USER storktest WITH PASSWORD 'storktest';\n" +
