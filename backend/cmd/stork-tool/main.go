@@ -24,11 +24,11 @@ const passwordGenRandomLength = 24
 // Specifying db-url is not supported. The maintenance database name,
 // user and password are specified with db-maintenance-name,
 // db-maintenance-user and db-maintenance-password settings.
-func getAdminDBConn(rawSettings *cli.Context) *dbops.PgDB {
-	settings := &dbops.DatabaseSettingsWithMaintenanceCLI{}
-	settings.ReadFromCLI(rawSettings)
+func getAdminDBConn(rawFlags *cli.Context) *dbops.PgDB {
+	flags := &dbops.DatabaseCLIFlagsWithMaintenance{}
+	flags.ReadFromCLI(rawFlags)
 
-	db, err := dbops.NewPgDBConn(settings.ConvertToMaintenanceDatabaseSettings())
+	db, err := dbops.NewPgDBConn(flags.ConvertToMaintenanceDatabaseSettings())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
@@ -42,11 +42,11 @@ func getAdminDBConn(rawSettings *cli.Context) *dbops.PgDB {
 }
 
 // Establish connection to a database with opts from command line.
-func getDBConn(rawSettings *cli.Context) *dbops.PgDB {
-	settings := &dbops.DatabaseSettingsCLI{}
-	settings.ReadFromCLI(rawSettings)
+func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
+	flags := &dbops.DatabaseCLIFlags{}
+	flags.ReadFromCLI(rawFlags)
 
-	db, err := dbops.NewPgDBConn(settings.ConvertToDatabaseSettings())
+	db, err := dbops.NewPgDBConn(flags.ConvertToDatabaseSettings())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
@@ -284,8 +284,8 @@ func setupApp() *cli.App {
 		fmt.Println(c.App.Version)
 	}
 
-	dbFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseSettingsCLI)(nil)).Elem())
-	dbCreateFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseSettingsWithMaintenanceCLI)(nil)).Elem())
+	dbFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlags)(nil)).Elem())
+	dbCreateFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlagsWithMaintenance)(nil)).Elem())
 
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
 		Name:    "force",

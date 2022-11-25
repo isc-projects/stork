@@ -17,8 +17,8 @@ import (
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	// Default configuration
-	settings := &dbops.DatabaseSettingsWithMaintenanceCLI{
-		DatabaseSettingsCLI: dbops.DatabaseSettingsCLI{
+	settings := &dbops.DatabaseCLIFlagsWithMaintenance{
+		DatabaseCLIFlags: dbops.DatabaseCLIFlags{
 			DBName: "storktest",
 			User:   "storktest",
 			Host:   "/var/run/postgres",

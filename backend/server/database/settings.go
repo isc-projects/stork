@@ -64,13 +64,13 @@ type DatabaseSettings struct {
 // connection string.
 func (s *DatabaseSettings) ToConnectionString() string {
 	// Get the reflect representation of the structure.
-	v := reflect.ValueOf(&s).Elem()
+	v := reflect.ValueOf(s).Elem()
 
 	// Get the types of the fields in the structure.
 	vType := v.Type()
 
 	// Iterate over the fields and append them to the connection string if needed.
-	params := make(map[string]string)
+	var params [][]string
 
 	for i := 0; i < v.NumField(); i++ {
 		field := vType.Field(i)
@@ -110,16 +110,18 @@ func (s *DatabaseSettings) ToConnectionString() string {
 			continue
 		}
 
-		params[paramName] = paramValue
+		params = append(params, []string{paramName, paramValue})
 	}
 	if len(s.SSLMode) == 0 {
-		params["sslmode"] = "disable"
+		params = append(params, []string{"sslmode", "'disable'"})
 	}
 
 	paramsStr := make([]string, len(params))
 	idx := 0
-	for key, value := range params {
+	for _, param := range params {
+		key, value := param[0], param[1]
 		paramsStr[idx] = fmt.Sprintf("%s=%s", key, value)
+		idx++
 	}
 
 	return strings.Join(paramsStr, " ")
@@ -128,13 +130,14 @@ func (s *DatabaseSettings) ToConnectionString() string {
 // Converts generic connection parameters to go-pg specific parameters.
 func (s *DatabaseSettings) toPgOptions() (*PgOptions, error) {
 	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
+	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 
-	if storkutil.IsSocket(s.Host) {
-		pgopts.Addr = path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
+	if storkutil.IsSocket(socketPath) {
+		pgopts.Addr = socketPath
 		pgopts.Network = "unix"
 	} else {
 		pgopts.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
-		pgopts.Network = "unix"
+		pgopts.Network = "tcp"
 		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert)
 		if err != nil {
 			return nil, err
@@ -223,7 +226,7 @@ func readFromCLI(obj any, lookup CLILookup) {
 }
 
 // The structure defines the database-related CLI flags.
-type DatabaseSettingsCLI struct {
+type DatabaseCLIFlags struct {
 	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
 	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
 	Password    string `description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
@@ -239,7 +242,7 @@ type DatabaseSettingsCLI struct {
 // Converts the values of CLI flags to the database settings. They don't
 // use the maintenance parameters. The standard user will connect to the
 // standard database.
-func (s *DatabaseSettingsCLI) ConvertToDatabaseSettings() *DatabaseSettings {
+func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() *DatabaseSettings {
 	return &DatabaseSettings{
 		DBName:      s.DBName,
 		User:        s.User,
@@ -255,19 +258,19 @@ func (s *DatabaseSettingsCLI) ConvertToDatabaseSettings() *DatabaseSettings {
 }
 
 // Reads the database settings (without maintenance) from the environment variables.
-func (s *DatabaseSettingsCLI) ReadFromEnvironment() {
+func (s *DatabaseCLIFlags) ReadFromEnvironment() {
 	readFromEnvironment(s)
 }
 
 // Reads the database settings (without maintenance) from the CLI lookup.
-func (s *DatabaseSettingsCLI) ReadFromCLI(lookup CLILookup) {
+func (s *DatabaseCLIFlags) ReadFromCLI(lookup CLILookup) {
 	readFromCLI(s, lookup)
 }
 
 // Converts the values of CLI flags to the database settings. They  include the
 // maintenance parameters.
-type DatabaseSettingsWithMaintenanceCLI struct {
-	DatabaseSettingsCLI
+type DatabaseCLIFlagsWithMaintenance struct {
+	DatabaseCLIFlags
 	MaintenanceDBName   string `short:"m" long:"db-maintenance-name" description:"The existing maintenance database name" env:"STORK_DATABASE_MAINTENANCE_NAME" default:"postgres"`
 	MaintenanceUser     string `short:"a" long:"db-maintenance-user" description:"The Postgres database administrator user name" env:"STORK_DATABASE_MAINTENANCE_USER_NAME" default:"postgres"`
 	MaintenancePassword string `long:"db-maintenance-password" description:"The Postgres database administrator password; if not specified, the user will be prompted for the password" env:"STORK_DATABASE_MAINTENANCE_PASSWORD"`
@@ -276,7 +279,7 @@ type DatabaseSettingsWithMaintenanceCLI struct {
 // Converts the values of CLI flags to the database settings. They use the
 // maintenance parameters. The maintenance user will connect to the maintenance
 // database.
-func (s *DatabaseSettingsWithMaintenanceCLI) ConvertToMaintenanceDatabaseSettings() *DatabaseSettings {
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings() *DatabaseSettings {
 	settings := s.ConvertToDatabaseSettings()
 	settings.DBName = s.MaintenanceDBName
 	settings.User = s.MaintenanceUser
@@ -285,12 +288,12 @@ func (s *DatabaseSettingsWithMaintenanceCLI) ConvertToMaintenanceDatabaseSetting
 }
 
 // Reads the database settings (with maintenance) from the environment variables.
-func (s *DatabaseSettingsWithMaintenanceCLI) ReadFromEnvironment() {
-	s.DatabaseSettingsCLI.ReadFromEnvironment()
+func (s *DatabaseCLIFlagsWithMaintenance) ReadFromEnvironment() {
+	s.DatabaseCLIFlags.ReadFromEnvironment()
 	readFromEnvironment(s)
 }
 
 // Reads the database settings (with maintenance) from the CLI lookup.
-func (s *DatabaseSettingsWithMaintenanceCLI) ReadFromCLI(lookup CLILookup) {
+func (s *DatabaseCLIFlagsWithMaintenance) ReadFromCLI(lookup CLILookup) {
 	readFromCLI(s, lookup)
 }
