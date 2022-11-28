@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"net"
 	"os"
 	"testing"
 
@@ -434,4 +435,19 @@ func TestCombineErrorsForListOfNils(t *testing.T) {
 
 	// Assert
 	require.Nil(t, combinedErr)
+}
+
+// Test that the socket is recognized properly.
+func TestIsSocket(t *testing.T) {
+	// Arrange
+	tempFile, _ := os.CreateTemp("", "*")
+	tempName := tempFile.Name()
+	tempFile.Close()
+	os.Remove(tempName)
+
+	listener, _ := net.Listen("unix", tempName)
+	defer listener.Close()
+
+	// Act & Assert
+	require.True(t, IsSocket(tempName))
 }
