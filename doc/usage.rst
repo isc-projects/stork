@@ -439,19 +439,19 @@ Creating Host Reservations
 --------------------------
 
 Above the list of the host reservations, there is the ``New Host`` button
-that opens a tab where a user can specify a new host reservation in one or
+that opens a tab where you can specify a new host reservation in one or
 more Kea servers. These Kea servers must be configured to use the ``host_cmds``
 hooks library, and only these servers are available for selection in
 the ``DHCP Servers`` dropdown.
 
-A user has a choice between a subnet-level or global host reservation.
+You have a choice between a subnet-level or global host reservation.
 Selecting a subnet using the ``Subnet`` dropdown is required for a
 subnet-level reservation. If the desired subnet is not displayed in the
 dropdown, it is possible that the selected DHCP servers do not include this
 subnet in their configuration. Setting the ``Global reservation`` option
 disables subnet selection.
 
-To associate the new host reservation with a DHCP client, the user can select
+To associate the new host reservation with a DHCP client, you can select
 one of the identifier types supported by Kea. Available identifiers differ
 depending on whether the user selected DHCPv4 or DHCPv6 servers. The identifier
 can be specified using ``hex`` or ``text`` format. For example, the ``hw-address``
@@ -463,27 +463,36 @@ select ``text`` option. Please refer to
 and `Host Reservations in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservations-in-dhcpv6>`_
 for more details regarding allowed DHCP identifiers and their formats.
 
-Further in the form, the user can specify the actual reservations. It is possible
+Further in the form, you can specify the actual reservations. It is possible
 to specify at most one IPv4 address. In the case of the DHCPv6 servers, it is
 possible to specify multiple IPv6 addresses and delegated prefixes.
 
-``Hostname`` is currently the only supported non-IP reservation type besides
-DHCP options.
+It is possible to associate one or more client classes with a host. Kea servers
+assign these classes to the DHCP packets received from the client having
+the host reservation. Client classes are typically defined in the Kea
+configurations but not necessarily. For example, built-in classes like
+``DROP`` have no explicit definitions in the configuration files.
+You can click the ``List`` button to select client classes from the list of
+classes explicitly defined in the configurations of the monitored Kea servers.
+Select the desired class names and click ``Insert``. If the desired class
+name is not on the list, you can type the class name directly in the
+input box and press enter. Click on the cross icon next to the class name
+to delete it from the host reservation.
 
 DHCP options can be added to the host reservation by clicking the ``Add Option``
 button. The list of the standard DHCP options is available via the dropdown.
-However, if the list is missing a desired option, the user can simply
+However, if the list is missing a desired option, you can simply
 type the option code in the dropdown. The ``Always Send`` checkbox specifies
 whether the option should always be returned to a DHCP client assigned this
 host reservation, regardless of whether the client requests this option from
 the DHCP server.
 
-In the current Stork version, the user must explicitly select an option
-payload suitable for the option. Thus, they must be familiar with the
+In the current Stork version, you must explicitly select an option
+payload suitable for the option. Thus, you must be familiar with the
 DHCP option formats and select appropriate option fields in the right
 order using the ``Add <field-type>`` button below the option code. For
 example, the ``(5) Name Server`` option can comprise one or more IPv4
-addresses. After selecting this option, the user should select an
+addresses. After selecting this option, you should select an
 ``ipv4-address`` option field once or more and fill the option fields
 with the IP addresses.
 
@@ -491,8 +500,8 @@ with the IP addresses.
 
    Currently, Stork does not verify whether or not the specified options comply
    with the formats specified in the RFCs, nor does it check them against the
-   runtime option definitions configured in Kea. If the user specifies
-   wrong option format, Stork will try to send the option to Kea for verification,
+   runtime option definitions configured in Kea. If you specify wrong option
+   format, Stork will try to send the option to Kea for verification,
    and Kea will reject the new reservation. The reservation can be submitted
    again after correcting the option payload.
 
@@ -501,13 +510,14 @@ Stork supports top-level options with maximum two levels of suboptions.
 
 If a host reservation is configured in several DHCP servers, typically, all
 servers comprise the same set of parameters (i.e., IP addresses, hostname,
-and DHCP options). By default, creating a new host reservation for several
-servers sends an identical copy of the host reservation to each. A user may
-choose to specify a different set of options for different servers by selecting
-``Toggle editing DHCP options individually for each server`` at the top of the
-form. In this case, the user must specify the complete option sets for each DHCP
-server. Leaving options blank for some servers means that these servers receive
-no DHCP options with the reservation.
+client classes and DHCP options). By default, creating a new host reservation
+for several servers sends an identical copy of the host reservation to each.
+You may choose to specify a different set of client classes or options for
+different servers by selecting ``Configure individual server vaues`` at the
+top of the form. In this case, you must specify the complete sets of client
+classes and options for each DHCP server. Leaving client classes or options
+blank for some servers means that these servers receive no classes or
+DHCP options with the reservation.
 
 Submitted host reservations may appear in Stork's host reservations list with some
 delay. Please allow some time for the reservations to propagate to the Kea DHCP
