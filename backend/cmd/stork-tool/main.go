@@ -233,51 +233,52 @@ func runHookInspect(settings *cli.Context) error {
 	}
 }
 
-func createFlagsFromTags(t reflect.Type) []cli.Flag {
-	var dbFlags []cli.Flag
+// Parse the general flag definitions into the object from the CLI library.
+func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Flag, error) {
+	var flags []cli.Flag
+	for _, definition := range flagDefinitions {
+		var flag cli.Flag
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		name := field.Tag.Get("long")
-		usage := field.Tag.Get("description")
-		value, ok := field.Tag.Lookup("default")
-		if !ok {
-			value = ""
-		}
 		var aliases []string
-		if alias, ok := field.Tag.Lookup("short"); ok {
-			aliases = append(aliases, alias)
-		}
-		var envVars []string
-		if envVar, ok := field.Tag.Lookup("env"); ok {
-			envVars = append(envVars, envVar)
+		if definition.Short != "" {
+			aliases = append(aliases, definition.Short)
 		}
 
-		switch field.Type.Kind() {
-		case reflect.String:
-			dbFlags = append(dbFlags, &cli.StringFlag{
-				Name:    name,
-				Usage:   usage,
-				Value:   value,
-				EnvVars: envVars,
-				Aliases: aliases,
-			})
-		case reflect.Int:
-			valueInt, _ := strconv.ParseInt(value, 10, 0)
-			dbFlags = append(dbFlags, &cli.Int64Flag{
-				Name:    name,
-				Usage:   usage,
-				Value:   valueInt,
-				EnvVars: envVars,
-				Aliases: aliases,
-			})
-		default:
-			// Unsupported type
-			continue
+		var envVars []string
+		if definition.EnvironmentVariable != "" {
+			envVars = append(envVars, definition.EnvironmentVariable)
 		}
+
+		if definition.Kind == reflect.Int {
+			valueInt, err := strconv.ParseInt(definition.Default, 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(
+					err, "invalid default value ('%s') for parameter ('%s')",
+					definition.Default, definition.Long,
+				)
+			}
+
+			flag = &cli.Int64Flag{
+				Name:    definition.Long,
+				Aliases: aliases,
+				Usage:   definition.Description,
+				EnvVars: envVars,
+				Value:   valueInt,
+			}
+		} else {
+			flag = &cli.StringFlag{
+				Name:    definition.Long,
+				Aliases: aliases,
+				Usage:   definition.Description,
+				EnvVars: envVars,
+				Value:   definition.Default,
+			}
+		}
+
+		flags = append(flags, flag)
 	}
 
-	return dbFlags
+	return flags, nil
 }
 
 // Prepare urfave cli app with all flags and commands defined.
@@ -286,8 +287,16 @@ func setupApp() *cli.App {
 		fmt.Println(c.App.Version)
 	}
 
-	dbFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlags)(nil)).Elem())
-	dbCreateFlags := createFlagsFromTags(reflect.TypeOf((*dbops.DatabaseCLIFlagsWithMaintenance)(nil)).Elem())
+	dbFlags, err := parseFlagDefinitions((*dbops.DatabaseCLIFlags)(nil).ConvertToCLIFlagDefinitions())
+	if err != nil {
+		log.WithError(err).Fatal("Invalid database CLI flag definitions")
+	}
+
+	dbCreateFlags, err := parseFlagDefinitions((*dbops.DatabaseCLIFlagsWithMaintenance)(nil).ConvertToCLIFlagDefinitions())
+	if err != nil {
+		log.WithError(err).Fatal("Invalid create database CLI flag definitions")
+	}
+
 	dbCreateFlags = append(dbCreateFlags, dbFlags...)
 
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
