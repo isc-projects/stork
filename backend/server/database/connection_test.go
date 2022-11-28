@@ -1,4 +1,4 @@
-package dbtest
+package dbops_test
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
+	dbtest "isc.org/stork/server/database/test"
 )
 
 // Error used in the connection unit tests.
@@ -24,7 +25,7 @@ func (txi *testTxi) Rollback() error {
 
 // Tests the logic that fetches database server version.
 func TestGetDatabaseServerVersion(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	version, err := dbops.GetDatabaseServerVersion(db)

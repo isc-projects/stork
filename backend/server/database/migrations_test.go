@@ -1,4 +1,4 @@
-package dbtest
+package dbops_test
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 )
 
 // Current schema version. This value must be bumped up every
@@ -39,7 +40,7 @@ func testCurrentVersion(t *testing.T, db *dbops.PgDB, expected int64) {
 
 // Test migrations between different database versions.
 func TestMigrate(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	_ = dbops.Toss(db)
@@ -60,7 +61,7 @@ func TestMigrate(t *testing.T) {
 
 // Test initialization and migration in a single step.
 func TestInitMigrate(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	_ = dbops.Toss(db)
@@ -72,7 +73,7 @@ func TestInitMigrate(t *testing.T) {
 // Tests that the database schema can be initialized and migrated to the
 // latest version with one call.
 func TestInitMigrateToLatest(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	_ = dbops.Toss(db)
@@ -85,7 +86,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 
 // Test that available schema version is returned as expected.
 func TestAvailableVersion(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	_ = dbops.Toss(db)
@@ -101,7 +102,7 @@ func TestAvailableVersion(t *testing.T) {
 
 // Test that current version is returned from the database.
 func TestCurrentVersion(t *testing.T) {
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	_ = dbops.Toss(db)
@@ -120,7 +121,7 @@ func TestCurrentVersion(t *testing.T) {
 // this database using generated password.
 func TestCreateDatabase(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, dbSettings, teardown := SetupDatabaseTestCase(t)
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
@@ -160,7 +161,7 @@ func TestCreateDatabase(t *testing.T) {
 // Test that the pgcrypto database extension is successfully created.
 func TestCreateCryptoExtension(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, originalSettings, teardown := SetupDatabaseTestCase(t)
+	db, originalSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
@@ -196,7 +197,7 @@ func TestCreateCryptoExtension(t *testing.T) {
 // Test that the 39 migration convert decimals to bigints as back.
 func TestMigration39DecimalToBigint(t *testing.T) {
 	// Arrange
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	dbops.Migrate(db, "down", "38")
