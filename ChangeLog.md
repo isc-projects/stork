@@ -1,3 +1,8 @@
+* 256 [func] marcin
+
+    Client classes can be specified in the host reservation form.
+    (Gitlab #884)
+
 * 255 [func] slawek
 
     Extended Kea Prometheus exporter to handle counters with summarized lease
