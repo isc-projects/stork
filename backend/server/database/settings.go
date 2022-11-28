@@ -43,19 +43,17 @@ func init() {
 	})
 }
 
-// Represents database connection settings. The "pq" tag names and their values
-// must correspond to the respective libpq parameters.
-// See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
+// Represents database connection settings.
 type DatabaseSettings struct {
-	DBName      string `pq:"dbname"`
-	User        string `pq:"user"`
-	Password    string `pq:"password"`
-	Host        string `pq:"host"`
-	Port        int    `pq:"port"`
-	SSLMode     string `pq:"sslmode"`
-	SSLCert     string `pq:"sslcert"`
-	SSLKey      string `pq:"sslkey"`
-	SSLRootCert string `pq:"sslrootcert"`
+	DBName      string
+	User        string
+	Password    string
+	Host        string
+	Port        int
+	SSLMode     string
+	SSLCert     string
+	SSLKey      string
+	SSLRootCert string
 	TraceSQL    LoggingQueryPreset
 }
 
@@ -63,6 +61,8 @@ type DatabaseSettings struct {
 // All string values are enclosed in quotes. The quotes and double quotes within the
 // string values are escaped. Empty or zero values are not included in the returned
 // connection string.
+// The parameter names must correspond to the respective libpq parameters.
+// See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
 func (s *DatabaseSettings) ConvertToConnectionString() string {
 	escapeQuotes := func(paramValue string) string {
 		// Escape quotes and double quotes.
