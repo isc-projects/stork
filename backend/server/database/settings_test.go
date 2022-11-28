@@ -247,8 +247,99 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 // Test that the values of the struct members are read from environment
 // variables correctly.
 func TestReadFromEnvironment(t *testing.T) {
-	// We need here a function to restore environment variables developed in #830.
-	t.Fail()
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	type mock struct {
+		String  string `env:"STRING"`
+		Int     int    `env:"INT"`
+		Bool    bool   `env:"BOOL"`
+		Missing string `env:"MISSING"`
+		NoTag   string
+	}
+
+	os.Setenv("STRING", "string")
+	os.Setenv("INT", "42")
+	os.Setenv("BOOL", "true")
+
+	obj := &mock{}
+
+	// Act
+	readFromEnvironment(obj)
+
+	// Assert
+	require.EqualValues(t, "string", obj.String)
+	require.EqualValues(t, 42, obj.Int)
+	// Boolean is not supported.
+	require.False(t, obj.Bool)
+	require.Empty(t, obj.Missing)
+	require.Empty(t, obj.NoTag)
+}
+
+// Test that the flags are read from the environment variables properly.
+func TestReadDatabaseCLIFlagsFromEnvironment(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	os.Setenv("STORK_DATABASE_NAME", "dbname")
+	os.Setenv("STORK_DATABASE_USER_NAME", "user")
+	os.Setenv("STORK_DATABASE_PASSWORD", "password")
+	os.Setenv("STORK_DATABASE_HOST", "host")
+	os.Setenv("STORK_DATABASE_PORT", "42")
+	os.Setenv("STORK_DATABASE_SSLMODE", "sslmode")
+	os.Setenv("STORK_DATABASE_SSLKEY", "sslkey")
+
+	obj := &DatabaseCLIFlags{}
+
+	// Act
+	obj.ReadFromEnvironment()
+
+	// Assert
+	require.EqualValues(t, "dbname", obj.DBName)
+	require.EqualValues(t, "user", obj.User)
+	require.EqualValues(t, "password", obj.Password)
+	require.EqualValues(t, "host", obj.Host)
+	require.EqualValues(t, 42, obj.Port)
+	require.EqualValues(t, "sslmode", obj.SSLMode)
+	require.EqualValues(t, "sslkey", obj.SSLKey)
+}
+
+// Test that the maintenance flags are read from the environment variables properly.
+func TestReadMaintenanceDatabaseCLIFlagsFromEnvironment(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	os.Setenv("STORK_DATABASE_MAINTENANCE_NAME", "maintenance-dbname")
+	os.Setenv("STORK_DATABASE_MAINTENANCE_USER_NAME", "maintenance-user")
+	os.Setenv("STORK_DATABASE_MAINTENANCE_PASSWORD", "maintenance-password")
+	os.Setenv("STORK_DATABASE_NAME", "dbname")
+	os.Setenv("STORK_DATABASE_USER_NAME", "user")
+	os.Setenv("STORK_DATABASE_PASSWORD", "password")
+	os.Setenv("STORK_DATABASE_HOST", "host")
+	os.Setenv("STORK_DATABASE_PORT", "42")
+	os.Setenv("STORK_DATABASE_SSLMODE", "sslmode")
+	os.Setenv("STORK_DATABASE_SSLKEY", "sslkey")
+
+	obj := &DatabaseCLIFlagsWithMaintenance{}
+
+	// Act
+	obj.ReadFromEnvironment()
+
+	// Assert
+	require.EqualValues(t, "dbname", obj.DBName)
+	require.EqualValues(t, "user", obj.User)
+	require.EqualValues(t, "password", obj.Password)
+	require.EqualValues(t, "host", obj.Host)
+	require.EqualValues(t, 42, obj.Port)
+	require.EqualValues(t, "sslmode", obj.SSLMode)
+	require.EqualValues(t, "sslkey", obj.SSLKey)
+
+	require.EqualValues(t, "maintenance-dbname", obj.MaintenanceDBName)
+	require.EqualValues(t, "maintenance-user", obj.MaintenanceUser)
+	require.EqualValues(t, "maintenance-password", obj.MaintenancePassword)
 }
 
 type mockCLILookup struct {
