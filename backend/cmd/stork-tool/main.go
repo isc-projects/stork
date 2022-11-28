@@ -297,8 +297,6 @@ func setupApp() *cli.App {
 		log.WithError(err).Fatal("Invalid create database CLI flag definitions")
 	}
 
-	dbCreateFlags = append(dbCreateFlags, dbFlags...)
-
 	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
 		Name:    "force",
 		Usage:   "Recreate the database and the user if they exist",
