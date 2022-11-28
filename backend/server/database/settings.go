@@ -64,57 +64,73 @@ type DatabaseSettings struct {
 // string values are escaped. Empty or zero values are not included in the returned
 // connection string.
 func (s *DatabaseSettings) ConvertToConnectionString() string {
-	// Get the reflect representation of the structure.
-	v := reflect.ValueOf(s).Elem()
-
-	// Get the types of the fields in the structure.
-	vType := v.Type()
-
-	// Iterate over the fields and append them to the connection string if needed.
-	var params [][]string
-
-	for i := 0; i < v.NumField(); i++ {
-		field := vType.Field(i)
-
-		// Parameter name
-		paramName, ok := field.Tag.Lookup("pq")
-		if !ok {
-			continue
-		}
-
-		// Parameter value
-		var paramValue string
-
-		// Check the type of the current field.
-		switch field.Type.Kind() {
-		case reflect.String:
-			// Only append the parameter if it is non-empty.
-			paramValue = v.Field(i).String()
-			if len(paramValue) == 0 {
-				continue
-			}
-			// Escape quotes and double quotes.
-			paramValue = strings.ReplaceAll(paramValue, "'", `\'`)
-			paramValue = strings.ReplaceAll(paramValue, `"`, `\"`)
-			// Enclose all strings in quotes in case they contain spaces.
-			paramValue = fmt.Sprintf("'%s'", paramValue)
-
-		case reflect.Int:
-			// If the int value is zero, do not include it.
-			paramValueInt := v.Field(i).Int()
-			if paramValueInt == 0 {
-				continue
-			}
-			paramValue = fmt.Sprint(paramValueInt)
-		default:
-			// Unsupported type.
-			continue
-		}
-
-		params = append(params, []string{paramName, paramValue})
+	escapeQuotes := func(paramValue string) string {
+		// Escape quotes and double quotes.
+		paramValue = strings.ReplaceAll(paramValue, "'", `\'`)
+		paramValue = strings.ReplaceAll(paramValue, `"`, `\"`)
+		// Enclose all strings in quotes in case they contain spaces.
+		paramValue = fmt.Sprintf("'%s'", paramValue)
+		return paramValue
 	}
-	if len(s.SSLMode) == 0 {
-		params = append(params, []string{"sslmode", "'disable'"})
+
+	params := [][]string{}
+
+	if len(s.DBName) != 0 {
+		params = append(params, []string{
+			"dbname", escapeQuotes(s.DBName),
+		})
+	}
+
+	if len(s.User) != 0 {
+		params = append(params, []string{
+			"user", escapeQuotes(s.User),
+		})
+	}
+
+	if len(s.Password) != 0 {
+		params = append(params, []string{
+			"password", escapeQuotes(s.Password),
+		})
+	}
+
+	if len(s.Host) != 0 {
+		params = append(params, []string{
+			"host", escapeQuotes(s.Host),
+		})
+	}
+
+	if s.Port != 0 {
+		params = append(params, []string{
+			"port", fmt.Sprint(s.Port),
+		})
+	}
+
+	if len(s.SSLMode) != 0 {
+		params = append(params, []string{
+			"sslmode", escapeQuotes(s.SSLMode),
+		})
+	} else {
+		params = append(params, []string{
+			"sslmode", escapeQuotes("disable"),
+		})
+	}
+
+	if len(s.SSLCert) != 0 {
+		params = append(params, []string{
+			"sslcert", escapeQuotes(s.SSLCert),
+		})
+	}
+
+	if len(s.SSLKey) != 0 {
+		params = append(params, []string{
+			"sslkey", escapeQuotes(s.SSLKey),
+		})
+	}
+
+	if len(s.SSLRootCert) != 0 {
+		params = append(params, []string{
+			"sslrootcert", escapeQuotes(s.SSLRootCert),
+		})
 	}
 
 	paramsStr := make([]string, len(params))
