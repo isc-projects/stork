@@ -24,10 +24,14 @@ const passwordGenRandomLength = 24
 func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 	flags := &dbops.DatabaseCLIFlags{}
 	flags.ReadFromCLI(rawFlags)
-
-	db, err := dbops.NewPgDBConn(flags.ConvertToDatabaseSettings())
+	settings, err := flags.ConvertToDatabaseSettings()
 	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
+		log.WithError(err).Fatal("Invalid database settings")
+	}
+
+	db, err := dbops.NewPgDBConn(settings)
+	if err != nil {
+		log.WithError(err).Fatal("Unexpected error")
 	}
 
 	// Theoretically, it should not happen but let's make sure in case someone
@@ -59,7 +63,7 @@ func runDBCreate(context *cli.Context) {
 	if len(password) == 0 {
 		password, err = storkutil.Base64Random(passwordGenRandomLength)
 		if err != nil {
-			log.Fatalf("Failed to generate random database password: %s", err)
+			log.WithError(err).Fatal("Failed to generate random database password")
 		}
 		// Only log the password if it has been generated. Otherwise, the
 		// user should know the password.
@@ -68,9 +72,14 @@ func runDBCreate(context *cli.Context) {
 	}
 
 	// Connect to the postgres database using admin credentials.
-	db, err := dbops.NewPgDBConn(flags.ConvertToMaintenanceDatabaseSettings())
+	settings, err := flags.ConvertToMaintenanceDatabaseSettings()
 	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
+		log.WithError(err).Fatal("Invalid database settings")
+	}
+
+	db, err := dbops.NewPgDBConn(settings)
+	if err != nil {
+		log.WithError(err).Fatal("Unexpected error")
 	}
 
 	// Try to create the database and the user with access using
@@ -85,15 +94,20 @@ func runDBCreate(context *cli.Context) {
 	db.Close()
 
 	// Re-use all admin credentials but connect to the new database.
-	db, err = dbops.NewPgDBConn(flags.ConvertToDatabaseSettingsAsMaintenance())
+	settings, err = flags.ConvertToDatabaseSettingsAsMaintenance()
 	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
+		log.WithError(err).Fatal("Invalid maintenance database settings")
+	}
+
+	db, err = dbops.NewPgDBConn(settings)
+	if err != nil {
+		log.WithError(err).Fatal("Unexpected error")
 	}
 
 	// Try to create the pgcrypto extension.
 	err = dbops.CreateExtension(db, "pgcrypto")
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.WithError(err).Fatal("Cannot create the database extension")
 	}
 
 	// Database setup successful.
@@ -105,7 +119,7 @@ func runDBCreate(context *cli.Context) {
 func runDBPasswordGen() {
 	password, err := storkutil.Base64Random(passwordGenRandomLength)
 	if err != nil {
-		log.Fatalf("Failed to generate random database password: %s", err)
+		log.WithError(err).Fatal("Failed to generate random database password")
 	}
 	log.WithFields(log.Fields{
 		"password": password,

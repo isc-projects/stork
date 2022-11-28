@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
+	"github.com/pkg/errors"
 
 	storkutil "isc.org/stork/util"
 )
@@ -228,6 +229,7 @@ func readFromCLI(obj any, lookup CLILookup) {
 
 // The structure defines the database-related CLI flags.
 type DatabaseCLIFlags struct {
+	URL         string `long:"db-url" description:"The URL to locate the Stork PostgreSQL database" env:"STORK_DATABASE_URL"`
 	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
 	User        string `short:"u" long:"db-user" description:"The user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
 	Password    string `long:"db-password" description:"The database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
@@ -243,8 +245,8 @@ type DatabaseCLIFlags struct {
 // Converts the values of CLI flags to the database settings. They don't
 // use the maintenance parameters. The standard user will connect to the
 // standard database.
-func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() *DatabaseSettings {
-	return &DatabaseSettings{
+func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error) {
+	settings := &DatabaseSettings{
 		DBName:      s.DBName,
 		User:        s.User,
 		Password:    s.Password,
@@ -256,6 +258,58 @@ func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() *DatabaseSettings {
 		SSLRootCert: s.SSLRootCert,
 		TraceSQL:    LoggingQueryPreset(s.TraceSQL),
 	}
+
+	if s.URL != "" {
+		// URL is mutually exclusive with some other parameters.
+		var nonEmptyParam string
+		switch {
+		case s.DBName != "":
+			nonEmptyParam = "database name"
+		case s.User != "":
+			nonEmptyParam = "user"
+		case s.Password != "":
+			nonEmptyParam = "password"
+		case s.Host != "":
+			nonEmptyParam = "host"
+		case s.Port != 0:
+			nonEmptyParam = "port"
+		}
+
+		if nonEmptyParam != "" {
+			return nil, errors.Errorf("URL is mutually exclusive with the %s", nonEmptyParam)
+		}
+
+		// Parse URL.
+		opts, err := pg.ParseURL(s.URL)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid database URL")
+		}
+
+		// Parse host and port.
+		host, portRaw, ok := strings.Cut(opts.Addr, ":")
+		if !ok {
+			// The pg.ParseURL always appends the port if it's missing.
+			return nil, errors.Errorf("Unknown address format: '%s'", opts.Addr)
+		}
+		port, err := strconv.ParseInt(portRaw, 10, 0)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Invalid port: '%s'", portRaw)
+		}
+
+		// Set parameters.
+		settings.DBName = opts.Database
+		settings.Host = host
+		settings.Port = int(port)
+		settings.Password = opts.Password
+		settings.User = opts.User
+
+		// The sslmode parameter is supported by the pg library but it's not permitted.
+		// The sslmode must be provided using the dedicated flags because
+		// the created TLS object is incomplete, and the exact SSL mode
+		// value is lost.
+	}
+
+	return settings, nil
 }
 
 // Reads the database settings (without maintenance) from the environment variables.
@@ -280,21 +334,28 @@ type DatabaseCLIFlagsWithMaintenance struct {
 // Converts the values of CLI flags to the database settings. They use the
 // maintenance parameters. The maintenance user will connect to the maintenance
 // database.
-func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings() *DatabaseSettings {
-	settings := s.ConvertToDatabaseSettings()
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings() (*DatabaseSettings, error) {
+	settings, err := s.ConvertToDatabaseSettings()
+	if err != nil {
+		return nil, err
+	}
+
 	settings.DBName = s.MaintenanceDBName
 	settings.User = s.MaintenanceUser
 	settings.Password = s.MaintenancePassword
-	return settings
+	return settings, nil
 }
 
 // Converts the values of CLI flags to the database settings. They use the
 // maintenance credentials. The maintenance user will connect to the standard
 // database.
-func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsAsMaintenance() *DatabaseSettings {
-	settings := s.ConvertToMaintenanceDatabaseSettings()
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsAsMaintenance() (*DatabaseSettings, error) {
+	settings, err := s.ConvertToMaintenanceDatabaseSettings()
+	if err != nil {
+		return nil, err
+	}
 	settings.DBName = s.DBName
-	return settings
+	return settings, nil
 }
 
 // Reads the database settings (with maintenance) from the environment variables.

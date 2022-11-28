@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -17,19 +16,18 @@ import (
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	// Default configuration
-	settings := &dbops.DatabaseCLIFlagsWithMaintenance{
+	flags := &dbops.DatabaseCLIFlagsWithMaintenance{
 		DatabaseCLIFlags: dbops.DatabaseCLIFlags{
 			DBName: "storktest",
 			User:   "storktest",
 			Host:   "/var/run/postgresql",
 			Port:   5432,
 		},
-		MaintenanceDBName:   "storktest",
-		MaintenanceUser:     "storktest",
-		MaintenancePassword: "storktest",
+		MaintenanceDBName: "postgres",
+		MaintenanceUser:   "postgres",
 	}
 
-	settings.ReadFromEnvironment()
+	flags.ReadFromEnvironment()
 
 	var (
 		t  *testing.T
@@ -45,7 +43,12 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	}
 
 	// Connect to maintenance database to be able to create test database.
-	db, err := dbops.NewPgDBConn(settings.ConvertToMaintenanceDatabaseSettings())
+	settings, err := flags.ConvertToMaintenanceDatabaseSettings()
+	if err != nil {
+		b.Fatalf("Invalid database settings: %+v", err)
+	}
+
+	db, err := dbops.NewPgDBConn(settings)
 	if db == nil {
 		log.Fatalf("Unable to create database instance: %+v", err)
 	}
@@ -57,9 +60,8 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	// Create test database from template. Template db is storktest (no tests should use it directly).
 	// Test database name is usually storktest + big random number e.g.: storktest9817239871871478571.
-	rand.Seed(time.Now().UnixNano())
-	//nolint:gosec
-	dbName := fmt.Sprintf("%s%d", settings.DBName, rand.Int63())
+	templateDBName := flags.DBName
+	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
 	_, err = db.Exec(cmd)
@@ -69,7 +71,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 		b.Fatalf("%s", err)
 	}
 
-	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, settings.DBName)
+	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, templateDBName)
 	_, err = db.Exec(cmd)
 	if t != nil {
 		require.NoError(t, err)
@@ -80,7 +82,11 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	db.Close()
 
 	// Create an instance of the test database.
-	testDBSettings := settings.ConvertToDatabaseSettings()
+	testDBSettings, err := flags.ConvertToDatabaseSettings()
+	if err != nil {
+		b.Fatalf("Invalid database settings: %+v", err)
+	}
+
 	testDBSettings.DBName = dbName
 
 	db, err = dbops.NewPgDBConn(testDBSettings)

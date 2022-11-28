@@ -312,9 +312,10 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	}
 
 	// Act
-	settings := cliFlags.ConvertToDatabaseSettings()
+	settings, err := cliFlags.ConvertToDatabaseSettings()
 
 	// Assert
+	require.NoError(t, err)
 	require.EqualValues(t, "dbname", settings.DBName)
 	require.EqualValues(t, "user", settings.User)
 	require.EqualValues(t, "password", settings.Password)
@@ -325,6 +326,91 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
+
+// Test that the database CLI flags with URL are converted to the database
+// settings properly.
+func TestConvertDatabaseCLIFlagsWithURLToSettings(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlags{
+		URL:         "postgres://user:password@host:42/dbname",
+		SSLMode:     "sslmode",
+		SSLCert:     "sslcert",
+		SSLKey:      "sslkey",
+		SSLRootCert: "sslrootcert",
+		TraceSQL:    "run",
+	}
+
+	// Act
+	settings, err := cliFlags.ConvertToDatabaseSettings()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "dbname", settings.DBName)
+	require.EqualValues(t, "user", settings.User)
+	require.EqualValues(t, "password", settings.Password)
+	require.EqualValues(t, "host", settings.Host)
+	require.EqualValues(t, 42, settings.Port)
+	require.EqualValues(t, "sslmode", settings.SSLMode)
+	require.EqualValues(t, "sslcert", settings.SSLCert)
+	require.EqualValues(t, "sslkey", settings.SSLKey)
+	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
+
+// Test that the database CLI flags cannot be converted to settings if they
+// contain mutually exclusive parameters.
+func TestConvertDatabaseCLIFlagsToSettingsWithMutuallyExclusives(t *testing.T) {
+	// Arrange
+	testLabels := []string{"dbname", "user", "password", "host", "port"}
+	testCases := []*DatabaseCLIFlags{
+		{
+			URL:    "postgres://user:password@host:42/dbname",
+			DBName: "dbname",
+		},
+		{
+			URL:  "postgres://user:password@host:42/dbname",
+			User: "user",
+		},
+		{
+			URL:      "postgres://user:password@host:42/dbname",
+			Password: "password",
+		},
+		{
+			URL:  "postgres://user:password@host:42/dbname",
+			Host: "host",
+		},
+		{
+			URL:  "postgres://user:password@host:42/dbname",
+			Port: 42,
+		},
+	}
+
+	for i, flags := range testCases {
+		t.Run(testLabels[i], func(t *testing.T) {
+			// Act
+			settings, err := flags.ConvertToDatabaseSettings()
+
+			// Assert
+			require.Nil(t, settings)
+			require.Error(t, err)
+		})
+	}
+}
+
+// Test that the invalid URL cannot be used to create the database settings.
+func TestConvertInvalidURLToDatabaseSettings(t *testing.T) {
+	// Arrange
+	flags := &DatabaseCLIFlags{
+		URL: "foo://bar",
+	}
+
+	// Act
+	settings, err := flags.ConvertToDatabaseSettings()
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, settings)
 }
 
 // Test that the CLI flags can be read from an external parameters source using
@@ -383,9 +469,10 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToSettings(t *testing.
 	}
 
 	// Act
-	settings := cliFlags.ConvertToDatabaseSettings()
+	settings, err := cliFlags.ConvertToDatabaseSettings()
 
 	// Assert
+	require.NoError(t, err)
 	require.EqualValues(t, "dbname", settings.DBName)
 	require.EqualValues(t, "user", settings.User)
 	require.EqualValues(t, "password", settings.Password)
@@ -421,9 +508,10 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToMaintenanceSettings(
 	}
 
 	// Act
-	settings := cliFlags.ConvertToMaintenanceDatabaseSettings()
+	settings, err := cliFlags.ConvertToMaintenanceDatabaseSettings()
 
 	// Assert
+	require.NoError(t, err)
 	require.EqualValues(t, "maintenance-dbname", settings.DBName)
 	require.EqualValues(t, "maintenance-user", settings.User)
 	require.EqualValues(t, "maintenance-password", settings.Password)
@@ -472,4 +560,43 @@ func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.
 	require.EqualValues(t, "maintenance-dbname", cliFlags.MaintenanceDBName)
 	require.EqualValues(t, "maintenance-user", cliFlags.MaintenanceUser)
 	require.Empty(t, cliFlags.MaintenancePassword)
+}
+
+// Test that the CLI flags that contains the maintenance credentials are
+// converted to the standard database settings with a maintenance user properly.
+func TestConvertDatabaseCLIFlagsToSettingsAsMaintenance(t *testing.T) {
+	// Arrange
+	cliFlags := &DatabaseCLIFlagsWithMaintenance{
+		DatabaseCLIFlags: DatabaseCLIFlags{
+			DBName:      "dbname",
+			User:        "user",
+			Password:    "password",
+			Host:        "host",
+			Port:        42,
+			SSLMode:     "sslmode",
+			SSLCert:     "sslcert",
+			SSLKey:      "sslkey",
+			SSLRootCert: "sslrootcert",
+			TraceSQL:    "run",
+		},
+		MaintenanceDBName:   "maintenance-dbname",
+		MaintenanceUser:     "maintenance-user",
+		MaintenancePassword: "maintenance-password",
+	}
+
+	// Act
+	settings, err := cliFlags.ConvertToDatabaseSettingsAsMaintenance()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "dbname", settings.DBName)
+	require.EqualValues(t, "maintenance-user", settings.User)
+	require.EqualValues(t, "maintenance-password", settings.Password)
+	require.EqualValues(t, "host", settings.Host)
+	require.EqualValues(t, 42, settings.Port)
+	require.EqualValues(t, "sslmode", settings.SSLMode)
+	require.EqualValues(t, "sslcert", settings.SSLCert)
+	require.EqualValues(t, "sslkey", settings.SSLKey)
+	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
 }

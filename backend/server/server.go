@@ -157,7 +157,11 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 		return NoneCommand, err
 	}
 
-	ss.DBSettings = *databaseFlags.ConvertToDatabaseSettings()
+	dbSettings, err := databaseFlags.ConvertToDatabaseSettings()
+	if err != nil {
+		return NoneCommand, err
+	}
+	ss.DBSettings = *dbSettings
 
 	if ss.GeneralSettings.Version {
 		// If user specified --version or -v, print the version and quit.
