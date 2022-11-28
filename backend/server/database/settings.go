@@ -149,6 +149,73 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	return pgopts, nil
 }
 
+// Iterates over the struct members including the nested ones.
+func iterateOverFields(obj any, f func(field reflect.StructField, valueField reflect.Value)) {
+	type fieldValuePair struct {
+		field reflect.StructField
+		value reflect.Value
+	}
+
+	// Get the reflect representation of the structure.
+	v := reflect.ValueOf(obj).Elem()
+
+	// Get the types of the fields in the structure.
+	vType := reflect.TypeOf(obj).Elem()
+
+	// It'll iterate over nested structs without recursion.
+	var fieldQueue []fieldValuePair
+
+	// Iterate over the top-level members and load them into queue.
+	for i := 0; i < vType.NumField(); i++ {
+		var valueField reflect.Value
+		// If the object is nil then the value fields are invalid. Accessing
+		// them causes panic.
+		if v.IsValid() {
+			valueField = v.Field(i)
+		}
+
+		fieldQueue = append(fieldQueue, fieldValuePair{
+			field: vType.Field(i),
+			value: valueField,
+		})
+	}
+
+	// Perform until exhaust the queue.
+	for len(fieldQueue) != 0 {
+		// Pop first element.
+		pair := fieldQueue[0]
+		// Remove the first element.
+		fieldQueue = fieldQueue[1:]
+
+		// Extract field type.
+		fieldType := pair.field.Type
+
+		// Iterate over the nested fields. Only structs are supported.
+		if fieldType.Kind() == reflect.Struct {
+			for i := 0; i < fieldType.NumField(); i++ {
+				var valueField reflect.Value
+				// If the object is nil then the value fields are invalid. Accessing
+				// them causes panic.
+				if v.IsValid() {
+					valueField = pair.value.Field(i)
+				}
+
+				// Push the nested field to a queue.
+				fieldQueue = append(fieldQueue, fieldValuePair{
+					field: fieldType.Field(i),
+					value: valueField,
+				})
+			}
+
+			// Not call the callback for the nested field.
+			continue
+		}
+
+		// Call the callback for the leaf fields.
+		f(pair.field, pair.value)
+	}
+}
+
 // Sets the member fields of a given object using the structure tags and value
 // lookup object. The function searches for the provided tag in the member tags.
 // If found, the tag value is passed to the value lookup. The output string is
@@ -161,41 +228,30 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 // the member has an unsupported type, or integer conversion fails, then the
 // member is skipped. It has a default value.
 func setFieldsBasedOnTags(obj any, tagName string, valueLookup func(string) (string, bool)) {
-	// Get the reflect representation of the structure.
-	v := reflect.ValueOf(obj).Elem()
-
-	// Get the types of the fields in the structure.
-	vType := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := vType.Field(i)
-
-		// Environment variable key
+	iterateOverFields(obj, func(field reflect.StructField, valueField reflect.Value) {
 		key, ok := field.Tag.Lookup(tagName)
 		if !ok {
-			continue
+			return
 		}
 
 		value, ok := valueLookup(key)
 		if !ok {
-			continue
+			return
 		}
 
-		// Check the type of the current field.
 		switch field.Type.Kind() {
 		case reflect.String:
-			v.Field(i).SetString(value)
+			valueField.SetString(value)
 		case reflect.Int:
 			envValueInt, err := strconv.ParseInt(value, 10, 0)
 			if err != nil {
-				continue
+				return
 			}
-			v.Field(i).SetInt(envValueInt)
+			valueField.SetInt(envValueInt)
 		default:
-			// Unsupported type.
-			continue
+			// Skip unsupported fields.
 		}
-	}
+	})
 }
 
 // Sets the member fields of a given object using the structure tags and the
@@ -227,7 +283,59 @@ func readFromCLI(obj any, lookup CLILookup) {
 	})
 }
 
-// The structure defines the database-related CLI flags.
+// The definition of the CLI flag compatible with the struct tags
+// used by the 'github.com/jessevdk/go-flags' library.
+type CLIFlagDefinition struct {
+	Short               string
+	Long                string
+	Description         string
+	EnvironmentVariable string
+	Default             string
+	Kind                reflect.Kind
+}
+
+// Reads the CLI flags metadata from the struct tags. It must be safe for nil
+// pointers.
+func convertToCLIFlagDefinitions(obj any) []*CLIFlagDefinition {
+	var flags []*CLIFlagDefinition
+
+	iterateOverFields(obj, func(field reflect.StructField, _ reflect.Value) {
+		var flag CLIFlagDefinition
+
+		flag.Kind = field.Type.Kind()
+
+		value, ok := field.Tag.Lookup("short")
+		if ok {
+			flag.Short = value
+		}
+
+		value, ok = field.Tag.Lookup("long")
+		if ok {
+			flag.Long = value
+		}
+
+		value, ok = field.Tag.Lookup("description")
+		if ok {
+			flag.Description = value
+		}
+
+		value, ok = field.Tag.Lookup("env")
+		if ok {
+			flag.EnvironmentVariable = value
+		}
+
+		value, ok = field.Tag.Lookup("default")
+		if ok {
+			flag.Default = value
+		}
+
+		flags = append(flags, &flag)
+	})
+
+	return flags
+}
+
+// General definition of the CLI flags used to connect to the database.
 type DatabaseCLIFlags struct {
 	URL         string `long:"db-url" description:"The URL to locate the Stork PostgreSQL database" env:"STORK_DATABASE_URL"`
 	DBName      string `short:"d" long:"db-name" description:"The name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
@@ -245,6 +353,8 @@ type DatabaseCLIFlags struct {
 // Converts the values of CLI flags to the database settings. They don't
 // use the maintenance parameters. The standard user will connect to the
 // standard database.
+// It may parse the access options from the URL but returns an error if it's
+// provided simultaneously with the standard parameters.
 func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error) {
 	settings := &DatabaseSettings{
 		DBName:      s.DBName,
@@ -312,6 +422,12 @@ func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error
 	return settings, nil
 }
 
+// Returns the CLI flag definitions as objects. This function is dedicated to
+// avoiding parsing the struct tags outside the module.
+func (s *DatabaseCLIFlags) ConvertToCLIFlagDefinitions() []*CLIFlagDefinition {
+	return convertToCLIFlagDefinitions(s)
+}
+
 // Reads the database settings (without maintenance) from the environment variables.
 func (s *DatabaseCLIFlags) ReadFromEnvironment() {
 	readFromEnvironment(s)
@@ -322,8 +438,10 @@ func (s *DatabaseCLIFlags) ReadFromCLI(lookup CLILookup) {
 	readFromCLI(s, lookup)
 }
 
-// Converts the values of CLI flags to the database settings. They  include the
-// maintenance parameters.
+// The database CLI flags are extended with the maintenance credentials.
+// The maintenance access should be used to perform operations outside the
+// standard database as creating or removing databases and users, creating
+// extensions, or granting privileges.
 type DatabaseCLIFlagsWithMaintenance struct {
 	DatabaseCLIFlags
 	MaintenanceDBName   string `short:"m" long:"db-maintenance-name" description:"The existing maintenance database name" env:"STORK_DATABASE_MAINTENANCE_NAME" default:"postgres"`
@@ -358,14 +476,18 @@ func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsAsMaintenance
 	return settings, nil
 }
 
+// Returns the CLI flag definitions as objects. This function is dedicated to
+// avoiding parsing the struct tags outside the module.
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToCLIFlagDefinitions() []*CLIFlagDefinition {
+	return convertToCLIFlagDefinitions(s)
+}
+
 // Reads the database settings (with maintenance) from the environment variables.
 func (s *DatabaseCLIFlagsWithMaintenance) ReadFromEnvironment() {
-	s.DatabaseCLIFlags.ReadFromEnvironment()
 	readFromEnvironment(s)
 }
 
 // Reads the database settings (with maintenance) from the CLI lookup.
 func (s *DatabaseCLIFlagsWithMaintenance) ReadFromCLI(lookup CLILookup) {
-	s.DatabaseCLIFlags.ReadFromCLI(lookup)
 	readFromCLI(s, lookup)
 }

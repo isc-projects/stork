@@ -61,6 +61,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// Create test database from template. Template db is storktest (no tests should use it directly).
 	// Test database name is usually storktest + big random number e.g.: storktest9817239871871478571.
 	templateDBName := flags.DBName
+
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)

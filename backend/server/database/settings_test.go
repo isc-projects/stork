@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -195,7 +196,12 @@ func TestConvertToPgOptionsSocket(t *testing.T) {
 // Test that the field tags are handled properly.
 func TestSetFieldsBasedOnTags(t *testing.T) {
 	// Arrange
+	type parentMock struct {
+		FieldString string `tag:"nested-field-string"`
+	}
+
 	type mock struct {
+		Parent                   parentMock
 		FieldString              string `tag:"field-string"`
 		FieldInt                 int    `tag:"field-int"`
 		FieldWithoutTag          string
@@ -215,6 +221,8 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 			return "value-multiple", true
 		case "field-boolean":
 			return "true", true
+		case "nested-field-string":
+			return "nested-field-string", true
 		default:
 			return "", false
 		}
@@ -233,6 +241,7 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 	require.EqualValues(t, "value-multiple", obj.FieldWithMultipleTags)
 	require.False(t, obj.FieldWithUnsupportedType)
 	require.Empty(t, obj.FieldStringUnknown)
+	require.EqualValues(t, "nested-field-string", obj.Parent.FieldString)
 }
 
 // Test that the values of the struct members are read from environment
@@ -599,4 +608,169 @@ func TestConvertDatabaseCLIFlagsToSettingsAsMaintenance(t *testing.T) {
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+}
+
+// Test that the field iteration is performed properly.
+func TestIterateOverFields(t *testing.T) {
+	// Arrange
+	type nestedMock struct {
+		Nested string
+	}
+
+	type mock struct {
+		Parent nestedMock
+		Foo    string
+		Bar    string
+	}
+
+	obj := &mock{
+		Parent: nestedMock{
+			Nested: "Nested",
+		},
+		Foo: "Foo",
+		Bar: "Bar",
+	}
+	numFields := 0
+
+	// Act
+	iterateOverFields(obj, func(field reflect.StructField, value reflect.Value) {
+		// Assert
+		require.EqualValues(t, field.Name, value.String())
+		numFields++
+	})
+
+	require.EqualValues(t, 3, numFields)
+}
+
+// Test that the field iteration is performed properly even if the object is nil.
+func TestIterateOverFieldsOfNil(t *testing.T) {
+	// Arrange
+	type nestedMock struct {
+		Nested string
+	}
+
+	type mock struct {
+		Parent nestedMock
+		Foo    string
+		Bar    string
+	}
+
+	obj := (*mock)(nil)
+	numFields := 0
+
+	// Act
+	iterateOverFields(obj, func(field reflect.StructField, value reflect.Value) {
+		// Assert
+		require.NotNil(t, field)
+		require.False(t, value.IsValid())
+		numFields++
+	})
+
+	require.EqualValues(t, 3, numFields)
+}
+
+// Test that the CLI flag definitions are read properly from the struct tags.
+func TestConvertToCLIFlagDefinitions(t *testing.T) {
+	// Arrange
+	type mock struct {
+		Foo                string `short:"f" long:"foo" description:"foofoo" env:"FOO" default:"foofoofoo"`
+		MissingShort       string `long:"bar" description:"barbar" env:"BAR" default:"barbarbar"`
+		MissingLong        string `short:"z" description:"bazbaz" env:"BAZ" default:"bazbazbaz"`
+		MissingDescription string `short:"i" long:"biz" env:"BIZ" default:"bizbizbiz"`
+		MissingEnv         string `short:"o" long:"boz" description:"bozboz" default:"bozbozboz"`
+		MissingDefault     string `short:"u" long:"buz" description:"buzbuz" env:"BUZ"`
+		MissingTags        string
+	}
+
+	obj := &mock{}
+
+	// Act
+	flags := convertToCLIFlagDefinitions(obj)
+
+	// Assert
+	require.Len(t, flags, 7)
+
+	require.EqualValues(t, "f", flags[0].Short)
+	require.EqualValues(t, "foo", flags[0].Long)
+	require.EqualValues(t, "foofoo", flags[0].Description)
+	require.EqualValues(t, "FOO", flags[0].EnvironmentVariable)
+	require.EqualValues(t, "foofoofoo", flags[0].Default)
+
+	require.Empty(t, flags[1].Short)
+	require.EqualValues(t, "bar", flags[1].Long)
+	require.EqualValues(t, "barbar", flags[1].Description)
+	require.EqualValues(t, "BAR", flags[1].EnvironmentVariable)
+	require.EqualValues(t, "barbarbar", flags[1].Default)
+
+	require.EqualValues(t, "z", flags[2].Short)
+	require.Empty(t, flags[2].Long)
+	require.EqualValues(t, "bazbaz", flags[2].Description)
+	require.EqualValues(t, "BAZ", flags[2].EnvironmentVariable)
+	require.EqualValues(t, "bazbazbaz", flags[2].Default)
+
+	require.EqualValues(t, "i", flags[3].Short)
+	require.EqualValues(t, "biz", flags[3].Long)
+	require.Empty(t, flags[3].Description)
+	require.EqualValues(t, "BIZ", flags[3].EnvironmentVariable)
+	require.EqualValues(t, "bizbizbiz", flags[3].Default)
+
+	require.EqualValues(t, "o", flags[4].Short)
+	require.EqualValues(t, "boz", flags[4].Long)
+	require.EqualValues(t, "bozboz", flags[4].Description)
+	require.Empty(t, flags[4].EnvironmentVariable)
+	require.EqualValues(t, "bozbozboz", flags[4].Default)
+
+	require.EqualValues(t, "u", flags[5].Short)
+	require.EqualValues(t, "buz", flags[5].Long)
+	require.EqualValues(t, "buzbuz", flags[5].Description)
+	require.EqualValues(t, "BUZ", flags[5].EnvironmentVariable)
+	require.Empty(t, flags[5].Default)
+
+	require.Empty(t, flags[6].Short)
+	require.Empty(t, flags[6].Long)
+	require.Empty(t, flags[6].Description)
+	require.Empty(t, flags[6].EnvironmentVariable)
+	require.Empty(t, flags[6].Default)
+}
+
+// Test that the flag definitions are converted from the struct tags into
+// objects properly.
+func TestConvertDatabaseCLIFlagsToDefinitions(t *testing.T) {
+	// Arrange
+	pointer := (*DatabaseCLIFlags)(nil)
+
+	// Act
+	definitions := pointer.ConvertToCLIFlagDefinitions()
+
+	// Assert
+	require.Len(t, definitions, 11)
+
+	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
+	for _, definition := range definitions {
+		definitionMap[definition.Long] = definition
+	}
+
+	require.EqualValues(t, "STORK_DATABASE_HOST", definitionMap["db-host"].EnvironmentVariable)
+	require.EqualValues(t, "p", definitionMap["db-port"].Short)
+	require.EqualValues(t, reflect.Int, definitionMap["db-port"].Kind)
+}
+
+// Test that the maintenance flag definitions are converted from the struct tags
+// into objects properly.
+func TestConvertMaintenanceDatabaseCLIFlagsToDefinitions(t *testing.T) {
+	// Arrange
+	pointer := (*DatabaseCLIFlagsWithMaintenance)(nil)
+
+	// Act
+	definitions := pointer.ConvertToCLIFlagDefinitions()
+
+	// Assert
+	require.Len(t, definitions, 11+3)
+
+	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
+	for _, definition := range definitions {
+		definitionMap[definition.Long] = definition
+	}
+
+	require.EqualValues(t, "postgres", definitionMap["db-maintenance-user"].Default)
 }
