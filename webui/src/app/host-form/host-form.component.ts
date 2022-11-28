@@ -531,7 +531,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 if (this.form.dhcpv4) {
                     this.ipGroups.at(i).get('inputIPv4').setValue(host.addressReservations[i].address)
                 } else {
-                    this.ipGroups.at(i).get('inputIPv6').setValue(host.addressReservations[i].address)
+                    this.ipGroups.at(i).get('inputNA').setValue(host.addressReservations[i].address)
                 }
             }
         }
@@ -1195,7 +1195,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * A function called when user clicks the button to revert host edit changes.
      */
     onRevert(): void {
-        console.info(this.savedUpdateHostBeginData)
         this._createDefaultFormGroup()
         this._initializeForm(this.savedUpdateHostBeginData)
     }

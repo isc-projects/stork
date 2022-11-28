@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 import { Host } from './backend/model/host'
-import { hasDifferentLocalHostData } from './hosts'
+import { hasDifferentLocalHostClientClasses, hasDifferentLocalHostData, hasDifferentLocalHostOptions } from './hosts'
 
 describe('hosts', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
@@ -22,6 +22,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeTrue()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeTrue()
     })
 
@@ -62,6 +64,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -82,6 +86,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -99,6 +105,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -116,6 +124,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeTrue()
         expect(hasDifferentLocalHostData(host)).toBeTrue()
     })
 
@@ -128,6 +138,8 @@ describe('hosts', () => {
                 },
             ],
         }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -135,6 +147,8 @@ describe('hosts', () => {
         const host: Host = {
             localHosts: [],
         }
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 })

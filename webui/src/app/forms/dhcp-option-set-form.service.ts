@@ -242,7 +242,7 @@ export class DhcpOptionSetFormService {
             if (option.alwaysSend) {
                 optionFormGroup.get('alwaysSend').setValue(option.alwaysSend)
             }
-            for (let field of option.fields) {
+            for (let field of option.fields ?? []) {
                 // Sanity check option field values.
                 if (
                     field.fieldType === DhcpOptionFieldType.IPv6Prefix ||

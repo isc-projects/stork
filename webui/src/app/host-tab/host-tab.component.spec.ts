@@ -18,10 +18,12 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { TreeModule } from 'primeng/tree'
+import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
+import { ChipModule } from 'primeng/chip'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -35,6 +37,7 @@ describe('HostTabComponent', () => {
             providers: [DHCPService, ConfirmationService, MessageService],
             imports: [
                 ConfirmDialogModule,
+                ChipModule,
                 FieldsetModule,
                 FormsModule,
                 HttpClientTestingModule,
@@ -47,7 +50,13 @@ describe('HostTabComponent', () => {
                 TreeModule,
                 TagModule,
             ],
-            declarations: [DhcpOptionSetViewComponent, HelpTipComponent, HostTabComponent, IdentifierComponent],
+            declarations: [
+                DhcpClientClassSetViewComponent,
+                DhcpOptionSetViewComponent,
+                HelpTipComponent,
+                HostTabComponent,
+                IdentifierComponent,
+            ],
         }).compileComponents()
     }))
 
@@ -698,7 +707,7 @@ describe('HostTabComponent', () => {
         expect(fixture.debugElement.query(By.css('[label=Delete]'))).toBeFalsy()
     })
 
-    it('should display different DHCP options for different servers separately', () => {
+    it('should display different host data for different servers separately', () => {
         const host = {
             id: 1,
             hostIdentifiers: [
@@ -718,6 +727,7 @@ describe('HostTabComponent', () => {
                     daemonId: 1,
                     appName: 'frog',
                     dataSource: 'api',
+                    clientClasses: ['foo', 'bar'],
                     options: [
                         {
                             code: 1024,
@@ -733,6 +743,7 @@ describe('HostTabComponent', () => {
                     daemonId: 1,
                     appName: 'lion',
                     dataSource: 'api',
+                    clientClasses: ['baz'],
                     options: [
                         {
                             code: 1024,
@@ -749,23 +760,35 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(6)
 
-        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
-        expect(fieldsets[3].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[2].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[3].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[4].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[5].properties.innerText).toContain('DHCP Options')
 
-        let frogLink = fieldsets[2].query(By.css('a'))
-        expect(frogLink).toBeTruthy()
-        expect(frogLink.properties.innerText).toContain('frog')
-        expect(frogLink.properties.pathname).toBe('/apps/kea/1')
+        let frogLinkClasses = fieldsets[2].query(By.css('a'))
+        expect(frogLinkClasses).toBeTruthy()
+        expect(frogLinkClasses.properties.innerText).toContain('frog')
+        expect(frogLinkClasses.properties.pathname).toBe('/apps/kea/1')
 
-        let lionLink = fieldsets[3].query(By.css('a'))
-        expect(lionLink).toBeTruthy()
-        expect(lionLink.properties.innerText).toContain('lion')
-        expect(lionLink.properties.pathname).toBe('/apps/kea/2')
+        let lionLinkClasses = fieldsets[3].query(By.css('a'))
+        expect(lionLinkClasses).toBeTruthy()
+        expect(lionLinkClasses.properties.innerText).toContain('lion')
+        expect(lionLinkClasses.properties.pathname).toBe('/apps/kea/2')
+
+        let frogLinkOptions = fieldsets[4].query(By.css('a'))
+        expect(frogLinkOptions).toBeTruthy()
+        expect(frogLinkOptions.properties.innerText).toContain('frog')
+        expect(frogLinkOptions.properties.pathname).toBe('/apps/kea/1')
+
+        let lionLinkOptions = fieldsets[5].query(By.css('a'))
+        expect(lionLinkOptions).toBeTruthy()
+        expect(lionLinkOptions.properties.innerText).toContain('lion')
+        expect(lionLinkOptions.properties.pathname).toBe('/apps/kea/2')
     })
 
-    it('should display the same DHCP options for different servers in one panel', () => {
+    it('should display the same host data for different servers in one panel', () => {
         const host = {
             id: 1,
             hostIdentifiers: [
@@ -785,6 +808,7 @@ describe('HostTabComponent', () => {
                     daemonId: 1,
                     appName: 'frog',
                     dataSource: 'api',
+                    clientClasses: ['foo', 'bar'],
                     options: [
                         {
                             code: 1024,
@@ -800,6 +824,7 @@ describe('HostTabComponent', () => {
                     daemonId: 1,
                     appName: 'lion',
                     dataSource: 'api',
+                    clientClasses: ['foo', 'bar'],
                     options: [
                         {
                             code: 1024,
@@ -816,13 +841,15 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
-
-        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets.length).toBe(4)
+        expect(fieldsets[2].properties.innerText).toContain('Client Classes')
         expect(fieldsets[2].properties.innerText).toContain('All Servers')
+
+        expect(fieldsets[3].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[3].properties.innerText).toContain('All Servers')
     })
 
-    it('should display DHCP options panel for host with one daemon and include server name', () => {
+    it('should display DHCP options panel for host with one daemon', () => {
         const host = {
             id: 1,
             hostIdentifiers: [
@@ -842,6 +869,7 @@ describe('HostTabComponent', () => {
                     daemonId: 1,
                     appName: 'frog',
                     dataSource: 'api',
+                    clientClasses: ['foo', 'bar'],
                     options: [
                         {
                             code: 1024,
@@ -858,14 +886,43 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
+        expect(fieldsets.length).toBe(4)
 
-        expect(fieldsets[2].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[2].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[2].properties.innerText).toContain('All Servers')
+        expect(fieldsets[3].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[3].properties.innerText).toContain('All Servers')
+    })
 
-        let frogLink = fieldsets[2].query(By.css('a'))
-        expect(frogLink).toBeTruthy()
-        expect(frogLink.properties.innerText).toContain('frog')
-        expect(frogLink.properties.pathname).toBe('/apps/kea/1')
+    it('should display a message about no client classes configured', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '51:52:53:54',
+                },
+            ],
+            addressReservations: [],
+            prefixReservations: [],
+            hostname: '',
+            subnetId: 1,
+            subnetPrefix: '2001:db8:1::/64',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    appName: 'frog',
+                    dataSource: 'api',
+                },
+            ],
+        }
+        component.host = host
+        fixture.detectChanges()
+
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(4)
+        expect(fieldsets[2].properties.innerText).toContain('No client classes configured.')
     })
 
     it('should display a message about no DHCP options configured', () => {
@@ -901,7 +958,7 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
-        expect(fieldsets[2].properties.innerText).toContain('No options configured.')
+        expect(fieldsets.length).toBe(4)
+        expect(fieldsets[3].properties.innerText).toContain('No options configured.')
     })
 })

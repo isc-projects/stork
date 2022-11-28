@@ -34,8 +34,8 @@ import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { ChipsModule } from 'primeng/chips'
-import { Button } from 'protractor'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -102,6 +102,7 @@ describe('HostsPageComponent', () => {
                 IdentifierComponent,
                 HostFormComponent,
                 DhcpClientClassSetFormComponent,
+                DhcpClientClassSetViewComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
                 DhcpOptionSetViewComponent,

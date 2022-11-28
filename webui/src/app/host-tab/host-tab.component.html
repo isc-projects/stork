@@ -1,11 +1,21 @@
 <p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <div *ngIf="host" class="mt-4 ml-2">
-    <div style="font-size: 1.2em; font-weight: bold; margin-left: 10px; color: #007ad9">
-        <i class="fa fa-laptop" style="padding-right: 10px"></i>
-        <span id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
+    <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
+        <div class="fa fa-laptop mr-2"></div>
+        <div id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
             [{{ host.id }}] Host in subnet {{ host.subnetPrefix }}
-        </span>
-        <span id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0"> [{{ host.id }}] Global host </span>
+        </div>
+        <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
+        <div>
+            <app-help-tip title="Host Reservation View">
+                Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
+                prefixes for a host must match in each DHCP server's configuration. If they are different, they are
+                treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are
+                displayed in one of the panels on this page. Client classes and DHCP options can differ in the
+                configurations of the DHCP servers owning the host. If this is the case, the client classes and/or DHCP
+                options are displayed individually for each server.
+            </app-help-tip>
+        </div>
     </div>
     <div *ngIf="erredApps && erredApps.length > 0">
         <p-messages id="erred-apps-message" [closable]="false" severity="warn">
@@ -29,7 +39,7 @@
             <ng-container
                 *ngFor="let reservations of [host.addressReservations, host.prefixReservations]; let i = index"
             >
-                <div *ngIf="reservations && reservations.length > 0" class="pt-4">
+                <div *ngIf="reservations && reservations.length > 0" class="mb-4">
                     <p-fieldset id="{{ ipReservationsStatics[i].id }}" legend="{{ ipReservationsStatics[i].legend }}">
                         <p-table [value]="reservations" dataKey="address">
                             <ng-template pTemplate="body" let-r let-expanded="expanded">
@@ -115,7 +125,7 @@
                     </p-fieldset>
                 </div>
             </ng-container>
-            <div *ngIf="host.hostname && host.hostname.length > 0">
+            <div *ngIf="host.hostname && host.hostname.length > 0" class="mb-4">
                 <p-fieldset id="non-ip-reservations-fieldset" legend="Non-IP Reservations">
                     <table style="width: 100%">
                         <tr>
@@ -125,7 +135,7 @@
                     </table>
                 </p-fieldset>
             </div>
-            <div class="mt-4">
+            <div class="mb-4">
                 <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
                     <p-table [value]="host.hostIdentifiers">
                         <ng-template pTemplate="body" let-i>
@@ -142,7 +152,7 @@
                     </p-table>
                 </p-fieldset>
             </div>
-            <div class="mt-4">
+            <div class="mb-4">
                 <p-fieldset id="apps-fieldset" legend="Kea Apps using the reservations">
                     <p-table [value]="host.localHosts">
                         <ng-template pTemplate="body" let-l>
@@ -160,58 +170,45 @@
                 </p-fieldset>
             </div>
             <ng-container *ngIf="host.localHosts?.length > 0">
-                <ng-container
-                    *ngIf="
-                        host.localHosts.length === 1 || !allDaemonsHaveEqualDhcpOptions();
-                        else allServerOptionsBlock
-                    "
-                >
-                    <div *ngFor="let localHost of host.localHosts" class="mt-4">
-                        <p-fieldset>
-                            <ng-template pTemplate="header">
-                                <span
-                                    >DHCP Options&nbsp;
-                                    <span class="font-normal"
-                                        >/&nbsp;
-                                        <a routerLink="/apps/kea/{{ localHost.appId }}">
-                                            {{ localHost.appName }}
-                                        </a>
-                                    </span>
-                                    <app-help-tip title="DHCP Option View">
-                                        This panel comprises DHCP options associated with the displayed host reservation
-                                        and associated with the server whose name is displayed in the panel title.
-                                        Typically, multiple DHCP servers using a host reservation have the same set of
-                                        options configured for it. However, in some cases, they can be configured
-                                        differently.
-                                    </app-help-tip>
-                                </span>
-                            </ng-template>
-                            <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
-                        </p-fieldset>
-                    </div>
-                </ng-container>
-                <ng-template #allServerOptionsBlock>
-                    <div class="mt-4">
-                        <p-fieldset>
-                            <ng-template pTemplate="header">
-                                <span
-                                    >DHCP Options&nbsp;
-                                    <span class="font-normal">/&nbsp; All Servers </span>
-                                    <app-help-tip title="DHCP Option View">
-                                        This panel comprises DHCP options associated with the displayed host reservation
-                                        and all servers sharing this reservation. It appears that all the servers have
-                                        the DHCP options configured equally. Stork also supports the cases when the same
-                                        host reservation is associated with different DHCP options for different DHCP
-                                        servers. In that case, the displayed options would have been split into multiple
-                                        panels, one for each server.
-                                    </app-help-tip>
-                                </span>
-                            </ng-template>
-                            <app-dhcp-option-set-view [options]="host.localHosts[0].options">
-                            </app-dhcp-option-set-view>
-                        </p-fieldset>
-                    </div>
-                </ng-template>
+                <div *ngFor="let localHost of host.localHosts; let i = index" class="mb-4">
+                    <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualClientClasses()">
+                        <ng-template pTemplate="header">
+                            <span
+                                >Client Classes&nbsp;/&nbsp;
+                                <a
+                                    *ngIf="!allDaemonsHaveEqualClientClasses(); else equalClientClassesBlock"
+                                    routerLink="/apps/kea/{{ localHost.appId }}"
+                                >
+                                    {{ localHost.appName }}
+                                </a>
+                                <ng-template #equalClientClassesBlock>
+                                    <span class="font-normal"> All Servers </span>
+                                </ng-template>
+                            </span>
+                        </ng-template>
+                        <app-dhcp-client-class-set-view [clientClasses]="localHost.clientClasses">
+                        </app-dhcp-client-class-set-view>
+                    </p-fieldset>
+                </div>
+                <div *ngFor="let localHost of host.localHosts; let i = index" class="mb-4">
+                    <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()">
+                        <ng-template pTemplate="header">
+                            <span
+                                >DHCP Options&nbsp;/&nbsp;
+                                <a
+                                    *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
+                                    routerLink="/apps/kea/{{ localHost.appId }}"
+                                >
+                                    {{ localHost.appName }}
+                                </a>
+                                <ng-template #equalDhcpOptionsBlock>
+                                    <span class="font-normal"> All Servers </span>
+                                </ng-template>
+                            </span>
+                        </ng-template>
+                        <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
+                    </p-fieldset>
+                </div>
             </ng-container>
         </div>
     </div>
