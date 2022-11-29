@@ -10,6 +10,8 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
+// Helper function to perform an error assertion.
+// It supports the testing (testing.T) and benchmark (testing.B) objects.
 func failOnError(testArg interface{}, err error) {
 	if t, ok := (testArg).(*testing.T); ok {
 		require.NoError(t, err)
@@ -22,8 +24,8 @@ func failOnError(testArg interface{}, err error) {
 	}
 }
 
-// Prepares unit test setup by re-creating the database schema and
-// returns pointer to the teardown function.
+// Creates unit test setup by re-creating the database schema and returns the
+// settings to connect to the created database as standard and maintenance user.
 func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSettings *dbops.DatabaseSettings, err error) {
 	// Default configuration
 	flags := &dbops.DatabaseCLIFlagsWithMaintenance{
@@ -76,7 +78,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 		return
 	}
 
-	// Create an instance of the test database.
+	// Create the database settings with a standard user credentials.
 	settings, err = flags.ConvertToDatabaseSettings()
 	if err != nil {
 		return
@@ -88,6 +90,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	return settings, maintenanceSettings, nil
 }
 
+// Returns a database connection object and teardown function.
 func prepareDBInstance(settings *dbops.DatabaseSettings) (*dbops.PgDB, func(), error) {
 	db, err := dbops.NewPgDBConn(settings)
 	if err != nil {
