@@ -192,7 +192,7 @@ func TestRunCertImport(t *testing.T) {
 
 // Check if db-create command can be invoked.
 func TestRunDBCreate(t *testing.T) {
-	_, settings, teardown := dbtest.SetupDatabaseTestCase(t)
+	_, settings, teardown := dbtest.SetupDatabaseTestCaseAsMaintenance(t)
 	defer teardown()
 
 	// Generate unique database name and use the same name for the user.

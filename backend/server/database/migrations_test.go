@@ -121,7 +121,7 @@ func TestCurrentVersion(t *testing.T) {
 // this database using generated password.
 func TestCreateDatabase(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCaseAsMaintenance(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
@@ -161,7 +161,7 @@ func TestCreateDatabase(t *testing.T) {
 // Test that the pgcrypto database extension is successfully created.
 func TestCreateCryptoExtension(t *testing.T) {
 	// Connect to the database with full privileges.
-	db, originalSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, originalSettings, teardown := dbtest.SetupDatabaseTestCaseAsMaintenance(t)
 	defer teardown()
 
 	// Create a database and the user with the same name.
