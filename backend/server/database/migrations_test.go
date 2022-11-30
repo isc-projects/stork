@@ -240,7 +240,7 @@ func TestMigration39DecimalToBigint(t *testing.T) {
 // Test that the 13 migration passes if some shared networks exist.
 func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	// Arrange
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	dbops.Migrate(db, "down", "12")

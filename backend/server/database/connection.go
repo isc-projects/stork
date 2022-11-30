@@ -35,16 +35,14 @@ type TxI interface {
 type DBLogger struct{}
 
 // The type used to define context keys for database handling.
-type DBContextKeyword string
+type contextKeywordDB string
 
-const suppressQueryLoggingKeyword DBContextKeyword = "suppress-query-logging"
+const suppressQueryLoggingKeyword contextKeywordDB = "suppress-query-logging"
 
 // Hook run before SQL query execution.
 func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
-	if suppress := c.Value(suppressQueryLoggingKeyword); suppress != nil {
-		if suppressValue, ok := suppress.(bool); ok && suppressValue {
-			return c, nil
-		}
+	if HasSuppressedQueryLogging(c) {
+		return c, nil
 	}
 
 	// When making queries on the system_user table we want to make sure that
@@ -170,6 +168,15 @@ func NewApplicationDatabaseConn(settings *DatabaseSettings) (*PgDB, error) {
 	}
 
 	return db, nil
+}
+
+// Checks if the query logging suppression is enabled.
+func HasSuppressedQueryLogging(ctx context.Context) bool {
+	value := ctx.Value(suppressQueryLoggingKeyword)
+	if isSuppressed, ok := value.(bool); ok {
+		return isSuppressed
+	}
+	return false
 }
 
 // Returns a database instance with a changed context to suppress the SQL

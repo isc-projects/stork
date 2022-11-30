@@ -70,13 +70,30 @@ func TestNewApplicationDatabaseConn(t *testing.T) {
 
 	// Act
 	db, dbErr := dbops.NewApplicationDatabaseConn(settings)
+	require.NoError(t, dbErr)
 	defer db.Close()
 	version, versionErr := dbops.CurrentVersion(db)
 
 	// Assert
 	require.NoError(t, tossErr)
-	require.NoError(t, dbErr)
 	require.NotNil(t, db)
 	require.NoError(t, versionErr)
 	require.NotZero(t, version)
+}
+
+// Test that the suppress query logging function returns a valid DB with a
+// context containing the disabling logging keyword.
+func TestSuppressQueryLogging(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	before := dbops.HasSuppressedQueryLogging(db.Context())
+	db = dbops.SuppressQueryLogging(db)
+	after := dbops.HasSuppressedQueryLogging(db.Context())
+
+	// Assert
+	require.False(t, before)
+	require.True(t, after)
 }
