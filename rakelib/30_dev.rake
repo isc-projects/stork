@@ -481,6 +481,7 @@ namespace :db do
         See db:setup_envvars task for more options.'
     task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
         if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
+            sh TOOL_BINARY_FILE, "db-create"
             sh TOOL_BINARY_FILE, "db-init"
         else
             puts "DB maintenance suppressed (creating)"

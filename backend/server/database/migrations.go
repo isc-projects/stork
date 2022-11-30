@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/migrations/v8"
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	// TODO: document why it is blank imported.
 	_ "isc.org/stork/server/database/migrations"
@@ -129,8 +130,13 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	// be done in a transaction.
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
 	if err != nil {
-		err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
-		return
+		var pgErr pg.Error
+		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
+			log.Infof("Database '%s' already exists", dbName)
+		} else {
+			err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
+			return
+		}
 	}
 
 	// Other things can be done in a transaction.
@@ -142,8 +148,18 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 				return
 			}
 		}
+		// Check if the user already exists.
+		var hasUserInt int
+		if _, err = tx.Query(pg.Scan(&hasUserInt), fmt.Sprintf("SELECT 1 FROM pg_roles WHERE rolname='%s';", userName)); err != nil {
+			err = errors.Wrapf(err, `problem with checking if the user "%s" exists`, userName)
+			return
+		}
+		hasUser := hasUserInt == 1
+
 		// Re-create the user.
-		if _, err = tx.Exec(fmt.Sprintf("CREATE USER %s;", userName)); err != nil {
+		if hasUser {
+			log.Infof("User '%s' already exists", userName)
+		} else if _, err = tx.Exec(fmt.Sprintf("CREATE USER %s;", userName)); err != nil {
 			err = errors.Wrapf(err, `problem creating the user "%s"`, userName)
 			return
 		}
