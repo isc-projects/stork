@@ -70,13 +70,15 @@ func TestNewApplicationDatabaseConn(t *testing.T) {
 
 	// Act
 	db, dbErr := dbops.NewApplicationDatabaseConn(settings)
-	require.NoError(t, dbErr)
-	defer db.Close()
-	version, versionErr := dbops.CurrentVersion(db)
 
 	// Assert
+	require.NoError(t, dbErr)
+	db.Close()
+
 	require.NoError(t, tossErr)
 	require.NotNil(t, db)
+
+	version, versionErr := dbops.CurrentVersion(db)
 	require.NoError(t, versionErr)
 	require.NotZero(t, version)
 }
