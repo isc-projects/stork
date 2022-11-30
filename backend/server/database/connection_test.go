@@ -59,3 +59,24 @@ func TestNoRollbackOnNoError(t *testing.T) {
 	dbops.RollbackOnError(tx, nil)
 	require.False(t, tx.rollbackCalled)
 }
+
+// Test that the application database connection is created properly
+// and database is migrated to the latest version.
+func TestNewApplicationDatabaseConn(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
+	tossErr := dbops.Toss(db)
+	teardown()
+
+	// Act
+	db, dbErr := dbops.NewApplicationDatabaseConn(settings)
+	defer db.Close()
+	version, versionErr := dbops.CurrentVersion(db)
+
+	// Assert
+	require.NoError(t, tossErr)
+	require.NoError(t, dbErr)
+	require.NotNil(t, db)
+	require.NoError(t, versionErr)
+	require.NotZero(t, version)
+}

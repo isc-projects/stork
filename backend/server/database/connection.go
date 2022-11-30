@@ -144,7 +144,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 }
 
 // Migrate database if necessary to the latest schema version.
-func NewApplicationDatabase(settings *DatabaseSettings) (*PgDB, error) {
+func NewApplicationDatabaseConn(settings *DatabaseSettings) (*PgDB, error) {
 	db, err := NewPgDBConn(settings)
 	if err != nil {
 		return nil, err

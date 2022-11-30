@@ -199,7 +199,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 
 	// setup database connection
-	ss.DB, err = dbops.NewApplicationDatabase(&ss.DBSettings)
+	ss.DB, err = dbops.NewApplicationDatabaseConn(&ss.DBSettings)
 	if err != nil {
 		return err
 	}
