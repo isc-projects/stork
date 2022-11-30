@@ -227,16 +227,17 @@ func HexToBytes(hexString string) []byte {
 // an error.
 func GetSecretInTerminal(prompt string) (string, error) {
 	// Prompt the user for a secret
-	if !term.IsTerminal(0) {
+	descriptor := int(os.Stdin.Fd())
+	if !term.IsTerminal(descriptor) {
 		return "", errors.Errorf("Not running in a terminal")
 	}
 
 	fmt.Print(prompt)
-	pass, err := term.ReadPassword(0)
+	pass, err := term.ReadPassword(descriptor)
 	fmt.Print("\n")
 
 	if err != nil {
-		err = errors.Wrap(err, "cannot read password for the 0 descriptor")
+		err = errors.Wrapf(err, "cannot read password for the '%d' descriptor", descriptor)
 		return "", err
 	}
 	return string(pass), nil
