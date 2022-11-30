@@ -12,6 +12,9 @@ variables:
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
   SUPPRESS_DB_MAINTENANCE: "true"
+  STORK_DATABASE_MAINTENANCE_NAME: "storktest"
+  STORK_DATABASE_MAINTENANCE_USER_NAME: "storktest"
+  STORK_DATABASE_MAINTENANCE_PASSWORD: "storktest"
 
   # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
