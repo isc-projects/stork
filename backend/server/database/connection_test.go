@@ -73,7 +73,7 @@ func TestNewApplicationDatabaseConn(t *testing.T) {
 
 	// Assert
 	require.NoError(t, dbErr)
-	db.Close()
+	defer db.Close()
 
 	require.NoError(t, tossErr)
 	require.NotNil(t, db)

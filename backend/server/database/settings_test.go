@@ -865,3 +865,13 @@ func TestConvertMaintenanceDatabaseCLIFlagsToDefinitions(t *testing.T) {
 
 	require.EqualValues(t, "postgres", definitionMap["db-maintenance-user"].Default)
 }
+
+// Test that the string is converted into the logging query preset properly.
+func TestNewLoggingQueryPreset(t *testing.T) {
+	require.EqualValues(t, LoggingQueryPresetAll, newLoggingQueryPreset("all"))
+	require.EqualValues(t, LoggingQueryPresetRuntime, newLoggingQueryPreset("run"))
+	require.EqualValues(t, LoggingQueryPresetNone, newLoggingQueryPreset("none"))
+	require.EqualValues(t, LoggingQueryPresetNone, newLoggingQueryPreset(""))
+	require.EqualValues(t, LoggingQueryPresetNone, newLoggingQueryPreset("nil"))
+	require.EqualValues(t, LoggingQueryPresetNone, newLoggingQueryPreset("false"))
+}

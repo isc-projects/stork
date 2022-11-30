@@ -36,6 +36,18 @@ const (
 	LoggingQueryPresetNone LoggingQueryPreset = "none"
 )
 
+// Converts a raw string into the logging query preset enum.
+func newLoggingQueryPreset(raw string) LoggingQueryPreset {
+	switch raw {
+	case LoggingQueryPresetAll:
+		return LoggingQueryPresetAll
+	case LoggingQueryPresetRuntime:
+		return LoggingQueryPresetRuntime
+	default:
+		return LoggingQueryPresetNone
+	}
+}
+
 // Enables singular SQL table names for go-pg ORM.
 func init() {
 	orm.SetTableNameInflector(func(s string) string {
@@ -382,7 +394,7 @@ func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error
 		SSLCert:     s.SSLCert,
 		SSLKey:      s.SSLKey,
 		SSLRootCert: s.SSLRootCert,
-		TraceSQL:    LoggingQueryPreset(s.TraceSQL),
+		TraceSQL:    newLoggingQueryPreset(s.TraceSQL),
 	}
 
 	if s.URL != "" {
