@@ -233,10 +233,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
 			for _, c := range clientClasses {
-				// Avoid duplicated class names.
-				if _, ok := clientClassesMap[c.Name]; !ok {
-					clientClassesMap[c.Name] = true
-				}
+				clientClassesMap[c.Name] = true
 			}
 		}
 	}
