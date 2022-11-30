@@ -2,14 +2,13 @@ package dbops
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	storkutil "isc.org/stork/util"
 )
@@ -97,9 +96,14 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		if err == nil {
 			break
 		}
+		err = errors.Wrapf(err, "unable to connect to the database using provided settings")
+
 		if errors.As(err, &pgError) {
 			if pgError.Field('R') == "auth_failed" {
-				pgParams.Password = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
+				pgParams.Password, err = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
+				if err != nil {
+					break
+				}
 				continue
 			} else if pgError.Field('S') == "FATAL" {
 				break
@@ -109,7 +113,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "unable to connect to the database using provided settings")
+		return nil, err
 	}
 
 	// Check that a database version is supported

@@ -146,12 +146,13 @@ func TestCreateDatabase(t *testing.T) {
 	require.NoError(t, err)
 
 	// Attempt go create the database without the force flag should not
-	// fail because the database already exists.
-	err = dbops.CreateDatabase(db, dbName, dbName, "pass", false)
+	// fail because the database already exists. The password is updated.
+	err = dbops.CreateDatabase(db, dbName, dbName, "pass3", false)
 	require.NoError(t, err)
 
 	// Connect to the database again using the second password.
-	opts.Password = "pass2"
+	opts.Password = "pass3"
+
 	db2, err = dbops.NewPgDBConn(&opts)
 	require.NoError(t, err)
 	require.NotNil(t, db2)

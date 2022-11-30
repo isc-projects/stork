@@ -223,18 +223,23 @@ func HexToBytes(hexString string) []byte {
 }
 
 // Prompts for secret in a terminal. The typed characters are not printed to
-// standard output. If a terminal is unavailable (no TTY attached), it causes
-// panic.
-func GetSecretInTerminal(prompt string) string {
+// standard output. If a terminal is unavailable (no TTY attached), returns
+// an error.
+func GetSecretInTerminal(prompt string) (string, error) {
 	// Prompt the user for a secret
+	if !term.IsTerminal(0) {
+		return "", errors.Errorf("Not running in a terminal")
+	}
+
 	fmt.Print(prompt)
 	pass, err := term.ReadPassword(0)
 	fmt.Print("\n")
 
 	if err != nil {
-		log.Fatal(err.Error())
+		err = errors.Wrap(err, "cannot read password for the 0 descriptor")
+		return "", err
 	}
-	return string(pass)
+	return string(pass), nil
 }
 
 // Read a file and resolve all include statements.

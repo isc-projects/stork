@@ -39,9 +39,9 @@ const (
 // Converts a raw string into the logging query preset enum.
 func newLoggingQueryPreset(raw string) LoggingQueryPreset {
 	switch raw {
-	case LoggingQueryPresetAll:
+	case string(LoggingQueryPresetAll):
 		return LoggingQueryPresetAll
-	case LoggingQueryPresetRuntime:
+	case string(LoggingQueryPresetRuntime):
 		return LoggingQueryPresetRuntime
 	default:
 		return LoggingQueryPresetNone
