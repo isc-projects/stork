@@ -481,28 +481,16 @@ namespace :db do
     end
 
     desc 'Migrate (and create) database to the newest version
-        SUPPRESS_DB_MAINTENANCE - do not run creation DB operation - default: false
         See db:setup_envvars task for more options.'
     task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
-        if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
-            sh TOOL_BINARY_FILE, "db-create"
-            sh TOOL_BINARY_FILE, "db-init"
-        else
-            puts "DB maintenance suppressed (creating)"
-        end
-
+        sh TOOL_BINARY_FILE, "db-create"
+        sh TOOL_BINARY_FILE, "db-init"
         sh TOOL_BINARY_FILE, "db-up"
     end
 
     desc "Remove remaining test databases and users
-        SUPPRESS_DB_MAINTENANCE - do not run this stage (no removing) - default: false
         See db:setup_envvars task for more options."
     task :remove_remaining => [PSQL, DROPUSER, DROPDB, :setup_envvars] do
-        if ENV["SUPPRESS_DB_MAINTENANCE"] == "true"
-            puts "DB maintenance suppressed (removing)"
-            next
-        end
-
         dbhost = ENV["STORK_DATABASE_HOST"]
         dbuser = ENV["STORK_DATABASE_USER_NAME"]
         dbport = ENV["STORK_DATABASE_PORT"]
