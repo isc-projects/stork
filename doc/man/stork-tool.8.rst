@@ -237,7 +237,7 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    Specifies the location of the root certificate file used to verify the database server's certificate. ``[$STORK_DATABASE_SSLROOTCERT]``
 
 ``--db-trace-queries=``
-   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, or ``all`` - both migrations and runtime. ``[$STORK_DATABASE_TRACE_QUERIES]``
+   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, ``all`` - both migrations and runtime, or ``none`` - disable the query logging. ``[$STORK_DATABASE_TRACE_QUERIES]``
 
 ``-h|--help``
    Shows a help message.
