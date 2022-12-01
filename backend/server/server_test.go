@@ -35,7 +35,7 @@ func getExpectedSwitches() []string {
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
-		"--env-file", "--use-env-file",
+		"--env-file", "--use-env-file", "--db-password",
 	}
 }
 
