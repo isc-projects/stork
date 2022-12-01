@@ -21,7 +21,7 @@ import (
 const passwordGenRandomLength = 24
 
 // Establish connection to a database with opts from command line.
-func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
+func getDBConn(rawFlags *cli.Context) (*dbops.PgDB, func()) {
 	flags := &dbops.DatabaseCLIFlags{}
 	flags.ReadFromCLI(rawFlags)
 	settings, err := flags.ConvertToDatabaseSettings()
@@ -39,7 +39,7 @@ func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 	if db == nil {
 		log.Fatal("Unable to create database instance")
 	}
-	return db
+	return db, func() { db.Close() }
 }
 
 // Execute db-create command. It prepares new database for the Stork
@@ -86,6 +86,7 @@ func runDBCreate(context *cli.Context) {
 	// specified password.
 	err = dbops.CreateDatabase(db, flags.DBName, flags.User, flags.Password, context.Bool("force"))
 	if err != nil {
+		db.Close()
 		log.Fatalf("%s", err)
 	}
 
@@ -103,6 +104,7 @@ func runDBCreate(context *cli.Context) {
 	if err != nil {
 		log.WithError(err).Fatal("Unexpected error")
 	}
+	defer db.Close()
 
 	// Try to create the pgcrypto extension.
 	err = dbops.CreateExtension(db, "pgcrypto")
@@ -153,10 +155,10 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 		log.Infof("SQL queries tracing set to %s", traceSQL)
 	}
 
-	db := getDBConn(settings)
+	db, teardown := getDBConn(settings)
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
-	db.Close()
+	teardown()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -175,14 +177,16 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 
 // Execute cert export command.
 func runCertExport(settings *cli.Context) error {
-	db := getDBConn(settings)
+	db, teardown := getDBConn(settings)
+	defer teardown()
 
 	return certs.ExportSecret(db, settings.String("object"), settings.String("file"))
 }
 
 // Execute cert import command.
 func runCertImport(settings *cli.Context) error {
-	db := getDBConn(settings)
+	db, teardown := getDBConn(settings)
+	defer teardown()
 
 	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
