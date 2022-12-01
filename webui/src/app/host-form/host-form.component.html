@@ -212,11 +212,17 @@
                                     class="col-offset-3 col-9 pt-0"
                                 >
                                     <small class="p-error block">
-                                        {{
-                                            ipGroup.get('inputNA').hasError('ip-subnet-range')
-                                                ? ipGroup.get('inputNA').errors['ip-subnet-range']
-                                                : 'Please specify a valid IPv6 address.'
-                                        }}
+                                        <ng-container
+                                            *ngIf="
+                                                ipGroup.get('inputNA').hasError('ip-subnet-range');
+                                                else elseInputNAHasErrorBlock
+                                            "
+                                        >
+                                            {{ ipGroup.get('inputNA').errors['ip-subnet-range'] }}
+                                        </ng-container>
+                                        <ng-template #elseInputNAHasErrorBlock>
+                                            <ng-container>Please specify a valid IPv6 address.</ng-container>
+                                        </ng-template>
                                     </small>
                                 </div>
                             </ng-container>

@@ -72,7 +72,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
         }
         this.sortedClientClasses = clientClasses
         this.sortedClientClasses.sort((c1, c2) => {
-            return c1.name > c2.name ? 1 : c1.name === c2.name ? 0 : -1
+            return c1.name.localeCompare(c2.name)
         })
     }
 
@@ -89,7 +89,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
      */
     isUsed(clientClass: string): boolean {
         const value = this.classFormControl.value as Array<string>
-        return value && value.indexOf(clientClass) >= 0 ? true : false
+        return !!value && value.includes(clientClass)
     }
 
     /**
@@ -139,7 +139,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
         let selectedClasses: string[] = []
         for (let clientClass of value) {
             if (
-                this.sortedClientClasses.findIndex((c) => c.name === clientClass) >= 0 &&
+                this.sortedClientClasses.some((c) => c.name === clientClass) &&
                 selectedClasses.indexOf(clientClass) < 0
             ) {
                 selectedClasses.push(clientClass)

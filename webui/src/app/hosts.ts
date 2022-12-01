@@ -1,7 +1,7 @@
 import { Host } from './backend'
 
 /**
- * Utility function checking if the are differences between
+ * Utility function checking if there are differences between
  * configurable local host data in the host.
  *
  * The local host holds the data specific to the DHCP servers
@@ -25,10 +25,10 @@ export function hasDifferentLocalHostData(host: Host): boolean {
  * otherwise.
  */
 export function hasDifferentLocalHostOptions(host: Host): boolean {
-    return host.localHosts?.length > 0 &&
+    return (
+        !!(host.localHosts?.length > 0) &&
         host.localHosts.slice(1).some((lh) => lh.optionsHash !== host.localHosts[0].optionsHash)
-        ? true
-        : false
+    )
 }
 
 /**
@@ -40,10 +40,14 @@ export function hasDifferentLocalHostOptions(host: Host): boolean {
  * otherwise.
  */
 export function hasDifferentLocalHostClientClasses(host: Host): boolean {
-    return host.localHosts?.length > 0 &&
+    return (
+        !!(host.localHosts?.length > 0) &&
         host.localHosts
             .slice(1)
-            .some((lh) => JSON.stringify(lh.clientClasses) !== JSON.stringify(host.localHosts[0].clientClasses))
-        ? true
-        : false
+            .some(
+                (lh) =>
+                    JSON.stringify(lh.clientClasses?.sort()) !==
+                    JSON.stringify(host.localHosts[0].clientClasses?.sort())
+            )
+    )
 }

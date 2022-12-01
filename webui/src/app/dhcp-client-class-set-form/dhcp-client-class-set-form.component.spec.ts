@@ -56,8 +56,8 @@ describe('DhcpClientClassSetFormComponent', () => {
 
         expect(component.sortedClientClasses).toBeTruthy()
         expect(component.sortedClientClasses.length).toBe(3)
-        expect(component.sortedClientClasses[0].name).toBe('DROP')
-        expect(component.sortedClientClasses[1].name).toBe('cable-modem')
+        expect(component.sortedClientClasses[0].name).toBe('cable-modem')
+        expect(component.sortedClientClasses[1].name).toBe('DROP')
         expect(component.sortedClientClasses[2].name).toBe('router')
     })
 

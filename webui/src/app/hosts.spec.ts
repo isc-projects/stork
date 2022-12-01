@@ -91,6 +91,28 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
+    it('detects no differences when client classes are in different order', () => {
+        const host: Host = {
+            localHosts: [
+                {
+                    optionsHash: null,
+                    clientClasses: ['foo', 'bar', 'baz'],
+                },
+                {
+                    optionsHash: null,
+                    clientClasses: ['foo', 'baz', 'bar'],
+                },
+                {
+                    optionsHash: null,
+                    clientClasses: ['baz', 'bar', 'foo'],
+                },
+            ],
+        }
+        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
+        expect(hasDifferentLocalHostData(host)).toBeFalse()
+    })
+
     it('detects no differences for all null client', () => {
         const host: Host = {
             localHosts: [
