@@ -415,7 +415,7 @@ func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error
 		// Parse URL.
 		opts, err := pg.ParseURL(s.URL)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid database URL")
+			return nil, errors.Wrapf(err, "invalid database URL: %s", s.URL)
 		}
 
 		// Parse host and port.
@@ -436,9 +436,9 @@ func (s *DatabaseCLIFlags) ConvertToDatabaseSettings() (*DatabaseSettings, error
 		settings.Password = opts.Password
 		settings.User = opts.User
 
-		// The sslmode parameter is supported by the pg library but it's not permitted.
+		// The sslmode parameter is supported by the go-pg library but it's not permitted by Stork.
 		// The sslmode must be provided using the dedicated flags because
-		// the created TLS object is incomplete, and the exact SSL mode
+		// the TLS object created by go-pg is incomplete, and the exact SSL mode
 		// value is lost.
 	}
 
