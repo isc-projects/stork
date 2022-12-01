@@ -75,7 +75,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-server.8.rst"))
 }
 
-// This test checks if stork-agent --version (and -v) report expected version.
+// This test checks if stork-server --version (and -v) report expected version.
 func TestCommandLineVersion(t *testing.T) {
 	// Let's repeat the test twice (for -v and then for --version)
 	for _, opt := range []string{"-v", "--version"} {

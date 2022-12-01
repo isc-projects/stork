@@ -85,14 +85,12 @@ func runDBCreate(context *cli.Context) {
 	// Try to create the database and the user with access using
 	// specified password.
 	err = dbops.CreateDatabase(db, flags.DBName, flags.User, flags.Password, context.Bool("force"))
-	if err != nil {
-		db.Close()
-		log.Fatalf("%s", err)
-	}
-
 	// Close the current connection. We will have to connect to the
 	// newly created database instead to create the pgcrypto extension.
 	db.Close()
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 
 	// Re-use all admin credentials but connect to the new database.
 	settings, err = flags.ConvertToDatabaseSettingsAsMaintenance()

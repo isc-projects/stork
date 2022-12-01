@@ -113,12 +113,14 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
+		db.Close()
 		return nil, err
 	}
 
 	// Check that a database version is supported
 	version, err := GetDatabaseServerVersion(db)
 	if err != nil {
+		db.Close()
 		return nil, err
 	}
 
@@ -161,6 +163,7 @@ func NewApplicationDatabaseConn(settings *DatabaseSettings) (*PgDB, error) {
 	oldVer, newVer, err := MigrateToLatest(migrateDB)
 	switch {
 	case err != nil:
+		db.Close()
 		return nil, err
 	case oldVer != newVer:
 		log.WithFields(log.Fields{
