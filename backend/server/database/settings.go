@@ -461,7 +461,7 @@ func (s *DatabaseCLIFlags) ReadFromCLI(lookup CLILookup) {
 	readFromCLI(s, lookup)
 }
 
-// The database CLI flags are extended with the maintenance credentials.
+// The database CLI flags extended with the maintenance credentials.
 // The maintenance access should be used to perform operations outside the
 // standard database as creating or removing databases and users, creating
 // extensions, or granting privileges.
