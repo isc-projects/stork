@@ -64,6 +64,10 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	// Test database name is usually storktest + big random number e.g.: storktest9817239871871478571.
 	templateDBName := flags.DBName
 
+	if flags.MaintenanceDBName == templateDBName {
+		log.Warn("The maintenance database should not be the same as the template database; otherwise, the source database may report that other users are accessing it.")
+	}
+
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
