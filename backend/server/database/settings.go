@@ -332,28 +332,23 @@ func convertToCLIFlagDefinitions(obj any) []*CLIFlagDefinition {
 
 		flag.Kind = field.Type.Kind()
 
-		value, ok := field.Tag.Lookup("short")
-		if ok {
+		if value, ok := field.Tag.Lookup("short"); ok {
 			flag.Short = value
 		}
 
-		value, ok = field.Tag.Lookup("long")
-		if ok {
+		if value, ok := field.Tag.Lookup("long"); ok {
 			flag.Long = value
 		}
 
-		value, ok = field.Tag.Lookup("description")
-		if ok {
+		if value, ok := field.Tag.Lookup("description"); ok {
 			flag.Description = value
 		}
 
-		value, ok = field.Tag.Lookup("env")
-		if ok {
+		if value, ok := field.Tag.Lookup("env"); ok {
 			flag.EnvironmentVariable = value
 		}
 
-		value, ok = field.Tag.Lookup("default")
-		if ok {
+		if value, ok := field.Tag.Lookup("default"); ok {
 			flag.Default = value
 		}
 
