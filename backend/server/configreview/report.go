@@ -7,7 +7,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Represents a single config review report. It may contains a description
+// Represents a single config review report. It may contain a description
 // of one issue found during a configuration review. The daemonID field
 // comprises an ID of the daemon for which the review is conducted.
 // The refDaemonIDs slice contain IDs of the daemons referenced in the
@@ -55,8 +55,9 @@ func NewReport(ctx *ReviewContext, content string) *IntermediateReport {
 
 // Creates a new empty report. This report has nil content that indicates a
 // given checker found no issues.
-// The checkers don't create this report directly. They return a report object
-// only if they have detection. The empty report is created internally by the dispatcher.
+// The checkers don't create this report directly. The empty report is
+// created internally by the dispatcher. The checkers return reports
+// only when they find issues.
 func newEmptyReport(ctx *ReviewContext) (*Report, error) {
 	// Ensure that the subject daemon has non-zero ID.
 	if ctx.subjectDaemon.ID == 0 {

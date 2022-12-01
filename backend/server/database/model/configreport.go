@@ -112,8 +112,8 @@ func AddConfigReport(dbi dbops.DBI, configReport *ConfigReport) error {
 // 0 to fetch all reports for a daemon. Besides returning the config
 // reports this function also returns the total number of reports for
 // the daemon (useful when paging the results) and an error.
-// If the onlyIssues flag is provided, returns the reports containing a
-// detected issues. The reports that detected nothing are skipped.
+// If the onlyIssues flag is true, it returns the reports containing
+// actual issues. The reports that detected no issues are not returned.
 func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64, onlyIssues bool) ([]ConfigReport, int64, error) {
 	var configReports []ConfigReport
 	q := db.Model(&configReports).
@@ -161,7 +161,7 @@ func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
 // to the daemons.
 func (r *ConfigReport) AfterSelect(ctx context.Context) error {
 	if !r.IsIssueFound() {
-		// No issue report has no content.
+		// A report about finding no issues has no content.
 		return nil
 	}
 

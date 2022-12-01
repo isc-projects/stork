@@ -1,7 +1,7 @@
 * 257 [func] slawek
 
     The configuration review checkers generate the reports even if they find no
-    issues. It enables browsing a list of checkers running for a given daemon.
+    issues. A user can see all checkers executed for a daemon.
     (Gitlab #816)
 
 * 256 [func] marcin

@@ -671,7 +671,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, "name 2", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", *okRsp.Payload.Items[0].Content)
 
-	// Try to fetch the config report for the second daemon.
+	// Try to fetch the config reports for the second daemon.
 	params = services.GetDaemonConfigReportsParams{
 		ID: app.Daemons[1].ID,
 	}

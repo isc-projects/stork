@@ -434,10 +434,10 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, d
 				}
 
 				if report == nil {
-					// Create an success report.
+					// Create a success report.
 					report, err = newEmptyReport(ctx)
 					if err != nil {
-						log.Errorf("Malformed report created for none issue")
+						log.Errorf("Malformed empty report created for a successful config review")
 					}
 				}
 
