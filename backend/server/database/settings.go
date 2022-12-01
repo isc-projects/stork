@@ -235,7 +235,7 @@ func iterateOverFields(obj any, f func(field reflect.StructField, valueField ref
 				})
 			}
 
-			// Not call the callback for the nested field.
+			// Not call the callback for the nested structs.
 			continue
 		}
 
@@ -277,7 +277,7 @@ func setFieldsBasedOnTags(obj any, tagName string, valueLookup func(string) (str
 			}
 			valueField.SetInt(envValueInt)
 		default:
-			// Skip unsupported fields.
+			// Skip an unsupported field.
 		}
 	})
 }
