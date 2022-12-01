@@ -93,7 +93,7 @@ func runDBCreate(context *cli.Context) {
 	}
 
 	// Re-use all admin credentials but connect to the new database.
-	settings, err = flags.ConvertToDatabaseSettingsAsMaintenance()
+	settings, err = flags.ConvertToDatabaseSettingsWithMaintenanceCredentials()
 	if err != nil {
 		log.WithError(err).Fatal("Invalid maintenance database settings")
 	}

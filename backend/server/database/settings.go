@@ -487,10 +487,9 @@ func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings()
 	return settings, nil
 }
 
-// Converts the values of CLI flags to the database settings. They use the
-// maintenance credentials. The maintenance user will connect to the standard
-// database.
-func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsAsMaintenance() (*DatabaseSettings, error) {
+// Returns the database settings needed to connect to the standard database
+// using the maintenance credentials. It is needed to install extensions.
+func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsWithMaintenanceCredentials() (*DatabaseSettings, error) {
 	settings, err := s.ConvertToMaintenanceDatabaseSettings()
 	if err != nil {
 		return nil, err

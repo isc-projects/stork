@@ -121,7 +121,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 // returns pointer to the teardown function. The specified argument
 // must be of a *testing.T or *testing.B type. The database uses the maintenance
 // credentials.
-func SetupDatabaseTestCaseAsMaintenance(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
+func SetupDatabaseTestCaseWithMaintenanceCredentials(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	_, settings, err := createDatabaseTestCase()
 	failOnError(testArg, err)
 	db, teardown, err := prepareDBInstance(settings)

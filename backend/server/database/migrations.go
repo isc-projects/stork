@@ -100,8 +100,8 @@ func MigrateToLatest(db *PgDB) (oldVersion, newVersion int64, err error) {
 
 // Checks what is the highest available schema version.
 func AvailableVersion() int64 {
-	if regm := migrations.RegisteredMigrations(); len(regm) > 0 {
-		return regm[len(regm)-1].Version
+	if migrations := migrations.RegisteredMigrations(); len(migrations) > 0 {
+		return migrations[len(migrations)-1].Version
 	}
 
 	return 0

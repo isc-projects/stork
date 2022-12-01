@@ -664,7 +664,7 @@ func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.
 
 // Test that the CLI flags that contains the maintenance credentials are
 // converted to the standard database settings with a maintenance user properly.
-func TestConvertDatabaseCLIFlagsToSettingsAsMaintenance(t *testing.T) {
+func TestConvertDatabaseCLIFlagsToSettingsWithMaintenanceCredentials(t *testing.T) {
 	// Arrange
 	cliFlags := &DatabaseCLIFlagsWithMaintenance{
 		DatabaseCLIFlags: DatabaseCLIFlags{
@@ -685,7 +685,7 @@ func TestConvertDatabaseCLIFlagsToSettingsAsMaintenance(t *testing.T) {
 	}
 
 	// Act
-	settings, err := cliFlags.ConvertToDatabaseSettingsAsMaintenance()
+	settings, err := cliFlags.ConvertToDatabaseSettingsWithMaintenanceCredentials()
 
 	// Assert
 	require.NoError(t, err)
