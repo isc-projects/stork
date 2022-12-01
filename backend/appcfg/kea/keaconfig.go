@@ -534,3 +534,10 @@ func (c *Map) GetClientClasses() (clientClasses []ClientClass) {
 	}
 	return
 }
+
+// Deletes client classes from the configuration.
+func (c *Map) DeleteClientClasses() {
+	if node, ok := c.getRootNode(); ok {
+		delete(node, "client-classes")
+	}
+}

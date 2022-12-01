@@ -960,3 +960,45 @@ func TestGetClientClasses(t *testing.T) {
 	clientClasses := cfg.GetClientClasses()
 	require.Len(t, clientClasses, 2)
 }
+
+// Test that empty set of client classes is returned when there is
+// no client-classes entry in the configuration.
+func TestGetClientClassesNonExisting(t *testing.T) {
+	configStr := `{
+		"Dhcp4": {
+		}
+	}`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	clientClasses := cfg.GetClientClasses()
+	require.Empty(t, clientClasses)
+}
+
+// Test that client classes can be deleted from the configuration.
+func TestDeleteClientClasses(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "client-classes": [
+				{
+					"name": "foo"
+				},
+				{
+					"name": "bar"
+				}
+			]
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	// Delete client classes multiple times and make sure they
+	// are gone and there is no panic.
+	for i := 0; i < 2; i++ {
+		cfg.DeleteClientClasses()
+		clientClasses := cfg.GetClientClasses()
+		require.Empty(t, clientClasses)
+	}
+}
