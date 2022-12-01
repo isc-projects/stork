@@ -536,13 +536,6 @@ namespace :db do
             "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts
         ])
     end
-
-    desc "Initialize stork user and database. 
-        See db:setup_envvars task for more options."
-    task :init => [:setup_envvars, TOOL_BINARY_FILE] do
-        sh TOOL_BINARY_FILE, "db-create"
-        sh TOOL_BINARY_FILE, "db-init"
-    end
 end
 
 
