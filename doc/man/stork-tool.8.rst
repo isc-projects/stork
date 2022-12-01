@@ -116,7 +116,7 @@ Options specific to ``db-create`` command:
    Database administrator user name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_USER_NAME]``
 
 ``--db-maintenance-password``
-   Database administrator password; if not specified, the user will be prompted for the password.
+   Database administrator password; if not specified, the user will be prompted for the password. ``[$STORK_DATABASE_MAINTENANCE_PASSWORD]``
 
 ``-f``, ``--force``
    Recreate the database and the user if they exist. The default is false.
@@ -190,16 +190,16 @@ Common Options
 The following options pertain to both ``db-`` and ``cert-`` commands:
 
 ``--db-url=``
-   Specifies the URL for the Stork PostgreSQL database. ``[$STORK_DATABASE_URL]``
+   Specifies the URL for the Stork PostgreSQL database. It's mutually exclusively with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
 
 ``-u|--db-user=``
    Specifies the user name for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
 ``--db-password=``
-   Specifies the database password for database connections. ``[$STORK_DATABASE_PASSWORD]``
+   Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-host=``
-   Specifies the name of the host where the database is available. The default is ``localhost``. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address or socket (containing directory) where the database is available. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port=``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``

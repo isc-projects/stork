@@ -53,8 +53,14 @@ Arguments
 ``-u|--db-user``
    Specifies the user name to be used for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
+``--db-password=``
+   Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
+
+``--db-url``
+   Specifies the URL to locate and connect to database. It's mutually exclusively with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
+
 ``--db-host``
-   Specifies the name of the host where the database is available. The default is ``localhost``. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address or socket (containing directory) where the database is available. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``
@@ -92,7 +98,7 @@ Arguments
    Specifies the location of the root certificate file used to verify the database server's certificate. ``[$STORK_DATABASE_SSLROOTCERT]``
 
 ``--db-trace-queries=``
-   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, or ``all`` - both migrations and runtime.
+   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, ``all`` - both migrations and runtime, or ``none`` - disable the query logging.
    ``[$STORK_DATABASE_TRACE]``
 
 ``--rest-cleanup-timeout``
