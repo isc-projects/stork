@@ -461,7 +461,7 @@ namespace :db do
         dbmaintenancepassword = ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] || ENV["DB_MAINTENANCE_PASSWORD"]
 
         if dbhost.include? ':'
-            dbhost, dbport = dbhost.split ':'
+            dbhost, dbport = dbhost.split(':')
         end
 
         ENV["STORK_DATABASE_HOST"] = dbhost
