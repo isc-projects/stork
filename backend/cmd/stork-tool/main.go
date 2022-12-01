@@ -235,7 +235,7 @@ func runHookInspect(settings *cli.Context) error {
 	}
 }
 
-// Parse the general flag definitions into the object from the CLI library.
+// Parse the general flag definitions into the objects compatible with the CLI library.
 func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Flag, error) {
 	var flags []cli.Flag
 	for _, definition := range flagDefinitions {

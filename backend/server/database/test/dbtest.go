@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -68,6 +69,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 		log.Warn("The maintenance database should not be the same as the template database; otherwise, the source database may report that other users are accessing it.")
 	}
 
+	rand.Seed(time.Now().UnixNano())
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
