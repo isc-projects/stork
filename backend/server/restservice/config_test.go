@@ -550,8 +550,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// Create several config reports - two for first daemon and one for the
-	// second daemon.
+	// Create several config reports - two for first daemon and two for the
+	// second daemon (including one empty).
 	content1 := "funny review contents for {daemon} and {daemon}"
 	content2 := "another funny review contents for {daemon}"
 	content3 := "review contents for another daemon"
