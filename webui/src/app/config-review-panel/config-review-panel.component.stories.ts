@@ -121,7 +121,7 @@ export default {
                 },
             },
             {
-                url: 'http://localhost/api/daemons/:daemonId/config-reports?start=0&limit=5&onlyIssues=:onlyIssues',
+                url: 'http://localhost/api/daemons/:daemonId/config-reports?start=0&limit=5&issuesOnly=:issuesOnly',
                 method: 'GET',
                 status: 200,
                 delay: 2000,
@@ -150,7 +150,7 @@ export default {
                         },
                     ]
 
-                    if (searchParams.onlyIssues == 'true') {
+                    if (searchParams.issuesOnly == 'true') {
                         reports = reports.filter((r) => !!r.content)
                     }
 

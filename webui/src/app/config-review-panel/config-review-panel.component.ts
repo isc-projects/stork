@@ -89,7 +89,7 @@ export class ConfigReviewPanelComponent implements OnInit {
      * Boolean flag indicating if only reports containing reports should be
      * visible. If false, all reports are shown.
      */
-    onlyIssues = true
+    issuesOnly = true
 
     /**
      * Component constructor.
@@ -120,7 +120,7 @@ export class ConfigReviewPanelComponent implements OnInit {
         this.review = null
         this.busy = false
         this.loading = false
-        this.onlyIssues = true
+        this.issuesOnly = true
     }
 
     /**
@@ -161,7 +161,7 @@ export class ConfigReviewPanelComponent implements OnInit {
         }
         // Get reports with specifying the limits.
         this.servicesApi
-            .getDaemonConfigReports(this.daemonId, this.start, this.limit, this.onlyIssues, 'response')
+            .getDaemonConfigReports(this.daemonId, this.start, this.limit, this.issuesOnly, 'response')
             .pipe(
                 // Look into the response and extract the status code.
                 map((resp) => {

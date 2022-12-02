@@ -274,7 +274,7 @@ describe('ConfigReviewPanelComponent', () => {
         component.loading = false
         const event = { first: 2, rows: 5 }
         const observe: any = 'response'
-        expect(component.onlyIssues).toBeTrue()
+        expect(component.issuesOnly).toBeTrue()
         component.refreshDaemonConfigReports(event)
         tick()
 
@@ -293,7 +293,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.limit).toBe(5)
         expect(component.reports.length).toBe(2)
 
-        component.onlyIssues = false
+        component.issuesOnly = false
 
         component.refreshDaemonConfigReports(event)
         tick()
