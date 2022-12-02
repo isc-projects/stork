@@ -632,6 +632,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 
 	// Make sure that both have been returned.
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.TotalIssues)
+	require.EqualValues(t, 2, okRsp.Payload.TotalReports)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
@@ -651,6 +653,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 
 	// The total number is two but only one report has been returned.
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.TotalIssues)
+	require.EqualValues(t, 2, okRsp.Payload.TotalReports)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
@@ -667,6 +671,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 
 	// The total number is two but only one report has been returned.
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.TotalIssues)
+	require.EqualValues(t, 2, okRsp.Payload.TotalReports)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 2", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", *okRsp.Payload.Items[0].Content)
@@ -680,6 +686,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
 
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, 1, okRsp.Payload.TotalIssues)
+	require.EqualValues(t, 2, okRsp.Payload.TotalReports)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "review contents for another daemon", *okRsp.Payload.Items[0].Content)
@@ -689,12 +697,14 @@ func TestGetDaemonConfigReports(t *testing.T) {
 
 	// If the only issues flag is provided, it should return only one report.
 	issuesOnly := true
-	params.issuesOnly = &issuesOnly
+	params.IssuesOnly = &issuesOnly
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
 	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
 
 	require.EqualValues(t, 1, okRsp.Payload.Total)
+	require.EqualValues(t, 1, okRsp.Payload.TotalIssues)
+	require.EqualValues(t, 2, okRsp.Payload.TotalReports)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "review contents for another daemon", *okRsp.Payload.Items[0].Content)

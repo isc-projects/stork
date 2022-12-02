@@ -104,11 +104,29 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 		limit = *params.Limit
 	}
 
-	issuesOnly := params.issuesOnly != nil && *params.issuesOnly
+	issuesOnly := params.IssuesOnly != nil && *params.IssuesOnly
 	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID, issuesOnly)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("Cannot get configuration review reports for daemon with ID %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	var totalReports int64
+	var totalIssues int64
+	if issuesOnly {
+		totalIssues = total
+		totalReports, err = dbmodel.CountConfigReportsByDaemonID(r.DB, params.ID, false)
+	} else {
+		totalIssues, err = dbmodel.CountConfigReportsByDaemonID(r.DB, params.ID, true)
+		totalReports = total
+	}
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("Cannot count configuration review reports for daemon with ID %d from db", params.ID)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -121,7 +139,9 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 			DaemonID:  review.DaemonID,
 			CreatedAt: strfmt.DateTime(review.CreatedAt),
 		},
-		Total: total,
+		Total:        total,
+		TotalIssues:  totalIssues,
+		TotalReports: totalReports,
 	}
 
 	for _, dbReport := range dbReports {

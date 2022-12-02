@@ -215,7 +215,7 @@ export function cfgFactory() {
         ChipModule,
         ChipsModule,
         DataViewModule,
-        ToggleButtonModule
+        ToggleButtonModule,
     ],
     providers: [
         {

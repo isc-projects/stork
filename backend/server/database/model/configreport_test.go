@@ -308,6 +308,70 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Equal(t, allReportIDs, pagedReportIDs)
 }
 
+// Test that the config reports are counted properly for different filters.
+func TestCountConfigReports(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add an app with two daemons.
+	app := &App{
+		Type:      AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+
+	// Add some empty reports
+	for i := 0; i < 10; i++ {
+		configReport := &ConfigReport{
+			CheckerName: fmt.Sprintf("empty %d", i),
+			Content:     nil,
+			DaemonID:    daemons[0].ID,
+			RefDaemons:  []*Daemon{},
+		}
+
+		err = AddConfigReport(db, configReport)
+		require.NoError(t, err)
+	}
+
+	// Add some reports with issues
+	for i := 0; i < 10; i++ {
+		configReport := &ConfigReport{
+			CheckerName: fmt.Sprintf("checker %d", i),
+			Content:     newPtr(fmt.Sprintf("content %d", i)),
+			DaemonID:    daemons[0].ID,
+			RefDaemons:  []*Daemon{},
+		}
+
+		err = AddConfigReport(db, configReport)
+		require.NoError(t, err)
+	}
+
+	// Act
+	totalReports, reportsErr := CountConfigReportsByDaemonID(db, daemons[0].ID, false)
+	totalIssues, issuesErr := CountConfigReportsByDaemonID(db, daemons[0].ID, true)
+
+	// Assert
+	require.NoError(t, reportsErr)
+	require.NoError(t, issuesErr)
+
+	require.EqualValues(t, 20, totalReports)
+	require.EqualValues(t, 10, totalIssues)
+}
+
 // Test different cases of malformed configuration reports.
 func TestInvalidConfigReport(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

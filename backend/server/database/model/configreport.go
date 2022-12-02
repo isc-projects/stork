@@ -143,6 +143,25 @@ func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64, 
 	return configReports, int64(total), nil
 }
 
+// Counts the total number of config reports. Accepts the same filters as
+// GetConfigReportsByDaemonID.
+func CountConfigReportsByDaemonID(db *pg.DB, daemonID int64, issuesOnly bool) (int64, error) {
+	q := db.Model((*ConfigReport)(nil)).
+		Where("config_report.daemon_id = ?", daemonID)
+
+	if issuesOnly {
+		q = q.Where("config_report.content IS NOT NULL")
+	}
+
+	total, err := q.Count()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem counting config reports for daemon %d", daemonID)
+		return 0, err
+	}
+
+	return int64(total), nil
+}
+
 // Delete all config reports for the specified daemon.
 func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
 	_, err := dbi.Model((*ConfigReport)(nil)).

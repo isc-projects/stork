@@ -49,7 +49,7 @@ export class ConfigReviewPanelComponent implements OnInit {
     limit = 5
 
     /**
-     * Total number of reports available for a daemon.
+     * Total number of reports available for the current criteria.
      */
     total = 0
 
@@ -92,6 +92,16 @@ export class ConfigReviewPanelComponent implements OnInit {
     issuesOnly = true
 
     /**
+     * A total number of reports containing issues.
+     */
+    totalIssues = 0
+
+    /**
+     * A total number of reports.
+     */
+    totalReports = 0
+
+    /**
      * Component constructor.
      *
      * @param msgService a service used to display error messages.
@@ -116,6 +126,8 @@ export class ConfigReviewPanelComponent implements OnInit {
         this.start = 0
         this.limit = 5
         this.total = 0
+        this.totalIssues = 0
+        this.totalReports = 0
         this.reports = []
         this.review = null
         this.busy = false
@@ -248,6 +260,8 @@ export class ConfigReviewPanelComponent implements OnInit {
                     case HttpStatusCode.Ok:
                         this.reports = resp.body.items
                         this.total = resp.body.total
+                        this.totalReports = resp.body.totalReports
+                        this.totalIssues = resp.body.totalIssues
                         this.review = resp.body.review
                         this.busy = false
                         break
@@ -309,16 +323,5 @@ export class ConfigReviewPanelComponent implements OnInit {
                 })
                 this.busy = false
             })
-    }
-
-    /**
-     * Returns a number of reports containing issues.
-     */
-    get issuesCount() {
-        if (!this.reports) {
-            return 0
-        }
-
-        return this.reports.filter((r) => !!r.content).length
     }
 }

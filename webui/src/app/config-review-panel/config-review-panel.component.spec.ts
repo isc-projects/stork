@@ -144,6 +144,8 @@ describe('ConfigReviewPanelComponent', () => {
             body: {
                 items: [],
                 total: 0,
+                totalIssues: 0,
+                totalReports: 0,
                 review: {
                     createdAt: '2021-11-18',
                 },
@@ -160,6 +162,8 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports).toBeTruthy()
         expect(component.reports.length).toBe(0)
         expect(component.total).toBe(0)
+        expect(component.totalIssues).toBe(0)
+        expect(component.totalReports).toBe(0)
         expect(component.review).toBeTruthy()
 
         // Refresh the view.
@@ -179,7 +183,9 @@ describe('ConfigReviewPanelComponent', () => {
             status: HttpStatusCode.Ok,
             body: {
                 items: new Array(),
-                total: 5,
+                total: 10,
+                totalReports: 20,
+                totalIssues: 10,
                 review: {
                     createdAt: '2021-11-18',
                 },
@@ -204,8 +210,10 @@ describe('ConfigReviewPanelComponent', () => {
         // Make sure the reports were recorded.
         expect(component.reports).toBeTruthy()
         expect(component.reports.length).toBe(5)
-        expect(component.total).toBe(5)
+        expect(component.total).toBe(10)
         expect(component.review).toBeTruthy()
+        expect(component.totalIssues).toBe(10)
+        expect(component.totalReports).toBe(20)
 
         // Refresh the view.
         fixture.detectChanges()
@@ -217,7 +225,7 @@ describe('ConfigReviewPanelComponent', () => {
         // It should contain the config review summary text.
         const reviewSummaryDiv = fixture.debugElement.query(By.css('#review-summary-div'))
         expect(reviewSummaryDiv).toBeTruthy()
-        expect(reviewSummaryDiv.properties.innerText).toContain('5 issues found at 2021-11-18')
+        expect(reviewSummaryDiv.properties.innerText).toContain('10 issues found in 20 reports at 2021-11-18')
 
         // It should contain 5 badges with checker names.
         const checkerTags = fixture.debugElement.queryAll(By.css('p-tag'))
@@ -240,6 +248,8 @@ describe('ConfigReviewPanelComponent', () => {
                 new HttpResponse({
                     body: {
                         total: 4,
+                        totalIssues: 10,
+                        totalReports: 20,
                         review: {
                             id: 2,
                             createdAt: '2022-02-21T14:09:00',
@@ -286,6 +296,8 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.total).toBe(4)
         expect(component.limit).toBe(5)
         expect(component.reports.length).toBe(2)
+        expect(component.totalIssues).toBe(10)
+        expect(component.totalReports).toBe(20)
 
         component.issuesOnly = false
 
@@ -433,28 +445,5 @@ describe('ConfigReviewPanelComponent', () => {
         const pickerComponent = pickerElement.componentInstance as ConfigCheckerPreferenceUpdaterComponent
         expect(pickerComponent.minimal).toBeTrue()
         expect(pickerComponent.daemonID).not.toBeNull()
-    })
-
-    it('should count issues properly', () => {
-        component.reports = null
-        expect(component.issuesCount).toBe(0)
-
-        component.reports = []
-        expect(component.issuesCount).toBe(0)
-
-        component.reports.push({
-            content: 'foo',
-        })
-        expect(component.issuesCount).toBe(1)
-
-        component.reports.push({
-            content: null,
-        })
-        expect(component.issuesCount).toBe(1)
-
-        component.reports.push({
-            content: 'bar',
-        })
-        expect(component.issuesCount).toBe(2)
     })
 })

@@ -476,6 +476,10 @@
           $ref: '#/definitions/ConfigReport'
       total:
         type: integer
+      totalIssues:
+        type: integer
+      totalReports:
+        type: integer
 
   ConfigCheckerState:
     type: string
