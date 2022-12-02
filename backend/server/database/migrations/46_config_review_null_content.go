@@ -10,7 +10,7 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-		    UPDATE config_report SET content='no issue found' WHERE content IS NULL;
+		    DELETE FROM config_report WHERE content IS NULL;
 			ALTER TABLE config_report ALTER COLUMN content SET NOT NULL;
         `)
 		return err
