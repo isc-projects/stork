@@ -293,7 +293,7 @@ Setup
 The following steps are common for Debian-based and RPM-based distributions
 using ``systemd``.
 
-Configure the Stork server settings in ``/etc/stork/server.env``. 
+Configure the Stork server settings in ``/etc/stork/server.env``.
 
 .. note::
 
@@ -382,7 +382,8 @@ The Stork server can be configured to run behind an HTTP reverse proxy
 using ``Nginx`` or ``Apache``. The Stork server package contains an example
 configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.conf``.
 
-The logging colorization is configured analogously to the :ref:`Stork Agent logging colorization <colorization-settings>`.
+The logging details, including colorization is configured analogously to the
+:ref:`Stork Agent logging settings <logging-settings>`.
 
 Stork can read and combine the configuration parameters from a few sources simultaneously.
 The command line flags have precedence over the environment variables read from the file
@@ -518,11 +519,13 @@ The command line flags have precedence over the environment variables read from 
 when the `--use-env-file` flag is specified. The environment variables read from the file
 take precedence over the environment variables set in the current shell.
 
+.. _logging-settings:
 
-.. _colorization-settings:
+Logging Settings
+~~~~~~~~~~~~~~~~
 
-Colorization Settings
-~~~~~~~~~~~~~~~~~~~~~
+Unless otherwise specified using ``STORK_LOG_LEVEL``, the default value of ``INFO``
+log level is used. Supported log levels are: ``DEBUG``, ``INFO``, ``WARN``, ``ERROR``.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. When set, the following
