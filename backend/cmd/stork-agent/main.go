@@ -247,6 +247,12 @@ func setupApp(reload bool) *cli.App {
 				Usage: "Environment file location; applicable only if the use-env-file is provided",
 				Value: "/etc/stork/agent.env",
 			},
+			&cli.StringFlag{
+				Name:    "",
+				Usage:   "Logging level can be specified using env variable only. Allowed values: are DEBUG, INFO, WARN, ERROR",
+				Value:   "INFO",
+				EnvVars: []string{"STORK_LOG_LEVEL"},
+			},
 		},
 		Before: func(c *cli.Context) error {
 			if c.Bool("use-env-file") {

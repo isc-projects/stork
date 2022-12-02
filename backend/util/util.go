@@ -108,6 +108,32 @@ func IsHexIdentifier(text string) bool {
 	return pattern.MatchString(strings.TrimSpace(text))
 }
 
+func SetupLoggingLevel() {
+	// Setup logging level.
+	//
+	// If the STORK_LOG_LEVEL is specified and has valid name in it, use
+	// that level. If not specified or has garbage, use the default (INFO).
+	if value, ok := os.LookupEnv("STORK_LOG_LEVEL"); ok {
+		levels := map[string]log.Level {
+			"DEBUG": log.DebugLevel,
+			"INFO": log.InfoLevel,
+			"WARN": log.WarnLevel,
+			"ERROR": log.ErrorLevel,
+		}
+
+		// fmt.Printf("STORK_LOG_LEVEL specified %s, %s\n", value, levels[value])
+		if levels[value] != log.PanicLevel {
+			fmt.Printf("STORK_LOG_LEVEL specified, setting logging level to %s\n", levels[value])
+			log.SetLevel(levels[value])
+			} else {
+			fmt.Printf("STORK_LOG_LEVEL has invalid log level: %s, ignoring.\n", value)
+		}
+	} else {
+		fmt.Printf("STORK_LOG_LEVEL not specified, using default logging level (INFO)\n")
+		log.SetLevel(log.InfoLevel)
+	}
+}
+
 // Configures the main application logger. Additionally, it converts the
 // values of the console color-related environment variables.
 func SetupLogging() {
@@ -124,7 +150,8 @@ func SetupLogging() {
 		}
 	}
 
-	log.SetLevel(log.InfoLevel)
+	SetupLoggingLevel()
+
 	log.SetOutput(os.Stdout)
 	log.SetReportCaller(true)
 	log.SetFormatter(&log.TextFormatter{
