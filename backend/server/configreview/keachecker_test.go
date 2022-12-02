@@ -137,6 +137,7 @@ func TestStatCmdsAbsent(t *testing.T) {
 	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "The Kea Statistics Commands library")
 }
 
@@ -193,6 +194,7 @@ func TestHostCmdsAbsentHostsDatabase(t *testing.T) {
 	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea can be configured")
 }
 
@@ -214,6 +216,7 @@ func TestHostCmdsAbsentHostsDatabases(t *testing.T) {
 	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea can be configured")
 }
 
@@ -243,6 +246,7 @@ func TestSharedNetworkDispensableNoDHCPv4Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 1 empty shared network")
 }
 
@@ -266,6 +270,7 @@ func TestSharedNetworkDispensableSingleDHCPv4Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 1 shared network with only a single subnet")
 }
 
@@ -315,6 +320,7 @@ func TestSharedNetworkDispensableSomeEmptySomeWithSingleSubnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 2 empty shared networks and 2 shared networks with only a single subnet")
 }
 
@@ -370,6 +376,7 @@ func TestSharedNetworkDispensableNoDHCPv6Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 1 empty shared network")
 }
 
@@ -393,6 +400,7 @@ func TestSharedNetworkDispensableSingleDHCPv6Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 1 shared network with only a single subnet")
 }
 
@@ -447,6 +455,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
@@ -485,6 +494,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
@@ -588,6 +598,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
@@ -626,6 +637,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
@@ -754,6 +766,7 @@ func TestDHCPv4ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1012,6 +1025,7 @@ func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1103,6 +1117,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1134,6 +1149,7 @@ func TestDHCPv6ReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1485,6 +1501,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1524,6 +1541,7 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
@@ -1908,6 +1926,7 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
 	require.Contains(t, *report.content, "1. 10.0.0.0/16 (subnet-id 2) is overlapped by 10.0.1.0/24 (subnet-id 1)")
 }
@@ -1938,7 +1957,9 @@ func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "1. 10.0.0.0/16 is overlapped by 10.0.1.0/24")
 }
 
@@ -1971,6 +1992,7 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea {daemon} configuration includes at least 10 overlapping subnet pairs.")
 	require.Contains(t, *report.content, "1. 10.0.0.0/8 (subnet-id 1) is overlapped by 10.0.0.0/9 (subnet-id 2)")
 	require.Contains(t, *report.content, "10. 10.0.0.0/8 (subnet-id 1) is overlapped by 10.0.0.0/18 (subnet-id 11)")
@@ -2043,6 +2065,7 @@ func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea {daemon} configuration includes 1 overlapping subnet pair.")
 	require.Contains(t, *report.content, "1. 10.0.0.0/16 is overlapped by 10.0.1.0/24")
 }
@@ -2156,6 +2179,7 @@ func TestCanonicalPrefixes(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, 42, report.daemonID)
+	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Kea {daemon} configuration contains 4 non-canonical prefixes.")
 	require.Contains(t, *report.content, "1. [2] 192.168.1.2/24 is invalid prefix, expected: 192.168.1.0/24;")
 	require.Contains(t, *report.content, "4. foobar is invalid prefix")

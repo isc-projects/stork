@@ -21,6 +21,7 @@ func TestCreateReport(t *testing.T) {
 		create()
 	require.NoError(t, err)
 	require.NotNil(t, report)
+	require.NotNil(t, report.content)
 	require.Equal(t, "new report for {daemon}", *report.content)
 	require.EqualValues(t, 123, report.daemonID)
 	require.Len(t, report.refDaemonIDs, 2)
