@@ -1,3 +1,8 @@
+* 258 [func] marcin
+
+    Stork server emits an event when it is reloaded with the SIGHUP signal.
+    (Gitlab #878)
+
 * 257 [func] slawek
 
     The configuration review checkers generate the reports even if they find no
