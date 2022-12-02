@@ -1,3 +1,10 @@
+* 272 [func] tomek
+
+    Stork agent and server now have logging levels configurable using
+    STORK_LOG_LEVEL environment variable. The location of a BIND 9 config file
+    can now be explicitly specified using STORK_BIND9_CONFIG environment
+    variable.
+
 * 271 [bug] slawek
 
     Added a waiting indicator presented while loading the HA servers' statuses.
