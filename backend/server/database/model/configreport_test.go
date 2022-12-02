@@ -140,6 +140,7 @@ func TestGetConfigReportsExceptEmpty(t *testing.T) {
 	require.Len(t, reports, 1)
 	require.EqualValues(t, 1, total)
 	require.NoError(t, err)
+	require.EqualValues(t, "test", reports[0].CheckerName)
 }
 
 // Test inserting, selecting and deleting configuration reports associated
