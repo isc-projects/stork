@@ -269,6 +269,14 @@ func setupApp(reload bool) *cli.App {
 				Usage: "Environment file location; applicable only if the use-env-file is provided",
 				Value: "/etc/stork/agent.env",
 			},
+			// Those two parameters are read directly from the environment variable. They're listed here only for
+			// the help.
+			&cli.StringFlag{
+				Name:    "bind9-path",
+				Usage:   "Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon.",
+				Value:   "",
+				EnvVars: []string{"STORK_BIND9_CONFIG"},
+			},
 			&cli.StringFlag{
 				Name:    "",
 				Usage:   "Logging level can be specified using env variable only. Allowed values: are DEBUG, INFO, WARN, ERROR",

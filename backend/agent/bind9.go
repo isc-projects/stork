@@ -364,24 +364,43 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	namedDir := match[1]
 	bind9Params := match[2]
 	bind9ConfPath := ""
+	found := false
 
 	// look for config file in cmd params
 	paramsPattern := regexp.MustCompile(`-c\s+(\S+)`)
 	m := paramsPattern.FindStringSubmatch(bind9Params)
-	if m != nil {
-		bind9ConfPath = m[1]
-		// if path to config is not absolute then join it with CWD of named
-		if !strings.HasPrefix(bind9ConfPath, "/") {
-			bind9ConfPath = path.Join(cwd, bind9ConfPath)
+
+	// Check if STORK_BIND9_CONFIG variable is specified it is, we'll use
+	// whatever value is provided. User knows best *cough*.
+	if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
+		log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
+		if _, err := os.Stat(f); err == nil {
+			bind9ConfPath = f
+			log.Infof("Found BIND 9 config file in %s", f)
+			found = true
+		} else {
+			log.Debugf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 		}
-	} else {
-		// config path not found in cmdline params so try to guess its location
-		for _, f := range getPotentialNamedConfLocations() {
-			log.Debugf("Looking for BIND 9 config file in %s", f)
-			if _, err := os.Stat(f); err == nil {
-				bind9ConfPath = f
-				log.Infof("Found BIND 9 config file in %s", f)
-				break
+	}
+
+	// If users didn't specify anything or what he specified is garbage,
+	// we'll go through the normal detection procedure.
+	if !found {
+		if m != nil {
+			bind9ConfPath = m[1]
+			// if path to config is not absolute then join it with CWD of named
+			if !strings.HasPrefix(bind9ConfPath, "/") {
+				bind9ConfPath = path.Join(cwd, bind9ConfPath)
+			}
+		} else {
+			// config path not found in cmdline params so try to guess its location
+			for _, f := range getPotentialNamedConfLocations() {
+				log.Debugf("Looking for BIND 9 config file in %s", f)
+				if _, err := os.Stat(f); err == nil {
+					bind9ConfPath = f
+					log.Infof("Found BIND 9 config file in %s", f)
+					break
+				}
 			}
 		}
 	}
