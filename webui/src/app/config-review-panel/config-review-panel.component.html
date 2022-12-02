@@ -72,22 +72,21 @@
             </p-divider>
             <div class="ml-4 mr-4">
                 <span
-                    class="fas"
+                    class="fas text-sm pr-2"
                     [ngClass]="{
                         'fa-pencil-alt': !!report.content,
                         'fa-check-double': !report.content
                     }"
-                    style="font-size: 0.9rem; padding-right: 4px"
                 >
                 </span>
-                <span class="font-italic" style="color: var(--text-color); font-size: 0.9rem">
+                <span class="font-italic text-sm text-color">
                     <app-event-text [text]="report.content ?? 'No issue found.'"></app-event-text>
                 </span>
             </div>
         </div>
     </ng-template>
     <ng-template let-report pTemplate="empty">
-        <span id="status-text" class="font-italic" style="font-size: 0.9rem">
+        <span id="status-text" class="font-italic text-sm">
             <ng-container *ngIf="refreshFailed"
                 >An error occurred while fetching the configuration review reports.</ng-container
             >
