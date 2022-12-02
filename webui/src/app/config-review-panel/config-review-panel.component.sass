@@ -2,6 +2,10 @@
   border: 0px
   margin-top: 10px
 
+::ng-deep .p-togglebutton .p-button-label
+  // Prevent to resize button while label is changed.
+  min-width: 5rem
+
 .review-header
   // Uses full width of the panel.
   width: 100%
@@ -26,6 +30,8 @@
   display: flex
   // Defines the horizontal spacing between buttons.
   column-gap: 0.5rem
+  // Align the switch button and text to the vertical center.
+  align-items: center
 
 .checker-panel-wrapper
   // Workaround for problem with displaying the overview panel out of the

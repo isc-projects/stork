@@ -18,9 +18,9 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { InputSwitchModule } from 'primeng/inputswitch'
-import { TooltipModule } from 'primeng/tooltip'
 import { DataViewModule } from 'primeng/dataview'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { FormsModule } from '@angular/forms'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -39,9 +39,9 @@ describe('ConfigReviewPanelComponent', () => {
                 TagModule,
                 TableModule,
                 ChipModule,
+                FormsModule,
                 OverlayPanelModule,
-                InputSwitchModule,
-                TooltipModule,
+                ToggleButtonModule,
                 DataViewModule,
             ],
             declarations: [

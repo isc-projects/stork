@@ -20,13 +20,15 @@
                 <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
             <div id="review-buttons">
-                <p-inputSwitch
+                <p-toggleButton
+                    onLabel= "Only issues"
+                    offLabel="All reports"
+                    onIcon="fa fa-toggle-on"
+                    offIcon="fa fa-toggle-off"
+                    styleClass="p-button-sm"
                     [(ngModel)]="issuesOnly"
-                    class="inline-flex"
-                    pTooltip="Show only issues"
-                    tooltipPosition="bottom"
                     (onChange)="refreshDaemonConfigReports($event)"
-                ></p-inputSwitch>
+                ></p-toggleButton>
                 <button
                     #selectCheckersPanelTarget
                     pButton

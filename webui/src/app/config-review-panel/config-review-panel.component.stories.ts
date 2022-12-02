@@ -19,9 +19,9 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { action } from '@storybook/addon-actions'
 import { ToastModule } from 'primeng/toast'
 import { toastDecorator } from '../utils.stories'
-import { InputSwitchModule } from 'primeng/inputswitch'
-import { TooltipModule } from 'primeng/tooltip'
 import { DataViewModule } from 'primeng/dataview'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { FormsModule } from '@angular/forms'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -65,8 +65,8 @@ export default {
                 ChipModule,
                 OverlayPanelModule,
                 ToastModule,
-                InputSwitchModule,
-                TooltipModule,
+                FormsModule,
+                ToggleButtonModule,
                 DataViewModule,
             ],
             declarations: [
