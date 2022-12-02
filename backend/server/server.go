@@ -288,8 +288,9 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 	ss.RestAPI = r
 
-	// Do not issue the event if we're only reloading the server.
-	if !reload {
+	if reload {
+		ss.EventCenter.AddInfoEvent("reloaded Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
+	} else {
 		ss.EventCenter.AddInfoEvent("started Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
 	}
 
