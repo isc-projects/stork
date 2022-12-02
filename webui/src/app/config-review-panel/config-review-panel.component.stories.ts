@@ -1,12 +1,8 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { Meta, moduleMetadata, Story } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
-import { DialogModule } from 'primeng/dialog'
 import { DividerModule } from 'primeng/divider'
-import { PaginatorModule } from 'primeng/paginator'
-import { PanelModule } from 'primeng/panel'
 import { TagModule } from 'primeng/tag'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
@@ -64,8 +60,6 @@ export default {
                 DividerModule,
                 HttpClientModule,
                 NoopAnimationsModule,
-                PaginatorModule,
-                PanelModule,
                 TagModule,
                 TableModule,
                 ChipModule,

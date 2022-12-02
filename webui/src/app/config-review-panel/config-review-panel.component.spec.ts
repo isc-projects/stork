@@ -5,16 +5,13 @@ import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
 import { DividerModule } from 'primeng/divider'
-import { PaginatorModule } from 'primeng/paginator'
 import { TagModule } from 'primeng/tag'
-import { PanelModule } from 'primeng/panel'
 import { ButtonModule } from 'primeng/button'
 import { MessageService } from 'primeng/api'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ConfigReports, ServicesService } from '../backend'
 import { LocaltimePipe } from '../localtime.pipe'
-import { DialogModule } from 'primeng/dialog'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -24,7 +21,6 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { InputSwitchModule } from 'primeng/inputswitch'
 import { TooltipModule } from 'primeng/tooltip'
 import { DataViewModule } from 'primeng/dataview'
-import { cpuUsage } from 'process'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -40,8 +36,6 @@ describe('ConfigReviewPanelComponent', () => {
                 DividerModule,
                 HttpClientTestingModule,
                 NoopAnimationsModule,
-                PaginatorModule,
-                PanelModule,
                 TagModule,
                 TableModule,
                 ChipModule,
