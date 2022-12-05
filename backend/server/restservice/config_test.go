@@ -696,8 +696,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.Nil(t, okRsp.Payload.Items[1].Content)
 
 	// If the only issues flag is provided, it should return only one report.
-	issuesOnly := true
-	params.IssuesOnly = &issuesOnly
+	params.IssuesOnly = true
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
 	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonConfigReportsOK)

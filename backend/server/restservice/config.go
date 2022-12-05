@@ -104,8 +104,7 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 		limit = *params.Limit
 	}
 
-	issuesOnly := params.IssuesOnly != nil && *params.IssuesOnly
-	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID, issuesOnly)
+	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID, params.IssuesOnly)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("Cannot get configuration review reports for daemon with ID %d from db", params.ID)
@@ -117,7 +116,7 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 
 	var totalReports int64
 	var totalIssues int64
-	if issuesOnly {
+	if params.IssuesOnly {
 		totalIssues = total
 		totalReports, err = dbmodel.CountConfigReportsByDaemonID(r.DB, params.ID, false)
 	} else {

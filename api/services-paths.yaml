@@ -548,7 +548,9 @@
         - name: issuesOnly
           in: query
           type: boolean
+          required: true
           description: Get only reports containing issues
+          default: false
       responses:
         200:
           description: Daemon configuration review reports list.
