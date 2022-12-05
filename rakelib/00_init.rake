@@ -305,7 +305,8 @@ def fetch_file(url, target)
         end
     end
 
-    if ENV["CI"] == "true" || target.nil?
+    if ENV["CI"] == "true"
+        # Suppress verbose output on the CI.
         wget.append "-q"
     end
 
