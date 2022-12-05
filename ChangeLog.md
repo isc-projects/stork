@@ -1,3 +1,8 @@
+* 259 [func] slawek
+
+    Upgraded Angular to version 14.2.10.
+    (Gitlab #903)
+
 * 258 [func] marcin
 
     Stork server emits an event when it is reloaded with the SIGHUP signal.
