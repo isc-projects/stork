@@ -225,7 +225,7 @@ end
 
 # Task name should be a path to file or an executable name.
 #
-# If the path is used, it must be name of the existing path. If all conditions
+# If the path is used, it must be a name of the existing path. If all conditions
 # are false, the function leaves the task and task name untouched.
 #
 # If the task name is a name of the executable (no slashes) then it may not
@@ -250,14 +250,14 @@ def require_manual_install_on(task_name, *conditions)
 
     if !conditions.any?
         if task.nil?
-            # Create an empty file task to prevent failure due to a non-exist
+            # Create an empty file task to prevent failure due to a non-existing
             # file if the executable isn't prerequisite.
             file task_name => [:phony]
         end
         return task_name
     end
 
-    # Remove the self-installed task due to it is unsupported.
+    # Remove the self-installed task when it is unsupported.
     if !task.nil?
         task.clear()
         Rake.application.instance_variable_get('@tasks').delete(task_name)
