@@ -581,6 +581,7 @@ file npm => [TAR, WGET, node_dir] do
         sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
         sh "rm", "node.tar.xz"
     end
+    sh "touch", "-c", npm
     sh npm, "--version"
 end
 NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
