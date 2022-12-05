@@ -548,7 +548,6 @@
         - name: issuesOnly
           in: query
           type: boolean
-          required: true
           description: Get only reports containing issues
           default: false
       responses:
