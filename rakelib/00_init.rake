@@ -223,6 +223,23 @@ Rake::Task[:phony].tap do |task|
   end
 end
 
+# Create a new file task that fails if the executable doesn't exist.
+# It accepts a path to the executable.
+def create_manually_installed_file_task(path)
+    file path do
+        # This check allows to use manually installed tasks as prerequisities of
+        # other manually installed tasks.
+        if which(path).nil?
+            fail "#{path} must be installed manually on your operating system"
+        end
+    end
+
+    # Add a property to indicate that it's a manually installed file.
+    newTask = Rake::Task[path]
+    newTask.instance_variable_set(:@manuall_install, true)
+    return newTask.name
+end
+
 # Task name should be a path to file or an executable name.
 #
 # If the path is used, it must be a name of the existing path. If all conditions
@@ -271,19 +288,7 @@ def require_manual_install_on(task_name, *conditions)
     end
 
     # Create a new task that fails if the executable doesn't exist.
-    file program do
-        # This check allows to use manually installed tasks as prerequisities of
-        # other manually installed tasks.
-        if which(program).nil?
-            fail "#{program} must be installed manually on your operating system"
-        end
-    end
-
-    # Add a property to indicate that it's a manually installed file.
-    newTask = Rake::Task[program]
-    newTask.instance_variable_set(:@manuall_install, true)
-
-    return newTask.name
+    return create_manually_installed_file_task(program)
 end
 
 # Fetches the file from the network. You should add the WGET to the
@@ -460,34 +465,45 @@ ENV["VIRTUAL_ENV"] = python_tools_dir
 # CHROME_BIN is required for UI unit tests and system tests. If it is
 # not provided by a user, try to locate Chrome binary and set
 # environment variable to its location.
-if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
-    location = which("chromium")
-    if location.nil?
-        location = which("chrome")
+def detect_chrome_binary()
+    if !ENV['CHROME_BIN'].nil? && !ENV['CHROME_BIN'].empty?
+        location = which(ENV['CHROME_BIN'])
+        if !location.nil?
+            return location
+        end
     end
-    if !location.nil?
-        ENV['CHROME_BIN'] = location
-    else    
-        ENV['CHROME_BIN'] = "chromium"
-        chrome_locations = []
 
-        if OS == 'linux'
-            chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
-        elsif OS == 'macos'
-            chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
-        end
-        # For each possible location check if the binary exists.
-        chrome_locations.each do |loc|
-            if File.exist?(loc)
-                # Found Chrome binary.
-                ENV['CHROME_BIN'] = loc
-                break
-            end
+    location = which("chromium")
+    if !location.nil?
+        return location
+    end
+
+    location = which("chrome")
+    if !location.nil?
+        return location
+    end
+
+    chrome_locations = []
+
+    if OS == 'linux'
+        chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
+    elsif OS == 'macos'
+        chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
+    end
+    
+    # For each possible location check if the binary exists.
+    chrome_locations.each do |loc|
+        if File.exist?(loc)
+            # Found Chrome binary.
+            return loc
         end
     end
+
+    return nil
 end
-file ENV['CHROME_BIN']
-CHROME = require_manual_install_on(ENV['CHROME_BIN'], any_system)
+
+CHROME = create_manually_installed_file_task(detect_chrome_binary() || "chrome")
+ENV["CHROME_BIN"] = CHROME
 
 # System tools
 WGET = require_manual_install_on("wget", any_system)
