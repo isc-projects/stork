@@ -38,8 +38,22 @@ describe('EventsPageComponent', () => {
                 },
                 MessageService,
             ],
-            declarations: [BreadcrumbsComponent, EventsPageComponent, EventsPageComponent, EventsPanelComponent, HelpTipComponent],
-            imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule, BreadcrumbModule, OverlayPanelModule],
+            declarations: [
+                BreadcrumbsComponent,
+                EventsPageComponent,
+                EventsPageComponent,
+                EventsPanelComponent,
+                HelpTipComponent,
+            ],
+            imports: [
+                HttpClientTestingModule,
+                FormsModule,
+                SelectButtonModule,
+                DropdownModule,
+                TableModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+            ],
         }).compileComponents()
     }))
 

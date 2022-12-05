@@ -123,7 +123,7 @@ describe('KeaAppTabComponent', () => {
                 InplaceModule,
                 FormsModule,
                 ToggleButtonModule,
-                DataViewModule
+                DataViewModule,
             ],
             declarations: [
                 KeaAppTabComponent,
