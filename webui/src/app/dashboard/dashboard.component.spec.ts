@@ -18,6 +18,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TooltipModule } from 'primeng/tooltip'
+import { TableModule } from 'primeng/table'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -36,6 +37,7 @@ describe('DashboardComponent', () => {
                 ButtonModule,
                 RouterTestingModule,
                 HttpClientTestingModule,
+                TableModule,
             ],
             declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent],
             providers: [

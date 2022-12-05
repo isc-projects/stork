@@ -31,6 +31,8 @@ import { ConfigReviewPanelComponent } from '../config-review-panel/config-review
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
 import { ButtonModule } from 'primeng/button'
+import { DataViewModule } from 'primeng/dataview'
+import { ToggleButtonModule } from 'primeng/togglebutton'
 
 class Details {
     daemons: any = [
@@ -119,6 +121,9 @@ describe('KeaAppTabComponent', () => {
                 OverlayPanelModule,
                 ButtonModule,
                 InplaceModule,
+                FormsModule,
+                ToggleButtonModule,
+                DataViewModule
             ],
             declarations: [
                 KeaAppTabComponent,

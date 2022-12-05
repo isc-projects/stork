@@ -12,6 +12,9 @@ import { FormsModule } from '@angular/forms'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -35,8 +38,8 @@ describe('EventsPageComponent', () => {
                 },
                 MessageService,
             ],
-            declarations: [BreadcrumbsComponent, EventsPageComponent, EventsPageComponent, EventsPanelComponent],
-            imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule],
+            declarations: [BreadcrumbsComponent, EventsPageComponent, EventsPageComponent, EventsPanelComponent, HelpTipComponent],
+            imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule, BreadcrumbModule, OverlayPanelModule],
         }).compileComponents()
     }))
 
