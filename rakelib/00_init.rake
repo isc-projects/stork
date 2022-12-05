@@ -211,16 +211,22 @@ def add_version_guard(task_name, version)
     end 
 end
 
-# Defines a :phony task that you can use as a dependency. This allows
-# file-based tasks to use non-file-based tasks as prerequisites
-# without forcing them to rebuild.
-# Adopted from: https://github.com/ruby/rake/blob/master/lib/rake/phony.rb
-task :phony
+# Defines a dump file task that has no logic and always is not needed to execute
+# that prevents unnecessary rebuilds of the parent task.
+def create_not_needed_file_task(task_name)
+    file task_name
 
-Rake::Task[:phony].tap do |task|
-  def task.timestamp # :nodoc:
-    Time.at 0
-  end
+    Rake::Task[task_name].tap do |task|
+        def task.timestamp # :nodoc:
+            Time.at 0
+        end
+        
+        def task.needed?
+            false
+        end
+    end
+
+    return task_name
 end
 
 # Create a new file task that fails if the executable doesn't exist.
@@ -269,7 +275,7 @@ def require_manual_install_on(task_name, *conditions)
         if task.nil?
             # Create an empty file task to prevent failure due to a non-existing
             # file if the executable isn't prerequisite.
-            file task_name => [:phony]
+            create_not_needed_file_task(task_name)
         end
         return task_name
     end
