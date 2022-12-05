@@ -1,3 +1,5 @@
+Stork 1.8.0 released on 2022-12-07.
+
 * 259 [func] slawek
 
     Upgraded Angular to version 14.2.10.
