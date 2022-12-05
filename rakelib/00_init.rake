@@ -211,8 +211,13 @@ def add_version_guard(task_name, version)
     end 
 end
 
-# Defines a dump file task that has no logic and always is not needed to execute
-# that prevents unnecessary rebuilds of the parent task.
+# Defines a file task with no logic and always has the "not needed" status.
+# The file task is rebuilt if the task target is updated (the modification date
+# is later than remembered by Rake) or if any prerequisites are updated. The
+# task that was changed has the "needed" status in Rake. The tasks created
+# using this function are always up-to-date and don't trigger the rebuild of
+# the parent task. They always have a "not needed" status and timestamp earlier
+# than the parent task.
 def create_not_needed_file_task(task_name)
     file task_name
 
