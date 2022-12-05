@@ -516,7 +516,6 @@ namespace :update do
         end
         Dir.chdir("webui") do
             sh NPX, "ng", "update",
-                "@angular-eslint/schematics@#{version}",
                 "@angular/core@#{version}",
                 "@angular/cli@#{version}"
         end
