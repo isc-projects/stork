@@ -286,9 +286,9 @@ describe('ConfigReviewPanelComponent', () => {
         // parameters.
         expect(servicesApi.getDaemonConfigReports).toHaveBeenCalledWith(
             component.daemonId,
+            true,
             event.first,
             event.rows,
-            true,
             observe
         )
         expect(component.loading).toBeFalse()
@@ -306,9 +306,9 @@ describe('ConfigReviewPanelComponent', () => {
 
         expect(servicesApi.getDaemonConfigReports).toHaveBeenCalledWith(
             component.daemonId,
+            false,
             event.first,
             event.rows,
-            false,
             observe
         )
     }))

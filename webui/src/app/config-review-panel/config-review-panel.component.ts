@@ -173,7 +173,7 @@ export class ConfigReviewPanelComponent implements OnInit {
         }
         // Get reports with specifying the limits.
         this.servicesApi
-            .getDaemonConfigReports(this.daemonId, this.start, this.limit, this.issuesOnly, 'response')
+            .getDaemonConfigReports(this.daemonId, this.issuesOnly, this.start, this.limit, 'response')
             .pipe(
                 // Look into the response and extract the status code.
                 map((resp) => {
