@@ -527,6 +527,13 @@ namespace :update do
             sh STORYBOOK, "--disable-telemetry", "upgrade"
         end
     end
+
+    desc 'Update internal browsers list'
+    task :browserslist => [NPX] do
+        Dir.chdir("webui") do
+            sh NPX, "browserslist", "--update-db"
+        end
+    end
 end
 
 namespace :prepare do
