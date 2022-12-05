@@ -528,7 +528,7 @@ namespace :update do
         end
     end
 
-    desc 'Update internal browsers list'
+    desc 'Update internal browsers list. It makes changes in the package-lock file to fix the problems with out-of-date data.'
     task :browserslist => [NPX] do
         Dir.chdir("webui") do
             sh NPX, "browserslist", "--update-db"
