@@ -291,7 +291,7 @@ node_ver='14.18.2'
 dlv_ver='v1.8.3'
 gdlv_ver='v1.8.0'
 bundler_ver='2.3.8'
-storybook_ver='6.5.13'
+storybook_ver='6.5.14'
 
 # System-dependent variables
 case OS
