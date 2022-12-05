@@ -8,14 +8,14 @@
         align-items: center;
     "
 >
-    <a
-        href="/"
-        pTooltip="Version: {{ storkVersion }} <br> Build Date: {{ storkBuildDate }}"
-        tooltipStyleClass="stork-version-tooltip"
-        [escape]="false"
-        class="logo"
-    >
-        <img src="/assets/stork-logo-small.png" id="small-stork-logo-img" />
+    <a href="/" class="logo">
+        <img
+            src="/assets/stork-logo-small.png"
+            id="small-stork-logo-img"
+            pTooltip="Version: {{ storkVersion }} <br> Build Date: {{ storkBuildDate }}"
+            tooltipStyleClass="stork-version-tooltip"
+            [escape]="false"
+        />
         <span> Stork </span>
     </a>
 
