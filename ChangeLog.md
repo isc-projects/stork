@@ -1,3 +1,9 @@
+* 269 [build] slawek
+
+    Added missing comments for all exported functions and enabled a linter
+    rule to make them mandatory.
+    (Gitlab #906)
+
 * 268 [func] slawek
 
     The subnet ID presents a value from the Kea configuration instead of
@@ -51,9 +57,9 @@ Stork 1.8.0 released on 2022-12-07.
 
 * 260 [build] slawek
 
-     Improved the system dependencies detection. The build system searches now
-     in PATH instead of relying on fixed paths.
-     (Gitlab #821)
+    Improved the system dependencies detection. The build system searches now
+    in PATH instead of relying on fixed paths.
+    (Gitlab #821)
 
 * 259 [func] slawek
 
