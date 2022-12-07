@@ -1,3 +1,8 @@
+* 261 [build] slawek
+
+    Fixed the missing man pages for Stork programs installed by packages.
+    (Gitlab #913)
+
 Stork 1.8.0 released on 2022-12-07.
 
 * 260 [build] slawek
