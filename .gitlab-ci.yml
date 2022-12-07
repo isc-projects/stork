@@ -16,7 +16,6 @@ variables:
 # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""  # this is workaround for TLS problem https://about.gitlab.com/blog/2019/07/31/docker-in-docker-with-docker-19-dot-03/
-  OLD_CI: "yes"
 
 # stages order
 stages:

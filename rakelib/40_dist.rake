@@ -257,7 +257,6 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir, cha
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.prerm",
             "--config-files", "etc/stork/server.env",
             "--description", "ISC Stork Server",
-            "--changelog", changelog_abs,
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
             "--vendor", "Internet Systems Consortium, Inc.",
