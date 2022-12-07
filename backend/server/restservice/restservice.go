@@ -33,6 +33,8 @@ import (
 	"isc.org/stork/server/metrics"
 )
 
+// The container for REST API settings. It contains the struct tags with the
+// CLI flags specification.
 type RestAPISettings struct {
 	CleanupTimeout  time.Duration    `long:"rest-cleanup-timeout" description:"The waiting period before killing idle connections" default:"10s"`
 	GracefulTimeout time.Duration    `long:"rest-graceful-timeout" description:"The waiting period before shutting down the server" default:"15s"`
@@ -413,6 +415,7 @@ func (r *RestAPI) Listen() error {
 	return nil
 }
 
+// Shutdown the HTTP handler of the REST API.
 func (r *RestAPI) Shutdown() {
 	log.Printf("Stopping RESTful API Service")
 	if r.HTTPServer != nil {

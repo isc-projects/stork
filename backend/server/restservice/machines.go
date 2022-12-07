@@ -1001,6 +1001,8 @@ func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType strin
 	return apps, nil
 }
 
+// Searches for applications that meet the given filter conditions. The results
+// are paginated.
 func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) middleware.Responder {
 	var start int64
 	if params.Start != nil {
@@ -1066,6 +1068,7 @@ func (r *RestAPI) GetAppsDirectory(ctx context.Context, params services.GetAppsD
 	return rsp
 }
 
+// Returns an application for a given ID or HTTP 404 status if it's missing.
 func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) middleware.Responder {
 	dbApp, err := dbmodel.GetAppByID(r.DB, params.ID)
 	if err != nil {

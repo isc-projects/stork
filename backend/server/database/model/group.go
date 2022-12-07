@@ -9,6 +9,7 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
+// List of the user group IDs used in the server.
 const (
 	SuperAdminGroupID int = 1
 	AdminGroupID      int = 2

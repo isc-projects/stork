@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	localhost      string = "localhost"
+	localhost string = "localhost"
+	// Root name for DHCPv4.
 	RootNameDHCPv4 string = "Dhcp4"
+	// Root name for DHCPv6.
 	RootNameDHCPv6 string = "Dhcp6"
 )
 

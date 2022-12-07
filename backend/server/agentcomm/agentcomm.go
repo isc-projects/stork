@@ -35,6 +35,7 @@ type AgentBind9CommStats struct {
 	CurrentErrorsStats int64
 }
 
+// The complex identifier for the application. It's expected to be unique.
 type AppCommStatsKey struct {
 	Address string
 	Port    int64

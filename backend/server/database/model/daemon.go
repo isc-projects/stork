@@ -15,6 +15,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Valid daemon names.
 const (
 	DaemonNameBind9  = "named"
 	DaemonNameDHCPv4 = "dhcp4"

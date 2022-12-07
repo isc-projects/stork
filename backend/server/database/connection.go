@@ -29,6 +29,8 @@ type TxI interface {
 	Rollback() error
 }
 
+// Defines the go-pg hooks to enable the SQL query logging.
+// It implements the "pg.QueryHook" interface.
 type DBLogger struct{}
 
 // Hook run before SQL query execution.

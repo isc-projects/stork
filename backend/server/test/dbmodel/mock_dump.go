@@ -9,6 +9,8 @@ type MockDump struct {
 	CallCount int
 }
 
+// Constructs new mock instance. Accepts the name and fixed error returned
+// by the Execute method.
 func NewMockDump(name string, err error) *MockDump {
 	return &MockDump{
 		dump.NewBasicDump(name),
@@ -17,6 +19,7 @@ func NewMockDump(name string, err error) *MockDump {
 	}
 }
 
+// Counts the call and returns a fixed error.
 func (d *MockDump) Execute() error {
 	d.CallCount++
 	return d.Err

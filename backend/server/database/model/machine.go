@@ -44,8 +44,10 @@ type Machine struct {
 	Authorized      bool `pg:",use_zero"`
 }
 
+// Identifier of the relations between the machine and other tables.
 type MachineRelation string
 
+// Names of the machine table relations. They must be valid in the go-pg sense.
 const (
 	MachineRelationApps             MachineRelation = "Apps"
 	MachineRelationDaemons          MachineRelation = "Apps.Daemons"

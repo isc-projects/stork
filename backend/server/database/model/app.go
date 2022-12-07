@@ -11,6 +11,7 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
+// Currently supported types are: "kea" and "bind9".
 const (
 	AppTypeKea   = "kea"
 	AppTypeBind9 = "bind9"

@@ -27,6 +27,8 @@ type BaseDatabaseSettings struct {
 	SSLRootCert string `long:"db-sslrootcert" description:"The location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
 }
 
+// Represents the additional database settings. They are not necessary to
+// perform the connection itself.
 type DatabaseSettings struct {
 	BaseDatabaseSettings
 	TraceSQL string `long:"db-trace-queries" description:"Enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time" env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`

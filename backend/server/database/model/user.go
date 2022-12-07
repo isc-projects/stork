@@ -27,6 +27,7 @@ type SystemUser struct {
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
 
+// Represents an association table between the system user and group tables.
 type SystemUserToGroup struct {
 	UserID  int `pg:",pk,notnull,on_delete:CASCADE"`
 	GroupID int `pg:",pk,notnull,on_delete:CASCADE"`

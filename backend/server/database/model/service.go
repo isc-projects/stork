@@ -45,6 +45,7 @@ type HAType = string
 // High Availability state.
 type HAState = string
 
+// Valid values for the HA-related enums.
 const (
 	HAModeHotStandby    HAMode = "hot-standby"
 	HAModePassiveBackup HAMode = "passive-backup"

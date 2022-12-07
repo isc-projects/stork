@@ -25,12 +25,18 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// The passed command to the server by the CLI.
 type Command string
 
+// Valid commands supported by the Stork server.
 const (
-	NoneCommand    Command = "none"
-	RunCommand     Command = "run"
-	HelpCommand    Command = "help"
+	// None command provided.
+	NoneCommand Command = "none"
+	// Run the server.
+	RunCommand Command = "run"
+	// Show help message.
+	HelpCommand Command = "help"
+	// Show version.
 	VersionCommand Command = "version"
 )
 

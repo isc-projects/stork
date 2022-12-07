@@ -11,6 +11,7 @@ type AccessPoint struct {
 	UseSecureProtocol bool `pg:",use_zero"`
 }
 
+// Valid kinds of the access points.
 const (
 	AccessPointControl    = "control"
 	AccessPointStatistics = "statistics"

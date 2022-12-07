@@ -19,6 +19,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+// Human-readable names for different kinds of secrets.
 const (
 	SecretTypeCACert   = "CA cert"
 	SecretTypeCAKey    = "CA key"

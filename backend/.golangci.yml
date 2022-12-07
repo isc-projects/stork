@@ -72,12 +72,17 @@ linters-settings:
     # Treats switch statements with default case as taking into account all possible cases.
     # Without this setting the switch statements must enumerate all possible cases.
     default-signifies-exhaustive: true
+  stylecheck:
+    checks:
+      - "all"
+      # Disables the rule that the comments of the exported variables ("var") must start with the variable name.
+      - "-ST1022"
 
 issues:
   max-same-issues: 3
 
   include:
-    - EXC0012  # EXC0012 revive: Annoying issue about not having a comment.
+    - EXC0012  # (comment on exported (method|function|type|const)|should have( a package)? comment|comment should be of the form)
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go

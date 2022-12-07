@@ -7,6 +7,7 @@ import "github.com/pkg/errors"
 // state from the higher order rule.
 type CheckerState string
 
+// Valid checker states.
 const (
 	CheckerStateInherit  CheckerState = "inherit"
 	CheckerStateDisabled CheckerState = "disabled"

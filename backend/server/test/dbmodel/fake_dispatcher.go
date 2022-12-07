@@ -28,15 +28,18 @@ type FakeDispatcher struct {
 
 var _ configreview.Dispatcher = (*FakeDispatcher)(nil)
 
+// Registers the call.
 func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, triggers configreview.Triggers, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "RegisterChecker"})
 }
 
+// Registers the call and returns true.
 func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSelector, checkerName string) bool {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "UnregisterChecker"})
 	return true
 }
 
+// Registers the call and returns the remembered states.
 func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configreview.CheckerMetadata, error) {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetCheckersMetadata"})
 
@@ -62,11 +65,13 @@ func (d *FakeDispatcher) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*configr
 	return metadata, nil
 }
 
+// Registers the call and returns a fixed value.
 func (d *FakeDispatcher) GetSignature() string {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetSignature"})
 	return d.Signature
 }
 
+// // Registers the call and remembers the checker state change.
 func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state configreview.CheckerState) error {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "SetCheckerState"})
 
@@ -93,19 +98,23 @@ func (d *FakeDispatcher) SetCheckerState(daemon *dbmodel.Daemon, checkerName str
 	return nil
 }
 
+// Registers the call.
 func (d *FakeDispatcher) Start() {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "Start"})
 }
 
+// Registers the call.
 func (d *FakeDispatcher) Shutdown() {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "Shutdown"})
 }
 
+// Registers the call and returns true.
 func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, trigger configreview.Trigger, callback configreview.CallbackFunc) bool {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "BeginReview", DaemonID: daemon.ID, Trigger: trigger})
 	return true
 }
 
+// Registers the call and returns a fixed value.
 func (d *FakeDispatcher) ReviewInProgress(daemonID int64) bool {
 	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "ReviewInProgress", DaemonID: daemonID})
 	return d.InProgress

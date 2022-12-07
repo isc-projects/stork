@@ -6,8 +6,10 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
+// Defines the sorting direction.
 type SortDirEnum int
 
+// Valid values of the sorting enum.
 const (
 	SortDirAny SortDirEnum = iota
 	SortDirAsc

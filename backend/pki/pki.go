@@ -16,6 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// The constants used to generate certificates.
 const (
 	CertValidityYears = 30
 	CertCountry       = "US"

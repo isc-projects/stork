@@ -16,6 +16,7 @@ import (
 // Provide example date format how named returns dates.
 const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 
+// The cache statistics of the Bind9 named daemon.
 type CacheStatsData struct {
 	CacheHits   int64 `json:"CacheHits"`
 	CacheMisses int64 `json:"CacheMisses"`
@@ -23,14 +24,18 @@ type CacheStatsData struct {
 	QueryMisses int64 `json:"QueryMisses"`
 }
 
+// The resolver entry of the view statistics JSON structure.
 type ResolverData struct {
 	CacheStats CacheStatsData `json:"cachestats"`
 }
 
+// The view statistics data JSON structure.
 type ViewStatsData struct {
 	Resolver ResolverData `json:"resolver"`
 }
 
+// JSON Structure of response returned by the named Bind 9 daemon on fetching
+// statistics.
 type NamedStatsGetResponse struct {
 	Views map[string]*ViewStatsData `json:"views,omitempty"`
 }

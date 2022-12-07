@@ -10,6 +10,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 )
 
+// The puller responsible for fetching the statistics from the Bind 9 daemon.
 type StatsPuller struct {
 	*agentcomm.PeriodicPuller
 	EventCenter eventcenter.EventCenter

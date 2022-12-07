@@ -19,6 +19,7 @@ import (
 // TODO: add caching to avoid trips to database; candidate caching libs:
 // https://allegro.tech/2016/03/writing-fast-cache-service-in-go.html
 
+// Valid data types for settings.
 const (
 	SettingValTypeInt    = 1
 	SettingValTypeBool   = 2

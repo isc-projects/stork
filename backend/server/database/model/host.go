@@ -19,6 +19,7 @@ import (
 // Source of the host information, i.e. configuration file or API (host_cmds).
 type HostDataSource string
 
+// Valid host data sources.
 const (
 	HostDataSourceConfig HostDataSource = "config"
 	HostDataSourceAPI    HostDataSource = "api"

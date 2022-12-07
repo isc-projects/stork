@@ -37,6 +37,8 @@ const (
 	AccessPointStatistics = "statistics"
 )
 
+// The application entry detected by an agent. It unambiguously indicates the
+// application location.
 type App struct {
 	Type         string
 	AccessPoints []AccessPoint
@@ -164,6 +166,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	return &state, nil
 }
 
+// The extracted output of the RNDC command.
 type RndcOutput struct {
 	Output string
 	Error  error

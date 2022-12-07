@@ -3,6 +3,7 @@ package keaconfig
 // DHCP option type enum, as defined in Kea.
 type DHCPOptionType = string
 
+// Valid DHCP option types.
 const (
 	EmptyOption       DHCPOptionType = "empty"
 	StringOption      DHCPOptionType = "string"
