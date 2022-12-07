@@ -58,6 +58,8 @@ end
 
 CLEAN.append "dist"
 
+changelog_abs = File.expand_path "ChangeLog.md"
+
 ##############
 ### Agent ###
 ##############
@@ -104,7 +106,7 @@ file agent_dist_dir => [agent_dist_bin_file, agent_dist_man_file, agent_dist_sys
 agent_hooks = FileList["etc/hooks/**/isc-stork-agent.post*", "etc/hooks/**/isc-stork-agent.pre*"]
 
 AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-built.pkg")
-file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + agent_hooks do
+file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir, changelog_abs] + agent_hooks do
     ENV["PKG_NAME"] = "agent"
     Rake::Task["clean:pkgs"].invoke()
 
@@ -113,22 +115,31 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
 
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
 
+    custom_opts = []
+    if pkg_type == "deb"
+        custom_opts.append "--deb-changelog", changelog_abs
+    elsif pkg_type == "rpm"
+        custom_opts.append "--rpm-changelog", changelog_abs
+    end
+
     Dir.chdir(pkgs_dir) do
         stdout, stderr, status = Open3.capture3 FPM,
-            "-C", agent_dist_dir_abs,
-            "-n", "isc-stork-agent",
-            "-s", "dir",
-            "-t", pkg_type,
-            "-v", "#{version}.#{TIMESTAMP}",
+            "--chdir", agent_dist_dir_abs,
+            "--name", "isc-stork-agent",
+            "--input-type", "dir",
+            "--output-type", pkg_type,
+            "--version", "#{version}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postrm",
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.prerm",
             "--config-files", "etc/stork/agent.env",
             "--config-files", "etc/stork/agent-credentials.json.template",
             "--description", "ISC Stork Agent",
+            "--maintainer", "ISC DHCP team",
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc."
+            "--vendor", "Internet Systems Consortium, Inc.",
+            *custom_opts
         if status != 0
             puts status, stdout, stderr
             fail
@@ -218,7 +229,7 @@ file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + s
 server_hooks = FileList["etc/hooks/**/isc-stork-server.post*", "etc/hooks/**/isc-stork-server.pre*"]
 
 SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-built.pkg")
-file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + server_hooks do
+file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir, changelog_abs] + server_hooks do
     ENV["PKG_NAME"] = "server"
     Rake::Task["clean:pkgs"].invoke()
 
@@ -226,6 +237,13 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
     pkg_type = get_pkg_type()
 
     server_dist_dir_abs = File.expand_path(server_dist_dir)
+
+    custom_opts = []
+    if pkg_type == "deb"
+        custom_opts.append "--deb-changelog", changelog_abs
+    elsif pkg_type == "rpm"
+        custom_opts.append "--rpm-changelog", changelog_abs
+    end
 
     Dir.chdir(pkgs_dir) do
         sh FPM,
@@ -239,9 +257,11 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.prerm",
             "--config-files", "etc/stork/server.env",
             "--description", "ISC Stork Server",
+            "--changelog", changelog_abs,
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc."
+            "--vendor", "Internet Systems Consortium, Inc.",
+            *custom_opts
     end
     sh "touch", SERVER_PACKAGE_STUB_FILE
 end
