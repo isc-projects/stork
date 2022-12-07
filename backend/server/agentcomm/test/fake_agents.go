@@ -73,10 +73,15 @@ func NewKeaFakeAgents(fnsKea ...func(int, []interface{})) *FakeAgents {
 	return fa
 }
 
+// Do nothing. Always returns nil.
 func (fa *FakeAgents) Ping(ctx context.Context, address string, agentPort int64) error {
 	return nil
 }
+
+// Do nothing.
 func (fa *FakeAgents) Shutdown() {}
+
+// Do nothing. Always returns nils.
 func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
 	return nil, nil
 }

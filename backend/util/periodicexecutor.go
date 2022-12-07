@@ -23,6 +23,7 @@ type PeriodicExecutor struct {
 	getIntervalFunc func() (int64, error)
 }
 
+// Interval is used while the puller is inactive to check if it was re-enabled.
 const InactiveInterval int64 = 60
 
 // Creates an instance of a new periodic executor. The periodic executor offers a mechanism

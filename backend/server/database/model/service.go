@@ -36,10 +36,13 @@ type DaemonToService struct {
 	ServiceID int64 `pg:",pk"`
 }
 
+// High Availability mode.
 type HAMode = string
 
+// High Availability type.
 type HAType = string
 
+// High Availability state.
 type HAState = string
 
 const (

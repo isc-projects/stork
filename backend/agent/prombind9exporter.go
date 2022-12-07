@@ -30,10 +30,12 @@ const (
 	qryRTT    = "QryRTT"
 )
 
+// The traffic BIND 9 statistics.
 type PromBind9TrafficStats struct {
 	SizeCount map[string]float64
 }
 
+// The view BIND 9 statistics.
 type PromBind9ViewStats struct {
 	ResolverCache      map[string]float64
 	ResolverCachestats map[string]float64
@@ -540,13 +542,13 @@ func (pbe *PromBind9Exporter) collectResolverStat(statName, view string, viewSta
 // with a label.
 func (pbe *PromBind9Exporter) collectResolverLabelStat(statName, view string, viewStat PromBind9ViewStats, ch chan<- prometheus.Metric, labels []string) {
 	for _, label := range labels {
-		rstatValue, ok := viewStat.ResolverStats[label]
+		resolverStatValue, ok := viewStat.ResolverStats[label]
 		if !ok {
-			rstatValue = 0
+			resolverStatValue = 0
 		}
 		ch <- prometheus.MustNewConstMetric(
 			pbe.viewStatsDesc[statName],
-			prometheus.CounterValue, rstatValue, view, label)
+			prometheus.CounterValue, resolverStatValue, view, label)
 	}
 }
 

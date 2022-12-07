@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -20,6 +19,7 @@ import (
 	"golang.org/x/term"
 )
 
+// Returns a current time in the UTC time zone.
 func UTCNow() time.Time {
 	return time.Now().UTC()
 }
@@ -107,6 +107,8 @@ func IsHexIdentifier(text string) bool {
 	return pattern.MatchString(strings.TrimSpace(text))
 }
 
+// Configures the main application logger. Additionally, it converts the
+// values of the console color-related environment variables.
 func SetupLogging() {
 	// Normalizes the color environment variables from the standard Stork
 	// convention.
@@ -144,17 +146,6 @@ func SetupLogging() {
 	})
 }
 
-// Helper code for mocking os/exec stuff... pathetic.
-type Commander interface {
-	Output(string, ...string) ([]byte, error)
-}
-
-type RealCommander struct{}
-
-func (c RealCommander) Output(command string, args ...string) ([]byte, error) {
-	return exec.Command(command, args...).Output()
-}
-
 // Convert bytes to hex string.
 func BytesToHex(bytesArray []byte) string {
 	var buf bytes.Buffer
@@ -171,6 +162,9 @@ func HexToBytes(hexString string) []byte {
 	return decoded
 }
 
+// Prompts for secret in a terminal. The typed characters are not printed to
+// standard output. If a terminal is unavailable (no TTY attached), it causes
+// panic.
 func GetSecretInTerminal(prompt string) string {
 	// Prompt the user for a secret
 	fmt.Print(prompt)

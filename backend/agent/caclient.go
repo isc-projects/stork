@@ -80,6 +80,10 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 	return client
 }
 
+// Sends a request to a given endpoint using the HTTP POST method. The payload
+// must contain the valid JSON. If the authentication credentials or TLS
+// certificates are provided in the application configuration, they are added
+// to the request.
 func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {

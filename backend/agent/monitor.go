@@ -52,6 +52,9 @@ const (
 	AppTypeBind9 = "bind9"
 )
 
+// The application monitor is responsible for detecting the applications
+// running in the operating system and periodically refreshing their states.
+// They are available through assessors.
 type AppMonitor interface {
 	GetApps() []App
 	GetApp(appType, apType, address string, port int64) App
@@ -189,15 +192,15 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
-	keaPtrn := regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
+	keaPattern := regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
 	// BIND 9 app is being detecting by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with named substring.
-	bind9Ptrn := regexp.MustCompile(`(.*?)named\s+(.*)`)
+	bind9Pattern := regexp.MustCompile(`(.*?)named\s+(.*)`)
 
 	var apps []App
 
-	procs, _ := process.Processes()
-	for _, p := range procs {
+	processes, _ := process.Processes()
+	for _, p := range processes {
 		procName, _ := p.Name()
 		cmdline := ""
 		cwd := ""
@@ -217,7 +220,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 		if procName == keaProcName {
 			// detect kea
-			m := keaPtrn.FindStringSubmatch(cmdline)
+			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
 				keaApp := detectKeaApp(m, cwd, storkAgent.HTTPClient)
 				if keaApp != nil {
@@ -230,9 +233,9 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 		if procName == namedProcName {
 			// detect bind9
-			m := bind9Ptrn.FindStringSubmatch(cmdline)
+			m := bind9Pattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				cmdr := &storkutil.RealCommander{}
+				cmdr := &systemCommandExecutor{}
 				bind9App := detectBind9App(m, cwd, cmdr)
 				if bind9App != nil {
 					bind9App.GetBaseApp().Pid = p.Pid
@@ -281,8 +284,8 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 func (sm *appMonitor) GetApps() []App {
 	ret := make(chan []App)
 	sm.requests <- ret
-	srvs := <-ret
-	return srvs
+	applications := <-ret
+	return applications
 }
 
 // Get an app from a monitor that matches provided params.

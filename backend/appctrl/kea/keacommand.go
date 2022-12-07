@@ -9,11 +9,23 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// See "src/lib/cc/command_interpreter.h" in the Kea repository for details.
 const (
-	ResponseSuccess            = 0
-	ResponseError              = 1
+	// Status code indicating a successful operation.
+	ResponseSuccess = 0
+	// Status code indicating a general failure.
+	ResponseError = 1
+	// Status code indicating that the specified command is not supported.
 	ResponseCommandUnsupported = 2
-	ResponseEmpty              = 3
+	// Status code indicating that the specified command was completed
+	// correctly, but failed to produce any results. For example, get
+	// completed the search, but couldn't find the object it was looking for.
+	ResponseEmpty = 3
+	// Status code indicating that the command was unsuccessful due to a
+	// conflict between the command arguments and the server state. For example,
+	// a lease4-add fails when the subnet identifier in the command does not
+	// match the subnet identifier in the server configuration.
+	ResponseConflict = 4
 )
 
 // Interface to a Kea command that can be marshalled and sent.
@@ -112,6 +124,7 @@ func NewCommand(command string, daemons []string, arguments interface{}) *Comman
 	return cmd
 }
 
+// Constructs new command from the JSON string.
 func NewCommandFromJSON(jsonCommand string) (*Command, error) {
 	cmd := Command{}
 	err := json.Unmarshal([]byte(jsonCommand), &cmd)

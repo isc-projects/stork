@@ -13,6 +13,8 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+// Statistics puller is responsible for fetching the data using the Kea
+// statistic hook.
 type StatsPuller struct {
 	*agentcomm.PeriodicPuller
 	*RpsWorker

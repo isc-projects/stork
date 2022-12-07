@@ -316,6 +316,7 @@ func RenameApp(dbi dbops.DBI, id int64, newName string) (*App, error) {
 	return app, nil
 }
 
+// Returns an application with a given ID.
 func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	app := App{}
 	q := dbi.Model(&app)
@@ -334,6 +335,7 @@ func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	return &app, nil
 }
 
+// Returns applications belonging to a machine with a given ID.
 func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 	var apps []*App
 
@@ -456,6 +458,8 @@ func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
 	return apps, nil
 }
 
+// Deletes an application from the database. Returns an error if the application
+// doesn't exist.
 func DeleteApp(dbi dbops.DBI, app *App) error {
 	result, err := dbi.Model(app).WherePK().Delete()
 	if err != nil {

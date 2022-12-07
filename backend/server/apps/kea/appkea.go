@@ -35,12 +35,12 @@ func GetDaemonHooks(dbDaemon *dbmodel.Daemon) (hooks []string) {
 	return
 }
 
-// version-get response structs
-
+// The arguments of the version-get command.
 type VersionGetRespArgs struct {
 	Extended string
 }
 
+// The response of the version-get command.
 type VersionGetResponse struct {
 	keactrl.ResponseHeader
 	Arguments *VersionGetRespArgs `json:"arguments,omitempty"`

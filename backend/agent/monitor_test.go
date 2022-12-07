@@ -236,9 +236,9 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
 
-type TestCommander struct{}
+type testCommandExecutor struct{}
 
-func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
+func (e *testCommandExecutor) output(command string, args ...string) ([]byte, error) {
 	text := `keys "foo" {
                       algorithm "hmac-sha256";
                       secret "abcd";
@@ -261,7 +261,7 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 	defer sb.Close()
 
 	// check BIND 9 app detection
-	cmdr := &TestCommander{}
+	executor := &testCommandExecutor{}
 	cfgPath, err := sb.Join("etc/path.cfg")
 	require.NoError(t, err)
 	namedDir, err := sb.JoinDir("usr/sbin")
@@ -270,7 +270,7 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 	require.NoError(t, err)
 	_, err = sb.Join("usr/sbin/rndc")
 	require.NoError(t, err)
-	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", cfgPath)}, "", cmdr)
+	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", cfgPath)}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -290,7 +290,7 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	cmdr := &TestCommander{}
+	cmdr := &testCommandExecutor{}
 	sb.Join("etc/path.cfg")
 	cfgDir, err := sb.JoinDir("etc")
 	require.NoError(t, err)

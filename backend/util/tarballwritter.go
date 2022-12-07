@@ -20,6 +20,8 @@ type TarballWriter struct {
 	tarWriter  *tar.Writer
 }
 
+// Constructs a new tarball wrapper instance. It accepts a writer where it will
+// pass the tarball bytes. The output data will be compressed using gzip.
 func NewTarballWriter(target io.Writer) *TarballWriter {
 	if target == nil {
 		return nil

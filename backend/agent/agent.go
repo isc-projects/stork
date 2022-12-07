@@ -419,6 +419,7 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	return response, nil
 }
 
+// Starts the gRPC and HTTP listeners.
 func (sa *StorkAgent) Serve() error {
 	// Install gRPC API handlers.
 	agentapi.RegisterAgentServer(sa.server, sa)
