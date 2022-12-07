@@ -20,9 +20,9 @@ variables:
 
 # stages order
 stages:
+  - build
   - checks
   - system_tests
-  - build
   - deploy
 
 # cache
@@ -47,7 +47,7 @@ cache:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
-    - apt-get install -y ruby-dev make python3-venv
+    - apt-get install -y ruby-dev make python3-venv man
     - rake prepare
     - rake prepare:deps
 
@@ -242,6 +242,9 @@ install_debs:
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
+    - "man stork-agent"
+    - "man stork-server"
+    - "man stork-tool"
     - "dpkg -r isc-stork-agent"
     - "dpkg -r isc-stork-server"
   needs:
@@ -254,6 +257,10 @@ install_rpms:
     - amd64
     - ssd
   stage: build
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    - yum install -y man
   script:
     - "rpm -i isc-stork-*.rpm"
     - "stork-agent --version"
@@ -263,6 +270,9 @@ install_rpms:
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
+    - "man stork-agent"
+    - "man stork-server"
+    - "man stork-tool"
     - "rpm -e isc-stork-agent"
     - "rpm -e isc-stork-server"
   needs:
@@ -276,6 +286,7 @@ install_apks:
     - ssd
   stage: build
   script:
+    - "apk add --no-cache mandoc"
     - "apk add --no-cache --allow-untrusted isc-stork-*.apk"
     - "stork-agent --version"
     - "stork-server --version"
@@ -284,6 +295,9 @@ install_apks:
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
+    - "man stork-agent"
+    - "man stork-server"
+    - "man stork-tool"
     - "apk del isc-stork-agent"
     - "apk del isc-stork-server"
   needs:
