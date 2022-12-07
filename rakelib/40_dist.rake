@@ -69,7 +69,10 @@ file agent_dist_bin_file => [agent_dist_bin_dir, AGENT_BINARY_FILE] do
     sh "cp", "-a", AGENT_BINARY_FILE, agent_dist_bin_file
 end
 
-agent_dist_man_dir = "dist/agent/usr/share/man/man8"
+# We don't use the "/usr/share/man" directory because the files cannot be
+# created inside this directory while the DEB package is installed on Debian.
+# Some Debian packaging policy probably causes it, but I cannot confirm it.
+agent_dist_man_dir = "dist/agent/usr/local/man/man8"
 directory agent_dist_man_dir
 agent_dist_man_file = File.join(agent_dist_man_dir, "stork-agent.8")
 file agent_dist_man_file => [agent_dist_man_dir, AGENT_MAN_FILE] do
@@ -149,7 +152,10 @@ file tool_dist_bin_file => [server_dist_bin_dir, TOOL_BINARY_FILE] do
     sh "cp", "-a", TOOL_BINARY_FILE, tool_dist_bin_file
 end
 
-server_dist_man_dir = "dist/server/usr/share/man/man8"
+# We don't use the "/usr/share/man" directory because the files cannot be
+# created inside this directory while the DEB package is installed on Debian.
+# Some Debian packaging policy probably causes it, but I cannot confirm it.
+server_dist_man_dir = "dist/server/usr/local/man/man8"
 directory server_dist_man_dir
 server_dist_man_file = File.join(server_dist_man_dir, "stork-server.8")
 file server_dist_man_file => [server_dist_man_dir, SERVER_MAN_FILE] do
