@@ -88,7 +88,7 @@ func createCert(templateCert, parentCert *x509.Certificate, publicKey *ecdsa.Pub
 // generated private key as a pointer to ecdsa.Private and as slice of
 // bytes in PEM format. Generated certificate is returned as a pointer
 // to x509.Certificate and as a slice of bytes in PEM format. It also
-// returns an eror in case anything goes wrong. This function is
+// returns an error in case anything goes wrong. This function is
 // public and is used in server by certs module by setupRootKeyAndCert
 // to prepare CA key and cert.
 func GenCAKeyCert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certificate, []byte, error) {

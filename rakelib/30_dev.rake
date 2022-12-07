@@ -153,7 +153,7 @@ namespace :unittest do
                                 'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
                                 'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
                                 'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
-                                'prepareTLS', 'handleRequest', 'pullerLoop', 'Output', 'Collect',
+                                'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
                                 'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
 
                                 # We spent a lot of time to try test the main agent function. It is a problematic

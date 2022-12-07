@@ -21,3 +21,29 @@ func TestGetPotentialNamedConfLocations(t *testing.T) {
 	paths := getPotentialNamedConfLocations()
 	require.Greater(t, len(paths), 1)
 }
+
+// Test that the system command executor returns a proper output.
+func TestSystemCommandExecutorOutput(t *testing.T) {
+	// Arrange
+	executor := &systemCommandExecutor{}
+
+	// Act
+	output, err := executor.output("echo", "-n", "foo")
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, "foo", string(output))
+}
+
+// Test that the system command executor returns an error for invalid command.
+func TestSystemCommandExecutorOnFail(t *testing.T) {
+	// Arrange
+	executor := &systemCommandExecutor{}
+
+	// Act
+	output, err := executor.output("non-exist-command")
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, output)
+}

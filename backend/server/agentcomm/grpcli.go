@@ -656,7 +656,6 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}
 		}
 	}
-	// log.Printf("errors CA: prev: %d, curr: %d", prevErrorsCA, keaCommStats.CurrentErrorsCA)
 
 	// Set the counters for individual daemons.
 	for dmnName, errCnt := range daemonErrorsCount {
@@ -669,7 +668,6 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 
 		// if communication with given daemon started or stopped failing then generate an event
 		currentErrors := keaCommStats.CurrentErrorsDaemons[dmnName]
-		// log.Printf("errors %s: prev: %d, curr: %d", dmnName, prevErrors, currentErrors)
 		if (prevErrors == 0 && currentErrors > 0) || (prevErrors > 0 && currentErrors == 0) {
 			for _, dmn := range app.GetDaemonTags() {
 				if dmn.GetName() == dmnName {

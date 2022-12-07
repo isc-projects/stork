@@ -132,7 +132,7 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
-	GetConnectedAgentStats(adddress string, port int64) *AgentStats
+	GetConnectedAgentStats(address string, port int64) *AgentStats
 	Ping(ctx context.Context, address string, agentPort int64) error
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
