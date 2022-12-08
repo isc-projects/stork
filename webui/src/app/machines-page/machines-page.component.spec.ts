@@ -22,6 +22,7 @@ import { ProgressBarModule } from 'primeng/progressbar'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -46,7 +47,13 @@ describe('MachinesPageComponent', () => {
                 NoopAnimationsModule,
                 BreadcrumbModule,
             ],
-            declarations: [MachinesPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
+            declarations: [
+                MachinesPageComponent,
+                LocaltimePipe,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                AppDaemonsStatusComponent,
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(MachinesPageComponent)
@@ -265,5 +272,66 @@ describe('MachinesPageComponent', () => {
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
         expect(breadcrumbsComponent.items[1].label).toEqual('Machines')
+    })
+
+    it('should display status of all daemons from all applications', async () => {
+        // Prepare the data
+        const getAuthorizedMachinesResp: any = {
+            items: [
+                {
+                    id: 1,
+                    hostname: 'zzz',
+                    apps: [
+                        {
+                            id: 1,
+                            name: 'kea@localhost',
+                            type: 'kea',
+                            details: {
+                                daemons: [
+                                    {
+                                        active: true,
+                                        extendedVersion: '2.2.0',
+                                        id: 1,
+                                        name: 'dhcp4',
+                                    },
+                                    {
+                                        active: false,
+                                        extendedVersion: '2.3.0',
+                                        id: 2,
+                                        name: 'ca',
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            id: 2,
+                            name: 'bind9@localhost',
+                            type: 'bind9',
+                            details: {
+                                daemon: {
+                                    active: true,
+                                    id: 3,
+                                    name: 'named',
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+            total: 1,
+        }
+        spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
+        // ngOnInit was already called before we prepared the static response.
+        // We have to reload the machines list manually.
+        component.loadMachines({ first: 0, rows: 0, filters: {} })
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const textContent = (fixture.debugElement.nativeElement as HTMLElement).textContent
+
+        expect(textContent).toContain('DHCPv4')
+        expect(textContent).toContain('CA')
+        expect(textContent).toContain('named')
     })
 })

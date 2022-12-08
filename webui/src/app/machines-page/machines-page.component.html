@@ -372,7 +372,7 @@ sudo ./stork-install-agent.sh</textarea
                 <td>{{ m.agentVersion }}</td>
                 <td>
                     <div *ngFor="let a of m.apps">
-                        <app-app-daemons-status [app]="m.apps[0]"></app-app-daemons-status>
+                        <app-app-daemons-status [app]="a"></app-app-daemons-status>
                     </div>
                 </td>
                 <td>{{ m.cpus }}</td>
