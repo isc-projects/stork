@@ -1,3 +1,9 @@
+* 262 [bug] slawek
+
+    Fixed showing duplicated statuses of daemons on the machine page while
+    a machine containing multiple applications.
+    (Gitlab #900)
+
 * 261 [build] slawek
 
     Fixed the missing man pages for Stork programs installed by packages.
