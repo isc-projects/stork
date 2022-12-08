@@ -237,6 +237,8 @@ install_debs:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
     - apt-get install -y man
+    # Ubuntu has dpkg configured to ignore man files by default.
+    - rm /etc/dpkg/dpkg.cfg.d/excludes
   script:
     - "dpkg -i isc-stork-*.deb"
     - "stork-agent --version"
