@@ -10,7 +10,7 @@ import (
 // Iterates over the plugins in a given directory. Every entry in the directory
 // (file or folder) calls the callback function. It accepts a path, library
 // wrapper (if no error), and error. The callback should return true to
-// continue. The function returns true on the general fail in access to the
+// continue. The function returns true on the general failure to access the
 // directory. It isn't guaranteed that the open library is a valid Stork hook.
 // The libraries are loaded in the lexicographic order of hook file names.
 func WalkPluginLibraries(directory string, callback func(path string, library *LibraryManager, err error) bool) error {

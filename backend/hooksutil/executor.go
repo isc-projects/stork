@@ -23,7 +23,7 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 		if calloutType.Kind() != reflect.Interface {
 			// It should never happen.
 			// If you got this panic message, check if your callout types are
-			// defined as follow:
+			// defined as follows:
 			// reflect.TypeOf((*hooks.FooCallout)(nil)).Elem()
 			// remember about:
 			// 1. pointer (star *) before the callout type.

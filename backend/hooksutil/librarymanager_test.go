@@ -49,7 +49,7 @@ func (p *pluginMock) addLookupVersion(result any) {
 	}
 }
 
-// Function with a signature non-matching to Load and Version.
+// Function with a signature not matching the Load and Version.
 func invalidSignature(int64) bool {
 	return false
 }
@@ -124,7 +124,7 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 }
 
 // Test that the load library function returns an error if the load plugin
-// function returns and error.
+// function returns an error.
 func TestLoadReturnErrorOnFail(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(

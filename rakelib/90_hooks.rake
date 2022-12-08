@@ -85,7 +85,7 @@ namespace :hook do
             sh "git", "checkout", "go.mod", "go.sum"
         })
 
-        # The plugin filenames after remap doesn't contain the version.
+        # The plugin filenames after remap lack the version.
         # We need to append it.
         commit, _ = Open3.capture2 "git", "rev-parse", "--short", "HEAD"
         commit = commit.strip()

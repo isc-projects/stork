@@ -458,7 +458,7 @@ func (sa *StorkAgent) Shutdown(reload bool) {
 		if err != nil {
 			log.
 				WithError(err).
-				Error("Hook closing failed")
+				Error("Closing Hook Manager failed")
 		}
 
 		if sa.server != nil {
