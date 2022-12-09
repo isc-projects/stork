@@ -41,10 +41,9 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 }
 
 // Extracts and calls the load function of the Stork hook. Returns an error if
-// the function is missing or fails. On success, returns an object with the
-// callout point implementations. On success, it returns an object with the
-// callout point implementations. The object also implements the Closer interface
-// that must be called to unload the hook.
+// the function is missing or fails. On success, it returns an object with the
+// callout point implementations. The object also implements the Closer
+// interface that must be called to unload the hook.
 func (lm *LibraryManager) Load() (hooks.Callout, error) {
 	symbolName := hooks.HookLoadFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
