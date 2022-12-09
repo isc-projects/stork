@@ -34,40 +34,36 @@ end
 
 namespace :hook do
     desc "Init new hook directory
-        PACKAGE - the GO package name associated with the hook - required
+        MODULE - the GO module name associated with the hook - required
         HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}"
     task :init => [GO] do
-        package = ENV["PACKAGE"]
-        if package.nil?
-            fail "You must provide the PACKAGE variable with the package name"
+        module_name = ENV["MODULE"]
+        if module_name.nil?
+            fail "You must provide the MODULE variable with the module name"
         end
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
         
-        package_directory_name = package.gsub(/[^\w\.-]/, '_')
+        module_directory_name = module_name.gsub(/[^\w\.-]/, '_')
 
-        destination = File.expand_path(File.join(hook_directory, package_directory_name))
+        destination = File.expand_path(File.join(hook_directory, module_directory_name))
 
         require 'pathname'
-        main_package = "isc.org/stork@v0.0.0"
-        main_package_directory_abs = Pathname.new('backend').realdirpath
-        package_directory_abs = Pathname.new(destination)
-        package_directory_rel = main_package_directory_abs.relative_path_from package_directory_abs
+        main_module = "isc.org/stork@v0.0.0"
+        main_module_directory_abs = Pathname.new('backend').realdirpath
+        module_directory_abs = Pathname.new(destination)
+        module_directory_rel = main_module_directory_abs.relative_path_from module_directory_abs
 
         sh "mkdir", "-p", destination
 
         Dir.chdir(destination) do
             sh "git", "init"
-            sh GO, "mod", "init", package
-            sh GO, "mod", "edit", "-require", main_package
-            sh GO, "mod", "edit", "-replace", "#{main_package}=#{package_directory_rel}"
+            sh GO, "mod", "init", module_name
+            sh GO, "mod", "edit", "-require", main_module
+            sh GO, "mod", "edit", "-replace", "#{main_module}=#{module_directory_rel}"
         end
         
         sh "cp", *FileList["backend/hooksutil/boilerplate/*"], destination
-        sh "find", destination,
-            "-type", "f",
-            "-name", "*.go",
-            "-exec", "sed", "-i", "-e", "s/package main/package #{package}/g", "{}", "\;"
     end
 
     desc "Build all hooks. Remap plugins to use the current codebase.
@@ -112,8 +108,8 @@ namespace :hook do
         TAG - use the given tag from the remote repository, if specified but empty use the current version as tag - optional
         If no COMMIT or TAG are specified then it remaps to use the local project."
     task :remap_core => [GO] do
-        main_package = "isc.org/stork"
-        main_package_directory_abs = File.expand_path "backend"
+        main_module = "isc.org/stork"
+        main_module_directory_abs = File.expand_path "backend"
         remote_url = "gitlab.isc.org/isc-projects/stork/backend"
         core_commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
 
@@ -143,14 +139,14 @@ namespace :hook do
             else
                 puts "Remap to use the local directory"
                 require 'pathname'
-                main_directory_abs_obj = Pathname.new(main_package_directory_abs)
-                package_directory_abs_obj = Pathname.new(".").realdirpath
-                package_directory_rel_obj = main_directory_abs_obj.relative_path_from package_directory_abs_obj
+                main_directory_abs_obj = Pathname.new(main_module_directory_abs)
+                module_directory_abs_obj = Pathname.new(".").realdirpath
+                module_directory_rel_obj = main_directory_abs_obj.relative_path_from module_directory_abs_obj
 
-                target = package_directory_rel_obj.to_s
+                target = module_directory_rel_obj.to_s
             end
 
-            sh GO, "mod", "edit", "-replace", "#{main_package}=#{target}"
+            sh GO, "mod", "edit", "-replace", "#{main_module}=#{target}"
             sh GO, "mod", "tidy"
         })
     end
