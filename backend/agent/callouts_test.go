@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
@@ -16,7 +17,7 @@ func TestOnBeforeForwardToKeaOverHTTPCallout(t *testing.T) {
 	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
 	mock.
 		EXPECT().
-		OnBeforeForwardToKeaOverHTTP(gomock.Any()).
+		OnBeforeForwardToKeaOverHTTP(context.Background(), gomock.Any()).
 		Times(1)
 
 	sa, ctx := setupAgentTestWithCallouts([]hooks.Callout{mock})

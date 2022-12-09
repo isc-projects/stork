@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"reflect"
 
 	agentapi "isc.org/stork/api"
@@ -27,9 +28,9 @@ func NewHookManager() *HookManager {
 }
 
 // Callout point executed before forwarding a command to Kea over HTTP.
-func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(in *agentapi.ForwardToKeaOverHTTPReq) {
+func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) {
 	hooksutil.CallSequential(hm.GetExecutor(), func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
-		callout.OnBeforeForwardToKeaOverHTTP(in)
+		callout.OnBeforeForwardToKeaOverHTTP(ctx, in)
 		return 0
 	})
 }
