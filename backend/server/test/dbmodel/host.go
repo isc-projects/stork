@@ -147,12 +147,18 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DaemonID:       apps[0].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI,
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 				{
-					DaemonID:   apps[1].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DaemonID:       apps[1].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI,
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 			},
 		},

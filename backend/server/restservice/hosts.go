@@ -57,12 +57,15 @@ func (r *RestAPI) convertFromHost(dbHost *dbmodel.Host) *models.Host {
 	// daemons and DHCP options.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
-			AppID:         dbLocalHost.Daemon.AppID,
-			AppName:       dbLocalHost.Daemon.App.Name,
-			DaemonID:      dbLocalHost.Daemon.ID,
-			DataSource:    dbLocalHost.DataSource.String(),
-			ClientClasses: dbLocalHost.ClientClasses,
-			OptionsHash:   dbLocalHost.DHCPOptionSetHash,
+			AppID:          dbLocalHost.Daemon.AppID,
+			AppName:        dbLocalHost.Daemon.App.Name,
+			DaemonID:       dbLocalHost.Daemon.ID,
+			DataSource:     dbLocalHost.DataSource.String(),
+			NextServer:     dbLocalHost.NextServer,
+			ServerHostname: dbLocalHost.ServerHostname,
+			BootFileName:   dbLocalHost.BootFileName,
+			ClientClasses:  dbLocalHost.ClientClasses,
+			OptionsHash:    dbLocalHost.DHCPOptionSetHash,
 		}
 		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
@@ -111,9 +114,12 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 		}
 
 		localHost := dbmodel.LocalHost{
-			DaemonID:      lh.DaemonID,
-			DataSource:    ds,
-			ClientClasses: lh.ClientClasses,
+			DaemonID:       lh.DaemonID,
+			DataSource:     ds,
+			ClientClasses:  lh.ClientClasses,
+			NextServer:     lh.NextServer,
+			ServerHostname: lh.ServerHostname,
+			BootFileName:   lh.BootFileName,
 		}
 		localHost.DHCPOptionSet, err = r.flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {

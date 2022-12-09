@@ -226,6 +226,41 @@ func TestGetHostWithClientClasses(t *testing.T) {
 	}
 }
 
+// Test that fetched host includes next server, server hostname and
+// the boot file name.
+func TestGetHostWithBootFields(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add hosts.
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
+
+	// Add LocalHost instance comprising client classes.
+	err = dbmodel.AddHostLocalHosts(db, &hosts[0])
+	require.NoError(t, err)
+
+	// Get the host over the API.
+	params := dhcp.GetHostParams{
+		ID: hosts[0].ID,
+	}
+	rsp := rapi.GetHost(ctx, params)
+	require.IsType(t, &dhcp.GetHostOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostOK)
+	returnedHost := okRsp.Payload
+
+	// Make sure that the boot fields have been returned.
+	require.Len(t, returnedHost.LocalHosts, 2)
+	for _, lh := range returnedHost.LocalHosts {
+		require.Equal(t, "192.2.2.2", lh.NextServer)
+		require.Equal(t, "stork.example.org", lh.ServerHostname)
+		require.Equal(t, "/tmp/boot.xyz", lh.BootFileName)
+	}
+}
+
 // Test that fetched host includes DHCP options.
 func TestGetHostWithOptions(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -338,14 +373,20 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 			},
 			LocalHosts: []*models.LocalHost{
 				{
-					DaemonID:      apps[0].Daemons[0].ID,
-					DataSource:    dbmodel.HostDataSourceAPI.String(),
-					ClientClasses: []string{"class1"},
+					DaemonID:       apps[0].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI.String(),
+					ClientClasses:  []string{"class1"},
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 				{
-					DaemonID:      apps[1].Daemons[0].ID,
-					DataSource:    dbmodel.HostDataSourceAPI.String(),
-					ClientClasses: []string{"class1"},
+					DaemonID:       apps[1].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI.String(),
+					ClientClasses:  []string{"class1"},
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 			},
 		},
@@ -365,7 +406,10 @@ func TestCreateHostBeginSubmit(t *testing.T) {
                     "hw-address": "010203040506",
                     "subnet-id": 111,
                     "hostname": "example.org",
-					"client-classes": ["class1"]
+					"client-classes": ["class1"],
+					"next-server": "192.2.2.2",
+					"server-hostname": "stork.example.org",
+					"boot-file-name": "/tmp/boot.xyz"
                 }
             }
         }`, c.Marshal())
@@ -862,14 +906,20 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 			},
 			LocalHosts: []*models.LocalHost{
 				{
-					DaemonID:      apps[0].Daemons[0].ID,
-					DataSource:    dbmodel.HostDataSourceAPI.String(),
-					ClientClasses: []string{"class1"},
+					DaemonID:       apps[0].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI.String(),
+					ClientClasses:  []string{"class1"},
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 				{
-					DaemonID:      apps[1].Daemons[0].ID,
-					DataSource:    dbmodel.HostDataSourceAPI.String(),
-					ClientClasses: []string{"class1"},
+					DaemonID:       apps[1].Daemons[0].ID,
+					DataSource:     dbmodel.HostDataSourceAPI.String(),
+					ClientClasses:  []string{"class1"},
+					NextServer:     "192.2.2.2",
+					ServerHostname: "stork.example.org",
+					BootFileName:   "/tmp/boot.xyz",
 				},
 			},
 		},
@@ -903,7 +953,10 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
                         "hw-address": "010203040506",
                         "subnet-id": 111,
                         "hostname": "updated.example.org",
-						"client-classes": ["class1"]
+						"client-classes": ["class1"],
+						"next-server": "192.2.2.2",
+						"server-hostname": "stork.example.org",
+						"boot-file-name": "/tmp/boot.xyz"
                     }
                 }
              }`, c.Marshal())

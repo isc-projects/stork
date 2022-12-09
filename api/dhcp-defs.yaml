@@ -154,6 +154,12 @@
         type: array
         items:
           type: string
+      nextServer:
+        type: string
+      serverHostname:
+        type: string
+      bootFileName:
+        type: string
       options:
         type: array
         items:
