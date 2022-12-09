@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
@@ -245,38 +246,50 @@ func runCertImport(settings *cli.Context) error {
 	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
 
-// Execute inspect hook command.
-func runHookInspect(settings *cli.Context) error {
-	directory := settings.String("directory")
-
-	err := hooksutil.WalkPluginLibraries(directory, func(path string, library *hooksutil.LibraryManager, err error) bool {
-		if err != nil {
-			log.
-				WithField("file", path).
-				Error(err)
-			return true
-		}
-
-		hookProgram, hookVersion, err := library.Version()
-		if err != nil {
-			log.
-				WithField("file", path).
-				Error(err)
-			return true
-		}
-
-		log.
-			WithField("file", path).
-			Infof("Hook is compatible with %s@%s", hookProgram, hookVersion)
-		return true
-	})
+// Inspect the hook file.
+func inspectHookFile(path string, library *hooksutil.LibraryManager, err error) {
 	if err != nil {
 		log.
-			WithField("directory", directory).
+			WithField("file", path).
 			Error(err)
+		return
 	}
 
-	return err
+	hookProgram, hookVersion, err := library.Version()
+	if err != nil {
+		log.
+			WithField("file", path).
+			Error(err)
+		return
+	}
+
+	log.
+		WithField("file", path).
+		Infof("Hook is compatible with %s@%s", hookProgram, hookVersion)
+}
+
+// Execute inspect hook command.
+func runHookInspect(settings *cli.Context) error {
+	hookPath := settings.String("path")
+	fileInfo, err := os.Stat(hookPath)
+	if err != nil {
+		return errors.Wrapf(err, "Cannot stat the hook path: '%s'", hookPath)
+	}
+
+	mode := fileInfo.Mode()
+	switch {
+	case mode.IsDir():
+		return hooksutil.WalkPluginLibraries(hookPath, func(path string, library *hooksutil.LibraryManager, err error) bool {
+			inspectHookFile(path, library, err)
+			return true
+		})
+	case mode.IsRegular():
+		library, err := hooksutil.NewLibraryManager(hookPath)
+		inspectHookFile(hookPath, library, err)
+		return nil
+	default:
+		return errors.Errorf("Unsupported file mode: '%s'", mode.String())
+	}
 }
 
 // Prepare urfave cli app with all flags and commands defined.
@@ -463,11 +476,11 @@ func setupApp() *cli.App {
 
 	hookInspectFlags := []cli.Flag{
 		&cli.StringFlag{
-			Name:     "directory",
-			Usage:    "The hook directory path",
+			Name:     "path",
+			Usage:    "The hook file or directory path",
 			Required: true,
-			Aliases:  []string{"d"},
-			EnvVars:  []string{"STORK_TOOL_HOOK_DIRECTORY"},
+			Aliases:  []string{"p"},
+			EnvVars:  []string{"STORK_TOOL_HOOK_PATH"},
 		},
 	}
 

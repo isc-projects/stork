@@ -223,11 +223,21 @@ func TestRunDBGenPassword(*testing.T) {
 	main()
 }
 
-// Test that the hook inspect command is running properly.
-func TestRunHookInspect(*testing.T) {
+// Test that the hook inspect command is running properly for directory path.
+func TestRunHookInspectDirectory(*testing.T) {
 	directory, _ := os.Getwd()
 	os.Args = []string{
-		"stork-tool", "hook-inspect", "-d", directory,
+		"stork-tool", "hook-inspect", "-p", directory,
+	}
+
+	main()
+}
+
+// Test that the hook inspect command is running properly for file path.
+func TestRunHookInspectFile(*testing.T) {
+	file, _ := os.Executable()
+	os.Args = []string{
+		"stork-tool", "hook-inspect", "-p", file,
 	}
 
 	main()
