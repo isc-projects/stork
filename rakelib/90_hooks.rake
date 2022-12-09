@@ -61,6 +61,7 @@ namespace :hook do
             sh GO, "mod", "init", module_name
             sh GO, "mod", "edit", "-require", main_module
             sh GO, "mod", "edit", "-replace", "#{main_module}=#{module_directory_rel}"
+            sh "touch", "go.sum"
         end
         
         sh "cp", *FileList["backend/hooksutil/boilerplate/*"], destination
@@ -70,20 +71,29 @@ namespace :hook do
         DEBUG - build plugins in debug mode - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}"
     task :build => [GO, :remap_core] do
+        require 'tmpdir'
+
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
 
         # Removes old plugins
         puts "Removing old compiled hooks..."
         sh "rm", "-f", *FileList[File.join(hook_directory, "*.so")]
 
-        forEachHook(lambda { |dir_name|
-            puts "Building #{dir_name}..."
-            sh "rake", "build"
-            sh "cp", *FileList["build/*.so"], hook_directory
+        mod_files = ["go.mod", "go.sum"]
 
-            # Back the changes in Go mod files.
-            puts "Reverting remap operation..."
-            sh "git", "checkout", "go.mod", "go.sum"
+        forEachHook(lambda { |dir_name|
+            # Make a backup of the original mod files
+            Dir.mktmpdir do |temp|
+                sh "cp", *mod_files, temp
+
+                puts "Building #{dir_name}..."
+                sh "rake", "build"
+                sh "cp", *FileList["build/*.so"], hook_directory
+
+                # Back the changes in Go mod files.
+                puts "Reverting remap operation..."
+                sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
+            end
         })
 
         # The plugin filenames after remap lack the version.
