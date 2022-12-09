@@ -45,7 +45,7 @@ func TestRegisterCalloutsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	hookManager := NewHookManager(nil)
 
 	// Act
-	err := hookManager.RegisterCalloutsFromDirectory("/non/exist/dir")
+	err := hookManager.RegisterCalloutsFromDirectory("foo", "/non/exist/dir")
 
 	// Assert
 	require.Error(t, err)

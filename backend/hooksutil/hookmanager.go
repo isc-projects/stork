@@ -21,8 +21,8 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 }
 
 // Registers all hooks from a given hook directory.
-func (hm *HookManager) RegisterCalloutsFromDirectory(directory string) error {
-	callouts, err := LoadAllHookCallouts(hooks.HookProgramServer, directory)
+func (hm *HookManager) RegisterCalloutsFromDirectory(program, directory string) error {
+	callouts, err := LoadAllHookCallouts(program, directory)
 	if err != nil {
 		return err
 	}

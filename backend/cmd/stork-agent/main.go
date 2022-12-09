@@ -14,6 +14,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"isc.org/stork"
 	"isc.org/stork/agent"
+	"isc.org/stork/hooks"
 	storkutil "isc.org/stork/util"
 )
 
@@ -45,7 +46,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 
 	// Read the hook libraries.
 	hookManager := agent.NewHookManager()
-	err := hookManager.RegisterCalloutsFromDirectory(settings.Path("hook-directory"))
+	err := hookManager.RegisterCalloutsFromDirectory(hooks.HookProgramAgent, settings.Path("hook-directory"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.
