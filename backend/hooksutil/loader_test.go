@@ -30,7 +30,6 @@ func TestLoadAllHookCalloutsReturnErrorForNonPluginFile(t *testing.T) {
 	require.Nil(t, callouts)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "cannot open hook library")
-	require.ErrorContains(t, err, "invalid ELF header")
 }
 
 // Test that the extract callout function returns an error if the Version
