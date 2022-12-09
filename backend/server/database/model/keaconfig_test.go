@@ -274,8 +274,44 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 }
 
 // Verifies that the host instance can be created by parsing Kea
-// configuration.
-func TestNewHostFromKea(t *testing.T) {
+// DHCPv4 configuration.
+func TestNewV4HostFromKea(t *testing.T) {
+	rawHost := map[string]interface{}{
+		"hw-address":      "01:02:03:04:05:06",
+		"ip-address":      "192.0.2.5",
+		"hostname":        "hostname.example.org",
+		"next-server":     "192.0.2.3",
+		"server-hostname": "my-server-host",
+		"boot-file-name":  "/tmp/bootfile",
+	}
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon.ID = 123
+	lookup := NewDHCPOptionDefinitionLookup()
+	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig, lookup)
+	require.NoError(t, err)
+	require.NotNil(t, parsedHost)
+
+	// Host identifiers.
+	require.Len(t, parsedHost.HostIdentifiers, 1)
+	require.Equal(t, "hw-address", parsedHost.HostIdentifiers[0].Type)
+	require.Len(t, parsedHost.IPReservations, 1)
+	require.Equal(t, "192.0.2.5", parsedHost.IPReservations[0].Address)
+
+	// Local host.
+	require.Len(t, parsedHost.LocalHosts, 1)
+	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
+	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
+
+	// Boot fields.
+	require.Equal(t, "192.0.2.3", parsedHost.LocalHosts[0].NextServer)
+	require.Equal(t, "my-server-host", parsedHost.LocalHosts[0].ServerHostname)
+	require.Equal(t, "/tmp/bootfile", parsedHost.LocalHosts[0].BootFileName)
+}
+
+// Verifies that the host instance can be created by parsing Kea
+// DHCPv6 configuration.
+func TestNewV6HostFromKea(t *testing.T) {
 	rawHost := map[string]interface{}{
 		"duid": "01:02:03:04",
 		"ip-addresses": []interface{}{
@@ -307,9 +343,12 @@ func TestNewHostFromKea(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, parsedHost)
 
+	// Host identifiers.
 	require.Len(t, parsedHost.HostIdentifiers, 1)
 	require.Equal(t, "duid", parsedHost.HostIdentifiers[0].Type)
 	require.Len(t, parsedHost.IPReservations, 4)
+
+	// IP reservations.
 	require.Equal(t, "2001:db8:1::1", parsedHost.IPReservations[0].Address)
 	require.Equal(t, "2001:db8:1::2", parsedHost.IPReservations[1].Address)
 	require.Equal(t, "3000:1::/64", parsedHost.IPReservations[2].Address)
