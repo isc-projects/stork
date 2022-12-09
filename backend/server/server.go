@@ -180,12 +180,14 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	ss.HookManager = hookmanager.NewHookManager()
 	err = ss.HookManager.RegisterCalloutsFromDirectory(ss.GeneralSettings.HookDirectory)
-	if err != nil && errors.Is(err, os.ErrNotExist) {
-		log.
-			WithError(err).
-			Warnf("The hook directory: '%s' doesn't exist", ss.GeneralSettings.HookDirectory)
-	} else if err != nil {
-		return err
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.
+				WithError(err).
+				Warnf("The hook directory: '%s' doesn't exist", ss.GeneralSettings.HookDirectory)
+		} else {
+			return err
+		}
 	}
 
 	// setup database connection

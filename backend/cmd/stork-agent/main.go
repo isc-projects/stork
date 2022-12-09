@@ -46,14 +46,16 @@ func runAgent(settings *cli.Context, reload bool) error {
 	// Read the hook libraries.
 	hookManager := agent.NewHookManager()
 	err := hookManager.RegisterCalloutsFromDirectory(settings.Path("hook-directory"))
-	if err != nil && errors.Is(err, os.ErrNotExist) {
-		log.
-			WithError(err).
-			Warnf("The hook directory: '%s' doesn't exist", settings.Path("hook-directory"))
-	} else if err != nil {
-		log.
-			WithError(err).
-			Fatal("Problem with loading hook libraries")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.
+				WithError(err).
+				Warnf("The hook directory: '%s' doesn't exist", settings.Path("hook-directory"))
+		} else {
+			log.
+				WithError(err).
+				Fatal("Problem with loading hook libraries")
+		}
 	}
 
 	// Try registering the agent in the server using the agent token
