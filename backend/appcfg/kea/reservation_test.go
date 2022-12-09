@@ -17,7 +17,10 @@ type testHost struct {
 		id  int64
 		err error
 	}
-	clientClasses []string
+	clientClasses  []string
+	nextServer     string
+	serverHostname string
+	bootFileName   string
 }
 
 // Creates a test host with default values.
@@ -58,6 +61,9 @@ func createDefaultTestHost() *testHost {
 		clientClasses: []string{
 			"foo", "bar",
 		},
+		nextServer:     "192.2.2.2",
+		serverHostname: "my-server-hostname",
+		bootFileName:   "/tmp/bootfile",
 	}
 }
 
@@ -87,6 +93,21 @@ func (host testHost) GetSubnetID(int64) (int64, error) {
 // Returns static client classes.
 func (host testHost) GetClientClasses(int64) []string {
 	return host.clientClasses
+}
+
+// Returns next server.
+func (host testHost) GetNextServer(int64) string {
+	return host.nextServer
+}
+
+// Returns server hostname.
+func (host testHost) GetServerHostname(int64) string {
+	return host.serverHostname
+}
+
+// Returns boot file name.
+func (host testHost) GetBootFileName(int64) string {
+	return host.bootFileName
 }
 
 // Returns static DHCP options.
@@ -161,6 +182,9 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 	require.Len(t, reservation.ClientClasses, 2)
 	require.Equal(t, "foo", reservation.ClientClasses[0])
 	require.Equal(t, "bar", reservation.ClientClasses[1])
+	require.Equal(t, "192.2.2.2", reservation.NextServer)
+	require.Equal(t, "my-server-hostname", reservation.ServerHostname)
+	require.Equal(t, "/tmp/bootfile", reservation.BootFileName)
 	require.EqualValues(t, 123, reservation.SubnetID)
 }
 

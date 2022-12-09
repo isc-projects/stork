@@ -736,8 +736,11 @@ func TestAddHostLocalHosts(t *testing.T) {
 	// Associate the first host with the first app.
 	host := hosts[0]
 	host.LocalHosts = append(host.LocalHosts, LocalHost{
-		DaemonID:   apps[0].Daemons[0].ID,
-		DataSource: HostDataSourceAPI,
+		DaemonID:       apps[0].Daemons[0].ID,
+		DataSource:     HostDataSourceAPI,
+		NextServer:     "192.2.2.2",
+		ServerHostname: "my-server-hostname",
+		BootFileName:   "/tmp/bootfile",
 		ClientClasses: []string{
 			"foo",
 			"bar",
@@ -787,12 +790,16 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
-	require.Len(t, returnedList[0].LocalHosts[0].ClientClasses, 2)
-	require.ElementsMatch(t, returnedList[0].LocalHosts[0].ClientClasses, []string{"foo", "bar"})
+
 	// When fetching all hosts, the detailed app and daemon information
 	// should be returned as well.
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon)
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon.App)
+
+	// Make sure that the boot parameters have been returned.
+	require.Equal(t, "192.2.2.2", returnedList[0].LocalHosts[0].NextServer)
+	require.Equal(t, "my-server-hostname", returnedList[0].LocalHosts[0].ServerHostname)
+	require.Equal(t, "/tmp/bootfile", returnedList[0].LocalHosts[0].BootFileName)
 
 	// Make sure that client classes are returned.
 	require.Len(t, returnedList[0].LocalHosts[0].ClientClasses, 2)
@@ -1429,7 +1436,10 @@ func TestKeaConfigHostInterface(t *testing.T) {
 		},
 		LocalHosts: []LocalHost{
 			{
-				DaemonID: 1,
+				DaemonID:       1,
+				NextServer:     "192.2.2.2",
+				ServerHostname: "my-server-hostname",
+				BootFileName:   "/tmp/bootfile",
 				ClientClasses: []string{
 					"foo",
 					"bar",
@@ -1461,6 +1471,11 @@ func TestKeaConfigHostInterface(t *testing.T) {
 	require.EqualValues(t, 234, subnetID)
 	_, err = host.GetSubnetID(3)
 	require.Error(t, err)
+	lh := host.GetLocalHost(1)
+	require.NotNil(t, lh)
+	require.Equal(t, "192.2.2.2", host.GetNextServer(1))
+	require.Equal(t, "my-server-hostname", host.GetServerHostname(1))
+	require.Equal(t, "/tmp/bootfile", host.GetBootFileName(1))
 	clientClasses := host.GetClientClasses(1)
 	require.Len(t, clientClasses, 2)
 	require.Equal(t, "foo", clientClasses[0])
@@ -1480,6 +1495,18 @@ func TestKeaConfigHostInterfaceNoSubnet(t *testing.T) {
 	subnetID, err := host.GetSubnetID(1)
 	require.NoError(t, err)
 	require.Zero(t, subnetID)
+}
+
+// Test that empty values are returned for the local host when daemon ID
+// doesn't match.
+func TestKeaConfigInterfaceNoDaemon(t *testing.T) {
+	host := &Host{}
+	require.Nil(t, host.GetLocalHost(1))
+	require.Empty(t, host.GetNextServer(1))
+	require.Empty(t, host.GetServerHostname(1))
+	require.Empty(t, host.GetBootFileName(1))
+	require.Empty(t, host.GetClientClasses(1))
+	require.Empty(t, host.GetDHCPOptions(1))
 }
 
 // Test that daemon information can be populated to the existing

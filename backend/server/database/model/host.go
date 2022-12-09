@@ -96,6 +96,9 @@ type LocalHost struct {
 	DataSource HostDataSource
 
 	ClientClasses     []string `pg:",array"`
+	NextServer        string
+	ServerHostname    string
+	BootFileName      string
 	DHCPOptionSet     []DHCPOption
 	DHCPOptionSetHash string
 }
@@ -688,6 +691,16 @@ func (host Host) IsSame(other *Host) bool {
 	return host.Hostname == other.Hostname
 }
 
+// Returns local host instance for the daemon ID or nil.
+func (host Host) GetLocalHost(daemonID int64) *LocalHost {
+	for i := range host.LocalHosts {
+		if host.LocalHosts[i].DaemonID == daemonID {
+			return &host.LocalHosts[i]
+		}
+	}
+	return nil
+}
+
 // Converts host identifier value to a string of hexadecimal digits.
 func (id HostIdentifier) ToHex(separator string) string {
 	// Convert binary value to hexadecimal value.
@@ -907,11 +920,32 @@ func (host Host) GetHostname() string {
 
 // Returns reserved client classes.
 func (host Host) GetClientClasses(daemonID int64) (clientClasses []string) {
-	for _, lh := range host.LocalHosts {
-		if lh.DaemonID == daemonID {
-			clientClasses = lh.ClientClasses
-			break
-		}
+	if lh := host.GetLocalHost(daemonID); lh != nil {
+		clientClasses = lh.ClientClasses
+	}
+	return
+}
+
+// Returns reserved next server address.
+func (host Host) GetNextServer(daemonID int64) (nextServer string) {
+	if lh := host.GetLocalHost(daemonID); lh != nil {
+		nextServer = lh.NextServer
+	}
+	return
+}
+
+// Returns reserved server hostname.
+func (host Host) GetServerHostname(daemonID int64) (serverHostname string) {
+	if lh := host.GetLocalHost(daemonID); lh != nil {
+		serverHostname = lh.ServerHostname
+	}
+	return
+}
+
+// Returns reserved boot file name.
+func (host Host) GetBootFileName(daemonID int64) (bootFileName string) {
+	if lh := host.GetLocalHost(daemonID); lh != nil {
+		bootFileName = lh.BootFileName
 	}
 	return
 }
