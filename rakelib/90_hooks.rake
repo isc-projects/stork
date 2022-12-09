@@ -6,7 +6,8 @@
 ### Files ###
 #############
 
-DEFAULT_HOOK_DIRECTORY = File.expand_path "plugins"
+default_hook_directory_rel = "hooks"
+DEFAULT_HOOK_DIRECTORY = File.expand_path default_hook_directory_rel
 
 CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
 
@@ -35,7 +36,7 @@ end
 namespace :hook do
     desc "Init new hook directory
         MODULE - the GO module name associated with the hook - required
-        HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}"
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
     task :init => [GO] do
         module_name = ENV["MODULE"]
         if module_name.nil?
@@ -67,15 +68,15 @@ namespace :hook do
         sh "cp", *FileList["backend/hooksutil/boilerplate/*"], destination
     end
 
-    desc "Build all hooks. Remap plugins to use the current codebase.
-        DEBUG - build plugins in debug mode - default: false
-        HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}"
+    desc "Build all hooks. Remap hooks to use the current codebase.
+        DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
     task :build => [GO, :remap_core] do
         require 'tmpdir'
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
 
-        # Removes old plugins
+        # Removes old hooks
         puts "Removing old compiled hooks..."
         sh "rm", "-f", *FileList[File.join(hook_directory, "*.so")]
 
@@ -113,7 +114,7 @@ namespace :hook do
     desc "Remap the dependency path to the Stork core. It specifies the source
         of the core dependency - remote repository or local directory. The
         remote repository may be fetched by tag or commit hash.
-        HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}
         COMMIT - use the given commit from the remote repository, if specified but empty use the current hash - optional
         TAG - use the given tag from the remote repository, if specified but empty use the current version as tag - optional
         If no COMMIT or TAG are specified then it remaps to use the local project."
@@ -183,7 +184,7 @@ end
 
 namespace :run do
     desc "Run Stork Server with hooks
-        HOOK_DIR - the hook (plugin) directory - optional, default: #{DEFAULT_HOOK_DIRECTORY}"
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
     task :server_hooks => ["hook:build"] do
         hook_directory = ENV["HOOK_DIR"] || ENV["STORK_SERVER_HOOK_DIRECTORY"] || DEFAULT_HOOK_DIRECTORY
         ENV["STORK_SERVER_HOOK_DIRECTORY"] = hook_directory
