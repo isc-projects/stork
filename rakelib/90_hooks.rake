@@ -62,7 +62,7 @@ namespace :hook do
             sh GO, "mod", "edit", "-replace", "#{main_package}=#{package_directory_rel}"
         end
 
-        sh "cp", *FileList["backend/hooksutil/templates/*"], destination
+        sh "cp", *FileList["backend/hooksutil/boilerplate/*"], destination
     end
 
     desc 'Build all hooks. Remap plugins to use the current codebase.

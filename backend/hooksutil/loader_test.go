@@ -24,7 +24,7 @@ func TestLoadAllHookCalloutsReturnErrorForInvalidDirectory(t *testing.T) {
 // contains a non-plugin file.
 func TestLoadAllHookCalloutsReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange & Act
-	callouts, err := LoadAllHookCallouts("", "templates")
+	callouts, err := LoadAllHookCallouts("", "boilerplate")
 
 	// Assert
 	require.Nil(t, callouts)
