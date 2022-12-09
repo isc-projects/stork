@@ -313,6 +313,16 @@ func TestBootstrap(t *testing.T) {
 	require.Contains(t, configPreferencesByName, "out_of_pool_reservation")
 	require.True(t, configPreferencesByName["out_of_pool_reservation"].GloballyEnabled)
 
+	// Check the if hook manager is initialized.
+	require.NotNil(t, server.HookManager)
+	require.NotNil(t, server.HookManager.GetExecutor())
+	require.NotEmpty(t, server.HookManager.GetExecutor().GetSupportedCalloutTypes())
+
+	// Check the if hook manager is initialized.
+	require.NotNil(t, server.HookManager)
+	require.NotNil(t, server.HookManager.GetExecutor())
+	require.NotEmpty(t, server.HookManager.GetExecutor().GetSupportedCalloutTypes())
+
 	// Run Bootstrap again with the reload flag set.
 	err = server.Bootstrap(true)
 	require.NoError(t, err)
