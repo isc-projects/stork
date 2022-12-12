@@ -9,15 +9,17 @@ import (
 
 // Test DaemonTag interface implementation.
 func TestDaemonTag(t *testing.T) {
-	daemon := Daemon{
+	tag := newDaemonTag(Daemon{
 		ID:    1,
 		Name:  "dhcp4",
 		AppID: 2,
-	}
-	require.EqualValues(t, 1, daemon.GetID())
-	require.Equal(t, "dhcp4", daemon.GetName())
-	require.EqualValues(t, 2, daemon.GetAppID())
-	require.Equal(t, dbmodel.AppTypeKea, daemon.GetAppType())
+	}, 42)
+	require.EqualValues(t, 1, tag.GetID())
+	require.Equal(t, "dhcp4", tag.GetName())
+	require.EqualValues(t, 2, tag.GetAppID())
+	require.Equal(t, dbmodel.AppTypeKea, tag.GetAppType())
+	require.NotNil(t, tag.GetMachineID())
+	require.EqualValues(t, 42, *tag.GetMachineID())
 }
 
 // Test that GetAppType() returns "kea" for Kea daemons.
@@ -31,26 +33,26 @@ func TestDaemonTagKeaAppType(t *testing.T) {
 	for _, name := range names {
 		daemonName := name
 		t.Run(name, func(t *testing.T) {
-			daemon := Daemon{
+			tag := newDaemonTag(Daemon{
 				Name: daemonName,
-			}
-			require.Equal(t, dbmodel.AppTypeKea, daemon.GetAppType())
+			}, 42)
+			require.Equal(t, dbmodel.AppTypeKea, tag.GetAppType())
 		})
 	}
 }
 
 // Test that GetAppType() returns "bind9" for daemon name "named".
 func TestDaemonTagBind9AppType(t *testing.T) {
-	daemon := Daemon{
+	tag := newDaemonTag(Daemon{
 		Name: "named",
-	}
-	require.Equal(t, dbmodel.AppTypeBind9, daemon.GetAppType())
+	}, 42)
+	require.Equal(t, dbmodel.AppTypeBind9, tag.GetAppType())
 }
 
 // Test that GetAppType() returns "unknown" for unsupported daemon name.
 func TestDaemonTagUnknownApp(t *testing.T) {
-	daemon := Daemon{
+	daemon := newDaemonTag(Daemon{
 		Name: "something",
-	}
+	}, 42)
 	require.Equal(t, "unknown", daemon.GetAppType())
 }

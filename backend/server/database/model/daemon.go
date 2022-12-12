@@ -226,6 +226,7 @@ type DaemonTag interface {
 	GetName() string
 	GetAppID() int64
 	GetAppType() string
+	GetMachineID() *int64
 }
 
 // Creates an instance of a Kea daemon. If the daemon name is dhcp4 or
@@ -627,4 +628,12 @@ func (d Daemon) GetAppType() (apptype string) {
 		apptype = AppTypeBind9
 	}
 	return
+}
+
+// Returns ID of an machine owning the daemon or nil if the app is unknown.
+func (d Daemon) GetMachineID() *int64 {
+	if d.App == nil {
+		return nil
+	}
+	return &d.App.MachineID
 }

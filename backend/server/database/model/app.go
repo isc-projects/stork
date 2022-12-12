@@ -45,6 +45,7 @@ type AppTag interface {
 	GetName() string
 	GetType() string
 	GetVersion() string
+	GetMachineID() int64
 }
 
 // updateAppAccessPoints updates the associated application access points into
@@ -521,6 +522,11 @@ func (app App) GetType() string {
 // Returns app version.
 func (app App) GetVersion() string {
 	return app.Meta.Version
+}
+
+// Return machine ID owning the app.
+func (app App) GetMachineID() int64 {
+	return app.MachineID
 }
 
 // Remaining functions for the agentcomm.ControlledApp implementation.

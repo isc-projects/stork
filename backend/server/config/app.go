@@ -54,6 +54,11 @@ func (app App) GetVersion() string {
 	return app.Meta.Version
 }
 
+// Returns machine ID owning the app.
+func (app App) GetMachineID() int64 {
+	return app.Machine.ID
+}
+
 // Returns app control access point including control address, port, key and
 // the flag indicating if the connection is secure.
 func (app App) GetControlAccessPoint() (address string, port int64, key string, secure bool, err error) {
@@ -78,7 +83,7 @@ func (app App) GetMachineTag() dbmodel.MachineTag {
 // Returns DaemonTag interfaces to the daemons owned by the app.
 func (app App) GetDaemonTags() (tags []dbmodel.DaemonTag) {
 	for i := range app.Daemons {
-		tags = append(tags, app.Daemons[i])
+		tags = append(tags, newDaemonTag(app.Daemons[i], app.Machine.ID))
 	}
 	return
 }
