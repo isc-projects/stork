@@ -642,7 +642,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "hook-inspect",
 				Usage:       "Prints details about hooks",
-				UsageText:   "stork-tool hook-inspect -d directory",
+				UsageText:   "stork-tool hook-inspect -p file-or-directory",
 				Description: "",
 				Flags:       hookInspectFlags,
 				Action:      runHookInspect,
