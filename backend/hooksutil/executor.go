@@ -111,13 +111,13 @@ func CallSequential[TCarrier hooks.CalloutCarrier, TOutput any](he *HookExecutor
 // Returns a default value if no callout was called.
 func CallSingle[TCarrier hooks.CalloutCarrier, TOutput any](he *HookExecutor, caller func(TCarrier) TOutput) (output TOutput) {
 	t := reflect.TypeOf((*TCarrier)(nil)).Elem()
-	callouts, ok := he.registeredCarriers[t]
-	if !ok || len(callouts) == 0 {
+	carriers, ok := he.registeredCarriers[t]
+	if !ok || len(carriers) == 0 {
 		return
-	} else if len(callouts) > 1 {
+	} else if len(carriers) > 1 {
 		logrus.
 			WithField("carrier", t.Name()).
 			Warn("there are many registered callout carriers but expected a single one")
 	}
-	return callCallout(callouts[0].(TCarrier), caller)
+	return callCallout(carriers[0].(TCarrier), caller)
 }

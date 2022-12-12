@@ -162,9 +162,9 @@ namespace :hook do
         })
     end
 
-    desc "List dependencies of a given callout package
+    desc "List dependencies of a given callout specification package
         KIND - callout kind - required, choice: agent or server
-        CALLOUT - callout package name - required"
+        CALLOUT - callout specification (interface) package name - required"
     task :list_callout_deps => [GO] do
         kind = ENV["KIND"]
         if kind != "server" && kind != "agent"
@@ -173,7 +173,7 @@ namespace :hook do
 
         callout = ENV["CALLOUT"]
         if callout.nil?
-            fail "You need to provide the callout name in CALLOUT variable."
+            fail "You need to provide the callout package name in CALLOUT variable."
         end
 
         package_rel = "hooks/#{kind}/#{callout}"

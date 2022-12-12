@@ -7,8 +7,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Facade for all callout points. It defines the specific calling method for
-// each callout point.
+// Facade for all callouts. It defines the specific calling method for
+// each callout.
 type HookManager struct {
 	executor *HookExecutor
 }

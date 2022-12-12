@@ -17,7 +17,7 @@ func (hm *HookManager) HasAuthenticationHook() bool {
 	return hm.GetExecutor().HasRegistered(reflect.TypeOf((*authenticationcallouts.AuthenticationCallouts)(nil)).Elem())
 }
 
-// Callout point to authenticate the user based on HTTP request (headers, cookie)
+// Callout to authenticate the user based on HTTP request (headers, cookie)
 // and the credentials provided in the login form (email, password).
 func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, email, password *string) (*authenticationcallouts.User, error) {
 	type output struct {
@@ -28,8 +28,8 @@ func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, 
 	// We assume that only one authentication hook can be used.
 	// It's a design decision. Technically, it's possible to authorize different
 	// users with different methods.
-	data := hooksutil.CallSingle(hm.GetExecutor(), func(callout authenticationcallouts.AuthenticationCallouts) output {
-		user, err := callout.Authenticate(ctx, request, email, password)
+	data := hooksutil.CallSingle(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) output {
+		user, err := carrier.Authenticate(ctx, request, email, password)
 		return output{
 			user: user,
 			err:  err,
@@ -38,12 +38,10 @@ func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, 
 	return data.user, data.err
 }
 
-// Callout point to unauthenticate a user (close session). It accepts a context
-// that should contain the session IDCallout point to unauthenticate a user
-// (close session). It accepts a context that should contain the session ID set
-// up in the Authenticate callout point.
+// Callout to unauthenticate a user (close session). It accepts a context that
+// should contain the session ID set up in the Authenticate callout.
 func (hm *HookManager) Unauthenticate(ctx context.Context) error {
-	return hooksutil.CallSingle(hm.GetExecutor(), func(callout authenticationcallouts.AuthenticationCallouts) error {
-		return callout.Unauthenticate(ctx)
+	return hooksutil.CallSingle(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) error {
+		return carrier.Unauthenticate(ctx)
 	})
 }

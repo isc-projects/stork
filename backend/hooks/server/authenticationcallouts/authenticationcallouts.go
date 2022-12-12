@@ -30,6 +30,6 @@ type AuthenticationCallouts interface {
 	// A session ID (if applicable) may be stored in the context.
 	Authenticate(ctx context.Context, request *http.Request, email, password *string) (*User, error)
 	// Called to perform unauthentication (closing the session). It accepts the
-	// context passed previously to the authentication callout point.
+	// context passed previously to the authentication callout.
 	Unauthenticate(ctx context.Context) error
 }

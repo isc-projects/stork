@@ -59,7 +59,7 @@ callout carrier (structure)
 
 callout carrier (object)
     The instance of the callout payload structure created by the ``Load`` hook function.
-    It allows calling the callout points implementations. The instance
+    It allows calling the callout implementations. The instance
     shouldn't be created before the ``Load`` call. At shutdown, the ``Close``
     method of the object is called. It should free all used resources.  The 
     hook payload may contain other functions for internal purposes, not only
