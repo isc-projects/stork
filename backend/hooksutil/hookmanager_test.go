@@ -84,11 +84,11 @@ func TestGetExecutor(t *testing.T) {
 // Test that the hook manager unregisters all callout carriers on close.
 func TestClose(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*io.Closer)(nil)).Elem()
+	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
 	mock := newMockCalloutCarrierFoo()
 
 	hookManager := NewHookManager([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
@@ -106,7 +106,7 @@ func TestClose(t *testing.T) {
 // Test that the hook manager combines the errors returned on close.
 func TestCloseCombineErrors(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*io.Closer)(nil)).Elem()
+	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
 
 	mock1 := newMockCalloutCarrierFoo()
 	mock1.closeErr = errors.New("foo")
@@ -115,7 +115,7 @@ func TestCloseCombineErrors(t *testing.T) {
 	mock2.closeErr = errors.New("bar")
 
 	hookManager := NewHookManager([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
