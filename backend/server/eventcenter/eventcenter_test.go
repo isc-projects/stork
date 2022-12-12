@@ -9,8 +9,57 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-// Check creating event.
-func TestCreateEvent(t *testing.T) {
+// Test that the event with a machine entry is created property.
+func TestCreateEventMachine(t *testing.T) {
+	// Arrange
+	machine := &dbmodel.Machine{
+		ID:      456,
+		Address: "my-address",
+		State: dbmodel.MachineState{
+			Hostname: "my-hostname",
+		},
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {machine} bar", machine)
+
+	// Assert
+	require.EqualValues(t, "foo <machine id=\"456\" address=\"my-address\" hostname=\"my-hostname\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the missing machine state doesn't cause problems.
+func TestCreateEventMachineWithoutState(t *testing.T) {
+	// Arrange
+	machine := &dbmodel.Machine{
+		ID: 456,
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {machine} bar", machine)
+
+	// Assert
+	require.EqualValues(t, "foo <machine id=\"456\" address=\"\" hostname=\"\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the event with an app entry is created properly.
+func TestCreateEventApp(t *testing.T) {
+	// Arrange
 	app := &dbmodel.App{
 		ID:   123,
 		Type: dbmodel.AppTypeKea,
@@ -18,50 +67,311 @@ func TestCreateEvent(t *testing.T) {
 		Meta: dbmodel.AppMeta{
 			Version: "1.2.3",
 		},
+		MachineID: 456,
 	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvWarning, "foo {app} bar", app)
+
+	// Assert
+	require.EqualValues(t, ev.Text, "foo <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"1.2.3\"> bar")
+	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.EqualValues(t, 123, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that missing app meta doesn't cause problems.
+func TestCreateEventAppWithoutMeta(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		ID:        123,
+		Type:      dbmodel.AppTypeKea,
+		Name:      "dhcp-server",
+		MachineID: 456,
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvWarning, "foo {app} bar", app)
+
+	// Assert
+	require.EqualValues(t, ev.Text, "foo <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"\"> bar")
+	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.EqualValues(t, 123, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the event with a daemon entry is created properly.
+func TestCreateEventDaemon(t *testing.T) {
+	// Arrange
+	daemon := &dbmodel.Daemon{
+		ID:   234,
+		Name: "dhcp4",
+		App: &dbmodel.App{
+			ID:        123,
+			MachineID: 456,
+			Type:      dbmodel.AppTypeKea,
+		},
+		AppID: 123,
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
+
+	// Assert
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" appId=\"123\" appType=\"kea\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvError, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.EqualValues(t, 123, ev.Relations.AppID)
+	require.EqualValues(t, 234, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the event with a daemon entry is created properly even if the
+// daemon misses the app reference.
+func TestCreateEventDaemonWithoutApp(t *testing.T) {
+	// Arrange
 	daemon := &dbmodel.Daemon{
 		ID:    234,
 		Name:  "dhcp4",
-		App:   app,
-		AppID: app.ID,
+		App:   nil,
+		AppID: 123,
 	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
+
+	// Assert
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" appId=\"123\" appType=\"\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvError, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.Zero(t, ev.Relations.MachineID)
+	require.EqualValues(t, 123, ev.Relations.AppID)
+	require.EqualValues(t, 234, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the event with a subnet entry is created properly.
+func TestCreateEventSubnet(t *testing.T) {
+	// Arrange
 	subnet := &dbmodel.Subnet{
 		ID:     345,
 		Prefix: "192.0.0.0/8",
 	}
-	machine := &dbmodel.Machine{
-		ID: 456,
-	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {subnet} bar", subnet)
+
+	// Assert
+	require.EqualValues(t, "foo <subnet id=\"345\" prefix=\"192.0.0.0/8\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.Zero(t, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.EqualValues(t, 345, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the error with a user entry is created properly.
+func TestCreateEventUser(t *testing.T) {
+	// Arrange
 	user := &dbmodel.SystemUser{
 		ID:    567,
 		Login: "login",
 		Email: "email",
 	}
 
-	// warning event with ref to app
-	ev := CreateEvent(dbmodel.EvWarning, "some text {app} and {user}", app, user)
-	require.EqualValues(t, ev.Text, "some text <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"1.2.3\"> and <user id=\"567\" login=\"login\" email=\"email\">")
+	// Act
+	ev := CreateEvent(dbmodel.EvWarning, "foo {user} bar", user)
+
+	// Assert
+	require.EqualValues(t, "foo <user id=\"567\" login=\"login\" email=\"email\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.Zero(t, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.EqualValues(t, 567, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the error with the app and daemon entries is created properly.
+func TestCreateEventAppAndDaemon(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		ID:   123,
+		Type: dbmodel.AppTypeKea,
+		Name: "dhcp-server",
+		Meta: dbmodel.AppMeta{
+			Version: "1.2.3",
+		},
+		MachineID: 456,
+	}
+
+	daemon := &dbmodel.Daemon{
+		ID:    234,
+		Name:  "dhcp4",
+		App:   app,
+		AppID: app.ID,
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {daemon} bar {app} baz", daemon, app)
+
+	// Assert
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" appId=\"123\" appType=\"kea\"> bar <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"1.2.3\"> baz", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.NotNil(t, ev.Relations)
+
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.EqualValues(t, 123, ev.Relations.AppID)
+	require.EqualValues(t, 234, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the event with the machine and subnet entries is created properly.
+func TestCreateEventMachineAndSubnet(t *testing.T) {
+	// Arrange
+	machine := &dbmodel.Machine{
+		ID:      456,
+		Address: "my-address",
+		State: dbmodel.MachineState{
+			Hostname: "my-hostname",
+		},
+	}
+
+	subnet := &dbmodel.Subnet{
+		ID:     345,
+		Prefix: "192.0.0.0/8",
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvError, "foo {subnet} bar {machine} baz", subnet, machine)
+
+	// Assert
+	require.EqualValues(t, "foo <subnet id=\"345\" prefix=\"192.0.0.0/8\"> bar <machine id=\"456\" address=\"my-address\" hostname=\"my-hostname\"> baz", ev.Text)
+	require.EqualValues(t, dbmodel.EvError, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.EqualValues(t, 345, ev.Relations.SubnetID)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+}
+
+// Test that the event with the app and user entries is created properly.
+func TestCreateEventAppAndUser(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		ID:        123,
+		Type:      dbmodel.AppTypeKea,
+		Name:      "dhcp-server",
+		MachineID: 456,
+	}
+
+	user := &dbmodel.SystemUser{
+		ID:    567,
+		Login: "login",
+		Email: "email",
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvWarning, "foo {app} bar {user} baz", app, user)
+
+	// Assert
+	require.EqualValues(t, "foo <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"\"> bar <user id=\"567\" login=\"login\" email=\"email\"> baz", ev.Text)
 	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 123, ev.Relations.AppID)
-
-	// info event with ref to app and daemon
-	ev = CreateEvent(dbmodel.EvInfo, "some {daemon} text", daemon, app)
-	require.EqualValues(t, "some <daemon id=\"234\" name=\"dhcp4\" appId=\"123\" appType=\"kea\"> text", ev.Text)
-	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
-	require.NotNil(t, ev.Relations)
-	require.EqualValues(t, 123, ev.Relations.AppID)
-	require.EqualValues(t, 234, ev.Relations.DaemonID)
-
-	// error event with ref to machine and subnet
-	ev = CreateEvent(dbmodel.EvError, "some {subnet} text {machine}", daemon, app, subnet, machine)
-	require.EqualValues(t, "some <subnet id=\"345\" prefix=\"192.0.0.0/8\"> text <machine id=\"456\" address=\"\" hostname=\"\">", ev.Text)
-	require.EqualValues(t, dbmodel.EvError, ev.Level)
-	require.NotNil(t, ev.Relations)
-	require.EqualValues(t, 123, ev.Relations.AppID)
-	require.EqualValues(t, 234, ev.Relations.DaemonID)
-	require.EqualValues(t, 345, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
 	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.EqualValues(t, 567, ev.Relations.UserID)
+}
+
+// Test that the event without tags is created properly.
+func TestCreateEventNoTags(t *testing.T) {
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar")
+
+	// Assert
+	require.EqualValues(t, "foo bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.Zero(t, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the missing related object causes the tag is not resolved.
+func TestCreateEventMissingObject(t *testing.T) {
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {machine} bar")
+
+	// Assert
+	require.EqualValues(t, "foo {machine} bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.Zero(t, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
+}
+
+// Test that the unknown tag is not resolved.
+func TestCreateEventUnknownTag(t *testing.T) {
+	// Arrange
+	machine := &dbmodel.Machine{
+		ID:      456,
+		Address: "my-address",
+		State: dbmodel.MachineState{
+			Hostname: "my-hostname",
+		},
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo {unknown} {machine} bar", machine)
+
+	// Assert
+	require.EqualValues(t, "foo {unknown} <machine id=\"456\" address=\"my-address\" hostname=\"my-hostname\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Empty(t, ev.Details)
+	require.Zero(t, ev.CreatedAt)
 }
 
 // Check adding event.
