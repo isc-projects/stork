@@ -16,11 +16,25 @@ func TestAppTag(t *testing.T) {
 		Meta: AppMeta{
 			Version: "2.1.1",
 		},
+		Machine: Machine{
+			ID: 42,
+		},
 	}
 	require.EqualValues(t, 11, app.GetID())
 	require.Equal(t, "kea@xyz", app.GetName())
 	require.Equal(t, dbmodel.AppTypeKea, app.GetType())
 	require.Equal(t, "2.1.1", app.GetVersion())
+	require.EqualValues(t, 42, app.GetMachineID())
+}
+
+// Test that getting machine ID is safe even if the machine reference is not
+// set explicitly.
+func TestAppTagGetMachineIDForDefaultMachine(t *testing.T) {
+	// Arrange
+	app := App{}
+
+	// Act & Assert
+	require.Zero(t, app.GetMachineID())
 }
 
 // Test getting control access point.
@@ -76,9 +90,12 @@ func TestGetDaemonTags(t *testing.T) {
 				ID: 11,
 			},
 		},
+		Machine: Machine{ID: 42},
 	}
 	daemons := app.GetDaemonTags()
 	require.Len(t, daemons, 2)
 	require.EqualValues(t, 10, daemons[0].GetID())
 	require.EqualValues(t, 11, daemons[1].GetID())
+	require.NotNil(t, daemons[1].GetMachineID())
+	require.EqualValues(t, 42, *daemons[1].GetMachineID())
 }

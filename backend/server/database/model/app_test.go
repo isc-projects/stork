@@ -1377,11 +1377,13 @@ func TestAppTag(t *testing.T) {
 		Meta: AppMeta{
 			Version: "2.1.1",
 		},
+		MachineID: 42,
 	}
 	require.EqualValues(t, 11, app.GetID())
 	require.Equal(t, "kea@xyz", app.GetName())
 	require.Equal(t, AppTypeKea, app.GetType())
 	require.Equal(t, "2.1.1", app.GetVersion())
+	require.EqualValues(t, 42, app.GetMachineID())
 }
 
 // Test getting control access point.

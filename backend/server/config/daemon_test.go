@@ -51,8 +51,18 @@ func TestDaemonTagBind9AppType(t *testing.T) {
 
 // Test that GetAppType() returns "unknown" for unsupported daemon name.
 func TestDaemonTagUnknownApp(t *testing.T) {
-	daemon := newDaemonTag(Daemon{
+	tag := newDaemonTag(Daemon{
 		Name: "something",
 	}, 42)
-	require.Equal(t, "unknown", daemon.GetAppType())
+	require.Equal(t, "unknown", tag.GetAppType())
+}
+
+// Test that the daemon tag returns the machine ID.
+func TestDaemonTagMachineID(t *testing.T) {
+	// Arrange
+	tag := newDaemonTag(Daemon{}, 42)
+
+	// Ac & Assert
+	require.NotNil(t, tag.MachineID)
+	require.EqualValues(t, 42, *tag.GetMachineID())
 }

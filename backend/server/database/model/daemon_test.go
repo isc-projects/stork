@@ -931,3 +931,25 @@ func TestDaemonTagBind9AppType(t *testing.T) {
 	}
 	require.Equal(t, AppTypeBind9, daemon.GetAppType())
 }
+
+// Test that the machine ID is returned if the app reference is set.
+func TestDaemonTagMachineID(t *testing.T) {
+	// Arrange
+	daemon := Daemon{
+		App: &App{
+			MachineID: 42,
+		},
+	}
+
+	// Assert & Assert
+	require.EqualValues(t, 42, *daemon.GetMachineID())
+}
+
+// Test that the machine ID is nil if the app reference is not set.
+func TestDaemonTagMissingMachineID(t *testing.T) {
+	// Arrange
+	daemon := Daemon{}
+
+	// Act & Assert
+	require.Nil(t, daemon.GetMachineID())
+}
