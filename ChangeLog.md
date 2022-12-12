@@ -1,3 +1,9 @@
+* 266 [bug] slawek
+
+    The events related to the daemon or application are now recognized as
+    related to the owning machine.
+    (Gitlab #882)
+
 * 265 [bug] slawek
 
     Fixed the database migration that interrupted the schema upgrade if the
