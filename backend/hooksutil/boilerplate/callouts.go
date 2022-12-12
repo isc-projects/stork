@@ -2,7 +2,7 @@ package main
 
 // ToDo: Import an callout specification (interface).
 // import (
-//	"isc.org/stork/hooks/server/[PROVIDE-ME]callout"
+//	"isc.org/stork/hooks/server/[PROVIDE-ME]callouts"
 // )
 
 // Callout carrier structure.
