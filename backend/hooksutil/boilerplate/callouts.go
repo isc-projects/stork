@@ -15,8 +15,8 @@ func (c *calloutCarrier) Close() error {
 }
 
 // Interface checks.
-// ToDo: Add an interface check below for all imported callouts.
-// var _ [PROVIDE-ME]callout.[PROVIDE-ME]Callout = (*calloutCarrier)(nil)
+// ToDo: Add an interface check below for all imported callout specifications.
+// var _ [PROVIDE-ME]callouts.[PROVIDE-ME]Callouts = (*calloutCarrier)(nil)
 
 // Interface implementations.
 // ToDo: Implement all imported interfaces.

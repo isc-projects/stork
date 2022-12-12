@@ -1,4 +1,8 @@
-# Constructs the hook filename
+# Constructs the hook filename in format: [INDEX]_[DIR]_[VERSION].[EXT].
+# Where: [INDEX] - The hook index that may be used to specify load order, initialized as 00.
+#        [DIR] - The directory of the hook, by default it is a module name.
+#        [VERSION] - The compatible Stork version.
+#        [EXT] - Hook extension: .so
 def construct_filename()
     gomod_content = IO.read("go.mod")
     # Finds the row that starts with "replace isc.org/stork",
@@ -10,7 +14,7 @@ def construct_filename()
 
     dir_name = File.basename(Dir.getwd)
 
-    return "#{dir_name}_#{version}.so"
+    return "00_#{dir_name}_#{version}.so"
 end
 
 desc "Build the hook
