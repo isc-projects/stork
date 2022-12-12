@@ -180,7 +180,7 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 // starting up (reload=false) or it is being reloaded (reload=true).
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	ss.HookManager = hookmanager.NewHookManager()
-	err = ss.HookManager.RegisterCalloutsFromDirectory(hooks.HookProgramServer, ss.GeneralSettings.HookDirectory)
+	err = ss.HookManager.RegisterHooksFromDirectory(hooks.HookProgramServer, ss.GeneralSettings.HookDirectory)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.

@@ -1,4 +1,4 @@
-package authenticationcallout
+package authenticationcallouts
 
 import (
 	"context"
@@ -21,9 +21,9 @@ type User struct {
 	Groups []int
 }
 
-// Set of callout points used to perform authentication.
-type AuthenticationCallout interface {
-	hooks.Callout
+// Set of callouts used to perform authentication.
+type AuthenticationCallouts interface {
+	hooks.CalloutCarrier
 	// Called to perform authentication. It accepts an HTTP request (header,
 	// cookie) and the credentials provided in the login form. Returns a user
 	// metadata or error if an authentication failed.

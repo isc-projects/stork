@@ -142,11 +142,11 @@ library
     need to implement any specific interface, but it's available to lookup for
     symbols.
 
-hook
+hook (file)
     The library that provides symbols required by the hook specification - the
     ``Load`` and ``Version`` functions. The ``Load`` function is used to create
-    the callout object. The hook shouldn't use any global variables (except
-    constants). It should be possible to call the ``Load`` and close the callout
+    the carrier object. The hook shouldn't use any global variables (except
+    constants). It should be possible to call the ``Load`` and close the payload
     object multiple times without side effects. The hooks are loaded in the
     lexicographic order. Only the hooks with the compatible application name
     and Stork version returned by the ``Version`` function are loaded.
@@ -154,51 +154,53 @@ hook
 core application
     The application that loads and uses the hooks.
 
-callout (interface)
-    The interface that specifies the callout points for a given hook. The
-    callout interface allows sharing of the callout points signatures between
+callout specification (interface)
+    The interface that defines the callout(s) for a given hook point. The
+    specification interface allows sharing of the callout signatures between
     the core application and the hooks. The single hook may implement one or
-    more callout interfaces. All callout interfaces supported by the given
-    application are implemented by the hook manager and registered in the hook
-    executor.
+    more specifications interfaces. All specifications interfaces supported by
+    the given application are implemented by the hook manager and registered in
+    the hook executor.
 
-callout (structure)
-    The structure defined in the hook implements the callout interfaces. 
-    The structure isn't directly available for the core application, but the
-    instance of it is created by the ``Load`` hook function.
+callout carrier (structure)
+    The structure defined in the hook implements the callout specification
+    interfaces.  The structure isn't directly available for the core
+    application, but the instance of it is created by the ``Load`` hook
+    function.
 
-callout (object)
-    The instance of the callout structure created by the ``Load`` hook function.
+callout carrier (object)
+    The instance of the callout payload structure created by the ``Load`` hook function.
     It allows calling the callout points implementations. The instance
     shouldn't be created before the ``Load`` call. At shutdown, the ``Close``
-    method of the object is called. It should free all used resources.
+    method of the object is called. It should free all used resources.  The 
+    hook payload may contain other functions for internal purposes, not only
+    callouts.
 
-callouts
-    Multiple callout objects.
-
+callout (function)
+    A single function defined by the callout specification interface. It is
+    dedicated to being called at a specific callout point. Due to technical
+    reasons, every callout should return a non-void value.
+    
 callout point
-    A single function defined by the callout interface. It is dedicated to
-    being called at a specific moment of the Stork execution. The hook manager
-    specifies the exact order of calling the callout points from different
-    hooks. The hook executor calls the callout points. A single callout
-    interface may define one or many callout points. Due to technical reasons,
-    every callout point should return a non-void value. The callout structure
-    may contain other functions for internal purposes, not only callout points.
+    The point in the code at which a call callout is made. In a single callout
+    point multiple callouts from various hooks may be executed by the hook
+    executor. The hook manager specifies the exact order of calling the
+    callouts from different hooks.
 
 hook executor
-    It is responsible for manage callout instances and execute the callout
-    points.
+    It is responsible for manage callout carrier instances and execute the
+    callouts.
 
 hook manager
-    The facade for calling the callout points. The specialized structs are
-    created in the core applications by implementing the callout interfaces.
-    It is responsible for defining the execution order of the callout points
+    The facade for calling the callouts. The specialized structs are
+    created in the core applications by implementing the callout specifications.
+    It is responsible for defining the execution order of the callouts
     from the loaded hooks by calling specific methods of the hook executor.
 
 library manager
-    The wrapper for the library allows calling the functions defined by the
-    hook specification. The library manager instance may be created from any
-    compatible plugin (library).
+    The wrapper for the library allows calling the standard hook functions. The
+    library manager instance may be created from any compatible plugin
+    (library).
 
 Hook structure
 ==============
@@ -358,7 +360,7 @@ callout interface):
 
 .. code-block:: shell
 
-    $ rake hook:list_callout_deps KIND=agent CALLOUT=authenticationcallout
+    $ rake hook:list_callout_deps KIND=agent CALLOUT=authenticationcallouts
 
 The ``KIND`` means a target application of callout (``agent`` or ``server``).
 The ``CALLOUT`` specifies name of the callout package.

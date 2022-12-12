@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	agentapi "isc.org/stork/api"
-	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
+	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
 	"isc.org/stork/hooksutil"
 )
 
@@ -16,20 +16,20 @@ type HookManager struct {
 }
 
 // Interface checks.
-var _ forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout = (*HookManager)(nil)
+var _ forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts = (*HookManager)(nil)
 
 // Constructs new hook manager.
 func NewHookManager() *HookManager {
 	return &HookManager{
 		HookManager: *hooksutil.NewHookManager([]reflect.Type{
-			reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem(),
+			reflect.TypeOf((*forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts)(nil)).Elem(),
 		}),
 	}
 }
 
 // Callout point executed before forwarding a command to Kea over HTTP.
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) {
-	hooksutil.CallSequential(hm.GetExecutor(), func(callout forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout) int {
+	hooksutil.CallSequential(hm.GetExecutor(), func(callout forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts) int {
 		callout.OnBeforeForwardToKeaOverHTTP(ctx, in)
 		return 0
 	})

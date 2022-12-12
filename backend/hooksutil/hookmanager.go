@@ -21,21 +21,21 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 }
 
 // Registers all hooks from a given hook directory.
-func (hm *HookManager) RegisterCalloutsFromDirectory(program, directory string) error {
-	callouts, err := LoadAllHookCallouts(program, directory)
+func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) error {
+	carriers, err := LoadAllHooks(program, directory)
 	if err != nil {
 		return err
 	}
 
-	hm.RegisterCallouts(callouts)
+	hm.RegisterCalloutCarriers(carriers)
 
 	return nil
 }
 
-// Register callouts.
-func (hm *HookManager) RegisterCallouts(callouts []hooks.Callout) {
-	for _, callout := range callouts {
-		hm.executor.registerCallout(callout)
+// Register callout carriers.
+func (hm *HookManager) RegisterCalloutCarriers(carriers []hooks.CalloutCarrier) {
+	for _, carrier := range carriers {
+		hm.executor.registerCalloutCarrier(carrier)
 	}
 }
 
@@ -44,8 +44,8 @@ func (hm *HookManager) GetExecutor() *HookExecutor {
 	return hm.executor
 }
 
-// Unregisters all callout objects.
+// Unregisters all callout carriers.
 func (hm *HookManager) Close() error {
-	errs := hm.executor.unregisterAllCallouts()
+	errs := hm.executor.unregisterAllCalloutCarriers()
 	return storkutil.CombineErrors("some hooks failed to close", errs)
 }

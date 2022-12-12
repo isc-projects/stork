@@ -2,11 +2,11 @@ package hooks
 
 import "isc.org/stork"
 
-type Callout interface {
+type CalloutCarrier interface {
 	Close() error
 }
 type (
-	HookLoadFunction    = func() (Callout, error)
+	HookLoadFunction    = func() (CalloutCarrier, error)
 	HookVersionFunction = func() (string, string)
 )
 

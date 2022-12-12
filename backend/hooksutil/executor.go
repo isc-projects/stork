@@ -7,20 +7,20 @@ import (
 	"isc.org/stork/hooks"
 )
 
-// Function that calls a specific callout point in the callout object.
-type Caller = func(callout any)
+// Function that calls a specific callout in the callout carrier.
+type Caller = func(carrier hooks.CalloutCarrier)
 
-// Manages all loaded hooks and allows to call their callout points.
+// Manages all loaded hooks and allows to call their callouts.
 // The caller may choose different calling strategies.
 type HookExecutor struct {
-	registeredCallouts map[reflect.Type][]hooks.Callout
+	registeredCarriers map[reflect.Type][]hooks.CalloutCarrier
 }
 
-// Constructs the hook executor using a list of supported callout types.
-func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
-	callouts := make(map[reflect.Type][]hooks.Callout, len(calloutTypes))
-	for _, calloutType := range calloutTypes {
-		if calloutType.Kind() != reflect.Interface {
+// Constructs the hook executor using a list of supported callout carrier types.
+func NewHookExecutor(calloutCarrierTypes []reflect.Type) *HookExecutor {
+	carriers := make(map[reflect.Type][]hooks.CalloutCarrier, len(calloutCarrierTypes))
+	for _, carrierType := range calloutCarrierTypes {
+		if carrierType.Kind() != reflect.Interface {
 			// It should never happen.
 			// If you got this panic message, check if your callout types are
 			// defined as follows:
@@ -30,94 +30,94 @@ func NewHookExecutor(calloutTypes []reflect.Type) *HookExecutor {
 			// 2. .Elem() call at the end.
 			panic("non-interface type passed")
 		}
-		callouts[calloutType] = make([]hooks.Callout, 0)
+		carriers[carrierType] = make([]hooks.CalloutCarrier, 0)
 	}
 	return &HookExecutor{
-		registeredCallouts: callouts,
+		registeredCarriers: carriers,
 	}
 }
 
-// Registers a callout object in the hook executor. If the given type is
+// Registers a callout carrier in the hook executor. If the given type is
 // unsupported, then it's silently ignored.
-func (he *HookExecutor) registerCallout(callout hooks.Callout) {
-	for calloutType, callouts := range he.registeredCallouts {
-		if reflect.TypeOf(callout).Implements(calloutType) {
-			he.registeredCallouts[calloutType] = append(callouts, callout)
+func (he *HookExecutor) registerCalloutCarrier(carrier hooks.CalloutCarrier) {
+	for carrierType, carriers := range he.registeredCarriers {
+		if reflect.TypeOf(carrier).Implements(carrierType) {
+			he.registeredCarriers[carrierType] = append(carriers, carrier)
 		}
 	}
 }
 
-// Unregisters all callout objects by calling their Close methods.
-func (he *HookExecutor) unregisterAllCallouts() []error {
+// Unregisters all callout carriers by calling their Close methods.
+func (he *HookExecutor) unregisterAllCalloutCarriers() []error {
 	var errs []error
 
-	for _, callouts := range he.registeredCallouts {
-		for _, callout := range callouts {
-			err := callout.Close()
+	for _, carriers := range he.registeredCarriers {
+		for _, carrier := range carriers {
+			err := carrier.Close()
 			if err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
 
-	he.registeredCallouts = make(map[reflect.Type][]hooks.Callout)
+	he.registeredCarriers = make(map[reflect.Type][]hooks.CalloutCarrier)
 
 	return errs
 }
 
-// Returns a slice of the supported callout types.
-func (he *HookExecutor) GetSupportedCalloutTypes() []reflect.Type {
-	supportedTypes := make([]reflect.Type, len(he.registeredCallouts))
+// Returns a slice of the supported callout carrier types.
+func (he *HookExecutor) GetSupportedCalloutCarrierTypes() []reflect.Type {
+	supportedTypes := make([]reflect.Type, len(he.registeredCarriers))
 	i := 0
-	for t := range he.registeredCallouts {
+	for t := range he.registeredCarriers {
 		supportedTypes[i] = t
 		i++
 	}
 	return supportedTypes
 }
 
-// Returns true if a given callout type is supported and has at least one
-// callout object registered.
-func (he *HookExecutor) HasRegistered(calloutType reflect.Type) bool {
-	callouts, ok := he.registeredCallouts[calloutType]
-	return ok && len(callouts) > 0
+// Returns true if a given callout carrier type is supported and has at least one
+// callout carrier registered.
+func (he *HookExecutor) HasRegistered(carrierType reflect.Type) bool {
+	carriers, ok := he.registeredCarriers[carrierType]
+	return ok && len(carriers) > 0
 }
 
-// Calls the specific callout point using the caller object.
+// Calls the specific callout using the caller object.
 // It can be used to monitor performance in the future.
-func callCallout[TCallout hooks.Callout, TOutput any](callout TCallout, caller func(TCallout) TOutput) TOutput {
-	return caller(callout)
+func callCallout[TCarrier hooks.CalloutCarrier, TOutput any](carrier TCarrier, caller func(TCarrier) TOutput) TOutput {
+	return caller(carrier)
 }
 
-// Calls the specific callout point for all callout objects sequentially, one by one.
-func CallSequential[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) []TOutput {
-	t := reflect.TypeOf((*TCallout)(nil)).Elem()
-	callouts, ok := he.registeredCallouts[t]
+// Calls the specific callout for all callout carriers sequentially, one by one.
+func CallSequential[TCarrier hooks.CalloutCarrier, TOutput any](he *HookExecutor, caller func(TCarrier) TOutput) []TOutput {
+	t := reflect.TypeOf((*TCarrier)(nil)).Elem()
+	carriers, ok := he.registeredCarriers[t]
 	if !ok {
 		return nil
 	}
 
 	var results []TOutput
-	for _, callout := range callouts {
-		result := callCallout(callout.(TCallout), caller)
+	for _, carrier := range carriers {
+		result := callCallout(carrier.(TCarrier), caller)
 		results = append(results, result)
 	}
 	return results
 }
 
-// Calls the specific callout point from a first callout object if any was
+// Calls the specific callout from a first callout carrier if any was
 // registered. It is dedicated to cases when only one hook with a given callout
-// point is expected.
-// Returns a default value if no callout point was called.
-func CallSingle[TCallout hooks.Callout, TOutput any](he *HookExecutor, caller func(TCallout) TOutput) (output TOutput) {
-	t := reflect.TypeOf((*TCallout)(nil)).Elem()
-	callouts, ok := he.registeredCallouts[t]
+// is expected.
+// Returns a default value if no callout was called.
+func CallSingle[TCarrier hooks.CalloutCarrier, TOutput any](he *HookExecutor, caller func(TCarrier) TOutput) (output TOutput) {
+	t := reflect.TypeOf((*TCarrier)(nil)).Elem()
+	callouts, ok := he.registeredCarriers[t]
 	if !ok || len(callouts) == 0 {
 		return
 	} else if len(callouts) > 1 {
 		logrus.
-			WithField("callout", t.Name()).
-			Warn("there are many registered callout objects but expected a single one")
+			WithField("carrier", t.Name()).
+			Warn("there are many registered callout carriers but expected a single one")
 	}
-	return callCallout(callouts[0].(TCallout), caller)
+	return callCallout(callouts[0].(TCarrier), caller)
 }

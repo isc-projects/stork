@@ -33,14 +33,13 @@ func WalkPluginLibraries(directory string, callback func(path string, library *L
 }
 
 // Loads all hook files from a given directory for a specific program (server
-// or agent). Returns a list of extracted callout objects.
+// or agent). Returns a list of extracted callout carriers.
 // The hook must be compiled with a matching version and application name.
 // Otherwise, the loading is stopped.
 // The hooks are loaded in the lexicographic order of hook file names.
-func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, error) {
+func LoadAllHooks(program string, directory string) ([]hooks.CalloutCarrier, error) {
 	var (
-		callouts   []hooks.Callout
-		callout    hooks.Callout
+		carriers   []hooks.CalloutCarrier
 		libraryErr error
 	)
 
@@ -50,27 +49,26 @@ func LoadAllHookCallouts(program string, directory string) ([]hooks.Callout, err
 			return false
 		}
 
-		// Load the hook callouts.
-		callout, libraryErr = extractCallout(library, program)
+		// Load the hook callout carrier.
+		carrier, libraryErr := extractCarrier(library, program)
 		if libraryErr != nil {
-			libraryErr = errors.WithMessagef(libraryErr, "cannot extract callouts from library: %s", path)
 			return false
 		}
 
-		callouts = append(callouts, callout)
+		carriers = append(carriers, carrier)
 		return true
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return callouts, libraryErr
+	return carriers, libraryErr
 }
 
-// Extracts the object with callout points implementations from a given library
-// (Go plugin). The library is validated. The version and program name must match
-// the caller application.
-func extractCallout(library *LibraryManager, expectedProgram string) (hooks.Callout, error) {
+// Extracts the object with callouts (callout specification implementations)
+// from a given library (Go plugin). The library is validated. The version and
+// program name must match the caller application.
+func extractCarrier(library *LibraryManager, expectedProgram string) (hooks.CalloutCarrier, error) {
 	hookProgram, hookVersion, err := library.Version()
 	if err != nil {
 		err = errors.WithMessage(err, "cannot call version of hook library")
@@ -85,11 +83,11 @@ func extractCallout(library *LibraryManager, expectedProgram string) (hooks.Call
 		return nil, errors.Errorf("incompatible hook version: %s", hookVersion)
 	}
 
-	callout, err := library.Load()
+	carrier, err := library.Load()
 	if err != nil {
 		err = errors.WithMessage(err, "cannot load hook library")
 		return nil, err
 	}
 
-	return callout, nil
+	return carrier, nil
 }

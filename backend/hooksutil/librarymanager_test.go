@@ -57,7 +57,7 @@ func invalidSignature(int64) bool {
 // Creates a valid Load function that returns the given output.
 // If the string content is empty, the function will return nil instead.
 func validLoad(s string, err error) hooks.HookLoadFunction {
-	return func() (hooks.Callout, error) {
+	return func() (hooks.CalloutCarrier, error) {
 		if s == "" {
 			return nil, err
 		}
@@ -102,10 +102,10 @@ func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
-	callout, err := library.Load()
+	calloutCarrier, err := library.Load()
 
 	// Assert
-	require.Nil(t, callout)
+	require.Nil(t, calloutCarrier)
 	require.Error(t, err)
 }
 
@@ -116,10 +116,10 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
-	callout, err := library.Load()
+	calloutCarrier, err := library.Load()
 
 	// Assert
-	require.Nil(t, callout)
+	require.Nil(t, calloutCarrier)
 	require.ErrorContains(t, err, "symbol Load has unexpected signature")
 }
 
@@ -136,25 +136,25 @@ func TestLoadReturnErrorOnFail(t *testing.T) {
 	))
 
 	// Act
-	callout, err := library.Load()
+	calloutCarrier, err := library.Load()
 
 	// Assert
-	require.Nil(t, callout)
+	require.Nil(t, calloutCarrier)
 	require.ErrorContains(t, err, "error in load")
 }
 
-// Test that the load library function returns a callout object on success.
-func TestLoadReturnCalloutOnSuccess(t *testing.T) {
+// Test that the load library function returns a callout carrier on success.
+func TestLoadReturnCalloutCarrierOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(
 		validLoad("bar", nil), nil,
 	))
 
 	// Act
-	callout, err := library.Load()
+	calloutCarrier, err := library.Load()
 
 	// Assert
-	require.NotNil(t, callout)
+	require.NotNil(t, calloutCarrier)
 	require.NoError(t, err)
 }
 

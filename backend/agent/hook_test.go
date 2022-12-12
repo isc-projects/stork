@@ -8,10 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
-	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout"
+	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
 )
 
-//go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/hooks/agent/forwardtokeaoverhttpcallout BeforeForwardToKeaOverHTTPCallout
+//go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts BeforeForwardToKeaOverHTTPCallouts
 
 // Test that the hook manager is constructed properly.
 func TestNewHookManager(t *testing.T) {
@@ -20,7 +20,7 @@ func TestNewHookManager(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	supportedTypes := hookManager.HookManager.GetExecutor().GetSupportedCalloutTypes()
+	supportedTypes := hookManager.HookManager.GetExecutor().GetSupportedCalloutCarrierTypes()
 	require.Len(t, supportedTypes, 1)
 }
 
@@ -31,29 +31,30 @@ func TestHookManagerFromDirectoryReturnErrorOnInvalidDirectory(t *testing.T) {
 	hookManager := NewHookManager()
 
 	// Arrange & Act
-	err := hookManager.RegisterCalloutsFromDirectory("foo", "/non/exist/dir")
+	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir")
 
 	// Assert
 	require.Error(t, err)
 }
 
-// Test that the hook manager is constructed properly from the callout objects.
+// Test that the hook manager is constructed properly from the callout carrier
+// slice.
 func TestHookManagerFromCallouts(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mock := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
 
 	hookManager := NewHookManager()
 
 	// Act
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		mock,
 	})
 
 	// Assert
-	require.True(t, hookManager.GetExecutor().HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallout.BeforeForwardToKeaOverHTTPCallout)(nil)).Elem()))
+	require.True(t, hookManager.GetExecutor().HasRegistered(reflect.TypeOf((*forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts)(nil)).Elem()))
 }
 
 // Test that the hook manager is closing properly.
@@ -61,7 +62,7 @@ func TestHookManagerClose(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mock := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
 	mock.
 		EXPECT().
 		Close().
@@ -69,7 +70,7 @@ func TestHookManagerClose(t *testing.T) {
 		Times(1)
 
 	hookManager := NewHookManager()
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		mock,
 	})
 
@@ -80,27 +81,27 @@ func TestHookManagerClose(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the hook manager pass through the error from the callout and
-// the error raising doesn't interrupt the close operation.
+// Test that the hook manager passes through the error from the callout carrier
+// and the error raising doesn't interrupt the close operation.
 func TestHookManagerCloseWithErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockWithoutErr1 := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithoutErr1 := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
 	mockWithoutErr1.
 		EXPECT().
 		Close().
 		Return(nil).
 		Times(1)
 
-	mockWithoutErr2 := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithoutErr2 := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
 	mockWithoutErr2.
 		EXPECT().
 		Close().
 		Return(nil).
 		Times(1)
 
-	mockWithErr := NewMockBeforeForwardToKeaOverHTTPCallout(ctrl)
+	mockWithErr := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
 	mockWithErr.
 		EXPECT().
 		Close().
@@ -108,7 +109,7 @@ func TestHookManagerCloseWithErrors(t *testing.T) {
 		Times(1)
 
 	hookManager := NewHookManager()
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		mockWithoutErr1,
 		mockWithErr,
 		mockWithoutErr2,

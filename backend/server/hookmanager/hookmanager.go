@@ -3,7 +3,7 @@ package hookmanager
 import (
 	"reflect"
 
-	"isc.org/stork/hooks/server/authenticationcallout"
+	"isc.org/stork/hooks/server/authenticationcallouts"
 	"isc.org/stork/hooksutil"
 )
 
@@ -17,7 +17,7 @@ type HookManager struct {
 func NewHookManager() *HookManager {
 	return &HookManager{
 		HookManager: *hooksutil.NewHookManager([]reflect.Type{
-			reflect.TypeOf((*authenticationcallout.AuthenticationCallout)(nil)).Elem(),
+			reflect.TypeOf((*authenticationcallouts.AuthenticationCallouts)(nil)).Elem(),
 		}),
 	}
 }

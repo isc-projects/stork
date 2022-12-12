@@ -24,8 +24,8 @@ func TestNewHookManager(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	require.Len(t, hookManager.executor.registeredCallouts, 2)
-	require.Contains(t, hookManager.executor.registeredCallouts, reflect.TypeOf((*foo)(nil)).Elem())
+	require.Len(t, hookManager.executor.registeredCarriers, 2)
+	require.Contains(t, hookManager.executor.registeredCarriers, reflect.TypeOf((*foo)(nil)).Elem())
 }
 
 // Test that the hook manager can be constructed from the empty slice of the
@@ -36,37 +36,37 @@ func TestNewHookManagerNoSupportedTypes(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	require.Len(t, hookManager.executor.registeredCallouts, 0)
+	require.Len(t, hookManager.executor.registeredCarriers, 0)
 }
 
 // Test that register method returns an error if the directory doesn't exist.
-func TestRegisterCalloutsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
+func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	// Arrange
 	hookManager := NewHookManager(nil)
 
 	// Act
-	err := hookManager.RegisterCalloutsFromDirectory("foo", "/non/exist/dir")
+	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir")
 
 	// Assert
 	require.Error(t, err)
 }
 
-// Test that the callouts are registered properly.
-func TestRegisterCallouts(t *testing.T) {
+// Test that the callout carriers are registered properly.
+func TestRegisterCalloutCarriers(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*io.Closer)(nil)).Elem()
+	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
 
 	hookManager := NewHookManager([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
 	// Act
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		io.NopCloser(nil),
 	})
 
 	// Assert
-	require.True(t, hookManager.GetExecutor().HasRegistered(calloutType))
+	require.True(t, hookManager.GetExecutor().HasRegistered(carrierType))
 }
 
 // Test that the executor getter returns a proper object.
@@ -81,17 +81,17 @@ func TestGetExecutor(t *testing.T) {
 	require.Equal(t, hookManager.executor, executor)
 }
 
-// Test that the hook manager unregisters all callouts on close.
+// Test that the hook manager unregisters all callout carriers on close.
 func TestClose(t *testing.T) {
 	// Arrange
 	calloutType := reflect.TypeOf((*io.Closer)(nil)).Elem()
-	mock := newMockCalloutFoo()
+	mock := newMockCalloutCarrierFoo()
 
 	hookManager := NewHookManager([]reflect.Type{
 		calloutType,
 	})
 
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		mock,
 	})
 
@@ -108,17 +108,17 @@ func TestCloseCombineErrors(t *testing.T) {
 	// Arrange
 	calloutType := reflect.TypeOf((*io.Closer)(nil)).Elem()
 
-	mock1 := newMockCalloutFoo()
+	mock1 := newMockCalloutCarrierFoo()
 	mock1.closeErr = errors.New("foo")
 
-	mock2 := newMockCalloutFoo()
+	mock2 := newMockCalloutCarrierFoo()
 	mock2.closeErr = errors.New("bar")
 
 	hookManager := NewHookManager([]reflect.Type{
 		calloutType,
 	})
 
-	hookManager.RegisterCallouts([]hooks.Callout{
+	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
 		mock1,
 		mock2,
 	})

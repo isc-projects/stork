@@ -1,4 +1,4 @@
-package forwardtokeaoverhttpcallout
+package forwardtokeaoverhttpcallouts
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"isc.org/stork/hooks"
 )
 
-type BeforeForwardToKeaOverHTTPCallout interface {
-	hooks.Callout
+type BeforeForwardToKeaOverHTTPCallouts interface {
+	hooks.CalloutCarrier
 	// Called before forwarding a command to Kea over HTTP.
 	OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq)
 }

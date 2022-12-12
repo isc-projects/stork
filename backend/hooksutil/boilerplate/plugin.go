@@ -4,9 +4,9 @@ import (
 	"isc.org/stork/hooks"
 )
 
-// Loads an object with the callout points implementations.
-func Load() (hooks.Callout, error) {
-	return &callout{}, nil
+// Loads a callout carrier (an object with the callout specification implementations).
+func Load() (hooks.CalloutCarrier, error) {
+	return &calloutCarrier{}, nil
 }
 
 // Returns an application name and expected version.

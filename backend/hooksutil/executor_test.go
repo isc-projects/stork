@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock callout interfaces.
-type mockCalloutFoo interface {
+// Mock callout carrier interfaces.
+type mockCalloutCarrierFoo interface {
 	Foo() int
 	Close() error
 }
 
-type mockCalloutBar interface {
+type mockCalloutCarrierBar interface {
 	Bar() bool
 	Close() error
 }
 
-// Foo mock callout implementation.
-type mockCalloutFooImpl struct {
+// Foo mock callout carrier implementation.
+type mockCalloutCarrierFooImpl struct {
 	fooCount int
 	// The call count including calls from all mock instances.
 	fooTotalCount int
@@ -31,9 +31,9 @@ type mockCalloutFooImpl struct {
 // The Foo call counter shared between all mock instances.
 var sharedFooCount int //nolint:gochecknoglobals
 
-// Constructs an instance of the mock callout implementation.
-func newMockCalloutFoo() *mockCalloutFooImpl {
-	return &mockCalloutFooImpl{
+// Constructs an instance of the mock callout carrier.
+func newMockCalloutCarrierFoo() *mockCalloutCarrierFooImpl {
+	return &mockCalloutCarrierFooImpl{
 		fooCount:      0,
 		fooTotalCount: 0,
 		closeCount:    0,
@@ -42,7 +42,7 @@ func newMockCalloutFoo() *mockCalloutFooImpl {
 }
 
 // Counts the call count.
-func (c *mockCalloutFooImpl) Foo() int {
+func (c *mockCalloutCarrierFooImpl) Foo() int {
 	c.fooCount++
 	sharedFooCount++
 	c.fooTotalCount = sharedFooCount
@@ -50,48 +50,48 @@ func (c *mockCalloutFooImpl) Foo() int {
 }
 
 // It counts the call count and returns the mocked error.
-func (c *mockCalloutFooImpl) Close() error {
+func (c *mockCalloutCarrierFooImpl) Close() error {
 	c.closeCount++
 	return c.closeErr
 }
 
 // Bar mock implementation.
-type mockCalloutBarImpl struct {
+type mockCalloutCarrierBarImpl struct {
 	barCount   int
 	closeCount int
 	closeErr   error
 }
 
 // Constructs the Bar mock.
-func newMockCalloutBar() *mockCalloutBarImpl {
-	return &mockCalloutBarImpl{}
+func newMockCalloutCarrierBar() *mockCalloutCarrierBarImpl {
+	return &mockCalloutCarrierBarImpl{}
 }
 
 // Counts the calls. Return parity of an actual value.
-func (c *mockCalloutBarImpl) Bar() bool {
+func (c *mockCalloutCarrierBarImpl) Bar() bool {
 	c.barCount++
 	return c.barCount%2 == 0
 }
 
 // It counts the call count and returns the mocked error.
-func (c *mockCalloutBarImpl) Close() error {
+func (c *mockCalloutCarrierBarImpl) Close() error {
 	c.closeCount++
 	return c.closeErr
 }
 
 // FooBar mock implementation.
-type mockCalloutFooBarImpl struct {
-	mockCalloutFooImpl
-	mockCalloutBarImpl
+type mockCalloutCarrierFooBarImpl struct {
+	mockCalloutCarrierFooImpl
+	mockCalloutCarrierBarImpl
 }
 
 // Constructs the FooBar mock.
-func newMockCalloutFooBar() *mockCalloutFooBarImpl {
-	return &mockCalloutFooBarImpl{}
+func newMockCalloutCarrierFooBar() *mockCalloutCarrierFooBarImpl {
+	return &mockCalloutCarrierFooBarImpl{}
 }
 
-func (c *mockCalloutFooBarImpl) Close() error {
-	return c.mockCalloutFooImpl.Close()
+func (c *mockCalloutCarrierFooBarImpl) Close() error {
+	return c.mockCalloutCarrierFooImpl.Close()
 }
 
 // Test that the hook executor is constructed properly.
@@ -100,7 +100,7 @@ func TestNewHookExecutor(t *testing.T) {
 	emptyExecutor := NewHookExecutor([]reflect.Type{})
 	nilExecutor := NewHookExecutor(nil)
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
 	})
 
 	// Assert
@@ -108,7 +108,7 @@ func TestNewHookExecutor(t *testing.T) {
 	require.NotNil(t, nilExecutor)
 	require.NotNil(t, executor)
 
-	require.Contains(t, executor.registeredCallouts, reflect.TypeOf((*mockCalloutFoo)(nil)).Elem())
+	require.Contains(t, executor.registeredCarriers, reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem())
 }
 
 // Test that the hook executor constructor panics on an invalid type (it's a
@@ -116,7 +116,7 @@ func TestNewHookExecutor(t *testing.T) {
 func TestNewHookExecutorInvalidType(t *testing.T) {
 	// Arrange
 	// Missing .Elem() call
-	invalidType := reflect.TypeOf((*mockCalloutFoo)(nil))
+	invalidType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil))
 
 	// Assert
 	require.Panics(t, func() {
@@ -125,127 +125,127 @@ func TestNewHookExecutorInvalidType(t *testing.T) {
 	})
 }
 
-// Test that the supported callout object is registered properly.
-func TestRegisterSupportedCallout(t *testing.T) {
+// Test that the supported callout carrier is registered properly.
+func TestRegisterSupportedCalloutCarrier(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
 	// Act
-	executor.registerCallout(newMockCalloutFoo())
+	executor.registerCalloutCarrier(newMockCalloutCarrierFoo())
 
 	// Assert
-	require.NotEmpty(t, executor.registeredCallouts[calloutType])
+	require.NotEmpty(t, executor.registeredCarriers[carrierType])
 }
 
-// Test that the unsupported callout object is not registered.
-func TestRegisterUnsupportedCallout(t *testing.T) {
+// Test that the unsupported callout carrier is not registered.
+func TestRegisterUnsupportedCalloutCarrier(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{})
 
 	// Act
-	executor.registerCallout(newMockCalloutFoo())
+	executor.registerCalloutCarrier(newMockCalloutCarrierFoo())
 
 	// Assert
-	require.Empty(t, executor.registeredCallouts)
+	require.Empty(t, executor.registeredCarriers)
 }
 
-// Test that all callouts are unregistering.
-func TestUnregisterAllCallouts(t *testing.T) {
+// Test that all callout carriers are unregistering.
+func TestUnregisterAllCalloutCarriers(t *testing.T) {
 	// Arrange
-	callout := newMockCalloutFoo()
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrier := newMockCalloutCarrierFoo()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
-	executor.registerCallout(callout)
+	executor.registerCalloutCarrier(carrier)
 
 	// Act
-	errs := executor.unregisterAllCallouts()
+	errs := executor.unregisterAllCalloutCarriers()
 
 	// Assert
-	require.Empty(t, executor.registeredCallouts)
-	require.EqualValues(t, 1, callout.closeCount)
+	require.Empty(t, executor.registeredCarriers)
+	require.EqualValues(t, 1, carrier.closeCount)
 	require.Empty(t, errs)
 }
 
-// Test that if one callout object returns an error, other are unregistered
+// Test that if one callout carrier returns an error, other are unregistered
 // properly.
-func TestUnregisterAllCalloutsWithError(t *testing.T) {
+func TestUnregisterAllCalloutCarriersWithError(t *testing.T) {
 	// Arrange
-	successCallout := newMockCalloutFoo()
-	failedCallout := newMockCalloutFoo()
-	failedCallout.closeErr = errors.New("Close failed")
+	successCarrier := newMockCalloutCarrierFoo()
+	failedCarrier := newMockCalloutCarrierFoo()
+	failedCarrier.closeErr = errors.New("Close failed")
 
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
-	executor.registerCallout(successCallout)
-	executor.registerCallout(failedCallout)
+	executor.registerCalloutCarrier(successCarrier)
+	executor.registerCalloutCarrier(failedCarrier)
 
 	// Act
-	errs := executor.unregisterAllCallouts()
+	errs := executor.unregisterAllCalloutCarriers()
 
 	// Assert
 	require.Len(t, errs, 1)
-	require.EqualValues(t, 1, successCallout.closeCount)
-	require.EqualValues(t, 1, failedCallout.closeCount)
+	require.EqualValues(t, 1, successCarrier.closeCount)
+	require.EqualValues(t, 1, failedCarrier.closeCount)
 }
 
-// Test that the registered callout is detected as registered.
-func TestHasRegisteredForRegisteredCallout(t *testing.T) {
+// Test that the registered callout carrier is detected as registered.
+func TestHasRegisteredForRegisteredCalloutCarrier(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
-	executor.registerCallout(newMockCalloutFoo())
+	executor.registerCalloutCarrier(newMockCalloutCarrierFoo())
 
 	// Act
-	isRegistered := executor.HasRegistered(calloutType)
+	isRegistered := executor.HasRegistered(carrierType)
 
 	// Assert
 	require.True(t, isRegistered)
 }
 
-// Test that the non-registered callout is non detected as registered.
-func TestHasRegisteredForNonRegisteredCallout(t *testing.T) {
+// Test that the non-registered callout carrier is non detected as registered.
+func TestHasRegisteredForNonRegisteredCalloutCarrier(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		calloutType,
+		carrierType,
 	})
 
 	// Act
-	isRegistered := executor.HasRegistered(calloutType)
+	isRegistered := executor.HasRegistered(carrierType)
 
 	// Assert
 	require.False(t, isRegistered)
 }
 
-// Test that the unsupported callout is not detected as registered.
-func TestHasRegisteredForUnsupportedCallout(t *testing.T) {
+// Test that the unsupported callout carrier is not detected as registered.
+func TestHasRegisteredForUnsupportedCalloutCarrier(t *testing.T) {
 	// Arrange
-	calloutType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
+	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{})
 
 	// Act
-	isRegistered := executor.HasRegistered(calloutType)
+	isRegistered := executor.HasRegistered(carrierType)
 
 	// Assert
 	require.False(t, isRegistered)
 }
 
 // Test that the supported callout types are returned properly.
-func TestGetSupportedCalloutTypes(t *testing.T) {
+func TestGetSupportedCarrierTypes(t *testing.T) {
 	// Arrange
-	fooType := reflect.TypeOf((*mockCalloutFoo)(nil)).Elem()
-	barType := reflect.TypeOf((*mockCalloutBar)(nil)).Elem()
+	fooType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	barType := reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem()
 
 	executor := NewHookExecutor([]reflect.Type{
 		fooType,
@@ -253,7 +253,7 @@ func TestGetSupportedCalloutTypes(t *testing.T) {
 	})
 
 	// Act
-	supportedTypes := executor.GetSupportedCalloutTypes()
+	supportedTypes := executor.GetSupportedCalloutCarrierTypes()
 
 	// Assert
 	require.Len(t, supportedTypes, 2)
@@ -261,30 +261,30 @@ func TestGetSupportedCalloutTypes(t *testing.T) {
 	require.Contains(t, supportedTypes, barType)
 }
 
-// Test that the callout points are called in the sequential order properly.
+// Test that the callouts are called in the sequential order properly.
 func TestCallSequential(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
 	})
 
-	fooMocks := []*mockCalloutFooImpl{
-		newMockCalloutFoo(),
-		newMockCalloutFoo(),
-		newMockCalloutFoo(),
+	fooMocks := []*mockCalloutCarrierFooImpl{
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
 	}
-	barMock := newMockCalloutBar()
-	fooBarMock := newMockCalloutFooBar()
+	barMock := newMockCalloutCarrierBar()
+	fooBarMock := newMockCalloutCarrierFooBar()
 
 	for _, mock := range fooMocks {
-		executor.registerCallout(mock)
+		executor.registerCalloutCarrier(mock)
 	}
-	executor.registerCallout(barMock)
-	executor.registerCallout(fooBarMock)
+	executor.registerCalloutCarrier(barMock)
+	executor.registerCalloutCarrier(fooBarMock)
 
 	// Act
-	results := CallSequential(executor, func(callout mockCalloutFoo) int {
+	results := CallSequential(executor, func(callout mockCalloutCarrierFoo) int {
 		return callout.Foo()
 	})
 
@@ -297,12 +297,12 @@ func TestCallSequential(t *testing.T) {
 
 		// 2. Has expected output.
 		require.EqualValues(t, mock.fooTotalCount, result)
-		// 3. The callout object was called exactly once.
+		// 3. The callout was called exactly once.
 		require.EqualValues(t, 1, mock.fooCount)
 
 		if i != 0 {
 			previousMock := fooMocks[i-1]
-			// 4. The callout objects were executed in an expected order.
+			// 4. The callouts were executed in an expected order.
 			require.EqualValues(t, previousMock.fooTotalCount, mock.fooTotalCount-1)
 		}
 	}
@@ -316,24 +316,24 @@ func TestCallSequential(t *testing.T) {
 	require.Zero(t, barMock.barCount)
 }
 
-// Test that the callout point is executed properly if exactly one callout object
+// Test that the callout is executed properly if exactly one callout carrier
 // was registered.
 func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
 	})
 
-	fooMock := newMockCalloutFoo()
-	barMock := newMockCalloutBar()
+	fooMock := newMockCalloutCarrierFoo()
+	barMock := newMockCalloutCarrierBar()
 
-	executor.registerCallout(fooMock)
-	executor.registerCallout(barMock)
+	executor.registerCalloutCarrier(fooMock)
+	executor.registerCalloutCarrier(barMock)
 
 	// Act
-	result := CallSingle(executor, func(callout mockCalloutFoo) int {
-		return callout.Foo()
+	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+		return carrier.Foo()
 	})
 
 	// Assert
@@ -342,34 +342,34 @@ func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	require.Zero(t, barMock.barCount)
 }
 
-// Test that only the first callout point is executed if more than one callout
-// object was registered.
+// Test that only the first callout is executed if more than one carrier was
+// registered.
 func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
 	})
 
-	mocks := []*mockCalloutFooImpl{
-		newMockCalloutFoo(),
-		newMockCalloutFoo(),
-		newMockCalloutFoo(),
+	mocks := []*mockCalloutCarrierFooImpl{
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
 	}
 
 	for _, mock := range mocks {
-		executor.registerCallout(mock)
+		executor.registerCalloutCarrier(mock)
 	}
 
-	barMock := newMockCalloutBar()
-	fooBarMock := newMockCalloutFooBar()
+	barMock := newMockCalloutCarrierBar()
+	fooBarMock := newMockCalloutCarrierFooBar()
 
-	executor.registerCallout(fooBarMock)
-	executor.registerCallout(barMock)
+	executor.registerCalloutCarrier(fooBarMock)
+	executor.registerCalloutCarrier(barMock)
 
 	// Act
-	result := CallSingle(executor, func(callout mockCalloutFoo) int {
-		return callout.Foo()
+	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+		return carrier.Foo()
 	})
 
 	// Assert
@@ -387,18 +387,18 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	require.Zero(t, fooBarMock.barCount)
 }
 
-// Test that the default result is returned if no callout object was
+// Test that the default result is returned if no callout carrier was
 // registered.
 func TestCallSingleForNoRegisteredCallouts(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
 	})
 
 	// Act
-	result := CallSingle(executor, func(callout mockCalloutFoo) int {
-		return callout.Foo()
+	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+		return carrier.Foo()
 	})
 
 	// Assert

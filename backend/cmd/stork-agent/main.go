@@ -46,7 +46,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 
 	// Read the hook libraries.
 	hookManager := agent.NewHookManager()
-	err := hookManager.RegisterCalloutsFromDirectory(hooks.HookProgramAgent, settings.Path("hook-directory"))
+	err := hookManager.RegisterHooksFromDirectory(hooks.HookProgramAgent, settings.Path("hook-directory"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.

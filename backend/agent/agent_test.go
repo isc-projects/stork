@@ -61,10 +61,10 @@ func mockRndcEmpty(command []string) ([]byte, error) {
 
 // Initializes StorkAgent instance and context used by the tests.
 func setupAgentTest() (*StorkAgent, context.Context) {
-	return setupAgentTestWithCallouts(nil)
+	return setupAgentTestWithHooks(nil)
 }
 
-func setupAgentTestWithCallouts(callouts []hooks.Callout) (*StorkAgent, context.Context) {
+func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context) {
 	httpClient := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
 
@@ -77,7 +77,7 @@ func setupAgentTestWithCallouts(callouts []hooks.Callout) (*StorkAgent, context.
 		hookManager:    NewHookManager(),
 	}
 
-	sa.hookManager.RegisterCallouts(callouts)
+	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
 	sa.Setup()
 	ctx := context.Background()
 	return sa, ctx
