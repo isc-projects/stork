@@ -234,6 +234,31 @@ def create_not_needed_file_task(task_name)
     return task_name
 end
 
+# This is a regular task that does nothing. It is dedicated to using as
+# prerequirement. Due to it being a regular task it is always recognized as
+# "needed" and causes to rebuild of a parent task.
+# The file tasks with this prerequisite cannot be a prerequisite for other file
+# tasks to avoid a negative impact on the performance.
+task :always_rebuild_this_task do |this|
+    # Checks if no file task depends on a file task with this prerequisite.
+    Rake::Task.tasks().each do |t|
+        if t.class != Rake::FileTask
+            next
+        end
+
+        # Iterates over the prerequisities of the file task.
+        t.prerequisites.each do |p|
+            # Iterates over the nested prerequisities (prerequisities of
+            # prerequisities).
+            Rake::Task[p].all_prerequisite_tasks.each do |n|
+                if n == this
+                    fail "#{this} cannot be a prerequsite of file task (#{t})"
+                end
+            end
+        end
+    end
+end
+
 # Create a new file task that fails if the executable doesn't exist.
 # It accepts a path to the executable.
 def create_manually_installed_file_task(path)
@@ -805,28 +830,28 @@ file RICHGO => [GO] do
 end
 add_version_guard(RICHGO, richgo_ver)
 
-MOCKERY = "#{gobin}/mockery"
+MOCKERY = File.join(gobin, "mockery")
 file MOCKERY => [GO] do
     sh GO, "install", "github.com/vektra/mockery/v2@#{mockery_ver}"
     sh MOCKERY, "--version"
 end
 add_version_guard(MOCKERY, mockery_ver)
 
-MOCKGEN = "#{gobin}/mockgen"
+MOCKGEN = File.join(gobin, "mockgen")
 file MOCKGEN => [GO] do
     sh GO, "install", "github.com/golang/mock/mockgen@#{mockgen_ver}"
     sh MOCKGEN, "--version"
 end
 add_version_guard(MOCKGEN, mockgen_ver)
 
-DLV = "#{gobin}/dlv"
+DLV = File.join(gobin, "dlv")
 file DLV => [GO] do
     sh GO, "install", "github.com/go-delve/delve/cmd/dlv@#{dlv_ver}"
     sh DLV, "version"
 end
 add_version_guard(DLV, dlv_ver)
 
-GDLV = "#{gobin}/gdlv"
+GDLV = File.join(gobin, "gdlv")
 file GDLV => [GO] do
     sh GO, "install", "github.com/aarzilli/gdlv@#{gdlv_ver}"
     if !File.file?(GDLV)
@@ -834,6 +859,19 @@ file GDLV => [GO] do
     end
 end
 add_version_guard(GDLV, gdlv_ver)
+
+GOVULNCHECK = File.join(gobin, "govulncheck")
+file GOVULNCHECK => [GO, :always_rebuild_this_task] do
+    # Govulncheck is still in the development phase. It doesn't use stable
+    # tags. Available versions have a short lifetime. We use the latest release
+    # and mark it as always out-of-date for Rake. The Go will check if the
+    # newer version is available every run. It shouldn't be problematic as long
+    # as it will be used only in a task to check the vulnerabilities.
+    sh GO, "install", "golang.org/x/vuln/cmd/govulncheck@latest"
+    if !File.file?(GOVULNCHECK)
+        fail
+    end
+end
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
