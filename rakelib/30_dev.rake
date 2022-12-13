@@ -394,6 +394,36 @@ namespace :lint do
 end
 
 
+namespace :audit do
+    desc 'Check the UI security issues.
+        FIX - fix the detected vulnerabilities - default: false'
+    task :ui => [NPM] do
+        opts = []
+        if ENV["FIX"] == "true"
+            opts.append "fix"
+        end
+
+        Dir.chdir("webui") do
+            sh NPM, "audit", *opts
+        end
+    end
+
+    desc 'Check the backend security issues'
+    task :backend => [GOVULNCHECK] + go_codebase do
+        Dir.chdir("backend") do
+            sh GOVULNCHECK, "-v", "./..."
+        end
+    end
+
+    desc 'Check the backend security issues (including testing codebase)'
+    task :backend_tests => [GOVULNCHECK] + go_dev_codebase do
+        Dir.chdir("backend") do
+            sh GOVULNCHECK, "-v", "-test", "./..."
+        end
+    end
+end
+
+
 namespace :db do
     desc 'Setup the database environment variables
         DB_NAME - database name - default: env:POSTGRES_DB or storktest
