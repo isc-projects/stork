@@ -1,3 +1,9 @@
+* 267 [build] slawek
+
+    Added govulncheck to the Stork build system, a tool to detect security
+    vulnerabilities on the backend.
+    (Gitlab #861)
+
 * 266 [bug] slawek
 
     The events pertaining to the daemons and apps can be filtered by the
