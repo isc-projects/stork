@@ -19,6 +19,7 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		Subnet:           sn.Prefix,
 		ClientClass:      sn.ClientClass,
 		AddrUtilization:  float64(sn.AddrUtilization) / 10,
+		PdUtilization:    float64(sn.PdUtilization) / 10,
 		Stats:            sn.Stats,
 		StatsCollectedAt: strfmt.DateTime(sn.StatsCollectedAt),
 	}
@@ -26,6 +27,19 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	for _, poolDetails := range sn.AddressPools {
 		pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
 		subnet.Pools = append(subnet.Pools, pool)
+	}
+
+	for _, prefixPoolDetails := range sn.PrefixPools {
+		prefix := prefixPoolDetails.Prefix
+		delegatedLength := int64(prefixPoolDetails.DelegatedLen)
+		subnet.PrefixDelegationPools = append(
+			subnet.PrefixDelegationPools,
+			&models.DelegatedPrefix{
+				Prefix:          &prefix,
+				DelegatedLength: &delegatedLength,
+				ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
+			},
+		)
 	}
 
 	if sn.SharedNetwork != nil {
@@ -134,6 +148,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 			Name:             net.Name,
 			Subnets:          subnets,
 			AddrUtilization:  float64(net.AddrUtilization) / 10,
+			PdUtilization:    float64(net.PdUtilization) / 10,
 			Stats:            net.Stats,
 			StatsCollectedAt: strfmt.DateTime(net.StatsCollectedAt),
 		}

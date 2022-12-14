@@ -209,6 +209,7 @@ func TestGetSubnets(t *testing.T) {
 				UpperBound: "192.118.0.200",
 			},
 		},
+		AddrUtilization: 420,
 	}
 
 	v6subnet := dbmodel.Subnet{
@@ -223,6 +224,8 @@ func TestGetSubnets(t *testing.T) {
 				UpperBound: "3001:db8:1:0:ffff::ffff",
 			},
 		},
+		AddrUtilization: 240,
+		PdUtilization:   420,
 	}
 	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, []dbmodel.Subnet{v4subnet}, a46.Daemons[0])
 	require.NoError(t, err)
@@ -318,6 +321,8 @@ func TestGetSubnets(t *testing.T) {
 		})
 	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.SubnetStats)["baz"])
 	require.EqualValues(t, time.Time{}.Add(3*time.Hour), okRsp.Payload.Items[2].StatsCollectedAt)
+	require.EqualValues(t, 24, okRsp.Payload.Items[2].AddrUtilization)
+	require.EqualValues(t, 42, okRsp.Payload.Items[2].PdUtilization)
 
 	// get subnets by text '118.0.0/2'
 	text := "118.0.0/2"

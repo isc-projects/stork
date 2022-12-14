@@ -564,11 +564,29 @@ end
 
 namespace :gen do
     namespace :ui do
-        desc 'Generate Angular component
-        NAME - name of component - required'
-        task :component => [NPX] do
+        desc 'Generate Angular stuff. Pass through the arguments to
+        "ng generate" command. They must be delimited by double dash (--).'
+        task :angular => [NPX] do |t|
+            flags = []
+            found_delimiter = false
+
+            ARGV.each do |arg|
+                if arg == "--"
+                    found_delimiter = true
+                    next
+                end
+
+                next if !found_delimiter
+
+                flags.append arg
+            end
+
+            if flags.empty?
+                fail "No double dash (--) delimiter found."
+            end
+
             Dir.chdir("webui") do
-                sh NPX, "ng", "generate", "component", ENV["NAME"]
+                sh NPX, "ng", "generate", *flags
             end
         end
 

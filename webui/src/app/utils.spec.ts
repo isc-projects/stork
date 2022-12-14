@@ -1,4 +1,4 @@
-import { clamp, humanCount, stringToHex, getErrorMessage } from './utils'
+import { clamp, stringToHex, getErrorMessage, humanCount, formatShortExcludedPrefix } from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -37,6 +37,7 @@ describe('utils', () => {
         const int = 12345678
         const float = 1234567890
         const bigInt = BigInt('1234567890000000000000000000000000')
+        const smallInt = 1
         const str = 'foo'
         const nan = Number.NaN
         const boolean = true as any
@@ -46,6 +47,7 @@ describe('utils', () => {
         const strInt = humanCount(int)
         const strFloat = humanCount(float)
         const strBigInt = humanCount(bigInt)
+        const strSmallInt = humanCount(smallInt)
         const strStr = humanCount(str)
         const nanStr = humanCount(nan)
         const boolStr = humanCount(boolean)
@@ -55,6 +57,7 @@ describe('utils', () => {
         expect(strInt).toBe('12.3M')
         expect(strFloat).toBe('1.2G')
         expect(strBigInt).toBe('1234567890Y')
+        expect(strSmallInt).toBe('1')
         expect(strStr).toBe('foo')
         expect(nanStr).toBe('NaN')
         expect(boolStr).toBe('true')
@@ -171,5 +174,39 @@ describe('utils', () => {
             const actualMessage = getErrorMessage(error)
             expect(actualMessage).toBe(expectedMessage, error)
         }
+    })
+
+    it('should shorten the excluded prefix if has common part with a prefix', () => {
+        const excludedPrefix = 'fe80:42::/96'
+        const prefix = 'fe80::/64'
+        expect(formatShortExcludedPrefix(prefix, excludedPrefix)).toBe('~:42::/96')
+    })
+
+    it('should not shorten if the excluded prefix has no common part with a prefix', () => {
+        const excludedPrefix = '3001::/96'
+        const prefix = 'fe80::/64'
+        expect(formatShortExcludedPrefix(prefix, excludedPrefix)).toBe('3001::/96')
+    })
+
+    it('should shorten if the prefix and excluded prefix has common part but one of them is not in a canonical form', () => {
+        const excludedPrefix = 'fe80:42::/96'
+        const prefix = 'fe80:0000::/64'
+        expect(formatShortExcludedPrefix(prefix, excludedPrefix)).toBe('~:42::/96')
+    })
+
+    it('should throw if the prefix is not IPv6', () => {
+        const prefix = 'foo'
+        const excludedPrefix = 'fe80:42::/96'
+        expect(() => formatShortExcludedPrefix(prefix, excludedPrefix)).toThrowError(
+            'Given IPv6 is not confirm to a valid IPv6 address'
+        )
+    })
+
+    it('should throw if the excluded prefix is not IPv6', () => {
+        const prefix = 'fe80::/64'
+        const excludedPrefix = 'foo'
+        expect(() => formatShortExcludedPrefix(prefix, excludedPrefix)).toThrowError(
+            'Given IPv6 is not confirm to a valid IPv6 address'
+        )
     })
 })

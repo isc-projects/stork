@@ -13,7 +13,7 @@ import {
     ServicesService,
 } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
-import { LocaltimePipe } from '../localtime.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import mockAddon from 'storybook-addon-mock'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'

@@ -1,0 +1,15 @@
+<div class="delegated-prefix">
+    <span>{{ prefix.prefix }}</span>
+    <!-- We use explicit spaces to allow copy-and-paste of the delegated
+        prefix in a human-friendly form. -->
+    <span>&nbsp;</span>
+    <abbr class="delegated-prefix__label" title="delegated length">del.:</abbr>
+    <span>&nbsp;</span>
+    <span>{{ prefix.delegatedLength }}</span>
+    <ng-container *ngIf="!!this.prefix.excludedPrefix">
+        <span>&nbsp;</span>
+        <abbr class="delegated-prefix__label" title="excluded prefix">ex.:</abbr>
+        <span>&nbsp;</span>
+        <abbr [title]="prefix.excludedPrefix">{{ shortExcludedPrefix }}</abbr>
+    </ng-container>
+</div>

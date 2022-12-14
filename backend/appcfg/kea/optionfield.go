@@ -504,7 +504,7 @@ func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, err
 		return "", errors.New("IPv6 prefix option field contains invalid value")
 	}
 	if textFormat {
-		return fmt.Sprintf("%s/%d", values[0], values[1]), nil
+		return storkutil.FormatCIDRNotation(ip, int(prefixLen.Int())), nil
 	}
 	return fmt.Sprintf("%s%02X", storkutil.BytesToHex(parsed.IP), prefixLen.Int()), nil
 }

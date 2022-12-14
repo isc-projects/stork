@@ -44,16 +44,22 @@ func TestNewAddressPoolFromRange(t *testing.T) {
 // Test that the prefix pool instance can be created from the prefix
 // and the delegated length.
 func TestNewPrefixPool(t *testing.T) {
-	pool, err := NewPrefixPool("2001:db8:1::/64", 96)
+	pool, err := NewPrefixPool("2001:db8:1::/64", 96, "")
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
 	require.Equal(t, "2001:db8:1::/64", pool.Prefix)
 	require.EqualValues(t, 96, pool.DelegatedLen)
+	require.Empty(t, pool.ExcludedPrefix)
 
 	// IPv4 is not accepted.
-	_, err = NewPrefixPool("192.0.2.0/24", 24)
+	_, err = NewPrefixPool("192.0.2.0/24", 24, "")
 	require.Error(t, err)
+
+	// Non-empty excluded prefix
+	pool, err = NewPrefixPool("2001:db8:1::/64", 96, "2001:db8:1:42::/80")
+	require.NoError(t, err)
+	require.EqualValues(t, "2001:db8:1:42::/80", pool.ExcludedPrefix)
 }
 
 func TestAddDeleteAddressPool(t *testing.T) {

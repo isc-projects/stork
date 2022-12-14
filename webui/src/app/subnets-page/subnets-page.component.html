@@ -56,7 +56,11 @@
         <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
         <div>
             <p-dropdown
-                [options]="dhcpVersions"
+                [options]="[
+                    { label: 'any', value: null, id: 'any-menu' },
+                    { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
+                    { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' }
+                ]"
                 id="protocol-dropdown-menu"
                 [(ngModel)]="queryParams.dhcpVersion"
                 [style]="{ width: '10em' }"
@@ -84,6 +88,7 @@
                 <tr>
                     <th rowspan="2" style="width: 11rem">Subnet</th>
                     <th colspan="3" style="width: 16rem">Addresses</th>
+                    <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
                     <th rowspan="2">Pools</th>
                     <th rowspan="2" style="width: 6rem">Shared Network</th>
                     <th colspan="2">Application</th>
@@ -95,6 +100,11 @@
                     <th>Total</th>
                     <th style="padding: 0.571rem 0.5rem">Assigned</th>
                     <th>Used %</th>
+                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                        <th>Total</th>
+                        <th style="padding: 0.571rem 0.5rem">Assigned</th>
+                        <th>Used %</th>
+                    </ng-container>
                     <th>Name</th>
                     <th>Kea Subnet ID</th>
                 </tr>
@@ -105,14 +115,10 @@
                         <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                     </td>
                     <td>
-                        <span pTooltip="{{ tooltipCount(getTotalAddresses(sn)) }}">{{
-                            humanCount(getTotalAddresses(sn))
-                        }}</span>
+                        <app-human-count [value]="getTotalAddresses(sn)"></app-human-count>
                     </td>
                     <td>
-                        <span pTooltip="{{ tooltipCount(getAssignedAddresses(sn)) }}">{{
-                            humanCount(getAssignedAddresses(sn))
-                        }}</span>
+                        <app-human-count [value]="getAssignedAddresses(sn)"></app-human-count>
                     </td>
                     <td>
                         {{ sn.addrUtilization ? sn.addrUtilization : '0' }} %
@@ -127,6 +133,28 @@
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
                         ></i>
                     </td>
+                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                        <td>
+                            <app-human-count [value]="getTotalDelegatedPrefixes(sn)"></app-human-count>
+                        </td>
+                        <td>
+                            <app-human-count [value]="getAssignedDelegatedPrefixes(sn)"></app-human-count>
+                        </td>
+                        <td *ngIf="sn.subnet.includes(':')">
+                            {{ sn.pdUtilization ? sn.pdUtilization : '0' }} %
+                            <i
+                                *ngIf="sn.pdUtilization > 80 && sn.pdUtilization <= 90"
+                                class="pi pi-exclamation-triangle"
+                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                            ></i>
+                            <i
+                                *ngIf="sn.pdUtilization > 90"
+                                class="pi pi-exclamation-circle"
+                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                            ></i>
+                        </td>
+                        <td *ngIf="sn.subnet.includes('.')">-</td>
+                    </ng-container>
                     <td>
                         <div
                             *ngFor="let p of sn.pools"
@@ -141,6 +169,10 @@
                         >
                             {{ p }}
                         </div>
+                        <app-delegated-prefix-bar
+                            [prefix]="p"
+                            *ngFor="let p of sn.prefixDelegationPools"
+                        ></app-delegated-prefix-bar>
                     </td>
                     <td>
                         {{ sn.sharedNetwork }}
@@ -173,6 +205,7 @@
                             [href]="getGrafanaUrl('dhcp4', sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                             [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                             target="blank"
+                            *ngIf="sn.localSubnets?.[0]"
                         >
                             <i class="pi pi-chart-line" style="font-size: 1.6em"></i>
                         </a>

@@ -162,7 +162,12 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source Hos
 		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.PdPools {
-		prefixPool, err := NewPrefixPool(fmt.Sprintf("%s/%d", p.Prefix, p.PrefixLen), p.DelegatedLen)
+		prefix := storkutil.FormatCIDRNotation(p.Prefix, p.PrefixLen)
+		var excludedPrefix string
+		if p.ExcludedPrefix != "" && p.ExcludedPrefixLen != 0 {
+			excludedPrefix = storkutil.FormatCIDRNotation(p.ExcludedPrefix, p.ExcludedPrefixLen)
+		}
+		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix)
 		if err != nil {
 			return nil, err
 		}

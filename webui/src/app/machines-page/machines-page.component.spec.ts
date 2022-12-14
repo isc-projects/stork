@@ -12,7 +12,7 @@ import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
 import { ServicesService, UsersService } from '../backend'
-import { LocaltimePipe } from '../localtime.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
 import { TabMenuModule } from 'primeng/tabmenu'

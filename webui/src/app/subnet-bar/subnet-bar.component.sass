@@ -1,28 +1,127 @@
-
-// main div
+// Main utilization container.
 .utilization
-  display: inline-block
+  // This causes the subnet prefix (label) to be aligned relatively to the main
+  // utilization container.
   position: relative
+  // Fixed width for the utilization container.
   width: 10em
-  background-color: #ddd
-  border-radius: 4px
-  vertical-align: middle
-
-// percentage div
-.utilization .bar
-  background-color: #abffa8
+  // Fixed height for the utilization container.
   height: 1.5rem
-  border-top-left-radius: 4px
-  border-bottom-left-radius: 4px
 
-// label centrally
-.utilization .label
+.utilization__bars
+  // Enable flex to order the bars.
+  display: flex
+  // Display bars vertically.
+  flex-direction: column
+  // Expand the bar container to full area.
+  height: 100%
+  width: 100%
+  // Background color when there are no data (NAs and PDs).
+  background-color: #eee
+  // Rounded border.
+  border-radius: 4px
+
+// Wrapper for the utilization bar.
+.utilization__bar-wrapper
+  // Split the available area proportionally for each bar wrapper and expand
+  // it to full size.
+  flex: 1
+  // Grayed color.
+  background-color: #ddd
+  // This causes the kind labels to be aligned relatively to this wrapper.
+  position: relative
+  // Rounded border.
+  border-radius: 4px
+
+// Percentage utilization bar.
+.utilization__bar
+  // Rounded border to fit in the wrapper.
+  border-radius: 4px
+  // Use full available height.
+  height: 100%
+
+// Subnet prefix label.
+.utilization__label
+  // Overlaps the main utilization container.
   position: absolute
+  // Full size of the main utilization container (text is still left-aligned).
   left: 0
   top: 0
   right: 0
   bottom: 0
+  // Offsets the text from the edge.
   padding-left: 4px
   padding-right: 4px
+  // Center text vertically.
   margin: auto
-  height: fit-content
+  // It is necessary to apply the margin:auto.
+  height: 100%
+  // Place the label on the front of other overlapped items (kind labels).
+  // Otherwise, the label is invisible.
+  z-index: 1
+  // Show the kind labels for IPv6 subnet.
+  display: inline-flex
+  // Center the text vertically using flex.
+  align-items: center
+
+// Bar label indicating the kind of the utilization.
+.utilization__kind
+  // Hide by default for IPv4.
+  display: none
+  // Overlaps the bar wrapper.
+  position: absolute
+  // Full vertical size and pull to right.
+  top: 0
+  right: 0
+  bottom: 0
+  // Center text vertically.
+  margin: auto
+  // It is necessary to apply the margin:auto and prevent expanding a label
+  // over a container.
+  height: 100%
+  // Offsets the text from the edge.
+  padding-right: 4px
+  // Use a grayed color to avoid distraction from the prefix label.
+  color: #888
+  // Use extra small font size.
+  font-size: 75%
+
+.utilization--ipv6
+  .utilization__kind
+    // Show the kind labels for IPv6 subnet.
+    display: inline-flex
+    // Center the text vertically using flex.
+    align-items: center
+
+.utilization__bar-wrapper--delegated-prefix
+  // Use a little different color for the delegated prefix bar for
+  // easier differentiation.
+  filter: brightness(95%)
+
+// Modificator for the low utilization value.
+.utilization__bar--low
+  // Green bar color.
+  background-color: #abffa8
+
+// Modificator for the medium utilization value.
+.utilization__bar--medium
+  // Orange bar color.
+  background-color: #ffcf76
+
+// Modificator for the high utilization value.
+.utilization__bar--high
+  // Red bar color.
+  background-color: #faa
+
+// Modificator for the exceed utilization value.
+.utilization__bar--exceed
+  // Blue bar color.
+  background-color: #9ab8ef
+
+// Modificator for missing statistic data.
+.utilization__bar--missing
+  background-color: #ccc
+
+.utilization__bar-wrapper--no-data
+  // Hide the bar if no data.
+  display: none

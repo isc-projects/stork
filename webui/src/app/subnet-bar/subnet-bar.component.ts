@@ -13,41 +13,29 @@ import { clamp, datetimeToLocal } from '../utils'
     styleUrls: ['./subnet-bar.component.sass'],
 })
 export class SubnetBarComponent {
+    /**
+     * Internal subnet instance.
+     */
     _subnet: Subnet
-    style: any
+
+    /**
+     * Tooltip content.
+     */
     tooltip = ''
 
     constructor() {}
 
+    /**
+     * Sets the subnet. It generates also the tooltip content.
+     */
     @Input()
     set subnet(subnet: Subnet) {
         this._subnet = subnet
 
-        const util: number = subnet.addrUtilization ? subnet.addrUtilization : 0
-
-        const style = {
-            // In some cases the utilization may be incorrect - less than
-            // zero or greater than 100%. We need to truncate the value
-            // to avoid a subnet bar overlapping other elements.
-            width: clamp(util, 0, 100) + '%',
-        }
-
-        if (util > 100) {
-            style['background-color'] = '#7C9FDE' // blue-ish
-        } else if (util > 90) {
-            style['background-color'] = '#faa' // red-ish
-        } else if (util > 80) {
-            style['background-color'] = '#ffcf76' // orange-ish
-        } else {
-            style['background-color'] = '#abffa8' // green-ish
-        }
-
-        this.style = style
-
         if (this._subnet.stats) {
             const stats = this._subnet.stats
             const lines = []
-            if (util > 100) {
+            if (this.addrUtilization > 100 || this.pdUtilization > 100) {
                 lines.push('Warning! Utilization is greater than 100%. Data is unreliable.')
                 lines.push(
                     'This problem is caused by a Kea limitation - addresses/NAs/PDs in out-of-pool host reservations are reported as assigned but excluded from the total counters.'
@@ -57,14 +45,19 @@ export class SubnetBarComponent {
                 )
                 lines.push('')
             }
+
             if (this._subnet.subnet.includes('.')) {
                 // DHCPv4 stats
+                lines.push(`Utilization: ${this.addrUtilization}%`)
                 lines.push('Total: ' + stats['total-addresses'].toLocaleString('en-US'))
                 lines.push('Assigned: ' + stats['assigned-addresses'].toLocaleString('en-US'))
                 lines.push('Declined: ' + stats['declined-addresses'].toLocaleString('en-US'))
             } else {
                 // DHCPv6 stats
                 // IPv6 addresses
+                lines.push(`Utilization NAs: ${this.addrUtilization}%`)
+                lines.push(`Utilization PDs: ${this.pdUtilization}%`)
+
                 if (stats['total-nas'] !== undefined) {
                     let total = stats['total-nas']
                     if (total === -1) {
@@ -94,11 +87,100 @@ export class SubnetBarComponent {
             this.tooltip = lines.join('<br>')
         } else {
             this.tooltip = 'No stats yet'
-            style['background-color'] = '#ccc' // grey
         }
     }
 
+    /**
+     * Returns the subnet.
+     */
     get subnet() {
         return this._subnet
+    }
+
+    /**
+     * Returns the address utilization. It guaranties that the number will be
+     * returned.
+     */
+    get addrUtilization() {
+        return this.subnet.addrUtilization ?? 0
+    }
+
+    /**
+     * Returns the delegated prefix utilization. It guaranties that the number
+     * will be returned.
+     */
+    get pdUtilization() {
+        return this.subnet.pdUtilization ?? 0
+    }
+
+    /**
+     * Returns true if the subnet is IPv6.
+     */
+    get isIPv6() {
+        return this.subnet.subnet.includes(':')
+    }
+
+    /**
+     * Returns a style for the address utilization bar.
+     */
+    get addrUtilizationStyle() {
+        return {
+            // In some cases the utilization may be incorrect - less than
+            // zero or greater than 100%. We need to truncate the value
+            // to avoid a subnet bar overlapping other elements.
+            width: clamp(this.addrUtilization, 0, 100) + '%',
+        }
+    }
+
+    /**
+     * Returns a style for the delegated prefix utilization bar.
+     */
+    get pdUtilizationStyle() {
+        return {
+            // In some cases the utilization may be incorrect - less than
+            // zero or greater than 100%. We need to truncate the value
+            // to avoid a subnet bar overlapping other elements.
+            width: clamp(this.pdUtilization, 0, 100) + '%',
+        }
+    }
+
+    /**
+     * Returns a proper CSS modificator class for a given utilization value.
+     */
+    getUtilizationBarModificatorClass(value: number): string {
+        if (!this.subnet.stats) {
+            return 'utilization__bar--missing'
+        }
+        if (value <= 80) {
+            return 'utilization__bar--low'
+        }
+        if (value <= 90) {
+            return 'utilization__bar--medium'
+        }
+        if (value <= 100) {
+            return 'utilization__bar--high'
+        }
+        return 'utilization__bar--exceed'
+    }
+
+    /**
+     * Returns true if there are stats with zero number of total addresses.
+     */
+    get hasZeroAddressStats(): boolean {
+        if (!this.subnet.stats) {
+            return false
+        }
+
+        return !this.subnet.stats['total-nas'] && !this.subnet.stats['total-addresses']
+    }
+
+    /**
+     * Returns true if there are stats with zero number of delegated prefixes.
+     */
+    get hasZeroDelegatedPrefixStats(): boolean {
+        if (!this.subnet.stats) {
+            return false
+        }
+        return !this.subnet.stats['total-pds']
     }
 }

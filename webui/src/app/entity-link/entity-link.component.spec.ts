@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
-import { SurroundPipe } from '../surround.pipe'
+import { SurroundPipe } from '../pipes/surround.pipe'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent

@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { humanCount, extractKeyValsAndPrepareQueryParams } from '../utils'
+import { extractKeyValsAndPrepareQueryParams } from '../utils'
 import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -25,7 +25,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     @ViewChild('networksTable') networksTable: Table
 
     // networks
-    networks: any[]
+    networks: SharedNetwork[]
     totalNetworks = 0
 
     // filters
@@ -145,37 +145,40 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get total of addresses in the network by summing up all subnets.
+     * Get the total number of addresses in the network.
      */
     getTotalAddresses(network: SharedNetwork) {
         return getTotalAddresses(network)
     }
 
     /**
-     * Get assigned of addresses in the network by summing up all subnets.
+     * Get the number of assigned addresses in the network.
      */
     getAssignedAddresses(network: SharedNetwork) {
         return getAssignedAddresses(network)
     }
 
     /**
-     * Prepare count for presenting in tooltip by adding ',' separator to big numbers, eg. 1,243,342.
+     * Get the total number of delegated prefixes in the network.
      */
-    tooltipCount(count) {
-        return count.toLocaleString('en-US')
+    getTotalDelegatedPrefixes(network: SharedNetwork) {
+        return network.stats?.['total-pds']
     }
 
     /**
-     * Prepare count for presenting in a column that it is easy to grasp by humans.
+     * Get the number of delegated prefixes in the network.
      */
-    humanCount(count) {
-        if (count < 1000001) {
-            return count.toLocaleString('en-US')
-        }
-
-        return humanCount(count)
+    getAssignedDelegatedPrefixes(network: SharedNetwork) {
+        return network.stats?.['assigned-pds']
     }
 
+    /**
+     * Returns a list of applications maintaining a given shared network.
+     * The list doesn't contain duplicates.
+     *
+     * @param net Shared network
+     * @returns List of the applications (only ID and app name)
+     */
     getApps(net: SharedNetwork) {
         const apps = []
         const appIds = {}
@@ -190,5 +193,13 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         }
 
         return apps
+    }
+
+    /**
+     * Returns true if at least one of the shared networks contains at least
+     * one IPv6 subnet
+     */
+    get isAnyIPv6SubnetVisible(): boolean {
+        return this.networks.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
     }
 }

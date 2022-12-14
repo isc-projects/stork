@@ -17,8 +17,12 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
+import { HumanCountComponent } from '../human-count/human-count.component'
+import { NumberPipe } from '../pipes/number.pipe'
 import { RouterTestingModule } from '@angular/router/testing'
 import { MessageModule } from 'primeng/message'
+import { HumanCountPipe } from '../pipes/human-count.pipe'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -60,7 +64,16 @@ describe('SubnetsPageComponent', () => {
                 NoopAnimationsModule,
                 MessageModule,
             ],
-            declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
+            declarations: [
+                SubnetsPageComponent,
+                SubnetBarComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                DelegatedPrefixBarComponent,
+                HumanCountComponent,
+                HumanCountPipe,
+                NumberPipe,
+            ],
         })
         dhcpService = TestBed.inject(DHCPService)
         router = TestBed.inject(Router)
@@ -193,7 +206,7 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        const stats: { [key: string]: BigInt } = component.subnets[0].stats
+        const stats: { [key: string]: BigInt } = component.subnets[0].stats as any
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
@@ -223,6 +236,16 @@ describe('SubnetsPageComponent', () => {
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
         expect(breadcrumbsComponent.items[1].label).toEqual('Subnets')
+    })
+
+    it('should detect IPv6 subnets', () => {
+        const subnets: Subnet[] = [{ subnet: '10.0.0.0/8' }, { subnet: '192.168.0.0/16' }]
+
+        component.subnets = subnets
+        expect(component.isAnyIPv6SubnetVisible).toBeFalse()
+
+        subnets.push({ subnet: 'fe80::/64' })
+        expect(component.isAnyIPv6SubnetVisible).toBeTrue()
     })
 
     it('should display the Kea subnet ID', async () => {

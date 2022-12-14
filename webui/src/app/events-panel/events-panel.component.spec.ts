@@ -10,7 +10,7 @@ import { ToastModule } from 'primeng/toast'
 
 import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
-import { LocaltimePipe } from '../localtime.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventsPanelComponent } from './events-panel.component'
 
 /**

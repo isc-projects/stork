@@ -56,13 +56,11 @@ import { environment } from './../environments/environment'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { AuthInterceptor } from './auth-interceptor'
-import { AuthService } from './auth.service'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
 import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
-import { LocaltimePipe } from './localtime.pipe'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
 import { Bind9AppTabComponent } from './bind9-app-tab/bind9-app-tab.component'
@@ -105,7 +103,12 @@ import { ConfigCheckerPreferencePageComponent } from './config-checker-preferenc
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view/dhcp-client-class-set-view.component'
-import { SurroundPipe } from './surround.pipe'
+import { DelegatedPrefixBarComponent } from './delegated-prefix-bar/delegated-prefix-bar.component'
+import { HumanCountComponent } from './human-count/human-count.component'
+import { NumberPipe } from './pipes/number.pipe'
+import { HumanCountPipe } from './pipes/human-count.pipe'
+import { LocaltimePipe } from './pipes/localtime.pipe'
+import { SurroundPipe } from './pipes/surround.pipe'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -166,6 +169,10 @@ export function cfgFactory() {
         ConfigCheckerPreferencePageComponent,
         DhcpClientClassSetFormComponent,
         DhcpClientClassSetViewComponent,
+        DelegatedPrefixBarComponent,
+        HumanCountPipe,
+        HumanCountComponent,
+        NumberPipe,
         SurroundPipe,
     ],
     imports: [

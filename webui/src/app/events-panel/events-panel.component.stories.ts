@@ -10,7 +10,7 @@ import mockAddon from 'storybook-addon-mock'
 import { TableModule } from 'primeng/table'
 import { ToastModule } from 'primeng/toast'
 import { action } from '@storybook/addon-actions'
-import { LocaltimePipe } from '../localtime.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ButtonModule } from 'primeng/button'
 

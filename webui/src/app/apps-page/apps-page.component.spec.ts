@@ -8,7 +8,6 @@ import { FormsModule } from '@angular/forms'
 import { TableModule } from 'primeng/table'
 import { Bind9AppTabComponent } from '../bind9-app-tab/bind9-app-tab.component'
 import { KeaAppTabComponent } from '../kea-app-tab/kea-app-tab.component'
-import { LocaltimePipe } from '../localtime.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { TabPanel, TabViewModule } from 'primeng/tabview'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
@@ -25,6 +24,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 class App {
     id: number

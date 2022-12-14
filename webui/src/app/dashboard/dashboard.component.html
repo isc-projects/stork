@@ -84,6 +84,7 @@
                             </td>
                             <td *ngIf="grafanaUrl">
                                 <a
+                                    *ngIf="sn.localSubnets?.[0]"
                                     [href]="
                                         getGrafanaUrl(
                                             'dhcp4',
@@ -144,17 +145,9 @@
                         <tr class="statistics-row">
                             <td class="statistics-row__label">Addresses</td>
                             <td class="statistics-row__value">
-                                {{
-                                    overview.dhcp4Stats.assignedAddresses
-                                        ? humanCount(overview.dhcp4Stats.assignedAddresses)
-                                        : '0'
-                                }}
+                                {{ overview.dhcp4Stats.assignedAddresses ?? 0 | humanCount }}
                                 /
-                                {{
-                                    overview.dhcp4Stats.totalAddresses
-                                        ? humanCount(overview.dhcp4Stats.totalAddresses)
-                                        : '0'
-                                }}
+                                {{ overview.dhcp4Stats.totalAddresses ?? 0 | humanCount }}
                                 ({{
                                     getPercent(
                                         overview.dhcp4Stats.assignedAddresses,
@@ -166,11 +159,7 @@
                         <tr class="statistics-row">
                             <td class="statistics-row__label">Declined</td>
                             <td class="statistics-row__value">
-                                {{
-                                    overview.dhcp4Stats.declinedAddresses
-                                        ? humanCount(overview.dhcp4Stats.declinedAddresses)
-                                        : '0'
-                                }}
+                                {{ overview.dhcp4Stats.declinedAddresses ?? 0 | humanCount }}
                             </td>
                         </tr>
                         <!-- TODO <tr> -->
@@ -258,31 +247,25 @@
                         <tr class="statistics-row">
                             <td class="statistics-row__label">Addresses</td>
                             <td class="statistics-row__value">
-                                {{
-                                    overview.dhcp6Stats.assignedNAs ? humanCount(overview.dhcp6Stats.assignedNAs) : '0'
-                                }}
+                                {{ overview.dhcp6Stats.assignedNAs ?? 0 | humanCount }}
                                 /
-                                {{ overview.dhcp6Stats.totalNAs ? humanCount(overview.dhcp6Stats.totalNAs) : '0' }}
+                                {{ overview.dhcp6Stats.totalNAs ?? 0 | humanCount }}
                                 ({{ getPercent(overview.dhcp6Stats.assignedNAs, overview.dhcp6Stats.totalNAs) }}% used)
                             </td>
                         </tr>
                         <tr class="statistics-row">
                             <td class="statistics-row__label">Prefixes</td>
                             <td class="statistics-row__value">
-                                {{
-                                    overview.dhcp6Stats.assignedPDs ? humanCount(overview.dhcp6Stats.assignedPDs) : '0'
-                                }}
+                                {{ overview.dhcp6Stats.assignedPDs ?? 0 | humanCount }}
                                 /
-                                {{ overview.dhcp6Stats.totalPDs ? humanCount(overview.dhcp6Stats.totalPDs) : '0' }}
+                                {{ overview.dhcp6Stats.totalPDs ?? 0 | humanCount }}
                                 ({{ getPercent(overview.dhcp6Stats.assignedPDs, overview.dhcp6Stats.totalPDs) }}% used)
                             </td>
                         </tr>
                         <tr class="statistics-row">
                             <td class="statistics-row__label">Declined</td>
                             <td class="statistics-row__value">
-                                {{
-                                    overview.dhcp6Stats.declinedNAs ? humanCount(overview.dhcp6Stats.declinedNAs) : '0'
-                                }}
+                                {{ overview.dhcp6Stats.declinedNAs ?? 0 | humanCount }}
                             </td>
                         </tr>
                         <!-- TODO <tr> -->

@@ -1,5 +1,5 @@
 import { LocaltimePipe } from './localtime.pipe'
-import { datetimeToLocal } from './utils'
+import { datetimeToLocal } from '../utils'
 
 describe('LocaltimePipe', () => {
     it('create an instance', () => {

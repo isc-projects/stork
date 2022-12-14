@@ -1,3 +1,9 @@
+* 270 [func] slawek
+
+    Extended the UI to display the delegated prefix pools and their
+    utilizations.
+    (Gitlab #186)
+
 * 269 [build] slawek
 
     Added missing comments for all exported functions and enabled a linter

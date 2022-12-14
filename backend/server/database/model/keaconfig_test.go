@@ -117,9 +117,11 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 		"pd-pools": []interface{}{
 			map[string]interface{}{
-				"prefix":        "2001:db8:1:1::",
-				"prefix-len":    96,
-				"delegated-len": 120,
+				"prefix":              "2001:db8:1:1::",
+				"prefix-len":          96,
+				"delegated-len":       120,
+				"excluded-prefix":     "2001:db8:1:1:1::",
+				"excluded-prefix-len": 128,
 			},
 		},
 		"reservations": []interface{}{
@@ -163,6 +165,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Len(t, parsedSubnet.PrefixPools, 1)
 	require.Equal(t, "2001:db8:1:1::/96", parsedSubnet.PrefixPools[0].Prefix)
 	require.EqualValues(t, 120, parsedSubnet.PrefixPools[0].DelegatedLen)
+	require.Equal(t, "2001:db8:1:1:1::/128", parsedSubnet.PrefixPools[0].ExcludedPrefix)
 
 	require.Len(t, parsedSubnet.Hosts, 1)
 	require.Len(t, parsedSubnet.Hosts[0].HostIdentifiers, 2)

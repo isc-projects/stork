@@ -19,7 +19,8 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TooltipModule } from 'primeng/tooltip'
 import { TableModule } from 'primeng/table'
-import { SurroundPipe } from '../surround.pipe'
+import { HumanCountPipe } from '../pipes/human-count.pipe'
+import { SurroundPipe } from '../pipes/surround.pipe'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -45,6 +46,7 @@ describe('DashboardComponent', () => {
                 EventsPanelComponent,
                 HelpTipComponent,
                 SubnetBarComponent,
+                HumanCountPipe,
                 SurroundPipe,
             ],
             providers: [

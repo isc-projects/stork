@@ -4,12 +4,13 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { humanCount, getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip } from '../utils'
+import { getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip, getErrorMessage } from '../utils'
 import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
 import { SettingService } from '../setting.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Subnet } from '../backend'
+import { MessageService } from 'primeng/api'
 
 /**
  * Component for presenting DHCP subnets.
@@ -26,12 +27,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     @ViewChild('subnetsTable') subnetsTable: Table
 
     // subnets
-    subnets: any[]
+    subnets: Subnet[] = []
     totalSubnets = 0
 
     // filters
     filterText = ''
-    dhcpVersions: any[]
     queryParams = {
         text: null,
         dhcpVersion: null,
@@ -45,7 +45,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private dhcpApi: DHCPService,
-        private settingSvc: SettingService
+        private settingSvc: SettingService,
+        private messageService: MessageService
     ) {}
 
     ngOnDestroy(): void {
@@ -53,13 +54,6 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        // prepare list of DHCP versions, this is used in subnets filtering
-        this.dhcpVersions = [
-            { label: 'any', value: null, id: 'any-menu' },
-            { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
-            { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' },
-        ]
-
         // ToDo: Silent error catching
         this.subscriptions.add(
             this.settingSvc.getSettings().subscribe(
@@ -67,7 +61,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     this.grafanaUrl = data['grafana_url']
                 },
                 (error) => {
-                    console.log(error)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot fetch server settings',
+                        detail: getErrorMessage(error),
+                    })
                 }
             )
         )
@@ -99,7 +97,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     this.loadSubnets(event)
                 },
                 (error) => {
-                    console.log(error)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot process URL query parameters',
+                        detail: getErrorMessage(error),
+                    })
                 }
             )
         )
@@ -141,7 +143,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 this.totalSubnets = data.total
             })
             .catch((error) => {
-                console.log(error)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot load subnets',
+                    detail: getErrorMessage(error),
+                })
             })
     }
 
@@ -168,17 +174,6 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 queryParamsHandling: 'merge',
             })
         }
-    }
-
-    /**
-     * Prepare count for presenting in a column that it is easy to grasp by humans.
-     */
-    humanCount(count) {
-        if (count < 1000001) {
-            return count.toLocaleString('en-US')
-        }
-
-        return humanCount(count)
     }
 
     /**
@@ -223,10 +218,37 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Get total number of delegated prefixes in a subnet.
+     */
+    getTotalDelegatedPrefixes(subnet: Subnet) {
+        if (subnet.subnet.includes('.')) {
+            return null
+        }
+        return subnet.stats?.['total-pds'] ?? '?'
+    }
+
+    /**
+     * Get assigned number of delegated prefixes in a subnet.
+     */
+    getAssignedDelegatedPrefixes(subnet: Subnet) {
+        if (subnet.subnet.includes('.')) {
+            return null
+        }
+        return subnet.stats?.['assigned-pds'] ?? '?'
+    }
+
+    /**
      * Build URL to Grafana dashboard
      */
     getGrafanaUrl(name, subnet, instance) {
         return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+    }
+
+    /**
+     * Returns true if the subnet list presents at least one IPv6 subnet.
+     */
+    get isAnyIPv6SubnetVisible(): boolean {
+        return this.subnets.some((s) => s.subnet.includes(':'))
     }
 
     /**

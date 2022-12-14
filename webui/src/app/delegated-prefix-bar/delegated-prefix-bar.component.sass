@@ -1,0 +1,26 @@
+.delegated-prefix
+    // Inline prevents expanding the component to full width.
+    display: inline-block
+    // Add rounded border.
+    border-radius: 4px
+    // Sets a filled background.
+    background-color: #ddd
+    // Sets a small padding.
+    padding: 3px 4px 0 4px
+    // Sets spacing between other component instances.
+    margin: 0 4px 4px 0
+    // Sets the height of the bar.
+    min-height: 1.5rem
+    // Display always in a single line.
+    white-space: nowrap
+
+    abbr
+        // Add a slight spacing between text and underline to avoid overlapping
+        // a dotted line on the text
+        text-underline-offset: 0.15rem
+
+.delegated-prefix__label
+    // Use cursive for labels.
+    font-style: italic
+    //Use a less prominent color than for the main value.
+    color: var(--text-color-secondary)

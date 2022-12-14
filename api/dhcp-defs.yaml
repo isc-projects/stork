@@ -1,4 +1,4 @@
-# A general purpose type used to diferentiate between various
+# A general purpose type used to differentiate between various
 # IPv4 (or DHCPv4) and IPv6 (or DHCPv6 cases).
   IPType:
     type: integer
@@ -268,6 +268,19 @@
         type: string
         format: date-time
 
+  DelegatedPrefix:
+    type: object
+    required:
+      - prefix
+      - delegatedLength
+    properties:
+      prefix:
+        type: string
+      delegatedLength:
+        type: integer
+      excludedPrefix:
+        type: string
+
   Subnet:
     type: object
     properties:
@@ -285,6 +298,8 @@
         type: string
       addrUtilization:
         type: number
+      pdUtilization:
+        type: number
       stats:
         type: object
       statsCollectedAt:
@@ -294,6 +309,10 @@
         type: array
         items:
           $ref: '#/definitions/LocalSubnet'
+      prefixDelegationPools:
+        type: array
+        items:
+          $ref: '#/definitions/DelegatedPrefix'
 
   Subnets:
     type: object
@@ -320,6 +339,8 @@
         items:
           $ref: '#/definitions/Subnet'
       addrUtilization:
+        type: number
+      pdUtilization:
         type: number
       stats:
         type: object

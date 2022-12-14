@@ -71,6 +71,7 @@
                 <tr>
                     <th rowspan="2" style="width: 7rem">Name</th>
                     <th colspan="3" style="width: 16rem">Addresses</th>
+                    <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
                     <th rowspan="2">Subnets</th>
                     <th rowspan="2" style="width: 14rem">App Name</th>
                 </tr>
@@ -78,6 +79,11 @@
                     <th>Total</th>
                     <th style="padding: 0.571rem 0.5rem">Assigned</th>
                     <th>Used %</th>
+                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                        <th>Total</th>
+                        <th style="padding: 0.571rem 0.5rem">Assigned</th>
+                        <th>Used %</th>
+                    </ng-container>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-net>
@@ -86,17 +92,13 @@
                         {{ net.name }}
                     </td>
                     <td>
-                        <span pTooltip="{{ tooltipCount(getTotalAddresses(net)) }}">{{
-                            humanCount(getTotalAddresses(net))
-                        }}</span>
+                        <app-human-count [value]="getTotalAddresses(net)"></app-human-count>
                     </td>
                     <td>
-                        <span pTooltip="{{ tooltipCount(getAssignedAddresses(net)) }}">{{
-                            humanCount(getAssignedAddresses(net))
-                        }}</span>
+                        <app-human-count [value]="getAssignedAddresses(net)"></app-human-count>
                     </td>
                     <td>
-                        {{ net.addrUtilization ? net.addrUtilization : '0' }} %
+                        {{ net.addrUtilization ?? '0' }} %
                         <i
                             *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
                             class="pi pi-exclamation-triangle"
@@ -108,6 +110,27 @@
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
                         ></i>
                     </td>
+                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                        <td>
+                            <app-human-count [value]="getTotalDelegatedPrefixes(net)"></app-human-count>
+                        </td>
+                        <td>
+                            <app-human-count [value]="getAssignedDelegatedPrefixes(net)"></app-human-count>
+                        </td>
+                        <td>
+                            {{ net.pdUtilization ?? '0' }} %
+                            <i
+                                *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
+                                class="pi pi-exclamation-triangle"
+                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                            ></i>
+                            <i
+                                *ngIf="net.pdUtilization > 90"
+                                class="pi pi-exclamation-circle"
+                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                            ></i>
+                        </td>
+                    </ng-container>
                     <td>
                         <app-subnet-bar
                             class="utilization-bar"

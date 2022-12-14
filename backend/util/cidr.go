@@ -195,7 +195,7 @@ func (parsed *ParsedIP) IsInPrefixRange(prefix string, prefixLen, delegatedLen i
 	// delegated prefix length.
 	if parsed.Prefix && prefixLen <= parsed.PrefixLength && delegatedLen == parsed.PrefixLength {
 		// Combine the prefix and the length in the IPNet.
-		_, rangeNetwork, err := net.ParseCIDR(fmt.Sprintf("%s/%d", prefix, prefixLen))
+		_, rangeNetwork, err := net.ParseCIDR(FormatCIDRNotation(prefix, prefixLen))
 		if err != nil {
 			return false
 		}
@@ -243,5 +243,11 @@ func (parsed *ParsedIP) GetNetworkPrefixAsBinary() string {
 
 // Returns prefix with a length in form: prefix/length.
 func (parsed *ParsedIP) GetNetworkPrefixWithLength() string {
-	return fmt.Sprintf("%s/%d", parsed.NetworkPrefix, parsed.PrefixLength)
+	return FormatCIDRNotation(parsed.NetworkPrefix, parsed.PrefixLength)
+}
+
+// Combines the IP and mask to a single string using
+// the [IP]/[MASK] notation.
+func FormatCIDRNotation(ip string, mask int) string {
+	return fmt.Sprintf("%s/%d", ip, mask)
 }

@@ -299,3 +299,12 @@ func TestGetPrefixWithLength(t *testing.T) {
 		})
 	}
 }
+
+// Test that the subnet string is formatted properly.
+func TestFormatCIDRNotation(t *testing.T) {
+	require.EqualValues(t, "fe80::/64", FormatCIDRNotation("fe80::", 64))
+	require.EqualValues(t, "10.0.0.0/8", FormatCIDRNotation("10.0.0.0", 8))
+	// The address is not converted to canonical form and the mask isn't
+	// validated.
+	require.EqualValues(t, "8.8.8.8/4242", FormatCIDRNotation("8.8.8.8", 4242))
+}

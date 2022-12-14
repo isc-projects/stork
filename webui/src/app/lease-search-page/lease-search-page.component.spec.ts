@@ -11,7 +11,7 @@ import { TableModule } from 'primeng/table'
 
 import { LeaseSearchPageComponent } from './lease-search-page.component'
 import { DHCPService } from '../backend'
-import { LocaltimePipe } from '../localtime.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { datetimeToLocal } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'

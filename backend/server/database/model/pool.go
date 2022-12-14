@@ -19,14 +19,15 @@ type AddressPool struct {
 	Subnet     *Subnet `pg:"rel:has-one"`
 }
 
-// Reflects IPv6 address pool.
+// Reflects IPv6 prefix pool.
 type PrefixPool struct {
-	ID           int64
-	CreatedAt    time.Time
-	Prefix       string
-	DelegatedLen int
-	SubnetID     int64
-	Subnet       *Subnet `pg:"rel:has-one"`
+	ID             int64
+	CreatedAt      time.Time
+	Prefix         string
+	DelegatedLen   int
+	ExcludedPrefix string
+	SubnetID       int64
+	Subnet         *Subnet `pg:"rel:has-one"`
 }
 
 // Creates new instance of the address pool from the address range. The
@@ -44,23 +45,38 @@ func NewAddressPoolFromRange(addressRange string) (*AddressPool, error) {
 	return nil, err
 }
 
-// Creates new instance of the pool for prefix delegation from the prefix
-// and delegated length. It validates the prefix provided to verify if it
-// follows CIDR notation.
-func NewPrefixPool(prefix string, delegatedLen int) (*PrefixPool, error) {
-	ipAddr, net, err := net.ParseCIDR(prefix)
+// Creates new instance of the pool for prefix delegation from the prefix,
+// delegated length, and optional excluded prefix. It validates the prefix
+// provided to verify if it follows CIDR notation.
+func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string) (*PrefixPool, error) {
+	prefixIP, prefixNet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		err = errors.Errorf("unable to parse the pool prefix %s", prefix)
 		return nil, err
 	}
 	// This prefix must not convert to IPv4. Only IPv6 is allowed.
-	if ipAddr.To4() != nil {
+	if prefixIP.To4() != nil {
 		err = errors.Errorf("specified prefix %s is not an IPv6 prefix", prefix)
 		return nil, err
 	}
+
 	pool := &PrefixPool{}
-	pool.Prefix = net.String()
+	pool.Prefix = prefixNet.String()
 	pool.DelegatedLen = delegatedLen
+
+	if excludedPrefix != "" {
+		excludedIP, excludedNet, err := net.ParseCIDR(excludedPrefix)
+		if err != nil {
+			return nil, errors.Errorf("unable to parse the excluded prefix %s", excludedPrefix)
+		}
+
+		if excludedIP.To4() != nil {
+			return nil, errors.Errorf("specified prefix %s is not an IPv6 prefix", excludedPrefix)
+		}
+
+		pool.ExcludedPrefix = excludedNet.String()
+	}
+
 	return pool, nil
 }
 

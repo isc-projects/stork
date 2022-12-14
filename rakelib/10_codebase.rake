@@ -338,6 +338,9 @@ namespace :gen do
     namespace :ui do
         desc 'Generate standard DHCP option definitions for the UI'
         task :std_option_defs => [std_option_defs4_ts_file, std_option_defs6_ts_file]
+
+        desc 'Generate Swagger API files'
+        task :swagger => [open_api_generator_webui_dir]
     end
 
     desc 'Generate standard DHCP option definitions for the backend and the UI'

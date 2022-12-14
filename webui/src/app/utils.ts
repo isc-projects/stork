@@ -1,4 +1,5 @@
 import * as moment from 'moment-timezone'
+import { IPv6, collapseIPv6Number } from 'ip-num'
 
 export function datetimeToLocal(d) {
     try {
@@ -95,7 +96,7 @@ export function humanCount(count: string | bigint | number) {
 
     let countStr = ''
     if (typeof count === 'number') {
-        countStr = count.toFixed(1)
+        countStr = count.toFixed(u >= 0 ? 1 : 0)
     } else {
         countStr = count.toString()
     }
@@ -404,4 +405,46 @@ export function getErrorMessage(err: any): string {
         return err.name
     }
     return err.toString()
+}
+
+/**
+ * Returns the short representation of the excluded prefix.
+ * The common octet pairs with the main prefix are replaced by ~.
+ *
+ * E.g.: for the 'fe80::/64' main prefix and the 'fe80:42::/80' excluded
+ * prefix the short form is: '~:42::/80'.
+ *
+ * It isn't any well-known convention, just a simple idea to limit the
+ * length of the bar.
+ */
+export function formatShortExcludedPrefix(prefix: string, excludedPrefix: string | null): string {
+    if (!excludedPrefix) {
+        return ''
+    }
+
+    // Split the network and length.
+    let [baseNetwork, _] = prefix.split('/')
+    let [excludedNetwork, excludedLen] = excludedPrefix.split('/')
+
+    let baseNetworkObj = IPv6.fromString(baseNetwork)
+    let excludedNetworkObj = IPv6.fromString(excludedNetwork)
+
+    baseNetwork = collapseIPv6Number(baseNetworkObj.toString())
+    excludedNetwork = collapseIPv6Number(excludedNetworkObj.toString())
+
+    // Trim the trailing double colon.
+    if (baseNetwork.endsWith('::')) {
+        baseNetwork = baseNetwork.slice(0, baseNetwork.length - 1)
+    }
+
+    // Check if the excluded prefix starts with the base prefix.
+    // It should be always true for valid data.
+    if (excludedNetwork.startsWith(baseNetwork)) {
+        // Replace the common part with ~.
+        excludedNetwork = excludedNetwork.slice(baseNetwork.length)
+        return `~:${excludedNetwork}/${excludedLen}`
+    }
+
+    // Fallback to full excluded prefix.
+    return excludedPrefix
 }

@@ -14,9 +14,11 @@ type Pool struct {
 
 // Represents prefix delegation pool structure within Kea configuration.
 type PdPool struct {
-	Prefix       string
-	PrefixLen    int `mapstructure:"prefix-len"`
-	DelegatedLen int `mapstructure:"delegated-len"`
+	Prefix            string
+	PrefixLen         int    `mapstructure:"prefix-len"`
+	DelegatedLen      int    `mapstructure:"delegated-len"`
+	ExcludedPrefix    string `mapstructure:"excluded-prefix"`
+	ExcludedPrefixLen int    `mapstructure:"excluded-prefix-len"`
 }
 
 // Represents a subnet with pools within Kea configuration.

@@ -226,6 +226,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 								"pools": []map[string]interface{}{{
 									"pool": "3001:db8:1::/80",
 								}},
+								"pd-pools": []map[string]interface{}{
+									{
+										"prefix":        "3001:db8:1:1::",
+										"prefix-len":    80,
+										"delegated-len": 96,
+									},
+									{
+										"prefix":              "3001:db8:1:2::",
+										"prefix-len":          80,
+										"delegated-len":       96,
+										"excluded-prefix":     "3001:db8:1:2:1::",
+										"excluded-prefix-len": 112,
+									},
+								},
 							}},
 						},
 					}),
@@ -254,6 +268,17 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					UpperBound: "3001:db8:1:0:ffff::ffff",
 				},
 			},
+			PrefixPools: []PrefixPool{
+				{
+					Prefix:       "3001:db8:1:1::/80",
+					DelegatedLen: 96,
+				},
+				{
+					Prefix:         "3001:db8:1:2::/80",
+					DelegatedLen:   96,
+					ExcludedPrefix: "3001:db8:1:2:1::/112",
+				},
+			},
 		},
 	}
 	for i := range a46.Daemons {
@@ -276,6 +301,9 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			require.Len(t, sn.AddressPools, 2)
 		case 2:
 			require.Len(t, sn.AddressPools, 0)
+		case 7:
+			require.Len(t, sn.PrefixPools, 2)
+			require.Len(t, sn.AddressPools, 1)
 		case 11:
 			require.Len(t, sn.AddressPools, 2)
 		case 12:
@@ -492,7 +520,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	require.Len(t, subnets, 0)
 }
 
-// Check that basic functionality of shared newtorks works, returns proper data and can be filtered.
+// Check that basic functionality of shared networks works, returns proper data and can be filtered.
 func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

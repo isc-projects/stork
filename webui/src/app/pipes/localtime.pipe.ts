@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core'
-import { datetimeToLocal, epochToLocal } from './utils'
+import { datetimeToLocal, epochToLocal } from '../utils'
 
 @Pipe({
     name: 'localtime',
