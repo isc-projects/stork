@@ -1,9 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
+import { Host, IPReservation } from '../backend'
 
 import { DHCPService } from '../backend/api/api'
-import { hasDifferentLocalHostClientClasses, hasDifferentLocalHostData } from '../hosts'
+import {
+    hasDifferentLocalHostBootFields,
+    hasDifferentLocalHostClientClasses,
+    hasDifferentLocalHostData,
+} from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
 
 enum HostReservationUsage {
@@ -53,7 +58,7 @@ export class HostTabComponent {
     /**
      * Structure containing host information currently displayed.
      */
-    currentHost: any
+    currentHost: Host
 
     /**
      * A map caching leases for various hosts.
@@ -79,21 +84,6 @@ export class HostTabComponent {
      * List of Kea apps which returned an error during leases search.
      */
     erredApps = []
-
-    /**
-     * Structure used to build a field set with IP address reservations
-     * and delegated prefix reservations from a template.
-     */
-    ipReservationsStatics = [
-        {
-            id: 'address-reservations-fieldset',
-            legend: 'Address Reservations',
-        },
-        {
-            id: 'prefix-reservations-fieldset',
-            legend: 'Prefix Reservations',
-        },
-    ]
 
     hostDeleted = false
 
@@ -145,6 +135,20 @@ export class HostTabComponent {
             // fetch it from Kea servers via Stork server.
             this._fetchLeases(host.id)
         }
+    }
+
+    /**
+     * Returns all IP host reservations (addresses and prefixes).
+     */
+    get ipReservations(): Array<IPReservation> {
+        let reservations: Array<IPReservation> = []
+        if (this.host.addressReservations) {
+            reservations.push(...this.host.addressReservations)
+        }
+        if (this.host.prefixReservations) {
+            reservations.push(...this.host.prefixReservations)
+        }
+        return reservations
     }
 
     /**
@@ -470,7 +474,23 @@ export class HostTabComponent {
         return !hasDifferentLocalHostData(this.host)
     }
 
+    /**
+     * Checks if all DHCP servers owning the reservation have equal set of
+     * client classes.
+     *
+     * @returns true, if all DHCP servers have equal set of client classes.
+     */
     allDaemonsHaveEqualClientClasses(): boolean {
         return !hasDifferentLocalHostClientClasses(this.host)
+    }
+
+    /**
+     * Checks if all DHCP servers owning the reservation have equal set of
+     * boot fields, i.e. next server, server hostname, boot file name.
+     *
+     * @returns true if, all DHCP servers have equal set of boot fields.
+     */
+    allDaemonsHaveEqualBootFields(): boolean {
+        return !hasDifferentLocalHostBootFields(this.host)
     }
 }

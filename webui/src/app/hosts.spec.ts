@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing'
 import { Host } from './backend/model/host'
-import { hasDifferentLocalHostClientClasses, hasDifferentLocalHostData, hasDifferentLocalHostOptions } from './hosts'
+import {
+    hasDifferentLocalHostBootFields,
+    hasDifferentLocalHostClientClasses,
+    hasDifferentLocalHostData,
+    hasDifferentLocalHostOptions,
+} from './hosts'
 
 describe('hosts', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
@@ -47,25 +52,59 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostData(host)).toBeTrue()
     })
 
+    it('detects differences between boot fields', () => {
+        const host: Host = {
+            localHosts: [
+                {
+                    optionsHash: '123',
+                    clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.1',
+                },
+                {
+                    optionsHash: '123',
+                    clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.2',
+                },
+                {
+                    optionsHash: '123',
+                    clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.1',
+                },
+            ],
+        }
+        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+        expect(hasDifferentLocalHostData(host)).toBeTrue()
+    })
+
     it('detects that there are no differences', () => {
         const host: Host = {
             localHosts: [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'my-server',
+                    bootFileName: '/tmp/boot',
                 },
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'my-server',
+                    bootFileName: '/tmp/boot',
                 },
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'my-server',
+                    bootFileName: '/tmp/boot',
                 },
             ],
         }
         expect(hasDifferentLocalHostOptions(host)).toBeFalse()
         expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -151,17 +190,88 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostData(host)).toBeTrue()
     })
 
+    it('detects differences for next server', () => {
+        const host: Host = {
+            localHosts: [
+                {
+                    nextServer: '192.0.2.2',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+            ],
+        }
+        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+    })
+
+    it('detects differences for server hostname', () => {
+        const host: Host = {
+            localHosts: [
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'bar',
+                    bootFileName: '/tmp/bootfile',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+            ],
+        }
+        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+    })
+
+    it('detects differences for boot file name', () => {
+        const host: Host = {
+            localHosts: [
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootx',
+                },
+                {
+                    nextServer: '192.0.2.1',
+                    serverHostname: 'foo',
+                    bootFileName: '/tmp/bootfile',
+                },
+            ],
+        }
+        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+    })
+
     it('detects no differences when there is a single local host', () => {
         const host: Host = {
             localHosts: [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo'],
+                    nextServer: '192.0.2.1',
                 },
             ],
         }
         expect(hasDifferentLocalHostOptions(host)).toBeFalse()
         expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 
@@ -171,6 +281,7 @@ describe('hosts', () => {
         }
         expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
         expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
         expect(hasDifferentLocalHostData(host)).toBeFalse()
     })
 })
