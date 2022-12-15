@@ -302,6 +302,78 @@
         </span>
     </ng-template>
 
+    <ng-container *ngIf="!form.dhcpv6" formArrayName="bootFields">
+        <ng-container *ngFor="let bootFields of bootFieldsArray.controls; let i = index">
+            <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="mt-4" [formGroupName]="i">
+                <ng-template pTemplate="header">
+                    <ng-container
+                        *ngTemplateOutlet="
+                            splittableFieldsetHeaderTemplate;
+                            context: { configuredName: 'Boot Fields', index: i }
+                        "
+                    ></ng-container>
+                </ng-template>
+                <div class="grid host-form-abs-width">
+                    <div class="col-10 mt-3">
+                        <span class="p-float-label">
+                            <input
+                                id="next-server-input-{{ i }}"
+                                pInputText
+                                class="full-width"
+                                formControlName="nextServer"
+                            />
+                            <label for="next-server-input-{{ i }}">Next Server</label>
+                        </span>
+                    </div>
+                    <div class="col-10 pt-0">
+                        <small
+                            *ngIf="
+                                getBootFieldsGroup(i).get('nextServer').invalid &&
+                                (getBootFieldsGroup(i).get('nextServer').dirty ||
+                                    getBootFieldsGroup(i).get('nextServer').touched)
+                            "
+                            class="p-error block"
+                            >Please specify a valid IPv4 address.
+                        </small>
+                    </div>
+                    <div class="col-10 mt-3">
+                        <span class="p-float-label">
+                            <input
+                                id="server-hostname-input-{{ i }}"
+                                pInputText
+                                class="full-width"
+                                formControlName="serverHostname"
+                            />
+                            <label for="server-hostname-input-{{ i }}">Server Hostname</label>
+                        </span>
+                    </div>
+                    <div class="col-10 pt-0">
+                        <small
+                            *ngIf="
+                                getBootFieldsGroup(i).get('serverHostname').invalid &&
+                                (getBootFieldsGroup(i).get('serverHostname').dirty ||
+                                    getBootFieldsGroup(i).get('serverHostname').touched)
+                            "
+                            class="p-error block"
+                            >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
+                        </small>
+                    </div>
+                    <div class="col-10 mt-3">
+                        <span class="p-float-label">
+                            <input
+                                id="boot-file-name-input-{{ i }}"
+                                pInputText
+                                class="full-width"
+                                formControlName="bootFileName"
+                            />
+                            <label for="boot-file-name-input-{{ i }}">Boot File Name</label>
+                        </span>
+                    </div>
+                </div>
+            </p-fieldset>
+        </ng-container>
+    </ng-container>
+
     <ng-container *ngFor="let clientClassesSet of clientClassesArray.controls; let i = index">
         <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="mt-4">
             <ng-template pTemplate="header">

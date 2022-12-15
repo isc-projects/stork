@@ -1241,6 +1241,27 @@ describe('HostFormComponent', () => {
         expect(clientClassesForm).toBeTruthy()
     }))
 
+    it('should include boot field inputs', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
+        fixture.detectChanges()
+
+        const nextServerInput = fixture.debugElement.query(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInput).toBeFalsy()
+    }))
+
+    it('should not include boot field inputs for dhcpv6', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+    }))
+
     it('should enable split editing mode', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
@@ -1259,6 +1280,10 @@ describe('HostFormComponent', () => {
         expect(clientClassForms).toBeTruthy()
         expect(clientClassForms.length).toBe(1)
 
+        let nextServerInputs = fixture.debugElement.queryAll(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInputs).toBeTruthy()
+        expect(nextServerInputs.length).toBe(1)
+
         component.formGroup.get('selectedDaemons').setValue([2])
         component.onDaemonsChange()
         fixture.detectChanges()
@@ -1270,6 +1295,10 @@ describe('HostFormComponent', () => {
         clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
         expect(clientClassForms).toBeTruthy()
         expect(clientClassForms.length).toBe(1)
+
+        nextServerInputs = fixture.debugElement.queryAll(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInputs).toBeTruthy()
+        expect(nextServerInputs.length).toBe(1)
 
         component.formGroup.get('selectedDaemons').setValue([2, 1])
         component.onDaemonsChange()
@@ -1283,12 +1312,20 @@ describe('HostFormComponent', () => {
         expect(clientClassForms).toBeTruthy()
         expect(clientClassForms.length).toBe(2)
 
+        nextServerInputs = fixture.debugElement.queryAll(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInputs).toBeTruthy()
+        expect(nextServerInputs.length).toBe(2)
+
         expect(component.optionsArray.length).toBe(2)
         expect((component.optionsArray.at(0) as UntypedFormArray).length).toBe(0)
         expect((component.optionsArray.at(1) as UntypedFormArray).length).toBe(0)
 
         expect(component.clientClassesArray.length).toBe(2)
         expect(component.clientClassesArray.get('0').value).toBeFalsy()
+
+        expect(component.bootFieldsArray.length).toBe(2)
+        expect(component.bootFieldsArray.get('0.nextServer').value).toBeFalsy()
+        expect(component.bootFieldsArray.get('1.nextServer').value).toBeFalsy()
 
         component.formGroup.get('selectedDaemons').setValue([1])
         component.onDaemonsChange()
@@ -1302,6 +1339,10 @@ describe('HostFormComponent', () => {
         expect(clientClassForms).toBeTruthy()
         expect(clientClassForms.length).toBe(1)
 
+        nextServerInputs = fixture.debugElement.queryAll(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInputs).toBeTruthy()
+        expect(nextServerInputs.length).toBe(1)
+
         component.formGroup.get('selectedDaemons').setValue([])
         component.onDaemonsChange()
         fixture.detectChanges()
@@ -1313,6 +1354,10 @@ describe('HostFormComponent', () => {
         clientClassForms = fixture.debugElement.queryAll(By.css('app-dhcp-client-class-set-form'))
         expect(clientClassForms).toBeTruthy()
         expect(clientClassForms.length).toBe(1)
+
+        nextServerInputs = fixture.debugElement.queryAll(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInputs).toBeTruthy()
+        expect(nextServerInputs.length).toBe(1)
     }))
 
     it('should toggle split editing mode', fakeAsync(() => {
@@ -1369,6 +1414,10 @@ describe('HostFormComponent', () => {
             })
         )
         component.getClientClassSetControl(0).setValue(['foo', 'bar'])
+        component.getBootFieldsGroup(0).get('nextServer').setValue('192.0.2.1')
+        component.getBootFieldsGroup(0).get('serverHostname').setValue('myserver')
+        component.getBootFieldsGroup(0).get('bootFileName').setValue('/tmp/boot')
+
         fixture.detectChanges()
 
         component.formGroup.get('splitFormMode').setValue(true)
@@ -1386,6 +1435,20 @@ describe('HostFormComponent', () => {
         expect(component.clientClassesArray.length).toBe(2)
         expect(component.getClientClassSetControl(0).value).toEqual(['foo', 'bar'])
         expect(component.getClientClassSetControl(1).value).toEqual(['foo', 'bar'])
+
+        expect(component.bootFieldsArray.length).toBe(2)
+        expect(component.getBootFieldsGroup(0).get('nextServer')).toBeTruthy()
+        expect(component.getBootFieldsGroup(1).get('nextServer')).toBeTruthy()
+        expect(component.getBootFieldsGroup(0).get('serverHostname')).toBeTruthy()
+        expect(component.getBootFieldsGroup(1).get('serverHostname')).toBeTruthy()
+        expect(component.getBootFieldsGroup(0).get('bootFileName')).toBeTruthy()
+        expect(component.getBootFieldsGroup(1).get('bootFileName')).toBeTruthy()
+        expect(component.getBootFieldsGroup(0).get('nextServer').value).toBe('192.0.2.1')
+        expect(component.getBootFieldsGroup(1).get('nextServer').value).toBe('192.0.2.1')
+        expect(component.getBootFieldsGroup(0).get('serverHostname').value).toBe('myserver')
+        expect(component.getBootFieldsGroup(1).get('serverHostname').value).toBe('myserver')
+        expect(component.getBootFieldsGroup(0).get('bootFileName').value).toBe('/tmp/boot')
+        expect(component.getBootFieldsGroup(1).get('bootFileName').value).toBe('/tmp/boot')
     }))
 
     it('should open a form for editing dhcpv4 host', fakeAsync(() => {
@@ -1413,6 +1476,9 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot1',
                     clientClasses: ['foo'],
                     options: [
                         {
@@ -1434,6 +1500,9 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 2,
                     dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot2',
                     clientClasses: ['bar'],
                     options: [
                         {
@@ -1484,6 +1553,13 @@ describe('HostFormComponent', () => {
         expect(component.clientClassesArray.length).toBe(2)
         expect(component.getClientClassSetControl(0).value).toEqual(['foo'])
         expect(component.getClientClassSetControl(1).value).toEqual(['bar'])
+        expect(component.bootFieldsArray.length).toBe(2)
+        expect(component.getBootFieldsGroup(0).get('nextServer').value).toEqual('192.2.2.1')
+        expect(component.getBootFieldsGroup(1).get('nextServer').value).toEqual('192.2.2.1')
+        expect(component.getBootFieldsGroup(0).get('serverHostname').value).toEqual('myserver.example.org')
+        expect(component.getBootFieldsGroup(1).get('serverHostname').value).toEqual('myserver.example.org')
+        expect(component.getBootFieldsGroup(0).get('bootFileName').value).toEqual('/tmp/boot1')
+        expect(component.getBootFieldsGroup(1).get('bootFileName').value).toEqual('/tmp/boot2')
 
         const okResp: any = {
             status: 200,
@@ -1515,6 +1591,9 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 1,
                     dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot1',
                     clientClasses: ['foo'],
                     options: [
                         {
@@ -1535,6 +1614,9 @@ describe('HostFormComponent', () => {
                 {
                     daemonId: 2,
                     dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot2',
                     clientClasses: ['bar'],
                     options: [
                         {

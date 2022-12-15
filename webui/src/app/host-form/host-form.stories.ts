@@ -136,11 +136,17 @@ mockUpdateHostBeginData.host = {
         {
             daemonId: 1,
             dataSource: 'api',
+            nextServer: '192.2.2.1',
+            serverHostname: 'server1.example.org',
+            bootFileName: '/tmp/boot1',
             clientClasses: ['router', 'switch'],
         },
         {
             daemonId: 2,
             dataSource: 'api',
+            nextServer: '192.2.2.1',
+            serverHostname: 'server2.example.org',
+            bootFileName: '/tmp/boot1',
             clientClasses: ['access-point', 'router'],
         },
     ],

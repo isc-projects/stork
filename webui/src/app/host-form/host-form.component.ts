@@ -29,6 +29,7 @@ import { IPType } from '../iptype'
 import { getErrorMessage, stringToHex } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { hasDifferentLocalHostData } from '../hosts'
+import { GenericFormService } from '../forms/generic-form.service'
 
 /**
  * A form validator checking if a subnet has been selected for
@@ -277,6 +278,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
     constructor(
         private _formBuilder: UntypedFormBuilder,
         private _dhcpApi: DHCPService,
+        private _genericFormService: GenericFormService,
         private _optionSetFormService: DhcpOptionSetFormService,
         private _messageService: MessageService
     ) {}
@@ -344,6 +346,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
                 hostname: ['', StorkValidators.fqdn],
                 clientClasses: this._formBuilder.array([this._formBuilder.control(null)]),
+                bootFields: this._formBuilder.array([this._createDefaultBootFieldsFormGroup()]),
                 // The outer array holds different option sets for different servers.
                 // The inner array holds the actual option sets. If the split-mode
                 // is disabled, there is only one outer array.
@@ -353,6 +356,23 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 validators: [subnetRequiredValidator],
             }
         )
+    }
+
+    /**
+     * Creates a default form group for boot fields.
+     *
+     * The boot fields include next server, server hostname and the
+     * boot file name controls.
+     *
+     * @returns created form group.
+     */
+    private _createDefaultBootFieldsFormGroup(): UntypedFormGroup {
+        let formGroup = this._formBuilder.group({
+            nextServer: ['', StorkValidators.ipv4()],
+            serverHostname: ['', StorkValidators.fqdn],
+            bootFileName: [''],
+        })
+        return formGroup
     }
 
     /**
@@ -556,27 +576,31 @@ export class HostFormComponent implements OnInit, OnDestroy {
 
         // Split form mode is only set when there are multiple servers associated
         // with the edited host and at least one of the servers has different
-        // set of DHCP options or client classes.
+        // set of DHCP options, client classes or boot fields.
         const splitFormMode = hasDifferentLocalHostData(host)
         this.formGroup.get('splitFormMode').setValue(splitFormMode)
 
         for (let i = 0; i < (splitFormMode ? host.localHosts.length : 1); i++) {
-            let converted = this._optionSetFormService.convertOptionsToForm(
-                this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
-                host.localHosts[i].options
+            // Options.
+            this._genericFormService.setArrayControl(
+                i,
+                this.optionsArray,
+                this._optionSetFormService.convertOptionsToForm(
+                    this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
+                    host.localHosts[i].options
+                )
             )
-            if (this.optionsArray.length > i) {
-                this.optionsArray.setControl(0, converted)
-            } else {
-                this.optionsArray.push(converted)
-            }
-
+            // Client classes.
             const clientClasses = host.localHosts[i].clientClasses ? [...host.localHosts[i].clientClasses] : []
-            if (this.clientClassesArray.length > i) {
-                this.clientClassesArray.setControl(0, this._formBuilder.control(clientClasses))
-            } else {
-                this.clientClassesArray.push(this._formBuilder.control(clientClasses))
-            }
+            this._genericFormService.setArrayControl(
+                i,
+                this.clientClassesArray,
+                this._formBuilder.control(clientClasses)
+            )
+            // Boot fields.
+            let bootFields = this._createDefaultBootFieldsFormGroup()
+            this._genericFormService.setFormGroupValues(bootFields, host.localHosts[i])
+            this._genericFormService.setArrayControl(i, this.bootFieldsArray, bootFields)
         }
     }
 
@@ -798,6 +822,41 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Convenience function returning the form array with boot field sets.
+     *
+     * Each item in the array comprises a form group with three controls
+     * (i.e., next server, server hostname and boot file name).
+     */
+    get bootFieldsArray(): UntypedFormArray {
+        return this.formGroup.get('bootFields') as UntypedFormArray
+    }
+
+    /**
+     * Convenience function returning form group with boot field controls.
+     * for a single server or all servers.
+     *
+     * If the split form mode is false, it always returns the first (common)
+     * group.
+     *
+     * @param index index of the form group to return.
+     * @returns form group with boot fields.
+     */
+    getBootFieldsGroup(index: number): UntypedFormGroup {
+        return this.bootFieldsArray.at(this.formGroup.get('splitFormMode').value ? index : 0) as UntypedFormGroup
+    }
+
+    /**
+     * Resets the part of the form comprising boot fields.
+     *
+     * It removes all existing boot field form groups and re-creates
+     * the default one.
+     */
+    private _resetBootFieldsArray() {
+        this.bootFieldsArray.clear()
+        this.bootFieldsArray.push(this._createDefaultBootFieldsFormGroup())
+    }
+
+    /**
      * Convenience function returning the form array with DHCP option sets.
      *
      * Each item in the array comprises another form array representing a
@@ -845,12 +904,14 @@ export class HostFormComponent implements OnInit, OnDestroy {
             const itemsToAdd = selectedDaemons.length - this.optionsArray.length
             if (selectedDaemons.length >= this.optionsArray.length) {
                 for (let i = 0; i < itemsToAdd; i++) {
-                    this.clientClassesArray.push(this._optionSetFormService.cloneControl(this.clientClassesArray.at(0)))
-                    this.optionsArray.push(this._optionSetFormService.cloneControl(this.optionsArray.at(0)))
+                    this.bootFieldsArray.push(this._genericFormService.cloneControl(this.bootFieldsArray.at(0)))
+                    this.clientClassesArray.push(this._genericFormService.cloneControl(this.clientClassesArray.at(0)))
+                    this.optionsArray.push(this._genericFormService.cloneControl(this.optionsArray.at(0)))
                 }
             }
         } else {
             for (let i = this.optionsArray.length; i >= 1; i--) {
+                this.bootFieldsArray.removeAt(i)
                 this.clientClassesArray.removeAt(i)
                 this.optionsArray.removeAt(i)
             }
@@ -884,9 +945,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
         if (this.form.updateFormForSelectedDaemons(this.formGroup.get('selectedDaemons').value)) {
-            // The breaking change puts us at risk of having option data that
-            // no longer matches the servers selection. Let's reset the option
-            // data.
+            // The breaking change puts us at risk of having server specific data
+            // that no longer matches the servers selection. Let's reset the data.
+            this._resetBootFieldsArray()
             this._resetOptionsArray()
             this._resetClientClassesArray()
         }
@@ -935,12 +996,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
 
         const splitFormMode = this.formGroup.get('splitFormMode').value
         if (splitFormMode) {
+            let bootFieldSets: UntypedFormGroup[] = []
             let clientClassSets: UntypedFormControl[] = []
             let optionSets: UntypedFormArray[] = []
             for (let i = 0; i < selectedDaemons.length; i++) {
+                bootFieldSets.push(this._createDefaultBootFieldsFormGroup())
                 clientClassSets.push(this._formBuilder.control(null))
                 optionSets.push(this._formBuilder.array([]))
             }
+            this.formGroup.setControl('bootFields', this._formBuilder.array(bootFieldSets))
             this.formGroup.setControl('clientClasses', this._formBuilder.array(clientClassSets))
             this.formGroup.setControl('options', this._formBuilder.array(optionSets))
         }
@@ -1071,6 +1135,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 clientClasses: this.formGroup.get('splitFormMode').value ? clientClasses[i] : clientClasses[0],
                 options: this.formGroup.get('splitFormMode').value ? options[i] : options[0],
             })
+            // Boot fields.
+            this._genericFormService.setValuesFromFormGroup(this.getBootFieldsGroup(i), localHosts[i])
         }
 
         // Use hex value or convert text value to hex.
