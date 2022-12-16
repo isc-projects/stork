@@ -467,9 +467,9 @@ Further in the form, you can specify the actual reservations. It is possible
 to specify at most one IPv4 address. In the case of the DHCPv6 servers, it is
 possible to specify multiple IPv6 addresses and delegated prefixes.
 
-The DHCPv4 `siaddr`, `sname` and `file` fields can be statically assigned to
+The DHCPv4 ``siaddr``, ``sname`` and ``file`` fields can be statically assigned to
 the clients using host reservations. The relevant values in Kea and Stork are:
-`Next Server`, `Server Hostname`, and `Boot File Name`. You can only set these
+``Next Server``, ``Server Hostname``, and ``Boot File Name``. You can only set these
 values for the DHCPv4 servers. The form lacks controls for setting them when
 editing a DHCPv6 host.
 
