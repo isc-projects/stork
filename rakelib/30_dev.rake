@@ -526,6 +526,14 @@ namespace :gen do
             end
         end
 
+        desc 'Generate Angular service
+        NAME - name of the service - required'
+        task :service => [NPX] do
+            Dir.chdir("webui") do
+                sh NPX, "ng", "generate", "service", ENV["NAME"]
+            end
+        end
+
         desc 'Regenerate package.json.lock'
         task :package_lock => [NPM] do
             Dir.chdir("webui") do
