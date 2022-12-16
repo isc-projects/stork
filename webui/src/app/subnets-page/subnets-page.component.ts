@@ -36,6 +36,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         text: null,
         dhcpVersion: null,
         appId: null,
+        subnetId: null
     }
 
     grafanaUrl: string
@@ -80,6 +81,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         if (ssParams.get('appId')) {
             text += ' appId:' + ssParams.get('appId')
         }
+        if (ssParams.get('subnetId')) {
+            text += ' subnetId:' + ssParams.get('subnetId')
+        }
         this.filterText = text.trim()
         this.updateOurQueryParams(ssParams)
 
@@ -108,6 +112,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         }
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
+        this.queryParams.subnetId = params.get('subnetId')
     }
 
     /**
@@ -120,7 +125,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         const params = this.queryParams
 
         this.dhcpApi
-            .getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .getSubnets(event.first, event.rows, params.appId, params.subnetId, params.dhcpVersion, params.text)
             // Custom parsing for statistics
             .pipe(
                 map((subnets) => {
@@ -157,7 +162,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'], null)
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId', 'subnetId'], null)
             this.router.navigate(['/dhcp/subnets'], {
                 queryParams,
                 queryParamsHandling: 'merge',
