@@ -1308,7 +1308,10 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 // Get DHCP overview.
 func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOverviewParams) middleware.Responder {
 	// get list of mostly utilized subnets
-	subnets4, err := r.getSubnets(0, 5, 0, 4, nil, "addr_utilization", dbmodel.SortDirDesc)
+	filters := &dbmodel.SubnetsPageFilters{}
+	filters.SetIPv4Family()
+
+	subnets4, err := r.getSubnets(0, 5, filters, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get IPv4 subnets from db"
@@ -1318,7 +1321,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 		return rsp
 	}
 
-	subnets6, err := r.getSubnets(0, 5, 0, 6, nil, "addr_utilization", dbmodel.SortDirDesc)
+	filters.SetIPv6Family()
+	subnets6, err := r.getSubnets(0, 5, filters, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get IPv6 subnets from db"

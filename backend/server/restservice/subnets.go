@@ -48,9 +48,9 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	return subnet
 }
 
-func (r *RestAPI) getSubnets(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Subnets, error) {
+func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsPageFilters, sortField string, sortDir dbmodel.SortDirEnum) (*models.Subnets, error) {
 	// get subnets from db
-	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.DB, offset, limit, appID, family, filterText, sortField, sortDir)
+	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.DB, offset, limit, filters, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -82,18 +82,15 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		limit = *params.Limit
 	}
 
-	var appID int64
-	if params.AppID != nil {
-		appID = *params.AppID
-	}
-
-	var dhcpVer int64
-	if params.DhcpVersion != nil {
-		dhcpVer = *params.DhcpVersion
-	}
-
 	// get subnets from db
-	subnets, err := r.getSubnets(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAny)
+	filters := &dbmodel.SubnetsPageFilters{
+		AppID:         params.AppID,
+		Family:        params.DhcpVersion,
+		Text:          params.Text,
+		LocalSubnetID: params.SubnetID,
+	}
+
+	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAny)
 	if err != nil {
 		msg := "Cannot get subnets from db"
 		log.Error(err)

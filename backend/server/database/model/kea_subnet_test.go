@@ -262,7 +262,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get all subnets.
-	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAny)
+	subnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
@@ -290,7 +290,10 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
 	// Get subnets from app a4
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 0, nil, "", SortDirAny)
+	filters := &SubnetsPageFilters{
+		AppID: &a4.ID,
+	}
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
@@ -307,7 +310,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get subnets from app a46.
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, nil, "", SortDirAny)
+	filters.AppID = &a46.ID
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, subnets, 2)
@@ -318,7 +322,9 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 4, subnets[1].LocalSubnets[0].LocalSubnetID)
 
 	// Get IPv4 subnets
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 4, nil, "", SortDirAny)
+	filters.AppID = nil
+	filters.Family = newPtr(int64(4))
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, subnets, 4)
@@ -330,7 +336,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get IPv4 subnets
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 6, nil, "", SortDirAny)
+	filters.Family = newPtr(int64(6))
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
@@ -342,7 +349,9 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get IPv4 subnets for app a4
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 4, nil, "", SortDirAny)
+	filters.Family = newPtr(int64(4))
+	filters.AppID = &a4.ID
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
@@ -354,8 +363,10 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get subnets by text '118.0.0/2'
-	text := "118.0.0/2"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text, "", SortDirAny)
+	filters = &SubnetsPageFilters{
+		Text: newPtr("118.0.0/2"),
+	}
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -364,8 +375,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '0.150-192.168'
-	text = "0.150-192.168"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text, "", SortDirAny)
+	filters.Text = newPtr("0.150-192.168")
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -374,8 +385,9 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '200' and app a46
-	text = "200"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, &text, "", SortDirAny)
+	filters.Text = newPtr("200")
+	filters.AppID = &a46.ID
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -384,8 +396,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get v4 subnets by text '200' and app a46
-	text = "200"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 4, &text, "", SortDirAny)
+	filters.Family = newPtr(int64(4))
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -393,8 +405,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
+	// get v4 subnets by local subnet ID '2'
+	filters = &SubnetsPageFilters{
+		LocalSubnetID: newPtr(int64(2)),
+	}
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, subnets, 1)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a6.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, 2, subnets[0].LocalSubnets[0].LocalSubnetID)
+
 	// get subnets sorted by id ascending
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAsc)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
@@ -402,7 +426,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 7, subnets[6].ID)
 
 	// get subnets sorted by id descending
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirDesc)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
@@ -410,7 +434,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, subnets[6].ID)
 
 	// get subnets sorted by prefix ascending
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "prefix", SortDirAsc)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "prefix", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
@@ -418,7 +442,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 4, subnets[6].ID)
 
 	// get subnets sorted by prefix descending
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "prefix", SortDirDesc)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "prefix", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
@@ -462,7 +486,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get all subnets -> empty list should be returned
-	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAny)
+	subnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Len(t, subnets, 0)

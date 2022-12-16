@@ -378,6 +378,26 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	return subnets, nil
 }
 
+// Container for filter values for fetching subnets by page.
+type SubnetsPageFilters struct {
+	AppID         *int64
+	LocalSubnetID *int64
+	Family        *int64
+	Text          *string
+}
+
+// Shorthand to set the IPv4 family.
+func (f *SubnetsPageFilters) SetIPv4Family() {
+	family := int64(4)
+	f.Family = &family
+}
+
+// Shorthand to set the IPv6 family.
+func (f *SubnetsPageFilters) SetIPv6Family() {
+	family := int64(6)
+	f.Family = &family
+}
+
 // Fetches a collection of subnets from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. The appID is used to filter subnets to those handled by the
@@ -390,18 +410,24 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 // empty then id is used for sorting.  in SortDirAny is used then ASC
 // order is used. This function returns a collection of subnets, the
 // total number of subnets and error.
-func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
+func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsPageFilters, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
+	if filters == nil {
+		filters = &SubnetsPageFilters{}
+	}
+
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets).Distinct()
 
+	if filters.AppID != nil || filters.LocalSubnetID != nil {
+		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
+	}
 	// When filtering by appID we also need the local_subnet table as it holds the
 	// application identifier.
-	if appID != 0 {
-		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
+	if filters.AppID != nil {
 		q = q.Join("INNER JOIN daemon AS d ON ls.daemon_id = d.id")
 	}
 	// Pools are also required when trying to filter by text.
-	if filterText != nil {
+	if filters.Text != nil {
 		q = q.Join("LEFT JOIN address_pool AS ap ON subnet.id = ap.subnet_id")
 	}
 	// Include pools, shared network the subnets belong to, local subnet info
@@ -416,26 +442,30 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterT
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		Relation("LocalSubnets.Daemon.App.Machine")
 
-	// Let's be liberal and allow other values than 0 too. The only special
-	// ones are 4 and 6.
-	if family == 4 || family == 6 {
-		q = q.Where("family(subnet.prefix) = ?", family)
+	// Applicable family values are 4 and 6.
+	if filters.Family != nil {
+		q = q.Where("family(subnet.prefix) = ?", *filters.Family)
 	}
 
 	// Filter by appID.
-	if appID != 0 {
-		q = q.Where("d.app_id = ?", appID)
+	if filters.AppID != nil {
+		q = q.Where("d.app_id = ?", *filters.AppID)
+	}
+
+	// Filter by local subnet ID.
+	if filters.LocalSubnetID != nil {
+		q = q.Where("ls.local_subnet_id = ?", *filters.LocalSubnetID)
 	}
 
 	// Quick filtering by subnet prefix, pool ranges or shared network name.
-	if filterText != nil {
+	if filters.Text != nil {
 		// The combination of the concat and host functions reconstruct the textual
 		// version of the pool range as specified in Kea, e.g. 192.0.2.10-192.0.2.20.
 		// This allows for quick filtering by strings like: 2.10-192.0.
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
-			q = q.WhereOr("text(subnet.prefix) LIKE ?", "%"+*filterText+"%").
-				WhereOr("concat(host(ap.lower_bound), '-', host(ap.upper_bound)) LIKE ?", "%"+*filterText+"%").
-				WhereOr("shared_network.name LIKE ?", "%"+*filterText+"%")
+			q = q.WhereOr("text(subnet.prefix) LIKE ?", "%"+*filters.Text+"%").
+				WhereOr("concat(host(ap.lower_bound), '-', host(ap.upper_bound)) LIKE ?", "%"+*filters.Text+"%").
+				WhereOr("shared_network.name LIKE ?", "%"+*filters.Text+"%")
 			return q, nil
 		})
 	}

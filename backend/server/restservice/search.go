@@ -40,9 +40,10 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		return rsp
 	}
 	text := strings.TrimSpace(*params.Text)
+	filters := &dbmodel.SubnetsPageFilters{Text: &text}
 
 	// get list of subnets
-	subnets, err := r.getSubnets(0, 5, 0, 0, &text, "", dbmodel.SortDirAny)
+	subnets, err := r.getSubnets(0, 5, filters, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "Cannot get subnets from the db")
 	}

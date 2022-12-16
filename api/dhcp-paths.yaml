@@ -292,6 +292,10 @@
           in: query
           description: Limit returned list of subnets to these which are served by given app ID.
           type: integer
+        - name: subnetId
+          in: query
+          description: Limit returned list of subnets to these with have assigned a given subnet ID in the Kea config.
+          type: integer
         - name: dhcpVersion
           in: query
           description: Limit returned list of subnets to either DHCPv4 (4) or DHCPv6 (6).

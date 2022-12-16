@@ -14,7 +14,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-// Simple mock for utilizationStatisitcs for testing purposes.
+// Simple mock for utilizationStatistics for testing purposes.
 type utilizationStatsMock struct {
 	addressUtilization         float64
 	delegatedPrefixUtilization float64
@@ -516,8 +516,12 @@ func TestGetSubnetsByPage(t *testing.T) {
 	}
 
 	// This should match two subnets.
-	filterText := "192.0"
-	returned, count, err := GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "prefix", SortDirDesc)
+	filters := &SubnetsPageFilters{
+		Text:   newPtr("192.0"),
+		Family: newPtr(int64(4)),
+	}
+
+	returned, count, err := GetSubnetsByPage(db, 0, 10, filters, "prefix", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
 	require.Len(t, returned, 2)
@@ -527,16 +531,16 @@ func TestGetSubnetsByPage(t *testing.T) {
 
 	// This should match multiple pools in the first subnet. However,
 	// only one record should be returned.
-	filterText = "192.0.2.1"
-	returned, count, err = GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "prefix", SortDirDesc)
+	filters.Text = newPtr("192.0.2.1")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "prefix", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, count)
 	require.Len(t, returned, 1)
 	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
 
 	// This should have no match.
-	filterText = "192.0.5.0"
-	returned, count, err = GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "id", SortDirAsc)
+	filters.Text = newPtr("192.0.5.0")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "id", SortDirAsc)
 	require.NoError(t, err)
 	require.Zero(t, count)
 	require.Empty(t, returned)
@@ -1132,4 +1136,28 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 			}
 		})
 	}
+}
+
+// Test that the shorthand for setting IPv4 family works properly.
+func TestSubnetsPageFiltersSetIPv4Family(t *testing.T) {
+	// Arrange
+	filters := &SubnetsPageFilters{}
+
+	// Act
+	filters.SetIPv4Family()
+
+	// Assert
+	require.EqualValues(t, 4, *filters.Family)
+}
+
+// Test that the shorthand for setting IPv6 family works properly.
+func TestSubnetsPageFiltersSetIPv6Family(t *testing.T) {
+	// Arrange
+	filters := &SubnetsPageFilters{}
+
+	// Act
+	filters.SetIPv6Family()
+
+	// Assert
+	require.EqualValues(t, 6, *filters.Family)
 }
