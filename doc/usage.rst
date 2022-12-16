@@ -467,6 +467,12 @@ Further in the form, you can specify the actual reservations. It is possible
 to specify at most one IPv4 address. In the case of the DHCPv6 servers, it is
 possible to specify multiple IPv6 addresses and delegated prefixes.
 
+The DHCPv4 `siaddr`, `sname` and `file` fields can be statically assigned to
+the clients using host reservations. The relevant values in Kea and Stork are:
+`Next Server`, `Server Hostname`, and `Boot File Name`. You can only set these
+values for the DHCPv4 servers. The form lacks controls for setting them when
+editing a DHCPv6 host.
+
 It is possible to associate one or more client classes with a host. Kea servers
 assign these classes to the DHCP packets received from the client having
 the host reservation. Client classes are typically defined in the Kea
@@ -510,14 +516,14 @@ Stork supports top-level options with maximum two levels of suboptions.
 
 If a host reservation is configured in several DHCP servers, typically, all
 servers comprise the same set of parameters (i.e., IP addresses, hostname,
-client classes and DHCP options). By default, creating a new host reservation
-for several servers sends an identical copy of the host reservation to each.
-You may choose to specify a different set of client classes or options for
-different servers by selecting ``Configure individual server vaues`` at the
-top of the form. In this case, you must specify the complete sets of client
-classes and options for each DHCP server. Leaving client classes or options
-blank for some servers means that these servers receive no classes or
-DHCP options with the reservation.
+boot fields, client classes and DHCP options). By default, creating a new
+host reservation for several servers sends an identical copy of the host
+reservation to each. You may choose to specify a different set of boot fields,
+client classes or options for different servers by selecting
+``Configure individual server vaues`` at the top of the form. In this case,
+you must specify the complete sets of boot fields, client classes and options
+for each DHCP server. Leaving them blank for some servers means that these
+servers receive no boot fields, classes or DHCP options with the reservation.
 
 Submitted host reservations may appear in Stork's host reservations list with some
 delay. Please allow some time for the reservations to propagate to the Kea DHCP
