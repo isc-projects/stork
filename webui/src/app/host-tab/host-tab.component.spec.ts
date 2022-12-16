@@ -73,7 +73,92 @@ describe('HostTabComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should display host information', () => {
+    it('should display v4 host information', () => {
+        const host = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'hw-address',
+                    idHexValue: '51:52:53:54:55:56',
+                },
+            ],
+            addressReservations: [
+                {
+                    address: '192.0.2.123',
+                },
+            ],
+            hostname: 'mouse.example.org',
+            subnetId: 1,
+            subnetPrefix: '192.0.2.0/24',
+            localHosts: [
+                {
+                    appId: 1,
+                    appName: 'frog',
+                    dataSource: 'config',
+                    nextServer: '192.0.2.2',
+                    serverHostname: 'my-server',
+                    bootFileName: '/tmp/bootfile1',
+                },
+                {
+                    appId: 2,
+                    appName: 'mouse',
+                    dataSource: 'api',
+                    nextServer: '192.0.2.2',
+                    serverHostname: 'my-server',
+                    bootFileName: '/tmp/bootfile1',
+                },
+            ],
+        }
+        const fakeLeases: any = {}
+        spyOn(dhcpApi, 'getLeases').and.returnValue(of(fakeLeases))
+        component.host = host
+        fixture.detectChanges()
+        expect(dhcpApi.getLeases).toHaveBeenCalled()
+
+        const titleSpan = fixture.debugElement.query(By.css('#tab-title-span'))
+        expect(titleSpan).toBeTruthy()
+        expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet 192.0.2.0/24')
+
+        const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(7)
+
+        const ipReservationsFieldset = fieldsets[3]
+        expect(ipReservationsFieldset).toBeTruthy()
+        expect(ipReservationsFieldset.nativeElement.textContent).toContain('192.0.2.123')
+
+        const hostnameFieldset = fieldsets[2]
+        expect(hostnameFieldset).toBeTruthy()
+        expect(hostnameFieldset.nativeElement.textContent).toContain('mouse.example.org')
+
+        const hostIdsFieldset = fieldsets[1]
+        expect(hostIdsFieldset).toBeTruthy()
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('hw-address')
+        // HW address should remain in hexadecimal form.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54:55:56')
+
+        const appsFieldset = fieldsets[0]
+        expect(appsFieldset).toBeTruthy()
+
+        const appLinks = appsFieldset.queryAll(By.css('a'))
+        expect(appLinks.length).toBe(2)
+        expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
+        expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
+
+        let configTag = appsFieldset.query(By.css('.cfg-srctag'))
+        expect(configTag).toBeTruthy()
+        expect(configTag.nativeElement.innerText).toBe('config')
+        configTag = appsFieldset.query(By.css('.hostcmds-srctag'))
+        expect(configTag).toBeTruthy()
+        expect(configTag.nativeElement.innerText).toBe('host_cmds')
+
+        const bootFieldsFieldset = fieldsets[4]
+        expect(bootFieldsFieldset).toBeTruthy()
+        expect(bootFieldsFieldset.nativeElement.textContent).toContain('192.0.2.2')
+        expect(bootFieldsFieldset.nativeElement.textContent).toContain('my-server')
+        expect(bootFieldsFieldset.nativeElement.textContent).toContain('/tmp/bootfile1')
+    })
+
+    it('should display v6 host information', () => {
         const host = {
             id: 1,
             hostIdentifiers: [
@@ -110,17 +195,11 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
-                    nextServer: '192.0.2.2',
-                    serverHostname: 'my-server',
-                    bootFileName: '/tmp/bootfile1',
                 },
                 {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
-                    nextServer: '192.0.2.2',
-                    serverHostname: 'my-server',
-                    bootFileName: '/tmp/bootfile1',
                 },
             ],
         }
@@ -135,7 +214,7 @@ describe('HostTabComponent', () => {
         expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(7)
+        expect(fieldsets.length).toBe(6)
 
         const ipReservationsFieldset = fieldsets[3]
         expect(ipReservationsFieldset).toBeTruthy()
@@ -171,12 +250,6 @@ describe('HostTabComponent', () => {
         configTag = appsFieldset.query(By.css('.hostcmds-srctag'))
         expect(configTag).toBeTruthy()
         expect(configTag.nativeElement.innerText).toBe('host_cmds')
-
-        const bootFieldsFieldset = fieldsets[4]
-        expect(bootFieldsFieldset).toBeTruthy()
-        expect(bootFieldsFieldset.nativeElement.textContent).toContain('192.0.2.2')
-        expect(bootFieldsFieldset.nativeElement.textContent).toContain('my-server')
-        expect(bootFieldsFieldset.nativeElement.textContent).toContain('/tmp/bootfile1')
     })
 
     it('should display global host tab title', () => {
@@ -279,7 +352,7 @@ describe('HostTabComponent', () => {
         expect(dhcpApi.getLeases).toHaveBeenCalled()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(6)
+        expect(fieldsets.length).toBe(5)
 
         const ipReservationsFieldset = fieldsets[2]
         expect(ipReservationsFieldset).toBeTruthy()
@@ -375,7 +448,7 @@ describe('HostTabComponent', () => {
         expect(dhcpApi.getLeases).toHaveBeenCalled()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(6)
+        expect(fieldsets.length).toBe(5)
 
         let ipReservationsFieldset = fieldsets[2]
         expect(ipReservationsFieldset).toBeTruthy()
@@ -404,7 +477,7 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(6)
+        expect(fieldsets.length).toBe(5)
 
         ipReservationsFieldset = fieldsets[2]
         expect(ipReservationsFieldset).toBeTruthy()
@@ -814,7 +887,7 @@ describe('HostTabComponent', () => {
             prefixReservations: [],
             hostname: '',
             subnetId: 1,
-            subnetPrefix: '2001:db8:1::/64',
+            subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
                     appId: 1,
@@ -885,7 +958,7 @@ describe('HostTabComponent', () => {
             prefixReservations: [],
             hostname: '',
             subnetId: 1,
-            subnetPrefix: '2001:db8:1::/64',
+            subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
                     appId: 1,
@@ -947,8 +1020,8 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
-        expect(fieldsets[3].properties.innerText).toContain('No client classes configured.')
+        expect(fieldsets.length).toBe(4)
+        expect(fieldsets[2].properties.innerText).toContain('No client classes configured.')
     })
 
     it('should display dashes when boot fields are not specified', () => {
@@ -964,13 +1037,14 @@ describe('HostTabComponent', () => {
             prefixReservations: [],
             hostname: '',
             subnetId: 1,
-            subnetPrefix: '2001:db8:1::/64',
+            subnetPrefix: '192.0.2.0::/24',
             localHosts: [
                 {
                     appId: 1,
                     daemonId: 1,
                     appName: 'frog',
                     dataSource: 'api',
+                    nextServer: '0.0.0.0',
                 },
             ],
         }
@@ -979,7 +1053,7 @@ describe('HostTabComponent', () => {
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(5)
-        expect(fieldsets[2].properties.innerText).toContain('Next server\n-')
+        expect(fieldsets[2].properties.innerText).toContain('Next server\n0.0.0.0')
         expect(fieldsets[2].properties.innerText).toContain('Server hostname\n-')
         expect(fieldsets[2].properties.innerText).toContain('Boot file name\n-')
     })
@@ -1017,7 +1091,7 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
-        expect(fieldsets[4].properties.innerText).toContain('No options configured.')
+        expect(fieldsets.length).toBe(4)
+        expect(fieldsets[3].properties.innerText).toContain('No options configured.')
     })
 })
