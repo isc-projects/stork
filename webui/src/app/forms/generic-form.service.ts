@@ -8,6 +8,9 @@ import {
 } from '@angular/forms'
 import { DhcpOptionFieldFormGroup } from './dhcp-option-field'
 
+/**
+ * A service providing generic form manipulation functions.
+ */
 @Injectable({
     providedIn: 'root',
 })
