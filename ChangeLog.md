@@ -1,3 +1,9 @@
+* 264 [func] marcin
+
+     Added configuration of the DHCPv4 siaddr, sname, and file fields in the
+     Kea host reservations.
+     (Gitlab #911)
+
 * 263 [build] andrei
 
     Added the lint:shell rake task which calls shellcheck on all shell scripts.
