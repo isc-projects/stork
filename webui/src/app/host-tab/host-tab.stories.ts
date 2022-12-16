@@ -77,8 +77,49 @@ const Template: Story<HostTabComponent> = (args: HostTabComponent) => ({
     props: args,
 })
 
-export const ViewHost = Template.bind({})
-ViewHost.args = {
+export const ViewDhcpv4Host = Template.bind({})
+ViewDhcpv4Host.args = {
+    host: {
+        id: 1,
+        hostIdentifiers: [
+            {
+                idType: 'hw-address',
+                idHexValue: '51:52:53:54:55:56',
+            },
+        ],
+        addressReservations: [
+            {
+                address: '192.0.2.23',
+            },
+        ],
+        hostname: 'mouse.example.org',
+        subnetId: 1,
+        subnetPrefix: '192.0.2.0/24',
+        localHosts: [
+            {
+                appId: 1,
+                appName: 'frog',
+                dataSource: 'config',
+                clientClasses: ['access-point', 'router', 'cable-modem'],
+                nextServer: '192.0.2.2',
+                serverHostname: 'myserver.example.org',
+                bootFileName: '/tmp/bootfile',
+            },
+            {
+                appId: 2,
+                appName: 'mouse',
+                dataSource: 'api',
+                clientClasses: ['access-point', 'router', 'cable-modem'],
+                nextServer: '192.0.2.2',
+                serverHostname: 'myserver.example.org',
+                bootFileName: '/tmp/bootfile',
+            },
+        ],
+    },
+}
+
+export const ViewDhcpv6Host = Template.bind({})
+ViewDhcpv6Host.args = {
     host: {
         id: 1,
         hostIdentifiers: [
@@ -116,18 +157,12 @@ ViewHost.args = {
                 appName: 'frog',
                 dataSource: 'config',
                 clientClasses: ['access-point', 'router', 'cable-modem'],
-                nextServer: '192.0.2.2',
-                serverHostname: 'myserver.example.org',
-                bootFileName: '/tmp/bootfile',
             },
             {
                 appId: 2,
                 appName: 'mouse',
                 dataSource: 'api',
                 clientClasses: ['access-point', 'router', 'cable-modem'],
-                nextServer: '192.0.2.2',
-                serverHostname: 'myserver.example.org',
-                bootFileName: '/tmp/bootfile',
             },
         ],
     },

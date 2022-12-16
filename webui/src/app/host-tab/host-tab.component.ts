@@ -61,6 +61,11 @@ export class HostTabComponent {
     currentHost: Host
 
     /**
+     * Indicates if the boot fields panel should be displayed.
+     */
+    displayBootFields: boolean
+
+    /**
      * A map caching leases for various hosts.
      *
      * Thanks to this caching, it is possible to switch between the
@@ -125,6 +130,8 @@ export class HostTabComponent {
         if (!this.currentHost) {
             return
         }
+        if (this.currentHost.subnetPrefix) {
+        }
         // Check if we already have lease information for this host.
         const leasesForHost = this._leasesForHosts.get(host.id)
         if (leasesForHost) {
@@ -135,6 +142,9 @@ export class HostTabComponent {
             // fetch it from Kea servers via Stork server.
             this._fetchLeases(host.id)
         }
+        this.displayBootFields = !!this.currentHost.localHosts?.some(
+            (lh) => lh.nextServer || lh.serverHostname || lh.bootFileName
+        )
     }
 
     /**

@@ -165,7 +165,7 @@
             </div>
             <ng-container *ngIf="host.localHosts?.length > 0">
                 <div *ngFor="let localHost of host.localHosts; let i = index" class="mb-4">
-                    <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualBootFields()">
+                    <p-fieldset *ngIf="displayBootFields && (i === 0 || !allDaemonsHaveEqualBootFields())">
                         <ng-template pTemplate="header">
                             <span
                                 >Boot Fields&nbsp;/&nbsp;
