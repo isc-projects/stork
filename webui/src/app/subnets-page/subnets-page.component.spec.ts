@@ -17,6 +17,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { RouterTestingModule } from '@angular/router/testing'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -28,6 +29,7 @@ describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
+    let router: Router
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -43,10 +45,7 @@ describe('SubnetsPageComponent', () => {
                         queryParamMap: of(new MockParamMap()),
                     },
                 },
-                {
-                    provide: Router,
-                    useValue: {},
-                },
+                RouterTestingModule,
             ],
             imports: [
                 FormsModule,
@@ -62,6 +61,7 @@ describe('SubnetsPageComponent', () => {
             declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
         })
         dhcpService = TestBed.inject(DHCPService)
+        router = TestBed.inject(Router)
     }))
 
     beforeEach(() => {
@@ -82,6 +82,10 @@ describe('SubnetsPageComponent', () => {
                             {
                                 appId: 28,
                                 appName: 'kea2@localhost',
+                                // Misconfiguration,  all local subnets in a
+                                // subnet should share the same subnet ID. In
+                                // this case, we display a value from the first
+                                // local subnet.
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
@@ -97,6 +101,21 @@ describe('SubnetsPageComponent', () => {
                         statsCollectedAt: '2022-01-19T12:10:22.513Z',
                         pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
+                    },
+                    {
+                        clientClass: 'class-00-01',
+                        id: 42,
+                        localSubnets: [
+                            {
+                                appId: 27,
+                                appName: 'kea@localhost',
+                                machineAddress: 'localhost',
+                                machineHostname: 'lv-pc',
+                            },
+                        ],
+                        statsCollectedAt: '0001-01-01T00:00:00.000Z',
+                        pools: ['1.1.0.4-1.1.255.254'],
+                        subnet: '1.1.0.0/16',
                     },
                 ],
                 total: 10496,
@@ -174,5 +193,43 @@ describe('SubnetsPageComponent', () => {
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
         expect(breadcrumbsComponent.items[1].label).toEqual('Subnets')
+    })
+
+    it('should display the Kea subnet ID', async () => {
+        // Act
+        await fixture.whenStable()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        // Assert
+        const cells = fixture.debugElement.queryAll(By.css("table tbody tr td:first-child"))
+        expect(cells.length).toBe(2)
+        const cellValues = cells.map(c => (c.nativeElement as HTMLElement).textContent.trim())
+        expect(cellValues).toContain("1")
+        // Second subnet misses the Kea subnet ID.
+        expect(cellValues).toContain("")
+    })
+
+    it('should filter hosts by the Kea subnet ID', async () => {
+        // Arrange
+        const input = fixture.debugElement.query(By.css("#filter-subnets-text-field"))
+        const spy = spyOn(router, "navigate")
+
+        // Act
+        await fixture.whenStable();
+
+        component.filterText = "subnetId:42"
+        input.triggerEventHandler('keyup', null)
+
+        await fixture.whenStable()
+
+        // Assert
+        expect(spy).toHaveBeenCalledOnceWith(['/dhcp/subnets'], jasmine.objectContaining({
+            queryParams: {
+                text: null,
+                subnetId: '42',
+                appId: null
+            }
+        }))
     })
 })
