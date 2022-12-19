@@ -1,3 +1,9 @@
+* 268 [func] slawek
+
+    The subnet ID presents a value from the Kea configuration instead the
+    internal Stork database ID.
+    (Gitlab #376)
+
 * 267 [build] slawek
 
     Added govulncheck to the Stork build system, a tool to detect security
