@@ -104,7 +104,7 @@ import { ConfigCheckerPreferencePickerComponent } from './config-checker-prefere
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view/dhcp-option-set-view.component'
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view/dhcp-client-class-set-view.component';
+import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { SurroundPipe } from './surround.pipe'
 
 export function cfgFactory() {

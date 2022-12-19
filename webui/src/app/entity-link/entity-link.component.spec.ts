@@ -147,12 +147,12 @@ describe('EntityLinkComponent', () => {
 
     it('should construct subnet entity', () => {
         component.entity = 'subnet'
-        component.attrs = { id: 1, prefix: 'fe80::/64', localSubnets: [ { id: 42 }]}
+        component.attrs = { id: 1, prefix: 'fe80::/64', localSubnets: [{ id: 42 }] }
         component.showEntityName = true
         fixture.detectChanges()
 
         const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
-        expect(content).toBe("subnet [42] fe80::/64")
+        expect(content).toBe('subnet [42] fe80::/64')
     })
 
     it('should construct subnet entity for missing a local subnet ID', () => {
@@ -162,6 +162,6 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
 
         const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
-        expect(content).toBe("fe80::/64")
+        expect(content).toBe('fe80::/64')
     })
 })

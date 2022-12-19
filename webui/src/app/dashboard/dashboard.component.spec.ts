@@ -40,7 +40,13 @@ describe('DashboardComponent', () => {
                 HttpClientTestingModule,
                 TableModule,
             ],
-            declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent, SurroundPipe],
+            declarations: [
+                DashboardComponent,
+                EventsPanelComponent,
+                HelpTipComponent,
+                SubnetBarComponent,
+                SurroundPipe,
+            ],
             providers: [
                 ServicesService,
                 LocationStrategy,
@@ -276,12 +282,10 @@ describe('DashboardComponent', () => {
         fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        const cells = fixture.debugElement.queryAll(
-            By.css(".dashboard-dhcp__subnets .utilization-row__id")
-        )
+        const cells = fixture.debugElement.queryAll(By.css('.dashboard-dhcp__subnets .utilization-row__id'))
         expect(cells.length).toBe(2)
-        const values = cells.map(c => (c.nativeElement as HTMLElement).textContent.trim())
-        expect(values).toContain("[41]")
-        expect(values).toContain("")
+        const values = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
+        expect(values).toContain('[41]')
+        expect(values).toContain('')
     })
 })
