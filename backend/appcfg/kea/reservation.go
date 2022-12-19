@@ -15,7 +15,7 @@ type Host interface {
 	GetHostname() string
 	GetSubnetID(int64) (int64, error)
 	GetClientClasses(int64) []string
-	GetNextServer(daemonID int64) string
+	GetNextServer(int64) string
 	GetServerHostname(int64) string
 	GetBootFileName(int64) string
 	GetDHCPOptions(int64) []DHCPOption
