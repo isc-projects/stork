@@ -202,34 +202,37 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenRenderingDone()
 
         // Assert
-        const cells = fixture.debugElement.queryAll(By.css("table tbody tr td:first-child"))
+        const cells = fixture.debugElement.queryAll(By.css('table tbody tr td:first-child'))
         expect(cells.length).toBe(2)
-        const cellValues = cells.map(c => (c.nativeElement as HTMLElement).textContent.trim())
-        expect(cellValues).toContain("1")
+        const cellValues = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
+        expect(cellValues).toContain('1')
         // Second subnet misses the Kea subnet ID.
-        expect(cellValues).toContain("")
+        expect(cellValues).toContain('')
     })
 
     it('should filter hosts by the Kea subnet ID', async () => {
         // Arrange
-        const input = fixture.debugElement.query(By.css("#filter-subnets-text-field"))
-        const spy = spyOn(router, "navigate")
+        const input = fixture.debugElement.query(By.css('#filter-subnets-text-field'))
+        const spy = spyOn(router, 'navigate')
 
         // Act
-        await fixture.whenStable();
+        await fixture.whenStable()
 
-        component.filterText = "subnetId:42"
+        component.filterText = 'subnetId:42'
         input.triggerEventHandler('keyup', null)
 
         await fixture.whenStable()
 
         // Assert
-        expect(spy).toHaveBeenCalledOnceWith(['/dhcp/subnets'], jasmine.objectContaining({
-            queryParams: {
-                text: null,
-                subnetId: '42',
-                appId: null
-            }
-        }))
+        expect(spy).toHaveBeenCalledOnceWith(
+            ['/dhcp/subnets'],
+            jasmine.objectContaining({
+                queryParams: {
+                    text: null,
+                    subnetId: '42',
+                    appId: null,
+                },
+            })
+        )
     })
 })
