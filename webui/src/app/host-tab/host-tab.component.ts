@@ -130,8 +130,6 @@ export class HostTabComponent {
         if (!this.currentHost) {
             return
         }
-        if (this.currentHost.subnetPrefix) {
-        }
         // Check if we already have lease information for this host.
         const leasesForHost = this._leasesForHosts.get(host.id)
         if (leasesForHost) {

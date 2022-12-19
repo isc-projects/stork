@@ -118,7 +118,7 @@ export class GenericFormService {
      * @param formGroup form group holding the user specified data.
      * @param values object to which the values are copied.
      */
-    public setValuesFromFormGroup<T>(formGroup: UntypedFormGroup, values: T): void {
+    public setValuesFromFormGroup(formGroup: UntypedFormGroup, values: Object): void {
         for (let key of Object.keys(formGroup.controls)) {
             if (formGroup.get(key).value) {
                 values[key] = formGroup.get(key).value

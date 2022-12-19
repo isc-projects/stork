@@ -1241,7 +1241,21 @@ describe('HostFormComponent', () => {
         expect(clientClassesForm).toBeTruthy()
     }))
 
-    it('should include boot field inputs', fakeAsync(() => {
+    it('should include boot field inputs for dhcpv4', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([0])
+        component.onDaemonsChange()
+        fixture.detectChanges()
+
+        const nextServerInput = fixture.debugElement.query(By.css('[formControlName="nextServer"]'))
+        expect(nextServerInput).toBeTruthy()
+    }))
+
+    it('should not include boot field inputs for dhcpv6', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
         tick()
@@ -1253,13 +1267,6 @@ describe('HostFormComponent', () => {
 
         const nextServerInput = fixture.debugElement.query(By.css('[formControlName="nextServer"]'))
         expect(nextServerInput).toBeFalsy()
-    }))
-
-    it('should not include boot field inputs for dhcpv6', fakeAsync(() => {
-        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
     }))
 
     it('should enable split editing mode', fakeAsync(() => {
