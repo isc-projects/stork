@@ -379,17 +379,17 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			log.Infof("Found BIND 9 config file in %s", f)
 			found = true
 		} else {
-			log.Debugf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
+			log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 		}
 	}
 
-	// If users didn't specify anything or what he specified is garbage,
+	// If user didn't specify anything or what he specified is garbage,
 	// we'll go through the normal detection procedure.
 	if !found {
 		if m != nil {
 			bind9ConfPath = m[1]
 			// if path to config is not absolute then join it with CWD of named
-			if !strings.HasPrefix(bind9ConfPath, "/") {
+			if path.IsAbs(bind9ConfPath) {
 				bind9ConfPath = path.Join(cwd, bind9ConfPath)
 			}
 		} else {
