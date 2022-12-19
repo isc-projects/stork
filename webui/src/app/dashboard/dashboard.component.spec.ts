@@ -19,6 +19,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TooltipModule } from 'primeng/tooltip'
 import { TableModule } from 'primeng/table'
+import { SurroundPipe } from '../surround.pipe'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -39,7 +40,7 @@ describe('DashboardComponent', () => {
                 HttpClientTestingModule,
                 TableModule,
             ],
-            declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent],
+            declarations: [DashboardComponent, EventsPanelComponent, HelpTipComponent, SubnetBarComponent, SurroundPipe],
             providers: [
                 ServicesService,
                 LocationStrategy,
@@ -113,7 +114,7 @@ describe('DashboardComponent', () => {
                             {
                                 appId: 27,
                                 appName: 'kea@localhost',
-                                id: 1,
+                                id: 41,
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
                             },
@@ -140,7 +141,6 @@ describe('DashboardComponent', () => {
                             {
                                 appId: 27,
                                 appName: 'kea@localhost',
-                                id: 2,
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
                             },
@@ -269,5 +269,19 @@ describe('DashboardComponent', () => {
             expect(labelText).toBe(expectedLabel)
             expect(valueText).toBe(expectedValue)
         }
+    })
+
+    it('should display Kea subnet ID', async () => {
+        await component.refreshDhcpOverview()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        const cells = fixture.debugElement.queryAll(
+            By.css(".dashboard-dhcp__subnets .utilization-row__id")
+        )
+        expect(cells.length).toBe(2)
+        const values = cells.map(c => (c.nativeElement as HTMLElement).textContent.trim())
+        expect(values).toContain("[41]")
+        expect(values).toContain("")
     })
 })

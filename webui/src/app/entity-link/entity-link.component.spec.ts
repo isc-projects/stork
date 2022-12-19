@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
+import { SurroundPipe } from '../surround.pipe'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
@@ -10,7 +11,7 @@ describe('EntityLinkComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [RouterTestingModule],
-            declarations: [EntityLinkComponent],
+            declarations: [EntityLinkComponent, SurroundPipe],
         }).compileComponents()
     }))
 
@@ -142,5 +143,25 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('host')
+    })
+
+    it('should construct subnet entity', () => {
+        component.entity = 'subnet'
+        component.attrs = { id: 1, prefix: 'fe80::/64', localSubnets: [ { id: 42 }]}
+        component.showEntityName = true
+        fixture.detectChanges()
+
+        const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
+        expect(content).toBe("subnet [42] fe80::/64")
+    })
+
+    it('should construct subnet entity for missing a local subnet ID', () => {
+        component.entity = 'subnet'
+        component.attrs = { id: 1, prefix: 'fe80::/64' }
+        component.showEntityName = false
+        fixture.detectChanges()
+
+        const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
+        expect(content).toBe("fe80::/64")
     })
 })

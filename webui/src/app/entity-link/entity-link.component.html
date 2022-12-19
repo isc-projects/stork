@@ -25,7 +25,7 @@
 
     <!-- subnet -->
     <ng-container *ngSwitchCase="'subnet'">
-        {{ showEntityName ? 'subnet ' : '' }}[{{ attrs.id }}] {{ attrs.prefix }}
+        {{ showEntityName ? 'subnet ' : '' }}{{ attrs.localSubnets?.[0]?.id | surround: "[":"]" }} {{ attrs.prefix }}
     </ng-container>
 
     <!-- user -->
