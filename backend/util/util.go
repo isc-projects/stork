@@ -114,10 +114,10 @@ func SetupLoggingLevel() {
 	// If the STORK_LOG_LEVEL is specified and has valid name in it, use
 	// that level. If not specified or has garbage, use the default (INFO).
 	if value, ok := os.LookupEnv("STORK_LOG_LEVEL"); ok {
-		levels := map[string]log.Level {
+		levels := map[string]log.Level{
 			"DEBUG": log.DebugLevel,
-			"INFO": log.InfoLevel,
-			"WARN": log.WarnLevel,
+			"INFO":  log.InfoLevel,
+			"WARN":  log.WarnLevel,
 			"ERROR": log.ErrorLevel,
 		}
 
@@ -125,7 +125,7 @@ func SetupLoggingLevel() {
 		if levels[value] != log.PanicLevel {
 			fmt.Printf("STORK_LOG_LEVEL specified, setting logging level to %s\n", levels[value])
 			log.SetLevel(levels[value])
-			} else {
+		} else {
 			fmt.Printf("STORK_LOG_LEVEL has invalid log level: %s, ignoring.\n", value)
 		}
 	} else {
