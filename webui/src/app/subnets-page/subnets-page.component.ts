@@ -36,7 +36,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         text: null,
         dhcpVersion: null,
         appId: null,
-        subnetId: null
+        subnetId: null,
     }
 
     grafanaUrl: string
