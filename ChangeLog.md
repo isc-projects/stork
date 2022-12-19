@@ -1,7 +1,7 @@
 * 262 [bug] slawek
 
-    Fixed showing duplicated statuses of daemons on the machine page while
-    a machine containing multiple applications.
+    Removed duplicated statuses of daemons on the machine page when the
+    machine runs multiple applications.
     (Gitlab #900)
 
 * 261 [build] slawek
