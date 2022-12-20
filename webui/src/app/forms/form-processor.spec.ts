@@ -1,0 +1,77 @@
+import {
+    AbstractControl,
+    AsyncValidator,
+    AsyncValidatorFn,
+    UntypedFormArray,
+    UntypedFormBuilder,
+    UntypedFormControl,
+    UntypedFormGroup,
+    ValidationErrors,
+    ValidatorFn,
+} from '@angular/forms'
+import { Observable } from 'rxjs'
+import { FormProcessor } from './form-processor'
+
+describe('FormProcessor', () => {
+    let processor: FormProcessor = new FormProcessor()
+    let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
+
+    it('copies a complex form control with multiple nesting levels', () => {
+        let validator1: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+            return null
+        }
+        let validator2: AsyncValidatorFn = (
+            control: AbstractControl
+        ): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> => {
+            return new Promise(null)
+        }
+        let formArray = formBuilder.array([
+            formBuilder.group({
+                foo: formBuilder.control('abc', validator1, validator2),
+                bar: formBuilder.group(
+                    {
+                        baz: formBuilder.array(
+                            [formBuilder.control('ccc'), formBuilder.control('xyz')],
+                            validator1,
+                            validator2
+                        ),
+                    },
+                    { validators: validator1, asyncValidators: validator2 }
+                ),
+            }),
+            formBuilder.control('aaa'),
+        ])
+        let clonedArray = processor.cloneControl(formArray)
+
+        expect(clonedArray).toBeTruthy()
+        expect(clonedArray.length).toBe(2)
+
+        expect(clonedArray.at(0)).toBeInstanceOf(UntypedFormGroup)
+        expect(clonedArray.at(1)).toBeInstanceOf(UntypedFormControl)
+
+        expect(clonedArray.at(0).get('foo')).toBeTruthy()
+        expect(clonedArray.at(0).get('foo')).toBeInstanceOf(UntypedFormControl)
+        expect(clonedArray.at(0).get('foo').value).toBe('abc')
+        expect(clonedArray.at(0).get('foo').hasValidator(validator1)).toBeTrue()
+        expect(clonedArray.at(0).get('foo').hasAsyncValidator(validator2)).toBeTrue()
+
+        expect(clonedArray.at(0).get('bar')).toBeTruthy()
+        expect(clonedArray.at(0).get('bar')).toBeInstanceOf(UntypedFormGroup)
+        expect(clonedArray.at(0).get('bar').hasValidator(validator1)).toBeTrue()
+        expect(clonedArray.at(0).get('bar').hasAsyncValidator(validator2)).toBeTrue()
+
+        expect(clonedArray.at(0).get('bar.baz')).toBeTruthy()
+        expect(clonedArray.at(0).get('bar.baz')).toBeInstanceOf(UntypedFormArray)
+        expect(clonedArray.at(0).get('bar.baz').hasValidator(validator1)).toBeTrue()
+        expect(clonedArray.at(0).get('bar.baz').hasAsyncValidator(validator2)).toBeTrue()
+
+        let baz = clonedArray.at(0).get('bar.baz') as UntypedFormArray
+        expect(baz.length).toBe(2)
+        expect(baz.at(0)).toBeInstanceOf(UntypedFormControl)
+        expect(baz.at(0).value).toBe('ccc')
+        expect(baz.at(1)).toBeInstanceOf(UntypedFormControl)
+        expect(baz.at(1).value).toBe('xyz')
+
+        expect(clonedArray.at(1).value).toBe('aaa')
+    })
+})

@@ -906,7 +906,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 for (let i = 0; i < itemsToAdd; i++) {
                     this.bootFieldsArray.push(this._genericFormService.cloneControl(this.bootFieldsArray.at(0)))
                     this.clientClassesArray.push(this._genericFormService.cloneControl(this.clientClassesArray.at(0)))
-                    this.optionsArray.push(this._genericFormService.cloneControl(this.optionsArray.at(0)))
+                    this.optionsArray.push(this._optionSetFormService.cloneControl(this.optionsArray.at(0)))
                 }
             }
         } else {

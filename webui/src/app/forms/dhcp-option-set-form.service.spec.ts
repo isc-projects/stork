@@ -89,6 +89,120 @@ describe('DhcpOptionSetFormService', () => {
         expect(service).toBeTruthy()
     })
 
+    it('copies a complex form control with multiple nesting levels', () => {
+        let clonedArray = service.cloneControl(formArray)
+
+        expect(clonedArray).toBeTruthy()
+        expect(clonedArray.length).toBe(3)
+
+        // Option 1024.
+        expect(clonedArray.at(0).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(0).get('optionCode')).toBeTruthy()
+        expect(clonedArray.at(0).get('optionFields')).toBeTruthy()
+
+        expect(clonedArray.at(0).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(0).get('optionCode').value).toBe(1024)
+
+        // Option 1024 fields.
+        expect(clonedArray.at(0).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        let fields = clonedArray.at(0).get('optionFields') as UntypedFormArray
+        expect(fields.controls.length).toBe(4)
+
+        // Option 1024 field 0.
+        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.IPv6Prefix)
+        expect(fields.at(0).get('prefix')).toBeTruthy()
+        expect(fields.at(0).get('prefixLength')).toBeTruthy()
+        expect(fields.at(0).get('prefix').value).toBe('3000::')
+        expect(fields.at(0).get('prefixLength').value).toBe(64)
+
+        // Option 1024 field 1.
+        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Psid)
+        expect(fields.at(1).get('psid')).toBeTruthy()
+        expect(fields.at(1).get('psidLength')).toBeTruthy()
+        expect(fields.at(1).get('psid').value).toBe(12)
+        expect(fields.at(1).get('psidLength').value).toBe(8)
+
+        // Option 1024 field 2.
+        expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.HexBytes)
+        expect(fields.at(2).get('control')).toBeTruthy()
+        expect(fields.at(2).get('control').value).toBe('01:02:03')
+
+        // Option 1024 field 3.
+        expect(fields.at(3)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(3) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.String)
+        expect(fields.at(3).get('control')).toBeTruthy()
+        expect(fields.at(3).get('control').value).toBe('foobar')
+
+        // Option 2024.
+        expect(clonedArray.at(1).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(1).get('optionCode')).toBeTruthy()
+        expect(clonedArray.at(1).get('optionFields')).toBeTruthy()
+
+        expect(clonedArray.at(1).get('alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(1).get('optionCode').value).toBe(2024)
+
+        // Option 2024 fields.
+        expect(clonedArray.at(1).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+        fields = clonedArray.at(1).get('optionFields') as UntypedFormArray
+        expect(fields.controls.length).toBe(2)
+
+        // Option 2024 field 0.
+        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint8)
+        expect(fields.at(0).get('control')).toBeTruthy()
+        expect(fields.at(0).get('control').value).toBe(101)
+
+        // Option 2024 field 1.
+        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
+        expect(fields.at(1).get('control')).toBeTruthy()
+        expect(fields.at(1).get('control').value).toBe(16523)
+
+        // Option 3087.
+        expect(clonedArray.at(2).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('optionCode')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions')).toBeTruthy()
+
+        expect(clonedArray.at(2).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(2).get('optionCode').value).toBe(3087)
+
+        // Option 3087 suboptions.
+        expect(clonedArray.at(2).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+        expect((clonedArray.at(2).get('suboptions') as UntypedFormArray).controls.length).toBe(2)
+
+        // Option 3087.1.
+        expect(clonedArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.0.optionCode')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.0.optionFields')).toBeTruthy()
+
+        // Option 3087.1 field 0.
+        fields = clonedArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
+        expect(fields.controls.length).toBe(1)
+        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
+        expect(fields.at(0).get('control')).toBeTruthy()
+        expect(fields.at(0).get('control').value).toBe(1111)
+
+        // Option 3087.0.
+        expect(clonedArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.1.optionFields')).toBeTruthy()
+
+        expect(clonedArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
+
+        // Option 3087.0 field 0.
+        fields = clonedArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
+        expect(fields.controls.length).toBe(1)
+        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)
+        expect(fields.at(0).get('control')).toBeTruthy()
+        expect(fields.at(0).get('control').value).toBe(2222)
+    })
+
     it('converts specified DHCP options to REST API format', () => {
         // Extract the options from the form and make sure there are
         // three of them.

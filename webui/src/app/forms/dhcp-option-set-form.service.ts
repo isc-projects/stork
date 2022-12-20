@@ -14,6 +14,7 @@ import { DHCPOption } from '../backend/model/dHCPOption'
 import { DHCPOptionField } from '../backend/model/dHCPOptionField'
 import { StorkValidators } from '../validators'
 import { GenericFormService } from './generic-form.service'
+import { FormProcessor } from './form-processor'
 
 /**
  * A service for converting reactive forms with DHCP options to the REST API
@@ -22,19 +23,54 @@ import { GenericFormService } from './generic-form.service'
 @Injectable({
     providedIn: 'root',
 })
-export class DhcpOptionSetFormService {
-    /**
-     * Form builder instance used by the service to create the reactive forms.
-     */
-    _formBuilder: UntypedFormBuilder
-
+export class DhcpOptionSetFormService extends FormProcessor {
     /**
      * Constructor.
      *
      * Creates form builder instance.
      */
     constructor() {
-        this._formBuilder = new UntypedFormBuilder()
+        super()
+    }
+
+    /**
+     * Performs deep copy of the form array holding DHCP options or its fragment.
+     *
+     * It copies all controls, including DhcpOptionFieldFormGroup, with their
+     * validators. Controls belonging to forms or arrays are copied recursively.
+     *
+     * It extends the generic function implemented in the base class with the
+     * support to copy DhcpOptionFieldFormGroup instances.
+     *
+     * @param control top-level control to be copied.
+     * @returns copied control instance.
+     */
+    public cloneControl<T extends AbstractControl>(control: T): T {
+        let newControl: T
+
+        if (control instanceof DhcpOptionFieldFormGroup) {
+            const formGroup = new DhcpOptionFieldFormGroup(
+                (control as DhcpOptionFieldFormGroup).data.fieldType,
+                {},
+                control.validator,
+                control.asyncValidator
+            )
+
+            const controls = control.controls
+
+            Object.keys(controls).forEach((key) => {
+                formGroup.addControl(key, this.cloneControl(controls[key]))
+            })
+
+            newControl = formGroup as any
+
+            if (control.disabled) {
+                newControl.disable({ emitEvent: false })
+            }
+            return newControl
+        }
+
+        return super.cloneControl(control)
     }
 
     /**
