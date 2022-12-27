@@ -107,6 +107,13 @@ go_tool_codebase = FileList[
     "backend/server/database/migrations/*"
 ]
 
+go_code_gen_codebase = FileList[
+    "backend/codegen",
+    "backend/codegen/*",
+    "backend/cmd/stork-code-gen",
+    "backend/cmd/stork-code-gen/*",
+]
+
 go_common_codebase = FileList["backend/**/*"]
     .exclude("backend/coverage.out")
     .exclude(swagger_server_dir + "/**/*")
@@ -130,6 +137,9 @@ GO_AGENT_CODEBASE = go_agent_codebase
 GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-tool/stork-tool")
+
+GO_CODE_GEN_CODEBASE = go_code_gen_codebase
+        .exclude("backend/cmd/stork-code-gen/stork-code-gen")
 
 file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do

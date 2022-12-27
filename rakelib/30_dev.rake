@@ -541,6 +541,18 @@ namespace :gen do
             end
         end
     end
+    desc 'Generate standard DHCP option definitions'
+    task :option_defs => [CODE_GEN_BINARY_FILE] do
+        sh CODE_GEN_BINARY_FILE, "--language", "golang", "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
+            "--output", "backend/appcfg/kea/stdoptiondef6.go", "--template", "backend/appcfg/kea/stdoptiondef6.go.template",
+            "--top-level-type", "dhcpOptionDefinition", "--field-type", "record-types:DHCPOptionType",
+            "--field-name", "type:OptionType"
+        Rake::Task["fmt:backend"].invoke()
+
+        sh CODE_GEN_BINARY_FILE, "--language", "typescript", "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
+            "--output", "webui/src/app/std-dhcpv6-option-defs.ts", "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
+        Rake::Task["fmt:ui"].invoke()
+    end
 end
 
 

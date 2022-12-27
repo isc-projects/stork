@@ -104,6 +104,15 @@ file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
 end
 CLEAN.append TOOL_BINARY_FILE
 
+CODE_GEN_BINARY_FILE = "backend/cmd/stork-code-gen/stork-code-gen"
+file CODE_GEN_BINARY_FILE => GO_CODE_GEN_CODEBASE + [GO] do
+    Dir.chdir("backend/cmd/stork-code-gen") do
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
+    end
+    puts "Stork Code Gen build date: #{build_date} (timestamp: #{TIMESTAMP})"
+end
+CLEAN.append CODE_GEN_BINARY_FILE
+
 #############
 ### Tasks ###
 #############
@@ -177,11 +186,14 @@ namespace :build do
     desc "Build Stork Tool from sources"
     task :tool => [TOOL_BINARY_FILE]
 
+    desc "Build Stork Code Gen from sources"
+    task :code_gen => [CODE_GEN_BINARY_FILE]
+
     desc "Build Web UI (production mode)"
     task :ui => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY]
 
-    desc "Build Stork Backend (Server, Agent, Tool)"
-    task :backend => [:server, :agent, :tool]
+    desc "Build Stork Backend (Code Generator, Server, Agent, Tool)"
+    task :backend => [:code_gen, :server, :agent, :tool]
 end
 
 desc "Build all Stork components (Server, Agent, Tool, UI, doc)"

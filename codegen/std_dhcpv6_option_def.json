@@ -1,0 +1,105 @@
+[
+    {
+        "code":        94,
+        "encapsulate": "s46-cont-mape-options",
+        "name":        "s46-cont-mape",
+        "space":       "dhcp6",
+        "type":        "empty"
+    },
+    {
+        "code":        95,
+        "encapsulate": "s46-cont-mapt-options",
+        "name":        "s46-cont-mapt",
+        "space":       "dhcp6",
+        "type":         "empty"
+    },
+    {
+        "code":        96,
+        "encapsulate": "s46-cont-lw-options",
+        "name":        "s46-cont-lw",
+        "space":       "dhcp6",
+        "type":         "empty"
+    },
+    {
+        "code":        90,
+        "encapsulate": "",
+        "name":        "s46-br",
+        "space":       "s46-cont-mape-options",
+        "type":         "ipv6-address"
+    },
+    {
+        "code":        89,
+        "encapsulate": "s46-rule-options",
+        "name":        "s46-rule",
+        "record-types": [
+            "uint8",
+            "uint8",
+            "uint8",
+            "ipv4-address",
+            "ipv6-prefix"
+        ],
+        "space":      "s46-cont-mape-options",
+        "type":        "record"
+    },
+    {
+        "code":        89,
+        "encapsulate": "s46-rule-options",
+        "name":        "s46-rule",
+        "record-types": [
+            "uint8",
+            "uint8",
+            "uint8",
+            "ipv4-address",
+            "ipv6-prefix"
+        ],
+        "space":      "s46-cont-mapt-options",
+        "type":        "record"
+    },
+    {
+        "code":        91,
+        "encapsulate": "",
+        "name":        "s46-dmr",
+        "space":       "s46-cont-mapt-options",
+        "type":         "ipv6-prefix"
+    },
+    {
+        "code":        90,
+        "encapsulate": "",
+        "name":        "s46-br",
+        "space":       "s46-cont-lw-options",
+        "type":         "ipv6-address"
+    },
+    {
+        "code":        92,
+        "encapsulate": "s46-v4v6bind-options",
+        "name":        "s46-v4v6bind",
+        "record-types": [
+            "ipv4-address",
+            "ipv6-prefix"
+        ],
+        "space":      "s46-cont-lw-options",
+        "type":        "record"
+    },
+    {
+        "code":        93,
+        "encapsulate": "",
+        "name":        "s46-portparams",
+        "record-types": [
+            "uint8",
+            "psid"
+        ],
+        "space":      "s46-rule-options",
+        "type":        "record"
+    },
+    {
+        "code":        93,
+        "encapsulate": "",
+        "name":        "s46-portparams",
+        "record-types": [
+            "uint8",
+            "psid"
+        ],
+        "space":      "s46-v4v6bind-options",
+        "type":        "record"
+    }
+]
