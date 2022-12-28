@@ -127,7 +127,7 @@ namespace :unittest do
 
             if with_cov_tests
                 out = `"#{GO}" tool cover -func=coverage.out`
-            
+
                 puts out, ''
 
                 problem = false
@@ -314,7 +314,7 @@ namespace :run do
     task :doc => DOC_CODEBASE do
         if OS == "macos"
             system "open", DOC_INDEX
-        elsif OS == "linux" || OS == "FreeBSD" 
+        elsif OS == "linux" || OS == "FreeBSD"
             system "xdg-open", DOC_INDEX
         else
             fail "operating system (#{OS}) not supported"
@@ -352,6 +352,35 @@ namespace :lint do
             sh GOLANGCILINT, "run", *opts
         end
     end
+
+    desc 'Check shell scripts
+        FIX - fix linting issues - default: false'
+    task :shell => [GIT, SHELLCHECK] do
+        # Get all files committed to git that have shell-specific terminations.
+        files = []
+        Open3.pipeline_r(
+            [GIT, "ls-files"],
+            ["grep", "-E", "\.sh$|\.prerm$|\.postinst"],
+        ) {|output|
+          output.each_line {|line|
+            files += [line.rstrip]
+          }
+        }
+
+        # Add files that are missing terminatons or ar more difficult to match.
+        files += ['utils/git-hooks/prepare-commit-msg']
+        files += ['utils/git-hooks-install']
+
+        # Do the checking or fixing.
+        if ENV["FIX"] == "true"
+            Open3.pipeline(
+                [SHELLCHECK, "-f", "diff", *files],
+                [GIT, "apply", "--allow-empty"],
+            )
+        else
+            sh SHELLCHECK, *files
+        end
+    end
 end
 
 
@@ -375,7 +404,7 @@ namespace :db do
         if dbhost.include? ':'
             dbhost, dbport = dbhost.split(':')
         end
-        
+
         ENV["STORK_DATABASE_HOST"] = dbhost
         ENV["STORK_DATABASE_PORT"] = dbport
         ENV["STORK_DATABASE_USER_NAME"] = dbuser
@@ -466,14 +495,14 @@ namespace :db do
             PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
             "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
         ], [
-            "xargs", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts 
+            "xargs", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts
         ])
 
         Open3.pipeline([
             PSQL, *psql_select_opts, *psql_access_opts, dbmaintenance,
             "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
         ], [
-            "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts 
+            "xargs", "-P", "16", "-n", "1", "-r", DROPUSER, *psql_access_opts
         ])
     end
 end
@@ -506,6 +535,7 @@ namespace :gen do
     end
 end
 
+
 namespace :update do
     desc 'Update Angular
     VERSION - target Angular version - required'
@@ -535,6 +565,7 @@ namespace :update do
         end
     end
 end
+
 
 namespace :prepare do
     desc 'Install the external dependencies related to the development'

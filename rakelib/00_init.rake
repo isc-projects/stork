@@ -208,7 +208,7 @@ def add_version_guard(task_name, version)
         # Creates a new version stamp with a timestamp before the guarded task
         # execution.
         FileUtils.touch [version_stamp], mtime: task.timestamp
-    end 
+    end
 end
 
 # Defines a file task with no logic and always has the "not needed" status.
@@ -225,7 +225,7 @@ def create_not_needed_file_task(task_name)
         def task.timestamp # :nodoc:
             Time.at 0
         end
-        
+
         def task.needed?
             false
         end
@@ -343,7 +343,7 @@ case uname.rstrip
     when "FreeBSD"
         OS="FreeBSD"
     when "OpenBSD"
-        OS="OpenBSD"    
+        OS="OpenBSD"
     else
         puts "ERROR: Unknown/unsupported OS: %s" % UNAME
         fail
@@ -377,6 +377,7 @@ dlv_ver='v1.8.3'
 gdlv_ver='v1.8.0'
 bundler_ver='2.3.8'
 storybook_ver='6.5.12'
+shellcheck_ver='0.9.0'
 
 # System-dependent variables
 case OS
@@ -386,6 +387,7 @@ when "macos"
   node_suffix="darwin-x64"
   golangcilint_suffix="darwin-amd64"
   chrome_drv_suffix="mac64"
+  shellcheck_suffix="darwin.x86_64"
   puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
   puts "WARNING: for the developers' convenience only."
 when "linux"
@@ -394,6 +396,7 @@ when "linux"
   node_suffix="linux-x64"
   golangcilint_suffix="linux-amd64"
   chrome_drv_suffix="linux64"
+  shellcheck_suffix="linux.x86_64"
 when "FreeBSD"
   go_suffix="freebsd-amd64"
   golangcilint_suffix="freebsd-amd64"
@@ -421,8 +424,11 @@ file go_tools_dir => [gopath]
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
+shell_dir = File.join(tools_dir, "shell")
+directory shell_dir
+
 # We use the "bundle" gem to manage the dependencies. The "bundle" package is
-# installed using the "gem" executable in the tools/ruby/gems directory, and 
+# installed using the "gem" executable in the tools/ruby/gems directory, and
 # the link is created in the tools/ruby/bin directory. Next, Ruby dependencies
 # are installed using the "bundle". It creates the tools/ruby/ruby/[VERSION]/
 # directory with "bin" and "gems" subdirectories and uses these directories as
@@ -501,7 +507,7 @@ def detect_chrome_binary()
     elsif OS == 'macos'
         chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
     end
-    
+
     # For each possible location check if the binary exists.
     chrome_locations.each do |loc|
         if File.exist?(loc)
@@ -667,7 +673,7 @@ add_version_guard(STORYBOOK, storybook_ver)
 #     elsif chrome_version.include? '93.'
 #         chrome_drv_version = '93.0.4577.63'
 #     elsif chrome_version.include? '94.'
-#         chrome_drv_version = '94.0.4606.61' 
+#         chrome_drv_version = '94.0.4606.61'
 #     end
 
 #     Dir.chdir(tools_dir) do
@@ -692,7 +698,7 @@ file go => [WGET, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         FileUtils.rm_rf("go")
         fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "go.tar.gz"
-        sh "tar", "-zxf", "go.tar.gz" 
+        sh "tar", "-zxf", "go.tar.gz"
         sh "rm", "go.tar.gz"
     end
     sh "touch", "-c", go
@@ -777,6 +783,22 @@ file golangcilint => [WGET, GO, TAR, go_tools_dir] do
 end
 GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
 add_version_guard(GOLANGCILINT, golangcilint_ver)
+
+SHELLCHECK = File.join(shell_dir, "shellcheck")
+file SHELLCHECK => [WGET, TAR, shell_dir] do
+    Dir.chdir(shell_dir) do
+        # Download the shellcheck binary.
+        fetch_file "https://github.com/koalaman/shellcheck/releases/download/v#{shellcheck_ver}/shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz", "shellcheck.tar.xz"
+        sh "mkdir", "-p", "tmp"
+        sh TAR, "-xf", "shellcheck.tar.xz", "-C", "tmp", "--strip-components=1"
+        sh "mv", "tmp/shellcheck", "."
+        sh "rm", "-rf", "tmp"
+        sh "rm", "-f", "shellcheck.tar.xz"
+    end
+    sh "touch", "-c", SHELLCHECK
+    sh SHELLCHECK, "--version"
+end
+add_version_guard(SHELLCHECK, shellcheck_ver)
 
 RICHGO = "#{gobin}/richgo"
 file RICHGO => [GO] do
