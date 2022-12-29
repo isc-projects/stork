@@ -5,8 +5,7 @@
 set -e
 
 # Check if the docker-compose exists
-if ! [ -x $(command -v docker-compose) ]
-then
+if ! command -v docker-compose > /dev/null; then
     echo "The docker-compose command could not be found"
     exit 127
 fi
@@ -97,13 +96,13 @@ then
         echo "Enter CloudSmith access token (or leave empty):"
         # No echo the secret
         stty -echo
-        read ACCESS_TOKEN
+        read -r ACCESS_TOKEN
         stty echo
     fi
 fi
 
 PREMIUM_COMPOSE=
-if ! [ -z "${ACCESS_TOKEN}" ]
+if [ -n "${ACCESS_TOKEN}" ]
 then
     PREMIUM_COMPOSE="-f${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
 else

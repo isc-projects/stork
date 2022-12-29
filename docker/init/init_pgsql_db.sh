@@ -1,6 +1,10 @@
+#!/bin/bash
+
+set -eu
+
 echo "Database type: ${DB_TYPE}"
 
-until PGPASSWORD=${DB_ROOT_PASSWORD} psql -h ${DB_HOST} -U ${DB_ROOT_USER} -c "SELECT 1" > /dev/null 2>&1;
+until PGPASSWORD=${DB_ROOT_PASSWORD} psql -h "${DB_HOST}" -U "${DB_ROOT_USER}" -c "SELECT 1" > /dev/null 2>&1;
 do
     echo "Waiting for database connection..."
     sleep 5
@@ -11,19 +15,20 @@ echo "CREATE USER"
 create_user_query="CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
-    -U ${DB_ROOT_USER} \
-    -h ${DB_HOST} \
-    -c "$create_user_query"
+    -U "${DB_ROOT_USER}" \
+    -h "${DB_HOST}" \
+    -c "${create_user_query}"
 
 echo "Checking if the database exists"
 
+exist_query="\c ${DB_NAME}"
+set +e
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
-        -U ${DB_ROOT_USER} \
-        -h ${DB_HOST} \
-        -d ${DB_NAME} \
-        -c "$exist_query"
-
+    -U "${DB_ROOT_USER}" \
+    -h "${DB_HOST}" \
+    -d "${DB_NAME}" \
+    -c "${exist_query}"
 has_db=$?
 set -e
 
@@ -33,17 +38,17 @@ then
     create_db_query="CREATE DATABASE ${DB_NAME};"
     PGPASSWORD=${DB_ROOT_PASSWORD} \
     psql \
-        -U ${DB_ROOT_USER} \
-        -h ${DB_HOST} \
-        -c "$create_db_query"
+        -U "${DB_ROOT_USER}" \
+        -h "${DB_HOST}" \
+        -c "${create_db_query}"
 fi
 
 grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
-    -U ${DB_ROOT_USER} \
-    -h ${DB_HOST} \
-    -c "$grant_query"
+    -U "${DB_ROOT_USER}" \
+    -h "${DB_HOST}" \
+    -c "${grant_query}"
 
 if [ $has_db -eq 0 ]
 then
@@ -51,17 +56,19 @@ then
 fi
 
 echo "Initializing the database"
-kea-admin db-init ${DB_TYPE} \
-    -u ${DB_USER} \
-    -p ${DB_PASSWORD} \
-    -n ${DB_NAME} \
-    -h ${DB_HOST}
+kea-admin db-init "${DB_TYPE}" \
+    -u "${DB_USER}" \
+    -p "${DB_PASSWORD}" \
+    -n "${DB_NAME}" \
+    -h "${DB_HOST}"
 
 echo "Seed database"
-seed_file="${BASH_SOURCE%/*}/init_pgsql_query.sql"
+path=$(dirname "${BASH_SOURCE[0]}")
+seed_file="${path}/init_pgsql_query.sql"
 
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
-    -U ${DB_ROOT_USER} \
-    -h ${DB_HOST} \
-    -d ${DB_NAME} < $seed_file
+    -U "${DB_ROOT_USER}" \
+    -h "${DB_HOST}" \
+    -d "${DB_NAME}" \
+    < "${seed_file}"

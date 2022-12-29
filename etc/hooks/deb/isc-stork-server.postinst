@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -eu
 
 adduser --quiet --system --group --home /var/lib/ \
         --no-create-home --disabled-password --disabled-login \

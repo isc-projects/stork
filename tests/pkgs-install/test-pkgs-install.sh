@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e -x
+
+set -eux
+
 PKGS_DIR=$1
 
 PKG_TYPES="deb rpm"
@@ -21,7 +23,7 @@ function cleanup {
 trap cleanup ERR
 
 for pkg_type in $PKG_TYPES; do
-    if [ $pkg_type = 'deb' ]; then
+    if [ "${pkg_type}" = 'deb' ]; then
         cntr="u1804-stork"
         image="ubuntu/bionic/amd64"
         install="dpkg -i"
@@ -37,27 +39,27 @@ for pkg_type in $PKG_TYPES; do
 
     lxc launch images:$image $cntr
 
-    pkgs=`ls $PKGS_DIR/isc-stork*$pkg_type`
+    pkgs=$(ls "${PKGS_DIR}"/isc-stork*"${pkg_type}")
     for file in $pkgs; do
-        lxc file push $file $cntr/root/$(basename $file)
+        lxc file push "${file}" "${cntr}/root/$(basename "${file}")"
     done
     lxc exec $cntr -- ls -al /root
 
     #lxc exec $cntr -- apt-get update
 
     for file in $pkgs; do
-        lxc exec $cntr -- $install /root/$(basename $file)
-        pkg_name=`echo $file | sed -n 's/.*\(isc-stork-[a-z]*\).*/\1/p'`
-        if [ $pkg_name = "isc-stork-agent" ]; then
-            lxc exec $cntr -- systemctl enable $pkg_name
-            lxc exec $cntr -- systemctl start $pkg_name
-            lxc exec $cntr -- systemctl status $pkg_name
+        lxc exec "${cntr}" -- "${install}" "/root/$(basename "${file}")"
+        pkg_name=$(echo "${file}" | sed -n 's/.*\(isc-stork-[a-z]*\).*/\1/p')
+        if [ "${pkg_name}" = "isc-stork-agent" ]; then
+            lxc exec $cntr -- systemctl enable "${pkg_name}"
+            lxc exec $cntr -- systemctl start "${pkg_name}"
+            lxc exec $cntr -- systemctl status "${pkg_name}"
         fi
 
         # check number of files in installed package
-        lines_cnt=`lxc exec $cntr -- $get_pkg_files $pkg_name | wc -l`
+        lines_cnt=$(lxc exec "${cntr}" -- "${get_pkg_files}" "${pkg_name}" | wc -l)
         echo "$pkg_name lines: $lines_cnt"
-        if [ $lines_cnt != ${PKG_FILES["$pkg_name-$pkg_type"]} ]; then
+        if [ "${lines_cnt}" != "${PKG_FILES["${pkg_name}-${pkg_type}"]}" ]; then
             echo "wrong number of files in $pkg_type package $pkg_name"
             exit 1
         fi

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -eu
 
 pw group add stork-server || /bin/true
 pw user add -n stork-server -c "Stork Server User" -g stork-server || /bin/true

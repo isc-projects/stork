@@ -1,12 +1,14 @@
 #!/bin/sh
 
-set -e
+set -eu
 
 # create folders for storing certs and agent token,
 # they should be available to owner ie. stork-agent user
 home_dir=/var/lib/stork-agent
-mkdir -p -m 700 $home_dir/certs
-mkdir -p -m 700 $home_dir/tokens
+mkdir -p "${home_dir}/certs"
+mkdir -p "${home_dir}/tokens"
+chmod 700 "${home_dir}/certs"
+chmod 700 "${home_dir}/tokens"
 
 # add stork-agent user
 adduser --quiet --system --group --home $home_dir \
@@ -14,14 +16,14 @@ adduser --quiet --system --group --home $home_dir \
         --gecos "Stork Agent User" stork-agent >/dev/null
 
 # add stork-agent user to bind so it can read its config files
-if [ $(getent group bind) ]; then
+if getent group bind > /dev/null; then
     usermod -aG bind stork-agent
 fi
 
 # add stork-agent user to kea so it can read its config files
-if [ $(getent group _kea) ]; then
+if getent group _kea > /dev/null; then
     usermod -aG _kea stork-agent
 fi
 
 # change ownership of all folders and files in home dir to stork-agent user
-chown -R stork-agent $home_dir
+chown -R stork-agent "${home_dir}"

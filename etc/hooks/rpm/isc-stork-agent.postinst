@@ -1,27 +1,29 @@
 #!/bin/sh
 
-set -e
+set -eu
 
 # create folders for storing certs and agent token,
 # they should be available to owner ie. stork-agent user
 home_dir=/var/lib/stork-agent
-mkdir -p -m 700 $home_dir/certs
-mkdir -p -m 700 $home_dir/tokens
+mkdir -p "${home_dir}/certs"
+mkdir -p "${home_dir}/tokens"
+chmod 700 "${home_dir}/certs"
+chmod 700 "${home_dir}/tokens"
 
 # add stork-agent user if does not exist
-if [ ! $(getent passwd stork-agent) ]; then
-    useradd --system --home-dir $home_dir stork-agent
+if ! getent passwd stork-agent > /dev/null; then
+    useradd --system --home-dir "${home_dir}" stork-agent
 fi
 
 # add stork-agent user to named so it can read its config files
-if [ $(getent group named) ]; then
+if getent group named > /dev/null; then
     usermod -aG named stork-agent
 fi
 
 # add stork-agent user to kea so it can read its config files
-if [ $(getent group _kea) ]; then
+if getent group _kea > /dev/null; then
     usermod -aG _kea stork-agent
 fi
 
 # change ownership of all folders and files in home dir to stork-agent user
-chown -R stork-agent $home_dir
+chown -R stork-agent "${home_dir}"

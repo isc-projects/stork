@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 case "$1" in
     0) # This is a yum/dnf remove.
         userdel stork-agent >/dev/null || /bin/true

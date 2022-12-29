@@ -65,7 +65,7 @@ RUN apt-get update \
 #############
 
 # Install main dependencies
-FROM base AS prepare 
+FROM base AS prepare
 WORKDIR /app/rakelib
 COPY rakelib/00_init.rake ./
 WORKDIR /app/rakelib/init_deps
@@ -218,7 +218,7 @@ RUN apt-get update \
         --no-install-recommends \
         curl=7.64.* \
         prometheus-node-exporter=0.17.* \
-        default-mysql-client=1.0.* \ 
+        default-mysql-client=1.0.* \
         postgresql-client=11+* \
         apt-transport-https=1.8.* \
         gnupg=2.2.* \
@@ -272,7 +272,7 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
 # for this stage.
 # hadolint ignore=DL3006
 FROM kea${KEA_PREMIUM}-base AS kea
-# Install agent    
+# Install agent
 COPY --from=agent-builder /app/dist/agent /
 # Database
 WORKDIR /var/lib/db
@@ -284,7 +284,7 @@ ENV DB_HOST=172.20.0.115
 ENV DB_USER=kea
 ENV DB_PASSWORD=kea
 ENV DB_NAME=kea
-ENTRYPOINT [ "/bin/bash", "-c", \
+ENTRYPOINT [ "/bin/sh", "-c", \
         "/var/lib/db/init_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
 # Incoming port
 EXPOSE 8080
@@ -324,7 +324,7 @@ RUN apt-get update \
         && mkdir -p /var/lib/stork-agent \
         && chown bind:bind /var/lib/stork-agent \
         && chmod 755 /var/lib/stork-agent
-# Install agent    
+# Install agent
 COPY --from=agent-builder /app/dist/agent/usr/bin /usr/bin
 # Use dedicated bind user
 USER bind

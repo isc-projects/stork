@@ -129,7 +129,7 @@ func sseMiddleware(next http.Handler, eventCenter eventcenter.EventCenter) http.
 // Install a middleware that is serving Agent installer.
 func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
 	// Agent installer as Bash script.
-	const agentInstallerScript = `#!/bin/bash
+	const agentInstallerScript = `#!/bin/sh
 set -e -x
 
 rm -f /tmp/isc-stork-agent.{deb,rpm,apk}

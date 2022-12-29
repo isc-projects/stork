@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 # This script install user-side git commit hooks. You are supposed to run it
 # only once for each repo (and very infrequently afterwards, once each time
 # the git hooks change).
@@ -14,7 +16,7 @@ GITDIR=${TOPDIR}/.git
 
 if test ! -d ${GITDIR}; then
    echo "ERROR: Could not find ${GITDIR} in ${TOPDIR}"
-   exit -1
+   exit 1
 fi
 
 echo "Installing hooks in ${GITDIR}/hooks"
