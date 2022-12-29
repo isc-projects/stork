@@ -137,6 +137,11 @@ danger:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake lint:git
 
+lint_shell:
+  extends: .base_build_debian
+  script:
+    - rake lint:shell
+
 tarball:
   stage: build
   rules:
