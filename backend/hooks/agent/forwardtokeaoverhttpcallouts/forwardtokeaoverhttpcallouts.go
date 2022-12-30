@@ -10,5 +10,5 @@ import (
 type BeforeForwardToKeaOverHTTPCallouts interface {
 	hooks.CalloutCarrier
 	// Called before forwarding a command to Kea over HTTP.
-	OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq)
+	OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) error
 }

@@ -7,6 +7,7 @@ import (
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
 	"isc.org/stork/hooksutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Facade for all callouts. It defines the specific calling method for
@@ -28,9 +29,9 @@ func NewHookManager() *HookManager {
 }
 
 // Callout executed before forwarding a command to Kea over HTTP.
-func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) {
-	hooksutil.CallSequential(hm.GetExecutor(), func(carrier forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts) int {
-		carrier.OnBeforeForwardToKeaOverHTTP(ctx, in)
-		return 0
+func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) error {
+	errors := hooksutil.CallSequential(hm.GetExecutor(), func(carrier forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts) error {
+		return carrier.OnBeforeForwardToKeaOverHTTP(ctx, in)
 	})
+	return storkutil.CombineErrors("error in the onBeforeForwardToKeaOverHTTP callout", errors)
 }

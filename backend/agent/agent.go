@@ -303,7 +303,9 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
 	// Call hook
-	sa.hookManager.OnBeforeForwardToKeaOverHTTP(ctx, in)
+	if err := sa.hookManager.OnBeforeForwardToKeaOverHTTP(ctx, in); err != nil {
+		return nil, err
+	}
 
 	// prepare base response
 	response := &agentapi.ForwardToKeaOverHTTPRsp{
