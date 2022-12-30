@@ -424,9 +424,6 @@ file go_tools_dir => [gopath]
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
-shell_dir = File.join(tools_dir, "shell")
-directory shell_dir
-
 # We use the "bundle" gem to manage the dependencies. The "bundle" package is
 # installed using the "gem" executable in the tools/ruby/gems directory, and
 # the link is created in the tools/ruby/bin directory. Next, Ruby dependencies
@@ -784,9 +781,9 @@ end
 GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
 add_version_guard(GOLANGCILINT, golangcilint_ver)
 
-SHELLCHECK = File.join(shell_dir, "shellcheck")
-file SHELLCHECK => [WGET, TAR, shell_dir] do
-    Dir.chdir(shell_dir) do
+shellcheck = File.join(tools_dir, "shellcheck")
+file shellcheck => [WGET, TAR, tools_dir] do
+    Dir.chdir(tools_dir) do
         # Download the shellcheck binary.
         fetch_file "https://github.com/koalaman/shellcheck/releases/download/v#{shellcheck_ver}/shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz", "shellcheck.tar.xz"
         sh "mkdir", "-p", "tmp"
@@ -795,9 +792,10 @@ file SHELLCHECK => [WGET, TAR, shell_dir] do
         sh "rm", "-rf", "tmp"
         sh "rm", "-f", "shellcheck.tar.xz"
     end
-    sh "touch", "-c", SHELLCHECK
-    sh SHELLCHECK, "--version"
+    sh "touch", "-c", shellcheck
+    sh shellcheck, "--version"
 end
+SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system)
 add_version_guard(SHELLCHECK, shellcheck_ver)
 
 RICHGO = "#{gobin}/richgo"

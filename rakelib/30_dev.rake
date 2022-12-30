@@ -363,13 +363,13 @@ namespace :lint do
             ["grep", "-E", "\.sh$|\.prerm$|\.postinst"],
         ) {|output|
           output.each_line {|line|
-            files += [line.rstrip]
+            files.append(line.rstrip)
           }
         }
 
-        # Add files that are missing terminatons or ar more difficult to match.
-        files += ['utils/git-hooks/prepare-commit-msg']
-        files += ['utils/git-hooks-install']
+        # Add other files that are missing terminatons or ar more difficult to match.
+        files.append('utils/git-hooks/prepare-commit-msg')
+        files.append('utils/git-hooks-install')
 
         # Do the checking or fixing.
         if ENV["FIX"] == "true"
