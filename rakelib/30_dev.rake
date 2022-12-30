@@ -30,17 +30,27 @@ end
 #############
 
 namespace :fmt do
-    desc 'Make frontend source code prettier'
+    desc 'Make frontend source code prettier.
+        SCOPE - the files that the prettier should process, relative to webui directory - default: **/*'
     task :ui => [NPX] + WEBUI_CODEBASE do
+        scope = "**/*"
+        if !ENV["SCOPE"].nil?
+            scope = ENV["SCOPE"]
+        end
         Dir.chdir('webui') do
-            sh NPX, "prettier", "--config", ".prettierrc", "--write", "**/*"
+            sh NPX, "prettier", "--config", ".prettierrc", "--write", scope
         end
     end
 
-    desc 'Format backend source code'
+    desc 'Format backend source code.
+        SCOPE - the files that should be formatted, relative to the backend directory - default: ./...'
     task :backend => [GO] + go_codebase do
+        scope = "./..."
+        if !ENV["SCOPE"].nil?
+            scope = ENV["SCOPE"]
+        end
         Dir.chdir('backend') do
-            sh GO, "fmt", "./..."
+            sh GO, "fmt", scope
         end
     end
 end
@@ -542,15 +552,23 @@ namespace :gen do
         end
     end
     desc 'Generate standard DHCP option definitions'
-    task :option_defs => [CODE_GEN_BINARY_FILE] do
+    task :std_option_defs => [CODE_GEN_BINARY_FILE] do
+        puts 'Regenerating standard option definitions in Go files.'
         sh CODE_GEN_BINARY_FILE, "--language", "golang", "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
             "--output", "backend/appcfg/kea/stdoptiondef6.go", "--template", "backend/appcfg/kea/stdoptiondef6.go.template",
             "--top-level-type", "dhcpOptionDefinition", "--field-type", "record-types:DHCPOptionType",
             "--field-name", "type:OptionType"
+
+        puts 'Formatting the generated files.'
+        ENV["SCOPE"] = "./appcfg/..."
         Rake::Task["fmt:backend"].invoke()
 
+        puts 'Regenerating standard option definitions in Typescript files.'
         sh CODE_GEN_BINARY_FILE, "--language", "typescript", "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
             "--output", "webui/src/app/std-dhcpv6-option-defs.ts", "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
+
+        puts 'Formatting the generated files.'
+        ENV["SCOPE"] = "src/app/std*option-defs.ts"
         Rake::Task["fmt:ui"].invoke()
     end
 end
