@@ -1,7 +1,7 @@
 /**
  * Attention! Generated Code!
  *
- * Run "rake gen:option_defs" to regenerate the option definitions
+ * Run "rake gen:std_option_defs" to regenerate the option definitions
  * specified in the "codegen/std_dhcpv6_option_def.json" using the
  * template file "std-dhcpv6-option-defs.ts.template" into the
  * "std-dhcpv6-option-defs.ts".

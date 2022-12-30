@@ -2,7 +2,7 @@ package keaconfig
 
 // Attention! Generated Code!
 //
-// Run "rake gen:option_defs" to regenerate the option definitions
+// Run "rake gen:std_option_defs" to regenerate the option definitions
 // specified in the "codegen/std_dhcpv6_option_def.json" using the
 // template file "stdoptiondef6.go.template" into the "stdoptiondef6.go".
 
