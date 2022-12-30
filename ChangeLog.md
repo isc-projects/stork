@@ -1,3 +1,10 @@
+* 263 [build] andrei
+
+    Added the lint:shell rake task which calls shellcheck on all shell scripts.
+    Added a CI step that calls this linter. Improved the shell scripts to
+    appease the shellcheck warnings.
+    (Gitlab #876)
+
 * 262 [bug] slawek
 
     Removed duplicated statuses of daemons on the machine page when the
