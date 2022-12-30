@@ -26,7 +26,6 @@ for Stork, can be found on ISC's `Stork project homepage
    backend-api
    devel
    demo
-   hook
 
 
 .. toctree::
