@@ -14,10 +14,8 @@ PKG_FILES=(
     ["isc-stork-server-deb"]="128")
 
 function cleanup {
-    set +e
-    lxc stop $cntr || true
-    lxc delete $cntr || true
-    set -e
+    lxc stop "${cntr}" || true
+    lxc delete "${cntr}" || true
 }
 
 trap cleanup ERR
