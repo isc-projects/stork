@@ -83,6 +83,21 @@ func (he *HookExecutor) HasRegistered(calloutSpecificationType reflect.Type) boo
 	return ok && len(carriers) > 0
 }
 
+// Below are implemented helper functions to call the callouts. The proper
+// approach to executing the hook code depends on a given hook's
+// characteristics. Different cases will require different strategies. It's a
+// short list of ideas on what helpers may be implemented.
+//
+// - Run all registered hooks sequentially
+// - Run only one (first) registered hook
+// - Run all registered hooks sequentially until the first failure
+// - Run all registered hooks sequentially until the first success
+// - Run all registered hooks sequentially until meeting the condition
+// - Filter hooks by condition and run them sequentially
+// - Run all (or conditionally selected) hooks parallel and wait for the finish
+// - Run all (or conditionally selected) hooks parallel and forgot
+// - Run all (or conditionally selected) hooks parallel and wait for the first finish
+
 // Calls the specific callout using the caller object.
 // It can be used to monitor performance in the future.
 func callCallout[TSpecification any, TOutput any](carrier TSpecification, caller func(TSpecification) TOutput) TOutput {
