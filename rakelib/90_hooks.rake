@@ -35,8 +35,8 @@ end
 
 namespace :hook do
     desc "Init new hook directory
-        MODULE - the GO module name associated with the hook - required
-        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
+        MODULE - the name  of the hook module used in the go.mod file and as the hook directory name - required
+        HOOK_DIR - the directory containing the hooks - optional, default: #{default_hook_directory_rel}"
     task :init => [GO] do
         module_name = ENV["MODULE"]
         if module_name.nil?
