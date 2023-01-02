@@ -121,10 +121,9 @@ func SetupLoggingLevel() {
 			"ERROR": log.ErrorLevel,
 		}
 
-		// fmt.Printf("STORK_LOG_LEVEL specified %s, %s\n", value, levels[value])
-		if levels[value] != log.PanicLevel {
-			fmt.Printf("STORK_LOG_LEVEL specified, setting logging level to %s\n", levels[value])
-			log.SetLevel(levels[value])
+		if level, ok := levels[value]; ok {
+			fmt.Printf("STORK_LOG_LEVEL specified, setting logging level to %s\n", level)
+			log.SetLevel(level)
 		} else {
 			fmt.Printf("STORK_LOG_LEVEL has invalid log level: %s, ignoring.\n", value)
 		}
