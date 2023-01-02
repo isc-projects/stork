@@ -1,0 +1,1184 @@
+[
+    {
+        "name": "subnet-mask",
+        "code": 1,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "time-offset",
+        "code": 2,
+        "space": "dhcp4",
+        "type": "int32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "routers",
+        "code": 3,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "time-servers",
+        "code": 4,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "name-servers",
+        "code": 5,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "domain-name-servers",
+        "code": 6,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "log-servers",
+        "code": 7,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "cookie-servers",
+        "code": 8,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "lpr-servers",
+        "code": 9,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "impress-servers",
+        "code": 10,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "resource-location-servers",
+        "code": 11,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "host-name",
+        "code": 12,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "boot-size",
+        "code": 13,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "merit-dump",
+        "code": 14,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "domain-name",
+        "code": 15,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "swap-server",
+        "code": 16,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "root-path",
+        "code": 17,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "extensions-path",
+        "code": 18,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "ip-forwarding",
+        "code": 19,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "non-local-source-routing",
+        "code": 20,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "policy-filter",
+        "code": 21,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "max-dgram-reassembly",
+        "code": 22,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "default-ip-ttl",
+        "code": 23,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "path-mtu-aging-timeout",
+        "code": 24,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "path-mtu-plateau-table",
+        "code": 25,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "interface-mtu",
+        "code": 26,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "all-subnets-local",
+        "code": 27,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "broadcast-address",
+        "code": 28,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "perform-mask-discovery",
+        "code": 29,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "mask-supplier",
+        "code": 30,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "router-discovery",
+        "code": 31,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "router-solicitation-address",
+        "code": 32,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "static-routes",
+        "code": 33,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "trailer-encapsulation",
+        "code": 34,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "arp-cache-timeout",
+        "code": 35,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "ieee802-3-encapsulation",
+        "code": 36,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "default-tcp-ttl",
+        "code": 37,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "tcp-keepalive-interval",
+        "code": 38,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "tcp-keepalive-garbage",
+        "code": 39,
+        "space": "dhcp4",
+        "type": "bool",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nis-domain",
+        "code": 40,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "nis-servers",
+        "code": 41,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "ntp-servers",
+        "code": 42,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "vendor-encapsulated-options",
+        "code": 43,
+        "space": "dhcp4",
+        "type": "empty",
+        "array": false,
+        "encapsulate": "vendor-encapsulated-options-space"
+    },
+    {
+        "name": "netbios-name-servers",
+        "code": 44,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "netbios-dd-server",
+        "code": 45,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "netbios-node-type",
+        "code": 46,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "netbios-scope",
+        "code": 47,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "font-servers",
+        "code": 48,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "x-display-manager",
+        "code": 49,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-requested-address",
+        "code": 50,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-lease-time",
+        "code": 51,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-option-overload",
+        "code": 52,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-message-type",
+        "code": 53,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-server-identifier",
+        "code": 54,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-parameter-request-list",
+        "code": 55,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-message",
+        "code": 56,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-max-message-size",
+        "code": 57,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-renewal-time",
+        "code": 58,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-rebinding-time",
+        "code": 59,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "vendor-class-identifier",
+        "code": 60,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-client-identifier",
+        "code": 61,
+        "space": "dhcp4",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nwip-domain-name",
+        "code": 62,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nwip-suboptions",
+        "code": 63,
+        "space": "dhcp4",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nisplus-domain-name",
+        "code": 64,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nisplus-servers",
+        "code": 65,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "tftp-server-name",
+        "code": 66,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "boot-file-name",
+        "code": 67,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "mobile-ip-home-agent",
+        "code": 68,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "smtp-server",
+        "code": 69,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "pop-server",
+        "code": 70,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nntp-server",
+        "code": 71,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "www-server",
+        "code": 72,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "finger-server",
+        "code": 73,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "irc-server",
+        "code": 74,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "streettalk-server",
+        "code": 75,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "streettalk-directory-assistance-server",
+        "code": 76,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "user-class",
+        "code": 77,
+        "space": "dhcp4",
+        "type": "binary",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "slp-directory-agent",
+        "code": 78,
+        "space": "dhcp4",
+        "type": "record",
+        "array": true,
+        "record-types": [
+            "bool",
+            "ipv4-address"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "slp-service-scope",
+        "code": 79,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "bool",
+            "string"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "fqdn",
+        "code": 81,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "uint8",
+            "uint8",
+            "fqdn"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-agent-options",
+        "code": 82,
+        "space": "dhcp4",
+        "type": "empty",
+        "array": false,
+        "encapsulate": "dhcp-agent-options-space"
+    },
+    {
+        "name": "nds-servers",
+        "code": 85,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nds-tree-name",
+        "code": 86,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "nds-context",
+        "code": 87,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "bcms-controller-names",
+        "code": 88,
+        "space": "dhcp4",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "bcms-controller-address",
+        "code": 89,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "authenticate",
+        "code": 90,
+        "space": "dhcp4",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "client-last-transaction-time",
+        "code": 91,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "associated-ip",
+        "code": 92,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "client-system",
+        "code": 93,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": true,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "client-ndi",
+        "code": 94,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "uint8",
+            "uint8"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "uuid-guid",
+        "code": 97,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "uap-servers",
+        "code": 98,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "geoconf-civic",
+        "code": 99,
+        "space": "dhcp4",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "pcode",
+        "code": 100,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+    
+        "encapsulate": ""
+    },
+    {
+        "name": "tcode",
+        "code": 101,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "v6-only-preferred",
+        "code": 108,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "netinfo-server-address",
+        "code": 112,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "netinfo-server-tag",
+        "code": 113,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "v4-captive-portal",
+        "code": 114,
+        "space": "dhcp4",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "auto-config",
+        "code":  116,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "name-service-search",
+        "code": 117,
+        "space": "dhcp4",
+        "type": "uint16",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "subnet-selection",
+        "code": 118,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "domain-search",
+        "code": 119,
+        "space": "dhcp4",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "vivco-suboptions",
+        "code": 124,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "vivso-suboptions",
+        "code": 125,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "pana-agent",
+        "code": 136,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "v4-lost",
+        "code": 137,
+        "space": "dhcp4",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "capwap-ac-v4",
+        "code": 138,
+        "space": "dhcp4",
+        "type": "ipv4-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "sip-ua-cs-domains",
+        "code": 141,
+        "space": "dhcp4",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "rdnss-selection",
+        "code": 146,
+        "space": "dhcp4",
+        "type": "record",
+        "array": true,
+        "record-types": [
+            "uint8",
+            "ipv4-address",
+            "ipv4-address",
+            "fqdn"
+        ],
+        
+        "encapsulate": ""
+    },
+    {
+        "name": "status-code",
+        "code": 151,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "string"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "base-time",
+        "code": 152,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "start-time-of-state",
+        "code": 153,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "query-start-time",
+        "code": 154,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "query-end-time",
+        "code": 155,
+        "space": "dhcp4",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp-state",
+        "code": 156,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "data-source",
+        "code": 157,
+        "space": "dhcp4",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "v4-portparams",
+        "code": 159,
+        "space": "dhcp4",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "psid"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "option-6rd",
+        "code": 212,
+        "space": "dhcp4",
+        "type": "record",
+        "array": true,
+        "record-types": [
+            "uint8",
+            "uint8",
+            "ipv6-address",
+            "ipv4-address"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "v4-access-domain",
+        "code": 213,
+        "space": "dhcp4",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "circuit-id",
+        "code": 1,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "remote-id",
+        "code": 2,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "docsis-device-class",
+        "code": 4,
+        "space": "dhcp-agent-options-space",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "link-selection",
+        "code": 5,
+        "space": "dhcp-agent-options-space",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "subscriber-id",
+        "code": 6,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "radius",
+        "code": 7,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "auth",
+        "code": 8,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "vendor-specific-info",
+        "code": 9,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-flags",
+        "code": 10,
+        "space": "dhcp-agent-options-space",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "server-id-override",
+        "code": 11,
+        "space": "dhcp-agent-options-space",
+        "type": "ipv4-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-id",
+        "code": 12,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "access-techno-type",
+        "code": 13,
+        "space": "dhcp-agent-options-space",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "access-network-name",
+        "code": 14,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "access-point-name",
+        "code": 15,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "access-point-bssid",
+        "code": 16,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "operator-id",
+        "code": 17,
+        "space": "dhcp-agent-options-space",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "operator-realm",
+        "code": 18,
+        "space": "dhcp-agent-options-space",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-port",
+        "code": 19,
+        "space": "dhcp-agent-options-space",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "virtual-subnet-select",
+        "code": 151,
+        "space": "dhcp-agent-options-space",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "virtual-subnet-select-ctrl",
+        "code": 152,
+        "space": "dhcp-agent-options-space",
+        "type": "empty",
+        "array": false, "encapsulate": ""
+    }
+]
