@@ -9,7 +9,7 @@ import (
 	"isc.org/stork/hooks"
 )
 
-// Tests that the ForwardToKeaOverHTTP method executes the callout point.
+// Tests that the ForwardToKeaOverHTTP method executes the callouts.
 func TestOnBeforeForwardToKeaOverHTTPCallouts(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
