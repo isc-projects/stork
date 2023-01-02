@@ -316,12 +316,12 @@ func TestBootstrap(t *testing.T) {
 	// Check the if hook manager is initialized.
 	require.NotNil(t, server.HookManager)
 	require.NotNil(t, server.HookManager.GetExecutor())
-	require.NotEmpty(t, server.HookManager.GetExecutor().GetSupportedCalloutCarrierTypes())
+	require.NotEmpty(t, server.HookManager.GetExecutor().GetTypesOfSupportedCalloutSpecifications())
 
 	// Check the if hook manager is initialized.
 	require.NotNil(t, server.HookManager)
 	require.NotNil(t, server.HookManager.GetExecutor())
-	require.NotEmpty(t, server.HookManager.GetExecutor().GetSupportedCalloutCarrierTypes())
+	require.NotEmpty(t, server.HookManager.GetExecutor().GetTypesOfSupportedCalloutSpecifications())
 
 	// Run Bootstrap again with the reload flag set.
 	err = server.Bootstrap(true)

@@ -15,7 +15,7 @@ func TestOnBeforeForwardToKeaOverHTTPCallouts(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mock := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 	mock.
 		EXPECT().
 		OnBeforeForwardToKeaOverHTTP(context.Background(), gomock.Any()).

@@ -3,8 +3,6 @@ package authenticationcallouts
 import (
 	"context"
 	"net/http"
-
-	"isc.org/stork/hooks"
 )
 
 // The logged user metadata. It's a data transfer object (DTO) to avoid using
@@ -23,7 +21,6 @@ type User struct {
 
 // Set of callouts used to perform authentication.
 type AuthenticationCallouts interface {
-	hooks.CalloutCarrier
 	// Called to perform authentication. It accepts an HTTP request (header,
 	// cookie) and the credentials provided in the login form. Returns a user
 	// metadata or error if an authentication failed.

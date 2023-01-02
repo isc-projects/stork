@@ -391,12 +391,32 @@ func TestCombineErrors(t *testing.T) {
 	// Arrange
 	err1 := errors.New("foo")
 	err2 := errors.New("bar")
+	var err3 error
 
 	// Act
-	combinedErr := CombineErrors("baz", []error{err1, err2})
+	combinedErr := CombineErrors("baz", []error{err1, err2, err3})
 
 	// Assert
 	require.ErrorContains(t, combinedErr, "baz")
 	require.ErrorContains(t, combinedErr, "bar")
 	require.ErrorContains(t, combinedErr, "foo")
+}
+
+// Test that the nil is returned on empty error list.
+func TestCombineErrorsForEmptyList(t *testing.T) {
+	// Arrange & Act
+	combinedErr := CombineErrors("baz", []error{})
+
+	// Assert
+	require.Nil(t, combinedErr)
+}
+
+// Test that the nil is returned if the error list contains only nil values.
+func TestCombineErrorsForListOfNils(t *testing.T) {
+	// Arrange
+	// Arrange & Act
+	combinedErr := CombineErrors("baz", []error{nil, nil, nil})
+
+	// Assert
+	require.Nil(t, combinedErr)
 }

@@ -11,7 +11,13 @@ import (
 	"isc.org/stork/hooks/server/authenticationcallouts"
 )
 
-//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go isc.org/stork/hooks/server/authenticationcallouts AuthenticationCallouts
+// Carrier mock interface for mockgen.
+type authenticationCalloutCarrier interface { //nolint:unused,deadcode
+	authenticationcallouts.AuthenticationCallouts
+	hooks.CalloutCarrier
+}
+
+//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
 
 // Test that the authentication hook is detected properly.
 func TestHasAuthenticationHook(t *testing.T) {
@@ -19,7 +25,7 @@ func TestHasAuthenticationHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockAuthenticationCallouts(ctrl)
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 
 	hookManager := NewHookManager()
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock})
@@ -40,7 +46,7 @@ func TestAuthenticate(t *testing.T) {
 	username := "foo"
 	password := "bar"
 
-	mock := NewMockAuthenticationCallouts(ctrl)
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), &username, &password).
 		Return(&authenticationcallouts.User{
@@ -70,13 +76,13 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock1 := NewMockAuthenticationCallouts(ctrl)
+	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&authenticationcallouts.User{}, nil).
 		Times(1)
 
-	mock2 := NewMockAuthenticationCallouts(ctrl)
+	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&authenticationcallouts.User{}, nil).
@@ -99,13 +105,13 @@ func TestAuthenticateReturnError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock1 := NewMockAuthenticationCallouts(ctrl)
+	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("foo")).
 		Times(1)
 
-	mock2 := NewMockAuthenticationCallouts(ctrl)
+	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("bar")).
@@ -142,13 +148,13 @@ func TestUnauthenticate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock1 := NewMockAuthenticationCallouts(ctrl)
+	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(nil).
 		Times(1)
 
-	mock2 := NewMockAuthenticationCallouts(ctrl)
+	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(nil).
@@ -170,13 +176,13 @@ func TestUnauthenticateError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock1 := NewMockAuthenticationCallouts(ctrl)
+	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(errors.New("foo")).
 		Times(1)
 
-	mock2 := NewMockAuthenticationCallouts(ctrl)
+	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(errors.New("bar")).

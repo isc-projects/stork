@@ -54,10 +54,10 @@ func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 // Test that the callout carriers are registered properly.
 func TestRegisterCalloutCarriers(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
+	specificationType := reflect.TypeOf((*io.Closer)(nil)).Elem()
 
 	hookManager := NewHookManager([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	// Act
@@ -66,7 +66,7 @@ func TestRegisterCalloutCarriers(t *testing.T) {
 	})
 
 	// Assert
-	require.True(t, hookManager.GetExecutor().HasRegistered(carrierType))
+	require.True(t, hookManager.GetExecutor().HasRegistered(specificationType))
 }
 
 // Test that the executor getter returns a proper object.
@@ -84,11 +84,11 @@ func TestGetExecutor(t *testing.T) {
 // Test that the hook manager unregisters all callout carriers on close.
 func TestClose(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	mock := newMockCalloutCarrierFoo()
 
 	hookManager := NewHookManager([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{
@@ -106,8 +106,6 @@ func TestClose(t *testing.T) {
 // Test that the hook manager combines the errors returned on close.
 func TestCloseCombineErrors(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*io.Closer)(nil)).Elem()
-
 	mock1 := newMockCalloutCarrierFoo()
 	mock1.closeErr = errors.New("foo")
 
@@ -115,7 +113,8 @@ func TestCloseCombineErrors(t *testing.T) {
 	mock2.closeErr = errors.New("bar")
 
 	hookManager := NewHookManager([]reflect.Type{
-		carrierType,
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem(),
 	})
 
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{

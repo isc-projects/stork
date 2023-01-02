@@ -8,15 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock callout carrier interfaces.
-type mockCalloutCarrierFoo interface {
+// Foo callout specification.
+type mockCalloutSpecificationFoo interface {
 	Foo() int
-	Close() error
 }
 
-type mockCalloutCarrierBar interface {
+// Bar callout specification.
+type mockCalloutSpecificationBar interface {
 	Bar() bool
-	Close() error
 }
 
 // Foo mock callout carrier implementation.
@@ -100,7 +99,7 @@ func TestNewHookExecutor(t *testing.T) {
 	emptyExecutor := NewHookExecutor([]reflect.Type{})
 	nilExecutor := NewHookExecutor(nil)
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
 	})
 
 	// Assert
@@ -108,7 +107,7 @@ func TestNewHookExecutor(t *testing.T) {
 	require.NotNil(t, nilExecutor)
 	require.NotNil(t, executor)
 
-	require.Contains(t, executor.registeredCarriers, reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem())
+	require.Contains(t, executor.registeredCarriers, reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem())
 }
 
 // Test that the hook executor constructor panics on an invalid type (it's a
@@ -116,7 +115,7 @@ func TestNewHookExecutor(t *testing.T) {
 func TestNewHookExecutorInvalidType(t *testing.T) {
 	// Arrange
 	// Missing .Elem() call
-	invalidType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil))
+	invalidType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil))
 
 	// Assert
 	require.Panics(t, func() {
@@ -128,16 +127,16 @@ func TestNewHookExecutorInvalidType(t *testing.T) {
 // Test that the supported callout carrier is registered properly.
 func TestRegisterSupportedCalloutCarrier(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	// Act
 	executor.registerCalloutCarrier(newMockCalloutCarrierFoo())
 
 	// Assert
-	require.NotEmpty(t, executor.registeredCarriers[carrierType])
+	require.NotEmpty(t, executor.registeredCarriers[specificationType])
 }
 
 // Test that the unsupported callout carrier is not registered.
@@ -156,9 +155,9 @@ func TestRegisterUnsupportedCalloutCarrier(t *testing.T) {
 func TestUnregisterAllCalloutCarriers(t *testing.T) {
 	// Arrange
 	carrier := newMockCalloutCarrierFoo()
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 	executor.registerCalloutCarrier(carrier)
 
@@ -179,9 +178,9 @@ func TestUnregisterAllCalloutCarriersWithError(t *testing.T) {
 	failedCarrier := newMockCalloutCarrierFoo()
 	failedCarrier.closeErr = errors.New("Close failed")
 
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	executor.registerCalloutCarrier(successCarrier)
@@ -199,15 +198,15 @@ func TestUnregisterAllCalloutCarriersWithError(t *testing.T) {
 // Test that the registered callout carrier is detected as registered.
 func TestHasRegisteredForRegisteredCalloutCarrier(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	executor.registerCalloutCarrier(newMockCalloutCarrierFoo())
 
 	// Act
-	isRegistered := executor.HasRegistered(carrierType)
+	isRegistered := executor.HasRegistered(specificationType)
 
 	// Assert
 	require.True(t, isRegistered)
@@ -216,36 +215,36 @@ func TestHasRegisteredForRegisteredCalloutCarrier(t *testing.T) {
 // Test that the non-registered callout carrier is non detected as registered.
 func TestHasRegisteredForNonRegisteredCalloutCarrier(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{
-		carrierType,
+		specificationType,
 	})
 
 	// Act
-	isRegistered := executor.HasRegistered(carrierType)
+	isRegistered := executor.HasRegistered(specificationType)
 
 	// Assert
 	require.False(t, isRegistered)
 }
 
-// Test that the unsupported callout carrier is not detected as registered.
-func TestHasRegisteredForUnsupportedCalloutCarrier(t *testing.T) {
+// Test that the unsupported specification is not detected as registered.
+func TestHasRegisteredForUnsupportedSpecification(t *testing.T) {
 	// Arrange
-	carrierType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
+	specificationType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
 	executor := NewHookExecutor([]reflect.Type{})
 
 	// Act
-	isRegistered := executor.HasRegistered(carrierType)
+	isRegistered := executor.HasRegistered(specificationType)
 
 	// Assert
 	require.False(t, isRegistered)
 }
 
-// Test that the supported callout types are returned properly.
-func TestGetSupportedCarrierTypes(t *testing.T) {
+// Test that the types of the supported callout specifications are returned properly.
+func TestGetTypesOfSupportedCarrierSpecifications(t *testing.T) {
 	// Arrange
-	fooType := reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem()
-	barType := reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem()
+	fooType := reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem()
+	barType := reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem()
 
 	executor := NewHookExecutor([]reflect.Type{
 		fooType,
@@ -253,7 +252,7 @@ func TestGetSupportedCarrierTypes(t *testing.T) {
 	})
 
 	// Act
-	supportedTypes := executor.GetSupportedCalloutCarrierTypes()
+	supportedTypes := executor.GetTypesOfSupportedCalloutSpecifications()
 
 	// Assert
 	require.Len(t, supportedTypes, 2)
@@ -265,8 +264,8 @@ func TestGetSupportedCarrierTypes(t *testing.T) {
 func TestCallSequential(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem(),
 	})
 
 	fooMocks := []*mockCalloutCarrierFooImpl{
@@ -284,8 +283,8 @@ func TestCallSequential(t *testing.T) {
 	executor.registerCalloutCarrier(fooBarMock)
 
 	// Act
-	results := CallSequential(executor, func(callout mockCalloutCarrierFoo) int {
-		return callout.Foo()
+	results := CallSequential(executor, func(carrier mockCalloutSpecificationFoo) int {
+		return carrier.Foo()
 	})
 
 	// Assert
@@ -321,8 +320,8 @@ func TestCallSequential(t *testing.T) {
 func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem(),
 	})
 
 	fooMock := newMockCalloutCarrierFoo()
@@ -332,7 +331,7 @@ func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 	executor.registerCalloutCarrier(barMock)
 
 	// Act
-	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+	result := CallSingle(executor, func(carrier mockCalloutSpecificationFoo) int {
 		return carrier.Foo()
 	})
 
@@ -347,8 +346,8 @@ func TestCallSingleForOneRegisteredCallout(t *testing.T) {
 func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem(),
 	})
 
 	mocks := []*mockCalloutCarrierFooImpl{
@@ -368,7 +367,7 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 	executor.registerCalloutCarrier(barMock)
 
 	// Act
-	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+	result := CallSingle(executor, func(carrier mockCalloutSpecificationFoo) int {
 		return carrier.Foo()
 	})
 
@@ -392,12 +391,12 @@ func TestCallSingleForManyRegisteredCallouts(t *testing.T) {
 func TestCallSingleForNoRegisteredCallouts(t *testing.T) {
 	// Arrange
 	executor := NewHookExecutor([]reflect.Type{
-		reflect.TypeOf((*mockCalloutCarrierFoo)(nil)).Elem(),
-		reflect.TypeOf((*mockCalloutCarrierBar)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+		reflect.TypeOf((*mockCalloutSpecificationBar)(nil)).Elem(),
 	})
 
 	// Act
-	result := CallSingle(executor, func(carrier mockCalloutCarrierFoo) int {
+	result := CallSingle(executor, func(carrier mockCalloutSpecificationFoo) int {
 		return carrier.Foo()
 	})
 

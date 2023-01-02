@@ -11,7 +11,13 @@ import (
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
 )
 
-//go:generate mockgen -package=agent -destination=hook_mock.go isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts BeforeForwardToKeaOverHTTPCallouts
+// Carrier mock interface for mockgen.
+type beforeForwardToKeaOverHTTPCalloutCarrier interface { //nolint:unused,deadcode
+	forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts
+	hooks.CalloutCarrier
+}
+
+//go:generate mockgen -source hook_test.go -package=agent -destination=hook_mock.go -mock_names=beforeForwardToKeaOverHTTPCalloutCarrier=MockBeforeForwardToKeaOverHTTPCalloutCarrier isc.org/agent beforeForwardToKeaOverHTTPCalloutCarrier
 
 // Test that the hook manager is constructed properly.
 func TestNewHookManager(t *testing.T) {
@@ -20,7 +26,7 @@ func TestNewHookManager(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	supportedTypes := hookManager.HookManager.GetExecutor().GetSupportedCalloutCarrierTypes()
+	supportedTypes := hookManager.HookManager.GetExecutor().GetTypesOfSupportedCalloutSpecifications()
 	require.Len(t, supportedTypes, 1)
 }
 
@@ -44,7 +50,7 @@ func TestHookManagerFromCallouts(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mock := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 
 	hookManager := NewHookManager()
 
@@ -62,7 +68,7 @@ func TestHookManagerClose(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mock := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mock := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 	mock.
 		EXPECT().
 		Close().
@@ -87,21 +93,21 @@ func TestHookManagerCloseWithErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockWithoutErr1 := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mockWithoutErr1 := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 	mockWithoutErr1.
 		EXPECT().
 		Close().
 		Return(nil).
 		Times(1)
 
-	mockWithoutErr2 := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mockWithoutErr2 := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 	mockWithoutErr2.
 		EXPECT().
 		Close().
 		Return(nil).
 		Times(1)
 
-	mockWithErr := NewMockBeforeForwardToKeaOverHTTPCallouts(ctrl)
+	mockWithErr := NewMockBeforeForwardToKeaOverHTTPCalloutCarrier(ctrl)
 	mockWithErr.
 		EXPECT().
 		Close().

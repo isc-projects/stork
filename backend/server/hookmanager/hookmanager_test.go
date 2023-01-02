@@ -13,6 +13,6 @@ func TestNewHookManager(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, hookManager)
-	supportedTypes := hookManager.HookManager.GetExecutor().GetSupportedCalloutCarrierTypes()
+	supportedTypes := hookManager.HookManager.GetExecutor().GetTypesOfSupportedCalloutSpecifications()
 	require.Len(t, supportedTypes, 1)
 }
