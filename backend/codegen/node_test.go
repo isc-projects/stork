@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test instantiating a new n.
+// Test instantiating a new node.
 func TestNewNode(t *testing.T) {
 	n := newNode(0, mapNode)
 	require.NotNil(t, n)
@@ -15,7 +15,7 @@ func TestNewNode(t *testing.T) {
 	require.False(t, n.isParentMap())
 }
 
-// Test checking that a parent n is an array.
+// Test checking that a parent node is an array.
 func TestIsParentArray(t *testing.T) {
 	n := newNode(0, arrayNode)
 	require.NotNil(t, n)
@@ -26,7 +26,7 @@ func TestIsParentArray(t *testing.T) {
 	require.False(t, n.isParentArray())
 }
 
-// Test creating a child n.
+// Test creating a child node.
 func TestCreateChild(t *testing.T) {
 	n := newNode(0, arrayNode)
 	require.NotNil(t, n)

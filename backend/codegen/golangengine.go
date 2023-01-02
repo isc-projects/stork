@@ -115,12 +115,12 @@ func (e *GolangEngine) formatPrimitive(value reflect.Value) string {
 	return fmt.Sprint(value)
 }
 
-// Returns a indetation up to the specified position.
+// Returns an indetation up to the specified position.
 func (e *GolangEngine) indent(position int) string {
 	return strings.Repeat("\t", position)
 }
 
-// Returns gap between the map key and the map value. The key is the current key
+// Returns a gap between the map key and the map value. The key is the current key
 // for which the gap is to be returned. The longestKeyLength is the length of the
 // longest key in the map.
 func (e *GolangEngine) align(key string, longestKeyLength int) string {

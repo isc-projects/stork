@@ -35,7 +35,7 @@ func createEngine(language, topLevelType string, fieldTypes []string) (codegen.E
 	}
 }
 
-// Creates generator instance and sets mappings between JSON keys
+// Creates a generator instance and sets mappings between JSON keys
 // and structure field names.
 func createGenerator(engine codegen.Engine, fieldNames []string) (*codegen.Generator, error) {
 	generator := codegen.NewGenerator(engine)
@@ -45,8 +45,8 @@ func createGenerator(engine codegen.Engine, fieldNames []string) (*codegen.Gener
 	return generator, nil
 }
 
-// Generates a structure with option definitions using selected language's
-// syntax.
+// Generates a structure with option definitions in a selected programming
+// language.
 func generateStdOptionDefs(c *cli.Context) error {
 	// Create the code generating engine for the specified language.
 	engine, err := createEngine(c.String("language"), c.String("top-level-type"), c.StringSlice("field-type"))
@@ -117,7 +117,7 @@ func main() {
 					},
 					&cli.StringFlag{
 						Name:     "top-level-type",
-						Usage:    "Generated top-level slice or map type. For example, Golang structures include type names in data assignments.",
+						Usage:    "Generated top-level slice or map type. Golang structures include the type names in data assignments.",
 						Required: false,
 					},
 					&cli.StringSliceFlag{
@@ -127,7 +127,7 @@ func main() {
 					},
 					&cli.StringSliceFlag{
 						Name:     "field-type",
-						Usage:    "Maps JSON key name to the struct field type using <json-key>:<struct-field-type> notation. It can be specified multiple times.",
+						Usage:    "Maps a JSON key name to the struct field type using <json-key>:<struct-field-type> notation. It can be specified multiple times.",
 						Required: false,
 					},
 				},

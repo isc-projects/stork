@@ -92,10 +92,11 @@ func (g *Generator) GenerateStructs(filename string) error {
 // template file. The template file is expected to include the %%% placeholder
 // for the output. It checks the indentation of the placeholder and follows the
 // indentation while it generates the structures. The filename is the input file
-// holding JSON structure. The template is the location of the template file.
-func (g *Generator) GenerateStructsWithTemplate(filename, template string) error {
+// holding JSON structure. The templateFilename is the location of the template
+// file.
+func (g *Generator) GenerateStructsWithTemplate(filename, templateFilename string) error {
 	// Open the template file.
-	templateFile, err := os.Open(template)
+	templateFile, err := os.Open(templateFilename)
 	if err != nil {
 		return err
 	}
@@ -152,7 +153,7 @@ func (g *Generator) Print() {
 	fmt.Print(g.builder.String())
 }
 
-// Write the generated output into the file.
+// Writes the generated output into the file.
 func (g *Generator) Write(filename string) error {
 	outputFile, err := os.Create(filename)
 	if err != nil {

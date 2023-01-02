@@ -53,13 +53,14 @@ func (n *node) getIndentation() int {
 	return n.indent
 }
 
-// Creates child node of the given kind.
+// Creates a child node of the given kind.
 func (n *node) createChild(kind nodeKind) *node {
 	child := newNode(n.indent+1, kind)
 	child.parent = n
 	return child
 }
 
+// Creates a child node within a map, remembering the parent's map key name.
 func (n *node) createMapChild(key string, kind nodeKind) *node {
 	child := n.createChild(kind)
 	child.key = key
