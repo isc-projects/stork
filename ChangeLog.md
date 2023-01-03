@@ -1,8 +1,14 @@
+* 265 [bug] slawek
+
+    Fixed the database migration that interrupted the schema upgrade if the
+    database contained any shared networks.
+    (Gitlab #196)
+
 * 264 [func] marcin
 
-     Added configuration of the DHCPv4 siaddr, sname, and file fields in the
-     Kea host reservations.
-     (Gitlab #911)
+    Added configuration of the DHCPv4 siaddr, sname, and file fields in the
+    Kea host reservations.
+    (Gitlab #911)
 
 * 263 [build] andrei
 
