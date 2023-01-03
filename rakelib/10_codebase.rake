@@ -79,6 +79,11 @@ end
 file agent_grpc_pb_go_file => [agent_pb_go_file]
 CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
+std_option_defs6_go_file = "backend/appcfg/kea/stdoptiondef6.go"
+file std_option_defs6_go_file => ["codegen/std_dhcpv6_option_def.json"] do
+    Rake::Task["gen:backend:std_option_defs"].invoke()
+end
+
 # Go dependencies are installed automatically during build
 # or can be triggered manually.
 CLOBBER.append File.join(ENV["GOPATH"], "pkg")
@@ -122,6 +127,7 @@ go_common_codebase = FileList["backend/**/*"]
     .exclude(go_tool_codebase)
     .include(agent_pb_go_file)
     .include(agent_grpc_pb_go_file)
+    .include(std_option_defs6_go_file)
 
 GO_SERVER_API_MOCK = "backend/server/agentcomm/api_mock.go"
 
@@ -202,6 +208,11 @@ file node_module_dir => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/packag
 end
 CLOBBER.append node_module_dir
 
+std_option_defs6_ts_file = "webui/src/app/std-dhcpv6-option-defs.ts"
+file std_option_defs6_ts_file => ["codegen/std_dhcpv6_option_def.json"] do
+    Rake::Task["gen:ui:std_option_defs"].invoke()
+end
+
 WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/.angular")
     .exclude("webui/.angular/**/*")
@@ -213,6 +224,7 @@ WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/src/assets/arm/**/*")
     .include(open_api_generator_webui_dir)
     .include(node_module_dir)
+    .include(std_option_defs6_ts_file)
 
 #############
 ### Tasks ###

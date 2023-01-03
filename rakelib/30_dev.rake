@@ -550,24 +550,34 @@ namespace :gen do
                 sh NPM, "install", "--package-lock-only"
             end
         end
+
+        desc 'Generate standard DHCP option definitions for the UI'
+        task :std_option_defs => [CODE_GEN_BINARY_FILE] do
+            puts 'Regenerating standard option definitions in Typescript files.'
+            sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
+                "--output", "webui/src/app/std-dhcpv6-option-defs.ts", "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
+
+            puts 'Formatting the generated files.'
+            ENV["SCOPE"] = "src/app/std*option-defs.ts"
+            Rake::Task["fmt:ui"].invoke()
+        end
     end
-    desc 'Generate standard DHCP option definitions'
+    namespace :backend do
+        desc 'Generate standard DHCP option definitions for the backend'
+        task :std_option_defs => [CODE_GEN_BINARY_FILE] do
+            puts 'Regenerating standard option definitions in Go files.'
+            sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
+                "--output", "backend/appcfg/kea/stdoptiondef6.go", "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
+
+            puts 'Formatting the generated files.'
+            ENV["SCOPE"] = "./appcfg/..."
+            Rake::Task["fmt:backend"].invoke()
+        end
+    end
+    desc 'Generate standard DHCP option definitions for the backend and the UI'
     task :std_option_defs => [CODE_GEN_BINARY_FILE] do
-        puts 'Regenerating standard option definitions in Go files.'
-        sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
-            "--output", "backend/appcfg/kea/stdoptiondef6.go", "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
-
-        puts 'Formatting the generated files.'
-        ENV["SCOPE"] = "./appcfg/..."
-        Rake::Task["fmt:backend"].invoke()
-
-        puts 'Regenerating standard option definitions in Typescript files.'
-        sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
-            "--output", "webui/src/app/std-dhcpv6-option-defs.ts", "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
-
-        puts 'Formatting the generated files.'
-        ENV["SCOPE"] = "src/app/std*option-defs.ts"
-        Rake::Task["fmt:ui"].invoke()
+        Rake::Task["gen:ui:std_option_defs"].invoke()
+        Rake::Task["gen:backend:std_option_defs"].invoke()
     end
 end
 
