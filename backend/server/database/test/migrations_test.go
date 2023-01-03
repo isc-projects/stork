@@ -242,3 +242,19 @@ func TestMigration39DecimalToBigint(t *testing.T) {
 	require.EqualValues(t, big.NewInt(math.MaxInt64), stats38["boz"])
 	require.EqualValues(t, big.NewInt(math.MinInt64), stats38["biz"])
 }
+
+// Test that the 13 migration passes if some shared networks exist.
+func TestMigration13AddINetFamilyColumn(t *testing.T) {
+	// Arrange
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
+
+	dbops.Migrate(db, "down", "12")
+	_, _ = db.Exec(`INSERT INTO shared_network (name) VALUES ('frog');`)
+
+	// Act
+	_, _, errUp := dbops.Migrate(db, "up", "13")
+
+	// Assert
+	require.NoError(t, errUp)
+}
