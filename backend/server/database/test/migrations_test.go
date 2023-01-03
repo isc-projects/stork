@@ -266,6 +266,7 @@ func TestMigration13AddINetFamilyColumn(t *testing.T) {
 	_, err = db.QueryOne(pg.Scan(&appID), `INSERT INTO app (machine_id, type) VALUES (?, 'kea') RETURNING id;`, machineID)
 	require.NoError(t, err)
 	_, err = db.QueryOne(pg.Scan(&subnetID), `INSERT INTO subnet (prefix, shared_network_id) VALUES ('fe80::/64', ?) RETURNING id;`, sharedNetworkID)
+	require.NoError(t, err)
 
 	// Act
 	_, _, errUp := dbops.Migrate(db, "up", "13")
