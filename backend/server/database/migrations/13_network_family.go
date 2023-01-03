@@ -9,7 +9,21 @@ func init() {
 		_, err := db.Exec(`
              -- Add column which specifies the family of subnets grouped within it.
              ALTER TABLE shared_network
-                 ADD COLUMN inet_family INT NOT NULL;
+                 ADD COLUMN inet_family INT;
+
+             -- Set initial values.
+             UPDATE shared_network
+             SET inet_family=family(subnet.prefix)
+             FROM subnet
+             WHERE shared_network.id=subnet.shared_network_id;
+
+             -- Drop orphaned shared networks.
+             DELETE FROM shared_network
+             WHERE inet_family IS NULL;
+
+             -- Require a value.
+             ALTER TABLE shared_network
+                 ALTER COLUMN inet_family SET NOT NULL;
 
              -- Make sure that the family is one of the IPv4 or IPv6.
              ALTER TABLE shared_network

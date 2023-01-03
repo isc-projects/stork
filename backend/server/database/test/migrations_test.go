@@ -250,11 +250,34 @@ func TestMigration13AddINetFamilyColumn(t *testing.T) {
 	defer teardown()
 
 	dbops.Migrate(db, "down", "12")
-	_, _ = db.Exec(`INSERT INTO shared_network (name) VALUES ('frog');`)
+
+	var machineID int
+	var appID int
+	var sharedNetworkID int
+	var subnetID int
+	// Add an orphaned shared network.
+	_, err := db.Exec(`INSERT INTO shared_network (name) VALUES ('frog');`)
+	require.NoError(t, err)
+	// Add a non-orphaned shared network.
+	_, err = db.QueryOne(pg.Scan(&sharedNetworkID), `INSERT INTO shared_network (name) VALUES ('mouse') RETURNING id;`)
+	require.NoError(t, err)
+	_, err = db.QueryOne(pg.Scan(&machineID), `INSERT INTO machine (address, agent_port, state) VALUES ('foo', 42, '{}'::jsonb) RETURNING id;`)
+	require.NoError(t, err)
+	_, err = db.QueryOne(pg.Scan(&appID), `INSERT INTO app (machine_id, type) VALUES (?, 'kea') RETURNING id;`, machineID)
+	require.NoError(t, err)
+	_, err = db.QueryOne(pg.Scan(&subnetID), `INSERT INTO subnet (prefix, shared_network_id) VALUES ('fe80::/64', ?) RETURNING id;`, sharedNetworkID)
 
 	// Act
 	_, _, errUp := dbops.Migrate(db, "up", "13")
 
 	// Assert
 	require.NoError(t, errUp)
+	var count int
+	_, err = db.QueryOne(pg.Scan(&count), `SELECT COUNT(*) FROM shared_network;`)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	var family int
+	_, err = db.QueryOne(pg.Scan(&family), `SELECT inet_family FROM shared_network;`)
+	require.NoError(t, err)
+	require.EqualValues(t, 6, family)
 }
