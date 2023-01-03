@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -670,6 +671,137 @@ func TestDetectNetworksRemoveOrphanedHosts(t *testing.T) {
 	// Ensure that the correct host is in the database.
 	require.Len(t, hosts[0].IPReservations, 1)
 	require.Equal(t, "192.0.2.66/32", hosts[0].IPReservations[0].Address)
+}
+
+// Utility shorthand alias.
+type m = map[string]any
+
+// Test that the address pools are updated.
+func TestDetectNetworkUpdateAddressPool(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	v4Config := m{
+		"Dhcp4": m{
+			"subnet4": []m{
+				{
+					"subnet": "192.0.2.0/24",
+					"pools": []m{
+						{"pool": "192.0.2.1 - 192.0.2.10"},
+					},
+				},
+			},
+		},
+	}
+
+	v4ConfigJSON, _ := json.Marshal(v4Config)
+	app := createAppWithSubnets(t, db, 0, string(v4ConfigJSON), "")
+	_ = CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Act
+	// Update the config.
+	v4Config["Dhcp4"].(m)["subnet4"].([]m)[0]["pools"].([]m)[0]["pool"] = "192.0.2.1 - 192.0.2.42"
+	v4ConfigJSON, _ = json.Marshal(v4Config)
+	kea4Config, _ := dbmodel.NewKeaConfigFromJSON(string(v4ConfigJSON))
+	app.Daemons[0].KeaDaemon.Config = kea4Config
+	err := CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Assert
+	require.NoError(t, err)
+	subnets, _ := dbmodel.GetAllSubnets(db, 4)
+	require.Len(t, subnets, 1)
+	require.Len(t, subnets[0].AddressPools, 1)
+	require.EqualValues(t, "192.0.2.1", subnets[0].AddressPools[0].LowerBound)
+	require.EqualValues(t, "192.0.2.42", subnets[0].AddressPools[0].UpperBound)
+}
+
+// Test that the client class is updated.
+func TestDetectNetworkUpdateClientClass(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	v4Config := m{
+		"Dhcp4": m{
+			"subnet4": []m{
+				{
+					"subnet":       "192.0.2.0/24",
+					"client-class": "foo",
+				},
+			},
+		},
+	}
+
+	v4ConfigJSON, _ := json.Marshal(v4Config)
+	app := createAppWithSubnets(t, db, 0, string(v4ConfigJSON), "")
+	_ = CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Act
+	// Update the config.
+	v4Config["Dhcp4"].(m)["subnet4"].([]m)[0]["client-class"] = "bar"
+	v4ConfigJSON, _ = json.Marshal(v4Config)
+	kea4Config, _ := dbmodel.NewKeaConfigFromJSON(string(v4ConfigJSON))
+	app.Daemons[0].KeaDaemon.Config = kea4Config
+	err := CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Assert
+	require.NoError(t, err)
+	subnets, _ := dbmodel.GetAllSubnets(db, 4)
+	require.Len(t, subnets, 1)
+	require.EqualValues(t, "bar", subnets[0].ClientClass)
+}
+
+// Test that the delegated prefix pools are updated.
+func TestDetectNetworkUpdateDelegatedPrefixPool(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	v4Config := m{
+		"Dhcp6": m{
+			"subnet6": []m{
+				{
+					"subnet": "fe80::/32",
+					"pd-pools": []m{
+						{
+							"prefix":        "fe80:1::",
+							"prefix-len":    64,
+							"delegated-len": 80,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v4ConfigJSON, _ := json.Marshal(v4Config)
+	app := createAppWithSubnets(t, db, 0, "", string(v4ConfigJSON))
+	_ = CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Act
+	// Update the config.
+	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix"] = "fe80:42::"
+	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix-len"] = "72"
+	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["delegated-len"] = "92"
+	v4ConfigJSON, _ = json.Marshal(v4Config)
+	kea4Config, _ := dbmodel.NewKeaConfigFromJSON(string(v4ConfigJSON))
+	app.Daemons[0].KeaDaemon.Config = kea4Config
+	err := CommitAppIntoDB(db, app, fec, nil, lookup)
+
+	// Assert
+	require.NoError(t, err)
+	subnets, _ := dbmodel.GetAllSubnets(db, 6)
+	require.Len(t, subnets, 1)
+	require.Len(t, subnets[0].PrefixPools, 1)
+	require.EqualValues(t, "fe80:42::/72", subnets[0].PrefixPools[0].Prefix)
+	require.EqualValues(t, 92, subnets[0].PrefixPools[0].DelegatedLen)
 }
 
 // Benchmark measuring performance of the findMatchingSubnet function. This
