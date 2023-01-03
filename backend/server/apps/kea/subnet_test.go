@@ -764,7 +764,7 @@ func TestDetectNetworkUpdateDelegatedPrefixPool(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
-	v4Config := m{
+	config := m{
 		"Dhcp6": m{
 			"subnet6": []m{
 				{
@@ -781,18 +781,18 @@ func TestDetectNetworkUpdateDelegatedPrefixPool(t *testing.T) {
 		},
 	}
 
-	v4ConfigJSON, _ := json.Marshal(v4Config)
-	app := createAppWithSubnets(t, db, 0, "", string(v4ConfigJSON))
+	configJSON, _ := json.Marshal(config)
+	app := createAppWithSubnets(t, db, 0, "", string(configJSON))
 	_ = CommitAppIntoDB(db, app, fec, nil, lookup)
 
 	// Act
 	// Update the config.
-	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix"] = "fe80:42::"
-	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix-len"] = "72"
-	v4Config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["delegated-len"] = "92"
-	v4ConfigJSON, _ = json.Marshal(v4Config)
-	kea4Config, _ := dbmodel.NewKeaConfigFromJSON(string(v4ConfigJSON))
-	app.Daemons[0].KeaDaemon.Config = kea4Config
+	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix"] = "fe80:42::"
+	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix-len"] = "72"
+	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["delegated-len"] = "92"
+	configJSON, _ = json.Marshal(config)
+	keaConfig, _ := dbmodel.NewKeaConfigFromJSON(string(configJSON))
+	app.Daemons[0].KeaDaemon.Config = keaConfig
 	err := CommitAppIntoDB(db, app, fec, nil, lookup)
 
 	// Assert
