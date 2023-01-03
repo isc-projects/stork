@@ -24,6 +24,7 @@ type DHCPStdOptionDefinitionLookup interface {
 // options is supported.
 func NewStdDHCPOptionDefinitionLookup() DHCPStdOptionDefinitionLookup {
 	lookup := &dhcpStdOptionDefinitionLookup{}
+	lookup.v4Defs = getStdDHCPv4OptionDefs()
 	lookup.v6Defs = getStdDHCPv6OptionDefs()
 	return lookup
 }

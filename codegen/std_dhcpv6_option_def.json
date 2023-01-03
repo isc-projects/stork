@@ -1,36 +1,619 @@
 [
     {
-        "code":        94,
-        "encapsulate": "s46-cont-mape-options",
-        "name":        "s46-cont-mape",
-        "space":       "dhcp6",
-        "type":        "empty"
+        "name": "clientid",
+        "code": 1,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
     },
     {
-        "code":        95,
-        "encapsulate": "s46-cont-mapt-options",
-        "name":        "s46-cont-mapt",
-        "space":       "dhcp6",
-        "type":         "empty"
+        "name": "serverid",
+        "code": 2,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
     },
     {
-        "code":        96,
-        "encapsulate": "s46-cont-lw-options",
-        "name":        "s46-cont-lw",
-        "space":       "dhcp6",
-        "type":         "empty"
+        "name": "ia-na",
+        "code": 3,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "uint32",
+            "uint32"
+        ],
+        "encapsulate": ""
     },
     {
-        "code":        90,
-        "encapsulate": "",
-        "name":        "s46-br",
-        "space":       "s46-cont-mape-options",
-        "type":         "ipv6-address"
+        "name": "ia-ta",
+        "code": 4,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
     },
     {
-        "code":        89,
+        "name": "iaaddr",
+        "code": 5,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "ipv6-address",
+            "uint32",
+            "uint32"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "oro",
+        "code": 6,
+        "space": "dhcp6",
+        "type": "uint16",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "preference",
+        "code": 7,
+        "space": "dhcp6",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "elapsed-time",
+        "code": 8,
+        "space": "dhcp6",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-msg",
+        "code": 9,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "auth",
+        "code": 11,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "unicast",
+        "code": 12,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "status-code",
+        "code": 13,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint16",
+            "string"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "rapid-commit",
+        "code": 14,
+        "space": "dhcp6",
+        "type": "empty",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "user-class",
+        "code": 15,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "vendor-class",
+        "code": 16,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "vendor-opts",
+        "code": 17,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "interface-id",
+        "code": 18,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "reconf-msg",
+        "code": 19,
+        "space": "dhcp6",
+        "type": "uint8",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "reconf-accept",
+        "code": 20,
+        "space": "dhcp6",
+        "type": "empty",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "sip-server-dns",
+        "code": 21,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "sip-server-addr",
+        "code": 22,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "dns-servers",
+        "code": 23,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "domain-search",
+        "code": 24,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "ia-pd",
+        "code": 25,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "uint32",
+            "uint32"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "iaprefix",
+        "code": 26,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "uint32",
+            "uint8",
+            "ipv6-address"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "nis-servers",
+        "code": 27,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nisp-servers",
+        "code": 28,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nis-domain-name",
+        "code": 29,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nisp-domain-name",
+        "code": 30,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "sntp-servers",
+        "code": 31,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "information-refresh-time",
+        "code": 32,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "bcmcs-server-dns",
+        "code": 33,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "bcmcs-server-addr",
+        "code": 34,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "geoconf-civic",
+        "code": 36,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "uint16",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "remote-id",
+        "code": 37,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint32",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "subscriber-id",
+        "code": 38,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "client-fqdn",
+        "code": 39,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "fqdn"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "pana-agent",
+        "code": 40,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "new-posix-timezone",
+        "code": 41,
+        "space": "dhcp6",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "new-tzdb-timezone",
+        "code": 42,
+        "space": "dhcp6",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "ero",
+        "code": 43,
+        "space": "dhcp6",
+        "type": "uint16",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "lq-query",
+        "code": 44,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "ipv6-address"
+        ]
+    },
+    {
+        "name": "client-data",
+        "code": 45,
+        "space": "dhcp6",
+        "type": "empty",
+        "array": false
+    },
+    {
+        "name": "clt-time",
+        "code": 46,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "lq-relay-data",
+        "code": 47,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "ipv6-address",
+            "binary"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "lq-client-link",
+        "code": 48,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "v6-lost",
+        "code": 51,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "capwap-ac-v6",
+        "code": 52,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-id",
+        "code": 53,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "v6-access-domain",
+        "code": 57,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "sip-ua-cs-list",
+        "code": 58,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "bootfile-url",
+        "code": 59,
+        "space": "dhcp6",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "bootfile-param",
+        "code": 60,
+        "space": "dhcp6",
+        "type": "tuple",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "client-arch-type",
+        "code": 61,
+        "space": "dhcp6",
+        "type": "uint16",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "nii",
+        "code": 62,
+        "space": "dhcp6",
+        "type": "record",
+        "array": false,
+        "record-types": [
+            "uint8",
+            "uint8",
+            "uint8"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "aftr-name",
+        "code": 64,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "erp-local-domain-name",
+        "code": 65,
+        "space": "dhcp6",
+        "type": "fqdn",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "rsoo",
+        "code": 66,
+        "space": "dhcp6",
+        "type": "empty",
+        "array": false,
+        "encapsulate": "rsoo-opts"
+    },
+    {
+        "name": "pd-exclude",
+        "code": 67,
+        "space": "dhcp6",
+        "type": "ipv6-prefix",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "rdnss-selection",
+        "code": 74,
+        "space": "dhcp6",
+        "type": "record",
+        "array": true,
+        "record-types": [
+            "uint8",
+            "ipv4-address",
+            "ipv4-address",
+            "fqdn"
+        ],
+        "encapsulate": ""
+    },
+    {
+        "name": "client-linklayer-addr",
+        "code": 79,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "link-address",
+        "code": 80,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "solmax-rt",
+        "code": 82,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "inf-max-rt",
+        "code": 83,
+        "space": "dhcp6",
+        "type": "uint32",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcpv4-message",
+        "code": 87,
+        "space": "dhcp6",
+        "type": "binary",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "dhcp4o6-server-addr",
+        "code": 88,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "name": "v6-captive-portal",
+        "code": 103,
+        "space": "dhcp6",
+        "type": "string",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "relay-source-port",
+        "code": 135,
+        "space": "dhcp6",
+        "type": "uint16",
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "name": "ipv6-address-andsf",
+        "code": 143,
+        "space": "dhcp6",
+        "type": "ipv6-address",
+        "array": true,
+        "encapsulate": ""
+    },
+    {
+        "code": 89,
         "encapsulate": "s46-rule-options",
-        "name":        "s46-rule",
+        "name": "s46-rule",
         "record-types": [
             "uint8",
             "uint8",
@@ -38,13 +621,13 @@
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space":      "s46-cont-mape-options",
-        "type":        "record"
+        "space": "s46-cont-mape-options",
+        "type": "record"
     },
     {
-        "code":        89,
+        "code": 89,
         "encapsulate": "s46-rule-options",
-        "name":        "s46-rule",
+        "name": "s46-rule",
         "record-types": [
             "uint8",
             "uint8",
@@ -52,54 +635,82 @@
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space":      "s46-cont-mapt-options",
-        "type":        "record"
+        "space": "s46-cont-mapt-options",
+        "type": "record"
     },
     {
-        "code":        91,
+        "code": 90,
         "encapsulate": "",
-        "name":        "s46-dmr",
-        "space":       "s46-cont-mapt-options",
-        "type":         "ipv6-prefix"
+        "name": "s46-br",
+        "space": "s46-cont-lw-options",
+        "type": "ipv6-address"
     },
     {
-        "code":        90,
+        "code": 90,
         "encapsulate": "",
-        "name":        "s46-br",
-        "space":       "s46-cont-lw-options",
-        "type":         "ipv6-address"
+        "name": "s46-br",
+        "space": "s46-cont-mape-options",
+        "type": "ipv6-address"
     },
     {
-        "code":        92,
+        "code": 91,
+        "encapsulate": "",
+        "name": "s46-dmr",
+        "space": "s46-cont-mapt-options",
+        "type": "ipv6-prefix"
+    },
+    {
+        "code": 92,
         "encapsulate": "s46-v4v6bind-options",
-        "name":        "s46-v4v6bind",
+        "name": "s46-v4v6bind",
         "record-types": [
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space":      "s46-cont-lw-options",
-        "type":        "record"
+        "space": "s46-cont-lw-options",
+        "type": "record"
     },
     {
-        "code":        93,
+        "code": 93,
         "encapsulate": "",
-        "name":        "s46-portparams",
+        "name": "s46-portparams",
         "record-types": [
             "uint8",
             "psid"
         ],
-        "space":      "s46-rule-options",
-        "type":        "record"
+        "space": "s46-rule-options",
+        "type": "record"
     },
     {
-        "code":        93,
+        "code": 93,
         "encapsulate": "",
-        "name":        "s46-portparams",
+        "name": "s46-portparams",
         "record-types": [
             "uint8",
             "psid"
         ],
-        "space":      "s46-v4v6bind-options",
-        "type":        "record"
+        "space": "s46-v4v6bind-options",
+        "type": "record"
+    },
+    {
+        "code": 94,
+        "encapsulate": "s46-cont-mape-options",
+        "name": "s46-cont-mape",
+        "space": "dhcp6",
+        "type": "empty"
+    },
+    {
+        "code": 95,
+        "encapsulate": "s46-cont-mapt-options",
+        "name": "s46-cont-mapt",
+        "space": "dhcp6",
+        "type": "empty"
+    },
+    {
+        "code": 96,
+        "encapsulate": "s46-cont-lw-options",
+        "name": "s46-cont-lw",
+        "space": "dhcp6",
+        "type": "empty"
     }
 ]

@@ -466,3 +466,33 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 	require.Equal(t, "3000::", fields[4].GetValues()[0])
 	require.Equal(t, 64, fields[4].GetValues()[1])
 }
+
+// Test that an option instance is successfully created using an option
+// definition with binary field types.
+func TestCreateStandardDHCPOptionBinary(t *testing.T) {
+	optionData := SingleOptionData{
+		Code:      97,
+		CSVFormat: true,
+		Data:      "1, 010203040102",
+		Name:      "uuid-guid",
+		Space:     "dhcp4",
+	}
+	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	require.NoError(t, err)
+	require.NotNil(t, option)
+	require.False(t, option.IsAlwaysSend())
+	require.EqualValues(t, 97, option.GetCode())
+	require.Equal(t, "uuid-guid", option.GetName())
+	require.Equal(t, "dhcp4", option.GetSpace())
+	require.Empty(t, option.GetEncapsulate())
+	require.Equal(t, storkutil.IPv4, option.GetUniverse())
+
+	fields := option.GetFields()
+	require.Len(t, fields, 2)
+	require.Equal(t, Uint8Field, fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.EqualValues(t, 1, fields[0].GetValues()[0])
+	require.Equal(t, HexBytesField, fields[1].GetFieldType())
+	require.Len(t, fields[1].GetValues(), 1)
+	require.EqualValues(t, "010203040102", fields[1].GetValues()[0])
+}

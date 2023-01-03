@@ -554,6 +554,8 @@ namespace :gen do
         desc 'Generate standard DHCP option definitions for the UI'
         task :std_option_defs => [CODE_GEN_BINARY_FILE] do
             puts 'Regenerating standard option definitions in Typescript files.'
+            sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv4_option_def.json",
+            "--output", "webui/src/app/std-dhcpv4-option-defs.ts", "--template", "webui/src/app/std-dhcpv4-option-defs.ts.template"
             sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
                 "--output", "webui/src/app/std-dhcpv6-option-defs.ts", "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
 
@@ -566,6 +568,8 @@ namespace :gen do
         desc 'Generate standard DHCP option definitions for the backend'
         task :std_option_defs => [CODE_GEN_BINARY_FILE] do
             puts 'Regenerating standard option definitions in Go files.'
+            sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv4_option_def.json",
+            "--output", "backend/appcfg/kea/stdoptiondef4.go", "--template", "backend/appcfg/kea/stdoptiondef4.go.template"
             sh CODE_GEN_BINARY_FILE, "std-option-defs", "--input", "./codegen/std_dhcpv6_option_def.json",
                 "--output", "backend/appcfg/kea/stdoptiondef6.go", "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
 

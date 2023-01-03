@@ -101,7 +101,6 @@
         "space": "dhcp4",
         "type": "uint16",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -134,7 +133,6 @@
         "space": "dhcp4",
         "type": "string",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -319,7 +317,6 @@
         "space": "dhcp4",
         "type": "string",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -616,7 +613,6 @@
         "space": "dhcp4",
         "type": "binary",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -735,7 +731,6 @@
         "space": "dhcp4",
         "type": "uint16",
         "array": true,
-    
         "encapsulate": ""
     },
     {
@@ -769,7 +764,6 @@
         "space": "dhcp4",
         "type": "string",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -786,7 +780,6 @@
         "space": "dhcp4",
         "type": "string",
         "array": false,
-    
         "encapsulate": ""
     },
     {
@@ -925,7 +918,6 @@
             "ipv4-address",
             "fqdn"
         ],
-        
         "encapsulate": ""
     },
     {
