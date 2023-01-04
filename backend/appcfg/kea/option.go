@@ -72,8 +72,8 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 			err   error
 		)
 		switch field.GetFieldType() {
-		case HexBytesField:
-			value, err = convertHexBytesField(field)
+		case BinaryField:
+			value, err = convertBinaryField(field)
 		case StringField:
 			value, err = convertStringField(field, data.CSVFormat)
 		case BoolField:
@@ -190,7 +190,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 	// of hexadecimal digits. Sanitize colons and whitespaces.
 	data = strings.ReplaceAll(strings.ReplaceAll(data, " ", ""), ":", "")
 	field := dhcpOptionField{
-		FieldType: HexBytesField,
+		FieldType: BinaryField,
 		Values:    []any{data},
 	}
 	option.Fields = append(option.Fields, field)

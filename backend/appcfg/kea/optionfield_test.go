@@ -167,44 +167,44 @@ func TestParsePsidField(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that a hex-bytes option field is converted to Kea format successfully.
-func TestConvertHexBytesField(t *testing.T) {
+// Test that a binary option field is converted to Kea format successfully.
+func TestConvertBinaryField(t *testing.T) {
 	// Colons are allowed.
-	value, err := convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "00:01:02:03:04"))
+	value, err := convertBinaryField(*newTestDHCPOptionField(BinaryField, "00:01:02:03:04"))
 	require.NoError(t, err)
 	require.Equal(t, "0001020304", value)
 
 	// Spaces are allowed.
-	value, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "00 01 02 03 04"))
+	value, err = convertBinaryField(*newTestDHCPOptionField(BinaryField, "00 01 02 03 04"))
 	require.NoError(t, err)
 	require.Equal(t, "0001020304", value)
 
 	// No separators are also allowed.
-	value, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "0001020304"))
+	value, err = convertBinaryField(*newTestDHCPOptionField(BinaryField, "0001020304"))
 	require.NoError(t, err)
 	require.Equal(t, "0001020304", value)
 }
 
-// Test that conversion of a malformed hex-bytes option field yields an error.
-func TestConvertHexBytesFieldMalformed(t *testing.T) {
+// Test that conversion of a malformed binary option field yields an error.
+func TestConvertBinaryFieldMalformed(t *testing.T) {
 	// It must have a single value.
-	_, err := convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "010203", "010203"))
+	_, err := convertBinaryField(*newTestDHCPOptionField(BinaryField, "010203", "010203"))
 	require.Error(t, err)
 
 	// Having no values is wrong.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField))
+	_, err = convertBinaryField(*newTestDHCPOptionField(BinaryField))
 	require.Error(t, err)
 
 	// Non-hex string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, "wrong"))
+	_, err = convertBinaryField(*newTestDHCPOptionField(BinaryField, "wrong"))
 	require.Error(t, err)
 
 	// Not a string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, 525))
+	_, err = convertBinaryField(*newTestDHCPOptionField(BinaryField, 525))
 	require.Error(t, err)
 
 	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(HexBytesField, ""))
+	_, err = convertBinaryField(*newTestDHCPOptionField(BinaryField, ""))
 	require.Error(t, err)
 }
 
@@ -237,7 +237,7 @@ func TestConvertStringFieldMalformed(t *testing.T) {
 	require.Error(t, err)
 
 	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(StringField, ""))
+	_, err = convertBinaryField(*newTestDHCPOptionField(StringField, ""))
 	require.Error(t, err)
 }
 
@@ -401,14 +401,14 @@ func TestUint32FieldMalformed(t *testing.T) {
 
 // Test that an IPv4 option field is converted to a hex format.
 func TestIPv4AddressFieldToHex(t *testing.T) {
-	value, err := convertIPv4AddressField(*newTestDHCPOptionField(HexBytesField, "192.0.2.1"), false)
+	value, err := convertIPv4AddressField(*newTestDHCPOptionField(BinaryField, "192.0.2.1"), false)
 	require.NoError(t, err)
 	require.Equal(t, "C0000201", value)
 }
 
 // Test that an IPv4 option field is converted to a text format.
 func TestIPv4AddressFieldToText(t *testing.T) {
-	value, err := convertIPv4AddressField(*newTestDHCPOptionField(HexBytesField, "192.0.2.1"), true)
+	value, err := convertIPv4AddressField(*newTestDHCPOptionField(BinaryField, "192.0.2.1"), true)
 	require.NoError(t, err)
 	require.Equal(t, "192.0.2.1", value)
 }
@@ -428,20 +428,20 @@ func TestIPv4AddressFieldMalformed(t *testing.T) {
 	require.Error(t, err)
 
 	// Empty string.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv4AddressField, ""))
+	_, err = convertBinaryField(*newTestDHCPOptionField(IPv4AddressField, ""))
 	require.Error(t, err)
 }
 
 // Test that an IPv6 option field is converted to a hex format.
 func TestIPv6AddressFieldToHex(t *testing.T) {
-	value, err := convertIPv6AddressField(*newTestDHCPOptionField(HexBytesField, "2001:db8:1::1"), false)
+	value, err := convertIPv6AddressField(*newTestDHCPOptionField(BinaryField, "2001:db8:1::1"), false)
 	require.NoError(t, err)
 	require.Equal(t, "20010DB8000100000000000000000001", value)
 }
 
 // Test that an IPv6 option field is converted to a text format.
 func TestIPv6AddressFieldToText(t *testing.T) {
-	value, err := convertIPv6AddressField(*newTestDHCPOptionField(HexBytesField, "2001:db8:1::1"), true)
+	value, err := convertIPv6AddressField(*newTestDHCPOptionField(BinaryField, "2001:db8:1::1"), true)
 	require.NoError(t, err)
 	require.Equal(t, "2001:db8:1::1", value)
 }
@@ -499,7 +499,7 @@ func TestIPv6PrefixFieldMalformed(t *testing.T) {
 	require.Error(t, err)
 
 	// Empty prefix.
-	_, err = convertHexBytesField(*newTestDHCPOptionField(IPv6PrefixField, "", 32))
+	_, err = convertBinaryField(*newTestDHCPOptionField(IPv6PrefixField, "", 32))
 	require.Error(t, err)
 }
 

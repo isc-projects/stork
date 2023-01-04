@@ -123,12 +123,12 @@ describe('DhcpOptionFormComponent', () => {
         expect(component.optionFields.length).toBe(1)
         expect(component.optionFields.at(0).get('control').value).toBe('')
 
-        // It should be the hex-bytes field.
+        // It should be the binary field.
         expect(fixture.debugElement.query(By.css('textarea'))).toBeTruthy()
         expect(fixture.debugElement.query(By.css('p-tag'))).toBeFalsy()
 
-        // It should contain a help-tip for the hex-bytes option field.
-        expect(fixture.debugElement.query(By.css('[title="hex-bytes Option Field"]'))).toBeTruthy()
+        // It should contain a help-tip for the binary option field.
+        expect(fixture.debugElement.query(By.css('[title="binary Option Field"]'))).toBeTruthy()
 
         // Find the last button. It should delete the option field.
         const allBtns = fixture.debugElement.queryAll(By.css('button'))

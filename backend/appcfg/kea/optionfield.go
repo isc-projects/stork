@@ -17,7 +17,7 @@ type DHCPOptionFieldType = string
 
 // Supported types of DHCP option fields.
 const (
-	HexBytesField    DHCPOptionFieldType = "hex-bytes"
+	BinaryField      DHCPOptionFieldType = "binary"
 	StringField      DHCPOptionFieldType = "string"
 	BoolField        DHCPOptionFieldType = "bool"
 	Uint8Field       DHCPOptionFieldType = "uint8"
@@ -324,20 +324,20 @@ func parsePsidField(value string) (uint16, uint8, error) {
 	return uint16(psid), uint8(psidLen), nil
 }
 
-// Converts a hex-bytes option field from Stork to Kea format. The conversion
+// Converts a binary option field from Stork to Kea format. The conversion
 // is the same regardless of the csv-format setting. It removes the colons
 // and spaces if they are used as separators.
-func convertHexBytesField(field DHCPOptionField) (string, error) {
+func convertBinaryField(field DHCPOptionField) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.Errorf("require one value in hex-bytes option field, have %d", len(values))
+		return "", errors.Errorf("require one value in binary option field, have %d", len(values))
 	}
 	output, ok := values[0].(string)
 	if !ok {
-		return "", errors.New("hex-bytes option field is not a string value")
+		return "", errors.New("binary option field is not a string value")
 	}
 	if len(output) == 0 {
-		return "", errors.New("hex-bytes option field value must not be empty")
+		return "", errors.New("binary option field value must not be empty")
 	}
 	for _, sep := range []string{":", " "} {
 		output = strings.ReplaceAll(output, sep, "")

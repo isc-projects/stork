@@ -6,7 +6,7 @@ import { LinkedFormGroup } from './linked-form-group'
  * An emum holding all supprted DHCP option field types.
  */
 export enum DhcpOptionFieldType {
-    HexBytes = 'hex-bytes',
+    Binary = 'binary',
     String = 'string',
     Bool = 'bool',
     Uint8 = 'uint8',

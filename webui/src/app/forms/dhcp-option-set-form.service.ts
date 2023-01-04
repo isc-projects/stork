@@ -236,8 +236,8 @@ export class DhcpOptionSetFormService extends FormProcessor {
                 // For each option field create an appropriate form group.
                 let fieldGroup: DhcpOptionFieldFormGroup
                 switch (field.fieldType as DhcpOptionFieldType) {
-                    case DhcpOptionFieldType.HexBytes:
-                        fieldGroup = this.createHexBytesField(field.values[0])
+                    case DhcpOptionFieldType.Binary:
+                        fieldGroup = this.createBinaryField(field.values[0])
                         break
                     case DhcpOptionFieldType.String:
                         fieldGroup = this.createStringField(field.values[0])
@@ -331,14 +331,14 @@ export class DhcpOptionSetFormService extends FormProcessor {
     }
 
     /**
-     * Creates a control for option field using hex-bytes format.
+     * Creates a control for option field using binary format.
      *
      * @param value option field value to set.
      * @returns created form group instance.
      */
-    createHexBytesField(value: string = ''): DhcpOptionFieldFormGroup {
+    createBinaryField(value: string = ''): DhcpOptionFieldFormGroup {
         return this._createSimpleField(
-            DhcpOptionFieldType.HexBytes,
+            DhcpOptionFieldType.Binary,
             this._formBuilder.control(value, StorkValidators.hexIdentifier())
         )
     }

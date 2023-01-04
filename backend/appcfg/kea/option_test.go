@@ -173,13 +173,13 @@ func TestCreateSingleOptionDataMultiplFields(t *testing.T) {
 }
 
 // Test the option conversion from the Stork to Kea format when the option
-// comprises a field in hex-bytes format.
-func TestCreateSingleOptionDataHexBytesField(t *testing.T) {
+// comprises a field in the binary format.
+func TestCreateSingleOptionDataBinaryField(t *testing.T) {
 	option := &testDHCPOption{
 		code: 1678,
 		fields: []testDHCPOptionField{
 			{
-				fieldType: "hex-bytes",
+				fieldType: "binary",
 				values:    []interface{}{"01:02:03:04"},
 			},
 		},
@@ -358,7 +358,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 
 	fields := option.GetFields()
 	require.Len(t, fields, 1)
-	require.Equal(t, HexBytesField, fields[0].GetFieldType())
+	require.Equal(t, BinaryField, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.Equal(t, "0102030405060708090A", fields[0].GetValues()[0])
 }
@@ -492,7 +492,7 @@ func TestCreateStandardDHCPOptionBinary(t *testing.T) {
 	require.Equal(t, Uint8Field, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.EqualValues(t, 1, fields[0].GetValues()[0])
-	require.Equal(t, HexBytesField, fields[1].GetFieldType())
+	require.Equal(t, BinaryField, fields[1].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.EqualValues(t, "010203040102", fields[1].GetValues()[0])
 }

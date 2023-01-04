@@ -27,7 +27,7 @@ describe('DhcpOptionSetFormService', () => {
                         psid: formBuilder.control(12),
                         psidLength: formBuilder.control(8),
                     }),
-                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.HexBytes, {
+                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Binary, {
                         control: formBuilder.control('01:02:03'),
                     }),
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.String, {
@@ -126,7 +126,7 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 1024 field 2.
         expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.HexBytes)
+        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Binary)
         expect(fields.at(2).get('control')).toBeTruthy()
         expect(fields.at(2).get('control').value).toBe('01:02:03')
 
@@ -227,7 +227,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[0].fields[1].values[0]).toBe('12')
         expect(serialized[0].fields[1].values[1]).toBe('8')
         expect(serialized[0].fields[1].values.length).toBe(2)
-        expect(serialized[0].fields[2].fieldType).toBe(DhcpOptionFieldType.HexBytes)
+        expect(serialized[0].fields[2].fieldType).toBe(DhcpOptionFieldType.Binary)
         expect(serialized[0].fields[2].values.length).toBe(1)
         expect(serialized[0].fields[2].values[0]).toBe('01:02:03')
         expect(serialized[0].fields[3].fieldType).toBe(DhcpOptionFieldType.String)
@@ -409,7 +409,7 @@ describe('DhcpOptionSetFormService', () => {
                         values: ['12', '8'],
                     },
                     {
-                        fieldType: DhcpOptionFieldType.HexBytes,
+                        fieldType: DhcpOptionFieldType.Binary,
                         values: ['01:02:03'],
                     },
                     {
@@ -507,7 +507,7 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 1024 field 2.
         expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.HexBytes)
+        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Binary)
         expect(fields.at(2).get('control')).toBeTruthy()
         expect(fields.at(2).get('control').value).toBe('01:02:03')
 
@@ -732,10 +732,10 @@ describe('DhcpOptionSetFormService', () => {
         expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
     })
 
-    it('creates hex-bytes field', () => {
-        let formGroup = service.createHexBytesField('01:02:03')
+    it('creates binary field', () => {
+        let formGroup = service.createBinaryField('01:02:03')
         expect(formGroup).toBeTruthy()
-        expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.HexBytes)
+        expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.Binary)
         expect(formGroup.contains('control')).toBeTrue()
         expect(formGroup.get('control').value).toBe('01:02:03')
     })

@@ -142,18 +142,18 @@ export class DhcpOptionFormComponent implements OnInit {
      * their selection with appropriate handler functions.
      */
     ngOnInit(): void {
-        this.lastFieldType = 'hex-bytes'
-        this.lastFieldCommand = this.addHexBytesField
+        this.lastFieldType = 'binary'
+        this.lastFieldCommand = this.addBinaryField
         this.codeInputId = uuidv4()
         this.alwaysSendCheckboxId = uuidv4()
         this.fieldTypes = [
             {
-                label: 'hex-bytes',
-                id: this.FieldType.HexBytes,
+                label: 'binary',
+                id: this.FieldType.Binary,
                 command: () => {
-                    this.lastFieldType = 'hex-bytes'
-                    this.lastFieldCommand = this.addHexBytesField
-                    this.addHexBytesField()
+                    this.lastFieldType = 'binary'
+                    this.lastFieldCommand = this.addBinaryField
+                    this.addBinaryField()
                 },
             },
             {
@@ -294,10 +294,10 @@ export class DhcpOptionFormComponent implements OnInit {
     }
 
     /**
-     * Adds a control for option field specified in hex-bytes format.
+     * Adds a control for option field specified in binary format.
      */
-    addHexBytesField(): void {
-        this._addField(this._optionSetFormService.createHexBytesField())
+    addBinaryField(): void {
+        this._addField(this._optionSetFormService.createBinaryField())
     }
 
     /**

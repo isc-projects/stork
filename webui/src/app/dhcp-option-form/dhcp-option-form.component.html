@@ -54,7 +54,7 @@
                 <p-splitButton
                     label="{{ 'Add ' + lastFieldType }}"
                     [model]="fieldTypes"
-                    pTooltip="Adds a new option field - a hex-bytes field or last added field type by default. Use the dropdown to select other type, if desired."
+                    pTooltip="Adds a new option field - a binary field or last added field type by default. Use the dropdown to select other type, if desired."
                     styleClass="p-button-secondary p-button-sm p-button-text"
                     (onClick)="lastFieldCommand()"
                 >
@@ -84,7 +84,7 @@
                 [ngSwitch]="fieldControl.data.fieldType"
                 [ngClass]="{ flex: true, 'align-items-top': true, 'ml-3': true, 'mt-4': first, 'mt-5': !first }"
             >
-                <div *ngSwitchCase="FieldType.HexBytes" [formGroupName]="i">
+                <div *ngSwitchCase="FieldType.Binary" [formGroupName]="i">
                     <span class="p-float-label">
                         <textarea
                             id="{{ fieldControl.data.getInputId(0) }}"
@@ -259,8 +259,8 @@
                             (click)="deleteField(i)"
                         ></button>
                     </div>
-                    <div *ngIf="fieldControl.data.fieldType === FieldType.HexBytes">
-                        <app-help-tip title="hex-bytes Option Field">
+                    <div *ngIf="fieldControl.data.fieldType === FieldType.Binary">
+                        <app-help-tip title="binary Option Field">
                             <p>
                                 Option value can be specified as a string of the hexadecimal digits. The following
                                 formats are accepted:

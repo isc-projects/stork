@@ -39,7 +39,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 					Encapsulate: "option-1001.1",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.HexBytesField,
+							FieldType: keaconfig.BinaryField,
 							Values:    []string{"01:02:03"},
 						},
 					},
@@ -452,7 +452,7 @@ func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
 		values      []string
 	}
 	tests := []test{
-		{"hex-bytes", keaconfig.HexBytesField, []any{"010203"}, []string{"010203"}},
+		{"binary", keaconfig.BinaryField, []any{"010203"}, []string{"010203"}},
 		{"string", keaconfig.StringField, []any{"foo"}, []string{"foo"}},
 		{"bool", keaconfig.BoolField, []any{true}, []string{"true"}},
 		{"uint8", keaconfig.Uint8Field, []any{111}, []string{"111"}},
