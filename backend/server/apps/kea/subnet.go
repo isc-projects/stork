@@ -42,6 +42,62 @@ func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.Indexed
 	return nil
 }
 
+// Overrides the address pools into the existing pools.
+func overrideIntoAddressPools(existingPools []dbmodel.AddressPool, newPools []dbmodel.AddressPool) (pools []dbmodel.AddressPool) {
+NEW_POOLS:
+	for _, newPool := range newPools {
+		for _, existingPool := range existingPools {
+			if newPool.EqualsData(&existingPool) {
+				// Pool already exists in the database.
+				pools = append(pools, existingPool)
+				continue NEW_POOLS
+			}
+		}
+		// Pool aren't existed in the database yet.
+		pools = append(pools, newPool)
+	}
+	return
+}
+
+// Overrides the delegated prefix pools into the existing pools.
+func overrideIntoPDPools(existingPools []dbmodel.PrefixPool, newPools []dbmodel.PrefixPool) (pools []dbmodel.PrefixPool) {
+NEW_POOLS:
+	for _, newPool := range newPools {
+		for _, existingPool := range existingPools {
+			if newPool.EqualsData(&existingPool) {
+				// Pool already exists in the database.
+				pools = append(pools, existingPool)
+				continue NEW_POOLS
+			}
+		}
+		// Pool aren't existed in the database yet.
+		pools = append(pools, newPool)
+	}
+	return
+}
+
+// Overrides a subnet into the existing database one.
+func overrideIntoDatabaseSubnet(dbi dbops.DBI, existingSubnet *dbmodel.Subnet, changedSubnet *dbmodel.Subnet) error {
+	// Hosts and local hosts.
+	hosts, err := overrideIntoDatabaseHosts(dbi, existingSubnet.ID, changedSubnet.Hosts)
+	if err != nil {
+		return err
+	}
+	existingSubnet.Hosts = hosts
+
+	// Client class.
+	existingSubnet.ClientClass = changedSubnet.ClientClass
+
+	// Address pools.
+	addressPools := overrideIntoAddressPools(existingSubnet.AddressPools, changedSubnet.AddressPools)
+	existingSubnet.AddressPools = addressPools
+
+	// Prefix delegation pools.
+	pdPools := overrideIntoPDPools(existingSubnet.PrefixPools, changedSubnet.PrefixPools)
+	existingSubnet.PrefixPools = pdPools
+	return nil
+}
+
 // For a given Kea configuration it detects the shared networks matching this
 // configuration. All existing shared network matching the given configuration
 // are returned as they are. If there is no match a new shared network instance
@@ -102,15 +158,14 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 				if existingSubnet == nil {
 					networkForUpdate.Subnets = append(networkForUpdate.Subnets, subnet)
 				} else {
-					// Subnet already exists and may contain some hosts. Let's
-					// override the hosts from the new subnet into the existing subnet.
-					hosts, err := overrideIntoDatabaseSubnetHosts(dbi, existingSubnet, &subnet)
+					// Subnet already exists and may contain some updated data. Let's
+					// override the data from the new subnet into the existing subnet.
+					err := overrideIntoDatabaseSubnet(dbi, existingSubnet, &subnet)
 					if err != nil {
-						log.Warnf("Skipping hosts for subnet %s after hosts override failure: %v",
+						log.Warnf("Skipping subnet %s after override failure: %v",
 							subnet.Prefix, err)
 						continue
 					}
-					existingSubnet.Hosts = hosts
 					networkForUpdate.Subnets = append(networkForUpdate.Subnets, *existingSubnet)
 				}
 			}
@@ -164,18 +219,15 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 			}
 			existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
 			if existingSubnet != nil {
-				subnets = append(subnets, *existingSubnet)
-
-				// Subnet already exists and may contain some hosts. Let's
-				// override the hosts from the new subnet into the existing subnet.
-				hosts, err := overrideIntoDatabaseSubnetHosts(dbi, existingSubnet, subnet)
+				// Subnet already exists and may contain some updated data. Let's
+				// override the data from the new subnet into the existing subnet.
+				err := overrideIntoDatabaseSubnet(dbi, existingSubnet, subnet)
 				if err != nil {
-					log.Warnf("Skipping hosts for subnet %s after hosts override failure: %v",
+					log.Warnf("Skipping subnet %s after data override failure: %v",
 						subnet.Prefix, err)
 					continue
 				}
-				// Assign merged hosts to the subnet.
-				subnets[len(subnets)-1].Hosts = hosts
+				subnets = append(subnets, *existingSubnet)
 			} else {
 				subnets = append(subnets, *subnet)
 			}
