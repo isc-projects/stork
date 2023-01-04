@@ -528,13 +528,13 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 		hosts = append(hosts, *host)
 	}
 
-	var mergedHosts []dbmodel.Host
+	var overriddenHosts []dbmodel.Host
 	// The subnet is nil when we're dealing with the global hosts.
 	if subnet == nil {
-		if mergedHosts, err = mergeHosts(tx, int64(0), hosts); err != nil {
+		if overriddenHosts, err = overrideIntoDatabaseHosts(tx, int64(0), hosts); err != nil {
 			return
 		}
-		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon); err != nil {
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, overriddenHosts, daemon); err != nil {
 			return
 		}
 		// We're done with global hosts, so let's get the next chunk of
@@ -550,28 +550,30 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	// given subnet and then fetch this subnet along with all the
 	// hosts it has in the database. The second parameter specifies
 	// the subnet with the new hosts (fetched via the Kea API). These
-	// hosts are merged into the existing hosts for this subnet and
-	// returned as mergedHosts.
-	if mergedHosts, err = mergeSubnetHosts(tx, subnet, subnet); err != nil {
+	// hosts are overridden into the existing hosts for this subnet and
+	// returned as overriddenHosts.
+	if overriddenHosts, err = overrideIntoDatabaseSubnetHosts(tx, subnet, subnet); err != nil {
 		return
 	}
 	// Now we have to assign the combined set of existing hosts and
 	// new hosts into the subnet instance and commit everything to the
 	// database.
-	subnet.Hosts = mergedHosts
+	subnet.Hosts = overriddenHosts
 	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon); err != nil {
 		return
 	}
 	return nil
 }
 
-// Merges global or subnet specific hosts and returns the slice with merged
-// hosts. When subnetID of 0 is specified it indicates that the global hosts
+// Overrides global or subnet specific hosts into existing entries from database
+// to restore the database ID and some fixed values (e.g. creation timestamp),
+// and returns the slice with combined hosts.
+// When subnetID of 0 is specified it indicates that the global hosts
 // are being merged. If the given host already exists in the database the
 // new host is joined to it, i.e., its local host instances are appended.
 // If the host does not exist yet, the new host is appended to the returned
 // slice.
-func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host) (hosts []dbmodel.Host, err error) {
+func overrideIntoDatabaseHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host) (hosts []dbmodel.Host, err error) {
 	// If there are no new hosts there is nothing to do.
 	if len(newHosts) == 0 {
 		return
@@ -579,10 +581,10 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host) (hosts [
 	// Get the hosts from the Stork database for this subnet.
 	existingHosts, err := dbmodel.GetHostsBySubnetID(dbi, subnetID)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem merging hosts for subnet %d", subnetID)
+		err = errors.WithMessagef(err, "problem overriding hosts for subnet %d", subnetID)
 		return
 	}
-	// Merge each new host into the existing hosts.
+	// Override each new host into the existing hosts.
 	for i := range newHosts {
 		newHost := &newHosts[i]
 		// Iterate over the existing hosts to check if the new hosts are there already.
@@ -602,12 +604,12 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host) (hosts [
 	return hosts, err
 }
 
-// Merges hosts belonging to the new subnet into the hosts within existing subnet.
+// Overrides hosts belonging to the new subnet into the hosts within existing subnet.
 // A host from the new subnet is added to the slice of returned hosts if such
 // host doesn't exist. If the host exists, the new host is joined to it by appending
 // the LocalHost instances.
-func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts)
+func overrideIntoDatabaseSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
+	return overrideIntoDatabaseHosts(dbi, existingSubnet.ID, newSubnet.Hosts)
 }
 
 // For a given Kea daemon it detects host reservations configured in the
@@ -634,6 +636,6 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup k
 			}
 		}
 	}
-	// Merge new hosts into the existing global hosts.
-	return mergeHosts(dbi, int64(0), hosts)
+	// Overrides new hosts into the existing global hosts.
+	return overrideIntoDatabaseHosts(dbi, int64(0), hosts)
 }
