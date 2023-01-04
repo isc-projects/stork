@@ -102,8 +102,10 @@ WORKDIR /app/etc
 COPY etc .
 WORKDIR /app/api
 COPY api .
+WORKDIR /app/codegen
+COPY codegen .
 WORKDIR /app/rakelib
-COPY rakelib/10_codebase.rake rakelib/20_build.rake rakelib/40_dist.rake ./
+COPY rakelib/10_codebase.rake rakelib/20_build.rake rakelib/30_dev.rake rakelib/40_dist.rake ./
 
 FROM codebase as codebase-backend
 WORKDIR /app/tools/golang
@@ -114,8 +116,14 @@ COPY backend .
 FROM codebase AS codebase-webui
 WORKDIR /app/grafana
 COPY grafana .
+WORKDIR /app/tools/golang/go
+COPY --from=gopath-prepare /app/tools/golang/go .
 WORKDIR /app/backend
-COPY backend/version.go .
+COPY backend/go.mod ./
+COPY backend/go.sum ./
+COPY backend/version.go ./
+COPY backend/codegen ./codegen
+COPY backend/cmd/stork-code-gen ./cmd/stork-code-gen
 WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app/webui

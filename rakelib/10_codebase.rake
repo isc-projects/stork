@@ -229,6 +229,7 @@ WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/src/assets/arm/**/*")
     .include(open_api_generator_webui_dir)
     .include(node_module_dir)
+    .include(go_code_gen_codebase)
     .include(std_option_defs4_ts_file)
     .include(std_option_defs6_ts_file)
 
