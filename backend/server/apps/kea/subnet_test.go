@@ -788,11 +788,11 @@ func TestDetectNetworkUpdateDelegatedPrefixPool(t *testing.T) {
 	// Act
 	// Update the config.
 	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix"] = "fe80:42::"
-	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix-len"] = "72"
-	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["delegated-len"] = "92"
+	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["prefix-len"] = 72
+	config["Dhcp6"].(m)["subnet6"].([]m)[0]["pd-pools"].([]m)[0]["delegated-len"] = 92
 	configJSON, _ = json.Marshal(config)
 	keaConfig, _ := dbmodel.NewKeaConfigFromJSON(string(configJSON))
-	app.Daemons[0].KeaDaemon.Config = keaConfig
+	app.Daemons[1].KeaDaemon.Config = keaConfig
 	err := CommitAppIntoDB(db, app, fec, nil, lookup)
 
 	// Assert

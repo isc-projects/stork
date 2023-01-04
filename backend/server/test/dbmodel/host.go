@@ -103,7 +103,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	}
 	for i, s := range subnets {
 		subnet := s
-		err := dbmodel.AddSubnet(db, &subnet)
+		err := dbmodel.AddOrUpdateSubnet(db, &subnet)
 		require.NoError(t, err)
 		require.NotZero(t, subnet.ID)
 		subnets[i] = subnet

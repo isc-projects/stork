@@ -39,7 +39,7 @@ func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 		subnet := s
 		subnet.SharedNetworkID = network.ID
 
-		err = addSubnetWithPools(tx, &subnet)
+		err = addOrUpdateSubnetWithPools(tx, &subnet)
 		if err != nil {
 			return err
 		}
@@ -223,11 +223,11 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	q := dbi.Model(&networks)
 
 	// prepare distinct on expression to include sort field, otherwise distinct on will fail
-	distingOnFields := "shared_network.id"
+	distinctOnFields := "shared_network.id"
 	if sortField != "" && sortField != "id" && sortField != "shared_network.id" {
-		distingOnFields = sortField + ", " + distingOnFields
+		distinctOnFields = sortField + ", " + distinctOnFields
 	}
-	q = q.DistinctOn(distingOnFields)
+	q = q.DistinctOn(distinctOnFields)
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.

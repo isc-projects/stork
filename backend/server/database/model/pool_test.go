@@ -70,7 +70,7 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	subnet := Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddSubnet(db, &subnet)
+	err := AddOrUpdateSubnet(db, &subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -110,7 +110,7 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	subnet := Subnet{
 		Prefix: "2001:db8:1::/64",
 	}
-	err := AddSubnet(db, &subnet)
+	err := AddOrUpdateSubnet(db, &subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 

@@ -177,33 +177,84 @@ func (s *Subnet) GetFamily() int {
 	return family
 }
 
-// Add address and prefix pools from the subnet instance into the database
-// in a transaction. The subnet is expected to exist in the database.
-func addSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
+// Add or update address and prefix pools from the subnet instance into the
+// database in a transaction. The subnet is expected to exist in the database.
+func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
+	// Remove out-of-date pools.
+	existingAddressPoolIDs := []int64{}
+	for _, p := range subnet.AddressPools {
+		if p.ID != 0 {
+			existingAddressPoolIDs = append(existingAddressPoolIDs, p.ID)
+		}
+	}
+	q := tx.Model((*AddressPool)(nil)).
+		Where("subnet_id = ?", subnet.ID)
+	if len(existingAddressPoolIDs) != 0 {
+		q = q.WhereIn("id NOT IN (?)", existingAddressPoolIDs)
+	}
+	if _, err = q.Delete(); err != nil {
+		return pkgerrors.Wrap(err, "problem removing out-of-date address pools")
+	}
+
+	existingPrefixPoolIDs := []int64{}
+	for _, p := range subnet.PrefixPools {
+		if p.ID != 0 {
+			existingPrefixPoolIDs = append(existingPrefixPoolIDs, p.ID)
+		}
+	}
+	q = tx.Model((*PrefixPool)(nil)).
+		Where("subnet_id = ?", subnet.ID)
+	if len(existingPrefixPoolIDs) != 0 {
+		q = q.WhereIn("id NOT IN (?)", existingPrefixPoolIDs)
+	}
+	if _, err = q.Delete(); err != nil {
+		return pkgerrors.Wrap(err, "problem removing out-of-date prefix pools")
+	}
+
+	// Check if there are entries to add or update.
 	if len(subnet.AddressPools) == 0 && len(subnet.PrefixPools) == 0 {
 		return nil
 	}
-	// Add address pools first.
+
+	// Add or update address pools first.
 	for i, p := range subnet.AddressPools {
 		pool := p
 		pool.SubnetID = subnet.ID
-		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
-		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
-				pool.LowerBound, pool.UpperBound, subnet.ID)
-			return err
+		if pool.ID == 0 {
+			_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+			if err != nil {
+				return pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
+					pool.LowerBound, pool.UpperBound, subnet.ID)
+			}
+		} else {
+			_, err = tx.Model(&pool).WherePK().Update()
+			if err != nil {
+				return pkgerrors.Wrapf(err, "problem updating address pool %s-%s for subnet with ID %d",
+					pool.LowerBound, pool.UpperBound, subnet.ID)
+			}
 		}
+
 		subnet.AddressPools[i] = pool
 	}
-	// Add prefix pools. This should be empty for IPv4 case.
+
+	// Add or update prefix pools. This should be empty for IPv4 case.
 	for i, p := range subnet.PrefixPools {
 		pool := p
 		pool.SubnetID = subnet.ID
-		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
-		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
-				pool.Prefix, subnet.ID)
-			return err
+		if p.ID == 0 {
+			_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+			if err != nil {
+				err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
+					pool.Prefix, subnet.ID)
+				return err
+			}
+		} else {
+			_, err = tx.Model(&pool).WherePK().Update()
+			if err != nil {
+				err = pkgerrors.Wrapf(err, "problem updating prefix pool %s for subnet with ID %d",
+					pool.Prefix, subnet.ID)
+				return err
+			}
 		}
 		subnet.PrefixPools[i] = pool
 	}
@@ -212,32 +263,32 @@ func addSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 }
 
 // Adds a new subnet and its pools to the database within a transaction.
-func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
-	// Add the subnet first.
-	_, err := tx.Model(subnet).Insert()
+func addOrUpdateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
+	// Add or update the subnet first.
+	if subnet.ID == 0 {
+		_, err = tx.Model(subnet).Insert()
+	} else {
+		_, err = tx.Model(subnet).WherePK().Update()
+	}
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem adding new subnet with prefix %s", subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem operating subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 	// Add the pools.
-	err = addSubnetPools(tx, subnet)
-	if err != nil {
-		return err
-	}
-	return err
+	return addOrUpdateSubnetPools(tx, subnet)
 }
 
-// Adds a subnet with its pools into the database. If the subnet has any
-// associations with a shared network, those associations are also created
-// in the database. It begins a new transaction when dbi has a *pg.DB type
-// or uses an existing transaction when dbi has a *pg.Tx type.
-func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
+// Adds or updates a subnet with its pools into the database. If the subnet has
+// any associations with a shared network, those associations are also created
+// (or updated) in the database. It begins a new transaction when dbi has a
+// *pg.DB type or uses an existing transaction when dbi has a *pg.Tx type.
+func AddOrUpdateSubnet(dbi dbops.DBI, subnet *Subnet) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addSubnetWithPools(tx, subnet)
+			return addOrUpdateSubnetWithPools(tx, subnet)
 		})
 	}
-	return addSubnetWithPools(dbi.(*pg.Tx), subnet)
+	return addOrUpdateSubnetWithPools(dbi.(*pg.Tx), subnet)
 }
 
 // Fetches the subnet and its pools by id from the database.
@@ -597,16 +648,15 @@ func (s *Subnet) GetApp(appID int64) *App {
 func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *Daemon) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
-		if subnet.ID == 0 {
-			subnet.SharedNetworkID = networkID
-			err = AddSubnet(tx, subnet)
-			if err != nil {
-				err = pkgerrors.WithMessagef(err, "unable to add detected subnet %s to the database",
-					subnet.Prefix)
-				return nil, err
-			}
-			addedSubnets = append(addedSubnets, subnet)
+		subnet.SharedNetworkID = networkID
+		err = AddOrUpdateSubnet(tx, subnet)
+		if err != nil {
+			err = pkgerrors.WithMessagef(err, "unable to add or modify detected subnet %s to the database",
+				subnet.Prefix)
+			return nil, err
 		}
+		addedSubnets = append(addedSubnets, subnet)
+
 		err = AddDaemonToSubnet(tx, subnet, daemon)
 		if err != nil {
 			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea daemon of ID %d", subnet.Prefix, daemon.ID)
