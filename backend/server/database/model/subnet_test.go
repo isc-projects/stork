@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -1031,6 +1032,77 @@ func TestSerializeLocalSubnetWithNoneStatsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	require.Nil(t, deserialized.Stats)
+}
+
+// Test that the subnet and its pools are updated properly.
+func TestUpdateSubnet(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	sharedNetworkFoo := &SharedNetwork{Name: "foo"}
+	sharedNetworkBar := &SharedNetwork{Name: "bar"}
+	_ = AddSharedNetwork(db, sharedNetworkFoo)
+	_ = AddSharedNetwork(db, sharedNetworkBar)
+
+	subnet := &Subnet{
+		Prefix:      "fe80::/64",
+		ClientClass: "foo",
+		AddressPools: []AddressPool{
+			{LowerBound: "fe80::1", UpperBound: "fe80::10"},
+			{LowerBound: "fe80::100", UpperBound: "fe80::110"},
+		},
+		PrefixPools: []PrefixPool{
+			{Prefix: "fe80:1::/80", DelegatedLen: 96},
+			{Prefix: "fe80:2::/80", DelegatedLen: 96},
+		},
+		SharedNetworkID: sharedNetworkFoo.ID,
+		Hosts:           []Host{{Hostname: "foo"}},
+	}
+
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	// Act
+	subnet.ClientClass = "bar"
+	subnet.AddressPools = subnet.AddressPools[1:]
+	subnet.AddressPools = append(subnet.AddressPools, AddressPool{
+		LowerBound: "fe80::1000", UpperBound: "fe80::1010",
+	})
+
+	subnet.PrefixPools = subnet.PrefixPools[1:]
+	subnet.PrefixPools = append(subnet.PrefixPools, PrefixPool{
+		Prefix: "fe80:2::/80", DelegatedLen: 108,
+	})
+
+	subnet.SharedNetworkID = sharedNetworkBar.ID
+	subnet.Hosts = []Host{{Hostname: "bar"}}
+
+	err = UpdateSubnet(db, subnet)
+
+	// Assert
+	require.NoError(t, err)
+	subnets, _, _ := GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAny)
+	require.Len(t, subnets, 1)
+	subnet = &subnets[0]
+
+	require.EqualValues(t, "bar", subnet.ClientClass)
+
+	require.Len(t, subnet.AddressPools, 2)
+	sort.Slice(subnet.AddressPools, func(i, j int) bool {
+		return subnet.AddressPools[i].ID < subnet.AddressPools[j].ID
+	})
+	require.EqualValues(t, 2, subnet.AddressPools[0].ID)
+	require.EqualValues(t, 3, subnet.AddressPools[1].ID)
+	require.EqualValues(t, "fe80::1000", subnet.AddressPools[1].LowerBound)
+
+	require.Len(t, subnet.PrefixPools, 2)
+	sort.Slice(subnet.PrefixPools, func(i, j int) bool {
+		return subnet.PrefixPools[i].ID < subnet.PrefixPools[j].ID
+	})
+	require.EqualValues(t, 2, subnet.PrefixPools[0].ID)
+	require.EqualValues(t, 3, subnet.PrefixPools[1].ID)
+	require.EqualValues(t, 108, subnet.PrefixPools[1].DelegatedLen)
 }
 
 // Benchmark measuring a time to add a single subnet.

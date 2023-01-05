@@ -177,9 +177,10 @@ func (s *Subnet) GetFamily() int {
 	return family
 }
 
-// Add or update address and prefix pools from the subnet instance into the
-// database in a transaction. The subnet is expected to exist in the database.
-func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
+// Add address and prefix pools from the subnet instance and removes these ones
+// that no longer belongs to this subnet into the database in a transaction.
+// The subnet is expected to exist in the database.
+func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	// Remove out-of-date pools.
 	existingAddressPoolIDs := []int64{}
 	for _, p := range subnet.AddressPools {
@@ -216,7 +217,7 @@ func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		return nil
 	}
 
-	// Add or update address pools first.
+	// Add address pools first.
 	for i, p := range subnet.AddressPools {
 		pool := p
 		pool.SubnetID = subnet.ID
@@ -226,18 +227,12 @@ func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 				return pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
 					pool.LowerBound, pool.UpperBound, subnet.ID)
 			}
-		} else {
-			_, err = tx.Model(&pool).WherePK().Update()
-			if err != nil {
-				return pkgerrors.Wrapf(err, "problem updating address pool %s-%s for subnet with ID %d",
-					pool.LowerBound, pool.UpperBound, subnet.ID)
-			}
 		}
 
 		subnet.AddressPools[i] = pool
 	}
 
-	// Add or update prefix pools. This should be empty for IPv4 case.
+	// Add prefix pools. This should be empty for IPv4 case.
 	for i, p := range subnet.PrefixPools {
 		pool := p
 		pool.SubnetID = subnet.ID
@@ -245,13 +240,6 @@ func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 			_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
 			if err != nil {
 				err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
-					pool.Prefix, subnet.ID)
-				return err
-			}
-		} else {
-			_, err = tx.Model(&pool).WherePK().Update()
-			if err != nil {
-				err = pkgerrors.Wrapf(err, "problem updating prefix pool %s for subnet with ID %d",
 					pool.Prefix, subnet.ID)
 				return err
 			}
@@ -272,7 +260,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		return err
 	}
 	// Add the pools.
-	return addOrUpdateSubnetPools(tx, subnet)
+	return addAndClearSubnetPools(tx, subnet)
 }
 
 // Updates a subnet and its pools to the database within a transaction.
@@ -285,7 +273,7 @@ func updateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		return err
 	}
 	// Add the pools.
-	return addOrUpdateSubnetPools(tx, subnet)
+	return addAndClearSubnetPools(tx, subnet)
 }
 
 // Adds a subnet with its pools into the database. If the subnet has
