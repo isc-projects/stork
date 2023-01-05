@@ -39,7 +39,7 @@ func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 		subnet := s
 		subnet.SharedNetworkID = network.ID
 
-		err = addOrUpdateSubnetWithPools(tx, &subnet)
+		err = addSubnetWithPools(tx, &subnet)
 		if err != nil {
 			return err
 		}

@@ -62,17 +62,17 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = AddOrUpdateSubnet(db, &Subnet{
+	_ = AddSubnet(db, &Subnet{
 		Prefix:          "3001:1::/64",
 		AddrUtilization: 10,
 		PdUtilization:   15,
 	})
-	_ = AddOrUpdateSubnet(db, &Subnet{
+	_ = AddSubnet(db, &Subnet{
 		Prefix:          "3001:2::/64",
 		AddrUtilization: 20,
 		PdUtilization:   25,
 	})
-	_ = AddOrUpdateSubnet(db, &Subnet{
+	_ = AddSubnet(db, &Subnet{
 		Prefix: "192.168.2.1/32",
 	})
 

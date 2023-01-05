@@ -42,7 +42,7 @@ func (m *utilizationStatsMock) GetStatistics() SubnetStats {
 }
 
 // Test that subnet with address pools is inserted into the database.
-func TestAddOrUpdateSubnetWithAddressPools(t *testing.T) {
+func TestAddSubnetWithAddressPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -63,7 +63,7 @@ func TestAddOrUpdateSubnetWithAddressPools(t *testing.T) {
 			},
 		},
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -79,7 +79,7 @@ func TestAddOrUpdateSubnetWithAddressPools(t *testing.T) {
 }
 
 // Test that subnet with address and prefix pools is inserted into the database.
-func TestAddOrUpdateSubnetWithPrefixPools(t *testing.T) {
+func TestAddSubnetWithPrefixPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -114,7 +114,7 @@ func TestAddOrUpdateSubnetWithPrefixPools(t *testing.T) {
 			},
 		},
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -168,7 +168,7 @@ func TestGetAllSubnets(t *testing.T) {
 	}
 	for _, s := range subnets {
 		subnet := s
-		err := AddOrUpdateSubnet(db, &subnet)
+		err := AddSubnet(db, &subnet)
 		require.NoError(t, err)
 	}
 
@@ -229,7 +229,7 @@ func TestGlobalSubnets(t *testing.T) {
 	}
 	for _, s := range subnets {
 		subnet := s
-		err := AddOrUpdateSubnet(db, &subnet)
+		err := AddSubnet(db, &subnet)
 		require.NoError(t, err)
 	}
 
@@ -253,7 +253,7 @@ func TestGlobalSubnets(t *testing.T) {
 }
 
 // Test that the inserted subnet can be associated with a shared network.
-func TestAddOrUpdateSubnetWithExistingSharedNetwork(t *testing.T) {
+func TestAddSubnetWithExistingSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -271,7 +271,7 @@ func TestAddOrUpdateSubnetWithExistingSharedNetwork(t *testing.T) {
 		Prefix:          "2001:db8:1::/64",
 		SharedNetworkID: sharedNetwork.ID,
 	}
-	err = AddOrUpdateSubnet(db, subnet)
+	err = AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -299,7 +299,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -374,7 +374,7 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 		},
 	}
 	for i := range subnets {
-		err := AddOrUpdateSubnet(db, &subnets[i])
+		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 	}
@@ -429,7 +429,7 @@ func TestGetSubnetsByDaemonID(t *testing.T) {
 		},
 	}
 	for i := range subnets {
-		err := AddOrUpdateSubnet(db, &subnets[i])
+		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
@@ -510,7 +510,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 		},
 	}
 	for i := range subnets {
-		err := AddOrUpdateSubnet(db, &subnets[i])
+		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 	}
@@ -559,7 +559,7 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -590,7 +590,7 @@ func TestUpdateStats(t *testing.T) {
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -770,7 +770,7 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -797,7 +797,7 @@ func TestUpdateUtilization(t *testing.T) {
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 	}
-	err := AddOrUpdateSubnet(db, subnet)
+	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -849,7 +849,7 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 		},
 	}
 	for i := range subnets {
-		err := AddOrUpdateSubnet(db, &subnets[i])
+		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 	}
@@ -1034,7 +1034,7 @@ func TestSerializeLocalSubnetWithNoneStatsToJSON(t *testing.T) {
 }
 
 // Benchmark measuring a time to add a single subnet.
-func BenchmarkAddOrUpdateSubnet(b *testing.B) {
+func BenchmarkAddSubnet(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
 	defer teardown()
 
@@ -1053,7 +1053,7 @@ func BenchmarkAddOrUpdateSubnet(b *testing.B) {
 				},
 			},
 		}
-		AddOrUpdateSubnet(tx, subnet)
+		AddSubnet(tx, subnet)
 	}
 	tx.Commit()
 }
@@ -1088,7 +1088,7 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 					"id":     i + 1,
 					"subnet": prefix + "0/24",
 				}
-				AddOrUpdateSubnet(tx, &subnet)
+				AddSubnet(tx, &subnet)
 				subnets = append(subnets, subnet)
 				keaSubnets = append(keaSubnets, keaSubnet)
 			}

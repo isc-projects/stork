@@ -1596,7 +1596,7 @@ func TestGetDhcpOverview(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	err = dbmodel.AddOrUpdateSubnet(db, &dbmodel.Subnet{
+	err = dbmodel.AddSubnet(db, &dbmodel.Subnet{
 		Prefix: "3001:fed8::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{

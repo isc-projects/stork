@@ -263,13 +263,10 @@ func addOrUpdateSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 }
 
 // Adds a new subnet and its pools to the database within a transaction.
-func addOrUpdateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
-	// Add or update the subnet first.
-	if subnet.ID == 0 {
-		_, err = tx.Model(subnet).Insert()
-	} else {
-		_, err = tx.Model(subnet).WherePK().Update()
-	}
+func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
+	// Add the subnet first.
+	_, err = tx.Model(subnet).Insert()
+
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem operating subnet with prefix %s", subnet.Prefix)
 		return err
@@ -278,17 +275,43 @@ func addOrUpdateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	return addOrUpdateSubnetPools(tx, subnet)
 }
 
-// Adds or updates a subnet with its pools into the database. If the subnet has
+// Updates a subnet and its pools to the database within a transaction.
+func updateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
+	// Update the subnet first.
+	_, err = tx.Model(subnet).WherePK().Update()
+
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem operating subnet with prefix %s", subnet.Prefix)
+		return err
+	}
+	// Add the pools.
+	return addOrUpdateSubnetPools(tx, subnet)
+}
+
+// Adds a subnet with its pools into the database. If the subnet has
 // any associations with a shared network, those associations are also created
-// (or updated) in the database. It begins a new transaction when dbi has a
-// *pg.DB type or uses an existing transaction when dbi has a *pg.Tx type.
-func AddOrUpdateSubnet(dbi dbops.DBI, subnet *Subnet) error {
+// in the database. It begins a new transaction when dbi has a *pg.DB type or
+// uses an existing transaction when dbi has a *pg.Tx type.
+func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addOrUpdateSubnetWithPools(tx, subnet)
+			return addSubnetWithPools(tx, subnet)
 		})
 	}
-	return addOrUpdateSubnetWithPools(dbi.(*pg.Tx), subnet)
+	return addSubnetWithPools(dbi.(*pg.Tx), subnet)
+}
+
+// Updates a subnet with its pools into the database. If the subnet has any
+// associations with a shared network, those associations are also updated
+// in the database. It begins a new transaction when dbi has a *pg.DB type or
+// uses an existing transaction when dbi has a *pg.Tx type.
+func UpdateSubnet(dbi dbops.DBI, subnet *Subnet) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateSubnetWithPools(tx, subnet)
+		})
+	}
+	return updateSubnetWithPools(dbi.(*pg.Tx), subnet)
 }
 
 // Fetches the subnet and its pools by id from the database.
@@ -649,12 +672,20 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 	for i := range subnets {
 		subnet := &subnets[i]
 		subnet.SharedNetworkID = networkID
-		err = AddOrUpdateSubnet(tx, subnet)
-		if err != nil {
-			err = pkgerrors.WithMessagef(err, "unable to add or modify detected subnet %s to the database",
+
+		if subnet.ID == 0 {
+			err = AddSubnet(tx, subnet)
+			err = pkgerrors.WithMessagef(err, "unable to add detected subnet %s to the database",
 				subnet.Prefix)
+		} else {
+			err = UpdateSubnet(tx, subnet)
+			err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s to the database",
+				subnet.Prefix)
+		}
+		if err != nil {
 			return nil, err
 		}
+
 		addedSubnets = append(addedSubnets, subnet)
 
 		err = AddDaemonToSubnet(tx, subnet, daemon)

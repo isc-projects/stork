@@ -81,7 +81,7 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	subnet := dbmodel.Subnet{
 		Prefix: subnetPrefix,
 	}
-	err = dbmodel.AddOrUpdateSubnet(db, &subnet)
+	err = dbmodel.AddSubnet(db, &subnet)
 	require.NoError(t, err)
 
 	// Associate the daemon with the subnet.
@@ -2352,7 +2352,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		dbSubnet := dbmodel.Subnet{
 			Prefix: prefix,
 		}
-		err = dbmodel.AddOrUpdateSubnet(db, &dbSubnet)
+		err = dbmodel.AddSubnet(db, &dbSubnet)
 		if err != nil {
 			b.Fatalf("failed to add a subnet %s: %+v", dbSubnet.Prefix, err)
 		}
