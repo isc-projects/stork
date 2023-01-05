@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
@@ -1103,6 +1105,69 @@ func TestUpdateSubnet(t *testing.T) {
 	require.EqualValues(t, 2, subnet.PrefixPools[0].ID)
 	require.EqualValues(t, 3, subnet.PrefixPools[1].ID)
 	require.EqualValues(t, 108, subnet.PrefixPools[1].DelegatedLen)
+}
+
+// Test that the new pools are added and existing ones are untouched. The
+// out-of-date entries should be removed.
+func TestAddAndClearSubnetPools(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	subnetFoo := &Subnet{
+		Prefix: "3001::/64",
+		AddressPools: []AddressPool{
+			{LowerBound: "3001:1::1", UpperBound: "3001:1::10"},
+			{LowerBound: "3001:2::1", UpperBound: "3001:2::10"},
+			{LowerBound: "3001:3::1", UpperBound: "3001:3::10"},
+		},
+		PrefixPools: []PrefixPool{
+			{Prefix: "3001:10::/80", DelegatedLen: 96},
+			{Prefix: "3001:20::/80", DelegatedLen: 96},
+			{Prefix: "3001:30::/80", DelegatedLen: 96},
+		},
+	}
+
+	subnetBar := &Subnet{
+		Prefix: "3002::/64",
+		AddressPools: []AddressPool{
+			{LowerBound: "3002:1::1", UpperBound: "3002:1::10"},
+			{LowerBound: "3002:2::1", UpperBound: "3002:2::10"},
+		},
+		PrefixPools: []PrefixPool{
+			{Prefix: "3002:10::/80", DelegatedLen: 96},
+			{Prefix: "3002:20::/80", DelegatedLen: 96},
+		},
+	}
+
+	_ = AddSubnet(db, subnetFoo)
+	_ = AddSubnet(db, subnetBar)
+
+	// Act
+	subnetFoo.AddressPools[2].UpperBound = "3001:3::42"
+	subnetFoo.PrefixPools[2].DelegatedLen = 116
+	subnetFoo.AddressPools = subnetFoo.AddressPools[1:]
+	subnetBar.PrefixPools = subnetBar.PrefixPools[1:]
+	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		if err := addAndClearSubnetPools(tx, subnetFoo); err != nil {
+			return err
+		}
+		return addAndClearSubnetPools(tx, subnetBar)
+	})
+
+	// Assert
+	require.NoError(t, err)
+	subnetFoo, err = GetSubnet(db, subnetFoo.ID)
+	require.NoError(t, err)
+	subnetBar, err = GetSubnet(db, subnetBar.ID)
+	require.NoError(t, err)
+	require.Len(t, subnetFoo.AddressPools, 2)
+	require.Len(t, subnetBar.AddressPools, 2)
+	require.Len(t, subnetFoo.PrefixPools, 3)
+	require.Len(t, subnetBar.PrefixPools, 1)
+	// Update is not supported.
+	require.EqualValues(t, "3001:3::10", subnetFoo.AddressPools[1].UpperBound)
+	require.EqualValues(t, 96, subnetFoo.PrefixPools[1].DelegatedLen)
 }
 
 // Benchmark measuring a time to add a single subnet.
