@@ -185,8 +185,8 @@ func TestPrefixPoolEqualsDataID(t *testing.T) {
 // Test that two prefix pools have equal data if their create timestamps differ.
 func TestPrefixPoolEqualsDataCreateTimestamp(t *testing.T) {
 	// Arrange
-	first := &PrefixPool{CreatedAt: time.Date(1980, 1, 1, 12, 00, 00, 0, time.UTC)}
-	second := &PrefixPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 00, 0, time.Local)}
+	first := &PrefixPool{CreatedAt: time.Date(1980, 1, 1, 12, 0o0, 0o0, 0, time.UTC)}
+	second := &PrefixPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
 	equity := first.EqualsData(second)
@@ -267,8 +267,8 @@ func TestAddressPoolEqualsDataID(t *testing.T) {
 // Test that two address pools have equal data if their create timestamp differ.
 func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 	// Arrange
-	first := &AddressPool{CreatedAt: time.Date(1980, 1, 1, 12, 00, 00, 0, time.UTC)}
-	second := &AddressPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 00, 0, time.Local)}
+	first := &AddressPool{CreatedAt: time.Date(1980, 1, 1, 12, 0o0, 0o0, 0, time.UTC)}
+	second := &AddressPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
 	equity := first.EqualsData(second)

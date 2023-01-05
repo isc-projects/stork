@@ -45,8 +45,10 @@ func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.Indexed
 // Overrides the address pools into the existing pools.
 func overrideIntoAddressPools(existingPools []dbmodel.AddressPool, newPools []dbmodel.AddressPool) (pools []dbmodel.AddressPool) {
 NEW_POOLS:
-	for _, newPool := range newPools {
-		for _, existingPool := range existingPools {
+	for newPoolIdx := range newPools {
+		newPool := newPools[newPoolIdx]
+		for existingPoolIdx := range existingPools {
+			existingPool := existingPools[existingPoolIdx]
 			if newPool.EqualsData(&existingPool) {
 				// Pool already exists in the database.
 				pools = append(pools, existingPool)
@@ -62,8 +64,10 @@ NEW_POOLS:
 // Overrides the delegated prefix pools into the existing pools.
 func overrideIntoPDPools(existingPools []dbmodel.PrefixPool, newPools []dbmodel.PrefixPool) (pools []dbmodel.PrefixPool) {
 NEW_POOLS:
-	for _, newPool := range newPools {
-		for _, existingPool := range existingPools {
+	for newPoolIdx := range newPools {
+		newPool := newPools[newPoolIdx]
+		for existingPoolIdx := range existingPools {
+			existingPool := existingPools[existingPoolIdx]
 			if newPool.EqualsData(&existingPool) {
 				// Pool already exists in the database.
 				pools = append(pools, existingPool)
