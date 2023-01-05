@@ -316,6 +316,13 @@ class Server(ComposeServiceWrapper):
         with self.transaction_update_host_reservation(host.id) as (_, submit, _):
             submit(host)
 
+    # Delete
+
+    def delete_machine(self, machine_id: int):
+        """Deletes a machine and references."""
+        api_instance = ServicesApi(self._api_client)
+        return api_instance.delete_machine(id=machine_id)
+
     # Transactional
 
     def transaction_create_host_reservation(self):
