@@ -256,7 +256,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	_, err = tx.Model(subnet).Insert()
 
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem operating subnet with prefix %s", subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem adding subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 	// Add the pools.
@@ -269,17 +269,17 @@ func updateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	_, err = tx.Model(subnet).WherePK().Update()
 
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem operating subnet with prefix %s", subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem updating subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 	// Add the pools.
 	return addAndClearSubnetPools(tx, subnet)
 }
 
-// Adds a subnet with its pools into the database. If the subnet has
-// any associations with a shared network, those associations are also created
-// in the database. It begins a new transaction when dbi has a *pg.DB type or
-// uses an existing transaction when dbi has a *pg.Tx type.
+// Adds a subnet with its pools into the database. If the subnet has any
+// associations with a shared network, those associations are also created
+// in the database. It begins a new transaction when dbi has a *pg.DB type
+// or uses an existing transaction when dbi has a *pg.Tx type.
 func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
