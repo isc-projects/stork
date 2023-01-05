@@ -1,3 +1,10 @@
+* 274 [bug] slawek
+
+    Fixed detecting changes in the subnets' configuration. Stork now recognizes
+    modifications of the subnet's client class, address pools, and delegated
+    prefix pools.
+    (Gitlab #927)
+
 * 273 [func] marcin
 
     DHCP option form automatically shows controls suitable for the selected
