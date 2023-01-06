@@ -625,6 +625,54 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.Nil(t, a)
 }
 
+// Test that the machine associated with a few config reports may be deleted
+// properly.
+func TestDeleteMachineWithConfigReports(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, machine)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, _ := AddApp(db, app)
+	daemon := daemons[0]
+
+	configReport := &ConfigReport{
+		CheckerName: "with-issue",
+		Content:     newPtr("Here is the test report for {daemon}"),
+		DaemonID:    daemon.ID,
+		RefDaemons:  daemons,
+	}
+	err := AddConfigReport(db, configReport)
+	require.NoError(t, err)
+
+	configReport = &ConfigReport{
+		CheckerName: "without-issue",
+		Content:     nil,
+		DaemonID:    daemon.ID,
+	}
+	err = AddConfigReport(db, configReport)
+	require.NoError(t, err)
+
+	// Act
+	err = DeleteMachine(db, machine)
+
+	// Assert
+	require.NoError(t, err)
+}
+
 // Check if refreshing machine works.
 func TestRefreshMachineFromDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
