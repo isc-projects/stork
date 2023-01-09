@@ -4,13 +4,7 @@ import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
-import {
-    ConfigChecker,
-    ConfigCheckerPreferences,
-    ConfigCheckers,
-    ConfigReports,
-    ServicesService,
-} from '../backend'
+import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
