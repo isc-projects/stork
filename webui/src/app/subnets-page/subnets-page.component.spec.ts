@@ -218,7 +218,7 @@ describe('SubnetsPageComponent', () => {
         // Act
         await fixture.whenStable()
 
-        component.filterText = 'subnetId:42'
+        component.filterText = 'subnetId:1'
         input.triggerEventHandler('keyup', null)
 
         await fixture.whenStable()
@@ -229,7 +229,7 @@ describe('SubnetsPageComponent', () => {
             jasmine.objectContaining({
                 queryParams: {
                     text: null,
-                    subnetId: '42',
+                    subnetId: '1',
                     appId: null,
                 },
             })
