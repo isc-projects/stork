@@ -1,5 +1,6 @@
 Flask
-requests
+requests==2.27.1
 # Backward compatibility for Ubuntu 18.04
 itsdangerous==2.0.1
 markupsafe==2.0.1
+jinja2 <= 3.0.3
