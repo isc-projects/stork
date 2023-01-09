@@ -16,6 +16,7 @@ import (
 
 	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
@@ -809,8 +810,8 @@ func (pbe *PromBind9Exporter) Start() {
 	// register collectors
 	version.Version = stork.Version
 	pbe.Registry.MustRegister(pbe, version.NewCollector("bind_exporter"))
-	pbe.procExporter = prometheus.NewProcessCollector(
-		prometheus.ProcessCollectorOpts{
+	pbe.procExporter = collectors.NewProcessCollector(
+		collectors.ProcessCollectorOpts{
 			PidFn: func() (int, error) {
 				return int(pbe.procID), nil
 			},
