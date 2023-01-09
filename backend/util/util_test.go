@@ -3,11 +3,12 @@ package storkutil
 import (
 	"bytes"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 	"io"
 	"os"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 // Test that HostWithPort function generates proper output.
@@ -345,7 +346,6 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set
 // logging level. Tests positive and negative cases.
 func TestLoggingLevel(t *testing.T) {
-
 	type testcase struct {
 		env string
 		lv  log.Level
@@ -353,15 +353,15 @@ func TestLoggingLevel(t *testing.T) {
 
 	testcases := []testcase{
 		// positive cases
-		testcase{env: "DEBUG", lv: log.DebugLevel},
-		testcase{env: "INFO", lv: log.InfoLevel},
-		testcase{env: "WARN", lv: log.WarnLevel},
-		testcase{env: "ERROR", lv: log.ErrorLevel},
+		{env: "DEBUG", lv: log.DebugLevel},
+		{env: "INFO", lv: log.InfoLevel},
+		{env: "WARN", lv: log.WarnLevel},
+		{env: "ERROR", lv: log.ErrorLevel},
 
 		// negative: if set to empty, garbase or unset at all, use the default (info)
-		testcase{env: "", lv: log.InfoLevel},
-		testcase{env: "Garbage", lv: log.InfoLevel},
-		testcase{env: "-", lv: log.InfoLevel},
+		{env: "", lv: log.InfoLevel},
+		{env: "Garbage", lv: log.InfoLevel},
+		{env: "-", lv: log.InfoLevel},
 	}
 
 	for _, test := range testcases {
