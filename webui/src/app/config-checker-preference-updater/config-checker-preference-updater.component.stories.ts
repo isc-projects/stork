@@ -9,7 +9,6 @@ import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ServicesServic
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
-import mockAddon from 'storybook-addon-mock'
 import { action } from '@storybook/addon-actions'
 import { toastDecorator } from '../utils.stories'
 import { ToastModule } from 'primeng/toast'
@@ -56,7 +55,6 @@ export default {
             ],
             providers: [MessageService, ServicesService],
         }),
-        mockAddon,
         toastDecorator,
     ],
     argTypes: {

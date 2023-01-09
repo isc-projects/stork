@@ -554,10 +554,16 @@ namespace :db do
 end
 
 
-desc 'Run Storybook'
+desc 'Run Storybook
+    CACHE - use internal Storybook cache, disable for fix the "Cannot GET /" problem - default: true'
 task :storybook => [NPM] + WEBUI_CODEBASE do
+    opts = []
+    if ENV["CACHE"] == "false"
+        opts.append "--no-manager-cache"
+    end
+
     Dir.chdir("webui") do
-        sh NPM, "run", "storybook"
+        sh NPM, "run", "storybook", "--", *opts
     end
 end
 

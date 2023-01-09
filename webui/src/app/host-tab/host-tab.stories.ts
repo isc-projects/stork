@@ -1,5 +1,4 @@
 import { moduleMetadata, Meta, Story } from '@storybook/angular'
-import mockAddon from 'storybook-addon-mock'
 import { HttpClientModule } from '@angular/common/http'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -53,7 +52,6 @@ export default {
             ],
             providers: [ConfirmationService, MessageService],
         }),
-        mockAddon,
         toastDecorator,
     ],
     parameters: {

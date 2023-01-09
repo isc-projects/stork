@@ -8,14 +8,12 @@ import {
     ConfigChecker,
     ConfigCheckerPreferences,
     ConfigCheckers,
-    ConfigReport,
     ConfigReports,
     ServicesService,
 } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
-import mockAddon from 'storybook-addon-mock'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HttpClientModule } from '@angular/common/http'
@@ -86,7 +84,6 @@ export default {
             ],
             providers: [ServicesService, MessageService],
         }),
-        mockAddon,
         toastDecorator,
     ],
     argTypes: {},

@@ -11,7 +11,6 @@ import { ConfigCheckerPreferencePickerComponent } from '../config-checker-prefer
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
-import mockAddon from 'storybook-addon-mock'
 import { toastDecorator } from '../utils.stories'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -70,7 +69,6 @@ export default {
             ],
             providers: [MessageService, ServicesService],
         }),
-        mockAddon,
         toastDecorator,
     ],
     parameters: {

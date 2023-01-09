@@ -6,7 +6,6 @@ import { PaginatorModule } from 'primeng/paginator'
 import { Events, EventsService, ServicesService, UsersService } from '../backend'
 import { toastDecorator } from '../utils.stories'
 import { EventsPanelComponent } from './events-panel.component'
-import mockAddon from 'storybook-addon-mock'
 import { TableModule } from 'primeng/table'
 import { ToastModule } from 'primeng/toast'
 import { action } from '@storybook/addon-actions'
@@ -23,7 +22,6 @@ export default {
             imports: [HttpClientModule, PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule],
             declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
         }),
-        mockAddon,
         toastDecorator,
     ],
     argTypes: {

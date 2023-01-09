@@ -4,7 +4,7 @@ module.exports = {
         '@storybook/addon-links',
         '@storybook/addon-essentials',
         '@storybook/addon-interactions',
-        'storybook-addon-mock/register',
+        'storybook-addon-mock',
     ],
     framework: '@storybook/angular',
     core: {

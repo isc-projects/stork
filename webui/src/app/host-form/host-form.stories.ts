@@ -20,7 +20,6 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { TableModule } from 'primeng/table'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { ToastModule } from 'primeng/toast'
-import mockAddon from 'storybook-addon-mock'
 import { toastDecorator } from '../utils.stories'
 import { CreateHostBeginResponse, DHCPService, UpdateHostBeginResponse } from '../backend'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -187,7 +186,6 @@ export default {
             ],
             providers: [UntypedFormBuilder, DHCPService, MessageService],
         }),
-        mockAddon,
         toastDecorator,
     ],
     parameters: {
