@@ -611,6 +611,15 @@ namespace :gen do
             end
         end
     end
+
+    namespace :backend do
+        desc 'Regenerate go.sum.'
+        task :go_sum => [GO] do
+            Dir.chdir("backend") do
+                sh GO, "mod", "tidy"
+            end
+        end
+    end
 end
 
 
@@ -649,6 +658,14 @@ namespace :update do
             sh NPM, "update"
             # Prints possible manual updates.
             sh NPM, "outdated"
+        end
+    end
+
+    desc 'Update all go.mod dependencies the latest versions'
+    task :backend_deps => [GO] do
+        Dir.chdir("backend") do
+            sh GO, "get", "-u", "./..."
+            sh GO, "mod", "tidy"
         end
     end
 end
