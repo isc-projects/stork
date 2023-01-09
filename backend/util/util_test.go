@@ -3,10 +3,11 @@ package storkutil
 import (
 	"bytes"
 	"encoding/json"
-	"io"
-	"testing"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"io"
+	"os"
+	"testing"
 )
 
 // Test that HostWithPort function generates proper output.
@@ -339,4 +340,41 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, executor)
+}
+
+// Tests if the SET_LOG_LEVEL environment variable is used correctly to set
+// logging level. Tests positive and negative cases.
+func TestLoggingLevel(t *testing.T) {
+
+	type testcase struct {
+		env string
+		lv  log.Level
+	}
+
+	testcases := []testcase{
+		// positive cases
+		testcase{env: "DEBUG", lv: log.DebugLevel},
+		testcase{env: "INFO", lv: log.InfoLevel},
+		testcase{env: "WARN", lv: log.WarnLevel},
+		testcase{env: "ERROR", lv: log.ErrorLevel},
+
+		// negative: if set to empty, garbase or unset at all, use the default (info)
+		testcase{env: "", lv: log.InfoLevel},
+		testcase{env: "Garbage", lv: log.InfoLevel},
+		testcase{env: "-", lv: log.InfoLevel},
+	}
+
+	for _, test := range testcases {
+		if test.env != "-" {
+			// special case "-" means to unset the variable
+			os.Setenv("STORK_LOG_LEVEL", test.env)
+		} else {
+			os.Unsetenv("STORK_LOG_LEVEL")
+		}
+		SetupLoggingLevel()
+
+		require.Equal(t, test.lv, log.GetLevel())
+	}
+
+	os.Unsetenv("STORK_LOG_LEVEL") // The test should clean up after itself
 }

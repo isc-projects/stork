@@ -122,13 +122,16 @@ func SetupLoggingLevel() {
 		}
 
 		if level, ok := levels[value]; ok {
-			fmt.Printf("STORK_LOG_LEVEL specified, setting logging level to %s\n", level)
+			// STORK_LOG_LEVEL specified, setting logging level to whatever was specified.
 			log.SetLevel(level)
 		} else {
-			fmt.Printf("STORK_LOG_LEVEL has invalid log level: %s, ignoring.\n", value)
+			// Invalid level. Let's initialize logging first and then log a
+			// warning about it.
+			log.SetLevel(log.InfoLevel)
+			log.Warnf("STORK_LOG_LEVEL has invalid log level: %s, ignoring.", value)
 		}
 	} else {
-		fmt.Printf("STORK_LOG_LEVEL not specified, using default logging level (INFO)\n")
+		// STORK_LOG_LEVEL not specified, using default logging level (INFO).
 		log.SetLevel(log.InfoLevel)
 	}
 }
