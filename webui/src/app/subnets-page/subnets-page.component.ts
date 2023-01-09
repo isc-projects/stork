@@ -36,7 +36,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         text: null,
         dhcpVersion: null,
         appId: null,
-        subnetId: null,
+        localSubnetId: null,
     }
 
     grafanaUrl: string
@@ -112,7 +112,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         }
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
-        this.queryParams.subnetId = params.get('subnetId')
+        this.queryParams.localSubnetId = params.get('subnetId')
     }
 
     /**
@@ -125,7 +125,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         const params = this.queryParams
 
         this.dhcpApi
-            .getSubnets(event.first, event.rows, params.appId, params.subnetId, params.dhcpVersion, params.text)
+            .getSubnets(event.first, event.rows, params.appId, params.localSubnetId, params.dhcpVersion, params.text)
             // Custom parsing for statistics
             .pipe(
                 map((subnets) => {

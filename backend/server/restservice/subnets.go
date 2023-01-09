@@ -87,7 +87,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		AppID:         params.AppID,
 		Family:        params.DhcpVersion,
 		Text:          params.Text,
-		LocalSubnetID: params.SubnetID,
+		LocalSubnetID: params.LocalSubnetID,
 	}
 
 	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAny)

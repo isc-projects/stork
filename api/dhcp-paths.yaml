@@ -112,7 +112,7 @@
         200:
           description: Host reservation successfully deleted.
         default:
-          description: generic error respone
+          description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
 
@@ -191,7 +191,7 @@
     post:
       summary: Begin transaction for updating an existing host reservation.
       description: >-
-        Creates a transaction in the config manager to update an existing host reseravtion.
+        Creates a transaction in the config manager to update an existing host reservation.
         It returns the existing host reservation information, a current list of available
         DHCP servers and subnets. This information is required in the form in which the
         user edits host reservation data.
@@ -292,7 +292,7 @@
           in: query
           description: Limit returned list of subnets to these which are served by given app ID.
           type: integer
-        - name: subnetId
+        - name: localSubnetId
           in: query
           description: Limit returned list of subnets to these with have assigned a given subnet ID in the Kea config.
           type: integer
