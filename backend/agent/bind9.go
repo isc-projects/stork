@@ -364,7 +364,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	namedDir := match[1]
 	bind9Params := match[2]
 	bind9ConfPath := ""
-	found := false
 
 	// look for config file in cmd params
 	paramsPattern := regexp.MustCompile(`-c\s+(\S+)`)
@@ -377,7 +376,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		if _, err := os.Stat(f); err == nil {
 			bind9ConfPath = f
 			log.Infof("Found BIND 9 config file in %s", f)
-			found = true
 		} else {
 			log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 		}
@@ -385,7 +383,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	// If user didn't specify anything or what he specified is garbage,
 	// we'll go through the normal detection procedure.
-	if !found {
+	if bind9ConfPath == "" {
 		if m != nil {
 			bind9ConfPath = m[1]
 			// if path to config is not absolute then join it with CWD of named
