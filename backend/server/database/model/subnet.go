@@ -378,7 +378,7 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	return subnets, nil
 }
 
-// Container for filter values for fetching subnets by page.
+// Container for values filtering subnets fetched by page.
 type SubnetsPageFilters struct {
 	AppID         *int64
 	LocalSubnetID *int64

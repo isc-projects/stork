@@ -210,7 +210,7 @@ describe('SubnetsPageComponent', () => {
         expect(cellValues).toContain('')
     })
 
-    it('should filter hosts by the Kea subnet ID', async () => {
+    it('should filter subnets by the Kea subnet ID', async () => {
         // Arrange
         const input = fixture.debugElement.query(By.css('#filter-subnets-text-field'))
         const spy = spyOn(router, 'navigate')
