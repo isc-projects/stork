@@ -668,6 +668,20 @@ namespace :update do
             sh GO, "mod", "tidy"
         end
     end
+
+    desc 'Update all Python dependencies'
+    task :python => [PIP_COMPILE] do
+        requirements_in_files = [
+            "rakelib/init_deps/pytest.in",
+            "rakelib/init_deps/sphinx.in",
+            "doc/src/requirements.in",
+            "tests/sim/requirements.in",
+        ]
+
+        requirements_in_files.each do |r|
+            sh PIP_COMPILE, "--resolver", "backtracking", "--upgrade", r
+        end
+    end
 end
 
 

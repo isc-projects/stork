@@ -909,6 +909,13 @@ file PYTEST => [PIP, pytests_requirements_file] do
     sh PYTEST, "--version"
 end
 
+PIP_COMPILE = File.expand_path("tools/python/bin/pip-compile")
+file PIP_COMPILE => [PIP] do
+    sh PIP, "install", "pip-tools"
+    sh "touch", "-c", PIP_COMPILE
+    sh PIP_COMPILE, "--version"
+end
+
 #############
 ### Tasks ###
 #############
