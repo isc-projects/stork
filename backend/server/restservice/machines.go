@@ -1308,7 +1308,7 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 // Get DHCP overview.
 func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOverviewParams) middleware.Responder {
 	// get list of mostly utilized subnets
-	filters := &dbmodel.SubnetsPageFilters{}
+	filters := &dbmodel.SubnetsByPageFilters{}
 	filters.SetIPv4Family()
 
 	subnets4, err := r.getSubnets(0, 5, filters, "addr_utilization", dbmodel.SortDirDesc)

@@ -40,7 +40,7 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		return rsp
 	}
 	text := strings.TrimSpace(*params.Text)
-	filters := &dbmodel.SubnetsPageFilters{Text: &text}
+	filters := &dbmodel.SubnetsByPageFilters{Text: &text}
 
 	// get list of subnets
 	subnets, err := r.getSubnets(0, 5, filters, "", dbmodel.SortDirAny)

@@ -516,7 +516,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 	}
 
 	// This should match two subnets.
-	filters := &SubnetsPageFilters{
+	filters := &SubnetsByPageFilters{
 		Text:   newPtr("192.0"),
 		Family: newPtr(int64(4)),
 	}
@@ -1139,9 +1139,9 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 }
 
 // Test that the shorthand for setting IPv4 family works properly.
-func TestSubnetsPageFiltersSetIPv4Family(t *testing.T) {
+func TestSubnetsByPageFiltersSetIPv4Family(t *testing.T) {
 	// Arrange
-	filters := &SubnetsPageFilters{}
+	filters := &SubnetsByPageFilters{}
 
 	// Act
 	filters.SetIPv4Family()
@@ -1151,9 +1151,9 @@ func TestSubnetsPageFiltersSetIPv4Family(t *testing.T) {
 }
 
 // Test that the shorthand for setting IPv6 family works properly.
-func TestSubnetsPageFiltersSetIPv6Family(t *testing.T) {
+func TestSubnetsByPageFiltersSetIPv6Family(t *testing.T) {
 	// Arrange
-	filters := &SubnetsPageFilters{}
+	filters := &SubnetsByPageFilters{}
 
 	// Act
 	filters.SetIPv6Family()

@@ -290,7 +290,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
 	// Get subnets from app a4
-	filters := &SubnetsPageFilters{
+	filters := &SubnetsByPageFilters{
 		AppID: &a4.ID,
 	}
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -363,7 +363,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get subnets by text '118.0.0/2'
-	filters = &SubnetsPageFilters{
+	filters = &SubnetsByPageFilters{
 		Text: newPtr("118.0.0/2"),
 	}
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -406,7 +406,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get v4 subnets by local subnet ID '2'
-	filters = &SubnetsPageFilters{
+	filters = &SubnetsByPageFilters{
 		LocalSubnetID: newPtr(int64(2)),
 	}
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)

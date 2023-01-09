@@ -379,7 +379,7 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 }
 
 // Container for values filtering subnets fetched by page.
-type SubnetsPageFilters struct {
+type SubnetsByPageFilters struct {
 	AppID         *int64
 	LocalSubnetID *int64
 	Family        *int64
@@ -387,13 +387,13 @@ type SubnetsPageFilters struct {
 }
 
 // Shorthand to set the IPv4 family.
-func (f *SubnetsPageFilters) SetIPv4Family() {
+func (f *SubnetsByPageFilters) SetIPv4Family() {
 	family := int64(4)
 	f.Family = &family
 }
 
 // Shorthand to set the IPv6 family.
-func (f *SubnetsPageFilters) SetIPv6Family() {
+func (f *SubnetsByPageFilters) SetIPv6Family() {
 	family := int64(6)
 	f.Family = &family
 }
@@ -406,9 +406,9 @@ func (f *SubnetsPageFilters) SetIPv6Family() {
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used. This function returns a collection of subnets, the
 // total number of subnets and error.
-func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsPageFilters, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
+func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPageFilters, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
 	if filters == nil {
-		filters = &SubnetsPageFilters{}
+		filters = &SubnetsByPageFilters{}
 	}
 
 	subnets := []Subnet{}
