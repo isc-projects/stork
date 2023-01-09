@@ -625,9 +625,9 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.Nil(t, a)
 }
 
-// Test that the machine associated with a few config reports may be deleted
+// Test that the machine associated with an empty config report may be deleted
 // properly.
-func TestDeleteMachineWithConfigReports(t *testing.T) {
+func TestDeleteMachineWithEmptyConfigReport(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -650,20 +650,51 @@ func TestDeleteMachineWithConfigReports(t *testing.T) {
 	daemon := daemons[0]
 
 	configReport := &ConfigReport{
-		CheckerName: "with-issue",
-		Content:     newPtr("Here is the test report for {daemon}"),
+		CheckerName: "empty",
+		Content:     nil,
 		DaemonID:    daemon.ID,
-		RefDaemons:  daemons,
 	}
 	err := AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
-	configReport = &ConfigReport{
-		CheckerName: "without-issue",
-		Content:     nil,
-		DaemonID:    daemon.ID,
+	// Act
+	err = DeleteMachine(db, machine)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that the machine associated with a config report may be deleted
+// properly.
+func TestDeleteMachineWithConfigReport(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
 	}
-	err = AddConfigReport(db, configReport)
+	_ = AddMachine(db, machine)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, _ := AddApp(db, app)
+	daemon := daemons[0]
+
+	configReport := &ConfigReport{
+		CheckerName: "checker",
+		Content:     newPtr("my {daemon}"),
+		DaemonID:    daemon.ID,
+		RefDaemons:  daemons,
+	}
+	err := AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
 	// Act
