@@ -127,6 +127,7 @@ go_common_codebase = FileList["backend/**/*"]
     .exclude(go_server_codebase)
     .exclude(go_agent_codebase)
     .exclude(go_tool_codebase)
+    .exclude(go_code_gen_codebase)
     .include(agent_pb_go_file)
     .include(agent_grpc_pb_go_file)
     .include(std_option_defs4_go_file)

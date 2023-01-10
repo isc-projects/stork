@@ -16,13 +16,12 @@ export const stdDhcpv4OptionDefs = [
     {{- range .}}{
         code:        {{.code}},
         name:        '{{.name}}',
-        type:        '{{.type}}',
         space:       '{{.space}}',
-        {{- if .encapsulate}}
+        optionType:  '{{.type}}',
+        array:       {{.array}},
         encapsulate: '{{.encapsulate}}',
-        {{- end}}
         {{if index . "record-types"}}recordTypes: [
             {{range index . "record-types"}}'{{ . }}',{{end}}
-        ],{{end }}
+        ],{{end}}
     },{{end}}
 ]

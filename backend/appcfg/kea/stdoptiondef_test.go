@@ -13,7 +13,7 @@ func TestFindDHCPv4OptionDefinition(t *testing.T) {
 	def := lookup.FindByCodeSpace(72, "dhcp4", storkutil.IPv4)
 	require.NotNil(t, def)
 	//  Validate the option definition.
-	require.False(t, def.GetArray())
+	require.True(t, def.GetArray())
 	require.EqualValues(t, 72, def.GetCode())
 	require.Empty(t, "", def.GetEncapsulate())
 	require.Equal(t, "www-server", def.GetName())

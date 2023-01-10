@@ -18,12 +18,11 @@ func getStdDHCPv4OptionDefs() []dhcpOptionDefinition {
 			Name:        "{{.name}}",
 			OptionType:  "{{.type}}",
 			Space:       "{{.space}}",
-			{{- if .encapsulate}}
+			Array:       {{.array}},
 			Encapsulate: "{{.encapsulate}}",
-			{{- end}}
-            {{if index . "record-types"}}RecordTypes: []DHCPOptionType{
-                {{range index . "record-types"}}"{{ . }}",{{end}}
-            },{{end }}
+			{{if index . "record-types"}}RecordTypes: []DHCPOptionType{
+				{{range index . "record-types"}}"{{ . }}",{{end}}
+			},{{end}}
 		},{{end}}
 	}
 }

@@ -30,6 +30,7 @@ func TestGenerateToStdout(t *testing.T) {
 			"baz": 1
 		},
 		{
+			"foo": "",
 			"baz": 2
 		}
 	]`)
@@ -112,6 +113,20 @@ func TestGenerateToStdoutInvalidInput(t *testing.T) {
 
 	// Create a valid template file.
 	templateFile, closer := createTempFile(t, `foo = {{.foo}}`)
+	defer closer()
+
+	err := GenerateToStdout(inputFile.Name(), templateFile.Name())
+	require.Error(t, err)
+}
+
+// Test that an error is returned when input file lacks map parameters.
+func TestGenerateToStdoutMissingMapParameter(t *testing.T) {
+	// Create input file with lacking baz key.
+	inputFile, closer := createTempFile(t, `{ "foo": "bar" }`)
+	defer closer()
+
+	// Create a valid template file.
+	templateFile, closer := createTempFile(t, `foo = {{.foo}}, baz = {{.baz}}`)
 	defer closer()
 
 	err := GenerateToStdout(inputFile.Name(), templateFile.Name())

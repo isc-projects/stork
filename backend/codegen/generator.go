@@ -34,7 +34,7 @@ func prepare(inputFilename, templateFilename string, parsedJSON any) (*template.
 	}
 
 	// Create the template from the template file.
-	template, err := template.New(path.Base(templateFilename)).Option("missingkey=zero").ParseFiles(templateFilename)
+	template, err := template.New(path.Base(templateFilename)).Option("missingkey=error").ParseFiles(templateFilename)
 	return template, err
 }
 

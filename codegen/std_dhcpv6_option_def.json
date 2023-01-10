@@ -378,14 +378,16 @@
         "record-types": [
             "uint8",
             "ipv6-address"
-        ]
+        ],
+        "encapsulate": ""
     },
     {
         "name": "client-data",
         "code": 45,
         "space": "dhcp6",
         "type": "empty",
-        "array": false
+        "array": false,
+        "encapsulate": ""
     },
     {
         "name": "clt-time",
@@ -612,8 +614,9 @@
     },
     {
         "code": 89,
-        "encapsulate": "s46-rule-options",
         "name": "s46-rule",
+        "space": "s46-cont-mape-options",
+        "type": "record",
         "record-types": [
             "uint8",
             "uint8",
@@ -621,13 +624,14 @@
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space": "s46-cont-mape-options",
-        "type": "record"
+        "array": false,
+        "encapsulate": "s46-rule-options"
     },
     {
         "code": 89,
-        "encapsulate": "s46-rule-options",
         "name": "s46-rule",
+        "space": "s46-cont-mapt-options",
+        "type": "record",
         "record-types": [
             "uint8",
             "uint8",
@@ -635,82 +639,91 @@
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space": "s46-cont-mapt-options",
-        "type": "record"
+        "array": false,
+        "encapsulate": "s46-rule-options"
     },
     {
         "code": 90,
-        "encapsulate": "",
         "name": "s46-br",
         "space": "s46-cont-lw-options",
-        "type": "ipv6-address"
+        "type": "ipv6-address",
+        "array": false,
+        "encapsulate": ""
     },
     {
         "code": 90,
-        "encapsulate": "",
         "name": "s46-br",
         "space": "s46-cont-mape-options",
-        "type": "ipv6-address"
+        "type": "ipv6-address",
+        "array": false,
+        "encapsulate": ""
     },
     {
         "code": 91,
-        "encapsulate": "",
         "name": "s46-dmr",
         "space": "s46-cont-mapt-options",
-        "type": "ipv6-prefix"
+        "type": "ipv6-prefix",
+        "array": false,
+        "encapsulate": ""
     },
     {
         "code": 92,
-        "encapsulate": "s46-v4v6bind-options",
         "name": "s46-v4v6bind",
+        "space": "s46-cont-lw-options",
+        "type": "record",
         "record-types": [
             "ipv4-address",
             "ipv6-prefix"
         ],
-        "space": "s46-cont-lw-options",
-        "type": "record"
+        "array": false,
+        "encapsulate": "s46-v4v6bind-options"
     },
     {
         "code": 93,
-        "encapsulate": "",
         "name": "s46-portparams",
-        "record-types": [
-            "uint8",
-            "psid"
-        ],
         "space": "s46-rule-options",
-        "type": "record"
-    },
-    {
-        "code": 93,
-        "encapsulate": "",
-        "name": "s46-portparams",
+        "type": "record",
         "record-types": [
             "uint8",
             "psid"
         ],
+        "array": false,
+        "encapsulate": ""
+    },
+    {
+        "code": 93,
+        "name": "s46-portparams",
         "space": "s46-v4v6bind-options",
-        "type": "record"
+        "type": "record",
+        "record-types": [
+            "uint8",
+            "psid"
+        ],
+        "array": false,
+        "encapsulate": ""
     },
     {
         "code": 94,
-        "encapsulate": "s46-cont-mape-options",
         "name": "s46-cont-mape",
         "space": "dhcp6",
-        "type": "empty"
+        "type": "empty",
+        "array": false,
+        "encapsulate": "s46-cont-mape-options"
     },
     {
         "code": 95,
-        "encapsulate": "s46-cont-mapt-options",
         "name": "s46-cont-mapt",
         "space": "dhcp6",
-        "type": "empty"
+        "type": "empty",
+        "array": false,
+        "encapsulate": "s46-cont-mapt-options"
     },
     {
         "code": 96,
-        "encapsulate": "s46-cont-lw-options",
         "name": "s46-cont-lw",
         "space": "dhcp6",
-        "type": "empty"
+        "type": "empty",
+        "array": false,
+        "encapsulate": "s46-cont-lw-options"
     }
 ]
