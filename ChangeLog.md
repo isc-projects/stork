@@ -1,9 +1,9 @@
 * 272 [func] tomek
 
     Stork agent and server now have logging levels configurable using
-    STORK_LOG_LEVEL environment variable. The location of a BIND 9 config file
-    can now be explicitly specified using STORK_BIND9_CONFIG environment
-    variable.
+    STORK_LOG_LEVEL environment variable. The allowed values are:
+    DEBUG, INFO, WARN, ERROR
+    (Gitlab #831)
 
 * 271 [bug] slawek
 
