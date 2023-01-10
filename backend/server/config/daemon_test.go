@@ -62,7 +62,7 @@ func TestDaemonTagMachineID(t *testing.T) {
 	// Arrange
 	tag := newDaemonTag(Daemon{}, 42)
 
-	// Ac & Assert
+	// Act & Assert
 	require.NotNil(t, tag.MachineID)
 	require.EqualValues(t, 42, *tag.GetMachineID())
 }

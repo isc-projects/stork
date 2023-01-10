@@ -524,7 +524,7 @@ func (app App) GetVersion() string {
 	return app.Meta.Version
 }
 
-// Return machine ID owning the app.
+// Return ID of a machine owning the app.
 func (app App) GetMachineID() int64 {
 	return app.MachineID
 }

@@ -630,7 +630,7 @@ func (d Daemon) GetAppType() (apptype string) {
 	return
 }
 
-// Returns ID of an machine owning the daemon or nil if the app is unknown.
+// Returns ID of a machine owning the daemon or nil if the app is unknown.
 func (d Daemon) GetMachineID() *int64 {
 	if d.App == nil {
 		return nil
