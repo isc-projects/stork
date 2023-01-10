@@ -979,32 +979,6 @@ HTTP Mocks
 ----------
 
 The easiest way to mock the REST API is using the `storybook-addon-mock <https://storybook.js.org/addons/storybook-addon-mock>`_
-First, you need to import it:
-
-.. code-block:: typescript
-
-    import mockAddon from 'storybook-addon-mock'
-
-and append to the ``decorators`` list in the story metadata:
-
-.. code-block:: typescript
-
-    export default {
-        title: ...,
-        component: ...,
-        decorators: [
-            moduleMetadata({
-                ...
-            }),
-            mockAddon
-        ],
-        argTypes: ...,
-        parameters: {
-            mockData: [
-                ...
-            ],
-        },
-    } as Meta
 
 The mocked API responses are specified by the ``parameters.mockData`` list that
 is a property of the metadata object.
