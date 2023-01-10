@@ -1,3 +1,8 @@
+* 277 [bug] slawek
+
+    Fixed a bug that prevents the machines from deleting.
+    (Gitlab #928)
+
 * 276 [func] razvan
 
     Added functionality for deteting users. A super-admin can not remove
