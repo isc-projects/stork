@@ -244,7 +244,7 @@ func TestMigration39DecimalToBigint(t *testing.T) {
 }
 
 // Test that the 13 migration passes if some shared networks exist.
-func TestMigration13AddINetFamilyColumn(t *testing.T) {
+func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	// Arrange
 	db, _, teardown := SetupDatabaseTestCase(t)
 	defer teardown()

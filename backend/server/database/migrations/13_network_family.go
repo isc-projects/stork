@@ -13,7 +13,7 @@ func init() {
 
              -- Set initial values.
              UPDATE shared_network
-             SET inet_family=family(subnet.prefix)
+                 SET inet_family=family(subnet.prefix)
              FROM subnet
              WHERE shared_network.id=subnet.shared_network_id;
 
