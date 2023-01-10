@@ -1,3 +1,9 @@
+* 275 [bug] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot and
+    updated some dependencies.
+    (Gitlab #934)
+
 * 274 [bug] slawek
 
     Fixed detecting changes in the subnets' configuration. Stork now recognizes
