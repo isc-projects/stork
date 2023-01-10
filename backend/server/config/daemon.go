@@ -21,8 +21,8 @@ type daemonTag struct {
 }
 
 // Construct a new daemon tag instance from the daemon object.
-func newDaemonTag(daemon Daemon, machineID int64) daemonTag {
-	return daemonTag{
+func newDaemonTag(daemon Daemon, machineID int64) *daemonTag {
+	return &daemonTag{
 		ID:        daemon.ID,
 		Name:      daemon.Name,
 		AppID:     daemon.AppID,
