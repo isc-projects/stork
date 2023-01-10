@@ -17,4 +17,4 @@ def test_delete_machine_with_config_reports(kea_service: Kea, server_service: Se
 
     server_service.delete_machine(state['id'])
     machines = server_service.list_machines()
-    assert machines['total'] == 0
+    assert machines['items'] is None
