@@ -52,10 +52,10 @@ services:
     depends_on:
       - postgres
 
-  server-db-ssl-ca-verify:
+  server-db-ssl-verify-ca:
     extends: server-base
     environment:
-      STORK_DATABASE_SSLMODE: ca-verify
+      STORK_DATABASE_SSLMODE: verify-ca
     depends_on:
       - postgres
 
