@@ -1,7 +1,7 @@
 * 266 [bug] slawek
 
-    The events related to the daemon or application are now recognized as
-    related to the owning machine.
+    The events pertaining to the daemons, apps, and machines can be filtered by
+    the machine running these daemons, apps, and machines.
     (Gitlab #882)
 
 * 265 [bug] slawek
