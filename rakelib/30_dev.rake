@@ -682,6 +682,24 @@ namespace :update do
             sh PIP_COMPILE, "--resolver", "backtracking", "--upgrade", r
         end
     end
+
+    desc 'Update all Ruby dependencies'
+    task :ruby => [BUNDLE] do
+        Dir.chdir("rakelib/init_deps") do
+            # List all Gemfiles.
+            gemfiles = FileList["*.Gemfile"].exclude(FileList["*.Gemfile.lock"])
+            gemfiles.each do |g|
+                # Bundle requires exactly a file named "Gemfile".
+                sh "ln", "-s", g, "Gemfile"
+                # Update dependencies in the lock file.
+                sh BUNDLE, "update"
+                # Grab a new lock file.
+                sh "mv", "Gemfile.lock", g + ".lock"
+                # Remove the temporary link.
+                rm "Gemfile"
+            end
+        end
+    end
 end
 
 
