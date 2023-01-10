@@ -38,37 +38,24 @@ func TestStdOptionDefsHelp(t *testing.T) {
 
 // Test that the main fuction triggers generating option definitions.
 func TestGenerateStdOptionDefs(t *testing.T) {
-	// Create an input file with JSON contents.
-	inputFile, err := os.CreateTemp(os.TempDir(), "*")
-	require.NoError(t, err)
-	require.NotNil(t, inputFile)
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 
-	_, err = inputFile.WriteString(`{"foo": "bar"}`)
+	// Create an input file with JSON contents.
+	inputFileName, err := sandbox.Write("input", `{"foo": "bar"}`)
 	require.NoError(t, err)
-	defer func() {
-		inputFile.Close()
-		os.Remove(inputFile.Name())
-	}()
 
 	// Create a valid template file.
-	templateFile, err := os.CreateTemp(os.TempDir(), "*")
+	templateFileName, err := sandbox.Write("template", `foo = {{.foo}}`)
 	require.NoError(t, err)
-	require.NotNil(t, templateFile)
-
-	_, err = templateFile.WriteString(`foo = {{.foo}}`)
-	require.NoError(t, err)
-	defer func() {
-		inputFile.Close()
-		os.Remove(inputFile.Name())
-	}()
 
 	// Prepare command line arguments.
 	os.Args = make([]string, 8)
 	os.Args[1] = "std-option-defs"
 	os.Args[2] = "--input"
-	os.Args[3] = inputFile.Name()
+	os.Args[3] = inputFileName
 	os.Args[4] = "--template"
-	os.Args[5] = templateFile.Name()
+	os.Args[5] = templateFileName
 	os.Args[6] = "--output"
 	os.Args[7] = "stdout"
 
