@@ -99,6 +99,23 @@ task :systemtest => [PYTEST, DOCKER_COMPOSE, open_api_generator_python_dir, *vol
         opts.append "-k", ENV["TEST"]
     end
 
+    # ToDo: Remove the below switches after updating OpenAPI Generator.
+    # OpenAPI Generator creates a code that uses the deprecated
+    # "HTTPResponse.getheaders()" and "HTTPResponse.getheader()" methods.
+    # It causes to generate thousands of warnings during the system tests
+    # execution.
+    #
+    # Full warning message:
+    #
+    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:40: DeprecationWarning: HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTResponse.headers.get(name, default).
+    #    return self.urllib3_response.getheader(name, default)
+    #
+    #  tests/test_bind9.py::test_bind9
+    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:36: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTResponse.headers directly.
+    #    return self.urllib3_response.getheaders()
+    opts.append "-W", "ignore:HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTResponse.headers directly.:DeprecationWarning:openapi_client.rest"
+    opts.append "-W", "ignore:HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTResponse.headers.get(name, default).:DeprecationWarning:openapi_client.rest"
+
     Dir.chdir(system_tests_dir) do
         sh PYTEST, "-s", *opts
     end
