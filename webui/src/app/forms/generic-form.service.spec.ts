@@ -25,7 +25,7 @@ describe('GenericFormService', () => {
                         psid: formBuilder.control(12),
                         psidLength: formBuilder.control(8),
                     }),
-                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.HexBytes, {
+                    new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Binary, {
                         control: formBuilder.control('01:02:03'),
                     }),
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.String, {
