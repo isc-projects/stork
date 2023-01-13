@@ -22,6 +22,11 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     private _daemonName: string
     private _receivedStatus: Record<string, KeaStatusHaServers>
 
+    /**
+     * Indicates if the data loading is in progress.
+     */
+    loading: boolean = false
+
     constructor(private servicesApi: ServicesService) {}
 
     ngOnDestroy(): void {
@@ -100,7 +105,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * @returns true if the status has been fetched and is available for display.
      */
     hasStatus(): boolean {
-        return !!this._receivedStatus[this._daemonName]
+        return !!this._receivedStatus?.[this._daemonName]
     }
 
     /**
@@ -129,6 +134,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * This function is invoked periodically to refresh the status.
      */
     private refreshStatus() {
+        this.loading = true
         this.servicesApi
             .getAppServicesStatus(this.appId)
             .toPromise()
@@ -145,6 +151,9 @@ export class HaStatusComponent implements OnInit, OnDestroy {
             .catch((err) => {
                 console.warn('Failed to fetch the HA status for Kea application ID ' + this.appId, err)
                 this._receivedStatus = null
+            })
+            .finally(() => {
+                this.loading = false
             })
     }
 
