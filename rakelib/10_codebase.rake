@@ -129,19 +129,25 @@ file agent_grpc_pb_go_file => [agent_pb_go_file]
 CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
 std_option_defs6_go_file = "backend/appcfg/kea/stdoptiondef6.go"
-file std_option_defs6_go_file => [CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
+file std_option_defs6_go_file => [GO, CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
     "--input", std_dhcpv6_option_definitions_json,
     "--output", std_option_defs6_go_file,
     "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
+    Dir.chdir('backend') do
+        sh GO, "fmt", "./appcfg/kea/..."
+    end
 end
 
 std_option_defs4_go_file = "backend/appcfg/kea/stdoptiondef4.go"
-file std_option_defs4_go_file => [CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
+file std_option_defs4_go_file => [GO, CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
     "--input", std_dhcpv4_option_definitions_json,
     "--output", std_option_defs4_go_file,
     "--template", "backend/appcfg/kea/stdoptiondef4.go.template"
+    Dir.chdir('backend') do
+        sh GO, "fmt", "./appcfg/kea/..."
+    end
 end
 
 # Go dependencies are installed automatically during build
@@ -262,19 +268,26 @@ CLOBBER.append node_module_dir
 
 
 std_option_defs6_ts_file = "webui/src/app/std-dhcpv6-option-defs.ts"
-file std_option_defs6_ts_file => [CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
+file std_option_defs6_ts_file => [NPX, CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
         "--input", std_dhcpv6_option_definitions_json,
         "--output", std_option_defs6_ts_file,
         "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
+    Dir.chdir('webui') do
+        sh NPX, "prettier", "--config", ".prettierrc", "--write", "src/app/std-dhcpv6-option-defs.ts"
+    end
 end
 
 std_option_defs4_ts_file = "webui/src/app/std-dhcpv4-option-defs.ts"
-file std_option_defs4_ts_file => [CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
+file std_option_defs4_ts_file => [NPX, CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
         "--input", std_dhcpv4_option_definitions_json,
         "--output", std_option_defs4_ts_file,
         "--template", "webui/src/app/std-dhcpv4-option-defs.ts.template"
+    Dir.chdir('webui') do
+        sh NPX, "prettier", "--config", ".prettierrc", "--write", "src/app/std-dhcpv4-option-defs.ts"
+    end
+
 end
 
 WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
