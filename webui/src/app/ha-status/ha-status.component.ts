@@ -2,6 +2,8 @@ import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { interval, Subscription } from 'rxjs'
 import { ServicesService } from '../backend/api/api'
 import { KeaStatusHaServers } from '../backend'
+import { MessageService } from 'primeng/api'
+import { getErrorMessage } from '../utils'
 
 /**
  * Component presenting live status of High Availability in Kea.
@@ -27,7 +29,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      */
     loading: boolean = false
 
-    constructor(private servicesApi: ServicesService) {}
+    constructor(private servicesApi: ServicesService, private messageService: MessageService) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
@@ -149,7 +151,11 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                 }
             })
             .catch((err) => {
-                console.warn('Failed to fetch the HA status for Kea application ID ' + this.appId, err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: `Failed to fetch the HA status for Kea application ID: ${this.appId}`,
+                    detail: getErrorMessage(err)
+                })
                 this._receivedStatus = null
             })
             .finally(() => {

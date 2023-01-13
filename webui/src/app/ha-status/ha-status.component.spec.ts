@@ -11,6 +11,7 @@ import { ProgressSpinner, ProgressSpinnerModule } from 'primeng/progressspinner'
 import { of, throwError } from 'rxjs'
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http'
 import { By } from '@angular/platform-browser'
+import { MessageService } from 'primeng/api'
 
 describe('HaStatusComponent', () => {
     let component: HaStatusComponent
@@ -28,7 +29,7 @@ describe('HaStatusComponent', () => {
                 ProgressSpinnerModule,
             ],
             declarations: [HaStatusComponent, LocaltimePipe],
-            providers: [ServicesService],
+            providers: [ServicesService, MessageService],
         }).compileComponents()
 
         servicesApi = TestBed.inject(ServicesService)
