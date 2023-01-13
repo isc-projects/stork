@@ -1,6 +1,7 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { interval, Subscription } from 'rxjs'
 import { ServicesService } from '../backend/api/api'
+import { KeaStatusHaServers } from '../backend'
 
 /**
  * Component presenting live status of High Availability in Kea.
@@ -19,11 +20,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
 
     private _appId: number
     private _daemonName: string
-    // ToDo: Strict typing. Avoid using `any`
-    // The map contains the complex objects. These objects are
-    // strongly used in this component. Now, we don't have any
-    // help from TS compiler or IDE.
-    private _receivedStatus: Map<string, any>
+    private _receivedStatus: Record<string, KeaStatusHaServers>
 
     constructor(private servicesApi: ServicesService) {}
 
@@ -103,7 +100,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * @returns true if the status has been fetched and is available for display.
      */
     hasStatus(): boolean {
-        return this._receivedStatus && this._receivedStatus[this._daemonName]
+        return !!this._receivedStatus[this._daemonName]
     }
 
     /**
@@ -137,16 +134,16 @@ export class HaStatusComponent implements OnInit, OnDestroy {
             .toPromise()
             .then((data) => {
                 if (data.items) {
-                    this._receivedStatus = new Map()
+                    this._receivedStatus = {}
                     for (const s of data.items) {
-                        if ((s.status as any).haServers && (s.status as any).daemon) {
-                            this._receivedStatus[(s.status as any).daemon] = (s.status as any).haServers
+                        if (s.status.haServers && s.status.daemon) {
+                            this._receivedStatus[s.status.daemon] = s.status.haServers
                         }
                     }
                 }
             })
             .catch((err) => {
-                console.warn('Failed to fetch the HA status for Kea application ID ' + this.appId)
+                console.warn('Failed to fetch the HA status for Kea application ID ' + this.appId, err)
                 this._receivedStatus = null
             })
     }
@@ -158,8 +155,8 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      */
     private localServerScopes(): string[] {
         let scopes: string[] = []
-        if (this.hasStatus() && this.localServer().scopes) {
-            scopes = this.localServer().scopes.join(', ')
+        if (this.hasStatus() && !!this.localServer().scopes) {
+            scopes = this.localServer().scopes
         }
         return scopes
     }
@@ -172,7 +169,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     private remoteServerScopes(): string[] {
         let scopes: string[] = []
         if (this.hasStatus() && this.remoteServer().scopes) {
-            scopes = this.remoteServer().scopes.join(', ')
+            scopes = this.remoteServer().scopes
         }
         return scopes
     }
