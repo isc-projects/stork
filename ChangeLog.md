@@ -1,3 +1,10 @@
+* 271 [bug] slawek
+
+    Added a waiting indicator presented while loading the HA servers' statuses.
+    Previously, an inappropriate message about missing HA configuration was
+    displayed.
+    (Gitlab #448)
+
 * 270 [func] slawek
 
     Extended the UI to display the delegated prefix pools and their
