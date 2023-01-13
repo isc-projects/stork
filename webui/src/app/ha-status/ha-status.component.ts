@@ -154,7 +154,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: `Failed to fetch the HA status for Kea application ID: ${this.appId}`,
-                    detail: getErrorMessage(err)
+                    detail: getErrorMessage(err),
                 })
                 this._receivedStatus = null
             })
