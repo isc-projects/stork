@@ -6,6 +6,25 @@
 # lists to use as pre-requirements in the next stages.
 # It installs the source code dependencies too.
 
+############
+### Date ###
+############
+
+require 'date'
+
+now = Time.now
+CURRENT_DATE = now.strftime("%Y-%m-%d %H:%M")
+
+if ENV['STORK_BUILD_TIMESTAMP']
+    TIMESTAMP = ENV['STORK_BUILD_TIMESTAMP']
+else
+    TIMESTAMP = now.strftime("%y%m%d%H%M%S")
+end
+
+#############
+### Clean ###
+#############
+
 # Ruby has a built-in solution for handling CLEAN and CLOBBER arrays and
 # deleting unnecessary files. But loading the 'rake' module significantly reduces
 # the performance. For these reason we implement the clean and clobber tasks
@@ -25,6 +44,29 @@ CLOBBER = FileList[]
 # Ruby bundler local file
 CLOBBER.append "rakelib/init_debs/.bundle/config"
 
+################
+### Code-gen ###
+################
+
+go_code_gen_codebase = FileList[
+    "backend/codegen",
+    "backend/codegen/*",
+    "backend/cmd/stork-code-gen",
+    "backend/cmd/stork-code-gen/*",
+]
+
+go_code_gen_codebase_without_binary = go_code_gen_codebase
+    .exclude("backend/cmd/stork-code-gen/stork-code-gen")
+
+CODE_GEN_BINARY_FILE = "backend/cmd/stork-code-gen/stork-code-gen"
+file CODE_GEN_BINARY_FILE => go_code_gen_codebase_without_binary + [GO] do
+    Dir.chdir("backend/cmd/stork-code-gen") do
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+    end
+    puts "Stork Code Gen build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
+end
+CLEAN.append CODE_GEN_BINARY_FILE
+
 ###############
 ### Swagger ###
 ###############
@@ -35,6 +77,13 @@ file SWAGGER_FILE => swagger_api_files + [YAMLINC] do
     sh YAMLINC, "-o", SWAGGER_FILE, "api/swagger.in.yaml"
 end
 CLEAN.append SWAGGER_FILE
+
+#####################################
+### JSON definitions for code-gen ###
+#####################################
+
+std_dhcpv4_option_definitions_json = "codegen/std_dhcpv4_option_def.json"
+std_dhcpv6_option_definitions_json = "codegen/std_dhcpv6_option_def.json"
 
 ###############
 ### Backend ###
@@ -79,12 +128,21 @@ end
 file agent_grpc_pb_go_file => [agent_pb_go_file]
 CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
-std_option_defs4_go_file = "backend/appcfg/kea/stdoptiondef4.go"
 std_option_defs6_go_file = "backend/appcfg/kea/stdoptiondef6.go"
-file std_option_defs6_go_file => ["codegen/std_dhcpv6_option_def.json"] do
-    Rake::Task["gen:backend:std_option_defs"].invoke()
+file std_option_defs6_go_file => [CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
+    sh CODE_GEN_BINARY_FILE, "std-option-defs",
+    "--input", std_dhcpv6_option_definitions_json,
+    "--output", std_option_defs6_go_file,
+    "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
 end
-file std_option_defs4_go_file => [std_option_defs6_go_file]
+
+std_option_defs4_go_file = "backend/appcfg/kea/stdoptiondef4.go"
+file std_option_defs4_go_file => [CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
+    sh CODE_GEN_BINARY_FILE, "std-option-defs",
+    "--input", std_dhcpv4_option_definitions_json,
+    "--output", std_option_defs4_go_file,
+    "--template", "backend/appcfg/kea/stdoptiondef4.go.template"
+end
 
 # Go dependencies are installed automatically during build
 # or can be triggered manually.
@@ -114,13 +172,6 @@ go_tool_codebase = FileList[
     "backend/server/database/migrations/*"
 ]
 
-go_code_gen_codebase = FileList[
-    "backend/codegen",
-    "backend/codegen/*",
-    "backend/cmd/stork-code-gen",
-    "backend/cmd/stork-code-gen/*",
-]
-
 go_common_codebase = FileList["backend/**/*"]
     .exclude("backend/coverage.out")
     .exclude(swagger_server_dir + "/**/*")
@@ -147,9 +198,6 @@ GO_AGENT_CODEBASE = go_agent_codebase
 GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-tool/stork-tool")
-
-GO_CODE_GEN_CODEBASE = go_code_gen_codebase
-        .exclude("backend/cmd/stork-code-gen/stork-code-gen")
 
 file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
     Dir.chdir("backend") do
@@ -212,12 +260,22 @@ file node_module_dir => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/packag
 end
 CLOBBER.append node_module_dir
 
-std_option_defs4_ts_file = "webui/src/app/std-dhcpv4-option-defs.ts"
+
 std_option_defs6_ts_file = "webui/src/app/std-dhcpv6-option-defs.ts"
-file std_option_defs6_ts_file => ["codegen/std_dhcpv6_option_def.json"] do
-    Rake::Task["gen:ui:std_option_defs"].invoke()
+file std_option_defs6_ts_file => [CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
+    sh CODE_GEN_BINARY_FILE, "std-option-defs",
+        "--input", std_dhcpv6_option_definitions_json,
+        "--output", std_option_defs6_ts_file,
+        "--template", "webui/src/app/std-dhcpv6-option-defs.ts.template"
 end
-file std_option_defs4_ts_file => [std_option_defs6_ts_file]
+
+std_option_defs4_ts_file = "webui/src/app/std-dhcpv4-option-defs.ts"
+file std_option_defs4_ts_file => [CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
+    sh CODE_GEN_BINARY_FILE, "std-option-defs",
+        "--input", std_dhcpv4_option_definitions_json,
+        "--output", std_option_defs4_ts_file,
+        "--template", "webui/src/app/std-dhcpv4-option-defs.ts.template"
+end
 
 WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/.angular")
@@ -230,7 +288,6 @@ WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/src/assets/arm/**/*")
     .include(open_api_generator_webui_dir)
     .include(node_module_dir)
-    .include(go_code_gen_codebase)
     .include(std_option_defs4_ts_file)
     .include(std_option_defs6_ts_file)
 
@@ -260,7 +317,18 @@ namespace :gen do
     namespace :backend do
         desc 'Generate Swagger API files'
         task :swagger => [swagger_server_dir]
+
+        desc 'Generate standard DHCP option definitions for the backend'
+        task :std_option_defs => [std_option_defs4_go_file, std_option_defs6_go_file]
     end
+
+    namespace :ui do
+        desc 'Generate standard DHCP option definitions for the UI'
+        task :std_option_defs => [std_option_defs4_ts_file, std_option_defs6_ts_file]
+    end
+
+    desc 'Generate standard DHCP option definitions for the backend and the UI'
+    task :std_option_defs => ["gen:ui:std_option_defs", "gen:backend:std_option_defs"]
 end
 
 namespace :prepare do

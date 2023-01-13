@@ -4,21 +4,6 @@
 # This file is responsible for building (compiling)
 # the binaries and other artifacts (docs, bundles). 
 
-############
-### Date ###
-############
-
-require 'date'
-
-now = Time.now
-build_date = now.strftime("%Y-%m-%d %H:%M")
-
-if ENV['STORK_BUILD_TIMESTAMP']
-    TIMESTAMP = ENV['STORK_BUILD_TIMESTAMP']
-else
-    TIMESTAMP = now.strftime("%y%m%d%H%M%S")
-end
-
 #####################
 ### Documentation ###
 #####################
@@ -79,9 +64,9 @@ CLEAN.append "webui/.angular"
 AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
 file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-agent") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
     end
-    puts "Stork Agent build date: #{build_date} (timestamp: #{TIMESTAMP})"
+    puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 CLEAN.append AGENT_BINARY_FILE
 
@@ -89,29 +74,20 @@ SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     sh "rm", "-f", GO_SERVER_API_MOCK
     Dir.chdir("backend/cmd/stork-server") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
     end
-    puts "Stork Server build date: #{build_date} (timestamp: #{TIMESTAMP})"
+    puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 CLEAN.append SERVER_BINARY_FILE
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-tool") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
+        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
     end
-    puts "Stork Tool build date: #{build_date} (timestamp: #{TIMESTAMP})"
+    puts "Stork Tool build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 CLEAN.append TOOL_BINARY_FILE
-
-CODE_GEN_BINARY_FILE = "backend/cmd/stork-code-gen/stork-code-gen"
-file CODE_GEN_BINARY_FILE => GO_CODE_GEN_CODEBASE + [GO] do
-    Dir.chdir("backend/cmd/stork-code-gen") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{build_date}'"
-    end
-    puts "Stork Code Gen build date: #{build_date} (timestamp: #{TIMESTAMP})"
-end
-CLEAN.append CODE_GEN_BINARY_FILE
 
 #############
 ### Tasks ###
@@ -186,14 +162,14 @@ namespace :build do
     desc "Build Stork Tool from sources"
     task :tool => [TOOL_BINARY_FILE]
 
-    desc "Build Stork Code Gen from sources"
-    task :code_gen => [CODE_GEN_BINARY_FILE]
-
     desc "Build Web UI (production mode)"
     task :ui => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY]
 
-    desc "Build Stork Backend (Code Generator, Server, Agent, Tool)"
-    task :backend => [:code_gen, :server, :agent, :tool]
+    desc "Build Stork Backend (Server, Agent, Tool)"
+    task :backend => [:server, :agent, :tool]
+
+    desc "Build Stork Code Gen from sources"
+    task :code_gen => [CODE_GEN_BINARY_FILE]
 end
 
 desc "Build all Stork components (Server, Agent, Tool, UI, doc)"
