@@ -8,7 +8,7 @@ import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { RouterModule, ActivatedRoute, Router, convertToParamMap } from '@angular/router'
-import { DHCPService, SettingsService, UsersService } from '../backend'
+import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
@@ -18,6 +18,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { RouterTestingModule } from '@angular/router/testing'
+import { MessageModule } from 'primeng/message'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -57,6 +58,7 @@ describe('SubnetsPageComponent', () => {
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
+                MessageModule
             ],
             declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
         })
@@ -117,6 +119,34 @@ describe('SubnetsPageComponent', () => {
                         pools: ['1.1.0.4-1.1.255.254'],
                         subnet: '1.1.0.0/16',
                     },
+                    {
+                        id: 67,
+                        localSubnets: [
+                            {
+                                id: 4,
+                                appId: 28,
+                                appName: 'ha@localhost',
+                                machineAddress: 'localhost',
+                                machineHostname: 'ha-cluster-1'
+                            },
+                            {
+                                id: 4,
+                                appId: 28,
+                                appName: 'ha@localhost',
+                                machineAddress: 'localhost',
+                                machineHostname: 'ha-cluster-2'
+                            },
+                            {
+                                id: 4,
+                                appId: 28,
+                                appName: 'ha@localhost',
+                                machineAddress: 'localhost',
+                                machineHostname: 'ha-cluster-3'
+                            }
+                        ],
+                        statsCollectedAt: '2022-01-16T14:16:00.000Z',
+                        subnet: '1.1.1.0/24',
+                    }
                 ],
                 total: 10496,
             },
@@ -202,12 +232,15 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenRenderingDone()
 
         // Assert
-        const cells = fixture.debugElement.queryAll(By.css('table tbody tr td:first-child'))
-        expect(cells.length).toBe(2)
+        const cells = fixture.debugElement.queryAll(By.css('table tbody tr td:last-child'))
+        expect(cells.length).toBe(3)
         const cellValues = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
-        expect(cellValues).toContain('1')
+        // First subnet has various Kea subnet IDs.
+        expect(cellValues).toContain('1  2 Inconsistent configurations')
         // Second subnet misses the Kea subnet ID.
         expect(cellValues).toContain('')
+        // Third subnet has identical Kea subnet IDs.
+        expect(cellValues).toContain('4')
     })
 
     it('should filter subnets by the Kea subnet ID', async () => {
@@ -234,5 +267,52 @@ describe('SubnetsPageComponent', () => {
                 },
             })
         )
+    })
+
+    it('should detect that the subnet has only references to the local subnets with identical IDs', () => {
+        // Arrange
+        const subnet: Subnet = {
+            subnet: 'fe80::/64',
+            localSubnets: [
+                {
+                    id: 1
+                },
+                {
+                    id: 1
+                }
+            ]
+        }
+
+        // Act & Assert
+        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
+    })
+
+    it('should detect that the subnet has references to the local subnets with various IDs', () => {
+        // Arrange
+        const subnet: Subnet = {
+            subnet: 'fe80::/64',
+            localSubnets: [
+                {
+                    id: 1
+                },
+                {
+                    id: 2
+                }
+            ]
+        }
+
+        // Act & Assert
+        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeTrue()
+    })
+
+    it('should recognize that all local subnets have the same IDs if the local subnets list is empty', () => {
+        // Arrange
+        const subnet: Subnet = {
+            subnet: 'fe80::/64',
+            localSubnets: []
+        }
+
+        // Act & Assert
+        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
     })
 })

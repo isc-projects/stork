@@ -82,12 +82,11 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" style="width: 5rem">Kea Subnet ID</th>
                     <th rowspan="2" style="width: 11rem">Subnet</th>
                     <th colspan="3" style="width: 16rem">Addresses</th>
                     <th rowspan="2">Pools</th>
                     <th rowspan="2" style="width: 6rem">Shared Network</th>
-                    <th rowspan="2" style="width: 14rem">App Name</th>
+                    <th colspan="2">Application</th>
                     <th rowspan="2" style="width: 3rem" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
                         <i class="pi pi-chart-line" style="font-size: 1.6em"></i>
                     </th>
@@ -96,13 +95,12 @@
                     <th>Total</th>
                     <th style="padding: 0.571rem 0.5rem">Assigned</th>
                     <th>Used %</th>
+                    <th>Name</th>
+                    <th>Kea Subnet ID</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-sn>
                 <tr class="alternate-list">
-                    <td>
-                        {{ sn.localSubnets?.[0]?.id }}
-                    </td>
                     <td>
                         <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                     </td>
@@ -154,6 +152,21 @@
                             style="display: block"
                             >{{ lsn.appName }}</a
                         >
+                    </td>
+                    <td>
+                        <div class="grid" *ngIf="hasAssignedMultipleKeaSubnetIds(sn); else elseSingleKeaSubnetId">
+                            <div class="col-fixed flex flex-column">
+                                <span *ngFor="let lsn of sn.localSubnets">
+                                    {{ lsn.id }}
+                                </span>
+                            </div>
+                            <div class="col-fixed flex align-items-center">
+                                <p-message severity="error" text="Inconsistent configurations"></p-message>
+                            </div>
+                        </div>
+                        <ng-template #elseSingleKeaSubnetId>
+                            <span>{{ sn.localSubnets?.[0].id }}</span>
+                        </ng-template>
                     </td>
                     <td *ngIf="grafanaUrl">
                         <a
