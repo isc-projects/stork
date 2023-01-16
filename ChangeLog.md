@@ -1,7 +1,8 @@
 * 266 [bug] slawek
 
-    The events pertaining to the daemons, apps, and machines can be filtered by
-    the machine running these daemons and apps.
+    The events pertaining to the daemons and apps can be filtered by the
+    machines running these daemons and apps. Previously, filtering by a
+    specific machine or an app did not return some events related to daemons.
     (Gitlab #882)
 
 * 265 [bug] slawek
