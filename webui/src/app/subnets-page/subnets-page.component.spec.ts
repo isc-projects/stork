@@ -58,7 +58,7 @@ describe('SubnetsPageComponent', () => {
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
-                MessageModule
+                MessageModule,
             ],
             declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
         })
@@ -127,26 +127,26 @@ describe('SubnetsPageComponent', () => {
                                 appId: 28,
                                 appName: 'ha@localhost',
                                 machineAddress: 'localhost',
-                                machineHostname: 'ha-cluster-1'
+                                machineHostname: 'ha-cluster-1',
                             },
                             {
                                 id: 4,
                                 appId: 28,
                                 appName: 'ha@localhost',
                                 machineAddress: 'localhost',
-                                machineHostname: 'ha-cluster-2'
+                                machineHostname: 'ha-cluster-2',
                             },
                             {
                                 id: 4,
                                 appId: 28,
                                 appName: 'ha@localhost',
                                 machineAddress: 'localhost',
-                                machineHostname: 'ha-cluster-3'
-                            }
+                                machineHostname: 'ha-cluster-3',
+                            },
                         ],
                         statsCollectedAt: '2022-01-16T14:16:00.000Z',
                         subnet: '1.1.1.0/24',
-                    }
+                    },
                 ],
                 total: 10496,
             },
@@ -275,12 +275,12 @@ describe('SubnetsPageComponent', () => {
             subnet: 'fe80::/64',
             localSubnets: [
                 {
-                    id: 1
+                    id: 1,
                 },
                 {
-                    id: 1
-                }
-            ]
+                    id: 1,
+                },
+            ],
         }
 
         // Act & Assert
@@ -293,12 +293,12 @@ describe('SubnetsPageComponent', () => {
             subnet: 'fe80::/64',
             localSubnets: [
                 {
-                    id: 1
+                    id: 1,
                 },
                 {
-                    id: 2
-                }
-            ]
+                    id: 2,
+                },
+            ],
         }
 
         // Act & Assert
@@ -309,7 +309,7 @@ describe('SubnetsPageComponent', () => {
         // Arrange
         const subnet: Subnet = {
             subnet: 'fe80::/64',
-            localSubnets: []
+            localSubnets: [],
         }
 
         // Act & Assert

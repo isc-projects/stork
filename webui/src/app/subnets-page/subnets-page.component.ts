@@ -232,10 +232,10 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     /**
      * Checks if the local subnets in a given subnet have different local
      * subnet IDs.
-     * 
+     *
      * All local subnet IDs should be the same for a given subnet. Otherwise,
      * it indicates on misconfiguration issue.
-     * 
+     *
      * @param subnet Subnet with local subnets
      * @returns True if the referenced local subnets have different IDs.
      */
