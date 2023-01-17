@@ -3298,43 +3298,102 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
 // Test that the checker returns an error if provided a non-DHCP daemon.
 func TestSubnetCmdsAndConfigBackendMutualExclusionForNonDHCPDaemon(t *testing.T) {
 	// Arrange
-
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
 	// Act
+	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
 
 	// Assert
-
+	require.ErrorContains(t, err, "unsupported daemon")
+	require.Nil(t, report)
 }
 
 // Test that the checker founds no issue if the subnet hook is missing.
 func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingSubnetHook(t *testing.T) {
 	// Arrange
+	configStr := `{
+        "Dhcp4": {
+            "config-control": {
+                "config-databases": [
+                    {
+                        "name": "config",
+                        "type": "mysql"
+                    }
+                ]
+            }
+        }
+    }`
+	ctx := createReviewContext(t, nil, configStr)
 
 	// Act
+	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
 
 	// Assert
-
+	require.NoError(t, err)
+	require.Nil(t, report)
 }
 
 // Test that the checker founds no issue if no config backend databases are
 // configured.
 func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingConfigBackend(t *testing.T) {
 	// Arrange
+	configStr := `{
+        "Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_subnet_cmds.so"
+                }
+            ]
+        }
+    }`
+	ctx := createReviewContext(t, nil, configStr)
 
 	// Act
+	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
 
 	// Assert
-
+	require.NoError(t, err)
+	require.Nil(t, report)
 }
 
 // Test that the checker founds an issue if the subnet hook and the config
 // backend database are used mutually.
 func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
 	// Arrange
+	configStr := `{
+        "Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_subnet_cmds.so"
+                }
+            ],
+            "config-control": {
+                "config-databases": [
+                    {
+                        "name": "config",
+                        "type": "mysql"
+                    }
+                ]
+            }
+        }
+    }`
+	ctx := createReviewContext(t, nil, configStr)
 
 	// Act
+	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
 
 	// Assert
-
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(
+		t,
+		*report.content,
+		"is recommended that the 'subnet_cmds' hook library not be used "+
+			"to manage subnets when the configuration backend is used",
+	)
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects
