@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -144,6 +145,26 @@ func SetupLogging() {
 			return "", fmt.Sprintf("%20v:%-5d", filename, f.Line)
 		},
 	})
+}
+
+// The command executor is an abstraction layer on top of the exec package to
+// improve testability and allow mock the operating system operations.
+type CommandExecutor interface {
+	Output(string, ...string) ([]byte, error)
+}
+
+// Executes the given command in the operating system.
+type systemCommandExecutor struct{}
+
+// Constructs the command executor that invokes the requests within the system
+// shell.
+func NewSystemCommandExecutor() CommandExecutor {
+	return &systemCommandExecutor{}
+}
+
+// Executes a given command in the system shell and returns an output.
+func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, error) {
+	return exec.Command(command, args...).Output()
 }
 
 // Convert bytes to hex string.

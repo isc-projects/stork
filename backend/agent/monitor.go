@@ -235,7 +235,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			// detect bind9
 			m := bind9Pattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				cmdr := &systemCommandExecutor{}
+				cmdr := storkutil.NewSystemCommandExecutor()
 				bind9App := detectBind9App(m, cwd, cmdr)
 				if bind9App != nil {
 					bind9App.GetBaseApp().Pid = p.Pid

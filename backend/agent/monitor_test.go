@@ -238,7 +238,9 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 
 type testCommandExecutor struct{}
 
-func (e *testCommandExecutor) output(command string, args ...string) ([]byte, error) {
+// Returns a fixed output and no error for any data. The output contains the
+// Bind 9 response with statistic channel details.
+func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	text := `keys "foo" {
                       algorithm "hmac-sha256";
                       secret "abcd";

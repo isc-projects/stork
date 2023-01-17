@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	storkutil "isc.org/stork/util"
 )
 
 // Represents the BIND 9 process metadata.
@@ -33,18 +34,6 @@ type Bind9State struct {
 type Bind9App struct {
 	BaseApp
 	RndcClient *RndcClient // to communicate with BIND 9 via rndc
-}
-
-// Helper code for mocking os/exec stuff.
-type commandExecutor interface {
-	output(string, ...string) ([]byte, error)
-}
-
-// Executes the given command in the operating system.
-type systemCommandExecutor struct{}
-
-func (e *systemCommandExecutor) output(command string, args ...string) ([]byte, error) {
-	return exec.Command(command, args...).Output()
 }
 
 // Get base information about BIND 9 app.
@@ -353,7 +342,7 @@ func getPotentialNamedConfLocations() []string {
 	}
 }
 
-func detectBind9App(match []string, cwd string, executor commandExecutor) App {
+func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil
@@ -405,7 +394,7 @@ func detectBind9App(match []string, cwd string, executor commandExecutor) App {
 		log.Warnf("cannot find BIND 9 %s: %s", namedCheckconfExec, err)
 		return nil
 	}
-	out, err := executor.output(namedCheckconfPath, "-p", bind9ConfPath)
+	out, err := executor.Output(namedCheckconfPath, "-p", bind9ConfPath)
 	if err != nil {
 		log.Warnf("cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
 		return nil

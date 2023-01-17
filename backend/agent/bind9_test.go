@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 // Test the function which extracts the list of log files from the Bind9
@@ -25,10 +26,10 @@ func TestGetPotentialNamedConfLocations(t *testing.T) {
 // Test that the system command executor returns a proper output.
 func TestSystemCommandExecutorOutput(t *testing.T) {
 	// Arrange
-	executor := &systemCommandExecutor{}
+	executor := storkutil.NewSystemCommandExecutor()
 
 	// Act
-	output, err := executor.output("echo", "-n", "foo")
+	output, err := executor.Output("echo", "-n", "foo")
 
 	// Assert
 	require.NoError(t, err)
@@ -38,10 +39,10 @@ func TestSystemCommandExecutorOutput(t *testing.T) {
 // Test that the system command executor returns an error for invalid command.
 func TestSystemCommandExecutorOnFail(t *testing.T) {
 	// Arrange
-	executor := &systemCommandExecutor{}
+	executor := storkutil.NewSystemCommandExecutor()
 
 	// Act
-	output, err := executor.output("non-exist-command")
+	output, err := executor.Output("non-exist-command")
 
 	// Assert
 	require.Error(t, err)
