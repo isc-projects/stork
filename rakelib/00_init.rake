@@ -239,6 +239,13 @@ end
 # "needed" and causes to rebuild of a parent task.
 # The file tasks with this prerequisite cannot be a prerequisite for other file
 # tasks to avoid a negative impact on the performance.
+#
+# This task works similarly to a default "phony" task in Ruby but has
+# additional validation that prevents you from using it in the middle of the
+# dependency chain. It isn't necessary; it changes nothing in how this task
+# works, but it verifies if a developer didn't misuse it and provide a
+# hard-to-find bug. See discussion about the "phony" task in
+# https://gitlab.isc.org/isc-projects/stork/-/merge_requests/535#note_344019.
 task :always_rebuild_this_task do |this|
     # Checks if no file task depends on a file task with this prerequisite.
     Rake::Task.tasks().each do |t|
