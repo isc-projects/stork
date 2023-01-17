@@ -3295,6 +3295,48 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
 		"1. Pool 'fe80::/80 del. 80' of the '[42] fe80::/16' subnet")
 }
 
+// Test that the checker returns an error if provided a non-DHCP daemon.
+func TestSubnetCmdsAndConfigBackendMutualExclusionForNonDHCPDaemon(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that the checker founds no issue if the subnet hook is missing.
+func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingSubnetHook(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that the checker founds no issue if no config backend databases are
+// configured.
+func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingConfigBackend(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that the checker founds an issue if the subnet hook and the config
+// backend database are used mutually.
+func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
