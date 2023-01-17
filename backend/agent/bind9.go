@@ -342,6 +342,15 @@ func getPotentialNamedConfLocations() []string {
 	}
 }
 
+// Detects the running Bind 9 application.
+// It accepts the components of the Bind 9 process name (the "match" argument),
+// the current working directory of the process (the "cwd" argument; it may be
+// empty), and a command executor instance.
+// It accepts the components of the Bind 9 process name (the "match" argument),
+// the current working directory of the process (the "cwd" argument; it may be
+// empty), and a command executor instance. It uses the arguments to detect the
+// Bind 9 configuration and the Bind 9 communication channels. Returns the
+// collected data or nil if the Bind 9 is not recognized or any error occurs.
 func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
