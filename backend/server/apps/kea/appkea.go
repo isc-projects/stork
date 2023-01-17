@@ -35,7 +35,7 @@ func GetDaemonHooks(dbDaemon *dbmodel.Daemon) (hooks []string) {
 	return
 }
 
-// The arguments of the version-get command.
+// The arguments of the version-get command response.
 type VersionGetRespArgs struct {
 	Extended string
 }
