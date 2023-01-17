@@ -1,3 +1,11 @@
+* 280 [func] slawek
+
+    Implemented a new Kea configuration checker to detect if the subnet
+    commands hook is simultaneously used with the configuration backend
+    database and suggest replacing it with the configuration backend command
+    hook.
+    (Gitlab #940)
+
 * 279 [func] slawek
 
     Added the Kea configuration checkers reporting when there are static
