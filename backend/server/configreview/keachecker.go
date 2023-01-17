@@ -14,18 +14,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// The checker verifying if the stat_cmds hooks library is loaded.
-func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
-	config := ctx.subjectDaemon.KeaDaemon.Config
-	if _, _, present := config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
-		r, err := NewReport(ctx, "The Kea Statistics Commands library (libdhcp_stat_cmds) provides commands for retrieving accurate DHCP lease statistics for Kea DHCP servers. Stork sends these commands to fetch lease statistics displayed in the dashboard, subnet, and shared-network views. Stork found that {daemon} is not using this hook library. Some statistics will not be available until the library is loaded.").
-			referencingDaemon(ctx.subjectDaemon).
-			create()
-		return r, err
-	}
-	return nil, nil
-}
-
 // The checker verifying if the host_cmds hooks library is loaded when
 // host backend is in use.
 func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
@@ -1286,4 +1274,36 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 		countMessage, strings.Join(messages, "\n"))).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
+}
+
+// The checker validates that the subnet commands hook is not used mutually
+// with the config backend.
+func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	if _, _, present := config.GetHooksLibrary("libdhcp_subnet_cmds"); !present {
+		// Missing subnet commands hook.
+		return nil, nil
+	}
+
+	databases := config.GetAllDatabases()
+	if len(databases.Config) == 0 {
+		// Missing a config backend.
+		return nil, nil
+	}
+
+	return NewReport(
+		ctx,
+		"It is recommended that the 'subnet_cmds' hook library not be used "+
+			"to manage subnets when the configuration backend is used as a "+
+			"source of information about the subnets. The 'subnet_cmds' hook "+
+			"library modifies the local subnets configuration in the server's "+
+			"memory, not in the database. Use the 'cb_cmds' hook library to "+
+			"manage the subnets information in the database instead.",
+	).referencingDaemon(ctx.subjectDaemon).create()
 }
