@@ -671,6 +671,9 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "ha_dedicated_ports")
 	require.Contains(t, checkerNames, "address_pools_exhausted_by_reservations")
 	require.Contains(t, checkerNames, "pd_pools_exhausted_by_reservations")
+	require.Contains(t, checkerNames, "overlapping_subnet")
+	require.Contains(t, checkerNames, "canonical_prefix")
+	require.Contains(t, checkerNames, "subnet_cmds_and_cb_mutual_exclusion")
 
 	// Ensure that the appropriate triggers were registered for the
 	// default checkers.
@@ -678,8 +681,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
 
-	require.EqualValues(t, 11, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 11, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 12, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 12, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 4, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 }
 

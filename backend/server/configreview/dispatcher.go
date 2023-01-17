@@ -905,7 +905,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "ha_dedicated_ports", GetDefaultTriggers(), highAvailabilityDedicatedPorts)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "address_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), addressPoolsExhaustedByReservations)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "pd_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), delegatedPrefixPoolsExhaustedByReservations)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_cmds_cb_mutual_exclusion", GetDefaultTriggers(), subnetCmdsAndConfigBackendMutualExclusion)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_cmds_and_cb_mutual_exclusion", GetDefaultTriggers(), subnetCmdsAndConfigBackendMutualExclusion)
 }
 
 // Fetches all checker preferences from the database and loads them into
