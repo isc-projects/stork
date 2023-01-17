@@ -331,3 +331,12 @@ func TestIsWholeNumber(t *testing.T) {
 	u8 := uint8(123)
 	require.False(t, IsWholeNumber(&u8))
 }
+
+// Test that the system command executor is constructed properly.
+func TestNewSystemCommandExecutor(t *testing.T) {
+	// Arrange & Act
+	executor := NewSystemCommandExecutor()
+
+	// Assert
+	require.NotNil(t, executor)
+}
