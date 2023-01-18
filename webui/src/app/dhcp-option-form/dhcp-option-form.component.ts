@@ -1,33 +1,20 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
-import {
-    AbstractControl,
-    AbstractControlOptions,
-    AsyncValidatorFn,
-    UntypedFormArray,
-    UntypedFormBuilder,
-    FormControl,
-    UntypedFormGroup,
-    Validators,
-    ValidatorFn,
-} from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { MenuItem } from 'primeng/api'
-import { LinkedFormGroup } from '../forms/linked-form-group'
-import { DhcpOptionField, DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
+import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DhcpOptionsService } from '../dhcp-options.service'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
+import { DhcpOptionDef } from '../dhcp-option-def'
 
 /**
- * An interface to a DHCP option description.
- *
- * It is used to define a list of standard DHCP options.
+ * An interface to a function adding a field to the form.
  */
-interface DHCPOptionListItem {
-    label: string
-    value: number
+interface AddFieldFn {
+    (): void
 }
 
 /**
@@ -82,6 +69,13 @@ export class DhcpOptionFormComponent implements OnInit {
     @Input() nestLevel = 0
 
     /**
+     * Option space the option belongs to.
+     *
+     * It is used to find a definition of a selected option.
+     */
+    @Input() optionSpace = null
+
+    /**
      * An event emitted when an option should be deleted.
      *
      * The parent component should react to this event by removing the
@@ -121,6 +115,14 @@ export class DhcpOptionFormComponent implements OnInit {
     alwaysSendCheckboxId: string
 
     /**
+     * Option definition of a currently selected option.
+     *
+     * It is null if the option definition doesn't exist for the selected
+     * option.
+     */
+    optionDef: DhcpOptionDef
+
+    /**
      * Constructor.
      *
      * @param _formBuilder a form builder instance used in this component.
@@ -136,115 +138,156 @@ export class DhcpOptionFormComponent implements OnInit {
     ) {}
 
     /**
+     * Returns a function to be invoked when selected option field type is
+     * added to the form.
+     *
+     * It is invoked in two situations: when user adds an option field with
+     * a button or when the default option form is opened using the option
+     * definition.
+     *
+     * @param fieldName option field type name as string.
+     * @returns pointer to a function to be invoked to add the option field
+     * to the form.
+     */
+    private _getFieldCommand(fieldName: string): AddFieldFn {
+        switch (fieldName) {
+            case DhcpOptionFieldType.Binary:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Binary
+                    this.lastFieldCommand = this.addBinaryField
+                    this.addBinaryField()
+                }
+            case DhcpOptionFieldType.String:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.String
+                    this.lastFieldCommand = this.addStringField
+                    this.addStringField()
+                }
+            case DhcpOptionFieldType.Bool:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Bool
+                    this.lastFieldCommand = this.addBoolField
+                    this.addBoolField()
+                }
+            case DhcpOptionFieldType.Uint8:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Uint8
+                    this.lastFieldCommand = this.addUint8Field
+                    this.addUint8Field()
+                }
+            case DhcpOptionFieldType.Uint16:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Uint16
+                    this.lastFieldCommand = this.addUint16Field
+                    this.addUint16Field()
+                }
+            case DhcpOptionFieldType.Uint32:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Uint32
+                    this.lastFieldCommand = this.addUint32Field
+                    this.addUint32Field()
+                }
+            case DhcpOptionFieldType.IPv4Address:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.IPv4Address
+                    this.lastFieldCommand = this.addIPv4AddressField
+                    this.addIPv4AddressField()
+                }
+            case DhcpOptionFieldType.IPv6Address:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.IPv6Address
+                    this.lastFieldCommand = this.addIPv6AddressField
+                    this.addIPv6AddressField()
+                }
+            case DhcpOptionFieldType.IPv6Prefix:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.IPv6Prefix
+                    this.lastFieldCommand = this.addIPv6PrefixField
+                    this.addIPv6PrefixField()
+                }
+            case DhcpOptionFieldType.Psid:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Psid
+                    this.lastFieldCommand = this.addPsidField
+                    this.addPsidField()
+                }
+            case DhcpOptionFieldType.Fqdn:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Fqdn
+                    this.lastFieldCommand = this.addFqdnField
+                    this.addFqdnField()
+                }
+            default:
+                return () => {}
+        }
+    }
+
+    /**
      * A component lifecycle hook called on component initialization.
      *
      * It initializes the list of selectable option fields and associates
      * their selection with appropriate handler functions.
      */
     ngOnInit(): void {
-        this.lastFieldType = 'binary'
+        this.lastFieldType = DhcpOptionFieldType.Binary
         this.lastFieldCommand = this.addBinaryField
         this.codeInputId = uuidv4()
         this.alwaysSendCheckboxId = uuidv4()
         this.fieldTypes = [
             {
-                label: 'binary',
+                label: DhcpOptionFieldType.Binary,
                 id: this.FieldType.Binary,
-                command: () => {
-                    this.lastFieldType = 'binary'
-                    this.lastFieldCommand = this.addBinaryField
-                    this.addBinaryField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Binary),
             },
             {
-                label: 'string',
+                label: DhcpOptionFieldType.String,
                 id: this.FieldType.String,
-                command: () => {
-                    this.lastFieldType = 'string'
-                    this.lastFieldCommand = this.addStringField
-                    this.addStringField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.String),
             },
             {
-                label: 'bool',
+                label: DhcpOptionFieldType.Bool,
                 id: this.FieldType.Bool,
-                command: () => {
-                    this.lastFieldType = 'bool'
-                    this.lastFieldCommand = this.addBoolField
-                    this.addBoolField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Bool),
             },
             {
-                label: 'uint8',
+                label: DhcpOptionFieldType.Uint8,
                 id: this.FieldType.Uint8,
-                command: () => {
-                    this.lastFieldType = 'uint8'
-                    this.lastFieldCommand = this.addUint8Field
-                    this.addUint8Field()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Uint8),
             },
             {
-                label: 'uint16',
+                label: DhcpOptionFieldType.Uint16,
                 id: this.FieldType.Uint16,
-                command: () => {
-                    this.lastFieldType = 'uint16'
-                    this.lastFieldCommand = this.addUint16Field
-                    this.addUint16Field()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Uint16),
             },
             {
-                label: 'uint32',
+                label: DhcpOptionFieldType.Uint32,
                 id: this.FieldType.Uint32,
-                command: () => {
-                    this.lastFieldType = 'uint32'
-                    this.lastFieldCommand = this.addUint32Field
-                    this.addUint32Field()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Uint32),
             },
             {
-                label: 'ipv4-address',
+                label: DhcpOptionFieldType.IPv4Address,
                 id: this.FieldType.IPv4Address,
-                command: () => {
-                    this.lastFieldType = 'ipv4-address'
-                    this.lastFieldCommand = this.addIPv4AddressField
-                    this.addIPv4AddressField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.IPv4Address),
             },
             {
-                label: 'ipv6-address',
+                label: DhcpOptionFieldType.IPv6Address,
                 id: this.FieldType.IPv6Address,
-                command: () => {
-                    this.lastFieldType = 'ipv6-address'
-                    this.lastFieldCommand = this.addIPv6AddressField
-                    this.addIPv6AddressField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.IPv6Address),
             },
             {
-                label: 'ipv6-prefix',
+                label: DhcpOptionFieldType.IPv6Prefix,
                 id: this.FieldType.IPv6Prefix,
-                command: () => {
-                    this.lastFieldType = 'ipv6-prefix'
-                    this.lastFieldCommand = this.addIPv6PrefixField
-                    this.addIPv6PrefixField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.IPv6Prefix),
             },
             {
-                label: 'psid',
+                label: DhcpOptionFieldType.Psid,
                 id: this.FieldType.Psid,
-                command: () => {
-                    this.lastFieldType = 'psid'
-                    this.lastFieldCommand = this.addPsidField
-                    this.addPsidField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Psid),
             },
             {
-                label: 'fqdn',
+                label: DhcpOptionFieldType.Fqdn,
                 id: this.FieldType.Fqdn,
-                command: () => {
-                    this.lastFieldType = 'fqdn'
-                    this.lastFieldCommand = this.addFqdnField
-                    this.addFqdnField()
-                },
+                command: this._getFieldCommand(DhcpOptionFieldType.Fqdn),
             },
         ]
 
@@ -408,5 +451,50 @@ export class DhcpOptionFormComponent implements OnInit {
             this.optionFields.at(index).get('control').setValidators([Validators.required, StorkValidators.fullFqdn])
         }
         this.optionFields.at(index).get('control').updateValueAndValidity()
+    }
+
+    /**
+     * Returns an array of option codes encapsulated by the currently
+     * selected option.
+     *
+     * @returns An array of option codes or an empty array if the option
+     * definition doesn't exist.
+     */
+    getStandardDhcpOptionDefCodes(): Array<number> {
+        if (!this.optionDef) {
+            return []
+        }
+        return this.v6
+            ? this.optionsService.findStandardDhcpv6OptionDefsBySpace(this.optionDef.encapsulate).map((def) => def.code)
+            : this.optionsService.findStandardDhcpv4OptionDefsBySpace(this.optionDef.encapsulate).map((def) => def.code)
+    }
+
+    /**
+     * A handler called when user selects or types a new option code.
+     *
+     * The handler clears the existing option fields and suboptions.
+     * It locates a corresponding option definition and adds suitable
+     * fields to the form based on it. If the option definition is not
+     * found, it adds no option fields to the form.
+     *
+     * @param event an event triggered on option code selection.
+     */
+    onOptionCodeChange(event) {
+        this.optionFields.clear()
+        this.suboptions.clear()
+        let optionCode = event.value
+        this.optionDef = this.v6
+            ? this.optionsService.findStandardDhcpv6OptionDef(optionCode, this.optionSpace)
+            : this.optionsService.findStandardDhcpv4OptionDef(optionCode, this.optionSpace)
+        if (!this.optionDef) {
+            return
+        }
+        if (this.optionDef.optionType === 'record') {
+            for (let recordType of this.optionDef.recordTypes) {
+                this._getFieldCommand(recordType)()
+            }
+        } else {
+            this._getFieldCommand(this.optionDef.optionType)()
+        }
     }
 }

@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing'
 
 import { DhcpOptionsService } from './dhcp-options.service'
+import { stdDhcpv4OptionDefs } from './std-dhcpv4-option-defs'
+import { stdDhcpv6OptionDefs } from './std-dhcpv6-option-defs'
 
 describe('DhcpOptionsService', () => {
     let service: DhcpOptionsService
@@ -52,5 +54,45 @@ describe('DhcpOptionsService', () => {
 
         // Non existing option.
         expect(service.findStandardDhcpv6Option(1024)).toBeFalsy()
+    })
+
+    it('should return standard DHCPv4 option definition', () => {
+        let defs = stdDhcpv4OptionDefs
+        for (let def of defs) {
+            let foundDef = service.findStandardDhcpv4OptionDef(def.code, def.space)
+            expect(foundDef).toBeTruthy()
+            expect(foundDef).toEqual(def)
+        }
+    })
+
+    it('should return standard DHCPv6 option definition', () => {
+        let defs = stdDhcpv6OptionDefs
+        for (let def of defs) {
+            let foundDef = service.findStandardDhcpv6OptionDef(def.code, def.space)
+            expect(foundDef).toBeTruthy()
+            expect(foundDef).toEqual(def)
+        }
+    })
+
+    it('should return standard DHCPv4 option definitions by space', () => {
+        let defs = stdDhcpv4OptionDefs
+        let foundDefs = service.findStandardDhcpv4OptionDefsBySpace(null)
+        expect(foundDefs.length).toBe(defs.filter((def) => def.space === 'dhcp4').length)
+
+        foundDefs = service.findStandardDhcpv4OptionDefsBySpace('dhcp-agent-options-space')
+        expect(foundDefs.length).toBe(defs.filter((def) => def.space === 'dhcp-agent-options-space').length)
+    })
+
+    it('should return standard DHCPv6 option definitions by space', () => {
+        let defs = stdDhcpv6OptionDefs
+        let foundDefs = service.findStandardDhcpv6OptionDefsBySpace(null)
+        expect(foundDefs.length).toBe(defs.filter((def) => def.space === 'dhcp6').length)
+
+        // Go over other option spaces.
+        let spaces = ['s46-cont-mape-options', 's46-cont-mapt-options', 's46-cont-lw-options', 's46-v4v6bind-options']
+        for (let space of spaces) {
+            foundDefs = service.findStandardDhcpv6OptionDefsBySpace(space)
+            expect(foundDefs.length).toBe(defs.filter((def) => def.space === space).length)
+        }
     })
 })

@@ -444,7 +444,7 @@ export class DhcpOptionSetFormService extends FormProcessor {
      * @param value option field value to set.
      * @returns created form group instance.
      */
-    createIPv6PrefixField(prefix: string = '', prefixLen: string | number | null = 64): DhcpOptionFieldFormGroup {
+    createIPv6PrefixField(prefix: string = '', prefixLen: string | number | null = null): DhcpOptionFieldFormGroup {
         return this._createComplexField(DhcpOptionFieldType.IPv6Prefix, {
             prefix: this._formBuilder.control(prefix, [Validators.required, StorkValidators.ipv6()]),
             prefixLength: this._formBuilder.control(prefixLen, Validators.required),

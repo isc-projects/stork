@@ -1,4 +1,8 @@
 import { Injectable } from '@angular/core'
+import { IPType } from './backend'
+import { DhcpOptionDef } from './dhcp-option-def'
+import { stdDhcpv4OptionDefs } from './std-dhcpv4-option-defs'
+import { stdDhcpv6OptionDefs } from './std-dhcpv6-option-defs'
 
 /**
  * An interface to a DHCP option description.
@@ -1419,5 +1423,51 @@ export class DhcpOptionsService {
      */
     findStandardDhcpv6Option(code: number): DhcpOptionListItem | null {
         return this._dhcpv6OptionsByCode.get(code)
+    }
+
+    /**
+     * Finds a standard DHCPv4 option definition by the code and space.
+     *
+     * @param code option code.
+     * @param space option space.
+     * @returns DHCPv4 option definition or null, if not found.
+     */
+    findStandardDhcpv4OptionDef(code: number, space: string | null): DhcpOptionDef | null {
+        return stdDhcpv4OptionDefs.find((def) => def.code === code && def.space === (space ?? 'dhcp4'))
+    }
+
+    /**
+     * Finds a standard DHCPv6 option definition by the code and space.
+     *
+     * @param code option code.
+     * @param space option space.
+     * @returns DHCPv6 option definition or null, if not found.
+     */
+    findStandardDhcpv6OptionDef(code: number, space: string | null): DhcpOptionDef | null {
+        return stdDhcpv6OptionDefs.find((def) => def.code === code && def.space === (space ?? 'dhcp6'))
+    }
+
+    /**
+     * Finds all standard DHCPv4 option definitions in option space.
+     *
+     * If the option space is null, the top-level dhcp4 option space is assumed.
+     *
+     * @param space option space name.
+     * @returns An array of option definitions in the option space.
+     */
+    findStandardDhcpv4OptionDefsBySpace(space: string | null): DhcpOptionDef[] {
+        return stdDhcpv4OptionDefs.filter((def) => def.space === (space ?? 'dhcp4'))
+    }
+
+    /**
+     * Finds all standard DHCPv6 option definitions in option space.
+     *
+     * If the option space is null, the top-level dhcp6 option space is assumed.
+     *
+     * @param space option space name.
+     * @returns An array of option definitions in the option space.
+     */
+    findStandardDhcpv6OptionDefsBySpace(space: string | null): DhcpOptionDef[] {
+        return stdDhcpv6OptionDefs.filter((def) => def.space === (space ?? 'dhcp6'))
     }
 }

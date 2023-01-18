@@ -32,6 +32,13 @@ export class DhcpOptionSetFormComponent {
     @Input() nestLevel = 0
 
     /**
+     * Option space the options belong to.
+     *
+     * It is used to find the definitions of the selected options.
+     */
+    @Input() optionSpace = null
+
+    /**
      * An event emitter sending an event when user adds a new option.
      */
     @Output() optionAdd = new EventEmitter<void>()
