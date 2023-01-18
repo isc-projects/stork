@@ -236,7 +236,7 @@ describe('SubnetsPageComponent', () => {
         expect(cells.length).toBe(3)
         const cellValues = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
         // First subnet has various Kea subnet IDs.
-        expect(cellValues).toContain('1  2 Inconsistent configurations')
+        expect(cellValues).toContain('1  2 Inconsistent IDs')
         // Second subnet misses the Kea subnet ID.
         expect(cellValues).toContain('')
         // Third subnet has identical Kea subnet IDs.
