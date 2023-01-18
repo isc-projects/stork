@@ -234,24 +234,18 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * subnet IDs.
      *
      * All local subnet IDs should be the same for a given subnet. Otherwise,
-     * it indicates on misconfiguration issue.
+     * it indicates a misconfiguration issue.
      *
      * @param subnet Subnet with local subnets
      * @returns True if the referenced local subnets have different IDs.
      */
     hasAssignedMultipleKeaSubnetIds(subnet: Subnet): boolean {
         const localSubnets = subnet.localSubnets
-        if (!localSubnets || localSubnets.length == 0) {
+        if (!localSubnets || localSubnets.length <= 1) {
             return false
         }
 
         const firstId = localSubnets[0].id
-
-        for (let localSubnet of localSubnets) {
-            if (localSubnet.id != firstId) {
-                return true
-            }
-        }
-        return false
+        return localSubnets.slice(1).some((ls) => ls.id !== firstId)
     }
 }
