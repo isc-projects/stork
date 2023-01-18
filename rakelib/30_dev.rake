@@ -153,8 +153,14 @@ namespace :unittest do
                                 'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
                                 'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
                                 'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
-                                'prepareTLS', 'handleRequest', 'pullerLoop', 'Output', 'Collect',
+                                'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
                                 'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
+
+                                # The Output method of the "systemCommandExecutor" structure encapsulates the
+                                # "exec.Command" call to allow mocking of the system response in unit tests. The
+                                # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
+                                # method.
+                                'Output',
 
                                 # We spent a lot of time to try test the main agent function. It is a problematic
                                 # function because it starts listening and blocks itself until receiving SIGINT.
