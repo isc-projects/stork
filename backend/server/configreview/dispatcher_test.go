@@ -669,6 +669,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "out_of_pool_reservation")
 	require.Contains(t, checkerNames, "ha_mt_presence")
 	require.Contains(t, checkerNames, "ha_dedicated_ports")
+	require.Contains(t, checkerNames, "pools_exhausted_by_reservations")
 
 	// Ensure that the appropriate triggers were registered for the
 	// default checkers.
@@ -676,9 +677,9 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
 
-	require.EqualValues(t, 9, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 9, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
-	require.EqualValues(t, 2, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
+	require.EqualValues(t, 10, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 10, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 3, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 }
 
 // Verifies that registering new checkers and bumping up the
