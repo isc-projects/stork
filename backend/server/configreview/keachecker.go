@@ -2,6 +2,7 @@ package configreview
 
 import (
 	"fmt"
+	"math/big"
 	"net/url"
 	"sort"
 	"strconv"
@@ -991,4 +992,123 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 	}
 
 	return nil, nil
+}
+
+// The checker validates when a size of pool equals to the number of
+// reservations.
+func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
+	type subnet struct {
+		ID           int64
+		Subnet       string
+		Pools        []keaconfig.Pool
+		Reservations []struct {
+			IPAddress string
+		}
+	}
+
+	type reportData struct {
+		Subnet subnet
+		Pool   string
+	}
+
+	// Retrieve the subnet data (IPv4 and IPv6).
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	var subnets []subnet
+	err := config.DecodeTopLevelSubnets(&subnets)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collected data to report.
+	const maxReports = 10
+	var poolsToReport []reportData
+
+SubnetLoop:
+	for _, subnet := range subnets {
+		// Parse all reservations in a subnet.
+		reservedAddresses := []*storkutil.ParsedIP{}
+
+		for _, reservation := range subnet.Reservations {
+			parsedIP := storkutil.ParseIP(reservation.IPAddress)
+			reservedAddresses = append(reservedAddresses, parsedIP)
+		}
+
+		// Iterate over the address pools and check if they are exhausted by
+		// IP reservations.
+		for _, pool := range subnet.Pools {
+			// Parse a pool.
+			lb, ub, err := storkutil.ParseIPRange(pool.Pool)
+			if err != nil {
+				continue
+			}
+
+			// Calculate the pool size.
+			poolSize := storkutil.CalculateRangeSize(lb, ub)
+
+			// Count the reservations in a pool. We use the standard integer
+			// variable. It may be insufficient for extremely large IPv6
+			// subnets, but similar configurations are unexpected.
+			var reservationsInPoolCount uint64
+			for _, address := range reservedAddresses {
+				if address.IsInRange(lb, ub) {
+					reservationsInPoolCount++
+				}
+			}
+
+			if poolSize.Cmp(big.NewInt(0).SetUint64(reservationsInPoolCount)) > 0 {
+				// The pool size is greater than the number of reservations
+				// within it.
+				continue
+			}
+
+			// The pool size equals to the number of reservations. Add to report.
+			poolsToReport = append(poolsToReport, reportData{subnet, pool.Pool})
+
+			if len(poolsToReport) == maxReports {
+				// Found a maximum number of the affected pools. Early stop.
+				break SubnetLoop
+			}
+		}
+	}
+
+	if poolsToReport == nil {
+		// No affected pools found.
+		return nil, nil
+	}
+
+	// Format affected pool messages.
+	messages := make([]string, len(poolsToReport))
+	for i, poolToReport := range poolsToReport {
+		subnetID := ""
+		if poolToReport.Subnet.ID != 0 {
+			subnetID = fmt.Sprintf("[%d] ", poolToReport.Subnet.ID)
+		}
+
+		messages[i] = fmt.Sprintf(
+			"% 2d. Pool '%s' of the '%s%s' subnet.",
+			i, poolToReport.Pool, subnetID, poolToReport.Subnet.Subnet,
+		)
+	}
+
+	// Format the message about a count of affected pool messages.
+	countMessage := fmt.Sprintf("First %d affected pools", maxReports)
+	if len(poolsToReport) < maxReports {
+		countMessage = fmt.Sprintf(
+			"Found %s",
+			storkutil.FormatNoun(
+				int64(len(poolsToReport)),
+				"affected pool",
+				"s",
+			),
+		)
+	}
+
+	// Format the final report.
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains "+
+		"some address pools whose sizes equal the number of IP reservations "+
+		"in these pools. The devices not in the reserved list will not get "+
+		"an address. %s:\n%s",
+		countMessage, strings.Join(messages, "\n"))).
+		referencingDaemon(ctx.subjectDaemon).
+		create()
 }

@@ -3,6 +3,7 @@ package storkutil
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"net"
 	"strings"
 
@@ -207,6 +208,15 @@ func (parsed *ParsedIP) IsInPrefixRange(prefix string, prefixLen, delegatedLen i
 		}
 	}
 	return false
+}
+
+// Calculates the number of addresses between a given bounds.
+func CalculateRangeSize(lb, ub net.IP) *big.Int {
+	size := big.NewInt(0)
+	size.Add(size, big.NewInt(0).SetBytes(ub))
+	size.Sub(size, big.NewInt(0).SetBytes(lb))
+	size.Add(size, big.NewInt(1))
+	return size
 }
 
 // Returns network prefix as a binary string without delimiters. It
