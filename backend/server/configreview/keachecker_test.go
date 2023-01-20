@@ -26,6 +26,7 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 	} else if strings.Contains(configStr, "Control-agent") {
 		daemonName = dbmodel.DaemonNameCA
 	}
+
 	// Create the daemon instance and the context.
 	ctx := newReviewContext(db, &dbmodel.Daemon{
 		ID:   1,
@@ -2233,13 +2234,9 @@ func TestCanonicalPrefixesForValidPrefixes(t *testing.T) {
 // Test that the canonical prefixes report is not generated for an empty config.
 func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
-	_ = daemon.SetConfigFromJSON(`{
+	ctx := createReviewContext(t, nil, `{
         "Dhcp4": { }
     }`)
-
-	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
 
 	// Act
 	report, err := canonicalPrefixes(ctx)
@@ -2823,6 +2820,204 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 			"listeners but the connections to the HA 'baz' peer with "+
 			"the 'http://10.0.0.1:8000' URL are performed over the Kea Control Agent "+
 			"omitting the dedicated HTTP listener of this peer. ")
+}
+
+// Test that the error is returned if the non-DHCP daemon is checking.
+func TestPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Control-agent": { }
+    }`)
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.ErrorContains(t, err, "unsupported daemon")
+}
+
+// Test that the no error and no issue are returned if the configuration
+// doesn't contain subnets.
+func TestPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp4": {}
+    }`)
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.Nil(t, err)
+}
+
+// Test that the no issue report is returned if the number of reservations is
+// less then the number of available addresses in pool.
+func TestPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "subnet": "fe80::/16",
+                "pools": [
+                    {
+                        "pool": "fe80::1-fe80::3"
+                    }
+                ],
+                "reservations": [
+                    {
+                        "ip-addresses": [
+                            "fe80::1",
+                            "fe80::2"
+                        ]
+                    }
+                ]
+            }]
+        }
+    }`)
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the issue report is returned if all pool addresses are reserved.
+func TestPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "subnet": "fe80::/16",
+                "pools": [
+                    {
+                        "pool": "fe80::1-fe80::3"
+                    }
+                ],
+                "reservations": [
+                    {
+                        "ip-addresses": [
+                            "fe80::1",
+                            "fe80::2"
+                        ]
+                    },
+                    {
+                        "ip-addresses": [
+                            "fe80::3"
+                        ]
+                    }
+                ]
+            }]
+        }
+    }`)
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "Found 1 affected pool:")
+	require.Contains(t, *report.content,
+		"pools whose sizes equal the number of IP reservations")
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::1-fe80::3' of the 'fe80::/16' subnet")
+	require.NotContains(t, *report.content, "2.")
+}
+
+// Test that only the first 10 affected pools are included in the report.
+func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T) {
+	// Arrange
+	subnets := []map[string]any{}
+	// Generate 2 subnet.
+	for s := 0; s <= 1; s++ {
+		pools := []map[string]any{}
+		reservations := []map[string]any{}
+		// Each subnet included 7 single-address pools and 7 reservations.
+		for a := 1; a <= 7; a++ {
+			address := fmt.Sprintf("10.0.%d.%d", s, a)
+
+			pool := map[string]any{
+				"pool": fmt.Sprintf("%s-%s", address, address),
+			}
+			pools = append(pools, pool)
+
+			reservation := map[string]any{
+				"ip-address": address,
+			}
+			reservations = append(reservations, reservation)
+
+		}
+
+		subnets = append(subnets, map[string]any{
+			"subnet":       fmt.Sprintf("10.0.%d.0/24", s),
+			"pools":        pools,
+			"reservations": reservations,
+		})
+	}
+
+	config := map[string]any{
+		"Dhcp4": map[string]any{
+			"subnet4": subnets,
+		},
+	}
+	configJSON, _ := json.Marshal(config)
+
+	ctx := createReviewContext(t, nil, string(configJSON))
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "First 10 affected pools:")
+	require.Contains(t, *report.content,
+		"pools whose sizes equal the number of IP reservations")
+	require.Contains(t, *report.content,
+		"1. Pool '10.0.0.1-10.0.0.1' of the '10.0.0.0/24' subnet")
+	require.Contains(t, *report.content,
+		"8. Pool '10.0.1.1-10.0.1.1' of the '10.0.1.0/24' subnet")
+	require.Contains(t, *report.content, "\n10.")
+	require.NotContains(t, *report.content, "\n11.")
+	require.NotContains(t, *report.content,
+		"Pool '10.0.1.7-10.0.1.7' of the '10.0.1.0/24' subnet")
+}
+
+// Test that the report contains the subnet IDs if provided.
+func TestPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "id": 42,
+                "subnet": "fe80::/16",
+                "pools": [{ "pool": "fe80::1-fe80::1" }],
+                "reservations": [{ "ip-address": "fe80::1" }]
+            }]
+        }
+    }`)
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::1-fe80::1' of the '[42] fe80::/16' subnet")
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects

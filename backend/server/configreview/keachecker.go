@@ -131,9 +131,7 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 		Pools  []struct {
 			Pool string
 		}
-		Reservations []struct {
-			IPAddress string
-		}
+		Reservations []struct{}
 	}
 	// Create a structure into which the shared networks will be decoded.
 	type sharedNetwork struct {
@@ -997,12 +995,18 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 // The checker validates when a size of pool equals to the number of
 // reservations.
 func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
 	type subnet struct {
 		ID           int64
 		Subnet       string
 		Pools        []keaconfig.Pool
 		Reservations []struct {
-			IPAddress string
+			IPAddress   string
+			IPAddresses []string
 		}
 	}
 
@@ -1029,8 +1033,14 @@ SubnetLoop:
 		reservedAddresses := []*storkutil.ParsedIP{}
 
 		for _, reservation := range subnet.Reservations {
-			parsedIP := storkutil.ParseIP(reservation.IPAddress)
-			reservedAddresses = append(reservedAddresses, parsedIP)
+			if reservation.IPAddress != "" {
+				parsedIP := storkutil.ParseIP(reservation.IPAddress)
+				reservedAddresses = append(reservedAddresses, parsedIP)
+			}
+			for _, address := range reservation.IPAddresses {
+				parsedIP := storkutil.ParseIP(address)
+				reservedAddresses = append(reservedAddresses, parsedIP)
+			}
 		}
 
 		// Iterate over the address pools and check if they are exhausted by
@@ -1085,8 +1095,8 @@ SubnetLoop:
 		}
 
 		messages[i] = fmt.Sprintf(
-			"% 2d. Pool '%s' of the '%s%s' subnet.",
-			i, poolToReport.Pool, subnetID, poolToReport.Subnet.Subnet,
+			"%d. Pool '%s' of the '%s%s' subnet.",
+			i+1, poolToReport.Pool, subnetID, poolToReport.Subnet.Subnet,
 		)
 	}
 
