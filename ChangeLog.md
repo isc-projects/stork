@@ -1,3 +1,9 @@
+* 279 [func] slawek
+
+    Added a Kea configuration checker that validates if all available addresses
+    in IP pools are not reserved for hosts.
+    (Gitlab #941)
+
 * 278 [func] slawek
 
     Added the configuration review checkers to detect common misconfigurations
