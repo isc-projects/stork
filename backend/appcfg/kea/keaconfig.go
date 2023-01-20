@@ -69,6 +69,15 @@ type Peer struct {
 	AutoFailover *bool `mapstructure:"auto-failover"`
 }
 
+// Structure representing a multi-threading configuration of the HA hooks
+// library.
+type HAMultiThreading struct {
+	EnableMultiThreading  bool `mapstructure:"enable-multi-threading"`
+	HttpDedicatedListener bool `mapstructure:"http-dedicated-listener"`
+	HttpListenerThreads   int  `mapstructure:"http-listener-threads"`
+	HttpClientThreads     int  `mapstructure:"http-client-threads"`
+}
+
 // Structure representing a configuration of the HA hooks library.
 type HA struct {
 	ThisServerName    *string `mapstructure:"this-server-name"`
@@ -78,6 +87,7 @@ type HA struct {
 	MaxAckDelay       *int `mapstructure:"max-ack-delay"`
 	MaxUnackedClients *int `mapstructure:"max-unacked-clients"`
 	Peers             []Peer
+	MultiThreading    *HAMultiThreading `mapstructure:"multi-threading"`
 }
 
 // Structure representing a configuration of the control socket in the
