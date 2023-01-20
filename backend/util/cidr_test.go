@@ -1,6 +1,9 @@
 package storkutil
 
 import (
+	"math"
+	"math/big"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -307,4 +310,62 @@ func TestFormatCIDRNotation(t *testing.T) {
 	// The address is not converted to canonical form and the mask isn't
 	// validated.
 	require.EqualValues(t, "8.8.8.8/4242", FormatCIDRNotation("8.8.8.8", 4242))
+}
+
+// Test calculating the size of the IPv4 range with lower bound equals to the
+// upper one.
+func TestCalculateRangeSizeLowerEqualsToUpperBound(t *testing.T) {
+	// Arrange
+	lowerBound := net.ParseIP("10.0.0.1")
+	upperBound := net.ParseIP("10.0.0.1")
+
+	// Act
+	size := CalculateRangeSize(lowerBound, upperBound)
+
+	// Assert
+	require.EqualValues(t, big.NewInt(1), size)
+}
+
+// Test that the size of the IPv4 range is calculated properly.
+func TestCalculateRangeSizeIPv4(t *testing.T) {
+	// Arrange
+	lowerBound := net.ParseIP("10.0.0.1")
+	upperBound := net.ParseIP("10.0.1.0")
+
+	// Act
+	size := CalculateRangeSize(lowerBound, upperBound)
+
+	// Assert
+	require.EqualValues(t, big.NewInt(256), size)
+}
+
+// Test that the size of the range with swapped bounds is not positive.
+func TestCalculateRangeSizeSwappedBounds(t *testing.T) {
+	// Arrange
+	lowerBound := net.ParseIP("10.0.0.10")
+	upperBound := net.ParseIP("10.0.0.1")
+
+	// Act
+	size := CalculateRangeSize(lowerBound, upperBound)
+
+	// Assert
+	require.EqualValues(t, big.NewInt(-8), size)
+}
+
+// Test that the size of the IPv6 range is calculated properly.
+func TestCalculateRangeSizeIPv6(t *testing.T) {
+	// Arrange
+	lowerBound := net.ParseIP("fe80::")
+	upperBound := net.ParseIP("fe80:0:0:1::")
+
+	// Act
+	size := CalculateRangeSize(lowerBound, upperBound)
+
+	// Assert
+	require.EqualValues(
+		t,
+		big.NewInt(0).Add(
+			big.NewInt(0).SetUint64(math.MaxUint64),
+			big.NewInt(2),
+		), size)
 }
