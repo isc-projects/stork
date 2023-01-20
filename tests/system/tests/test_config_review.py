@@ -20,16 +20,17 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
 
     # The response should include all generated reports, not only the ones with
     # issues.
-    assert data['total'] > 3
+    assert data['total'] > 4
     issue_reports = {report['checker']: report
                      for report in data['items']
                      if 'content' in report}
 
-    assert len(issue_reports) == 3
+    assert len(issue_reports) == 4
 
     assert 'stat_cmds_presence' in issue_reports
     assert 'overlapping_subnet' in issue_reports
     assert 'canonical_prefix' in issue_reports
+    assert 'pools_exhausted_by_reservations' in issue_reports
 
 
 @ha_pair_parametrize('agent-kea-ha1-only-top-mt', 'agent-kea-ha2-only-top-mt')
