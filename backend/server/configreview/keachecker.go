@@ -831,3 +831,19 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 	}
 	return candidate.GetNetworkPrefixWithLength(), true
 }
+
+// The checker validates that the HA is running in multithreading mode if the
+// Kea uses this mode.
+func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	_, haConfig, ok := config.GetHAHooksLibrary()
+	if !ok {
+		// There is no HA configured.
+		return nil, nil
+	}
+}
