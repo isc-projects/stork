@@ -2954,7 +2954,6 @@ func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T)
 				"ip-address": address,
 			}
 			reservations = append(reservations, reservation)
-
 		}
 
 		subnets = append(subnets, map[string]any{
