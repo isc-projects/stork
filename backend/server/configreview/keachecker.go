@@ -837,11 +837,6 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 // The checker validates that the HA is running in multithreading mode if the
 // Kea uses this mode.
 func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
-		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
-	}
-
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
 	multiThreadingConfig := config.GetMultiThreadingEntry()
@@ -859,23 +854,35 @@ func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	// Suggest to enable HA+MT.
 	haMultiThreadingConfig := haConfig.MultiThreading
-	if haMultiThreadingConfig == nil ||
-		haMultiThreadingConfig.EnableMultiThreading == nil ||
-		!*haMultiThreadingConfig.EnableMultiThreading {
-		// The HA-level multi-threading is not configured or disabled.
-		return NewReport(ctx, "The Kea {daemon} daemon is configured to work "+
-			"in multi-threading mode, but the High Availability hooks use "+
-			"single-thread mode. You can set the 'multi-threading' parameter "+
-			"to true in the HA hook configuration to enable the "+
-			"multi-threading mode and improve the performance of the "+
-			"communication between HA servers.").
-			referencingDaemon(ctx.subjectDaemon).
-			create()
+	if haMultiThreadingConfig != nil &&
+		haMultiThreadingConfig.EnableMultiThreading != nil &&
+		*haMultiThreadingConfig.EnableMultiThreading {
+		// HA+MT enabled.
+		return nil, nil
 	}
 
-	// Hint to configure proper HTTP ports.
+	// The HA-level multi-threading is not configured or disabled.
+	return NewReport(ctx, "The Kea {daemon} daemon is configured to work "+
+		"in multi-threading mode, but the High Availability hooks use "+
+		"single-thread mode. You can set the 'multi-threading' parameter "+
+		"to true in the HA hook configuration to enable the "+
+		"multi-threading mode and improve the performance of the "+
+		"communication between HA servers.").
+		referencingDaemon(ctx.subjectDaemon).
+		create()
+}
+
+// The checker validates that High Availability peers don't use the HTTP port
+// assigned to the Kea Control Agent.
+func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
+	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	_, haConfig, ok := config.GetHAHooksLibrary()
+	if !ok {
+		// There is no HA configured.
+		return nil, nil
+	}
 
 	// Collect all CA daemons in a given application.
 	var caDaemons []*dbmodel.Daemon
