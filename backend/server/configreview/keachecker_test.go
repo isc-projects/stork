@@ -2304,19 +2304,6 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 	}
 }
 
-// Test that the checker returns an error if the daemon is not DHCP.
-func TestHighAvailabilityMultithreadingModeCheckerNonDHCPDaemon(t *testing.T) {
-	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
-
-	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
-
-	// Assert
-	require.ErrorContains(t, err, "unsupported daemon")
-	require.Nil(t, report)
-}
-
 // Test that the checker produces no report if the top multi-threading
 // is disabled.
 func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
@@ -2454,67 +2441,6 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
 		"single-thread mode")
 }
 
-// Test that the checker produces a report if any peer uses the port assigned
-// to the CA daemon.
-func TestHighAvailabilityMultithreadingModeCheckerPortCollisionWithCA(t *testing.T) {
-	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
-            "enable-multi-threading": true
-        },
-        "hooks-libraries": [
-            {
-                "library": "/libdhcp_ha.so",
-                "parameters": {
-                    "high-availability": [{
-                        "multi-threading": {
-                            "enable-multi-threading": true
-                        },
-                        "peers": [
-                            {
-                                "role": "primary",
-                                "name": "foo",
-                                "url": "http://foobar:8000"
-                            },
-                            {
-                                "role": "standby",
-                                "name": "bar",
-                                "url": "http://barfoo:8000"
-                            }
-                        ]
-                    }]
-                }
-            }
-        ]
-    } }`)
-
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "foobar",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
-
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
-		ID:   42,
-		Name: dbmodel.DaemonNameCA,
-	})
-
-	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
-
-	// Assert
-	require.NotNil(t, report)
-	require.NoError(t, err)
-
-	require.Len(t, report.refDaemonIDs, 2)
-	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
-	require.Contains(t, report.refDaemonIDs, int64(42))
-	require.NotNil(t, report.content)
-	require.Contains(t, *report.content,
-		"The HA 'foo' peer with the 'http://foobar:8000' URL is configured to use "+
-			"the same '8000' HTTP port as the 'control' access point.")
-}
-
 // Test that the checker produces no report if the configuration contains no
 // issues.
 func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testing.T) {
@@ -2562,6 +2488,138 @@ func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testin
 
 	// Act
 	report, err := highAvailabilityMultithreadingMode(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the checker produces no report if the HA is not configured.
+func TestHighAvailabilityDedicatedPortsCheckerNoHA(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the checker produces a report if any peer uses the port assigned
+// to the CA daemon.
+func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "foo",
+                                "url": "http://foobar:8000"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "bar",
+                                "url": "http://barfoo:8000"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
+
+	require.Len(t, report.refDaemonIDs, 2)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.Contains(t, report.refDaemonIDs, int64(42))
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"The HA 'foo' peer with the 'http://foobar:8000' URL is configured to use "+
+			"the same '8000' HTTP port as the 'control' access point.")
+}
+
+// Test that the checker produces no report if the configuration contains no
+// issue.
+func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "foo",
+                                "url": "http://foobar:8001"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "bar",
+                                "url": "http://barfoo:8001"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
 
 	// Assert
 	require.Nil(t, report)

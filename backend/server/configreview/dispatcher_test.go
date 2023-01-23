@@ -667,7 +667,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "dispensable_shared_network")
 	require.Contains(t, checkerNames, "dispensable_subnet")
 	require.Contains(t, checkerNames, "out_of_pool_reservation")
-	require.Contains(t, checkerNames, "ha+mt")
+	require.Contains(t, checkerNames, "ha_mt_recommendation")
+	require.Contains(t, checkerNames, "ha_dedicated_ports")
 
 	// Ensure that the appropriate triggers were registered for the
 	// default checkers.
@@ -675,8 +676,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
 
-	require.EqualValues(t, 8, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 8, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 9, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 9, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 2, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 }
 
