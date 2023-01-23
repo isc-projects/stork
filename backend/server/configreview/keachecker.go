@@ -2,7 +2,9 @@ package configreview
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -841,9 +843,88 @@ func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 	}
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	multiThreadingConfig := config.GetMultiThreadingInfo()
+
+	if multiThreadingConfig == nil ||
+		multiThreadingConfig.EnableMultiThreading == nil ||
+		!*multiThreadingConfig.EnableMultiThreading {
+		// The top-level multi-threading is not configured or disabled.
+		return nil, nil
+	}
+
 	_, haConfig, ok := config.GetHAHooksLibrary()
 	if !ok {
 		// There is no HA configured.
 		return nil, nil
 	}
+
+	// Suggest to enable HA+MT.
+	haMultiThreadingConfig := haConfig.MultiThreading
+	if haMultiThreadingConfig == nil ||
+		haMultiThreadingConfig.EnableMultiThreading == nil ||
+		!*haMultiThreadingConfig.EnableMultiThreading {
+		// The HA-level multi-threading is not configured or disabled.
+		return NewReport(ctx, "The Kea {daemon} daemon is configured to work "+
+			"in multi-threading mode, but the High Availability hooks use "+
+			"single-thread mode. You can set the 'multi-threading' parameter "+
+			"to true in the HA hook configuration to enable the "+
+			"multi-threading mode and improve the performance of the "+
+			"communication between HA servers.").
+			referencingDaemon(ctx.subjectDaemon).
+			create()
+	}
+
+	// Hint to configure proper HTTP ports.
+
+	// Collect all CA daemons in a given application.
+	var caDaemons []*dbmodel.Daemon
+	for _, daemon := range ctx.subjectDaemon.App.Daemons {
+		if daemon.Name == dbmodel.DaemonNameCA {
+			caDaemons = append(caDaemons, daemon)
+		}
+	}
+
+	for _, peer := range haConfig.Peers {
+		if !peer.IsSet() {
+			// Invalid peer. Skip.
+			continue
+		}
+
+		urlObj, err := url.Parse(*peer.URL)
+		if err != nil {
+			// It should never happen. Kea disallows invalid URLs.
+			continue
+		}
+
+		port, err := strconv.ParseInt(urlObj.Port(), 10, 64)
+		if err != nil {
+			// It should never happen. Kea disallows invalid URLs.
+			continue
+		}
+
+		for _, accessPoint := range ctx.subjectDaemon.App.AccessPoints {
+			if accessPoint.Address != urlObj.Host {
+				// There is no port collision due to the ports belong to different hosts.
+				continue
+			}
+			if accessPoint.Port == port {
+				// Port collision.
+				report := NewReport(ctx, fmt.Sprintf("The HA '%s' peer with the '%s' URL is "+
+					"configured to use the same '%d' HTTP port as the '%s' "+
+					"access point. It may cause the bottlenecks that nullify "+
+					"any performance gains offered by HA+MT",
+					*peer.Name, *peer.URL, port, accessPoint.Type)).
+					referencingDaemon(ctx.subjectDaemon)
+
+				for _, daemon := range caDaemons {
+					report = report.referencingDaemon(daemon)
+				}
+
+				return report.create()
+			}
+		}
+	}
+
+	return nil, nil
 }

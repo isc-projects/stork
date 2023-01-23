@@ -901,6 +901,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "out_of_pool_reservation", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "overlapping_subnet", GetDefaultTriggers(), subnetsOverlapping)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "canonical_prefix", GetDefaultTriggers(), canonicalPrefixes)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "ha+mt", GetDefaultTriggers(), highAvailabilityMultithreadingMode)
 }
 
 // Fetches all checker preferences from the database and loads them into

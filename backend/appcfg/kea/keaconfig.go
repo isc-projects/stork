@@ -72,10 +72,10 @@ type Peer struct {
 // Structure representing a multi-threading configuration of the HA hooks
 // library.
 type HAMultiThreading struct {
-	EnableMultiThreading  bool `mapstructure:"enable-multi-threading"`
-	HttpDedicatedListener bool `mapstructure:"http-dedicated-listener"`
-	HttpListenerThreads   int  `mapstructure:"http-listener-threads"`
-	HttpClientThreads     int  `mapstructure:"http-client-threads"`
+	EnableMultiThreading  *bool `mapstructure:"enable-multi-threading"`
+	HTTPDedicatedListener *bool `mapstructure:"http-dedicated-listener"`
+	HTTPListenerThreads   *int  `mapstructure:"http-listener-threads"`
+	HTTPClientThreads     *int  `mapstructure:"http-client-threads"`
 }
 
 // Structure representing a configuration of the HA hooks library.
@@ -142,6 +142,13 @@ type ReservationModes struct {
 	InSubnet   *bool   `mapstructure:"reservations-in-subnet,omitempty"`
 	Global     *bool   `mapstructure:"reservations-global,omitempty"`
 	Deprecated *string `mapstructure:"reservation-mode,omitempty"`
+}
+
+// Structure representing multi-threading parameters.
+type MultiThreading struct {
+	EnableMultiThreading *bool `mapstructure:"enable-multi-threading"`
+	ThreadPoolSize       *int  `mapstructure:"thread-pool-size"`
+	PacketQueueSize      *int  `mapstructure:"packet-queue-size"`
 }
 
 // Creates new instance from the pointer to the map of interfaces.
@@ -257,6 +264,19 @@ func (c *Map) GetHooksLibrary(name string) (path string, params map[string]inter
 		}
 	}
 	return path, params, ok
+}
+
+// Returns the multi-threading parameters or nil if they are not provided.
+func (c *Map) GetMultiThreadingInfo() *MultiThreading {
+	data, ok := c.getTopLevelEntry("multi-threading")
+	if !ok {
+		return nil
+	}
+	multiThreadingInfo, ok := data.(MultiThreading)
+	if !ok {
+		return nil
+	}
+	return &multiThreadingInfo
 }
 
 // Returns configuration of the HA hooks library in a parsed form.
