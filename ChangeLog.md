@@ -1,3 +1,11 @@
+* 278 [func] slawek
+
+    Added a configuration review checker to detect common misconfigurations
+    related to the HA multi-threading mode. The checker suggests enabling the
+    HA+MT if Kea uses multi-threading and validates that the Kea Control Agent
+    does not use the HTTP ports of the HA peers.
+    (Gitlab #944)
+
 Stork 1.9.0 released on 2023-02-01.
 
 * 277 [bug] slawek
@@ -7,7 +15,7 @@ Stork 1.9.0 released on 2023-02-01.
 
 * 276 [func] razvan
 
-    Added functionality for deteting users. A super-admin cannot remove
+    Added functionality for deleting users. A super-admin cannot remove
     its own account and the last super-admin user can not be removed.
     (Gitlab #117)
 
