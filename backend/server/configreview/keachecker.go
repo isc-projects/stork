@@ -844,7 +844,7 @@ func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	multiThreadingConfig := config.GetMultiThreadingInfo()
+	multiThreadingConfig := config.GetMultiThreadingEntry()
 
 	if multiThreadingConfig == nil ||
 		multiThreadingConfig.EnableMultiThreading == nil ||

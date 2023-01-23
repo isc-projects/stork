@@ -267,16 +267,11 @@ func (c *Map) GetHooksLibrary(name string) (path string, params map[string]inter
 }
 
 // Returns the multi-threading parameters or nil if they are not provided.
-func (c *Map) GetMultiThreadingInfo() *MultiThreading {
-	data, ok := c.getTopLevelEntry("multi-threading")
-	if !ok {
-		return nil
+func (c *Map) GetMultiThreadingEntry() (output *MultiThreading) {
+	if data, ok := c.getTopLevelEntry("multi-threading"); ok {
+		_ = mapstructure.Decode(data, &output)
 	}
-	multiThreadingInfo, ok := data.(MultiThreading)
-	if !ok {
-		return nil
-	}
-	return &multiThreadingInfo
+	return
 }
 
 // Returns configuration of the HA hooks library in a parsed form.

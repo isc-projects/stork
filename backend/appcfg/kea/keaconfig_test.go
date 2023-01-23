@@ -1002,3 +1002,62 @@ func TestDeleteClientClasses(t *testing.T) {
 		require.Empty(t, clientClasses)
 	}
 }
+
+// Test that the top-level multi-threading parameters are returned properly.
+func TestGetMultiThreadingEntry(t *testing.T) {
+	// Arrange
+	configStr := `{
+		"Dhcp4": {
+			"multi-threading": {
+			   "enable-multi-threading": true,
+			   "thread-pool-size": 4,
+			   "packet-queue-size": 16
+			}
+		}
+	}`
+
+	config, _ := NewFromJSON(configStr)
+
+	// Act
+	multiThreading := config.GetMultiThreadingEntry()
+
+	// Assert
+	require.NotNil(t, multiThreading)
+	require.NotNil(t, multiThreading.EnableMultiThreading)
+	require.True(t, *multiThreading.EnableMultiThreading)
+	require.NotNil(t, multiThreading.ThreadPoolSize)
+	require.EqualValues(t, 4, *multiThreading.ThreadPoolSize)
+	require.NotNil(t, multiThreading.PacketQueueSize)
+	require.EqualValues(t, 16, *multiThreading.PacketQueueSize)
+}
+
+// Test that the top-level multi-threading parameters is returned even if there
+// is no parameters.
+func TestGetMultiThreadingEntryMissingParameters(t *testing.T) {
+	// Arrange
+	configStr := `{ "Dhcp4": { "multi-threading": { } } }`
+	config, _ := NewFromJSON(configStr)
+
+	// Act
+	multiThreading := config.GetMultiThreadingEntry()
+
+	// Assert
+	require.NotNil(t, multiThreading)
+	require.Nil(t, multiThreading.EnableMultiThreading)
+	require.Nil(t, multiThreading.PacketQueueSize)
+	require.Nil(t, multiThreading.ThreadPoolSize)
+}
+
+// Test that the top-level multi-threading parameters are nil if the
+// multi-threading entry is missing.
+func TestGetMultiThreadingEntryNotExists(t *testing.T) {
+	// Arrange
+	configStr := `{ "Dhcp4": { } }`
+	config, _ := NewFromJSON(configStr)
+
+	// Act
+	multiThreading := config.GetMultiThreadingEntry()
+
+	// Assert
+	require.Nil(t, multiThreading)
+}
