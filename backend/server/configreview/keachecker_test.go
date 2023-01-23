@@ -33,7 +33,14 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 		KeaDaemon: &dbmodel.KeaDaemon{
 			Config: config,
 		},
+		AppID: 1,
+		App: &dbmodel.App{
+			Type:   "kea",
+			Active: true,
+			Name:   "kea@machine",
+		},
 	}, ManualRun, nil)
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, ctx.subjectDaemon)
 	require.NotNil(t, ctx)
 
 	return ctx
@@ -2322,16 +2329,18 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *t
             {
                 "library": "/libdhcp_ha.so",
                 "parameters": {
-                    "peers": [
-                        {
-                            "name": "foo",
-                            "url": "foobar:8000"
-                        },
-                        {
-                            "name": "bar",
-                            "url": "barfoo:8000"
-                        }
-                    ]
+                    "high-availability": [{
+                        "peers": [
+                            {
+                                "name": "foo",
+                                "url": "http://foobar:8000"
+                            },
+                            {
+                                "name": "bar",
+                                "url": "http://barfoo:8000"
+                            }
+                        ]
+                    }]
                 }
             }
         ]
@@ -2357,19 +2366,21 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
             {
                 "library": "/libdhcp_ha.so",
                 "parameters": {
-                    "multi-threading": {
-                        "enable-multi-threading": true
-                    },
-                    "peers": [
-                        {
-                            "name": "foo",
-                            "url": "foobar:8000"
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true
                         },
-                        {
-                            "name": "bar",
-                            "url": "barfoo:8000"
-                        }
-                    ]
+                        "peers": [
+                            {
+                                "name": "foo",
+                                "url": "http://foobar:8000"
+                            },
+                            {
+                                "name": "bar",
+                                "url": "http://barfoo:8000"
+                            }
+                        ]
+                    }]
                 }
             }
         ]
@@ -2411,16 +2422,18 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
             {
                 "library": "/libdhcp_ha.so",
                 "parameters": {
-                    "peers": [
-                        {
-                            "name": "foo",
-                            "url": "foobar:8000"
-                        },
-                        {
-                            "name": "bar",
-                            "url": "barfoo:8000"
-                        }
-                    ]
+                    "high-availability": [{
+                        "peers": [
+                            {
+                                "name": "foo",
+                                "url": "http://foobar:8000"
+                            },
+                            {
+                                "name": "bar",
+                                "url": "http://barfoo:8000"
+                            }
+                        ]
+                    }]
                 }
             }
         ]
@@ -2441,24 +2454,118 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
 		"single-thread mode")
 }
 
-// Test that
+// Test that the checker produces a report if any peer uses the port assigned
+// to the CA daemon.
 func TestHighAvailabilityMultithreadingModeCheckerPortCollisionWithCA(t *testing.T) {
 	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "foo",
+                                "url": "http://foobar:8000"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "bar",
+                                "url": "http://barfoo:8000"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
 
+	require.Len(t, report.refDaemonIDs, 2)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.Contains(t, report.refDaemonIDs, int64(42))
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"The HA 'foo' peer with the 'http://foobar:8000' URL is configured to use "+
+			"the same '8000' HTTP port as the 'control' access point.")
 }
 
-// Test that
+// Test that the checker produces no report if the configuration contains no
+// issues.
 func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "foo",
+                                "url": "http://foobar:8001"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "bar",
+                                "url": "http://barfoo:8001"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
-
+	require.Nil(t, report)
+	require.NoError(t, err)
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects

@@ -904,7 +904,7 @@ func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 		}
 
 		for _, accessPoint := range ctx.subjectDaemon.App.AccessPoints {
-			if accessPoint.Address != urlObj.Host {
+			if accessPoint.Address != urlObj.Hostname() {
 				// There is no port collision due to the ports belong to different hosts.
 				continue
 			}
