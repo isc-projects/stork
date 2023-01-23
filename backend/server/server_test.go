@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
@@ -288,16 +289,27 @@ func TestBootstrap(t *testing.T) {
 
 	// Checks if the config review checker states were loaded from the database.
 	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemons[0])
-	require.GreaterOrEqual(t, len(configReviewCheckerPreferences), 5)
-	require.EqualValues(t, "host_cmds_presence", configReviewCheckerPreferences[3].Name)
-	require.False(t, configReviewCheckerPreferences[3].GloballyEnabled)
-	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
-	require.True(t, configReviewCheckerPreferences[4].GloballyEnabled)
+	preferencesByCheckerName := map[string]*configreview.CheckerMetadata{}
+	for _, preference := range configReviewCheckerPreferences {
+		preferencesByCheckerName[preference.Name] = preference
+	}
+
+	require.GreaterOrEqual(t, len(preferencesByCheckerName), 5)
+	require.Contains(t, preferencesByCheckerName, "host_cmds_presence")
+	require.False(t, preferencesByCheckerName["host_cmds_presence"].GloballyEnabled)
+	require.Contains(t, preferencesByCheckerName, "out_of_pool_reservation")
+	require.True(t, preferencesByCheckerName["out_of_pool_reservation"].GloballyEnabled)
+
 	configReviewCheckerPreferences, _ = server.ReviewDispatcher.GetCheckersMetadata(daemons[1])
-	require.EqualValues(t, "host_cmds_presence", configReviewCheckerPreferences[3].Name)
-	require.False(t, configReviewCheckerPreferences[3].GloballyEnabled)
-	require.EqualValues(t, "out_of_pool_reservation", configReviewCheckerPreferences[4].Name)
-	require.True(t, configReviewCheckerPreferences[4].GloballyEnabled)
+	preferencesByCheckerName = map[string]*configreview.CheckerMetadata{}
+	for _, preference := range configReviewCheckerPreferences {
+		preferencesByCheckerName[preference.Name] = preference
+	}
+
+	require.Contains(t, preferencesByCheckerName, "host_cmds_presence")
+	require.False(t, preferencesByCheckerName["host_cmds_presence"].GloballyEnabled)
+	require.Contains(t, preferencesByCheckerName, "out_of_pool_reservation")
+	require.True(t, preferencesByCheckerName["out_of_pool_reservation"].GloballyEnabled)
 
 	// Run Bootstrap again with the reload flag set.
 	err = server.Bootstrap(true)
