@@ -2295,6 +2295,66 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 	}
 }
 
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerNonDHCPDaemon(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerPortCollisionWithCA(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
+// Test that
+func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 // This benchmark stores host reservations in the database.
