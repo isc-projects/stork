@@ -23,6 +23,8 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 	daemonName := dbmodel.DaemonNameDHCPv4
 	if strings.Contains(configStr, "Dhcp6") {
 		daemonName = dbmodel.DaemonNameDHCPv6
+	} else if strings.Contains(configStr, "Control-agent") {
+		daemonName = dbmodel.DaemonNameCA
 	}
 	// Create the daemon instance and the context.
 	ctx := newReviewContext(db, &dbmodel.Daemon{
@@ -2295,44 +2297,148 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 	}
 }
 
-// Test that
+// Test that the checker returns an error if the daemon is not DHCP.
 func TestHighAvailabilityMultithreadingModeCheckerNonDHCPDaemon(t *testing.T) {
 	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
-
+	require.ErrorContains(t, err, "unsupported daemon")
+	require.Nil(t, report)
 }
 
-// Test that
+// Test that the checker produces no report if the top multi-threading
+// is disabled.
 func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
 	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": false
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "peers": [
+                        {
+                            "name": "foo",
+                            "url": "foobar:8000"
+                        },
+                        {
+                            "name": "bar",
+                            "url": "barfoo:8000"
+                        }
+                    ]
+                }
+            }
+        ]
+    } }`)
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
-
+	require.Nil(t, report)
+	require.NoError(t, err)
 }
 
-// Test that
+// Test that the checker produces no report if the top multi-threading
+// is disabled and the HA-level multi-threading is enabled.
+func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": false
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "multi-threading": {
+                        "enable-multi-threading": true
+                    },
+                    "peers": [
+                        {
+                            "name": "foo",
+                            "url": "foobar:8000"
+                        },
+                        {
+                            "name": "bar",
+                            "url": "barfoo:8000"
+                        }
+                    ]
+                }
+            }
+        ]
+    } }`)
+
+	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the checker produces no report if the HA is not configured.
 func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
 	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        }
+    } }`)
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
-
+	require.Nil(t, report)
+	require.NoError(t, err)
 }
 
-// Test that
+// Test that the checker produces a report if the top multi-threading is
+// enabled but the HA is configured to use single thread.
 func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
-	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "peers": [
+                        {
+                            "name": "foo",
+                            "url": "foobar:8000"
+                        },
+                        {
+                            "name": "bar",
+                            "url": "barfoo:8000"
+                        }
+                    ]
+                }
+            }
+        ]
+    } }`)
 
 	// Act
+	report, err := highAvailabilityMultithreadingMode(ctx)
 
 	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
 
+	require.Len(t, report.refDaemonIDs, 1)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.refDaemonIDs[0])
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "daemon is configured to work "+
+		"in multi-threading mode, but the High Availability hooks use "+
+		"single-thread mode")
 }
 
 // Test that
