@@ -204,6 +204,13 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'The checker verifying if all available addresses in IP pools are not reserved for hosts.'
             case 'pd_pools_exhausted_by_reservations':
                 return 'The checker verifying if all available delegated prefixes in PD pools are not reserved for hosts.'
+            case 'subnet_cmds_and_cb_mutual_exclusion':
+                return (
+                    'The checker detects if the subnet commands hook is ' +
+                    'simultaneously used with the configuration backend' +
+                    'database and suggest replacing it with the ' +
+                    'configuration backend command hook.'
+                )
             default:
                 return ''
         }
