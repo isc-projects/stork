@@ -186,6 +186,17 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'The checker verifying if subnet prefixes do not overlap.'
             case 'canonical_prefix':
                 return 'The checker verifying if subnet prefixes are in the ' + 'canonical form.'
+            case 'ha_mt_presence':
+                return (
+                    'The checker verifies if the High-Availability hook is ' +
+                    'running in the multi-threading mode if the Kea itself uses ' +
+                    'this mode.'
+                )
+            case 'ha_dedicated_ports':
+                return (
+                    'The checker verifies if any HTTP port assigned to ' +
+                    'the HA peers is not used by the Kea Control Agent.'
+                )
             default:
                 return ''
         }
