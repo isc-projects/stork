@@ -185,7 +185,7 @@ export class ConfigCheckerPreferencePickerComponent {
             case 'overlapping_subnet':
                 return 'The checker verifying if subnet prefixes do not overlap.'
             case 'canonical_prefix':
-                return 'The checker verifying if subnet prefixes are in the ' + 'canonical form.'
+                return 'The checker verifying if subnet prefixes are in the canonical form.'
             case 'ha_mt_presence':
                 return (
                     'The checker verifies if the High-Availability hook is ' +
@@ -200,6 +200,8 @@ export class ConfigCheckerPreferencePickerComponent {
                     'via the HTTP ports exposed by the dedicated listeners ' +
                     'rather than Kea Control Agent.'
                 )
+            case 'pools_exhausted_by_reservations':
+                return 'The checker verifying if all available addresses in IP pools are not reserved for hosts.'
             default:
                 return ''
         }
