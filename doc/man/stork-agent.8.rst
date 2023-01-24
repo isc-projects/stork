@@ -86,6 +86,9 @@ Prometheus BIND 9 Exporter flags:
 ``-h`` or ``--help``
    Returns the list of available parameters.
 
+Stork logs on INFO level by default. Other levels can be configured using the
+``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
+
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
 enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
