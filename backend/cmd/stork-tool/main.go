@@ -455,6 +455,14 @@ func setupApp() *cli.App {
      overwriting the db schema version and getting its current value.`,
 		Version:  stork.Version,
 		HelpName: "stork-tool",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "",
+				Usage:   "Logging level can be specified using env variable only. Allowed values: are DEBUG, INFO, WARN, ERROR",
+				Value:   "INFO",
+				EnvVars: []string{"STORK_LOG_LEVEL"},
+			},
+		},
 		Commands: []*cli.Command{
 			// DATABASE CREATION COMMANDS
 			{

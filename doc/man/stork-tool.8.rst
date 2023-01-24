@@ -245,6 +245,9 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
 Note that there is no argument for the database password, as the command-line arguments can sometimes be seen
 by other users. It can be passed using the ``STORK_DATABASE_PASSWORD`` variable.
 
+Stork logs on INFO level by default. Other levels can be configured using the
+``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
+
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
 enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
