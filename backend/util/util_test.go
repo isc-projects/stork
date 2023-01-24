@@ -9,6 +9,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
+	"isc.org/stork/testutil"
 )
 
 // Test that HostWithPort function generates proper output.
@@ -364,17 +366,21 @@ func TestLoggingLevel(t *testing.T) {
 		{env: "-", lv: log.InfoLevel},
 	}
 
+	// Let's remember state of the environment and revert to it after test.
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
 	for _, test := range testcases {
-		if test.env != "-" {
-			// special case "-" means to unset the variable
-			os.Setenv("STORK_LOG_LEVEL", test.env)
-		} else {
-			os.Unsetenv("STORK_LOG_LEVEL")
-		}
-		SetupLoggingLevel()
+		t.Run(test.env, func(t *testing.T) {
+			if test.env != "-" {
+				// special case "-" means to unset the variable
+				os.Setenv("STORK_LOG_LEVEL", test.env)
+			} else {
+				os.Unsetenv("STORK_LOG_LEVEL")
+			}
+			SetupLoggingLevel()
 
-		require.Equal(t, test.lv, log.GetLevel())
+			require.Equal(t, test.lv, log.GetLevel())
+		})
 	}
-
-	os.Unsetenv("STORK_LOG_LEVEL") // The test should clean up after itself
 }
