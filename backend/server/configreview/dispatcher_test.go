@@ -667,7 +667,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "dispensable_shared_network")
 	require.Contains(t, checkerNames, "dispensable_subnet")
 	require.Contains(t, checkerNames, "out_of_pool_reservation")
-	require.Contains(t, checkerNames, "ha_mt_recommendation")
+	require.Contains(t, checkerNames, "ha_mt_presence")
 	require.Contains(t, checkerNames, "ha_dedicated_ports")
 
 	// Ensure that the appropriate triggers were registered for the
