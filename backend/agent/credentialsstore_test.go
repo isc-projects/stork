@@ -325,3 +325,22 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 		})
 	}
 }
+
+// Test that the non-empty credentials store is not recognized as empty.
+func TestIsEmptyForNonEmptyCredentialsStore(t *testing.T) {
+	// Arrange
+	store := NewCredentialsStore()
+	_ = store.AddOrUpdateBasicAuth("10.0.0.1", 42, NewBasicAuthCredentials("bar", "baz"))
+
+	// Act & Assert
+	require.False(t, store.IsEmpty())
+}
+
+// Test that the empty credentials store is recognized as empty.
+func TestIsEmptyForEmptyCredentialsStore(t *testing.T) {
+	// Arrange
+	store := NewCredentialsStore()
+
+	// Act & Assert
+	require.True(t, store.IsEmpty())
+}

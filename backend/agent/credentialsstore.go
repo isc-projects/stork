@@ -119,6 +119,11 @@ func (cs *CredentialsStore) Read(reader io.Reader) error {
 	return cs.loadContent(&content)
 }
 
+// Indicates if the credentials store has no entries provided.
+func (cs *CredentialsStore) IsEmpty() bool {
+	return len(cs.basicAuthCredentials) == 0
+}
+
 // Constructor of the network location (IP address and port).
 func newLocation(address string, port int64) (location, error) {
 	ip := storkutil.ParseIP(address)
