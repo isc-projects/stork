@@ -107,6 +107,12 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 	return rsp, err
 }
 
+// Indicates if the Stork Agent attaches the authentication credentials to
+// the requests.
+func (c *HTTPClient) HasAuthenticationCredentials() bool {
+	return !c.credentials.IsEmpty()
+}
+
 // TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
 func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
 	// Certificates

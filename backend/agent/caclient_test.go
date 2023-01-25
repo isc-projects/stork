@@ -168,3 +168,75 @@ func TestCallWithMissingBody(t *testing.T) {
 	require.NoError(t, err)
 	defer res.Body.Close()
 }
+
+// Test that the authentication credentials are detected properly.
+func TestHasAuthenticationCredentials(t *testing.T) {
+	// Arrange
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	tmpDir, err := os.MkdirTemp("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	CredentialsFile = path.Join(tmpDir, "credentials.json")
+
+	content := `{
+		"basic_auth": [
+			{
+				"ip": "10.0.0.1",
+				"port": 42,
+				"user": "foo",
+				"password": "bar"
+			}
+		]
+	}`
+
+	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
+
+	// Act
+	client := NewHTTPClient(false)
+
+	// Assert
+	require.True(t, client.HasAuthenticationCredentials())
+}
+
+// Test that the authentication credentials are not detected if the credentials
+// file exists but it's empty.
+func TestHasAuthenticationCredentialsEmptyFile(t *testing.T) {
+	// Arrange
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	tmpDir, err := os.MkdirTemp("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	CredentialsFile = path.Join(tmpDir, "credentials.json")
+
+	content := `{ "basic_auth": [ ] }`
+
+	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
+
+	// Act
+	client := NewHTTPClient(false)
+
+	// Assert
+	require.False(t, client.HasAuthenticationCredentials())
+}
+
+// Test that the authentication credentials are not detected if the credentials
+// is missing.
+func TestHasAuthenticationCredentialsMissingFile(t *testing.T) {
+	// Arrange
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	CredentialsFile = "/not/exist/file.json"
+
+	// Act
+	client := NewHTTPClient(false)
+
+	// Assert
+	require.False(t, client.HasAuthenticationCredentials())
+}
