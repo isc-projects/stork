@@ -161,6 +161,9 @@
       hostID:
         type: string
         readOnly: true
+      agentUsesHttpCredentials:
+        type: boolean
+        readOnly: true
       lastVisitedAt:
         type: string
         format: date-time

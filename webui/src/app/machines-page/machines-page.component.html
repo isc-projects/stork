@@ -525,6 +525,25 @@ sudo ./stork-install-agent.sh</textarea
                     <td>{{ machineTab.machine.virtualizationSystem }}</td>
                 </tr>
                 <tr>
+                    <td>
+                        Use HTTP credentials
+                        <app-help-tip title="Use HTTP credentials" id="cpu-load-2-help-button">
+                            <p>
+                                Indicates if the Stork Agent includes the HTTP
+                                credentials (i.e., Basic Auth user and
+                                password) in the requests sent to the Kea
+                                Control Agent.
+                            </p>
+                            <p>
+                                The credentials are included only in the
+                                requests to the hosts specified in the
+                                configuration file. Other hosts don't receive
+                                any authorization data.
+                            </p>
+                        </app-help-tip>
+                    </td>
+                </tr>
+                <tr>
                     <td>Host ID</td>
                     <td>{{ machineTab.machine.hostID }}</td>
                 </tr>
