@@ -181,24 +181,25 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	}
 
 	state := agentapi.GetStateRsp{
-		AgentVersion:         stork.Version,
-		Apps:                 apps,
-		Hostname:             hostInfo.Hostname,
-		Cpus:                 int64(runtime.NumCPU()),
-		CpusLoad:             loadStr,
-		Memory:               int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
-		UsedMemory:           int64(vm.UsedPercent),
-		Uptime:               int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
-		Os:                   hostInfo.OS,
-		Platform:             hostInfo.Platform,
-		PlatformFamily:       hostInfo.PlatformFamily,
-		PlatformVersion:      hostInfo.PlatformVersion,
-		KernelVersion:        hostInfo.KernelVersion,
-		KernelArch:           hostInfo.KernelArch,
-		VirtualizationSystem: hostInfo.VirtualizationSystem,
-		VirtualizationRole:   hostInfo.VirtualizationRole,
-		HostID:               hostInfo.HostID,
-		Error:                "",
+		AgentVersion:             stork.Version,
+		Apps:                     apps,
+		Hostname:                 hostInfo.Hostname,
+		Cpus:                     int64(runtime.NumCPU()),
+		CpusLoad:                 loadStr,
+		Memory:                   int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
+		UsedMemory:               int64(vm.UsedPercent),
+		Uptime:                   int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
+		Os:                       hostInfo.OS,
+		Platform:                 hostInfo.Platform,
+		PlatformFamily:           hostInfo.PlatformFamily,
+		PlatformVersion:          hostInfo.PlatformVersion,
+		KernelVersion:            hostInfo.KernelVersion,
+		KernelArch:               hostInfo.KernelArch,
+		VirtualizationSystem:     hostInfo.VirtualizationSystem,
+		VirtualizationRole:       hostInfo.VirtualizationRole,
+		HostID:                   hostInfo.HostID,
+		Error:                    "",
+		AgentUsesHTTPCredentials: sa.HTTPClient.HasAuthenticationCredentials(),
 	}
 
 	return &state, nil

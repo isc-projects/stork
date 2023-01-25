@@ -181,6 +181,7 @@ func TestGetState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
 	require.Equal(t, stork.Version, rsp.AgentVersion)
+	require.False(t, rsp.AgentUsesHTTPCredentials)
 	require.Len(t, rsp.Apps, 2)
 
 	keaApp := rsp.Apps[0]
@@ -207,6 +208,32 @@ func TestGetState(t *testing.T) {
 	require.EqualValues(t, 2346, point.Port)
 	require.False(t, point.UseSecureProtocol)
 	require.Empty(t, point.Key)
+
+	// Prepare credentials file.
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	tmpDir, _ := os.MkdirTemp("", "reg")
+	CredentialsFile = path.Join(tmpDir, "credentials.json")
+
+	content := `{
+		"basic_auth": [
+			{
+				"ip": "10.0.0.1",
+				"port": 42,
+				"user": "foo",
+				"password": "bar"
+			}
+		]
+	}`
+
+	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
+
+	// Recreate Stork agent.
+	sa, ctx = setupAgentTest()
+	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
+	require.NoError(t, err)
+	require.True(t, rsp.AgentUsesHTTPCredentials)
 }
 
 // Helper function for unzipping buffers. It does not return

@@ -175,8 +175,7 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	restorePaths := RememberPaths()
 	defer restorePaths()
 
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
+	tmpDir, _ := os.MkdirTemp("", "reg")
 	defer os.RemoveAll(tmpDir)
 
 	CredentialsFile = path.Join(tmpDir, "credentials.json")
@@ -208,8 +207,7 @@ func TestHasAuthenticationCredentialsEmptyFile(t *testing.T) {
 	restorePaths := RememberPaths()
 	defer restorePaths()
 
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
+	tmpDir, _ := os.MkdirTemp("", "reg")
 	defer os.RemoveAll(tmpDir)
 
 	CredentialsFile = path.Join(tmpDir, "credentials.json")

@@ -71,6 +71,7 @@ message GetStateRsp {
   string virtualizationSystem = 16;
   string virtualizationRole = 17;
   string hostID = 18;
+  bool agentUsesHTTPCredentials = 19;
 }
 
 // Application access point
