@@ -26,7 +26,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
     // machines table
-    machines: any[]
+    machines: Machine[]
     totalMachines: number
     machineMenuItems: MenuItem[]
     machineMenuItemsAuth: MenuItem[]
@@ -53,8 +53,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
-    openedMachines: any
-    machineTab: any
+    openedMachines: { machine: Machine }[]
+    machineTab: { machine: Machine }
 
     displayAgentInstallationInstruction = false
 
@@ -82,7 +82,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    addMachineTab(machine) {
+    addMachineTab(machine: Machine) {
         this.openedMachines.push({
             machine,
         })
@@ -326,25 +326,19 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                         detail: 'Refreshing succeeded.',
                     })
                 }
-
+                
                 // refresh machine in machines list
-                for (const m of this.machines) {
-                    if (m.id === data.id) {
-                        Object.assign(m, data)
-                        if (data.error === undefined) {
-                            m.error = ''
-                        }
+                for (let i = 0; i < this.machines.length; i++) {
+                    if (this.machines[i].id === data.id) {
+                        this.machines[i] = data
                         break
                     }
                 }
-
+                
                 // refresh machine in opened tab if present
-                for (const m of this.openedMachines) {
-                    if (m.machine.id === data.id) {
-                        Object.assign(m.machine, data)
-                        if (data.error === undefined) {
-                            m.machine.error = ''
-                        }
+                for (let i = 0; i < this.openedMachines.length; i++) {
+                    if (this.openedMachines[i].machine.id === data.id) {
+                        this.openedMachines[i].machine = data
                         break
                     }
                 }

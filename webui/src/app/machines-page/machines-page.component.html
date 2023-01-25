@@ -462,8 +462,8 @@ sudo ./stork-install-agent.sh</textarea
                     <td>{{ machineTab.machine.cpus }}</td>
                 </tr>
                 <tr>
-                    <td>
-                        CPUs Load
+                    <td class="flex align-items-center justify-content-between">
+                        <span>CPUs Load</span>
                         <app-help-tip title="CPU Load" id="cpu-load-2-help-button">
                             <p>
                                 These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes.
@@ -525,9 +525,9 @@ sudo ./stork-install-agent.sh</textarea
                     <td>{{ machineTab.machine.virtualizationSystem }}</td>
                 </tr>
                 <tr>
-                    <td>
-                        Use HTTP credentials
-                        <app-help-tip title="Use HTTP credentials" id="cpu-load-2-help-button">
+                    <td class="flex align-items-center justify-content-between">
+                        <span>Use HTTP credentials</span>
+                        <app-help-tip title="Use HTTP credentials">
                             <p>
                                 Indicates if the Stork Agent includes the HTTP
                                 credentials (i.e., Basic Auth user and
@@ -541,6 +541,12 @@ sudo ./stork-install-agent.sh</textarea
                                 any authorization data.
                             </p>
                         </app-help-tip>
+                    </td>
+                    <td>
+                        {{ !!machineTab.machine.agentUsesHttpCredentials }}
+                        <i class="pi pi-key" *ngIf="machineTab.machine.agentUsesHttpCredentials"></i>
+                    </td>
+                    <td>
                     </td>
                 </tr>
                 <tr>

@@ -30,7 +30,7 @@ export class HelpTipComponent {
     /**
      * A class for icon with question mark.
      */
-    @Input() variant = ''
+    @Input() variant: 'big' | '' = ''
 
     constructor() {}
 
