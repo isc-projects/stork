@@ -93,6 +93,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.VirtualizationSystem = m.VirtualizationSystem
 	dbMachine.State.VirtualizationRole = m.VirtualizationRole
 	dbMachine.State.HostID = m.HostID
+	dbMachine.State.AgentUsesHTTPCredentials = m.AgentUsesHTTPCredentials
 	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
 	err := dbmodel.UpdateMachine(db, dbMachine)
