@@ -163,7 +163,6 @@ func DeleteUser(db *pg.DB, user *SystemUser) (existing bool, err error) {
 	defer dbops.RollbackOnError(tx, &err)
 
 	result, err := db.Model(user).WherePK().Delete()
-
 	if err != nil {
 		var pgError pg.Error
 		if errors.As(err, &pgError) {

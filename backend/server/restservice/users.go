@@ -305,6 +305,21 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 // Deletes existing user account from the database.
 func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams) middleware.Responder {
 	id := int(params.ID)
+
+	_, currentUser := r.SessionManager.Logged(ctx)
+	if currentUser.ID == id {
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
+
+		msg := "User account with provided login/email tries to delete itself"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusConflict).WithPayload(&rspErr)
+		return rsp
+	}
+
 	su, err := dbmodel.GetUserByID(r.DB, id)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -352,6 +367,23 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 			su.Identity(), err.Error())
 
 		msg := fmt.Sprintf("Failed to delete user account for user %s", su.Identity())
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
+
+	err = r.SessionManager.LogoutUser(ctx, su)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"userid": id,
+			"login":  su.Login,
+			"email":  su.Email,
+		}).Errorf("Failed to logout user account for user %s: %s",
+			su.Identity(), err.Error())
+
+		msg := fmt.Sprintf("Failed to logout user account for user %s", su.Identity())
 		rspErr := models.APIError{
 			Message: &msg,
 		}

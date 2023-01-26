@@ -81,6 +81,23 @@ func (s *SessionMgr) LogoutHandler(ctx context.Context) error {
 	return nil
 }
 
+// Logout specific user.
+func (s *SessionMgr) LogoutUser(ctx context.Context, user *dbmodel.SystemUser) error {
+	err := s.scsSessionMgr.Iterate(ctx, func(ctx context.Context) error {
+		id := s.scsSessionMgr.GetInt(ctx, "userID")
+
+		if id == user.ID {
+			return s.scsSessionMgr.Destroy(ctx)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "error while destroying a user session")
+	}
+	return nil
+}
+
 // Implements middleware which reads the session cookie, loads session data for the
 // user and stores the token/ in the Cookie being sent to the user.
 func (s *SessionMgr) SessionMiddleware(handler http.Handler) http.Handler {

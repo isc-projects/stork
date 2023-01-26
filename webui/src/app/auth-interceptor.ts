@@ -23,12 +23,10 @@ export class AuthInterceptor implements HttpInterceptor {
             // the user to the login page.
             this.auth.destroyLocalSession()
             this.router.navigateByUrl('/login')
-            return EMPTY
         } else if (err.status === 403) {
             // User has no access to the given view. Let's redirect the
             // user to the error page.
             this.router.navigateByUrl('/forbidden', { skipLocationChange: true })
-            return EMPTY
         }
         return throwError(err)
     }

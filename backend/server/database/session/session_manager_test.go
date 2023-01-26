@@ -104,3 +104,54 @@ func TestLoad(t *testing.T) {
 	_, err = mgr.Load(ctx, "")
 	require.NoError(t, err)
 }
+
+func TestLogOutUser(t *testing.T) {
+	// Reset database schema.
+	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create session manager.
+	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	// Create user to be logged to the system.
+	user := &dbmodel.SystemUser{
+		ID:       1,
+		Login:    "johnw",
+		Email:    "johnw@example.org",
+		Lastname: "White",
+		Name:     "John C",
+
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID:   5,
+				Name: "abc",
+			},
+			{
+				ID:   25,
+				Name: "def",
+			},
+		},
+	}
+
+	ctx, err = mgr.Load(ctx, "")
+	require.NoError(t, err)
+
+	err = mgr.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	logged, su := mgr.Logged(ctx)
+	require.True(t, logged)
+	require.Equal(t, user.ID, su.ID)
+
+	err = mgr.LogoutUser(ctx, su)
+	require.NoError(t, err)
+
+	err = mgr.LogoutHandler(ctx)
+	require.NoError(t, err)
+
+	logged, su = mgr.Logged(ctx)
+	require.False(t, logged)
+}

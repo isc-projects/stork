@@ -123,15 +123,38 @@ func TestDeleteUser(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
-	// Create new user in the database.
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new super-admin user in the database.
 	su := dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "White",
+		Name:     "John",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: 1,
+			},
+		},
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su2 := dbmodel.SystemUser{
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
 	}
-	con, err := dbmodel.CreateUser(db, &su)
+	con, err = dbmodel.CreateUser(db, &su2)
 	require.False(t, con)
+	require.NoError(t, err)
+
+	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
 
 	// Try wrong request, variant 1 - it should raise an error
@@ -144,28 +167,40 @@ func TestDeleteUser(t *testing.T) {
 
 	// Try wrong request, variant 2 - it should raise an error
 	params = users.DeleteUserParams{
-		ID: int64(su.ID + 1),
+		ID: int64(su2.ID + 1),
 	}
+
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
 
+	// Try wrong request, variant 2 - it should raise an error - trying to delete itself
 	params = users.DeleteUserParams{
 		ID: int64(su.ID),
+	}
+
+	rsp = rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp = rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
+
+	params = users.DeleteUserParams{
+		ID: int64(su2.ID),
 	}
 
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserOK{}, rsp)
 	okRsp := rsp.(*users.DeleteUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
-	require.Equal(t, *okRsp.Payload.Email, su.Email)
-	require.Equal(t, *okRsp.Payload.Lastname, su.Lastname)
-	require.Equal(t, *okRsp.Payload.Login, su.Login)
-	require.Equal(t, *okRsp.Payload.Name, su.Name)
+	require.Equal(t, *okRsp.Payload.Email, su2.Email)
+	require.Equal(t, *okRsp.Payload.Lastname, su2.Lastname)
+	require.Equal(t, *okRsp.Payload.Login, su2.Login)
+	require.Equal(t, *okRsp.Payload.Name, su2.Name)
 
-	// Also check that the user is indeed in the database.
+	// Also check that the user is indeed not in the database.
 	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
 	require.NoError(t, err)
 	require.Nil(t, returned)
@@ -175,7 +210,111 @@ func TestDeleteUser(t *testing.T) {
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 2 in the database", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
+}
+
+// Tests that user account can be deleted via REST API.
+func TestDeleteUserInGroup(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new super-admin user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "White",
+		Name:     "John",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: 1,
+			},
+		},
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su2 := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: 1,
+			},
+		},
+	}
+	con, err = dbmodel.CreateUser(db, &su2)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	err = rapi.SessionManager.LoginHandler(ctx, &su)
+	require.NoError(t, err)
+
+	// Try wrong request, variant 1 - it should raise an error
+	params := users.DeleteUserParams{}
+	rsp := rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to find user with ID 0 in the database", *defaultRsp.Payload.Message)
+
+	// Try wrong request, variant 2 - it should raise an error
+	params = users.DeleteUserParams{
+		ID: int64(su2.ID + 1),
+	}
+
+	rsp = rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp = rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
+
+	params = users.DeleteUserParams{
+		ID: int64(su.ID),
+	}
+
+	rsp = rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp = rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
+
+	params = users.DeleteUserParams{
+		ID: int64(su2.ID),
+	}
+
+	rsp = rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserOK{}, rsp)
+	okRsp := rsp.(*users.DeleteUserOK)
+	require.Greater(t, *okRsp.Payload.ID, int64(0))
+	require.Equal(t, *okRsp.Payload.Email, su2.Email)
+	require.Equal(t, *okRsp.Payload.Lastname, su2.Lastname)
+	require.Equal(t, *okRsp.Payload.Login, su2.Login)
+	require.Equal(t, *okRsp.Payload.Name, su2.Name)
+
+	// Also check that the user is indeed not in the database.
+	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	// An attempt to delete the same user should fail with HTTP error 409.
+	rsp = rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp = rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
 }
 
 // Tests that user account can be updated via REST API.

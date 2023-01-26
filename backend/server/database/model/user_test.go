@@ -500,3 +500,35 @@ func TestAddToGroupByID(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, added)
 }
+
+// Test that the user is successfully deleted if added to super-admin group.
+func TestDeleteUserInGroup(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create new user.
+	user := &SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+		Groups: []*SystemGroup{
+			{
+				ID: 1,
+			},
+		},
+	}
+	con, err := CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	con, err = DeleteUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// An attempt to delete the same user should result in an error.
+	con, err = DeleteUser(db, user)
+	require.False(t, con)
+	require.Error(t, err)
+	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
+}
