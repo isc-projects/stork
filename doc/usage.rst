@@ -493,14 +493,12 @@ whether the option should always be returned to a DHCP client assigned this
 host reservation, regardless of whether the client requests this option from
 the DHCP server.
 
-In the current Stork version, you must explicitly select an option
-payload suitable for the option. Thus, you must be familiar with the
-DHCP option formats and select appropriate option fields in the right
-order using the ``Add <field-type>`` button below the option code. For
-example, the ``(5) Name Server`` option can comprise one or more IPv4
-addresses. After selecting this option, you should select an
-``ipv4-address`` option field once or more and fill the option fields
-with the IP addresses.
+Stork recognizes standard DHCP option formats. After selecting an option
+code, the form is adjusted to include option fields suitable for the selected
+option. If the option payload comprises an array of option fields, only the
+first field (or the first group of the record field) is displayed by default.
+Use the ``Add <field-type>`` button below the option code to add more fields
+to the array.
 
 .. note::
 
