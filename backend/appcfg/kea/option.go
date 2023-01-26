@@ -78,8 +78,8 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 			value, err = convertStringField(field, data.CSVFormat)
 		case BoolField:
 			value, err = convertBoolField(field, data.CSVFormat)
-		case Uint8Field, Uint16Field, Uint32Field:
-			value, err = convertUintField(field, data.CSVFormat)
+		case Uint8Field, Uint16Field, Uint32Field, Int8Field, Int16Field, Int32Field:
+			value, err = convertIntField(field, data.CSVFormat)
 		case IPv4AddressField:
 			value, err = convertIPv4AddressField(field, data.CSVFormat)
 		case IPv6AddressField:

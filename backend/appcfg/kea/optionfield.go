@@ -23,6 +23,9 @@ const (
 	Uint8Field       DHCPOptionFieldType = "uint8"
 	Uint16Field      DHCPOptionFieldType = "uint16"
 	Uint32Field      DHCPOptionFieldType = "uint32"
+	Int8Field        DHCPOptionFieldType = "int8"
+	Int16Field       DHCPOptionFieldType = "int16"
+	Int32Field       DHCPOptionFieldType = "int32"
 	IPv4AddressField DHCPOptionFieldType = "ipv4-address"
 	IPv6AddressField DHCPOptionFieldType = "ipv6-address"
 	IPv6PrefixField  DHCPOptionFieldType = "ipv6-prefix"
@@ -98,7 +101,8 @@ func (option dhcpOption) GetSpace() string {
 // and the corresponding field value(s). It has some limitations:
 //
 //   - It is unable to recognize an exact integer type, therefore it returns
-//     all numbers as uint32 fields.
+//     all positive numbers as uint32 fields and all negative numbers as
+//     int32 fields.
 //   - It is unable to differentiate between partial FQDN and a regular string,
 //     therefore it returns string field for partial FQDNs.
 //
@@ -116,10 +120,18 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 		}
 		return field
 	}
-	// Is it a number?
+	// Is it an unsigned number?
 	if iv, err := parseUint32Field(value); err == nil {
 		field = dhcpOptionField{
 			FieldType: Uint32Field,
+			Values:    []any{iv},
+		}
+		return field
+	}
+	// Is it a negative number.
+	if iv, err := parseInt32Field(value); err == nil {
+		field = dhcpOptionField{
+			FieldType: Int32Field,
 			Values:    []any{iv},
 		}
 		return field
@@ -214,6 +226,24 @@ func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOpti
 			return nil, err
 		}
 		field.Values = []any{iv}
+	case Int8Field:
+		iv, err := parseInt8Field(value)
+		if err != nil {
+			return nil, err
+		}
+		field.Values = []any{iv}
+	case Int16Field:
+		iv, err := parseInt16Field(value)
+		if err != nil {
+			return nil, err
+		}
+		field.Values = []any{iv}
+	case Int32Field:
+		iv, err := parseInt32Field(value)
+		if err != nil {
+			return nil, err
+		}
+		field.Values = []any{iv}
 	case IPv4AddressField:
 		ip, err := parseIPField(value)
 		if err != nil {
@@ -296,6 +326,33 @@ func parseUint32Field(value string) (uint32, error) {
 		return 0, errors.Errorf("%s is not a valid uint32 option field value", value)
 	}
 	return uint32(iv), nil
+}
+
+// Parse int8 option field.
+func parseInt8Field(value string) (int8, error) {
+	iv, err := strconv.ParseInt(value, 10, 8)
+	if err != nil {
+		return 0, errors.Errorf("%s is not a valid uint8 option field value", value)
+	}
+	return int8(iv), nil
+}
+
+// Parse int16 option field.
+func parseInt16Field(value string) (int16, error) {
+	iv, err := strconv.ParseInt(value, 10, 16)
+	if err != nil {
+		return 0, errors.Errorf("%s is not a valid uint16 option field value", value)
+	}
+	return int16(iv), nil
+}
+
+// Parse int32 option field.
+func parseInt32Field(value string) (int32, error) {
+	iv, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return 0, errors.Errorf("%s is not a valid uint32 option field value", value)
+	}
+	return int32(iv), nil
 }
 
 // Parse IPv4 address, IPv6 address or IPv6 prefix option field.
@@ -392,41 +449,66 @@ func convertBoolField(field DHCPOptionField, textFormat bool) (string, error) {
 	return "00", nil
 }
 
-// Converts an uint8, uint16 or uin32 option field from Stork to Kea format.
-// It expects that there is one option field value and that this value is a
-// number. If the textFormat is set to true, it returns the value converted
-// to a string. Otherwise, it converts the value to the hex format.
-func convertUintField(field DHCPOptionField, textFormat bool) (string, error) {
+// Converts an uint8, uint16, uint32, int8, int16 or int32 option field from
+// Stork to Kea format. It expects that there is one option field value and
+// that this value is a number. If the textFormat is set to true, it returns
+// the value converted to a string. Otherwise, it converts the value to the
+// hex format.
+func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
-		return "", errors.Errorf("require one value in uint option field, have %d", len(values))
+		return "", errors.Errorf("require one value in int option field, have %d", len(values))
 	}
 	if !storkutil.IsWholeNumber(values[0]) {
-		return "", errors.New("uint option field value is not a valid number")
+		return "", errors.New("int option field value is not a valid number")
 	}
 	value := reflect.ValueOf(values[0])
-	ivalue := value.Convert(reflect.TypeOf((*uint64)(nil)).Elem())
+	ivalue := value.Convert(reflect.TypeOf((*int64)(nil)).Elem())
 	switch field.GetFieldType() {
 	case Uint8Field:
-		if ivalue.Uint() > math.MaxUint8 {
-			return "", errors.Errorf("uint8 option field value must not be greater than math.MaxUint8")
+		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint8 {
+			return "", errors.Errorf("uint8 option field value must be between 0 and %d", math.MaxUint8)
 		}
 		if !textFormat {
-			return fmt.Sprintf("%02X", ivalue.Uint()), nil
+			return fmt.Sprintf("%02X", ivalue.Int()), nil
 		}
 	case Uint16Field:
-		if ivalue.Uint() > math.MaxUint16 {
-			return "", errors.Errorf("uint16 option field value must not be greater than %d", math.MaxUint16)
+		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint16 {
+			return "", errors.Errorf("uint16 option field value must be between 0 and %d", math.MaxUint16)
 		}
 		if !textFormat {
-			return fmt.Sprintf("%04X", ivalue.Uint()), nil
+			return fmt.Sprintf("%04X", ivalue.Int()), nil
 		}
 	case Uint32Field:
-		if ivalue.Uint() > math.MaxUint32 {
-			return "", errors.Errorf("uint32 option field value must not be greater than %d", math.MaxUint32)
+		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint32 {
+			return "", errors.Errorf("uint32 option field value must be between 0 and %d", math.MaxUint32)
 		}
 		if !textFormat {
-			return fmt.Sprintf("%08X", ivalue.Uint()), nil
+			return fmt.Sprintf("%08X", ivalue.Int()), nil
+		}
+	case Int8Field:
+		if ivalue.Int() < math.MinInt8 || ivalue.Int() > math.MaxInt8 {
+			return "", errors.Errorf("int8 option field value must be between %d and %d", math.MinInt8, math.MaxInt8)
+		}
+		if !textFormat {
+			// Cast integer to unsigned integer before hex conversion.
+			return fmt.Sprintf("%02X", uint8(ivalue.Int())), nil
+		}
+	case Int16Field:
+		if ivalue.Int() < math.MinInt16 || ivalue.Int() > math.MaxInt16 {
+			return "", errors.Errorf("int16 option field value must be between %d and %d", math.MinInt16, math.MaxInt16)
+		}
+		if !textFormat {
+			// Cast integer to unsigned integer before hex conversion.
+			return fmt.Sprintf("%04X", uint16(ivalue.Int())), nil
+		}
+	case Int32Field:
+		if ivalue.Int() < math.MinInt32 || ivalue.Int() > math.MaxInt32 {
+			return "", errors.Errorf("int32 option field value must be between %d and %d", math.MinInt32, math.MaxInt32)
+		}
+		if !textFormat {
+			// Cast integer to unsigned integer before hex conversion.
+			return fmt.Sprintf("%08X", uint32(ivalue.Int())), nil
 		}
 	}
 	return fmt.Sprintf("%d", values[0]), nil

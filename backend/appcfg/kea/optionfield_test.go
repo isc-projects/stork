@@ -33,6 +33,24 @@ func TestParseDHCPOptionField(t *testing.T) {
 	require.Len(t, field.GetValues(), 1)
 	require.EqualValues(t, 345, field.GetValues()[0].(uint32))
 
+	field, err = parseDHCPOptionField(Int8Field, "-123")
+	require.NoError(t, err)
+	require.Equal(t, Int8Field, field.GetFieldType())
+	require.Len(t, field.GetValues(), 1)
+	require.EqualValues(t, -123, field.GetValues()[0].(int8))
+
+	field, err = parseDHCPOptionField(Int16Field, "-234")
+	require.NoError(t, err)
+	require.Equal(t, Int16Field, field.GetFieldType())
+	require.Len(t, field.GetValues(), 1)
+	require.EqualValues(t, -234, field.GetValues()[0].(int16))
+
+	field, err = parseDHCPOptionField(Int32Field, "-345")
+	require.NoError(t, err)
+	require.Equal(t, Int32Field, field.GetFieldType())
+	require.Len(t, field.GetValues(), 1)
+	require.EqualValues(t, -345, field.GetValues()[0].(int32))
+
 	field, err = parseDHCPOptionField(IPv4AddressField, "192.0.2.1")
 	require.NoError(t, err)
 	require.Equal(t, IPv4AddressField, field.GetFieldType())
@@ -284,14 +302,14 @@ func TestBoolFieldMalformed(t *testing.T) {
 
 // Test that an uint8 option field is converted to a hex format.
 func TestUint8FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 155), false)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint8Field, 155), false)
 	require.NoError(t, err)
 	require.Equal(t, "9B", value)
 }
 
 // Test that an uint8 option field is converted to a text format.
 func TestUint8FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 155), true)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint8Field, 155), true)
 	require.NoError(t, err)
 	require.Equal(t, "155", value)
 }
@@ -299,43 +317,98 @@ func TestUint8FieldToText(t *testing.T) {
 // Test that conversion of a malformed uint8 option field yields an error.
 func TestUint8FieldMalformed(t *testing.T) {
 	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint8Field, 15, 16), false)
+	_, err := convertIntField(*newTestDHCPOptionField(Uint8Field, 15, 16), false)
 	require.Error(t, err)
 
 	// It must be lower than 256.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, 1550), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint8Field, 1550), false)
 	require.Error(t, err)
 
 	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint8Field), false)
 	require.Error(t, err)
 
 	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, "111"), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint8Field, "111"), false)
 	require.Error(t, err)
 
 	// Floating point number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint8Field, 1.1), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint8Field, 1.1), false)
+	require.Error(t, err)
+}
+
+// Test that a positive int8 option field is converted to a hex format.
+func TestPositiveInt8FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int8Field, 90), false)
+	require.NoError(t, err)
+	require.Equal(t, "5A", value)
+}
+
+// Test that a negative int8 option field is converted to a hex format.
+func TestNegativeInt8FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int8Field, -5), false)
+	require.NoError(t, err)
+	require.Equal(t, "FB", value)
+}
+
+// Test that a positive int8 option field is converted to a text format.
+func TestPositiveInt8FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int8Field, 89), true)
+	require.NoError(t, err)
+	require.Equal(t, "89", value)
+}
+
+// Test that a negative int8 option field is converted to a text format.
+func TestNegativeInt8FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int8Field, -89), true)
+	require.NoError(t, err)
+	require.Equal(t, "-89", value)
+}
+
+// Test that conversion of a malformed int8 option field yields an error.
+func TestInt8FieldMalformed(t *testing.T) {
+	// It must be a single value.
+	_, err := convertIntField(*newTestDHCPOptionField(Int8Field, 15, 16), false)
+	require.Error(t, err)
+
+	// It must be lower than 128.
+	_, err = convertIntField(*newTestDHCPOptionField(Int8Field, 128), false)
+	require.Error(t, err)
+
+	// It must be greater than -129.
+	_, err = convertIntField(*newTestDHCPOptionField(Int8Field, -129), false)
+	require.Error(t, err)
+
+	// No value.
+	_, err = convertIntField(*newTestDHCPOptionField(Int8Field), false)
+	require.Error(t, err)
+
+	// Not a number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int8Field, "111"), false)
+	require.Error(t, err)
+
+	// Floating point number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int8Field, 1.1), false)
 	require.Error(t, err)
 }
 
 // Test that an uint16 option field is converted to a hex format.
 func TestUint16FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1550), false)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint16Field, 1550), false)
 	require.NoError(t, err)
 	require.Equal(t, "060E", value)
 }
 
 // Test that converted uint16 option field value has 4 digits.
 func TestUint16FieldToHexPadding(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1), false)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint16Field, 1), false)
 	require.NoError(t, err)
 	require.Equal(t, "0001", value)
 }
 
 // Test that an uint16 option field is converted to a text format.
 func TestUint16FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 1550), true)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint16Field, 1550), true)
 	require.NoError(t, err)
 	require.Equal(t, "1550", value)
 }
@@ -343,39 +416,94 @@ func TestUint16FieldToText(t *testing.T) {
 // Test that conversion of a malformed uint16 option field yields an error.
 func TestUint16FieldMalformed(t *testing.T) {
 	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint16Field, 150, 1600), false)
+	_, err := convertIntField(*newTestDHCPOptionField(Uint16Field, 150, 1600), false)
 	require.Error(t, err)
 
 	// It must be lower or equal max uint16.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field, 166535), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint16Field, 166535), false)
 	require.Error(t, err)
 
 	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint16Field), false)
 	require.Error(t, err)
 
 	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint16Field, "222"), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint16Field, "222"), false)
+	require.Error(t, err)
+}
+
+// Test that a positive int16 option field is converted to a hex format.
+func TestPositiveInt16FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int16Field, 709), false)
+	require.NoError(t, err)
+	require.Equal(t, "02C5", value)
+}
+
+// Test that a negative int16 option field is converted to a hex format.
+func TestNegativeInt16FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int16Field, -10), false)
+	require.NoError(t, err)
+	require.Equal(t, "FFF6", value)
+}
+
+// Test that a positive int16 option field is converted to a text format.
+func TestPositiveInt16FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int16Field, 1089), true)
+	require.NoError(t, err)
+	require.Equal(t, "1089", value)
+}
+
+// Test that a negative int16 option field is converted to a text format.
+func TestNegativeInt16FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int16Field, -1289), true)
+	require.NoError(t, err)
+	require.Equal(t, "-1289", value)
+}
+
+// Test that conversion of a malformed int16 option field yields an error.
+func TestInt16FieldMalformed(t *testing.T) {
+	// It must be a single value.
+	_, err := convertIntField(*newTestDHCPOptionField(Int16Field, 15, 16), false)
+	require.Error(t, err)
+
+	// It must be lower than 32768.
+	_, err = convertIntField(*newTestDHCPOptionField(Int16Field, 32768), false)
+	require.Error(t, err)
+
+	// It must be greater than -32769.
+	_, err = convertIntField(*newTestDHCPOptionField(Int16Field, -32769), false)
+	require.Error(t, err)
+
+	// No value.
+	_, err = convertIntField(*newTestDHCPOptionField(Int16Field), false)
+	require.Error(t, err)
+
+	// Not a number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int16Field, "111"), false)
+	require.Error(t, err)
+
+	// Floating point number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int16Field, 1.1), false)
 	require.Error(t, err)
 }
 
 // Test that an uint32 option field is converted to a hex format.
 func TestUint32FieldToHex(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 65537), false)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint32Field, 65537), false)
 	require.NoError(t, err)
 	require.Equal(t, "00010001", value)
 }
 
 // Test that converted uint32 option field value has 8 digits.
 func TestUint32FieldToHexPadding(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 1), false)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint32Field, 1), false)
 	require.NoError(t, err)
 	require.Equal(t, "00000001", value)
 }
 
 // Test that an uint32 option field is converted to a text format.
 func TestUint32FieldToText(t *testing.T) {
-	value, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 65537), true)
+	value, err := convertIntField(*newTestDHCPOptionField(Uint32Field, 65537), true)
 	require.NoError(t, err)
 	require.Equal(t, "65537", value)
 }
@@ -383,19 +511,74 @@ func TestUint32FieldToText(t *testing.T) {
 // Test that conversion of a malformed uint32 option field yields an error.
 func TestUint32FieldMalformed(t *testing.T) {
 	// It must be a single value.
-	_, err := convertUintField(*newTestDHCPOptionField(Uint32Field, 1, 10), false)
+	_, err := convertIntField(*newTestDHCPOptionField(Uint32Field, 1, 10), false)
 	require.Error(t, err)
 
 	// It must be lower than max uint32.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field, uint64(math.MaxUint64-5)), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint32Field, uint64(math.MaxUint64-5)), false)
 	require.Error(t, err)
 
 	// No value.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint32Field), false)
 	require.Error(t, err)
 
 	// Not a number.
-	_, err = convertUintField(*newTestDHCPOptionField(Uint32Field, "222"), false)
+	_, err = convertIntField(*newTestDHCPOptionField(Uint32Field, "222"), false)
+	require.Error(t, err)
+}
+
+// Test that a positive int32 option field is converted to a hex format.
+func TestPositiveInt32FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int32Field, 10000), false)
+	require.NoError(t, err)
+	require.Equal(t, "00002710", value)
+}
+
+// Test that a negative int32 option field is converted to a hex format.
+func TestNegativeInt32FieldToHex(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int32Field, -100), false)
+	require.NoError(t, err)
+	require.Equal(t, "FFFFFF9C", value)
+}
+
+// Test that a positive int32 option field is converted to a text format.
+func TestPositiveInt32FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int32Field, 123331), true)
+	require.NoError(t, err)
+	require.Equal(t, "123331", value)
+}
+
+// Test that a negative int32 option field is converted to a text format.
+func TestNegativeInt32FieldToText(t *testing.T) {
+	value, err := convertIntField(*newTestDHCPOptionField(Int32Field, -11111), true)
+	require.NoError(t, err)
+	require.Equal(t, "-11111", value)
+}
+
+// Test that conversion of a malformed int32 option field yields an error.
+func TestInt32FieldMalformed(t *testing.T) {
+	// It must be a single value.
+	_, err := convertIntField(*newTestDHCPOptionField(Int32Field, 15, 16), false)
+	require.Error(t, err)
+
+	// It must be lower than 2147483648.
+	_, err = convertIntField(*newTestDHCPOptionField(Int32Field, 2147483648), false)
+	require.Error(t, err)
+
+	// It must be greater than -2147483649.
+	_, err = convertIntField(*newTestDHCPOptionField(Int32Field, -2147483649), false)
+	require.Error(t, err)
+
+	// No value.
+	_, err = convertIntField(*newTestDHCPOptionField(Int32Field), false)
+	require.Error(t, err)
+
+	// Not a number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int32Field, "111"), false)
+	require.Error(t, err)
+
+	// Floating point number.
+	_, err = convertIntField(*newTestDHCPOptionField(Int32Field, 1.1), false)
 	require.Error(t, err)
 }
 

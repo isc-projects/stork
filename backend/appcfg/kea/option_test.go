@@ -120,6 +120,18 @@ func TestCreateSingleOptionDataMultiplFields(t *testing.T) {
 				values:    []interface{}{369},
 			},
 			{
+				fieldType: "int8",
+				values:    []interface{}{-123},
+			},
+			{
+				fieldType: "int16",
+				values:    []interface{}{-234},
+			},
+			{
+				fieldType: "int32",
+				values:    []interface{}{-369},
+			},
+			{
 				fieldType: "bool",
 				values:    []interface{}{true},
 			},
@@ -169,7 +181,7 @@ func TestCreateSingleOptionDataMultiplFields(t *testing.T) {
 	require.Equal(t, "bar", data.Name)
 
 	// Make sure that the option data were set correctly.
-	require.Equal(t, "123,234,369,true,192.0.2.1,3000:12::,3001::/64,1644/12,foobar.example.org,foobar", data.Data)
+	require.Equal(t, "123,234,369,-123,-234,-369,true,192.0.2.1,3000:12::,3001::/64,1644/12,foobar.example.org,foobar", data.Data)
 }
 
 // Test the option conversion from the Stork to Kea format when the option
@@ -227,6 +239,18 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 				values:    []interface{}{369},
 			},
 			{
+				fieldType: "int8",
+				values:    []interface{}{-123},
+			},
+			{
+				fieldType: "int16",
+				values:    []interface{}{-234},
+			},
+			{
+				fieldType: "int32",
+				values:    []interface{}{-369},
+			},
+			{
 				fieldType: "bool",
 				values:    []interface{}{true},
 			},
@@ -276,7 +300,7 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 	require.Equal(t, "bar", data.Name)
 
 	// Make sure that the option data were converted to the hex format.
-	require.Equal(t, "7B00EA0000017101C0000201300000120000000000000000000000003001000000000000000000000000000040066C0C06666F6F626172076578616D706C65036F7267666F6F626172", data.Data)
+	require.Equal(t, "7B00EA0000017185FF16FFFFFE8F01C0000201300000120000000000000000000000003001000000000000000000000000000040066C0C06666F6F626172076578616D706C65036F7267666F6F626172", data.Data)
 }
 
 // Test that an option received from Kea is correctly parsed into the Stork's
@@ -286,7 +310,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 		AlwaysSend: true,
 		Code:       244,
 		CSVFormat:  true,
-		Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12",
+		Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12, -5",
 		Name:       "foo",
 		Space:      "bar",
 	}
@@ -300,7 +324,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	require.Equal(t, "bar.244", option.GetEncapsulate())
 
 	fields := option.GetFields()
-	require.Len(t, fields, 8)
+	require.Len(t, fields, 9)
 	require.Equal(t, IPv4AddressField, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.Equal(t, "192.0.2.1", fields[0].GetValues()[0])
@@ -334,6 +358,10 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	require.Equal(t, IPv6AddressField, fields[7].GetFieldType())
 	require.Len(t, fields[7].GetValues(), 1)
 	require.EqualValues(t, "2001:db8:1::12", fields[7].GetValues()[0])
+
+	require.Equal(t, Int32Field, fields[8].GetFieldType())
+	require.Len(t, fields[8].GetValues(), 1)
+	require.EqualValues(t, -5, fields[8].GetValues()[0])
 }
 
 // Test that an option in a hex bytes format received from Kea is correctly parsed

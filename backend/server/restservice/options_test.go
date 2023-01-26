@@ -86,6 +86,18 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 							FieldType: keaconfig.FqdnField,
 							Values:    []string{"foo.example.org."},
 						},
+						{
+							FieldType: keaconfig.Int8Field,
+							Values:    []string{"-123"},
+						},
+						{
+							FieldType: keaconfig.Int16Field,
+							Values:    []string{"-234"},
+						},
+						{
+							FieldType: keaconfig.Int32Field,
+							Values:    []string{"-345"},
+						},
 					},
 					Universe: 4,
 				},
@@ -169,7 +181,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 
 	require.False(t, options[2].AlwaysSend)
 	require.EqualValues(t, 3, options[2].Code)
-	require.Len(t, options[2].Fields, 3)
+	require.Len(t, options[2].Fields, 6)
 	require.Len(t, options[2].Fields[0].Values, 1)
 	require.Equal(t, uint8(123), options[2].Fields[0].Values[0])
 	require.Len(t, options[2].Fields[1].Values, 2)
@@ -180,6 +192,12 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 	require.Equal(t, "option-1002", options[2].Space)
 	require.Equal(t, "option-1002.3", options[2].Encapsulate)
 	require.Equal(t, storkutil.IPv4, options[2].Universe)
+	require.Len(t, options[2].Fields[3].Values, 1)
+	require.Equal(t, int8(-123), options[2].Fields[3].Values[0])
+	require.Len(t, options[2].Fields[4].Values, 1)
+	require.Equal(t, int16(-234), options[2].Fields[4].Values[0])
+	require.Len(t, options[2].Fields[5].Values, 1)
+	require.Equal(t, int32(-345), options[2].Fields[5].Values[0])
 
 	require.False(t, options[3].AlwaysSend)
 	require.EqualValues(t, 4, options[3].Code)
@@ -322,9 +340,15 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 		{"non uint8 value", keaconfig.Uint8Field, []string{"foo"}},
 		{"non uint16 value", keaconfig.Uint16Field, []string{"foo"}},
 		{"non uint32 value", keaconfig.Uint32Field, []string{"foo"}},
+		{"non int8 value", keaconfig.Int8Field, []string{"foo"}},
+		{"non int16 value", keaconfig.Int16Field, []string{"foo"}},
+		{"non int32 value", keaconfig.Int32Field, []string{"foo"}},
 		{"uint8 out of range", keaconfig.Uint8Field, []string{"256"}},
 		{"uint16 out of range", keaconfig.Uint16Field, []string{"65536"}},
 		{"uint32 out of range", keaconfig.Uint32Field, []string{"14294967295"}},
+		{"int8 out of range", keaconfig.Int8Field, []string{"256"}},
+		{"int16 out of range", keaconfig.Int16Field, []string{"65536"}},
+		{"int32 out of range", keaconfig.Int32Field, []string{"14294967295"}},
 		{"invalid bool", keaconfig.BoolField, []string{"19"}},
 		{"prefix lacks length", keaconfig.IPv6PrefixField, []string{"3001::"}},
 		{"prefix length out of range", keaconfig.IPv6PrefixField, []string{"3001::", "280"}},
@@ -458,6 +482,9 @@ func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
 		{"uint8", keaconfig.Uint8Field, []any{111}, []string{"111"}},
 		{"uint16", keaconfig.Uint16Field, []any{65536}, []string{"65536"}},
 		{"uint32", keaconfig.Uint32Field, []any{14294967295}, []string{"14294967295"}},
+		{"int8", keaconfig.Uint8Field, []any{-111}, []string{"-111"}},
+		{"int16", keaconfig.Uint16Field, []any{-2323}, []string{"-2323"}},
+		{"int32", keaconfig.Uint32Field, []any{-235}, []string{"-235"}},
 		{"ipv4-address", keaconfig.IPv4AddressField, []any{"192.0.1.2"}, []string{"192.0.1.2"}},
 		{"ipv6-address", keaconfig.IPv6AddressField, []any{"3001::"}, []string{"3001::"}},
 		{"ipv6-prefix", keaconfig.IPv6PrefixField, []any{"3001::", "64"}, []string{"3001::", "64"}},
