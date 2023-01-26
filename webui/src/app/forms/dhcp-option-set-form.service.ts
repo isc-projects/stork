@@ -254,6 +254,15 @@ export class DhcpOptionSetFormService extends FormProcessor {
                     case DhcpOptionFieldType.Uint32:
                         fieldGroup = this.createUint32Field(field.values[0])
                         break
+                    case DhcpOptionFieldType.Int8:
+                        fieldGroup = this.createInt8Field(field.values[0])
+                        break
+                    case DhcpOptionFieldType.Int16:
+                        fieldGroup = this.createInt16Field(field.values[0])
+                        break
+                    case DhcpOptionFieldType.Int32:
+                        fieldGroup = this.createInt32Field(field.values[0])
+                        break
                     case DhcpOptionFieldType.IPv4Address:
                         fieldGroup = this.createIPv4AddressField(field.values[0])
                         break
@@ -410,6 +419,36 @@ export class DhcpOptionSetFormService extends FormProcessor {
             DhcpOptionFieldType.Uint32,
             this._formBuilder.control(value, Validators.required)
         )
+    }
+
+    /**
+     * Creates a control for option field using int8 format.
+     *
+     * @param value option field value to set.
+     * @returns created form group instance.
+     */
+    createInt8Field(value: string | number | null = null): DhcpOptionFieldFormGroup {
+        return this._createSimpleField(DhcpOptionFieldType.Int8, this._formBuilder.control(value, Validators.required))
+    }
+
+    /**
+     * Creates a control for option field using int16 format.
+     *
+     * @param value option field value to set.
+     * @returns created form group instance.
+     */
+    createInt16Field(value: string | number | null = null): DhcpOptionFieldFormGroup {
+        return this._createSimpleField(DhcpOptionFieldType.Int16, this._formBuilder.control(value, Validators.required))
+    }
+
+    /**
+     * Creates a control for option field using int32 format.
+     *
+     * @param value option field value to set.
+     * @returns created form group instance.
+     */
+    createInt32Field(value: string | number | null = null): DhcpOptionFieldFormGroup {
+        return this._createSimpleField(DhcpOptionFieldType.Int32, this._formBuilder.control(value, Validators.required))
     }
 
     /**

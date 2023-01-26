@@ -443,8 +443,8 @@ describe('DhcpOptionSetFormService', () => {
                         code: 1,
                         fields: [
                             {
-                                fieldType: DhcpOptionFieldType.Uint16,
-                                values: ['1111'],
+                                fieldType: DhcpOptionFieldType.Int16,
+                                values: ['-1111'],
                             },
                         ],
                         options: [
@@ -465,6 +465,14 @@ describe('DhcpOptionSetFormService', () => {
                             {
                                 fieldType: DhcpOptionFieldType.Uint32,
                                 values: ['2222'],
+                            },
+                            {
+                                fieldType: DhcpOptionFieldType.Int8,
+                                values: ['-127'],
+                            },
+                            {
+                                fieldType: DhcpOptionFieldType.Int32,
+                                values: ['-1000'],
                             },
                         ],
                     },
@@ -578,9 +586,9 @@ describe('DhcpOptionSetFormService', () => {
         fields = formArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
         expect(fields.controls.length).toBe(1)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
+        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int16)
         expect(fields.at(0).get('control')).toBeTruthy()
-        expect(fields.at(0).get('control').value).toBe('1111')
+        expect(fields.at(0).get('control').value).toBe('-1111')
 
         // Option 3087.1.2
         expect((formArray.at(2).get('suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(1)
@@ -609,11 +617,23 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.0 field 0.
         fields = formArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(1)
+        expect(fields.controls.length).toBe(3)
         expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
         expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)
         expect(fields.at(0).get('control')).toBeTruthy()
         expect(fields.at(0).get('control').value).toBe('2222')
+
+        // Option 3087.0 field 1
+        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int8)
+        expect(fields.at(1).get('control')).toBeTruthy()
+        expect(fields.at(1).get('control').value).toBe('-127')
+
+        // Option 3087.0 field 2
+        expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int32)
+        expect(fields.at(2).get('control')).toBeTruthy()
+        expect(fields.at(2).get('control').value).toBe('-1000')
     })
 
     it('returns empty array for null options', () => {

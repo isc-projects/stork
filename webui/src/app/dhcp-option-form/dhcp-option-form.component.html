@@ -171,6 +171,7 @@
                             max="255"
                             inputStyleClass="option-field"
                             formControlName="control"
+                            [useGrouping]="false"
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
@@ -185,6 +186,7 @@
                             max="65535"
                             inputStyleClass="option-field"
                             formControlName="control"
+                            [useGrouping]="false"
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
@@ -199,6 +201,52 @@
                             max="4294967295"
                             inputStyleClass="option-field"
                             formControlName="control"
+                            [useGrouping]="false"
+                        >
+                        </p-inputNumber>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
+                    </span>
+                </div>
+                <div *ngSwitchCase="FieldType.Int8" [formGroupName]="i">
+                    <span class="p-float-label">
+                        <p-inputNumber
+                            ngDefaultControl
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
+                            min="-128"
+                            max="127"
+                            inputStyleClass="option-field"
+                            formControlName="control"
+                            [useGrouping]="false"
+                        >
+                        </p-inputNumber>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
+                    </span>
+                </div>
+                <div *ngSwitchCase="FieldType.Int16" [formGroupName]="i">
+                    <span class="p-float-label">
+                        <p-inputNumber
+                            ngDefaultControl
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
+                            min="-32768"
+                            max="32767"
+                            inputStyleClass="option-field"
+                            formControlName="control"
+                            [useGrouping]="false"
+                        >
+                        </p-inputNumber>
+                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
+                    </span>
+                </div>
+                <div *ngSwitchCase="FieldType.Int32" [formGroupName]="i">
+                    <span class="p-float-label">
+                        <p-inputNumber
+                            ngDefaultControl
+                            inputId="{{ fieldControl.data.getInputId(0) }}"
+                            min="-2147483648"
+                            max="2147483647"
+                            inputStyleClass="option-field"
+                            formControlName="control"
+                            [useGrouping]="false"
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>

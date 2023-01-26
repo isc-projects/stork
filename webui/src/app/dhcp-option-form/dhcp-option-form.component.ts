@@ -187,6 +187,24 @@ export class DhcpOptionFormComponent implements OnInit {
                     this.lastFieldCommand = this.addUint32Field
                     this.addUint32Field()
                 }
+            case DhcpOptionFieldType.Int8:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Int8
+                    this.lastFieldCommand = this.addInt8Field
+                    this.addInt8Field()
+                }
+            case DhcpOptionFieldType.Int16:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Int16
+                    this.lastFieldCommand = this.addInt16Field
+                    this.addInt16Field()
+                }
+            case DhcpOptionFieldType.Int32:
+                return () => {
+                    this.lastFieldType = DhcpOptionFieldType.Int32
+                    this.lastFieldCommand = this.addInt32Field
+                    this.addInt32Field()
+                }
             case DhcpOptionFieldType.IPv4Address:
                 return () => {
                     this.lastFieldType = DhcpOptionFieldType.IPv4Address
@@ -263,6 +281,21 @@ export class DhcpOptionFormComponent implements OnInit {
                 label: DhcpOptionFieldType.Uint32,
                 id: this.FieldType.Uint32,
                 command: this._getFieldCommand(DhcpOptionFieldType.Uint32),
+            },
+            {
+                label: DhcpOptionFieldType.Int8,
+                id: this.FieldType.Int8,
+                command: this._getFieldCommand(DhcpOptionFieldType.Int8),
+            },
+            {
+                label: DhcpOptionFieldType.Int16,
+                id: this.FieldType.Int16,
+                command: this._getFieldCommand(DhcpOptionFieldType.Int16),
+            },
+            {
+                label: DhcpOptionFieldType.Int32,
+                id: this.FieldType.Int32,
+                command: this._getFieldCommand(DhcpOptionFieldType.Int32),
             },
             {
                 label: DhcpOptionFieldType.IPv4Address,
@@ -376,6 +409,27 @@ export class DhcpOptionFormComponent implements OnInit {
      */
     addUint32Field(): void {
         this._addField(this._optionSetFormService.createUint32Field())
+    }
+
+    /**
+     * Adds a control for option field specified as int8.
+     */
+    addInt8Field(): void {
+        this._addField(this._optionSetFormService.createInt8Field())
+    }
+
+    /**
+     * Adds a control for option field specified as int16.
+     */
+    addInt16Field(): void {
+        this._addField(this._optionSetFormService.createInt16Field())
+    }
+
+    /**
+     * Adds a control for option field specified as int32.
+     */
+    addInt32Field(): void {
+        this._addField(this._optionSetFormService.createInt32Field())
     }
 
     /**

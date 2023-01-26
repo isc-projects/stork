@@ -179,7 +179,7 @@ describe('DhcpOptionFormComponent', () => {
             field.command()
         }
         fixture.detectChanges()
-        expect(component.optionFields.length).toBe(11)
+        expect(component.optionFields.length).toBe(14)
 
         // Find the container holding all added option fields.
         const containerEl = fixture.debugElement.query(By.css('[formArrayName="optionFields"]'))
@@ -196,10 +196,10 @@ describe('DhcpOptionFormComponent', () => {
         expect(boolFieldEls.length).toBe(2)
 
         let numberFieldEls = containerEl.queryAll(By.css('p-inputNumber'))
-        expect(numberFieldEls.length).toBe(6)
+        expect(numberFieldEls.length).toBe(9)
 
         const deleteBtns = containerEl.queryAll(By.css('button'))
-        expect(deleteBtns.length).toBe(11)
+        expect(deleteBtns.length).toBe(14)
 
         // Delete uint32 option field.
         deleteBtns[5].nativeElement.dispatchEvent(new Event('click'))
@@ -207,8 +207,8 @@ describe('DhcpOptionFormComponent', () => {
 
         // Make sure it is gone.
         numberFieldEls = containerEl.queryAll(By.css('p-inputNumber'))
-        expect(numberFieldEls.length).toBe(5)
-        expect(component.optionFields.length).toBe(10)
+        expect(numberFieldEls.length).toBe(8)
+        expect(component.optionFields.length).toBe(13)
     })
 
     it('should add and delete suboption form', () => {
