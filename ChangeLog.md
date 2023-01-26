@@ -1,3 +1,10 @@
+* 273 [func] marcin
+
+    DHCP option form automatically shows controls suitable for the selected
+    standard option definition. Previously, a user had to know the option
+    format and manually add option field controls.
+    (Gitlab #937)
+
 * 272 [func] tomek
 
     Stork agent, server and tool now have logging levels configurable using
