@@ -143,7 +143,7 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	require.Empty(t, returnedSubnet.PrefixPools)
 }
 
-// Test that two prefix pools have not equal data if their prefixes differ.
+// Test that two prefix pools have unequal data if their prefixes differ.
 func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{Prefix: "fe80::/64"}
@@ -156,7 +156,7 @@ func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
 	require.False(t, equity)
 }
 
-// Test that two prefix pools have not equal data if their delegated lengths differ.
+// Test that two prefix pools have unequal data if their delegated lengths differ.
 func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{DelegatedLen: 64}
@@ -264,7 +264,7 @@ func TestAddressPoolEqualsDataID(t *testing.T) {
 	require.True(t, equity)
 }
 
-// Test that two address pools have equal data if their create timestamp differ.
+// Test that two address pools have equal data if their create timestamps differ.
 func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 	// Arrange
 	first := &AddressPool{CreatedAt: time.Date(1980, 1, 1, 12, 0o0, 0o0, 0, time.UTC)}
@@ -277,7 +277,7 @@ func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 	require.True(t, equity)
 }
 
-// Test that two address pools have not equal data if their lower bounds differ.
+// Test that two address pools have unequal data if their lower bounds differ.
 func TestAddressPoolEqualsDataLowerBound(t *testing.T) {
 	// Arrange
 	first := &AddressPool{LowerBound: "10.0.0.1"}

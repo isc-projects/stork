@@ -55,7 +55,7 @@ NEW_POOLS:
 				continue NEW_POOLS
 			}
 		}
-		// Pool aren't existed in the database yet.
+		// Pool doesn't exist in the database yet.
 		pools = append(pools, newPool)
 	}
 	return
@@ -74,7 +74,7 @@ NEW_POOLS:
 				continue NEW_POOLS
 			}
 		}
-		// Pool aren't existed in the database yet.
+		// Pool doesn't exist in the database yet.
 		pools = append(pools, newPool)
 	}
 	return

@@ -177,8 +177,8 @@ func (s *Subnet) GetFamily() int {
 	return family
 }
 
-// Add address and prefix pools from the subnet instance and removes these ones
-// that no longer belongs to this subnet into the database in a transaction.
+// Add address and prefix pools from the subnet instance and remove the ones
+// that no longer belong to the subnet in a transaction.
 // The subnet is expected to exist in the database.
 func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	// Remove out-of-date pools.
@@ -263,7 +263,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	return addAndClearSubnetPools(tx, subnet)
 }
 
-// Updates a subnet and its pools to the database within a transaction.
+// Updates a subnet and its pools in the database within a transaction.
 func updateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 	// Update the subnet first.
 	_, err = tx.Model(subnet).WherePK().Update()
@@ -289,7 +289,7 @@ func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 	return addSubnetWithPools(dbi.(*pg.Tx), subnet)
 }
 
-// Updates a subnet with its pools into the database. If the subnet has any
+// Updates a subnet with its pools in the database. If the subnet has any
 // associations with a shared network, those associations are also updated
 // in the database. It begins a new transaction when dbi has a *pg.DB type or
 // uses an existing transaction when dbi has a *pg.Tx type.

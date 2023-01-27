@@ -19,7 +19,7 @@ type AddressPool struct {
 	Subnet     *Subnet `pg:"rel:has-one"`
 }
 
-// Checks equity of the address pool's own data without database-related members
+// Checks equality of the address pool's own data without database-related members
 // and references.
 func (ap *AddressPool) EqualsData(other *AddressPool) bool {
 	return ap.LowerBound == other.LowerBound &&
@@ -37,7 +37,7 @@ type PrefixPool struct {
 	Subnet         *Subnet `pg:"rel:has-one"`
 }
 
-// Checks equity of the prefix pool's own data without database-related members
+// Checks equality of the prefix pool's own data without database-related members
 // and references.
 func (pp *PrefixPool) EqualsData(other *PrefixPool) bool {
 	return pp.Prefix == other.Prefix &&

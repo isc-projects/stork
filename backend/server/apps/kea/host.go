@@ -566,7 +566,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 }
 
 // Overrides global or subnet specific hosts into existing entries from database
-// to restore the database ID and some fixed values (e.g. creation timestamp),
+// with preserving the database ID and some fixed values (e.g. creation timestamp),
 // and returns the slice with combined hosts.
 // When subnetID of 0 is specified it indicates that the global hosts
 // are being merged. If the given host already exists in the database the
