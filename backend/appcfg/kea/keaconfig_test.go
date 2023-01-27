@@ -1019,7 +1019,7 @@ func TestGetMultiThreadingEntry(t *testing.T) {
 	config, _ := NewFromJSON(configStr)
 
 	// Act
-	multiThreading := config.GetMultiThreadingEntry()
+	multiThreading := config.GetMultiThreading()
 
 	// Assert
 	require.NotNil(t, multiThreading)
@@ -1039,7 +1039,7 @@ func TestGetMultiThreadingEntryMissingParameters(t *testing.T) {
 	config, _ := NewFromJSON(configStr)
 
 	// Act
-	multiThreading := config.GetMultiThreadingEntry()
+	multiThreading := config.GetMultiThreading()
 
 	// Assert
 	require.NotNil(t, multiThreading)
@@ -1056,7 +1056,7 @@ func TestGetMultiThreadingEntryNotExists(t *testing.T) {
 	config, _ := NewFromJSON(configStr)
 
 	// Act
-	multiThreading := config.GetMultiThreadingEntry()
+	multiThreading := config.GetMultiThreading()
 
 	// Assert
 	require.Nil(t, multiThreading)

@@ -839,7 +839,7 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	multiThreadingConfig := config.GetMultiThreadingEntry()
+	multiThreadingConfig := config.GetMultiThreading()
 
 	if multiThreadingConfig == nil ||
 		multiThreadingConfig.EnableMultiThreading == nil ||

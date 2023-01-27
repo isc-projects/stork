@@ -267,7 +267,7 @@ func (c *Map) GetHooksLibrary(name string) (path string, params map[string]inter
 }
 
 // Returns the multi-threading parameters or nil if they are not provided.
-func (c *Map) GetMultiThreadingEntry() (output *MultiThreading) {
+func (c *Map) GetMultiThreading() (output *MultiThreading) {
 	if data, ok := c.getTopLevelEntry("multi-threading"); ok {
 		_ = mapstructure.Decode(data, &output)
 	}
