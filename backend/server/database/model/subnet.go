@@ -222,7 +222,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool := p
 		pool.SubnetID = subnet.ID
 		if pool.ID == 0 {
-			_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+			_, err = tx.Model(&pool).Insert()
 			if err != nil {
 				return pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
 					pool.LowerBound, pool.UpperBound, subnet.ID)
@@ -236,7 +236,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool := p
 		pool.SubnetID = subnet.ID
 		if p.ID == 0 {
-			_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+			_, err = tx.Model(&pool).Insert()
 			if err != nil {
 				err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
 					pool.Prefix, subnet.ID)
