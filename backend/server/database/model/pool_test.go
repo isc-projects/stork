@@ -150,10 +150,10 @@ func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
 	second := &PrefixPool{Prefix: "3001::/64"}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.False(t, equity)
+	require.False(t, equality)
 }
 
 // Test that two prefix pools have unequal data if their delegated lengths differ.
@@ -163,10 +163,10 @@ func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
 	second := &PrefixPool{DelegatedLen: 80}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.False(t, equity)
+	require.False(t, equality)
 }
 
 // Test that two prefix pools have unequal data if their excluded prefixes differ.
@@ -176,10 +176,10 @@ func TestPrefixPoolEqualsDataExcludedPrefix(t *testing.T) {
 	second := &PrefixPool{ExcludedPrefix: "3001::/80"}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.False(t, equity)
+	require.False(t, equality)
 }
 
 // Test that two prefix pools have equal data if their IDs differ.
@@ -189,10 +189,10 @@ func TestPrefixPoolEqualsDataID(t *testing.T) {
 	second := &PrefixPool{ID: 2}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two prefix pools have equal data if their create timestamps differ.
@@ -202,10 +202,10 @@ func TestPrefixPoolEqualsDataCreateTimestamp(t *testing.T) {
 	second := &PrefixPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two prefix pools have equal data if their subnet IDs differ.
@@ -215,10 +215,10 @@ func TestPrefixPoolEqualsDataSubnetID(t *testing.T) {
 	second := &PrefixPool{SubnetID: 2}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two prefix pools have equal data if their subnets differ.
@@ -228,10 +228,10 @@ func TestPrefixPoolEqualsDataSubnet(t *testing.T) {
 	second := &PrefixPool{Subnet: &Subnet{Prefix: "10.0.0.0/8"}}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two prefix pools have equal data if they are the same.
@@ -258,12 +258,12 @@ func TestPrefixPoolEqualsDataTheSame(t *testing.T) {
 	}
 
 	// Act
-	equityFirstSecond := first.EqualsData(second)
-	equitySecondFirst := second.EqualsData(first)
+	equalityFirstSecond := first.EqualsData(second)
+	equalitySecondFirst := second.EqualsData(first)
 
 	// Assert
-	require.True(t, equityFirstSecond)
-	require.True(t, equitySecondFirst)
+	require.True(t, equalityFirstSecond)
+	require.True(t, equalitySecondFirst)
 }
 
 // Test that two address pools have equal data if their IDs differ.
@@ -273,10 +273,10 @@ func TestAddressPoolEqualsDataID(t *testing.T) {
 	second := &AddressPool{ID: 2}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two address pools have equal data if their create timestamps differ.
@@ -286,10 +286,10 @@ func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 	second := &AddressPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two address pools have unequal data if their lower bounds differ.
@@ -299,10 +299,10 @@ func TestAddressPoolEqualsDataLowerBound(t *testing.T) {
 	second := &AddressPool{LowerBound: "192.168.0.1"}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.False(t, equity)
+	require.False(t, equality)
 }
 
 // Test that two address pools have equal data if their upper bounds differ.
@@ -312,10 +312,10 @@ func TestAddressPoolEqualsDataUpperBound(t *testing.T) {
 	second := &AddressPool{UpperBound: "192.168.0.42"}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.False(t, equity)
+	require.False(t, equality)
 }
 
 // Test that two address pools have equal data if their subnet IDs differ.
@@ -325,10 +325,10 @@ func TestAddressPoolEqualsDataSubnetID(t *testing.T) {
 	second := &AddressPool{SubnetID: 2}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two address pools have equal data if their subnets differ.
@@ -338,10 +338,10 @@ func TestAddressPoolEqualsDataSubnets(t *testing.T) {
 	second := &AddressPool{Subnet: &Subnet{Prefix: "3001::/48"}}
 
 	// Act
-	equity := first.EqualsData(second)
+	equality := first.EqualsData(second)
 
 	// Assert
-	require.True(t, equity)
+	require.True(t, equality)
 }
 
 // Test that two address pools have equal data of they are the same.
@@ -366,10 +366,10 @@ func TestAddressPoolEqualsDataTheSame(t *testing.T) {
 	}
 
 	// Act
-	equityFirstSecond := first.EqualsData(second)
-	equitySecondFirst := second.EqualsData(first)
+	equalityFirstSecond := first.EqualsData(second)
+	equalitySecondFirst := second.EqualsData(first)
 
 	// Assert
-	require.True(t, equityFirstSecond)
-	require.True(t, equitySecondFirst)
+	require.True(t, equalityFirstSecond)
+	require.True(t, equalitySecondFirst)
 }
