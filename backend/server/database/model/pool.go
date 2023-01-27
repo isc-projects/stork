@@ -21,7 +21,7 @@ type AddressPool struct {
 
 // Checks equality of the address pool's own data without database-related members
 // and references.
-func (ap *AddressPool) EqualsData(other *AddressPool) bool {
+func (ap *AddressPool) HasEqualData(other *AddressPool) bool {
 	return ap.LowerBound == other.LowerBound &&
 		ap.UpperBound == other.UpperBound
 }
@@ -39,7 +39,7 @@ type PrefixPool struct {
 
 // Checks equality of the prefix pool's own data without database-related members
 // and references.
-func (pp *PrefixPool) EqualsData(other *PrefixPool) bool {
+func (pp *PrefixPool) HasEqualData(other *PrefixPool) bool {
 	return pp.Prefix == other.Prefix &&
 		pp.DelegatedLen == other.DelegatedLen &&
 		pp.ExcludedPrefix == other.ExcludedPrefix

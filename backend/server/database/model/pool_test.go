@@ -150,7 +150,7 @@ func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
 	second := &PrefixPool{Prefix: "3001::/64"}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.False(t, equality)
@@ -163,7 +163,7 @@ func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
 	second := &PrefixPool{DelegatedLen: 80}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.False(t, equality)
@@ -176,7 +176,7 @@ func TestPrefixPoolEqualsDataExcludedPrefix(t *testing.T) {
 	second := &PrefixPool{ExcludedPrefix: "3001::/80"}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.False(t, equality)
@@ -189,7 +189,7 @@ func TestPrefixPoolEqualsDataID(t *testing.T) {
 	second := &PrefixPool{ID: 2}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -202,7 +202,7 @@ func TestPrefixPoolEqualsDataCreateTimestamp(t *testing.T) {
 	second := &PrefixPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -215,7 +215,7 @@ func TestPrefixPoolEqualsDataSubnetID(t *testing.T) {
 	second := &PrefixPool{SubnetID: 2}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -228,7 +228,7 @@ func TestPrefixPoolEqualsDataSubnet(t *testing.T) {
 	second := &PrefixPool{Subnet: &Subnet{Prefix: "10.0.0.0/8"}}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -258,8 +258,8 @@ func TestPrefixPoolEqualsDataTheSame(t *testing.T) {
 	}
 
 	// Act
-	equalityFirstSecond := first.EqualsData(second)
-	equalitySecondFirst := second.EqualsData(first)
+	equalityFirstSecond := first.HasEqualData(second)
+	equalitySecondFirst := second.HasEqualData(first)
 
 	// Assert
 	require.True(t, equalityFirstSecond)
@@ -273,7 +273,7 @@ func TestAddressPoolEqualsDataID(t *testing.T) {
 	second := &AddressPool{ID: 2}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -286,7 +286,7 @@ func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 	second := &AddressPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -299,7 +299,7 @@ func TestAddressPoolEqualsDataLowerBound(t *testing.T) {
 	second := &AddressPool{LowerBound: "192.168.0.1"}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.False(t, equality)
@@ -312,7 +312,7 @@ func TestAddressPoolEqualsDataUpperBound(t *testing.T) {
 	second := &AddressPool{UpperBound: "192.168.0.42"}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.False(t, equality)
@@ -325,7 +325,7 @@ func TestAddressPoolEqualsDataSubnetID(t *testing.T) {
 	second := &AddressPool{SubnetID: 2}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -338,7 +338,7 @@ func TestAddressPoolEqualsDataSubnets(t *testing.T) {
 	second := &AddressPool{Subnet: &Subnet{Prefix: "3001::/48"}}
 
 	// Act
-	equality := first.EqualsData(second)
+	equality := first.HasEqualData(second)
 
 	// Assert
 	require.True(t, equality)
@@ -366,8 +366,8 @@ func TestAddressPoolEqualsDataTheSame(t *testing.T) {
 	}
 
 	// Act
-	equalityFirstSecond := first.EqualsData(second)
-	equalitySecondFirst := second.EqualsData(first)
+	equalityFirstSecond := first.HasEqualData(second)
+	equalitySecondFirst := second.HasEqualData(first)
 
 	// Assert
 	require.True(t, equalityFirstSecond)

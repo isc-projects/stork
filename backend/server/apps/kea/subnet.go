@@ -49,7 +49,7 @@ NEW_POOLS:
 		newPool := newPools[newPoolIdx]
 		for existingPoolIdx := range existingPools {
 			existingPool := existingPools[existingPoolIdx]
-			if newPool.EqualsData(&existingPool) {
+			if newPool.HasEqualData(&existingPool) {
 				// Pool already exists in the database.
 				pools = append(pools, existingPool)
 				continue NEW_POOLS
@@ -68,7 +68,7 @@ NEW_POOLS:
 		newPool := newPools[newPoolIdx]
 		for existingPoolIdx := range existingPools {
 			existingPool := existingPools[existingPoolIdx]
-			if newPool.EqualsData(&existingPool) {
+			if newPool.HasEqualData(&existingPool) {
 				// Pool already exists in the database.
 				pools = append(pools, existingPool)
 				continue NEW_POOLS
