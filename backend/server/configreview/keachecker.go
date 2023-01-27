@@ -878,10 +878,40 @@ func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
+	multiThreadingConfig := config.GetMultiThreading()
+
+	if multiThreadingConfig == nil ||
+		multiThreadingConfig.EnableMultiThreading == nil ||
+		!*multiThreadingConfig.EnableMultiThreading {
+		// The top-level multi-threading is not configured or disabled.
+		return nil, nil
+	}
+
 	_, haConfig, ok := config.GetHAHooksLibrary()
 	if !ok {
 		// There is no HA configured.
 		return nil, nil
+	}
+
+	if haConfig.MultiThreading == nil ||
+		haConfig.MultiThreading.EnableMultiThreading == nil ||
+		!*haConfig.MultiThreading.EnableMultiThreading {
+		// There is no HA+MT configured.
+		return nil, nil
+	}
+
+	if haConfig.MultiThreading.HTTPDedicatedListener == nil ||
+		!*haConfig.MultiThreading.HTTPDedicatedListener {
+		// The dedicated listener is disabled.
+		return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
+			"use dedicated HTTP listeners to handle communication between HA "+
+			"peers. It will still work over Kea Control Agent. It may cause "+
+			"the bottlenecks that nullify any performance gains offered by "+
+			"HA+MT. To avoid it, enable the dedicated HTTP listeners in the "+
+			"multi-threading configuration of the High-Availability hook. "+
+			"Remember that the dedicated listeners must be configured to use "+
+			"the HTTP port different from the one used by the Kea Control "+
+			"Agent.").referencingDaemon(ctx.subjectDaemon).create()
 	}
 
 	// Collect all CA daemons in a given application.
@@ -922,7 +952,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 			if accessPoint.Port == port {
 				// Port collision.
 				report := NewReport(ctx, fmt.Sprintf("The HA '%s' peer with the '%s' URL is "+
-					"configured to use the same HTTP port '%d' as the Kea"+
+					"configured to use the same HTTP port '%d' as the Kea "+
 					"Control Agent. It may cause the bottlenecks that nullify "+
 					"any performance gains offered by HA+MT",
 					*peer.Name, *peer.URL, port)).

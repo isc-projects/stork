@@ -2518,18 +2518,70 @@ func TestHighAvailabilityDedicatedPortsCheckerNoHA(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the checker produces a report if any peer uses the port assigned
-// to the CA daemon.
-func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) {
+// Test that the checker produces no report if the HA configuration is missing.
+func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [ ]
+    } }`)
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the checker produces no report if the HA doesn't use the
+// multi-threading
+func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
         "hooks-libraries": [
             {
                 "library": "/libdhcp_ha.so",
                 "parameters": {
                     "high-availability": [{
                         "multi-threading": {
-                            "enable-multi-threading": true
+                            "enable-multi-threading": false
+                        }
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the checker produces a report if any peer uses the port assigned
+// to the CA daemon.
+func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true,
+                            "http-dedicated-listener": true
                         },
                         "peers": [
                             {
@@ -2573,7 +2625,67 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content,
 		"The HA 'foo' peer with the 'http://foobar:8000' URL is configured to use "+
-			"the same '8000' HTTP port as the Kea Control Agent.")
+			"the same HTTP port '8000' as the Kea Control Agent.")
+}
+
+// Test that the checker produces a report if the dedicated HTTP listener is
+// not enabled.
+func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true,
+                            "http-dedicated-listener": false
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "foo",
+                                "url": "http://foobar:8001"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "bar",
+                                "url": "http://barfoo:8001"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "foobar",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
+		ID:   42,
+		Name: dbmodel.DaemonNameCA,
+	})
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
+
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"is not configured to use dedicated HTTP listeners")
 }
 
 // Test that the checker produces no report if the configuration contains no
@@ -2581,13 +2693,17 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
         "hooks-libraries": [
             {
                 "library": "/libdhcp_ha.so",
                 "parameters": {
                     "high-availability": [{
                         "multi-threading": {
-                            "enable-multi-threading": true
+                            "enable-multi-threading": true,
+                            "http-dedicated-listener": true
                         },
                         "peers": [
                             {
