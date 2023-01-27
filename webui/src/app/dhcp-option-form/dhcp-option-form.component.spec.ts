@@ -383,13 +383,13 @@ describe('DhcpOptionFormComponent', () => {
         component.formGroup.get('optionCode').setValue(3)
         fixture.detectChanges()
 
-        let event = {
+        const event = {
             value: 3,
         }
         component.onOptionCodeChange(event)
         expect(component.optionFields.length).toBe(1)
 
-        let field: DhcpOptionFieldFormGroup = component.optionFields.at(0) as DhcpOptionFieldFormGroup
+        let field = component.optionFields.at(0) as DhcpOptionFieldFormGroup
         expect(field).toBeTruthy()
         expect(field.data.fieldType).toBe(DhcpOptionFieldType.IPv4Address)
 
@@ -410,7 +410,7 @@ describe('DhcpOptionFormComponent', () => {
         component.formGroup.get('optionCode').setValue(89)
         fixture.detectChanges()
 
-        let event = {
+        const event = {
             value: 89,
         }
         component.onOptionCodeChange(event)
@@ -424,7 +424,7 @@ describe('DhcpOptionFormComponent', () => {
             DhcpOptionFieldType.IPv6Prefix,
         ]
         for (let i = 0; i < expectedFieldTypes.length; i++) {
-            let field: DhcpOptionFieldFormGroup = component.optionFields.at(i) as DhcpOptionFieldFormGroup
+            const field = component.optionFields.at(i) as DhcpOptionFieldFormGroup
             expect(field).toBeTruthy()
             expect(field.data.fieldType).toBe(expectedFieldTypes[i])
         }
@@ -435,7 +435,7 @@ describe('DhcpOptionFormComponent', () => {
         component.formGroup.get('optionCode').setValue(254)
         fixture.detectChanges()
 
-        let event = {
+        const event = {
             value: 254,
         }
         component.onOptionCodeChange(event)
@@ -448,7 +448,7 @@ describe('DhcpOptionFormComponent', () => {
         expect(helptip).toBeFalsy()
 
         component.formGroup.get('optionCode').setValue(85)
-        let event = {
+        const event = {
             value: 85,
         }
         component.onOptionCodeChange(event)
@@ -467,10 +467,10 @@ describe('DhcpOptionFormComponent', () => {
             array: false,
             encapsulate: 'dhcp-agent-options-space',
         }
-        let codes = component.getStandardDhcpOptionDefCodes()
+        const codes = component.getStandardDhcpOptionDefCodes()
         expect(codes.length).toBe(20)
 
-        let expectedCodes = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 151, 152]
+        const expectedCodes = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 151, 152]
         expect(codes).toEqual(expectedCodes)
     })
 
@@ -485,13 +485,13 @@ describe('DhcpOptionFormComponent', () => {
             recordTypes: ['uint8', 'uint8', 'uint8', 'ipv4-address', 'ipv6-prefix'],
         }
         component.v6 = true
-        let codes = component.getStandardDhcpOptionDefCodes()
+        const codes = component.getStandardDhcpOptionDefCodes()
         expect(codes.length).toBe(1)
         expect(codes[0]).toBe(93)
     })
 
     it('should return an empty array of option definition codes when option definition is unavailable', () => {
-        let codes = component.getStandardDhcpOptionDefCodes()
+        const codes = component.getStandardDhcpOptionDefCodes()
         expect(codes).toBeTruthy()
         expect(codes.length).toBe(0)
     })

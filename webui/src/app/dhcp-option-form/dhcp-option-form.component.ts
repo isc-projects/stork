@@ -11,11 +11,9 @@ import { StorkValidators } from '../validators'
 import { DhcpOptionDef } from '../dhcp-option-def'
 
 /**
- * An interface to a function adding a field to the form.
+ * A signature to a function adding a field to the form.
  */
-interface AddFieldFn {
-    (): void
-}
+type AddFieldFn = () => void
 
 /**
  * A component providing a form to edit DHCP option information.
