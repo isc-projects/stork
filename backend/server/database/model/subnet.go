@@ -228,7 +228,6 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 					pool.LowerBound, pool.UpperBound, subnet.ID)
 			}
 		}
-
 		subnet.AddressPools[i] = pool
 	}
 
