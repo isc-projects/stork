@@ -669,7 +669,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 			}
 		} else {
 			err = UpdateSubnet(tx, subnet)
-			err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s to the database",
+			err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s in the database",
 				subnet.Prefix)
 		}
 		if err != nil {
