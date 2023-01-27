@@ -180,7 +180,7 @@ func (s *Subnet) GetFamily() int {
 // Add address and prefix pools from the subnet instance and remove the ones
 // that no longer belong to the subnet in a transaction.
 // The subnet is expected to exist in the database.
-func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
+func addAndClearSubnetPools(dbi dbops.DBI, subnet *Subnet) (err error) {
 	// Remove out-of-date pools.
 	existingAddressPoolIDs := []int64{}
 	for _, p := range subnet.AddressPools {
@@ -188,7 +188,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 			existingAddressPoolIDs = append(existingAddressPoolIDs, p.ID)
 		}
 	}
-	q := tx.Model((*AddressPool)(nil)).
+	q := dbi.Model((*AddressPool)(nil)).
 		Where("subnet_id = ?", subnet.ID)
 	if len(existingAddressPoolIDs) != 0 {
 		q = q.WhereIn("id NOT IN (?)", existingAddressPoolIDs)
@@ -203,7 +203,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 			existingPrefixPoolIDs = append(existingPrefixPoolIDs, p.ID)
 		}
 	}
-	q = tx.Model((*PrefixPool)(nil)).
+	q = dbi.Model((*PrefixPool)(nil)).
 		Where("subnet_id = ?", subnet.ID)
 	if len(existingPrefixPoolIDs) != 0 {
 		q = q.WhereIn("id NOT IN (?)", existingPrefixPoolIDs)
@@ -222,7 +222,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool := p
 		pool.SubnetID = subnet.ID
 		if pool.ID == 0 {
-			_, err = tx.Model(&pool).Insert()
+			_, err = dbi.Model(&pool).Insert()
 			if err != nil {
 				return pkgerrors.Wrapf(err, "problem adding address pool %s-%s for subnet with ID %d",
 					pool.LowerBound, pool.UpperBound, subnet.ID)
@@ -236,7 +236,7 @@ func addAndClearSubnetPools(tx *pg.Tx, subnet *Subnet) (err error) {
 		pool := p
 		pool.SubnetID = subnet.ID
 		if p.ID == 0 {
-			_, err = tx.Model(&pool).Insert()
+			_, err = dbi.Model(&pool).Insert()
 			if err != nil {
 				err = pkgerrors.Wrapf(err, "problem adding prefix pool %s for subnet with ID %d",
 					pool.Prefix, subnet.ID)
@@ -263,16 +263,16 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
 }
 
 // Updates a subnet and its pools in the database within a transaction.
-func updateSubnetWithPools(tx *pg.Tx, subnet *Subnet) (err error) {
+func updateSubnetWithPools(dbi dbops.DBI, subnet *Subnet) (err error) {
 	// Update the subnet first.
-	_, err = tx.Model(subnet).WherePK().Update()
+	_, err = dbi.Model(subnet).WherePK().Update()
 
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 	// Add the pools.
-	return addAndClearSubnetPools(tx, subnet)
+	return addAndClearSubnetPools(dbi, subnet)
 }
 
 // Adds a subnet with its pools into the database. If the subnet has any
@@ -286,19 +286,6 @@ func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 		})
 	}
 	return addSubnetWithPools(dbi.(*pg.Tx), subnet)
-}
-
-// Updates a subnet with its pools in the database. If the subnet has any
-// associations with a shared network, those associations are also updated
-// in the database. It begins a new transaction when dbi has a *pg.DB type or
-// uses an existing transaction when dbi has a *pg.Tx type.
-func UpdateSubnet(dbi dbops.DBI, subnet *Subnet) error {
-	if db, ok := dbi.(*pg.DB); ok {
-		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return updateSubnetWithPools(tx, subnet)
-		})
-	}
-	return updateSubnetWithPools(dbi.(*pg.Tx), subnet)
 }
 
 // Fetches the subnet and its pools by id from the database.
@@ -668,7 +655,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 				addedSubnets = append(addedSubnets, subnet)
 			}
 		} else {
-			err = UpdateSubnet(tx, subnet)
+			err = updateSubnetWithPools(tx, subnet)
 			err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s in the database",
 				subnet.Prefix)
 		}

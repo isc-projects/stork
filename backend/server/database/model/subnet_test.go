@@ -1080,7 +1080,7 @@ func TestUpdateSubnet(t *testing.T) {
 	subnet.SharedNetworkID = sharedNetworkBar.ID
 	subnet.Hosts = []Host{{Hostname: "bar"}}
 
-	err = UpdateSubnet(db, subnet)
+	err = updateSubnetWithPools(db, subnet)
 
 	// Assert
 	require.NoError(t, err)
