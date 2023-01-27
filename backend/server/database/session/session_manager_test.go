@@ -116,6 +116,9 @@ func TestLogOutUser(t *testing.T) {
 
 	ctx := context.Background()
 
+	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+
 	// Create user to be logged to the system.
 	user := &dbmodel.SystemUser{
 		ID:       1,
@@ -136,22 +139,73 @@ func TestLogOutUser(t *testing.T) {
 		},
 	}
 
-	ctx, err = mgr.Load(ctx, "")
-	require.NoError(t, err)
+	// Flag which indicates if login should be performed on the response handler.
+	performLogin := true
 
-	err = mgr.LoginHandler(ctx, user)
-	require.NoError(t, err)
+	// Run the middleware.
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if performLogin {
+			// Simulate user login to the system.
+			err := mgr.LoginHandler(r.Context(), user)
+			require.NoError(t, err)
 
+			// Check that the user has been logged
+			logged, userSession := mgr.Logged(r.Context())
+
+			// ... and that user data was stored in the session.
+			require.True(t, logged)
+			require.NotNil(t, userSession)
+			require.Equal(t, user.ID, userSession.ID)
+			require.Equal(t, user.Login, userSession.Login)
+			require.Equal(t, user.Email, userSession.Email)
+			require.Equal(t, user.Lastname, userSession.Lastname)
+			require.Equal(t, user.Name, userSession.Name)
+
+			require.Len(t, userSession.Groups, 2)
+			require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))
+			require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 25}))
+		}
+
+		// Store the context so that it can be checked after the session is
+		// stored in the database.
+		ctx = r.Context()
+	}
+
+	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))
+	middlewareFunc.ServeHTTP(w, req)
+	resp := w.Result()
+	require.Equal(t, resp.StatusCode, 200)
+
+	// The context has proper data in sync with the data in the database.
+	// The user should have a valid session.
 	logged, su := mgr.Logged(ctx)
 	require.True(t, logged)
 	require.Equal(t, user.ID, su.ID)
 
-	err = mgr.LogoutUser(ctx, su)
+	resp.Body.Close()
+
+	// The LogoutUser will remove the session from the database, but it won't
+	// update the data in the context used by the function call.
+	// Usually the function is called using the context of the administator which
+	// is deleting a user and the updated context is the context of the user
+	// being deleted. To get the right context, the context needs to be retrieved
+	// from the handler once again.
+	err = mgr.LogoutUser(ctx, user)
 	require.NoError(t, err)
 
-	err = mgr.LogoutHandler(ctx)
-	require.NoError(t, err)
+	// Update the flag so calling the handler will only retrieve the updated
+	// context.
+	performLogin = false
 
+	// Perform the request and retrieve the updated context.
+	middlewareFunc.ServeHTTP(w, req)
+	resp = w.Result()
+	require.Equal(t, resp.StatusCode, 200)
+
+	// The context has proper data in sync with the data in the database.
+	// The user should not have a valid session.
 	logged, _ = mgr.Logged(ctx)
 	require.False(t, logged)
+
+	resp.Body.Close()
 }

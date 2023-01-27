@@ -87,7 +87,7 @@ func (s *SessionMgr) LogoutUser(ctx context.Context, user *dbmodel.SystemUser) e
 		id := s.scsSessionMgr.GetInt(ctx, "userID")
 
 		if id == user.ID {
-			return s.scsSessionMgr.Destroy(ctx)
+			return s.LogoutHandler(ctx)
 		}
 
 		return nil
@@ -95,6 +95,7 @@ func (s *SessionMgr) LogoutUser(ctx context.Context, user *dbmodel.SystemUser) e
 	if err != nil {
 		return errors.Wrapf(err, "error while destroying a user session")
 	}
+
 	return nil
 }
 
