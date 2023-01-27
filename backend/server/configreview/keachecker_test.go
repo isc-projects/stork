@@ -2249,63 +2249,8 @@ func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
 	require.Nil(t, report)
 }
 
-// Benchmark measuring performance of a Kea configuration checker that detects
-// subnets in which the out-of-pool host reservation mode is recommended.
-func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
-	// Create 10.000 subnets with a pool and out of pool reservation.
-	subnets := []interface{}{}
-	for i := 0; i < 10000; i++ {
-		prefix := fmt.Sprintf("192.%d.%d", i/256, i%256)
-		subnet := map[string]interface{}{
-			"subnet": fmt.Sprintf("%s.0/24", prefix),
-			"pools": []map[string]interface{}{
-				{
-					"pool": fmt.Sprintf("%s.10 - %s.100", prefix, prefix),
-				},
-			},
-			"reservations": []map[string]interface{}{
-				{
-					"ip-address": fmt.Sprintf("%s.5", prefix),
-				},
-			},
-		}
-		subnets = append(subnets, subnet)
-	}
-
-	// Create Kea DHCPv4 configuration with the subnets.
-	configMap := map[string]interface{}{
-		"Dhcp4": map[string]interface{}{
-			"subnet4": subnets,
-		},
-	}
-	configStr, err := json.Marshal(configMap)
-	if err != nil {
-		b.Fatalf("failed to marshal configuration map: %+v", err)
-	}
-	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
-	if err != nil {
-		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
-	}
-
-	// The benchmark starts here.
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ctx := newReviewContext(nil, &dbmodel.Daemon{
-			ID:   1,
-			Name: dbmodel.DaemonNameDHCPv4,
-			KeaDaemon: &dbmodel.KeaDaemon{
-				Config: config,
-			},
-		}, ManualRun, nil)
-		_, err = reservationsOutOfPool(ctx)
-		if err != nil {
-			b.Fatalf("checker failed: %+v", err)
-		}
-	}
-}
-
-// Test that the checker produces no report if the top multi-threading
-// is disabled.
+// Test that the HA MT mode checker produces no report if the top
+// multi-threading is disabled.
 func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2341,8 +2286,8 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *t
 	require.NoError(t, err)
 }
 
-// Test that the checker produces no report if the top multi-threading
-// is disabled and the HA-level multi-threading is enabled.
+// Test that the HA MT mode checker produces no report if the top
+// multi-threading is disabled and the HA-level multi-threading is enabled.
 func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2381,7 +2326,7 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
 	require.NoError(t, err)
 }
 
-// Test that the checker produces no report if the HA is not configured.
+// Test that the HA MT mode checker produces no report if the HA is not configured.
 func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2398,8 +2343,8 @@ func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the checker produces a report if the top multi-threading is
-// enabled but the HA is configured to use single thread.
+// Test that the HA MT mode checker produces a report if the top
+// multi-threading is enabled but the HA is configured to use single thread.
 func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
@@ -2441,8 +2386,8 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
 		"single-thread mode")
 }
 
-// Test that the checker produces no report if the configuration contains no
-// issues.
+// Test that the HA MT mode checker produces no report if the configuration
+// contains no issues.
 func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2494,7 +2439,8 @@ func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testin
 	require.NoError(t, err)
 }
 
-// Test that the checker produces no report if the HA is not configured.
+// Test that the HA dedicated ports checker produces no report if the HA is not
+// configured.
 func TestHighAvailabilityDedicatedPortsCheckerNoHA(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
@@ -2518,7 +2464,8 @@ func TestHighAvailabilityDedicatedPortsCheckerNoHA(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the checker produces no report if the HA configuration is missing.
+// Test that the HA dedicated ports checker produces no report if the HA
+// configuration is missing.
 func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2536,8 +2483,8 @@ func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the checker produces no report if the HA doesn't use the
-// multi-threading
+// Test that the HA dedicated ports checker produces no report if the HA
+// doesn't use the multi-threading
 func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2566,8 +2513,8 @@ func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T
 	require.NoError(t, err)
 }
 
-// Test that the checker produces a report if any peer uses the port assigned
-// to the CA daemon.
+// Test that the HA dedicated ports checker produces a report if any peer uses
+// the port assigned to the CA daemon.
 func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2628,8 +2575,8 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 			"the same HTTP port '8000' as the Kea Control Agent.")
 }
 
-// Test that the checker produces a report if the dedicated HTTP listener is
-// not enabled.
+// Test that the HA dedicated ports checker produces a report if the dedicated
+// HTTP listener is not enabled.
 func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2688,8 +2635,8 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
 		"is not configured to use dedicated HTTP listeners")
 }
 
-// Test that the checker produces no report if the configuration contains no
-// issue.
+// Test that the HA dedicated ports checker produces no report if the
+// configuration contains no issue.
 func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
@@ -2740,6 +2687,61 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 	// Assert
 	require.Nil(t, report)
 	require.NoError(t, err)
+}
+
+// Benchmark measuring performance of a Kea configuration checker that detects
+// subnets in which the out-of-pool host reservation mode is recommended.
+func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
+	// Create 10.000 subnets with a pool and out of pool reservation.
+	subnets := []interface{}{}
+	for i := 0; i < 10000; i++ {
+		prefix := fmt.Sprintf("192.%d.%d", i/256, i%256)
+		subnet := map[string]interface{}{
+			"subnet": fmt.Sprintf("%s.0/24", prefix),
+			"pools": []map[string]interface{}{
+				{
+					"pool": fmt.Sprintf("%s.10 - %s.100", prefix, prefix),
+				},
+			},
+			"reservations": []map[string]interface{}{
+				{
+					"ip-address": fmt.Sprintf("%s.5", prefix),
+				},
+			},
+		}
+		subnets = append(subnets, subnet)
+	}
+
+	// Create Kea DHCPv4 configuration with the subnets.
+	configMap := map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": subnets,
+		},
+	}
+	configStr, err := json.Marshal(configMap)
+	if err != nil {
+		b.Fatalf("failed to marshal configuration map: %+v", err)
+	}
+	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
+	if err != nil {
+		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
+	}
+
+	// The benchmark starts here.
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ctx := newReviewContext(nil, &dbmodel.Daemon{
+			ID:   1,
+			Name: dbmodel.DaemonNameDHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config: config,
+			},
+		}, ManualRun, nil)
+		_, err = reservationsOutOfPool(ctx)
+		if err != nil {
+			b.Fatalf("checker failed: %+v", err)
+		}
+	}
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects
