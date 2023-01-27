@@ -2,8 +2,9 @@
 
     Added a configuration review checkers to detect common misconfigurations
     related to the HA multi-threading mode. The first checker suggests enabling
-    the HA+MT if Kea uses multi-threading and the second validates that the
-    Kea Control Agent does not use the HTTP ports of the HA peers.
+    the HA+MT if Kea uses multi-threading and the second validates that HA
+    peers use dedicated ports rather than Kea Control Agent's port when the
+    dedicated listeners are enabled.
     (Gitlab #944)
 
 Stork 1.9.0 released on 2023-02-01.
