@@ -2484,7 +2484,7 @@ func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 }
 
 // Test that the HA dedicated ports checker produces no report if the HA
-// doesn't use the multi-threading
+// doesn't use the multi-threading.
 func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
