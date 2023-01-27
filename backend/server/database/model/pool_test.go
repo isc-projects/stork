@@ -169,6 +169,19 @@ func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
 	require.False(t, equity)
 }
 
+// Test that two prefix pools have unequal data if their excluded prefixes differ.
+func TestPrefixPoolEqualsDataExcludedPrefix(t *testing.T) {
+	// Arrange
+	first := &PrefixPool{ExcludedPrefix: "fe80::/80"}
+	second := &PrefixPool{ExcludedPrefix: "3001::/80"}
+
+	// Act
+	equity := first.EqualsData(second)
+
+	// Assert
+	require.False(t, equity)
+}
+
 // Test that two prefix pools have equal data if their IDs differ.
 func TestPrefixPoolEqualsDataID(t *testing.T) {
 	// Arrange
@@ -225,21 +238,23 @@ func TestPrefixPoolEqualsDataSubnet(t *testing.T) {
 func TestPrefixPoolEqualsDataTheSame(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{
-		ID:           42,
-		CreatedAt:    time.Time{},
-		Prefix:       "fe80::/64",
-		DelegatedLen: 80,
-		SubnetID:     24,
-		Subnet:       &Subnet{},
+		ID:             42,
+		CreatedAt:      time.Time{},
+		Prefix:         "fe80::/64",
+		DelegatedLen:   80,
+		SubnetID:       24,
+		Subnet:         &Subnet{},
+		ExcludedPrefix: "fe80::/80",
 	}
 
 	second := &PrefixPool{
-		ID:           42,
-		CreatedAt:    time.Time{},
-		Prefix:       "fe80::/64",
-		DelegatedLen: 80,
-		SubnetID:     24,
-		Subnet:       &Subnet{},
+		ID:             42,
+		CreatedAt:      time.Time{},
+		Prefix:         "fe80::/64",
+		DelegatedLen:   80,
+		SubnetID:       24,
+		Subnet:         &Subnet{},
+		ExcludedPrefix: "fe80::/80",
 	}
 
 	// Act

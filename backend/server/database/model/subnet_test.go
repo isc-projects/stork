@@ -1084,7 +1084,7 @@ func TestUpdateSubnet(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	subnets, _, _ := GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAny)
+	subnets, _, _ := GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.Len(t, subnets, 1)
 	subnet = &subnets[0]
 
