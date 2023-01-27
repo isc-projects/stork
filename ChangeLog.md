@@ -1,6 +1,6 @@
 * 277 [bug] slawek
 
-    Fixed a bug that prevents the machines from deleting.
+    Fixed a bug that prevented the machines from deleting.
     (Gitlab #928)
 
 * 276 [func] razvan
