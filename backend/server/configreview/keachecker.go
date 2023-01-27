@@ -834,7 +834,7 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 	return candidate.GetNetworkPrefixWithLength(), true
 }
 
-// The checker validates that the HA is running in multithreading mode if the
+// The checker verifies that the HA is running in multi-threading mode if
 // Kea uses this mode.
 func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
@@ -912,13 +912,13 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 		for _, accessPoint := range ctx.subjectDaemon.App.AccessPoints {
 			if accessPoint.Address != urlObj.Hostname() {
-				// There is no port collision due to the ports belong to different hosts.
+				// There is no port collision because the ports belong to different hosts.
 				continue
 			}
 			if accessPoint.Port == port {
 				// Port collision.
 				report := NewReport(ctx, fmt.Sprintf("The HA '%s' peer with the '%s' URL is "+
-					"configured to use the same '%d' HTTP port as the '%s' "+
+					"configured to use the same HTTP port '%d' as the '%s' "+
 					"access point. It may cause the bottlenecks that nullify "+
 					"any performance gains offered by HA+MT",
 					*peer.Name, *peer.URL, port, accessPoint.Type)).

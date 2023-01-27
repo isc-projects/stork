@@ -189,7 +189,7 @@ export class ConfigCheckerPreferencePickerComponent {
             case 'ha_mt_presence':
                 return (
                     'The checker verifies if the High-Availability hook is ' +
-                    'running in the multi-threading mode if the Kea itself uses ' +
+                    'running in the multi-threading mode when Kea is running in ' +
                     'this mode.'
                 )
             case 'ha_dedicated_ports':

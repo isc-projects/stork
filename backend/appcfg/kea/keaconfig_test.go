@@ -1031,8 +1031,8 @@ func TestGetMultiThreadingEntry(t *testing.T) {
 	require.EqualValues(t, 16, *multiThreading.PacketQueueSize)
 }
 
-// Test that the top-level multi-threading parameters is returned even if there
-// is no parameters.
+// Test that the top-level multi-threading structure is returned even if it
+// includes no parameters.
 func TestGetMultiThreadingEntryMissingParameters(t *testing.T) {
 	// Arrange
 	configStr := `{ "Dhcp4": { "multi-threading": { } } }`
