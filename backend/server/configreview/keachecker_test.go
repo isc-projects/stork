@@ -2573,7 +2573,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content,
 		"The HA 'foo' peer with the 'http://foobar:8000' URL is configured to use "+
-			"the same '8000' HTTP port as the 'control' access point.")
+			"the same '8000' HTTP port as the Kea Control Agent.")
 }
 
 // Test that the checker produces no report if the configuration contains no

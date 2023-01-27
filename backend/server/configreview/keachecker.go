@@ -911,6 +911,10 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		}
 
 		for _, accessPoint := range ctx.subjectDaemon.App.AccessPoints {
+			if accessPoint.Type != dbmodel.AccessPointControl {
+				continue
+			}
+
 			if accessPoint.Address != urlObj.Hostname() {
 				// There is no port collision because the ports belong to different hosts.
 				continue
@@ -918,10 +922,10 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 			if accessPoint.Port == port {
 				// Port collision.
 				report := NewReport(ctx, fmt.Sprintf("The HA '%s' peer with the '%s' URL is "+
-					"configured to use the same HTTP port '%d' as the '%s' "+
-					"access point. It may cause the bottlenecks that nullify "+
+					"configured to use the same HTTP port '%d' as the Kea"+
+					"Control Agent. It may cause the bottlenecks that nullify "+
 					"any performance gains offered by HA+MT",
-					*peer.Name, *peer.URL, port, accessPoint.Type)).
+					*peer.Name, *peer.URL, port)).
 					referencingDaemon(ctx.subjectDaemon)
 
 				for _, daemon := range caDaemons {
