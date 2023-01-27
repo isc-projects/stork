@@ -1,6 +1,6 @@
 * 272 [func] tomek
 
-    Stork agent and server now have logging levels configurable using
+    Stork agent, server and tool now have logging levels configurable using
     STORK_LOG_LEVEL environment variable. The allowed values are:
     DEBUG, INFO, WARN, ERROR
     (Gitlab #870)

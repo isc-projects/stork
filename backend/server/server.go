@@ -84,7 +84,10 @@ type Settings struct {
 // Returns the expected command to run and error.
 func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	shortDescription := "Stork Server"
-	longDescription := "Stork Server is a Kea and BIND 9 dashboard"
+	longDescription := `Stork Server is a Kea and BIND 9 dashboard
+
+Stork logs on INFO level by default. Other levels can be configured using the
+STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 
 	// Process command line flags.
 	// Process the environment file flag.
