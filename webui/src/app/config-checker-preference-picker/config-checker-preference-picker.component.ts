@@ -194,8 +194,11 @@ export class ConfigCheckerPreferencePickerComponent {
                 )
             case 'ha_dedicated_ports':
                 return (
-                    'The checker verifies if any HTTP port assigned to ' +
-                    'the HA peers is not used by the Kea Control Agent.'
+                    'The checker verifies that the multi-threading mode of ' +
+                    'High Availability is enabled together with the ' +
+                    'dedicated HTTP listeners. The checker detects ' +
+                    'collisions between HTTP ports assigned to the HA peers ' +
+                    'and the port used by the Kea Control Agent.'
                 )
             default:
                 return ''
