@@ -100,7 +100,6 @@
           description: Updated user account information and password
           schema:
             $ref: "#/definitions/UserAccount"
-
       responses:
         200:
           description: User account successfully updated.
@@ -131,7 +130,6 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
-
     delete:
       summary: Delete the specific user.
       description: Deletes user by id.

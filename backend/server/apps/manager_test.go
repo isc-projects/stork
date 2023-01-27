@@ -596,9 +596,6 @@ func TestCommitDueDeleteError(t *testing.T) {
 	})
 	require.NotNil(t, manager)
 
-	_, err = dbmodel.DeleteUser(db, user)
-	require.NoError(t, err)
-
 	// Replace the interface for committing changes in the Kea
 	// configuration module for the fake one.
 	impl := manager.(*configManagerImpl)
@@ -619,8 +616,12 @@ func TestCommitDueDeleteError(t *testing.T) {
 	}
 	for i := range changes {
 		err := dbmodel.AddScheduledConfigChange(db, &changes[i])
-		require.Error(t, err)
+		require.NoError(t, err)
 	}
+
+	err = dbmodel.DeleteUser(db, user)
+	require.NoError(t, err)
+
 	// Commit due changes.
 	err = manager.CommitDue()
 	require.NoError(t, err)

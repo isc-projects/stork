@@ -18,7 +18,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { RouterTestingModule } from '@angular/router/testing'
 import { ReactiveFormsModule } from '@angular/forms'
 import { AuthService } from '../auth.service'
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -67,7 +67,7 @@ describe('UsersPageComponent', () => {
                     provide: AuthService,
                     useValue: {
                         currentUser: of({}),
-                        currentUserValue: {id: 1}
+                        currentUserValue: { id: 1 },
                     },
                 },
                 {
@@ -75,7 +75,7 @@ describe('UsersPageComponent', () => {
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
                         queryParamMap: of(new MockParamMap()),
-                        paramMap: paramMapValue.asObservable()
+                        paramMap: paramMapValue.asObservable(),
                     },
                 },
             ],
@@ -106,7 +106,7 @@ describe('UsersPageComponent', () => {
         expect(breadcrumbsComponent.items[1].label).toEqual('Users')
     })
 
-    it('delete user', async () => {
+    it('should delete user when pressing delete button', async () => {
         spyOn(confirmService, 'confirm').and.callThrough()
         spyOn(usersApi, 'deleteUser')
         component.ngOnInit()
@@ -122,7 +122,7 @@ describe('UsersPageComponent', () => {
                 login: '',
                 name: 'user_one',
                 email: 'user_one@isc.org',
-                groups: []
+                groups: [],
             },
             {
                 id: 2,
@@ -130,8 +130,8 @@ describe('UsersPageComponent', () => {
                 login: '',
                 name: 'user_two',
                 email: 'user_two@isc.org',
-                groups: []
-            }
+                groups: [],
+            },
         ]
         component.totalUsers = 2
         fixture.detectChanges()

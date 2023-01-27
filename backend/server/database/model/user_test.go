@@ -171,13 +171,11 @@ func TestDeleteUser(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	con, err = DeleteUser(db, user)
-	require.False(t, con)
+	err = DeleteUser(db, user)
 	require.NoError(t, err)
 
 	// An attempt to delete the same user should result in an error.
-	con, err = DeleteUser(db, user)
-	require.False(t, con)
+	err = DeleteUser(db, user)
 	require.Error(t, err)
 	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
 }
@@ -407,10 +405,10 @@ func TestUserGroups(t *testing.T) {
 		Password: "pass",
 		Groups: []*SystemGroup{
 			{
-				ID: 1,
+				ID: SuperAdminGroupID,
 			},
 			{
-				ID: 2,
+				ID: AdminGroupID,
 			},
 		},
 	}
@@ -514,7 +512,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Password: "pass",
 		Groups: []*SystemGroup{
 			{
-				ID: 1,
+				ID: SuperAdminGroupID,
 			},
 		},
 	}
@@ -522,13 +520,11 @@ func TestDeleteUserInGroup(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	con, err = DeleteUser(db, user)
-	require.False(t, con)
+	err = DeleteUser(db, user)
 	require.NoError(t, err)
 
 	// An attempt to delete the same user should result in an error.
-	con, err = DeleteUser(db, user)
-	require.False(t, con)
+	err = DeleteUser(db, user)
 	require.Error(t, err)
 	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
 }

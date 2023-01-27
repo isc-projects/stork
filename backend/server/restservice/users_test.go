@@ -135,7 +135,7 @@ func TestDeleteUser(t *testing.T) {
 		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: 1,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -184,7 +184,7 @@ func TestDeleteUser(t *testing.T) {
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
 
 	params = users.DeleteUserParams{
@@ -213,7 +213,7 @@ func TestDeleteUser(t *testing.T) {
 	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
 }
 
-// Tests that user account can be deleted via REST API.
+// Tests that super-admin user account can be deleted via REST API.
 func TestDeleteUserInGroup(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -235,7 +235,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: 1,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -251,7 +251,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: 1,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -288,7 +288,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
 
 	params = users.DeleteUserParams{

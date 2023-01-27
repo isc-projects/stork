@@ -124,7 +124,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 		log.WithFields(log.Fields{
 			"start": start,
 			"limit": limit,
-		}).Errorf("Failed to get users from the database with error: %s", err.Error())
+		}).WithError(err).Errorf("Failed to get users from the database")
 
 		msg := "Failed to get users from the database"
 		rspErr := models.APIError{
@@ -145,20 +145,18 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
-		}).Errorf("Failed to fetch user with ID %v from the database with error: %s", id,
-			err.Error())
+		}).WithError(err).Errorf("Failed to fetch user with ID %d from the database", id)
 
-		msg := "Failed to fetch user with ID %v from the database"
+		msg := fmt.Sprintf("Failed to fetch user with ID %d from the database", id)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		rsp := users.NewGetUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
-	} else if su == nil {
-		msg := fmt.Sprintf("Failed to find user with ID %v in the database", id)
-		log.WithFields(log.Fields{
-			"userid": id,
-		}).Error(msg)
+	}
+	if su == nil {
+		msg := fmt.Sprintf("Failed to find user with ID %d in the database", id)
+		log.WithField("userid", id).Error(msg)
 
 		rspErr := models.APIError{
 			Message: &msg,
@@ -273,9 +271,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 	con, err := dbmodel.UpdateUser(r.DB, su)
 	if con {
-		log.WithFields(log.Fields{
-			"userid": *u.ID,
-		}).Infof("Failed to update user account for user %s: %s", su.Identity(), err.Error())
+		log.WithField("userid", *u.ID).WithError(err).Infof("Failed to update user account for user %s", su.Identity())
 
 		msg := "User account with provided login/email already exists"
 		rspErr := models.APIError{
@@ -288,8 +284,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 			"userid": *u.ID,
 			"login":  *u.Login,
 			"email":  *u.Email,
-		}).Errorf("Failed to update user account for user %s: %s",
-			su.Identity(), err.Error())
+		}).WithError(err).Errorf("Failed to update user account for user %s", su.Identity())
 
 		msg := fmt.Sprintf("Failed to update user account for user %s", su.Identity())
 		rspErr := models.APIError{
@@ -308,15 +303,13 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 
 	_, currentUser := r.SessionManager.Logged(ctx)
 	if currentUser.ID == id {
-		log.WithFields(log.Fields{
-			"userid": id,
-		}).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
+		log.WithField("userid", id).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
 
 		msg := "User account with provided login/email tries to delete itself"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewDeleteUserDefault(http.StatusConflict).WithPayload(&rspErr)
+		rsp := users.NewDeleteUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 		return rsp
 	}
 
@@ -324,20 +317,19 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
-		}).Errorf("Failed to fetch user with ID %v from the database with error: %s", id,
+		}).Errorf("Failed to fetch user with ID %d from the database with error: %s", id,
 			err.Error())
 
-		msg := "Failed to fetch user with ID %v from the database"
+		msg := fmt.Sprintf("Failed to fetch user with ID %d from the database", id)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		rsp := users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
-	} else if su == nil {
-		msg := fmt.Sprintf("Failed to find user with ID %v in the database", id)
-		log.WithFields(log.Fields{
-			"userid": id,
-		}).Error(msg)
+	}
+	if su == nil {
+		msg := fmt.Sprintf("Failed to find user with ID %d in the database", id)
+		log.WithField("userid", id).Error(msg)
 
 		rspErr := models.APIError{
 			Message: &msg,
@@ -346,19 +338,8 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 		return rsp
 	}
 
-	con, err := dbmodel.DeleteUser(r.DB, su)
-	if con {
-		log.WithFields(log.Fields{
-			"userid": id,
-		}).Infof("Failed to delete user account for user %s: %s", su.Identity(), err.Error())
-
-		msg := "User account with provided login/email does not exist"
-		rspErr := models.APIError{
-			Message: &msg,
-		}
-		rsp := users.NewDeleteUserDefault(http.StatusConflict).WithPayload(&rspErr)
-		return rsp
-	} else if err != nil {
+	err = dbmodel.DeleteUser(r.DB, su)
+	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
 			"login":  su.Login,
@@ -380,8 +361,7 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 			"userid": id,
 			"login":  su.Login,
 			"email":  su.Email,
-		}).Errorf("Failed to logout user account for user %s: %s",
-			su.Identity(), err.Error())
+		}).WithError(err).Errorf("Failed to logout user account for user %s", su.Identity())
 
 		msg := fmt.Sprintf("Failed to logout user account for user %s", su.Identity())
 		rspErr := models.APIError{

@@ -152,6 +152,6 @@ func TestLogOutUser(t *testing.T) {
 	err = mgr.LogoutHandler(ctx)
 	require.NoError(t, err)
 
-	logged, su = mgr.Logged(ctx)
+	logged, _ = mgr.Logged(ctx)
 	require.False(t, logged)
 }
