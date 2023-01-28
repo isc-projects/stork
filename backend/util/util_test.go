@@ -348,12 +348,12 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set
 // logging level. Tests positive and negative cases.
 func TestLoggingLevel(t *testing.T) {
-	type testcase struct {
+	type testCase struct {
 		env string
 		lv  log.Level
 	}
 
-	testcases := []testcase{
+	testCases := []testCase{
 		// positive cases
 		{env: "DEBUG", lv: log.DebugLevel},
 		{env: "INFO", lv: log.InfoLevel},
@@ -370,7 +370,7 @@ func TestLoggingLevel(t *testing.T) {
 	restore := testutil.CreateEnvironmentRestorePoint()
 	defer restore()
 
-	for _, test := range testcases {
+	for _, test := range testCases {
 		t.Run(test.env, func(t *testing.T) {
 			if test.env != "-" {
 				// special case "-" means to unset the variable
