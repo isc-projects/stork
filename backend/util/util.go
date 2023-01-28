@@ -108,6 +108,9 @@ func IsHexIdentifier(text string) bool {
 	return pattern.MatchString(strings.TrimSpace(text))
 }
 
+// Sets up the logging level. It's set to INFO, unless STORK_LOG_LEVEL
+// environment variable is present. If it is, its value governs the level.
+// Supported levels are: DEBUG, INFO, WARN, ERROR.
 func SetupLoggingLevel() {
 	// Setup logging level.
 	//
