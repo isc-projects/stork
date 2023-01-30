@@ -6,8 +6,8 @@ import (
 
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
-		_, err := db.Exec(
-			`-- Login is a convenient alternative to email. Also, the default
+		_, err := db.Exec(`
+             -- Login is a convenient alternative to email. Also, the default
              -- admin user has no email set initially.
              ALTER TABLE public.system_user
                ADD COLUMN login text;
@@ -54,11 +54,12 @@ func init() {
              -- The admin is the default user who can use the 'admin' password to
              -- login to the system.
              INSERT INTO public.system_user (login, password_hash, name, lastname)
-               VALUES ('admin', 'admin', 'admin', 'admin');`)
+               VALUES ('admin', 'admin', 'admin', 'admin');
+           `)
 		return err
 	}, func(db migrations.DB) error {
-		_, err := db.Exec(
-			`-- Deletes the default user.
+		_, err := db.Exec(`
+             -- Deletes the default user.
              DELETE FROM public.system_user
                WHERE login = 'admin';
 
@@ -82,7 +83,8 @@ func init() {
 
              -- Login is no longer used.
              ALTER TABLE public.system_user
-               DROP COLUMN login;`)
+               DROP COLUMN login;
+           `)
 		return err
 	})
 }

@@ -1,3 +1,9 @@
+* 276 [func] razvan
+
+    Added functionality for deteting users. A super-admin can not remove
+    it's own account and the last super-admin user can not be removed.
+    (Gitlab #117)
+
 * 275 [bug] slawek
 
     Fixed the security vulnerabilities reported by the Github Dependabot and

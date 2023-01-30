@@ -74,11 +74,8 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 // Destroys user session as a result of logout.
 func (s *SessionMgr) LogoutHandler(ctx context.Context) error {
 	err := s.scsSessionMgr.Destroy(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "error while destroying a user session")
-	}
 
-	return nil
+	return errors.Wrapf(err, "error while destroying a user session")
 }
 
 // Logout specific user.
@@ -92,11 +89,8 @@ func (s *SessionMgr) LogoutUser(ctx context.Context, user *dbmodel.SystemUser) e
 
 		return nil
 	})
-	if err != nil {
-		return errors.Wrapf(err, "error while destroying a user session")
-	}
 
-	return nil
+	return errors.Wrapf(err, "error while destroying a user session")
 }
 
 // Implements middleware which reads the session cookie, loads session data for the

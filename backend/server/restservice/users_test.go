@@ -12,8 +12,8 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/users"
 )
 
-// Tests that user account without necessary fields is rejected via REST API.
-func TestCreateUserNegative(t *testing.T) {
+// Tests that create user account without necessary fields is rejected via REST API.
+func TestCreateUserConflict(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -26,6 +26,7 @@ func TestCreateUserNegative(t *testing.T) {
 		Name:     "John",
 	}
 
+	// New user has empty email which conflicts with the default admin user empty email.
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
@@ -37,7 +38,65 @@ func TestCreateUserNegative(t *testing.T) {
 	rsp := rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
 	defaultRsp := rsp.(*users.CreateUserDefault)
-	require.Equal(t, 409, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email already exists", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with empty params is rejected via REST API.
+func TestCreateUserEmptyParams(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Try empty params - it should raise an error
+	params := users.CreateUserParams{}
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with empty request is rejected via REST API.
+func TestCreateUserEmptyRequest(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Try empty request - it should raise an error
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{},
+	}
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with missing data is rejected via REST API.
+func TestCreateUserMissingData(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Try missing data - it should raise an error
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User: &models.User{},
+		},
+	}
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
 }
 
 // Tests that user account can be created via REST API.
@@ -48,36 +107,6 @@ func TestCreateUser(t *testing.T) {
 	ctx := context.Background()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
-	// Try empty request, variant 1 - it should raise an error
-	params := users.CreateUserParams{}
-	rsp := rapi.CreateUser(ctx, params)
-	require.IsType(t, &users.CreateUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.CreateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
-
-	// Try empty request, variant 2 - it should raise an error
-	params = users.CreateUserParams{
-		Account: &models.UserAccount{},
-	}
-	rsp = rapi.CreateUser(ctx, params)
-	require.IsType(t, &users.CreateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.CreateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
-
-	// Try empty request, variant 3 - it should raise an error
-	params = users.CreateUserParams{
-		Account: &models.UserAccount{
-			User: &models.User{},
-		},
-	}
-	rsp = rapi.CreateUser(ctx, params)
-	require.IsType(t, &users.CreateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.CreateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
-
 	// Create the user and verify the response.
 	su := dbmodel.SystemUser{
 		Email:    "jb@example.org",
@@ -85,14 +114,14 @@ func TestCreateUser(t *testing.T) {
 		Login:    "jb",
 		Name:     "John",
 	}
-	params = users.CreateUserParams{
+	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
 
-	rsp = rapi.CreateUser(ctx, params)
+	rsp := rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserOK{}, rsp)
 	okRsp := rsp.(*users.CreateUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
@@ -109,8 +138,173 @@ func TestCreateUser(t *testing.T) {
 	// An attempt to create the same user should fail with HTTP error 409.
 	rsp = rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.CreateUserDefault)
+	defaultRsp := rsp.(*users.CreateUserDefault)
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
+}
+
+// Tests that delete user account with empty params is rejected via REST API.
+func TestDeleteUserEmptyParams(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new super-admin user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "White",
+		Name:     "John",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: dbmodel.SuperAdminGroupID,
+			},
+		},
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su2 := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err = dbmodel.CreateUser(db, &su2)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	err = rapi.SessionManager.LoginHandler(ctx, &su)
+	require.NoError(t, err)
+
+	// Try empty params - it should raise an error
+	params := users.DeleteUserParams{}
+	rsp := rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to find user with ID 0 in the database", *defaultRsp.Payload.Message)
+}
+
+// Tests that delete user account with invalid user ID is rejected via REST API.
+func TestDeleteUserInvalidUserID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new super-admin user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "White",
+		Name:     "John",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: dbmodel.SuperAdminGroupID,
+			},
+		},
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su2 := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err = dbmodel.CreateUser(db, &su2)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	err = rapi.SessionManager.LoginHandler(ctx, &su)
+	require.NoError(t, err)
+
+	// Try using invalid user ID - it should raise an error
+	params := users.DeleteUserParams{
+		ID: int64(su2.ID + 1),
+	}
+
+	rsp := rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
+}
+
+// Tests that delete user account with same user ID as current session is rejected via REST API.
+func TestDeleteUserSameUserAsSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new super-admin user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "White",
+		Name:     "John",
+		Password: "pass",
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID: dbmodel.SuperAdminGroupID,
+			},
+		},
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su2 := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err = dbmodel.CreateUser(db, &su2)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	err = rapi.SessionManager.LoginHandler(ctx, &su)
+	require.NoError(t, err)
+
+	// Try same user ID as current session - it should raise an error - trying to delete itself
+	params := users.DeleteUserParams{
+		ID: int64(su.ID),
+	}
+
+	rsp := rapi.DeleteUser(ctx, params)
+	require.IsType(t, &users.DeleteUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
 }
 
 // Tests that user account can be deleted via REST API.
@@ -156,42 +350,11 @@ func TestDeleteUser(t *testing.T) {
 
 	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
-
-	// Try wrong request, variant 1 - it should raise an error
-	params := users.DeleteUserParams{}
-	rsp := rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 0 in the database", *defaultRsp.Payload.Message)
-
-	// Try wrong request, variant 2 - it should raise an error
-	params = users.DeleteUserParams{
-		ID: int64(su2.ID + 1),
-	}
-
-	rsp = rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
-
-	// Try wrong request, variant 2 - it should raise an error - trying to delete itself
-	params = users.DeleteUserParams{
-		ID: int64(su.ID),
-	}
-
-	rsp = rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
-
-	params = users.DeleteUserParams{
+	params := users.DeleteUserParams{
 		ID: int64(su2.ID),
 	}
 
-	rsp = rapi.DeleteUser(ctx, params)
+	rsp := rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserOK{}, rsp)
 	okRsp := rsp.(*users.DeleteUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
@@ -208,7 +371,7 @@ func TestDeleteUser(t *testing.T) {
 	// An attempt to delete the same user should fail with HTTP error 409.
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
 }
@@ -262,40 +425,11 @@ func TestDeleteUserInGroup(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
 
-	// Try wrong request, variant 1 - it should raise an error
-	params := users.DeleteUserParams{}
-	rsp := rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 0 in the database", *defaultRsp.Payload.Message)
-
-	// Try wrong request, variant 2 - it should raise an error
-	params = users.DeleteUserParams{
-		ID: int64(su2.ID + 1),
-	}
-
-	rsp = rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
-
-	params = users.DeleteUserParams{
-		ID: int64(su.ID),
-	}
-
-	rsp = rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "User account with provided login/email tries to delete itself", *defaultRsp.Payload.Message)
-
-	params = users.DeleteUserParams{
+	params := users.DeleteUserParams{
 		ID: int64(su2.ID),
 	}
 
-	rsp = rapi.DeleteUser(ctx, params)
+	rsp := rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserOK{}, rsp)
 	okRsp := rsp.(*users.DeleteUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
@@ -312,9 +446,141 @@ func TestDeleteUserInGroup(t *testing.T) {
 	// An attempt to delete the same user should fail with HTTP error 409.
 	rsp = rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.DeleteUserDefault)
+	defaultRsp := rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
+}
+
+// Tests that update user account with empty params is rejected via REST API.
+func TestUpdateUserEmptyParams(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Try empty params - it should raise an error
+	params := users.UpdateUserParams{}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
+}
+
+// Tests that update user account with empty request is rejected via REST API.
+func TestUpdateUserEmptyRequest(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Try empty request - it should raise an error
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
+}
+
+// Tests that update user account with missing data is rejected via REST API.
+func TestUpdateUserMissingData(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Try missing data - it should raise an error
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: &models.User{},
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
+}
+
+// Tests that update user account with invalid user ID is rejected via REST API.
+func TestUpdateUserInvalidUserID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// An attempt to update non-existing user (non macthing ID) should
+	// result in an error 409.
+	su.ID = 123
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: models.Password("pass"),
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
 // Tests that user account can be updated via REST API.
@@ -338,65 +604,52 @@ func TestUpdateUser(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// Try empty request, variant 1 - it should raise an error
-	params := users.UpdateUserParams{}
-	rsp := rapi.UpdateUser(ctx, params)
-	require.IsType(t, &users.UpdateUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.UpdateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
-
-	// Try empty request, variant 2 - it should raise an error
-	params = users.UpdateUserParams{
-		Account: &models.UserAccount{},
-	}
-	rsp = rapi.UpdateUser(ctx, params)
-	require.IsType(t, &users.UpdateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.UpdateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
-
-	// Try empty request, variant 3 - it should raise an error
-	params = users.UpdateUserParams{
-		Account: &models.UserAccount{
-			User: &models.User{},
-		},
-	}
-	rsp = rapi.UpdateUser(ctx, params)
-	require.IsType(t, &users.UpdateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.UpdateUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
-
 	// Modify some values and update the user.
 	su.Lastname = "Born"
-	params = users.UpdateUserParams{
+	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
-	rsp = rapi.UpdateUser(ctx, params)
+	rsp := rapi.UpdateUser(ctx, params)
 	require.IsType(t, &users.UpdateUserOK{}, rsp)
 
 	// Also check that the user has been updated in the database.
 	returned, err := dbmodel.GetUserByID(db, su.ID)
 	require.NoError(t, err)
 	require.Equal(t, su.Lastname, returned.Lastname)
+}
 
-	// An attempt to update non-existing user (non macthing ID) should
-	// result in an error 409.
-	su.ID = 123
-	params = users.UpdateUserParams{
-		Account: &models.UserAccount{
-			User:     newRestUser(su),
-			Password: models.Password("pass"),
-		},
+// Tests that update user password with missing data is rejected via REST API.
+func TestUpdateUserPasswordMissingData(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
 	}
-	rsp = rapi.UpdateUser(ctx, params)
-	require.IsType(t, &users.UpdateUserDefault{}, rsp)
-	defaultRsp = rsp.(*users.UpdateUserDefault)
-	require.Equal(t, 409, getStatusCode(*defaultRsp))
+	con, err := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Try empty request - it should raise an error.
+	params := users.UpdateUserPasswordParams{
+		ID: int64(user.ID),
+	}
+	rsp := rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to update password for user: missing data", *defaultRsp.Payload.Message)
 }
 
 // Tests that user password can be updated via REST API.
@@ -444,16 +697,6 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-
-	// Try empty request - it should raise an error.
-	params = users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
-	}
-	rsp = rapi.UpdateUserPassword(ctx, params)
-	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
-	defaultRsp = rsp.(*users.UpdateUserPasswordDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to update password for user: missing data", *defaultRsp.Payload.Message)
 }
 
 // Tests that multiple groups can be fetched from the database.
@@ -581,8 +824,8 @@ func TestGetUser(t *testing.T) {
 	// require.Len(t, okRsp.Payload.Groups, 1)
 }
 
-// Tests that new session can be created for a logged user.
-func TestCreateSession(t *testing.T) {
+// Tests that new session can not be created using empty params.
+func TestCreateSessionEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -603,22 +846,66 @@ func TestCreateSession(t *testing.T) {
 	params := users.CreateSessionParams{}
 	rsp := rapi.CreateSession(ctx, params)
 	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
+}
+
+// Tests that new session can not be created using invalid credentials.
+func TestCreateSessionInvalidCredentials(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
 
 	// for next tests there is some data required in the context, let's prepare it
 	ctx2, err := rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
 
+	params := users.CreateSessionParams{}
 	// provide wrong credentials - it should raise an error
 	params.Credentials.Useremail = &user.Email
 	bad := "bad pass"
 	params.Credentials.Userpassword = &bad
-	rsp = rapi.CreateSession(ctx2, params)
+	rsp := rapi.CreateSession(ctx2, params)
 	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
+}
 
+// Tests that new session can be created for a logged user.
+func TestCreateSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// for next tests there is some data required in the context, let's prepare it
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	params := users.CreateSessionParams{}
 	// provide correct credentials - it should create a new session
 	params.Credentials.Useremail = &user.Email
 	params.Credentials.Userpassword = &user.Password
-	rsp = rapi.CreateSession(ctx2, params)
+	rsp := rapi.CreateSession(ctx2, params)
 	require.IsType(t, &users.CreateSessionOK{}, rsp)
 	okRsp := rsp.(*users.CreateSessionOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))

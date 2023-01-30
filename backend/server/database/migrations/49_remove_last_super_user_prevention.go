@@ -21,7 +21,7 @@ func init() {
               IF user_group != 1 THEN
                 RETURN OLD;
               END IF;
-              SELECT COUNT(*) FROM system_user_to_group WHERE group_id = 1 AND user_id != OLD.id INTO user_count;
+              SELECT COUNT(*) FROM system_user_to_group WHERE group_id = 1 AND user_id != OLD.id LIMIT 1 INTO user_count;
               IF user_count = 0 THEN
                 RAISE EXCEPTION 'deleting last super-admin user is forbidden';
               END IF;

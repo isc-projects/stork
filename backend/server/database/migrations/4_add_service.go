@@ -10,8 +10,8 @@ func init() {
              -- Apps table.
              CREATE TABLE public.app (
                  id                      SERIAL PRIMARY KEY,
-	         created                 TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-	         deleted                 TIMESTAMP WITHOUT TIME ZONE,
+                 created                 TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+                 deleted                 TIMESTAMP WITHOUT TIME ZONE,
                  machine_id              INTEGER REFERENCES public.machine(id) NOT NULL,
                  type                    VARCHAR(10) NOT NULL,
                  ctrl_port               INTEGER DEFAULT 0,

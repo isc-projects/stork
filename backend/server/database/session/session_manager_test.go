@@ -174,6 +174,7 @@ func TestLogOutUser(t *testing.T) {
 	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))
 	middlewareFunc.ServeHTTP(w, req)
 	resp := w.Result()
+	resp.Body.Close()
 	require.Equal(t, resp.StatusCode, 200)
 
 	// The context has proper data in sync with the data in the database.
@@ -181,8 +182,6 @@ func TestLogOutUser(t *testing.T) {
 	logged, su := mgr.Logged(ctx)
 	require.True(t, logged)
 	require.Equal(t, user.ID, su.ID)
-
-	resp.Body.Close()
 
 	// The LogoutUser will remove the session from the database, but it won't
 	// update the data in the context used by the function call.
@@ -200,12 +199,11 @@ func TestLogOutUser(t *testing.T) {
 	// Perform the request and retrieve the updated context.
 	middlewareFunc.ServeHTTP(w, req)
 	resp = w.Result()
+	resp.Body.Close()
 	require.Equal(t, resp.StatusCode, 200)
 
 	// The context has proper data in sync with the data in the database.
 	// The user should not have a valid session.
 	logged, _ = mgr.Logged(ctx)
 	require.False(t, logged)
-
-	resp.Body.Close()
 }

@@ -622,12 +622,6 @@ func TestCommitDueDeleteError(t *testing.T) {
 	err = dbmodel.DeleteUser(db, user)
 	require.NoError(t, err)
 
-	// Commit due changes.
-	err = manager.CommitDue()
-	require.NoError(t, err)
-	require.Len(t, fkm.ops, 0)
-	require.Len(t, fkm.contexts, 0)
-
 	// We have processed due config changes. They should no longer be returned.
 	changes, err = dbmodel.GetDueConfigChanges(db)
 	require.NoError(t, err)
