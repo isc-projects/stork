@@ -326,7 +326,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                         detail: 'Refreshing succeeded.',
                     })
                 }
-                
+
                 // refresh machine in machines list
                 for (let i = 0; i < this.machines.length; i++) {
                     if (this.machines[i].id === data.id) {
@@ -334,7 +334,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                         break
                     }
                 }
-                
+
                 // refresh machine in opened tab if present
                 for (let i = 0; i < this.openedMachines.length; i++) {
                     if (this.openedMachines[i].machine.id === data.id) {

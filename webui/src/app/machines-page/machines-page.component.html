@@ -529,16 +529,12 @@ sudo ./stork-install-agent.sh</textarea
                         <span>Use HTTP credentials</span>
                         <app-help-tip title="Use HTTP credentials">
                             <p>
-                                Indicates if the Stork Agent includes the HTTP
-                                credentials (i.e., Basic Auth user and
-                                password) in the requests sent to the Kea
-                                Control Agent.
+                                Indicates if the Stork Agent includes the HTTP credentials (i.e., Basic Auth user and
+                                password) in the requests sent to the Kea Control Agent.
                             </p>
                             <p>
-                                The credentials are included only in the
-                                requests to the hosts specified in the
-                                configuration file. Other hosts don't receive
-                                any authorization data.
+                                The credentials are included only in the requests to the hosts specified in the
+                                configuration file. Other hosts don't receive any authorization data.
                             </p>
                         </app-help-tip>
                     </td>
@@ -546,8 +542,7 @@ sudo ./stork-install-agent.sh</textarea
                         {{ !!machineTab.machine.agentUsesHttpCredentials }}
                         <i class="pi pi-key" *ngIf="machineTab.machine.agentUsesHttpCredentials"></i>
                     </td>
-                    <td>
-                    </td>
+                    <td></td>
                 </tr>
                 <tr>
                     <td>Host ID</td>
