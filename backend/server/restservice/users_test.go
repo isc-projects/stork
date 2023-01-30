@@ -172,17 +172,6 @@ func TestDeleteUserEmptyParams(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// Create new user in the database.
-	su2 := dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
-		Password: "pass",
-	}
-	con, err = dbmodel.CreateUser(db, &su2)
-	require.False(t, con)
-	require.NoError(t, err)
-
 	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
 
@@ -225,30 +214,19 @@ func TestDeleteUserInvalidUserID(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// Create new user in the database.
-	su2 := dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
-		Password: "pass",
-	}
-	con, err = dbmodel.CreateUser(db, &su2)
-	require.False(t, con)
-	require.NoError(t, err)
-
 	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
 
 	// Try using invalid user ID - it should raise an error
 	params := users.DeleteUserParams{
-		ID: int64(su2.ID + 1),
+		ID: int64(su.ID + 1),
 	}
 
 	rsp := rapi.DeleteUser(ctx, params)
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp := rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to find user with ID 4 in the database", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to find user with ID 3 in the database", *defaultRsp.Payload.Message)
 }
 
 // Tests that delete user account with same user ID as current session is rejected via REST API.
@@ -278,17 +256,6 @@ func TestDeleteUserSameUserAsSession(t *testing.T) {
 		},
 	}
 	con, err := dbmodel.CreateUser(db, &su)
-	require.False(t, con)
-	require.NoError(t, err)
-
-	// Create new user in the database.
-	su2 := dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
-		Password: "pass",
-	}
-	con, err = dbmodel.CreateUser(db, &su2)
 	require.False(t, con)
 	require.NoError(t, err)
 

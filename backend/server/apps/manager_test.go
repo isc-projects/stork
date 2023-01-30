@@ -575,8 +575,8 @@ func TestCommitDueErrors(t *testing.T) {
 	}
 }
 
-// Test that due changes from the database are committed.
-func TestCommitDueDeleteError(t *testing.T) {
+// Test that due changes are dropped if the user is deleted.
+func TestDeleteDue(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
