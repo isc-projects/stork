@@ -1,8 +1,8 @@
 * 278 [func] slawek
 
-    Added a configuration review checkers to detect common misconfigurations
+    Added the configuration review checkers to detect common misconfigurations
     related to the HA multi-threading mode. The first checker suggests enabling
-    the HA+MT if Kea uses multi-threading and the second validates that HA
+    the HA+MT if Kea uses multi-threading, and the second validates that HA
     peers use dedicated ports rather than Kea Control Agent's port when the
     dedicated listeners are enabled.
     (Gitlab #944)
