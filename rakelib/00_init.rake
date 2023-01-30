@@ -598,7 +598,7 @@ file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
 end
 add_version_guard(BUNDLE, bundler_ver)
 
-fpm_gemfile = File.expand_path("init_deps/fpm.Gemfile", __dir__)
+fpm_gemfile = File.expand_path("init_deps/fpm/Gemfile", __dir__)
 FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
 file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir, fpm_gemfile] do
     sh BUNDLE, "install",
@@ -608,7 +608,7 @@ file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir, fpm_gemfile] do
     sh FPM, "--version"
 end
 
-danger_gemfile = File.expand_path("init_deps/danger.Gemfile", __dir__)
+danger_gemfile = File.expand_path("init_deps/danger/Gemfile", __dir__)
 DANGER = File.join(ruby_tools_bin_bundle_dir, "danger")
 file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDLE] do
     sh BUNDLE, "install",

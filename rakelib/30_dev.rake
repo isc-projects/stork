@@ -685,18 +685,14 @@ namespace :update do
 
     desc 'Update all Ruby dependencies'
     task :ruby => [BUNDLE] do
-        Dir.chdir("rakelib/init_deps") do
-            # List all Gemfiles.
-            gemfiles = FileList["*.Gemfile"].exclude(FileList["*.Gemfile.lock"])
-            gemfiles.each do |g|
-                # Bundle requires exactly a file named "Gemfile".
-                sh "ln", "-s", g, "Gemfile"
+        gemfiles = FileList["rakelib/init_deps/*/Gemfile"]
+            .exclude(FileList["rakelib/init_deps/*/Gemfile.lock"])
+        # List all Gemfiles.
+        gemfiles.each do |g|
+            gemfile_dir = File.dirname(g)
+            Dir.chdir(gemfile_dir) do
                 # Update dependencies in the lock file.
                 sh BUNDLE, "update"
-                # Grab a new lock file.
-                sh "mv", "Gemfile.lock", g + ".lock"
-                # Remove the temporary link.
-                rm "Gemfile"
             end
         end
     end
