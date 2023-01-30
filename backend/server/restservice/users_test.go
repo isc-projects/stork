@@ -142,29 +142,6 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
-// Tests that delete user account with no logged in user is rejected via REST API.
-func TestDeleteUserNoLoggedUser(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	ctx := context.Background()
-
-	rapi, err := NewRestAPI(dbSettings, db)
-	require.NoError(t, err)
-
-	// Create session manager.
-	ctx, err = rapi.SessionManager.Load(ctx, "")
-	require.NoError(t, err)
-
-	// Try empty params - it should raise an error
-	params := users.DeleteUserParams{}
-	rsp := rapi.DeleteUser(ctx, params)
-	require.IsType(t, &users.DeleteUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.DeleteUserDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to delete user account because the context does not belong to a logged in user", *defaultRsp.Payload.Message)
-}
-
 // Tests that delete user account with empty params is rejected via REST API.
 func TestDeleteUserEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

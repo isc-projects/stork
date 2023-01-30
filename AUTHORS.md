@@ -14,6 +14,7 @@ Primary developers:
 - Sławek Figiel (server, agent, UI, prometheus)
 - Marcin Godzina (QA)
 - Suzanne Goldlust (documentation)
+- Razvan Becheriu (database, server, UI)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.

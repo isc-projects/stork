@@ -302,17 +302,6 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	id := int(params.ID)
 
 	_, currentUser := r.SessionManager.Logged(ctx)
-	if currentUser == nil {
-		log.WithField("userid", id).Info("Failed to delete user account because the context does not belong to a logged in user")
-
-		msg := "Failed to delete user account because the context does not belong to a logged in user"
-		rspErr := models.APIError{
-			Message: &msg,
-		}
-		rsp := users.NewDeleteUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
-		return rsp
-	}
-
 	if currentUser.ID == id {
 		log.WithField("userid", id).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
 
