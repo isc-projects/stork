@@ -82,6 +82,13 @@ both a localhost address and a port specific to a given container must
 be specified. The list of containers can be found in the
 :ref:`docker_containers_for_development` section.
 
+Updating dependencies
+---------------------
+
+There are useful rake tasks for updating dependencies: `update:ui_deps`,
+`update:python`, `update:backend_deps`, `update:ruby`. More may be added in the
+future. Please check `rake -T`.
+
 Installing Git Hooks
 --------------------
 
