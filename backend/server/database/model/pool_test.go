@@ -144,7 +144,7 @@ func TestAddDeletePrefixPool(t *testing.T) {
 }
 
 // Test that two prefix pools have unequal data if their prefixes differ.
-func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
+func TestPrefixPoolHasEqualDataPrefix(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{Prefix: "fe80::/64"}
 	second := &PrefixPool{Prefix: "3001::/64"}
@@ -157,7 +157,7 @@ func TestPrefixPoolEqualsDataPrefix(t *testing.T) {
 }
 
 // Test that two prefix pools have unequal data if their delegated lengths differ.
-func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
+func TestPrefixPoolHasEqualDataDelegatedLength(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{DelegatedLen: 64}
 	second := &PrefixPool{DelegatedLen: 80}
@@ -170,7 +170,7 @@ func TestPrefixPoolEqualsDataDelegatedLength(t *testing.T) {
 }
 
 // Test that two prefix pools have unequal data if their excluded prefixes differ.
-func TestPrefixPoolEqualsDataExcludedPrefix(t *testing.T) {
+func TestPrefixPoolHasEqualDataExcludedPrefix(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{ExcludedPrefix: "fe80::/80"}
 	second := &PrefixPool{ExcludedPrefix: "3001::/80"}
@@ -183,7 +183,7 @@ func TestPrefixPoolEqualsDataExcludedPrefix(t *testing.T) {
 }
 
 // Test that two prefix pools have equal data if their IDs differ.
-func TestPrefixPoolEqualsDataID(t *testing.T) {
+func TestPrefixPoolHasEqualDataID(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{ID: 1}
 	second := &PrefixPool{ID: 2}
@@ -196,7 +196,7 @@ func TestPrefixPoolEqualsDataID(t *testing.T) {
 }
 
 // Test that two prefix pools have equal data if their create timestamps differ.
-func TestPrefixPoolEqualsDataCreateTimestamp(t *testing.T) {
+func TestPrefixPoolHasEqualDataCreateTimestamp(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{CreatedAt: time.Date(1980, 1, 1, 12, 0o0, 0o0, 0, time.UTC)}
 	second := &PrefixPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
@@ -209,7 +209,7 @@ func TestPrefixPoolEqualsDataCreateTimestamp(t *testing.T) {
 }
 
 // Test that two prefix pools have equal data if their subnet IDs differ.
-func TestPrefixPoolEqualsDataSubnetID(t *testing.T) {
+func TestPrefixPoolHasEqualDataSubnetID(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{SubnetID: 1}
 	second := &PrefixPool{SubnetID: 2}
@@ -222,7 +222,7 @@ func TestPrefixPoolEqualsDataSubnetID(t *testing.T) {
 }
 
 // Test that two prefix pools have equal data if their subnets differ.
-func TestPrefixPoolEqualsDataSubnet(t *testing.T) {
+func TestPrefixPoolHasEqualDataSubnet(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{Subnet: &Subnet{Prefix: "fe80::/64"}}
 	second := &PrefixPool{Subnet: &Subnet{Prefix: "10.0.0.0/8"}}
@@ -235,7 +235,7 @@ func TestPrefixPoolEqualsDataSubnet(t *testing.T) {
 }
 
 // Test that two prefix pools have equal data if they are the same.
-func TestPrefixPoolEqualsDataTheSame(t *testing.T) {
+func TestPrefixPoolHasEqualDataTheSame(t *testing.T) {
 	// Arrange
 	first := &PrefixPool{
 		ID:             42,
@@ -267,7 +267,7 @@ func TestPrefixPoolEqualsDataTheSame(t *testing.T) {
 }
 
 // Test that two address pools have equal data if their IDs differ.
-func TestAddressPoolEqualsDataID(t *testing.T) {
+func TestAddressPoolHasEqualDataID(t *testing.T) {
 	// Arrange
 	first := &AddressPool{ID: 1}
 	second := &AddressPool{ID: 2}
@@ -280,7 +280,7 @@ func TestAddressPoolEqualsDataID(t *testing.T) {
 }
 
 // Test that two address pools have equal data if their create timestamps differ.
-func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
+func TestAddressPoolHasEqualDataCreateTimestamp(t *testing.T) {
 	// Arrange
 	first := &AddressPool{CreatedAt: time.Date(1980, 1, 1, 12, 0o0, 0o0, 0, time.UTC)}
 	second := &AddressPool{CreatedAt: time.Date(2023, 1, 4, 16, 49, 0o0, 0, time.Local)}
@@ -293,7 +293,7 @@ func TestAddressPoolEqualsDataCreateTimestamp(t *testing.T) {
 }
 
 // Test that two address pools have unequal data if their lower bounds differ.
-func TestAddressPoolEqualsDataLowerBound(t *testing.T) {
+func TestAddressPoolHasEqualDataLowerBound(t *testing.T) {
 	// Arrange
 	first := &AddressPool{LowerBound: "10.0.0.1"}
 	second := &AddressPool{LowerBound: "192.168.0.1"}
@@ -306,7 +306,7 @@ func TestAddressPoolEqualsDataLowerBound(t *testing.T) {
 }
 
 // Test that two address pools have equal data if their upper bounds differ.
-func TestAddressPoolEqualsDataUpperBound(t *testing.T) {
+func TestAddressPoolHasEqualDataUpperBound(t *testing.T) {
 	// Arrange
 	first := &AddressPool{UpperBound: "10.0.0.42"}
 	second := &AddressPool{UpperBound: "192.168.0.42"}
@@ -319,7 +319,7 @@ func TestAddressPoolEqualsDataUpperBound(t *testing.T) {
 }
 
 // Test that two address pools have equal data if their subnet IDs differ.
-func TestAddressPoolEqualsDataSubnetID(t *testing.T) {
+func TestAddressPoolHasEqualDataSubnetID(t *testing.T) {
 	// Arrange
 	first := &AddressPool{SubnetID: 1}
 	second := &AddressPool{SubnetID: 2}
@@ -332,7 +332,7 @@ func TestAddressPoolEqualsDataSubnetID(t *testing.T) {
 }
 
 // Test that two address pools have equal data if their subnets differ.
-func TestAddressPoolEqualsDataSubnets(t *testing.T) {
+func TestAddressPoolHasEqualDataSubnets(t *testing.T) {
 	// Arrange
 	first := &AddressPool{Subnet: &Subnet{Prefix: "fe80::/64"}}
 	second := &AddressPool{Subnet: &Subnet{Prefix: "3001::/48"}}
@@ -345,7 +345,7 @@ func TestAddressPoolEqualsDataSubnets(t *testing.T) {
 }
 
 // Test that two address pools have equal data of they are the same.
-func TestAddressPoolEqualsDataTheSame(t *testing.T) {
+func TestAddressPoolHasEqualDataTheSame(t *testing.T) {
 	// Arrange
 	first := &AddressPool{
 		ID:         42,
