@@ -2251,7 +2251,7 @@ func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
 
 // Test that the HA MT mode checker produces no report if the top
 // multi-threading is disabled.
-func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
+func TestHighAvailabilityMultiThreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
@@ -2279,7 +2279,7 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *t
     } }`)
 
 	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
+	report, err := highAvailabilityMultiThreadingMode(ctx)
 
 	// Assert
 	require.Nil(t, report)
@@ -2288,7 +2288,7 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMultiThreadingDisabled(t *t
 
 // Test that the HA MT mode checker produces no report if the top
 // multi-threading is disabled and the HA-level multi-threading is enabled.
-func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *testing.T) {
+func TestHighAvailabilityMultiThreadingModeCheckerTopMTDisabledHAMTEnabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
@@ -2319,7 +2319,7 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
     } }`)
 
 	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
+	report, err := highAvailabilityMultiThreadingMode(ctx)
 
 	// Assert
 	require.Nil(t, report)
@@ -2327,7 +2327,7 @@ func TestHighAvailabilityMultithreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
 }
 
 // Test that the HA MT mode checker produces no report if the HA is not configured.
-func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
+func TestHighAvailabilityMultiThreadingModeCheckerNoHAConfigured(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
@@ -2336,7 +2336,7 @@ func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
     } }`)
 
 	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
+	report, err := highAvailabilityMultiThreadingMode(ctx)
 
 	// Assert
 	require.Nil(t, report)
@@ -2345,7 +2345,7 @@ func TestHighAvailabilityMultithreadingModeCheckerNoHAConfigured(t *testing.T) {
 
 // Test that the HA MT mode checker produces a report if the top
 // multi-threading is enabled but the HA is configured to use single thread.
-func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
+func TestHighAvailabilityMultiThreadingModeCheckerSingleThreaded(t *testing.T) {
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
             "enable-multi-threading": true
@@ -2372,7 +2372,7 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
     } }`)
 
 	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
+	report, err := highAvailabilityMultiThreadingMode(ctx)
 
 	// Assert
 	require.NotNil(t, report)
@@ -2388,7 +2388,7 @@ func TestHighAvailabilityMultithreadingModeCheckerSingleThreaded(t *testing.T) {
 
 // Test that the HA MT mode checker produces no report if the configuration
 // contains no issues.
-func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testing.T) {
+func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
         "multi-threading": { 
@@ -2432,7 +2432,7 @@ func TestHighAvailabilityMultithreadingModeCheckerCorrectConfiguration(t *testin
 	})
 
 	// Act
-	report, err := highAvailabilityMultithreadingMode(ctx)
+	report, err := highAvailabilityMultiThreadingMode(ctx)
 
 	// Assert
 	require.Nil(t, report)

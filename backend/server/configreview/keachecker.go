@@ -836,7 +836,7 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 
 // The checker verifies that the HA is running in multi-threading mode if
 // Kea uses this mode.
-func highAvailabilityMultithreadingMode(ctx *ReviewContext) (*Report, error) {
+func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
 	multiThreadingConfig := config.GetMultiThreading()
