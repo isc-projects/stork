@@ -1164,3 +1164,35 @@ func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, err
 			"manage the subnets information in the database instead.",
 	).referencingDaemon(ctx.subjectDaemon).create()
 }
+
+// The checker validates that the Stork agent communicates with the Kea Control
+// Agent using the HTTPS protocol when the HTTP authentication credentials
+// (i.e., Basic Auth) are configured.
+func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameCA {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	machine := ctx.subjectDaemon.App.Machine
+
+	if !machine.State.AgentUsesHTTPCredentials {
+		// The HTTP credentials are not configured. Nothing to do.
+		return nil, nil
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+
+	if config.UseSecureProtocol() {
+		// The TLS is configured. All is OK.
+		return nil, nil
+	}
+
+	// The Stork agent has HTTP credentials configured but communicates with
+	// Kea over unsecure protocol.
+	return NewReport(ctx, "Basic HTTP authentication is weak on its own as "+
+		"there are known dictionary attacks, but those attacks require a "+
+		"'man in the middle' to get access to the HTTP traffic. That can be "+
+		"eliminated by using basic HTTP authentication exclusively over TLS.").
+		referencingDaemon(ctx.subjectDaemon).
+		create()
+}
