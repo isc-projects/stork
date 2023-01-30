@@ -1,7 +1,9 @@
 * 275 [bug] slawek
 
     Fixed the security vulnerabilities reported by the Github Dependabot and
-    updated some dependencies.
+    updated some dependencies. Added some Rake tasks for updating the project
+    dependencies. Upgraded the target ECMAScript (JavaScript) version of the
+    output UI bundle to the ES2020 standard-compliant.
     (Gitlab #934)
 
 * 274 [bug] slawek
