@@ -162,7 +162,7 @@ func TestDeleteUserNoLoggedUser(t *testing.T) {
 	require.IsType(t, &users.DeleteUserDefault{}, rsp)
 	defaultRsp := rsp.(*users.DeleteUserDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Failed to delete user account because there is no user logged in", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to delete user account because the context does not belong to a logged in user", *defaultRsp.Payload.Message)
 }
 
 // Tests that delete user account with empty params is rejected via REST API.
