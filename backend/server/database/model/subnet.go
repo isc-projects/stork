@@ -649,18 +649,19 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 
 		if subnet.ID == 0 {
 			err = AddSubnet(tx, subnet)
-			err = pkgerrors.WithMessagef(err, "unable to add detected subnet %s to the database",
-				subnet.Prefix)
-			if err == nil {
-				addedSubnets = append(addedSubnets, subnet)
+			if err != nil {
+				err = pkgerrors.WithMessagef(err, "unable to add detected subnet %s to the database",
+					subnet.Prefix)
+				return nil, err
 			}
+			addedSubnets = append(addedSubnets, subnet)
 		} else {
 			err = updateSubnetWithPools(tx, subnet)
-			err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s in the database",
-				subnet.Prefix)
-		}
-		if err != nil {
-			return nil, err
+			if err != nil {
+				err = pkgerrors.WithMessagef(err, "unable to update detected subnet %s in the database",
+					subnet.Prefix)
+				return nil, err
+			}
 		}
 
 		err = AddDaemonToSubnet(tx, subnet, daemon)
