@@ -371,6 +371,70 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	require.Empty(t, machineDaemonHAServices.Apps[0].Daemons[1].Services)
 }
 
+// Test that the machine is selected by the address and port of any access point.
+func TestGetMachineByAccessPoint(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m1 := &Machine{Address: "fe80::1", AgentPort: 8080}
+	_ = AddMachine(db, m1)
+
+	a1 := &App{
+		MachineID: m1.ID,
+		Type:      AppTypeKea,
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m1.ID,
+				Type:      AccessPointControl,
+				Address:   "fe80::1",
+				Port:      8001,
+			},
+		},
+	}
+	_, _ = AddApp(db, a1)
+
+	a2 := &App{
+		MachineID: m1.ID,
+		Type:      AppTypeKea,
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m1.ID,
+				Type:      AccessPointControl,
+				Address:   "fe80::1",
+				Port:      8003,
+			},
+		},
+	}
+	_, _ = AddApp(db, a2)
+
+	m2 := &Machine{Address: "fe80::1:1", AgentPort: 8090}
+	_ = AddMachine(db, m2)
+
+	a3 := &App{
+		ID:        0,
+		MachineID: m2.ID,
+		Type:      AppTypeKea,
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m2.ID,
+				Type:      AccessPointControl,
+				Address:   "fe80::1:2",
+				Port:      8001,
+			},
+		},
+	}
+	_, _ = AddApp(db, a3)
+
+	// Act
+	machine, err := GetMachineByAccessPoint(db, "fe80::1", 8001)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, machine)
+	require.EqualValues(t, m1.ID, machine.ID)
+}
+
 // Basic check if getting machines by pages works.
 func TestGetMachinesByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

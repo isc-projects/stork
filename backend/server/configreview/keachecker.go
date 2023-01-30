@@ -955,7 +955,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		}
 
 		// Fetch the external peer machine from the database.
-		peerMachine, err := dbmodel.GetMachineByAddressAndAgentPort(
+		peerMachine, err := dbmodel.GetMachineByAccessPoint(
 			ctx.db, peerAddress, peerPort,
 		)
 
