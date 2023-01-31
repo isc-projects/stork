@@ -1,3 +1,5 @@
+Stork 1.9.0 released on 2023-02-01.
+
 * 277 [bug] slawek
 
     Fixed a bug that prevented the machines from deleting.
@@ -5,8 +7,8 @@
 
 * 276 [func] razvan
 
-    Added functionality for deteting users. A super-admin can not remove
-    it's own account and the last super-admin user can not be removed.
+    Added functionality for deteting users. A super-admin cannot remove
+    its own account and the last super-admin user can not be removed.
     (Gitlab #117)
 
 * 275 [bug] slawek
@@ -14,7 +16,7 @@
     Fixed the security vulnerabilities reported by the Github Dependabot and
     updated some dependencies. Added some Rake tasks for updating the project
     dependencies. Upgraded the target JavaScript version of the
-    output UI bundle to the ES2020 standard-compliant.
+    output UI bundle to be ES2020 standard-compliant.
     (Gitlab #934)
 
 * 274 [bug] slawek
@@ -35,7 +37,7 @@
 
     Stork agent, server and tool now have logging levels configurable using
     STORK_LOG_LEVEL environment variable. The allowed values are:
-    DEBUG, INFO, WARN, ERROR
+    DEBUG, INFO, WARN, ERROR.
     (Gitlab #870)
 
 * 271 [bug] slawek

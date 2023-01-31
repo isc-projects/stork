@@ -24,7 +24,7 @@ sys.setrecursionlimit(5000)
 # -- Project information -----------------------------------------------------
 
 project = 'Stork'
-copyright = '2021-2022, Internet Systems Consortium'
+copyright = '2021-2023, Internet Systems Consortium'
 author = 'Internet Systems Consortium'
 
 # get current stork version

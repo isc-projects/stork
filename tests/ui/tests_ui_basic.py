@@ -30,7 +30,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     selenium.maximize_window()
     assert "Stork" in selenium.title
 
-    check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2021 by ISC. All Rights Reserved.'])
+    check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2023 by ISC. All Rights Reserved.'])
 
     # login
     stork_login(selenium, "admin", "admin")
@@ -151,7 +151,7 @@ def test_add_new_machine(selenium, agent, server):
     selenium.implicitly_wait(10)
     selenium.maximize_window()
     assert "Stork" in selenium.title
-    check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2021 by ISC. All Rights Reserved.'])
+    check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2023 by ISC. All Rights Reserved.'])
 
     stork_login(selenium, "admin", "admin")
 
@@ -484,7 +484,7 @@ def test_read_kea_daemon_config(selenium, agent, server):
 #
 #     selenium.implicitly_wait(10)
 #     assert "Stork" in selenium.title
-#     check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2021 by ISC. All Rights Reserved.'])
+#     check_phrases(selenium, [r'Dashboard for', r'Copyright 2019-2023 by ISC. All Rights Reserved.'])
 #     stork_login(selenium, "admin", "admin")
 #
 #     find_element(selenium, 'xpath', '/html/body/app-root/div/p-splitbutton/div/button[2]').click()
