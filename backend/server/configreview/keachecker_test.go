@@ -2622,13 +2622,13 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
                         "peers": [
                             {
                                 "role": "primary",
-                                "name": "foo",
-                                "url": "http://foobar:8001"
+                                "name": "bar",
+                                "url": "http://10.0.0.2:8000"
                             },
                             {
                                 "role": "standby",
-                                "name": "bar",
-                                "url": "http://barfoo:8001"
+                                "name": "baz",
+                                "url": "http://10.0.0.2:8000"
                             }
                         ]
                     }]
@@ -2666,10 +2666,31 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
 // configuration contains no issue.
 func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
-	t.Fail()
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	// Initialize the failover entries.
+	failoverMachine := &dbmodel.Machine{
+		Address:   "10.0.0.2",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, failoverMachine)
+
+	failoverApp := &dbmodel.App{
+		MachineID: failoverMachine.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "10.0.0.2",
+				Port:    8000,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
+	}
+	_, _ = dbmodel.AddApp(db, failoverApp)
+
+	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
         "multi-threading": { 
             "enable-multi-threading": true
@@ -2686,13 +2707,13 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
                         "peers": [
                             {
                                 "role": "primary",
-                                "name": "foo",
-                                "url": "http://foobar:8001"
+                                "name": "bar",
+                                "url": "http://10.0.0.2:8001"
                             },
                             {
                                 "role": "standby",
-                                "name": "bar",
-                                "url": "http://barfoo:8001"
+                                "name": "baz",
+                                "url": "http://10.0.0.2:8001"
                             }
                         ]
                     }]
@@ -2701,15 +2722,15 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
         ]
     } }`)
 
+	// The default IDs are already stored in the database.
+	ctx.subjectDaemon.ID = 2
+	ctx.subjectDaemon.AppID = 2
+	ctx.subjectDaemon.App.ID = 2
+
 	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "foobar",
+		Address: "10.0.0.1",
 		Port:    8000,
 		Type:    dbmodel.AccessPointControl,
-	})
-
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
-		ID:   42,
-		Name: dbmodel.DaemonNameCA,
 	})
 
 	// Act
