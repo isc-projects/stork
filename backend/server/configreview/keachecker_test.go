@@ -2564,7 +2564,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
                             {
                                 "role": "standby",
                                 "name": "baz",
-                                "url": "http://10.0.0.2:8000"
+                                "url": "http://10.0.0.3:8000"
                             }
                         ]
                     }]
@@ -2628,7 +2628,7 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
                             {
                                 "role": "standby",
                                 "name": "baz",
-                                "url": "http://10.0.0.2:8000"
+                                "url": "http://10.0.0.3:8000"
                             }
                         ]
                     }]
@@ -2713,7 +2713,7 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
                             {
                                 "role": "standby",
                                 "name": "baz",
-                                "url": "http://10.0.0.2:8001"
+                                "url": "http://10.0.0.3:8001"
                             }
                         ]
                     }]
@@ -2739,6 +2739,90 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 	// Assert
 	require.Nil(t, report)
 	require.NoError(t, err)
+}
+
+// Test that the port collision is detected if it occurs on the machine of the
+// subject daemon.
+func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Initialize the failover entries.
+	machine := &dbmodel.Machine{
+		Address:   "10.0.0.1",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, machine)
+
+	failoverApp := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "10.0.0.1",
+				Port:    8000,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
+	}
+	_, _ = dbmodel.AddApp(db, failoverApp)
+
+	// Prepare the subject entries.
+	ctx := createReviewContext(t, db, `{ "Dhcp4": {
+        "multi-threading": { 
+            "enable-multi-threading": true
+        },
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [{
+                        "multi-threading": {
+                            "enable-multi-threading": true,
+                            "http-dedicated-listener": true
+                        },
+                        "peers": [
+                            {
+                                "role": "primary",
+                                "name": "bar",
+                                "url": "http://10.0.0.2:8000"
+                            },
+                            {
+                                "role": "standby",
+                                "name": "baz",
+                                "url": "http://10.0.0.1:8000"
+                            }
+                        ]
+                    }]
+                }
+            }
+        ]
+    } }`)
+
+	// The default IDs are already stored in the database.
+	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
+		Address: "10.0.0.1",
+		Port:    8000,
+		Type:    dbmodel.AccessPointControl,
+	})
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.NoError(t, err)
+
+	require.NotNil(t, report)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"High Availability hook configured to use dedicated HTTP "+
+			"listeners but the connections to the HA 'baz' peer with "+
+			"the 'http://10.0.0.1:8000' URL are performed over the Kea Control Agent "+
+			"omitting the dedicated HTTP listener of this peer. ")
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects

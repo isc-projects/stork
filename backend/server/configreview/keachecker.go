@@ -936,27 +936,10 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 		peerAddress := urlObj.Hostname()
 
-		// Iterate over the access points of the subject daemon.
-		// Exclude the peer configuration related to the subject daemon.
-		isSubjectPeer := false
-		for _, subjectAccessPoint := range ctx.subjectDaemon.App.AccessPoints {
-			if subjectAccessPoint.Type != dbmodel.AccessPointControl {
-				continue
-			}
-
-			if subjectAccessPoint.Address == peerAddress {
-				// The peer is corresponding to the subject daemon.
-				isSubjectPeer = true
-			}
-		}
-		if isSubjectPeer {
-			// Skip the subject peer.
-			continue
-		}
-
 		// Fetch the external peer machine from the database.
+		accessPointType := dbmodel.AccessPointControl
 		peerMachine, err := dbmodel.GetMachineByAccessPoint(
-			ctx.db, peerAddress, peerPort,
+			ctx.db, peerAddress, peerPort, &accessPointType,
 		)
 
 		if err != nil {
@@ -964,52 +947,50 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		}
 
 		if peerMachine == nil {
-			// Peer is not monitored by Stork. Skip.
+			// Peer port doesn't collide with the CA port or the peer is not
+			// monitored by Stork. Skip.
 			continue
 		}
 
+		// Collect the Kea Control Agent daemons.
+		// There is no possibility of binding the access point to a
+		// specific CA daemon.
+		var caDaemons []*dbmodel.Daemon
 		for _, peerApp := range peerMachine.Apps {
-			if peerApp.Type != dbmodel.AppTypeKea {
-				continue
-			}
-
+			// Search for an application that contains the collided access point.
 			for _, peerAccessPoint := range peerApp.AccessPoints {
-				if peerAccessPoint.Type != dbmodel.AccessPointControl {
-					continue
-				}
-
 				if peerAccessPoint.Address != peerAddress || peerAccessPoint.Port != peerPort {
-					// There is no port collision.
 					continue
 				}
 
-				// Collect the Kea Control Agent daemons.
-				// There is no possibility of binding the access point to a
-				// specific CA daemon.
-				var caDaemons []*dbmodel.Daemon
 				for _, peerDaemon := range peerApp.Daemons {
+					if peerDaemon.ID == ctx.subjectDaemon.ID {
+						// Prevent referencing the subject daemon twice.
+						continue
+					}
+
 					if peerDaemon.Name == dbmodel.DaemonNameCA {
 						caDaemons = append(caDaemons, peerDaemon)
 					}
 				}
-
-				report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled "+
-					"High Availability hook configured to use dedicated HTTP "+
-					"listeners but the connections to the HA '%s' peer with "+
-					"the '%s' URL are performed over the Kea Control Agent "+
-					"omitting the dedicated HTTP listener of this peer. "+
-					"It may cause the bottlenecks that nullify any "+
-					"performance gains offered by HA+MT"+
-					"You need to change the peer's HTTP '%d' port because it "+
-					"is already assigned to the Kea Control Agent.",
-					*peer.Name, *peer.URL, peerPort)).
-					referencingDaemon(ctx.subjectDaemon)
-				for _, daemon := range caDaemons {
-					report = report.referencingDaemon(daemon)
-				}
-				return report.create()
 			}
 		}
+
+		report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled "+
+			"High Availability hook configured to use dedicated HTTP "+
+			"listeners but the connections to the HA '%s' peer with "+
+			"the '%s' URL are performed over the Kea Control Agent "+
+			"omitting the dedicated HTTP listener of this peer. "+
+			"It may cause the bottlenecks that nullify any "+
+			"performance gains offered by HA+MT"+
+			"You need to change the peer's HTTP '%d' port because it "+
+			"is already assigned to the Kea Control Agent.",
+			*peer.Name, *peer.URL, peerPort)).
+			referencingDaemon(ctx.subjectDaemon)
+		for _, daemon := range caDaemons {
+			report = report.referencingDaemon(daemon)
+		}
+		return report.create()
 	}
 
 	return nil, nil
