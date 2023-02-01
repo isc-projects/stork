@@ -371,7 +371,7 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	require.Empty(t, machineDaemonHAServices.Apps[0].Daemons[1].Services)
 }
 
-// Test that the machine is selected by the address and port of any access point.
+// Test that the machine is selected by the address and port of an access point.
 func TestGetMachineByAccessPoint(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -427,12 +427,94 @@ func TestGetMachineByAccessPoint(t *testing.T) {
 	_, _ = AddApp(db, a3)
 
 	// Act
-	machine, err := GetMachineByAccessPoint(db, "fe80::1", 8001)
+	machine, err := GetMachineByAccessPoint(db, "fe80::1", 8001, nil)
 
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, machine)
 	require.EqualValues(t, m1.ID, machine.ID)
+}
+
+// Test that the machine is selected by the address, port, and type of an
+// access point.
+func TestGetMachineByAccessPointFilterByType(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m1 := &Machine{Address: "fe80::1", AgentPort: 8080}
+	_ = AddMachine(db, m1)
+
+	a1 := &App{
+		MachineID: m1.ID,
+		Type:      AppTypeKea,
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m1.ID,
+				Type:      AccessPointControl,
+				Address:   "fe80::1",
+				Port:      8001,
+			},
+		},
+	}
+	_, _ = AddApp(db, a1)
+
+	a2 := &App{
+		MachineID: m1.ID,
+		Type:      AppTypeKea,
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m1.ID,
+				Type:      AccessPointStatistics,
+				Address:   "fe80::1",
+				Port:      8003,
+			},
+		},
+	}
+	_, _ = AddApp(db, a2)
+
+	t.Run("Filter the Kea Control Agent only", func(t *testing.T) {
+		accessPointType := AccessPointControl
+
+		// Act
+		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, &accessPointType)
+		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, &accessPointType)
+
+		// Assert
+		require.NoError(t, errControl)
+		require.NoError(t, errStatistics)
+
+		require.NotNil(t, machineControl)
+		require.Nil(t, machineStatistics)
+	})
+
+	t.Run("Filter the Statistics channel only", func(t *testing.T) {
+		accessPointType := AccessPointStatistics
+
+		// Act
+		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, &accessPointType)
+		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, &accessPointType)
+
+		// Assert
+		require.NoError(t, errControl)
+		require.NoError(t, errStatistics)
+
+		require.Nil(t, machineControl)
+		require.NotNil(t, machineStatistics)
+	})
+
+	t.Run("No type filter", func(t *testing.T) {
+		// Act
+		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, nil)
+		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, nil)
+
+		// Assert
+		require.NoError(t, errControl)
+		require.NoError(t, errStatistics)
+
+		require.NotNil(t, machineControl)
+		require.NotNil(t, machineStatistics)
+	})
 }
 
 // Basic check if getting machines by pages works.

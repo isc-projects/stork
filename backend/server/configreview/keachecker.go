@@ -941,7 +941,6 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		peerMachine, err := dbmodel.GetMachineByAccessPoint(
 			ctx.db, peerAddress, peerPort, &accessPointType,
 		)
-
 		if err != nil {
 			return nil, err
 		}
