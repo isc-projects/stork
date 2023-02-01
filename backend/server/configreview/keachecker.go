@@ -1115,9 +1115,9 @@ SubnetLoop:
 
 	// Format the final report.
 	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains "+
-		"some address pools whose sizes equal the number of IP reservations "+
-		"in these pools. The devices not in the reserved list will not get "+
-		"an address. %s:\n%s",
+		"address pools with the number of in-pool IP reservations equal "+
+		"to their size. The devices lacking the reservations will not get "+
+		"addresses from these pools. %s:\n%s",
 		countMessage, strings.Join(messages, "\n"))).
 		referencingDaemon(ctx.subjectDaemon).
 		create()

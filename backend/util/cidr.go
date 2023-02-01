@@ -210,7 +210,7 @@ func (parsed *ParsedIP) IsInPrefixRange(prefix string, prefixLen, delegatedLen i
 	return false
 }
 
-// Calculates the number of addresses between a given bounds.
+// Calculates the number of addresses in the address range.
 func CalculateRangeSize(lb, ub net.IP) *big.Int {
 	size := big.NewInt(0)
 	size.Add(size, big.NewInt(0).SetBytes(ub))
