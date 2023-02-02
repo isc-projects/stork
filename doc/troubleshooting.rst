@@ -157,3 +157,20 @@ This section describes the solutions for some common issues with the Stork serve
 :Explanation: The ``/etc/stork/server.env`` file contains the environment variables, but ``stork-server`` does not automatically
               load them, unless you use ``--use-env-file`` flag; the file must be loaded manually. The default systemd service
               unit is configured to load this file before starting the agent.
+
+--------------
+
+:Issue:       The server is running but rejects the HTTP requests due to the TLS handshake error.
+:Description: The HTTP requests sent via an Internet browser or tools like ``curl`` are rejected. The clients show a
+              message similar to: ``OpenSSL SSL_write: Broken pipe, errno 32``. The Stork  serverlogs contain the
+              ``TLS handshake error`` entry with the ``tls: client didn't provide a certificate`` description.
+:Solution 1.: Leave the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable and the ``--rest-tls-ca`` flag empty.
+:Solution 2.: Configure the Internet browser or HTTP tool to use the valid and trusted TLS client certificate.
+              The client certificate must be signed by the authority whose CA certificate was provided in the server
+              configuration.
+:Explanation: Providing the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable or the ``--rest-tls-ca`` flag turns
+              on the TLS client certificate verification. The HTTP requests must be assigned with the valid and trusted
+              HTTP certificate signed by the authority whose CA certificate was provided in the server configuration.
+              Otherwise, the request will be rejected. This option is dedicated to improving server security by limiting
+              access to only trusted users. You shouldn't use it if you don't have a CA configured or want to allow to
+              login to the Stork server from any computer without prior setup.

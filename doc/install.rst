@@ -326,9 +326,12 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 * ``STORK_REST_TLS_CERTIFICATE`` - a file with a certificate to use for secure connections
 * ``STORK_REST_TLS_PRIVATE_KEY`` - a file with a private key to use for secure connections
 * ``STORK_REST_TLS_CA_CERTIFICATE`` - a certificate authority file used for mutual TLS authentication
-* ``STORK_REST_STATIC_FILES_DIR`` - a directory with static files served in the user interface
 
-.. note::
+   Providing the CA certificate path enables the TLS client certificate
+   verification. Any HTTP request to the server assigned with a missing,
+   invalid, or untrusted TLS certificate will be rejected. 
+
+* ``STORK_REST_STATIC_FILES_DIR`` - a directory with static files served in the user interface
 
    The ``STORK_REST_STATIC_FILES_DIR`` should be set to ``/usr/share/stork/www``
    for the Stork Server installed from the binary packages. It's the default location
