@@ -3360,7 +3360,7 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingConfigBackend(t *tes
 func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
 	// Arrange
 	configStr := `{
-        "Dhcp4": {
+        "Dhcp6": {
             "hooks-libraries": [
                 {
                     "library": "/usr/lib/kea/libdhcp_subnet_cmds.so"
