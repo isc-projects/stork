@@ -18,7 +18,13 @@ import (
 func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 	if _, _, present := config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
-		r, err := NewReport(ctx, "The Kea Statistics Commands library (libdhcp_stat_cmds) provides commands for retrieving accurate DHCP lease statistics for Kea DHCP servers. Stork sends these commands to fetch lease statistics displayed in the dashboard, subnet, and shared-network views. Stork found that {daemon} is not using this hook library. Some statistics will not be available until the library is loaded.").
+		r, err := NewReport(ctx, "The Kea Statistics Commands library "+
+			"(libdhcp_stat_cmds) provides commands for retrieving accurate "+
+			"DHCP lease statistics for Kea DHCP servers. Stork sends these "+
+			"commands to fetch lease statistics displayed in the dashboard, "+
+			"subnet, and shared-network views. Stork found that {daemon} is "+
+			"not using this hook library. Some statistics will not be "+
+			"available until the library is loaded.").
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -33,7 +39,14 @@ func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	if _, _, present := config.GetHooksLibrary("libdhcp_host_cmds"); !present {
 		databases := config.GetAllDatabases()
 		if len(databases.Hosts) > 0 {
-			r, err := NewReport(ctx, "Kea can be configured to store host reservations in a database. Stork can access these reservations using the commands implemented in the Host Commands hook library and make them available in the Host Reservations view. It appears that the libdhcp_host_cmds hook library is not loaded on {daemon}. Host reservations from the database will not be visible in Stork until this library is enabled.").
+			r, err := NewReport(ctx, "Kea can be configured to store host "+
+				"reservations in a database. Stork can access these "+
+				"reservations using the commands implemented in the Host "+
+				"Commands hook library and make them available in the Host "+
+				"Reservations view. It appears that the libdhcp_host_cmds "+
+				"hook library is not loaded on {daemon}. Host reservations "+
+				"from the database will not be visible in Stork until this "+
+				"library is enabled.").
 				referencingDaemon(ctx.subjectDaemon).
 				create()
 			return r, err
@@ -74,10 +87,12 @@ func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 		case dbmodel.DaemonNameDHCPv6:
 			subnetsCount = len(net.Subnet6)
 		default:
-			return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+			return nil, errors.Errorf(
+				"unsupported daemon %s", ctx.subjectDaemon.Name,
+			)
 		}
-		// Depending on whether there are no subnets or there is a single subnet
-		// let's update the respective counters.
+		// Depending on whether there are no subnets or there is a single
+		// subnet let's update the respective counters.
 		switch subnetsCount {
 		case 0:
 			emptyCount++
@@ -100,7 +115,12 @@ func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 			details += storkutil.FormatNoun(singleCount, "shared network", "s")
 			details += " with only a single subnet"
 		}
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s. Shared networks create overhead for a Kea server configuration and DHCP message processing, affecting their performance. It is recommended to remove any shared networks having none or a single subnet and specify these subnets at the global configuration level.", details)).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+			"includes %s. Shared networks create overhead for a Kea server "+
+			"configuration and DHCP message processing, affecting their "+
+			"performance. It is recommended to remove any shared networks "+
+			"having none or a single subnet and specify these subnets at the "+
+			"global configuration level.", details)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -116,7 +136,12 @@ func createSubnetDispensableReport(ctx *ReviewContext, dispensableCount int64) (
 	if dispensableCount == 0 {
 		return nil, nil
 	}
-	r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s without pools and host reservations. The DHCP server will not assign any addresses to the devices within this subnet. It is recommended to add some pools or host reservations to this subnet or remove the subnet from the configuration.", storkutil.FormatNoun(dispensableCount, "subnet", "s"))).
+	r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+		"includes %s without pools and host reservations. The DHCP server "+
+		"will not assign any addresses to the devices within this subnet. "+
+		"It is recommended to add some pools or host reservations to this "+
+		"subnet or remove the subnet from the configuration.",
+		storkutil.FormatNoun(dispensableCount, "subnet", "s"))).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
 	return r, err
@@ -232,7 +257,13 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 	dispensableCount := int64(0)
 	for _, net := range *decodedSharedNetworks {
 		for _, subnet := range net.Subnet6 {
-			if len(subnet.Pools) == 0 && len(subnet.PDPools) == 0 && len(subnet.Reservations) == 0 &&
+			// Empty address pools.
+			if len(subnet.Pools) == 0 &&
+				// Empty delegated prefix pools.
+				len(subnet.PDPools) == 0 &&
+				// Empty host reservations
+				len(subnet.Reservations) == 0 &&
+				// Missing host cmds hook or empty DB host reservations.
 				(!hostCmds || len(dbHosts[subnet.ID]) == 0) {
 				dispensableCount++
 			}
@@ -248,7 +279,10 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
-		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+		return nil, errors.Errorf(
+			"unsupported daemon %s",
+			ctx.subjectDaemon.Name,
+		)
 	}
 	if ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 {
 		return checkSubnet4Dispensable(ctx)
@@ -263,16 +297,21 @@ func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts 
 		return false, dbHosts, nil
 	}
 	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
-		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, dbmodel.HostDataSourceAPI)
+		hosts, _, err := dbmodel.GetHostsByDaemonID(
+			ctx.db,
+			ctx.subjectDaemon.ID,
+			dbmodel.HostDataSourceAPI,
+		)
 		if err != nil {
 			return present, dbHosts, err
 		}
 		for i, host := range hosts {
-			if host.Subnet != nil {
-				for _, ls := range host.Subnet.LocalSubnets {
-					if ls.DaemonID == ctx.subjectDaemon.ID && ls.LocalSubnetID != 0 {
-						dbHosts[ls.LocalSubnetID] = append(dbHosts[ls.LocalSubnetID], hosts[i])
-					}
+			if host.Subnet == nil {
+				continue
+			}
+			for _, ls := range host.Subnet.LocalSubnets {
+				if ls.DaemonID == ctx.subjectDaemon.ID && ls.LocalSubnetID != 0 {
+					dbHosts[ls.LocalSubnetID] = append(dbHosts[ls.LocalSubnetID], hosts[i])
 				}
 			}
 		}
@@ -380,7 +419,9 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Get global host reservation mode settings.
 	globalModes := config.GetGlobalReservationModes()
 	if globalModes == nil {
-		return nil, errors.New("problem getting global reservation modes from Kea configuration")
+		return nil, errors.New(
+			"problem getting global reservation modes from Kea configuration",
+		)
 	}
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
@@ -443,7 +484,13 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host-reservation mode. Reservations specified for these subnets are outside the dynamic address pools. Using out-of-pool reservation mode prevents Kea from checking host-reservation existence when allocating in-pool addresses, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+			"includes %s for which it is recommended to use out-of-pool "+
+			"host-reservation mode. Reservations specified for these subnets "+
+			"are outside the dynamic address pools. Using out-of-pool "+
+			"reservation mode prevents Kea from checking host-reservation "+
+			"existence when allocating in-pool addresses, thus improving "+
+			"performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -510,7 +557,9 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Get global host reservation mode settings.
 	globalModes := config.GetGlobalReservationModes()
 	if globalModes == nil {
-		return nil, errors.New("problem getting global reservation modes from Kea configuration")
+		return nil, errors.New(
+			"problem getting global reservation modes from Kea configuration",
+		)
 	}
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
@@ -542,8 +591,8 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			for _, reservation := range subnet.Reservations {
 				if len(reservation.IPAddresses) > 0 || len(reservation.Prefixes) > 0 {
 					ipResrvExist = true
-					// Check if any of the IP addresses or delegated prefixes belong to any
-					// of the pools. If so, move to the next subnet.
+					// Check if any of the IP addresses or delegated prefixes
+					// belong to any of the pools. If so, move to the next subnet.
 					if isAnyAddressInPools(reservation.IPAddresses, subnet.Pools) ||
 						isAnyPrefixInPools(reservation.Prefixes, subnet.PDPools) {
 						inPool = true
@@ -575,7 +624,14 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host-reservation mode. Reservations specified for these subnets appear outside the dynamic-address and/or prefix-delegation pools. Using out-of-pool reservation mode prevents Kea from checking host-reservation existence when allocating in-pool addresses and delegated prefixes, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+			"includes %s for which it is recommended to use out-of-pool "+
+			"host-reservation mode. Reservations specified for these subnets "+
+			"appear outside the dynamic-address and/or prefix-delegation "+
+			"pools. Using out-of-pool reservation mode prevents Kea from "+
+			"checking host-reservation existence when allocating in-pool "+
+			"addresses and delegated prefixes, thus improving performance.",
+			storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -607,11 +663,14 @@ type minimalSubnetPair struct {
 	child  minimalSubnet
 }
 
-// The checker validates that subnets (global or from shared networks) don't overlap.
+// The checker validates that subnets (global or from shared networks) don't
+// overlap.
 func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
-		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+		return nil, errors.Errorf(
+			"unsupported daemon %s", ctx.subjectDaemon.Name,
+		)
 	}
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
@@ -669,11 +728,11 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	}
 	overlapMessage := strings.Join(overlappingMessages, "; ")
 
-	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes%s %s. "+
-		"It means that the DHCP clients in different subnets may be assigned the same IP addresses.\n%s",
-		maxExceedMessage, storkutil.FormatNoun(int64(len(overlaps)), "overlapping subnet pair", "s"), overlapMessage)).
-		referencingDaemon(ctx.subjectDaemon).
-		create()
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+		"includes%s %s. It means that the DHCP clients in different subnets "+
+		"may be assigned the same IP addresses.\n%s", maxExceedMessage,
+		storkutil.FormatNoun(int64(len(overlaps)), "overlapping subnet pair", "s"),
+		overlapMessage)).referencingDaemon(ctx.subjectDaemon).create()
 }
 
 // Search for prefix overlaps in the provided set of subnets.
@@ -784,7 +843,12 @@ func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
 			subnetID = fmt.Sprintf("[%d] ", decodedSubnet.ID)
 		}
 
-		issue := fmt.Sprintf("%d. %s%s is invalid prefix", len(issues)+1, subnetID, decodedSubnet.Subnet)
+		issue := fmt.Sprintf(
+			"%d. %s%s is invalid prefix",
+			len(issues)+1,
+			subnetID,
+			decodedSubnet.Subnet,
+		)
 
 		if prefix != "" {
 			issue = fmt.Sprintf("%s, expected: %s", issue, prefix)
@@ -808,17 +872,18 @@ func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
 
 	hintMessage := strings.Join(issues, "; ")
 
-	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains%s %s. "+
-		"Kea accepts non-canonical prefix forms, which may lead to duplicates "+
-		"if two subnets have the same prefix specified in different forms. "+
-		"Use canonical forms to ensure that Kea properly identifies and "+
-		"validates subnet prefixes to avoid duplication or overlap.\n%s",
-		maxExceedMessage, storkutil.FormatNoun(int64(len(issues)), "non-canonical prefix", "es"), hintMessage)).
-		referencingDaemon(ctx.subjectDaemon).
-		create()
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
+		"contains%s %s. Kea accepts non-canonical prefix forms, which may "+
+		"lead to duplicates if two subnets have the same prefix specified in "+
+		"different forms. Use canonical forms to ensure that Kea properly "+
+		"identifies and validates subnet prefixes to avoid duplication or "+
+		"overlap.\n%s", maxExceedMessage,
+		storkutil.FormatNoun(int64(len(issues)), "non-canonical prefix", "es"),
+		hintMessage)).referencingDaemon(ctx.subjectDaemon).create()
 }
 
-// Returns the prefix with zeros on masked bits. If it was already valid, return the true status.
+// Returns the prefix with zeros on masked bits. If it was already valid,
+// return the true status.
 func getCanonicalPrefix(prefix string) (string, bool) {
 	candidate := storkutil.ParseIP(prefix)
 	if candidate == nil {
