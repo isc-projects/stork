@@ -1055,17 +1055,16 @@ SubnetLoop:
 			// Calculate the pool size.
 			poolSize := storkutil.CalculateRangeSize(lb, ub)
 
-			// Count the reservations in a pool. We use the standard integer
-			// variable. It may be insufficient for extremely large IPv6
-			// subnets, but similar configurations are unexpected.
-			var reservationsInPoolCount uint64
+			// Count the reservations in a pool.
+			reservationsInPoolCount := big.NewInt(0)
 			for _, address := range reservedAddresses {
 				if address.IsInRange(lb, ub) {
-					reservationsInPoolCount++
+					// Increment by one.
+					reservationsInPoolCount.Add(reservationsInPoolCount, big.NewInt(1))
 				}
 			}
 
-			if poolSize.Cmp(big.NewInt(0).SetUint64(reservationsInPoolCount)) > 0 {
+			if poolSize.Cmp(reservationsInPoolCount) > 0 {
 				// The pool size is greater than the number of reservations
 				// within it.
 				continue
