@@ -1024,8 +1024,8 @@ func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 	}
 
 	// Collected data to report.
-	const maxReports = 10
-	var poolsToReport []reportData
+	const maxIssues = 10
+	var issues []reportData
 
 SubnetLoop:
 	for _, subnet := range subnets {
@@ -1072,41 +1072,41 @@ SubnetLoop:
 			}
 
 			// The pool size equals to the number of reservations. Add to report.
-			poolsToReport = append(poolsToReport, reportData{subnet, pool.Pool})
+			issues = append(issues, reportData{subnet, pool.Pool})
 
-			if len(poolsToReport) == maxReports {
+			if len(issues) == maxIssues {
 				// Found a maximum number of the affected pools. Early stop.
 				break SubnetLoop
 			}
 		}
 	}
 
-	if poolsToReport == nil {
+	if len(issues) == 0 {
 		// No affected pools found.
 		return nil, nil
 	}
 
 	// Format affected pool messages.
-	messages := make([]string, len(poolsToReport))
-	for i, poolToReport := range poolsToReport {
+	messages := make([]string, len(issues))
+	for i, issue := range issues {
 		subnetID := ""
-		if poolToReport.Subnet.ID != 0 {
-			subnetID = fmt.Sprintf("[%d] ", poolToReport.Subnet.ID)
+		if issue.Subnet.ID != 0 {
+			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.ID)
 		}
 
 		messages[i] = fmt.Sprintf(
 			"%d. Pool '%s' of the '%s%s' subnet.",
-			i+1, poolToReport.Pool, subnetID, poolToReport.Subnet.Subnet,
+			i+1, issue.Pool, subnetID, issue.Subnet.Subnet,
 		)
 	}
 
 	// Format the message about a count of affected pool messages.
-	countMessage := fmt.Sprintf("First %d affected pools", maxReports)
-	if len(poolsToReport) < maxReports {
+	countMessage := fmt.Sprintf("First %d affected pools", maxIssues)
+	if len(issues) < maxIssues {
 		countMessage = fmt.Sprintf(
 			"Found %s",
 			storkutil.FormatNoun(
-				int64(len(poolsToReport)),
+				int64(len(issues)),
 				"affected pool",
 				"s",
 			),
