@@ -1027,6 +1027,12 @@ func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 	const maxIssues = 10
 	var issues []reportData
 
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 SubnetLoop:
 	for _, subnet := range subnets {
 		// Parse all reservations in a subnet.
@@ -1040,6 +1046,15 @@ SubnetLoop:
 			for _, address := range reservation.IPAddresses {
 				parsedIP := storkutil.ParseIP(address)
 				reservedAddresses = append(reservedAddresses, parsedIP)
+			}
+		}
+
+		for _, host := range dbHosts[subnet.ID] {
+			for _, reservation := range host.GetIPReservations() {
+				parsedIP := storkutil.ParseIP(reservation)
+				if !parsedIP.Prefix {
+					reservedAddresses = append(reservedAddresses, parsedIP)
+				}
 			}
 		}
 

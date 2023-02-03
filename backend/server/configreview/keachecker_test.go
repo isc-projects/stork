@@ -3019,6 +3019,41 @@ func TestPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
 		"1. Pool 'fe80::1-fe80::1' of the '[42] fe80::/16' subnet")
 }
 
+// Test that the IP reservations from the database are considered when checking
+// if the pool is exhausted.
+func TestPoolsExhaustedByReservationsConsidersDatabaseReservations(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	config := `{
+        "Dhcp6": {
+            "hooks-libraries": [ {
+                "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+            } ],
+            "subnet6": [{
+                "id": 42,
+                "subnet": "fe80::/16",
+                "pools": [{ "pool": "fe80::1-fe80::1" }]
+            }]
+        }
+    }`
+
+	ctx := createReviewContext(t, db, config)
+
+	createHostInDatabase(t, db, config, "fe80::/16", "fe80::1")
+
+	// Act
+	report, err := poolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::1-fe80::1' of the '[42] fe80::/16' subnet")
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
