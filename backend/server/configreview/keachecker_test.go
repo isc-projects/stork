@@ -2926,8 +2926,8 @@ func TestPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing
 	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "Found 1 affected pool:")
-	require.Contains(t, *report.content,
-		"pools whose sizes equal the number of IP reservations")
+	require.Contains(t, *report.content, "configuration contains address "+
+		"pools with the number of in-pool IP reservations equal to their size")
 	require.Contains(t, *report.content,
 		"1. Pool 'fe80::1-fe80::3' of the 'fe80::/16' subnet")
 	require.NotContains(t, *report.content, "2.")
@@ -2983,8 +2983,8 @@ func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T)
 	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content, "First 10 affected pools:")
-	require.Contains(t, *report.content,
-		"pools whose sizes equal the number of IP reservations")
+	require.Contains(t, *report.content, "configuration contains address "+
+		"pools with the number of in-pool IP reservations equal to their size")
 	require.Contains(t, *report.content,
 		"1. Pool '10.0.0.1-10.0.0.1' of the '10.0.0.0/24' subnet")
 	require.Contains(t, *report.content,
