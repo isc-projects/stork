@@ -1230,9 +1230,8 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 			issues = append(issues, reportData{
 				subnet,
 				fmt.Sprintf(
-					"%s/%d del. %d",
-					pool.Prefix,
-					pool.PrefixLen,
+					"%s del. %d",
+					storkutil.FormatCIDRNotation(pool.Prefix, pool.PrefixLen),
 					pool.DelegatedLen,
 				),
 			})
