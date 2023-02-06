@@ -1140,3 +1140,153 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 		referencingDaemon(ctx.subjectDaemon).
 		create()
 }
+
+// The checker validates when a size of delegated prefix pool equals to the
+// number of reservations.
+func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	type subnet struct {
+		ID           int64
+		Subnet       string
+		PDPools      []keaconfig.PdPool
+		Reservations []struct {
+			Prefixes []string
+		}
+	}
+
+	type reportData struct {
+		Subnet subnet
+		Pool   string
+	}
+
+	// Retrieve the subnet data (IPv4 and IPv6).
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	var subnets []subnet
+	err := config.DecodeTopLevelSubnets(&subnets)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collected data to report.
+	const maxIssues = 10
+	var issues []reportData
+
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, subnet := range subnets {
+		// Parse all reservations in a subnet.
+		reservedPrefixes := []*storkutil.ParsedIP{}
+
+		for _, reservation := range subnet.Reservations {
+			for _, prefix := range reservation.Prefixes {
+				parsedIP := storkutil.ParseIP(prefix)
+				reservedPrefixes = append(reservedPrefixes, parsedIP)
+			}
+		}
+
+		for _, host := range dbHosts[subnet.ID] {
+			for _, reservation := range host.GetIPReservations() {
+				parsedIP := storkutil.ParseIP(reservation)
+				if parsedIP.Prefix {
+					reservedPrefixes = append(reservedPrefixes, parsedIP)
+				}
+			}
+		}
+
+		// Iterate over the PD pools and check if they are exhausted by
+		// IP reservations.
+		for _, pool := range subnet.PDPools {
+			// Calculate the pool size.
+			// Pool size = 2 power to the number of the wildcard bytes.
+			poolSize := big.NewInt(2)
+			poolSize.Exp(poolSize, big.NewInt(int64(128-pool.DelegatedLen)), nil)
+
+			// Count the reservations in a pool.
+			reservationsInPoolCount := big.NewInt(0)
+			for _, prefix := range reservedPrefixes {
+				if prefix.IsInPrefixRange(pool.Prefix, pool.PrefixLen, pool.DelegatedLen) {
+					// Increment by prefix size.
+					prefixSize := big.NewInt(2)
+					prefixSize.Exp(prefixSize, big.NewInt(int64(128-prefix.PrefixLength)), nil)
+					reservationsInPoolCount.Add(reservationsInPoolCount, prefixSize)
+				}
+			}
+
+			if poolSize.Cmp(reservationsInPoolCount) > 0 {
+				// The pool size is greater than the number of reservations
+				// within it.
+				continue
+			}
+
+			// The pool size equals to the number of reservations. Add to report.
+			issues = append(issues, reportData{
+				subnet,
+				fmt.Sprintf(
+					"%s/%d del. %d",
+					pool.Prefix,
+					pool.PrefixLen,
+					pool.DelegatedLen,
+				),
+			})
+
+			if len(issues) == maxIssues {
+				// Found a maximum number of the affected pools. Early stop.
+				break
+			}
+		}
+
+		if len(issues) == maxIssues {
+			// Found a maximum number of the affected pools. Early stop.
+			break
+		}
+	}
+
+	if len(issues) == 0 {
+		// No affected pools found.
+		return nil, nil
+	}
+
+	// Format affected pool messages.
+	messages := make([]string, len(issues))
+	for i, issue := range issues {
+		subnetID := ""
+		if issue.Subnet.ID != 0 {
+			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.ID)
+		}
+
+		messages[i] = fmt.Sprintf(
+			"%d. Pool '%s' of the '%s%s' subnet.",
+			i+1, issue.Pool, subnetID, issue.Subnet.Subnet,
+		)
+	}
+
+	// Format the message about a count of affected pool messages.
+	countMessage := fmt.Sprintf("First %d affected pools", maxIssues)
+	if len(issues) < maxIssues {
+		countMessage = fmt.Sprintf(
+			"Found %s",
+			storkutil.FormatNoun(
+				int64(len(issues)),
+				"affected pool",
+				"s",
+			),
+		)
+	}
+
+	// Format the final report.
+	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains "+
+		"delegated prefix pools with the number of in-pool IP reservations equal "+
+		"to their size. The devices lacking the reservations will not get "+
+		"prefix from these pools. %s:\n%s",
+		countMessage, strings.Join(messages, "\n"))).
+		referencingDaemon(ctx.subjectDaemon).
+		create()
+}
