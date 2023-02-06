@@ -160,6 +160,7 @@ services:
     extends: agent-kea
     volumes:
       - $PWD/tests/system/config/kea-config-review/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - $PWD/tests/system/config/kea-config-review/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
 
   agent-kea-basic-auth-no-credentials:
     extends: agent-kea

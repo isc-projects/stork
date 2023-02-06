@@ -11,9 +11,11 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
     state, *_ = server_service.wait_for_next_machine_states()
 
     daemons = state['apps'][0]['details']['daemons']
-    daemons = [d for d in daemons if d['name'] == 'dhcp4']
-    assert len(daemons) == 1
-    daemon_id = daemons[0]['id']
+
+    # DHCPv4 daemon.
+    dhcp_v4_daemons = [d for d in daemons if d['name'] == 'dhcp4']
+    assert len(dhcp_v4_daemons) == 1
+    daemon_id = dhcp_v4_daemons[0]['id']
 
     # Get config reports for the daemon.
     data = server_service.wait_for_config_reports(daemon_id)
@@ -24,13 +26,30 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
     issue_reports = {report['checker']: report
                      for report in data['items']
                      if 'content' in report}
-
     assert len(issue_reports) == 4
 
     assert 'stat_cmds_presence' in issue_reports
     assert 'overlapping_subnet' in issue_reports
     assert 'canonical_prefix' in issue_reports
-    assert 'pools_exhausted_by_reservations' in issue_reports
+    assert 'address_pools_exhausted_by_reservations' in issue_reports
+
+    # DHCPv6 daemon.
+    dhcp_v6_daemons = [d for d in daemons if d['name'] == 'dhcp6']
+    assert len(dhcp_v6_daemons) == 1
+    daemon_id = dhcp_v6_daemons[0]['id']
+
+    # Get config reports for the daemon.
+    data = server_service.wait_for_config_reports(daemon_id)
+
+    # The response should include all generated reports, not only the ones with
+    # issues.
+    assert data['total'] >= 1
+    issue_reports = {report['checker']: report
+                     for report in data['items']
+                     if 'content' in report}
+    assert len(issue_reports) == 1
+
+    assert 'pd_pools_exhausted_by_reservations' in issue_reports
 
 
 @ha_pair_parametrize('agent-kea-ha1-only-top-mt', 'agent-kea-ha2-only-top-mt')
