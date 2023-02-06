@@ -194,11 +194,11 @@ export class ConfigCheckerPreferencePickerComponent {
                 )
             case 'ha_dedicated_ports':
                 return (
-                    'The checker verifies that the multi-threading mode of ' +
+                    'The checker verifies if the multi-threading mode of ' +
                     'High Availability is enabled together with the ' +
-                    'dedicated HTTP listeners. The checker detects whether ' +
-                    'peers communicate via the HTTP ports exposed by the ' +
-                    'dedicated listeners rather than Kea Control Agent.'
+                    'dedicated HTTP listeners, and if the peers communicate ' +
+                    'via the HTTP ports exposed by the dedicated listeners ' +
+                    'rather than Kea Control Agent.'
                 )
             default:
                 return ''

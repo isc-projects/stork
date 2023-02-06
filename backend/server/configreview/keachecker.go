@@ -874,7 +874,7 @@ func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 }
 
 // The checker validates that High Availability peers don't use the HTTP port
-// assigned to the Kea Control Agent.
+// assigned to the Kea Control Agent when the dedicated listeners are enabled.
 func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
@@ -905,7 +905,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		// The dedicated listener is disabled.
 		return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
 			"use dedicated HTTP listeners to handle communication between HA "+
-			"peers. It will still work over Kea Control Agent. It may cause "+
+			"peers. They will communicate Kea Control Agent. It may cause "+
 			"the bottlenecks that nullify any performance gains offered by "+
 			"HA+MT. To avoid it, enable the dedicated HTTP listeners in the "+
 			"multi-threading configuration of the High-Availability hook. "+
