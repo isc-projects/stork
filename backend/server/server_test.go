@@ -289,27 +289,27 @@ func TestBootstrap(t *testing.T) {
 
 	// Checks if the config review checker states were loaded from the database.
 	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemons[0])
-	preferencesByCheckerName := map[string]*configreview.CheckerMetadata{}
+	configPreferencesByName := make(map[string]*configreview.CheckerMetadata)
 	for _, preference := range configReviewCheckerPreferences {
-		preferencesByCheckerName[preference.Name] = preference
+		configPreferencesByName[preference.Name] = preference
 	}
 
-	require.GreaterOrEqual(t, len(preferencesByCheckerName), 5)
-	require.Contains(t, preferencesByCheckerName, "host_cmds_presence")
-	require.False(t, preferencesByCheckerName["host_cmds_presence"].GloballyEnabled)
-	require.Contains(t, preferencesByCheckerName, "out_of_pool_reservation")
-	require.True(t, preferencesByCheckerName["out_of_pool_reservation"].GloballyEnabled)
+	require.GreaterOrEqual(t, len(configReviewCheckerPreferences), 5)
+	require.Contains(t, configPreferencesByName, "host_cmds_presence")
+	require.False(t, configPreferencesByName["host_cmds_presence"].GloballyEnabled)
+	require.Contains(t, configPreferencesByName, "out_of_pool_reservation")
+	require.True(t, configPreferencesByName["out_of_pool_reservation"].GloballyEnabled)
 
 	configReviewCheckerPreferences, _ = server.ReviewDispatcher.GetCheckersMetadata(daemons[1])
-	preferencesByCheckerName = map[string]*configreview.CheckerMetadata{}
+	configPreferencesByName = make(map[string]*configreview.CheckerMetadata)
 	for _, preference := range configReviewCheckerPreferences {
-		preferencesByCheckerName[preference.Name] = preference
+		configPreferencesByName[preference.Name] = preference
 	}
 
-	require.Contains(t, preferencesByCheckerName, "host_cmds_presence")
-	require.False(t, preferencesByCheckerName["host_cmds_presence"].GloballyEnabled)
-	require.Contains(t, preferencesByCheckerName, "out_of_pool_reservation")
-	require.True(t, preferencesByCheckerName["out_of_pool_reservation"].GloballyEnabled)
+	require.Contains(t, configPreferencesByName, "host_cmds_presence")
+	require.False(t, configPreferencesByName["host_cmds_presence"].GloballyEnabled)
+	require.Contains(t, configPreferencesByName, "out_of_pool_reservation")
+	require.True(t, configPreferencesByName["out_of_pool_reservation"].GloballyEnabled)
 
 	// Run Bootstrap again with the reload flag set.
 	err = server.Bootstrap(true)
