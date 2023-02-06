@@ -200,8 +200,10 @@ export class ConfigCheckerPreferencePickerComponent {
                     'via the HTTP ports exposed by the dedicated listeners ' +
                     'rather than Kea Control Agent.'
                 )
-            case 'pools_exhausted_by_reservations':
+            case 'address_pools_exhausted_by_reservations':
                 return 'The checker verifying if all available addresses in IP pools are not reserved for hosts.'
+            case 'pd_pools_exhausted_by_reservations':
+                return 'The checker verifying if all available delegated prefixes in PD pools are not reserved for hosts.'
             default:
                 return ''
         }
