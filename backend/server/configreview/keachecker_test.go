@@ -2823,14 +2823,14 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 }
 
 // Test that the error is returned if the non-DHCP daemon is checking.
-func TestPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Control-agent": { }
     }`)
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.Nil(t, report)
@@ -2839,14 +2839,14 @@ func TestPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
 
 // Test that the no error and no issue are returned if the configuration
 // doesn't contain subnets.
-func TestPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp4": {}
     }`)
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.Nil(t, report)
@@ -2855,7 +2855,7 @@ func TestPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
 
 // Test that the no issue report is returned if the number of reservations is
 // less then the number of available addresses in pool.
-func TestPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp6": {
@@ -2879,7 +2879,7 @@ func TestPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing
     }`)
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -2887,7 +2887,7 @@ func TestPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing
 }
 
 // Test that the issue report is returned if all pool addresses are reserved.
-func TestPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp6": {
@@ -2916,7 +2916,7 @@ func TestPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing
     }`)
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -2934,7 +2934,7 @@ func TestPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing
 }
 
 // Test that only the first 10 affected pools are included in the report.
-func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T) {
 	// Arrange
 	subnets := []map[string]any{}
 	// Generate 2 subnet.
@@ -2973,7 +2973,7 @@ func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T)
 	ctx := createReviewContext(t, nil, string(configJSON))
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -2996,7 +2996,7 @@ func TestPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T)
 }
 
 // Test that the report contains the subnet IDs if provided.
-func TestPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp6": {
@@ -3009,7 +3009,7 @@ func TestPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
         }
     }`)
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.NoError(t, err)
@@ -3021,7 +3021,7 @@ func TestPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
 
 // Test that the IP reservations from the database are considered when checking
 // if the pool is exhausted.
-func TestPoolsExhaustedByReservationsConsidersDatabaseReservations(t *testing.T) {
+func TestAddressPoolsExhaustedByReservationsConsidersDatabaseReservations(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -3044,7 +3044,7 @@ func TestPoolsExhaustedByReservationsConsidersDatabaseReservations(t *testing.T)
 	createHostInDatabase(t, db, config, "fe80::/16", "fe80::1")
 
 	// Act
-	report, err := poolsExhaustedByReservations(ctx)
+	report, err := addressPoolsExhaustedByReservations(ctx)
 
 	// Assert
 	require.NoError(t, err)

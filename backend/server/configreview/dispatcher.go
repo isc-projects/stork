@@ -903,7 +903,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "canonical_prefix", GetDefaultTriggers(), canonicalPrefixes)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "ha_mt_presence", GetDefaultTriggers(), highAvailabilityMultiThreadingMode)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "ha_dedicated_ports", GetDefaultTriggers(), highAvailabilityDedicatedPorts)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), poolsExhaustedByReservations)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "address_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), addressPoolsExhaustedByReservations)
 }
 
 // Fetches all checker preferences from the database and loads them into

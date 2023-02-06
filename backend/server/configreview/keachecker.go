@@ -994,7 +994,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 // The checker validates when a size of pool equals to the number of
 // reservations.
-func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
+func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
