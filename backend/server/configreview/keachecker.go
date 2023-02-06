@@ -1033,7 +1033,6 @@ func poolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 		return nil, err
 	}
 
-SubnetLoop:
 	for _, subnet := range subnets {
 		// Parse all reservations in a subnet.
 		reservedAddresses := []*storkutil.ParsedIP{}
@@ -1090,8 +1089,13 @@ SubnetLoop:
 
 			if len(issues) == maxIssues {
 				// Found a maximum number of the affected pools. Early stop.
-				break SubnetLoop
+				break
 			}
+		}
+
+		if len(issues) == maxIssues {
+			// Found a maximum number of the affected pools. Early stop.
+			break
 		}
 	}
 
