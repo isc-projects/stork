@@ -212,6 +212,9 @@ func TestPrefixInRange(t *testing.T) {
 	// An IP address is always out of the prefix range.
 	parsedIP = ParseIP("2001:db8:1:0:2::")
 	require.False(t, parsedIP.IsInPrefixRange("2001:db8:1::", 64, 96))
+
+	parsedIP = ParseIP("2001:db8:1:0:2::/128")
+	require.True(t, parsedIP.IsInPrefixRange("2001:db8:1::", 64, 96))
 }
 
 // Test that the network prefixes are correctly converted to binary strings.

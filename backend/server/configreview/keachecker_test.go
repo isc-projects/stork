@@ -3054,6 +3054,247 @@ func TestAddressPoolsExhaustedByReservationsConsidersDatabaseReservations(t *tes
 		"1. Pool 'fe80::1-fe80::1' of the '[42] fe80::/16' subnet")
 }
 
+// Test that the error is returned if the non-DHCP daemon is checking.
+func TestDelegatedPrefixPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Control-agent": { }
+    }`)
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.ErrorContains(t, err, "unsupported daemon")
+}
+
+// Test that the no error and no issue are returned if the configuration
+// doesn't contain subnets.
+func TestDelegatedPrefixPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp4": {}
+    }`)
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.Nil(t, err)
+}
+
+// Test that the no issue report is returned if the number of reservations is
+// less then the number of available prefixes in pool.
+func TestDelegatedPrefixPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "subnet": "fe80::/16",
+                "pd-pools": [
+                    {
+                        "prefix": "fe80::",
+                        "prefix-len": 64,
+                        "delegated-len": 80
+                    }
+                ],
+                "reservations": [
+                    {
+                        "prefixes": [
+                            "fe80:1::/96",
+                            "fe80:2::/96"
+                        ]
+                    }
+                ]
+            }]
+        }
+    }`)
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the issue report is returned if all pool prefixes are reserved.
+func TestDelegatedPrefixPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "subnet": "fe80::/16",
+                "pd-pools": [
+                    {
+                        "prefix": "fe80::",
+                        "prefix-len": 125,
+                        "delegated-len": 127
+                    }
+                ],
+                "reservations": [
+                    {
+                        "prefixes": [
+                            "fe80::0/127",
+                            "fe80::4/127",
+                            "fe80::8/127"
+                        ]
+                    },
+                    {
+                        "prefixes": [
+                            "fe80::12/127"
+                        ]
+                    }
+                ]
+            }]
+        }
+    }`)
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "Found 1 affected pool:")
+	require.Contains(t, *report.content, "configuration contains delegated "+
+		"prefix pools with the number of in-pool PD reservations equal to their size")
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::/125 del. 127' of the 'fe80::/16' subnet")
+	require.NotContains(t, *report.content, "2.")
+}
+
+// Test that only the first 10 affected pools are included in the report.
+func TestDelegatedPrefixPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *testing.T) {
+	// Arrange
+	subnets := []map[string]any{}
+	// Generate 2 subnet.
+	for s := 0; s <= 1; s++ {
+		pools := []map[string]any{}
+		reservations := []map[string]any{}
+		// Each subnet included 7 single-prefix pools and 7 reservations.
+		for a := 1; a <= 7; a++ {
+			prefix := fmt.Sprintf("fe80::%d:%d", s, a)
+
+			pool := map[string]any{
+				"prefix":        prefix,
+				"prefix-len":    112,
+				"delegated-len": 127,
+			}
+			pools = append(pools, pool)
+
+			reservation := map[string]any{
+				"prefixes": []string{
+					fmt.Sprintf("%s/127", prefix),
+				},
+			}
+			reservations = append(reservations, reservation)
+		}
+
+		subnets = append(subnets, map[string]any{
+			"subnet":       fmt.Sprintf("fe80::%d:0/112", s),
+			"pd-pools":     pools,
+			"reservations": reservations,
+		})
+	}
+
+	config := map[string]any{
+		"Dhcp6": map[string]any{
+			"subnet6": subnets,
+		},
+	}
+	configJSON, _ := json.Marshal(config)
+
+	ctx := createReviewContext(t, nil, string(configJSON))
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "First 10 affected pools:")
+	require.Contains(t, *report.content, "configuration contains delegated prefix "+
+		"pools with the number of in-pool PD reservations equal to their size")
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::0:1/112 del. 127' of the 'fe80::0:0/112' subnet")
+	require.Contains(t, *report.content,
+		"8. Pool 'fe80::1:1/112 del. 127' of the 'fe80::1:0/112' subnet")
+	require.Contains(t, *report.content, "\n10.")
+	require.NotContains(t, *report.content, "\n11.")
+	require.NotContains(t, *report.content,
+		"Pool 'fe80::1:4/112 del. 127' of the 'fe80::1:0/112' subnet")
+}
+
+// Test that the report contains the subnet IDs if provided.
+func TestDelegatedPrefixPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{
+        "Dhcp6": {
+            "subnet6": [{
+                "id": 42,
+                "subnet": "fe80::/16",
+                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 16, "delegated-len": 80 }],
+                "reservations": [{ "prefixes": ["fe80::/80"] }]
+            }]
+        }
+    }`)
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::/16 del. 80' of the '[42] fe80::/16' subnet")
+}
+
+// Test that the IP reservations from the database are considered when checking
+// if the pool is exhausted.
+func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservations(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	config := `{
+        "Dhcp6": {
+            "hooks-libraries": [ {
+                "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+            } ],
+            "subnet6": [{
+                "id": 42,
+                "subnet": "fe80::/16",
+                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 64, "delegated-len": 80 }]
+            }]
+        }
+    }`
+
+	ctx := createReviewContext(t, db, config)
+
+	createHostInDatabase(t, db, config, "fe80::/16", "fe80::/80")
+
+	// Act
+	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"1. Pool 'fe80::/64 del. 80' of the '[42] fe80::/16' subnet")
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {

@@ -1283,7 +1283,7 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 
 	// Format the final report.
 	return NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration contains "+
-		"delegated prefix pools with the number of in-pool IP reservations equal "+
+		"delegated prefix pools with the number of in-pool PD reservations equal "+
 		"to their size. The devices lacking the reservations will not get "+
 		"prefix from these pools. %s:\n%s",
 		countMessage, strings.Join(messages, "\n"))).
