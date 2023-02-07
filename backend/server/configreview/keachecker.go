@@ -977,14 +977,12 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 		report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled "+
 			"High Availability hook configured to use dedicated HTTP "+
-			"listeners but the connections to the HA '%s' peer with "+
-			"the '%s' URL are performed over the Kea Control Agent "+
-			"omitting the dedicated HTTP listener of this peer. "+
-			"It may cause the bottlenecks that nullify any "+
-			"performance gains offered by HA+MT"+
-			"You need to change the peer's HTTP '%d' port because it "+
-			"is already assigned to the Kea Control Agent.",
-			*peer.Name, *peer.URL, peerPort)).
+			"listeners but the connections to the HA '%s' peer with the '%s' "+
+			"URL are performed over the Kea Control Agent omitting the "+
+			"dedicated HTTP listener of this peer. It may cause the "+
+			"bottlenecks that nullify any performance gains offered by HA+MT"+
+			"You need to set the peer's HTTP '%d' port to the dedicated "+
+			"listener's port.", *peer.Name, *peer.URL, peerPort)).
 			referencingDaemon(ctx.subjectDaemon)
 		for _, daemon := range caDaemons {
 			report = report.referencingDaemon(daemon)
