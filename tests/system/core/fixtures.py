@@ -240,7 +240,7 @@ def ha_pair_service(request):
     )
     second_wrapper = _prepare_kea_wrapper(
         request,
-        param["first_service_name"],
+        param["second_service_name"],
         param["suppress_registration"],
         "kea-ha2"
     )

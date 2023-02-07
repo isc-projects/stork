@@ -72,8 +72,6 @@ services:
   agent-kea:
     extends: agent-kea-base
     hostname: agent-kea
-    ports:
-      - "42119:9119"
     networks:
       storknet:
         ipv4_address: 172.20.42.100
@@ -221,8 +219,6 @@ services:
   agent-kea-ha2:
     extends: agent-kea
     hostname: agent-kea-ha2
-    ports:
-      - "42120:9119"
     environment:
       STORK_AGENT_HOST: 172.20.42.101
     networks:
@@ -263,8 +259,6 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.20.42.53
-    ports:
-      - "42119:9119"
     volumes:
       - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
