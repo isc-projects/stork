@@ -214,8 +214,6 @@ services:
     hostname: agent-kea-ha1
     volumes:
       - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha.json
-      # Disable DHCPv6 due to missing dedicated configuration.
-      - /etc/supervisor/conf.d/kea-dhcp6.conf
 
   agent-kea-ha2:
     extends: agent-kea
@@ -243,8 +241,6 @@ services:
         priority: 400
     volumes:
       - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha.json
-      # Disable DHCPv6 due to missing dedicated configuration.
-      - /etc/supervisor/conf.d/kea-dhcp6.conf
 
   agent-bind9:
     restart: always

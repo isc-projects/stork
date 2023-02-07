@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Callable, List, Optional, TypeVar
 
 import openapi_client
+import openapi_client.model_utils
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.base import ComposeServiceWrapper
@@ -23,8 +24,7 @@ from openapi_client.model.update_host_begin_response import \
 from openapi_client.model.event import Event
 from openapi_client.model.host import Host
 from openapi_client.model.puller import Puller
-
-import openapi_client.model_utils
+from openapi_client.model.dhcp_daemon import DhcpDaemon
 
 
 T1 = TypeVar("T1")
@@ -616,6 +616,23 @@ class Server(ComposeServiceWrapper):
         if reports is None:
             raise NoSuccessException("reviews aren't ready yet")
         return reports
+
+    @wait_for_success(wait_msg="waiting for HA peers to be ready...")
+    def wait_for_ha_ready(self):
+        """
+        Waits for accomplishing synchronizing the HA pair.
+        The HA peers must be detected and authorized.
+        Supports only hot-standby mode.
+        """
+        valid_states = ['hot-standby']
+
+        overview = self.overview()
+
+        daemon: DhcpDaemon
+        for daemon in overview['dhcp_daemons']:
+            if daemon.get('ha_state') not in valid_states:
+                identifier = f"{daemon['app_name']}@{daemon['machine']}/{daemon['name']}"
+                raise NoSuccessException(f"The {identifier} HA peer is {daemon.get('ha_state')}")
 
     @contextmanager
     def no_validate(self):
