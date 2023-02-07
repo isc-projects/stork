@@ -372,7 +372,7 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 }
 
 // Test that the machine is selected by the address and port of an access point.
-func TestGetMachineByAccessPoint(t *testing.T) {
+func TestGetMachineByAddressAndAccessPointPort(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -401,7 +401,7 @@ func TestGetMachineByAccessPoint(t *testing.T) {
 			{
 				MachineID: m1.ID,
 				Type:      AccessPointControl,
-				Address:   "fe80::1",
+				Address:   "127.0.0.1",
 				Port:      8003,
 			},
 		},
@@ -427,7 +427,7 @@ func TestGetMachineByAccessPoint(t *testing.T) {
 	_, _ = AddApp(db, a3)
 
 	// Act
-	machine, err := GetMachineByAccessPoint(db, "fe80::1", 8001, nil)
+	machine, err := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8001, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -437,7 +437,7 @@ func TestGetMachineByAccessPoint(t *testing.T) {
 
 // Test that the machine is selected by the address, port, and type of an
 // access point.
-func TestGetMachineByAccessPointFilterByType(t *testing.T) {
+func TestGetMachineByAddressAndAccessPointPortFilterByType(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -452,7 +452,7 @@ func TestGetMachineByAccessPointFilterByType(t *testing.T) {
 			{
 				MachineID: m1.ID,
 				Type:      AccessPointControl,
-				Address:   "fe80::1",
+				Address:   "127.0.0.1",
 				Port:      8001,
 			},
 		},
@@ -466,7 +466,7 @@ func TestGetMachineByAccessPointFilterByType(t *testing.T) {
 			{
 				MachineID: m1.ID,
 				Type:      AccessPointStatistics,
-				Address:   "fe80::1",
+				Address:   "127.0.0.1",
 				Port:      8003,
 			},
 		},
@@ -477,8 +477,8 @@ func TestGetMachineByAccessPointFilterByType(t *testing.T) {
 		accessPointType := AccessPointControl
 
 		// Act
-		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, &accessPointType)
-		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, &accessPointType)
+		machineControl, errControl := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8001, &accessPointType)
+		machineStatistics, errStatistics := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8003, &accessPointType)
 
 		// Assert
 		require.NoError(t, errControl)
@@ -492,8 +492,8 @@ func TestGetMachineByAccessPointFilterByType(t *testing.T) {
 		accessPointType := AccessPointStatistics
 
 		// Act
-		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, &accessPointType)
-		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, &accessPointType)
+		machineControl, errControl := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8001, &accessPointType)
+		machineStatistics, errStatistics := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8003, &accessPointType)
 
 		// Assert
 		require.NoError(t, errControl)
@@ -505,8 +505,8 @@ func TestGetMachineByAccessPointFilterByType(t *testing.T) {
 
 	t.Run("No type filter", func(t *testing.T) {
 		// Act
-		machineControl, errControl := GetMachineByAccessPoint(db, "fe80::1", 8001, nil)
-		machineStatistics, errStatistics := GetMachineByAccessPoint(db, "fe80::1", 8003, nil)
+		machineControl, errControl := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8001, nil)
+		machineStatistics, errStatistics := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8003, nil)
 
 		// Assert
 		require.NoError(t, errControl)

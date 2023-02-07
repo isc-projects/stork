@@ -4,6 +4,7 @@ from core.wrappers import Server, Kea
 
 
 def test_get_ha_config_review_reports(server_service: Server, ha_pair_service: Tuple[Kea, Kea]):
+    """Test that the HA peer works properly in the system tests."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()

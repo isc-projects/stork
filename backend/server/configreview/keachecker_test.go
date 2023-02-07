@@ -2533,7 +2533,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
-				Address: "10.0.0.2",
+				Address: "127.0.0.1",
 				Port:    8000,
 			},
 		},
@@ -2579,7 +2579,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 	ctx.subjectDaemon.App.ID = 2
 
 	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "10.0.0.1",
+		Address: "127.0.0.1",
 		Port:    8000,
 		Type:    dbmodel.AccessPointControl,
 	})
@@ -2761,7 +2761,7 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
-				Address: "10.0.0.1",
+				Address: "127.0.0.1",
 				Port:    8000,
 			},
 		},
@@ -2803,7 +2803,7 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "10.0.0.1",
+		Address: "127.0.0.1",
 		Port:    8000,
 		Type:    dbmodel.AccessPointControl,
 	})

@@ -1,0 +1,4 @@
+"multi-threading": {
+    "enable-multi-threading": true,
+    "http-dedicated-listener": true
+},

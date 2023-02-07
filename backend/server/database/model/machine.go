@@ -104,16 +104,16 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	return &machine, nil
 }
 
-// Get a machine by the address and port of the access point. Optionally, it
-// filters access points by type.
-func GetMachineByAccessPoint(db *pg.DB, address string, port int64, accessPointType *string) (*Machine, error) {
+// Get a machine by the machine address and the access point port.
+// Optionally, it filters access points by type.
+func GetMachineByAddressAndAccessPointPort(db *pg.DB, machineAddress string, accessPointPort int64, accessPointType *string) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).
 		Relation(string(MachineRelationAppAccessPoints)).
 		Relation(string(MachineRelationDaemons)).
 		Join("JOIN access_point").JoinOn("machine.id = access_point.machine_id").
-		Where("access_point.address = ?", address).
-		Where("access_point.port = ?", port)
+		Where("machine.address = ?", machineAddress).
+		Where("access_point.port = ?", accessPointPort)
 
 	if accessPointType != nil {
 		q = q.Where("access_point.type = ?", accessPointType)
@@ -123,7 +123,7 @@ func GetMachineByAccessPoint(db *pg.DB, address string, port int64, accessPointT
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem getting machine by the %s:%d access point", address, port)
+		return nil, pkgerrors.Wrapf(err, "problem getting machine by the '%s' machine address and the '%d' access point port", machineAddress, accessPointPort)
 	}
 	return &machine, nil
 }

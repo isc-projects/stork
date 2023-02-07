@@ -938,7 +938,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 		// Fetch the external peer machine from the database.
 		accessPointType := dbmodel.AccessPointControl
-		peerMachine, err := dbmodel.GetMachineByAccessPoint(
+		peerMachine, err := dbmodel.GetMachineByAddressAndAccessPointPort(
 			ctx.db, peerAddress, peerPort, &accessPointType,
 		)
 		if err != nil {
@@ -958,7 +958,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		for _, peerApp := range peerMachine.Apps {
 			// Search for an application that contains the collided access point.
 			for _, peerAccessPoint := range peerApp.AccessPoints {
-				if peerAccessPoint.Address != peerAddress || peerAccessPoint.Port != peerPort {
+				if peerAccessPoint.Port != peerPort {
 					continue
 				}
 
