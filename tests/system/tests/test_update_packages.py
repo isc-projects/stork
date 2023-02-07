@@ -1,7 +1,14 @@
+import pytest
+
 from core.wrappers import ExternalPackages
 import core.version as version
 
 
+@pytest.mark.skip(
+    reason="This test takes too much time and resources to run on every commit"
+           "on CI. It should be run on demand. Now, it is disabled "
+           "permanently, but it should be handled using the profile feature, "
+           "similar to the tests that use the premium features.")
 def test_update_stork_from_the_latest_released_version(package_service: ExternalPackages):
     """
     Initializes the Stork Server with the packages from the CloudSmith and
