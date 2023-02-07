@@ -72,6 +72,8 @@ services:
   agent-kea:
     extends: agent-kea-base
     hostname: agent-kea
+    ports:
+      - "9119"
     networks:
       storknet:
         ipv4_address: 172.20.42.100
@@ -93,7 +95,6 @@ services:
         priority: 400
     expose:
       - "8080" # stork server to agent
-      - "8001" # HA heartbeat
       - "9547" # kea_exporter for prometheus
     environment:
       DB_TYPE: none
@@ -279,6 +280,8 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.20.42.53
+    ports:
+      - "42119:9119"
     volumes:
       - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
