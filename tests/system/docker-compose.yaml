@@ -93,6 +93,7 @@ services:
         priority: 400
     expose:
       - "8080" # stork server to agent
+      - "8001" # HA heartbeat
       - "9547" # kea_exporter for prometheus
     environment:
       DB_TYPE: none
@@ -224,6 +225,7 @@ services:
     networks:
       storknet:
         ipv4_address: 172.20.42.101
+        priority: 1000
       subnet_00:
         ipv4_address: 172.100.42.101
         priority: 500
