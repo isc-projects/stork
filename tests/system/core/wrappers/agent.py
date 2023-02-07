@@ -93,7 +93,6 @@ class Agent(ComposeServiceWrapper):
         if not self.is_registered():
             raise NoSuccessException()
 
-
     def get_stork_agent_pid(self):
         """Returns PID of the stork-agent process."""
         return self._get_pid('stork-agent')

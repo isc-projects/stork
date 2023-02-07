@@ -111,6 +111,7 @@ services:
       - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea/hook-disabled.json:/etc/kea/hook-hostcmds.json
+      - $PWD/tests/system/config/kea/hook-disabled.json:/etc/kea/hook-ha.json
       - $PWD/tests/system/config/kea/kea-host-database.json:/etc/kea/kea-host-database.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
@@ -208,6 +209,44 @@ services:
       - /etc/supervisor/conf.d/kea-dhcp6.conf
     depends_on:
       - postgres
+
+  agent-kea-ha1:
+    extends: agent-kea
+    hostname: agent-kea-ha1
+    volumes:
+      - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha.json
+      # Disable DHCPv6 due to missing dedicated configuration.
+      - /etc/supervisor/conf.d/kea-dhcp6.conf
+
+  agent-kea-ha2:
+    extends: agent-kea
+    hostname: agent-kea-ha2
+    ports:
+      - "42120:9119"
+    environment:
+      STORK_AGENT_HOST: 172.20.42.101
+    networks:
+      storknet:
+        ipv4_address: 172.20.42.101
+      subnet_00:
+        ipv4_address: 172.100.42.101
+        priority: 500
+      subnet_01:
+        ipv4_address: 172.101.42.101
+        priority: 400
+      subnet_02:
+        ipv4_address: 172.102.42.101
+        priority: 300
+      subnet6_00:
+        ipv6_address: 3000:db8:1:42::101
+        priority: 500
+      subnet6_01:
+        ipv6_address: 3001:db8:1:42::101
+        priority: 400
+    volumes:
+      - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha.json
+      # Disable DHCPv6 due to missing dedicated configuration.
+      - /etc/supervisor/conf.d/kea-dhcp6.conf
 
   agent-bind9:
     restart: always

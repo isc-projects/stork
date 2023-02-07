@@ -72,6 +72,8 @@ __pycache__/
 tests/system/config/kea-many-subnets/kea-dhcp4.conf
 tests/system/config/kea/kea-leases4.csv
 tests/system/config/kea/kea-leases6.csv
+tests/system/config/kea-ha2/kea-leases4.csv
+tests/system/config/kea-ha2/kea-leases6.csv
 tests/system/config/certs/key.pem
 tests/system/config/certs/cert.pem
 

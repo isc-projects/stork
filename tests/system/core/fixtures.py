@@ -59,6 +59,31 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     return _agent_parametrize("kea_service", service_name, suppress_registration)
 
 
+def ha_pair_parametrize(first_service_name="agent-kea-ha1", second_service_name="agent-kea-ha2", suppress_registration=False):
+    """
+    Helper for parametrizing the Kea fixture.
+
+    Parameters
+    ----------
+    first_service_name : str, optional
+        Name of docker-compose service of the first Kea instance, by default "agent-kea-ha1"
+    second_service_name : str, optional
+        Name of docker-compose service of the second Kea instance, by default "agent-kea-ha2"
+    suppress_registration : bool, optional
+        Suppress the Stork Agent registration in a server, by default False
+
+    Returns
+    -------
+    _ParametrizeMarkDecorator
+        the Pytest decorator ready to use
+    """
+    return pytest.mark.parametrize("ha_pair_service", [{
+        "first_service_name": first_service_name,
+        "second_service_name": second_service_name,
+        "suppress_registration": suppress_registration
+    }], indirect=True)
+
+
 def bind9_parametrize(service_name="agent-bind9", suppress_registration=False, version=None,):
     """
     Helper for parametrize the Bind9 fixture.
@@ -151,7 +176,7 @@ def server_service(request):
 @pytest.fixture
 def kea_service(request):
     """
-    A fixture that setup the Kea Server service and guarantees that it is
+    A fixture that setup the Kea service and guarantees that it is
     operational.
 
     Parameters
@@ -176,17 +201,84 @@ def kea_service(request):
     if hasattr(request, "param"):
         param.update(request.param)
 
+    return _prepare_kea_wrapper(
+        request, param["service_name"], param["suppress_registration"]
+    )
+
+
+@pytest.fixture
+def ha_pair_service(request):
+    """
+    A fixture that setup the Kea High-Availability pair services and
+    guarantees that they are operational.
+
+    Parameters
+    ----------
+    request : unknown
+        Pytest request object
+
+    Returns
+    -------
+    Tuple[core.wrappers.Kea]
+        Kea wrappers for the docker-compose services
+
+    Notes
+    -----
+    You can use the ha_pair_parametrize helper for configure the service.
+    """
+    param = {
+        "first_service_name": "agent-kea-ha1",
+        "second_service_name": "agent-kea-ha2",
+        "suppress_registration": False
+    }
+
+    if hasattr(request, "param"):
+        param.update(request.param)
+
+    first_wrapper = _prepare_kea_wrapper(
+        request, param["first_service_name"], param["suppress_registration"]
+    )
+    second_wrapper = _prepare_kea_wrapper(
+        request,
+        param["first_service_name"],
+        param["suppress_registration"],
+        "kea-ha2"
+    )
+    return first_wrapper, second_wrapper
+
+
+def _prepare_kea_wrapper(request, service_name: str, suppress_registration: bool, config_dirname="kea"):
+    """
+    The helper function that setup the Kea Server service and guarantees that
+    it is operational.
+
+    Parameters
+    ----------
+    request : unknown
+        Pytest request object
+    service_name : str
+        The compose service name
+    suppress_registration : bool
+        Indicates the registration in the server should be suppressed.
+    config_dirname : str, optional
+        The target directory for auto-generated configurations, by default "kea"
+
+    Returns
+    -------
+    core.wrappers.Kea
+        Kea wrapper for the docker-compose service
+    """
     # Starts server service or suppresses registration
     env_vars = None
     server_service = None
-    if param['suppress_registration']:
+    if suppress_registration:
         env_vars = {"STORK_SERVER_URL": ""}
     else:
         # We need the Server to perform the registration
         server_service = request.getfixturevalue("server_service")
 
     # Re-generate the lease files
-    config_dir = os.path.join(os.path.dirname(__file__), "../config/kea")
+    config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
     with open(os.path.join(config_dir, "kea-leases4.csv"), "wt") as f:
         lease_generators.gen_dhcp4_lease_file(f)
 
@@ -194,13 +286,12 @@ def kea_service(request):
         lease_generators.gen_dhcp6_lease_file(f)
 
     # Setup wrapper
-    service_name = param['service_name']
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service)
 
-    if not param['suppress_registration']:
+    if not suppress_registration:
         wrapper.wait_for_registration()
 
     return wrapper
