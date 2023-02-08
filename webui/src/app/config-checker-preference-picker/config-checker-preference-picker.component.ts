@@ -99,6 +99,8 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'fa fa-tools'
             case 'host reservations change':
                 return 'fa fa-registered'
+            case 'Stork agent config change':
+                return 'fa fa-hammer'
             default:
                 return null
         }
