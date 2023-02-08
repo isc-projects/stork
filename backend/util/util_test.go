@@ -314,6 +314,17 @@ func TestIsNotNilPtr(t *testing.T) {
 	require.False(t, IsNilPtr(iface))
 }
 
+// Test creating a pointer from a literal.
+func TestPtr(t *testing.T) {
+	// Test string.
+	ptr0 := Ptr("string")
+	require.NotNil(t, ptr0)
+	require.Equal(t, "string", *ptr0)
+	// Test int64.
+	ptr := Ptr[int64](64)
+	require.Equal(t, int64(64), *ptr)
+}
+
 // Test the function that checks if a specified value is a whole number.
 func TestIsWholeNumber(t *testing.T) {
 	// Signed integers.

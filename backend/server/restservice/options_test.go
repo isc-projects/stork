@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -29,7 +29,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 			Encapsulate: "option-1001",
 			Fields: []*models.DHCPOptionField{
 				{
-					FieldType: keaconfig.StringField,
+					FieldType: dhcpmodel.StringField,
 					Values:    []string{"foo"},
 				},
 			},
@@ -39,7 +39,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 					Encapsulate: "option-1001.1",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.BinaryField,
+							FieldType: dhcpmodel.BinaryField,
 							Values:    []string{"01:02:03"},
 						},
 					},
@@ -50,7 +50,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 					Encapsulate: "option-1001.2",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.BoolField,
+							FieldType: dhcpmodel.BoolField,
 							Values:    []string{"true"},
 						},
 					},
@@ -65,7 +65,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 			Encapsulate: "option-1002",
 			Fields: []*models.DHCPOptionField{
 				{
-					FieldType: keaconfig.Uint16Field,
+					FieldType: dhcpmodel.Uint16Field,
 					Values:    []string{"755"},
 				},
 			},
@@ -75,27 +75,27 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 					Encapsulate: "option-1002.3",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.Uint8Field,
+							FieldType: dhcpmodel.Uint8Field,
 							Values:    []string{"123"},
 						},
 						{
-							FieldType: keaconfig.PsidField,
+							FieldType: dhcpmodel.PsidField,
 							Values:    []string{"1622", "12"},
 						},
 						{
-							FieldType: keaconfig.FqdnField,
+							FieldType: dhcpmodel.FqdnField,
 							Values:    []string{"foo.example.org."},
 						},
 						{
-							FieldType: keaconfig.Int8Field,
+							FieldType: dhcpmodel.Int8Field,
 							Values:    []string{"-123"},
 						},
 						{
-							FieldType: keaconfig.Int16Field,
+							FieldType: dhcpmodel.Int16Field,
 							Values:    []string{"-234"},
 						},
 						{
-							FieldType: keaconfig.Int32Field,
+							FieldType: dhcpmodel.Int32Field,
 							Values:    []string{"-345"},
 						},
 					},
@@ -106,15 +106,15 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 					Encapsulate: "option-1002.4",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.Uint32Field,
+							FieldType: dhcpmodel.Uint32Field,
 							Values:    []string{"166535"},
 						},
 						{
-							FieldType: keaconfig.IPv6PrefixField,
+							FieldType: dhcpmodel.IPv6PrefixField,
 							Values:    []string{"3001::", "64"},
 						},
 						{
-							FieldType: keaconfig.IPv4AddressField,
+							FieldType: dhcpmodel.IPv4AddressField,
 							Values:    []string{"192.0.2.2"},
 						},
 					},
@@ -125,7 +125,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 							Encapsulate: "option-1002.4.5",
 							Fields: []*models.DHCPOptionField{
 								{
-									FieldType: keaconfig.StringField,
+									FieldType: dhcpmodel.StringField,
 									Values:    []string{"baz"},
 								},
 							},
@@ -138,7 +138,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 									Encapsulate: "option-1002.4.5.6",
 									Fields: []*models.DHCPOptionField{
 										{
-											FieldType: keaconfig.Uint32Field,
+											FieldType: dhcpmodel.Uint32Field,
 											Values:    []string{"12"},
 										},
 									},
@@ -264,7 +264,7 @@ func TestFlattenDHCPv6Options(t *testing.T) {
 					Encapsulate: "option-94.89",
 					Fields: []*models.DHCPOptionField{
 						{
-							FieldType: keaconfig.Uint8Field,
+							FieldType: dhcpmodel.Uint8Field,
 							Values:    []string{"1"},
 						},
 					},
@@ -274,7 +274,7 @@ func TestFlattenDHCPv6Options(t *testing.T) {
 							Encapsulate: "option-94.89.93",
 							Fields: []*models.DHCPOptionField{
 								{
-									FieldType: keaconfig.Uint8Field,
+									FieldType: dhcpmodel.Uint8Field,
 									Values:    []string{"2"},
 								},
 							},
@@ -337,25 +337,25 @@ func TestFlattenDHCPOptionsInvalidValues(t *testing.T) {
 		values    []string
 	}
 	tests := []test{
-		{"non uint8 value", keaconfig.Uint8Field, []string{"foo"}},
-		{"non uint16 value", keaconfig.Uint16Field, []string{"foo"}},
-		{"non uint32 value", keaconfig.Uint32Field, []string{"foo"}},
-		{"non int8 value", keaconfig.Int8Field, []string{"foo"}},
-		{"non int16 value", keaconfig.Int16Field, []string{"foo"}},
-		{"non int32 value", keaconfig.Int32Field, []string{"foo"}},
-		{"uint8 out of range", keaconfig.Uint8Field, []string{"256"}},
-		{"uint16 out of range", keaconfig.Uint16Field, []string{"65536"}},
-		{"uint32 out of range", keaconfig.Uint32Field, []string{"14294967295"}},
-		{"int8 out of range", keaconfig.Int8Field, []string{"256"}},
-		{"int16 out of range", keaconfig.Int16Field, []string{"65536"}},
-		{"int32 out of range", keaconfig.Int32Field, []string{"14294967295"}},
-		{"invalid bool", keaconfig.BoolField, []string{"19"}},
-		{"prefix lacks length", keaconfig.IPv6PrefixField, []string{"3001::"}},
-		{"prefix length out of range", keaconfig.IPv6PrefixField, []string{"3001::", "280"}},
-		{"psid lacks length", keaconfig.PsidField, []string{"1600"}},
-		{"psid out of range", keaconfig.PsidField, []string{"65536", "12"}},
-		{"psid length out of range", keaconfig.PsidField, []string{"12", "1000"}},
-		{"no values", keaconfig.StringField, []string{}},
+		{"non uint8 value", dhcpmodel.Uint8Field, []string{"foo"}},
+		{"non uint16 value", dhcpmodel.Uint16Field, []string{"foo"}},
+		{"non uint32 value", dhcpmodel.Uint32Field, []string{"foo"}},
+		{"non int8 value", dhcpmodel.Int8Field, []string{"foo"}},
+		{"non int16 value", dhcpmodel.Int16Field, []string{"foo"}},
+		{"non int32 value", dhcpmodel.Int32Field, []string{"foo"}},
+		{"uint8 out of range", dhcpmodel.Uint8Field, []string{"256"}},
+		{"uint16 out of range", dhcpmodel.Uint16Field, []string{"65536"}},
+		{"uint32 out of range", dhcpmodel.Uint32Field, []string{"14294967295"}},
+		{"int8 out of range", dhcpmodel.Int8Field, []string{"256"}},
+		{"int16 out of range", dhcpmodel.Int16Field, []string{"65536"}},
+		{"int32 out of range", dhcpmodel.Int32Field, []string{"14294967295"}},
+		{"invalid bool", dhcpmodel.BoolField, []string{"19"}},
+		{"prefix lacks length", dhcpmodel.IPv6PrefixField, []string{"3001::"}},
+		{"prefix length out of range", dhcpmodel.IPv6PrefixField, []string{"3001::", "280"}},
+		{"psid lacks length", dhcpmodel.PsidField, []string{"1600"}},
+		{"psid out of range", dhcpmodel.PsidField, []string{"65536", "12"}},
+		{"psid length out of range", dhcpmodel.PsidField, []string{"12", "1000"}},
+		{"no values", dhcpmodel.StringField, []string{}},
 	}
 
 	for _, test := range tests {
@@ -396,7 +396,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 			Encapsulate: "option-1001",
 			Fields: []dbmodel.DHCPOptionField{
 				{
-					FieldType: keaconfig.StringField,
+					FieldType: dhcpmodel.StringField,
 					Values:    []any{"foo"},
 				},
 			},
@@ -406,7 +406,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 			Code:       1,
 			Fields: []dbmodel.DHCPOptionField{
 				{
-					FieldType: keaconfig.Uint8Field,
+					FieldType: dhcpmodel.Uint8Field,
 					Values:    []any{11},
 				},
 			},
@@ -418,7 +418,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 			Code:       2,
 			Fields: []dbmodel.DHCPOptionField{
 				{
-					FieldType: keaconfig.Uint32Field,
+					FieldType: dhcpmodel.Uint32Field,
 					Values:    []any{22},
 				},
 			},
@@ -434,7 +434,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.EqualValues(t, 1001, restOptions[0].Code)
 	require.EqualValues(t, "option-1001", restOptions[0].Encapsulate)
 	require.Len(t, restOptions[0].Fields, 1)
-	require.Equal(t, keaconfig.StringField, restOptions[0].Fields[0].FieldType)
+	require.Equal(t, dhcpmodel.StringField, restOptions[0].Fields[0].FieldType)
 	require.Len(t, restOptions[0].Fields[0].Values, 1)
 	require.Equal(t, "foo", restOptions[0].Fields[0].Values[0])
 	require.Len(t, restOptions[0].Options, 1)
@@ -444,7 +444,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.False(t, restOptions[0].Options[0].AlwaysSend)
 	require.EqualValues(t, 1, restOptions[0].Options[0].Code)
 	require.Len(t, restOptions[0].Options[0].Fields, 1)
-	require.Equal(t, keaconfig.Uint8Field, restOptions[0].Options[0].Fields[0].FieldType)
+	require.Equal(t, dhcpmodel.Uint8Field, restOptions[0].Options[0].Fields[0].FieldType)
 	require.Len(t, restOptions[0].Options[0].Fields[0].Values, 1)
 	require.Equal(t, "11", restOptions[0].Options[0].Fields[0].Values[0])
 	require.Equal(t, "option-1001.1", restOptions[0].Options[0].Encapsulate)
@@ -454,7 +454,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.False(t, restOptions[0].Options[0].Options[0].AlwaysSend)
 	require.EqualValues(t, 2, restOptions[0].Options[0].Options[0].Code)
 	require.Len(t, restOptions[0].Options[0].Options[0].Fields, 1)
-	require.Equal(t, keaconfig.Uint32Field, restOptions[0].Options[0].Options[0].Fields[0].FieldType)
+	require.Equal(t, dhcpmodel.Uint32Field, restOptions[0].Options[0].Options[0].Fields[0].FieldType)
 	require.Len(t, restOptions[0].Options[0].Options[0].Fields[0].Values, 1)
 	require.Equal(t, "22", restOptions[0].Options[0].Options[0].Fields[0].Values[0])
 	require.Equal(t, "option-1001.1.2", restOptions[0].Options[0].Options[0].Encapsulate)
@@ -476,20 +476,20 @@ func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
 		values      []string
 	}
 	tests := []test{
-		{"binary", keaconfig.BinaryField, []any{"010203"}, []string{"010203"}},
-		{"string", keaconfig.StringField, []any{"foo"}, []string{"foo"}},
-		{"bool", keaconfig.BoolField, []any{true}, []string{"true"}},
-		{"uint8", keaconfig.Uint8Field, []any{111}, []string{"111"}},
-		{"uint16", keaconfig.Uint16Field, []any{65536}, []string{"65536"}},
-		{"uint32", keaconfig.Uint32Field, []any{14294967295}, []string{"14294967295"}},
-		{"int8", keaconfig.Int8Field, []any{-111}, []string{"-111"}},
-		{"int16", keaconfig.Int16Field, []any{-2323}, []string{"-2323"}},
-		{"int32", keaconfig.Int32Field, []any{-235}, []string{"-235"}},
-		{"ipv4-address", keaconfig.IPv4AddressField, []any{"192.0.1.2"}, []string{"192.0.1.2"}},
-		{"ipv6-address", keaconfig.IPv6AddressField, []any{"3001::"}, []string{"3001::"}},
-		{"ipv6-prefix", keaconfig.IPv6PrefixField, []any{"3001::", "64"}, []string{"3001::", "64"}},
-		{"psid", keaconfig.PsidField, []any{16111, 12}, []string{"16111", "12"}},
-		{"fqdn", keaconfig.FqdnField, []any{"foo.example.org."}, []string{"foo.example.org."}},
+		{"binary", dhcpmodel.BinaryField, []any{"010203"}, []string{"010203"}},
+		{"string", dhcpmodel.StringField, []any{"foo"}, []string{"foo"}},
+		{"bool", dhcpmodel.BoolField, []any{true}, []string{"true"}},
+		{"uint8", dhcpmodel.Uint8Field, []any{111}, []string{"111"}},
+		{"uint16", dhcpmodel.Uint16Field, []any{65536}, []string{"65536"}},
+		{"uint32", dhcpmodel.Uint32Field, []any{14294967295}, []string{"14294967295"}},
+		{"int8", dhcpmodel.Int8Field, []any{-111}, []string{"-111"}},
+		{"int16", dhcpmodel.Int16Field, []any{-2323}, []string{"-2323"}},
+		{"int32", dhcpmodel.Int32Field, []any{-235}, []string{"-235"}},
+		{"ipv4-address", dhcpmodel.IPv4AddressField, []any{"192.0.1.2"}, []string{"192.0.1.2"}},
+		{"ipv6-address", dhcpmodel.IPv6AddressField, []any{"3001::"}, []string{"3001::"}},
+		{"ipv6-prefix", dhcpmodel.IPv6PrefixField, []any{"3001::", "64"}, []string{"3001::", "64"}},
+		{"psid", dhcpmodel.PsidField, []any{16111, 12}, []string{"16111", "12"}},
+		{"fqdn", dhcpmodel.FqdnField, []any{"foo.example.org."}, []string{"foo.example.org."}},
 	}
 	for _, test := range tests {
 		fieldType := test.fieldType

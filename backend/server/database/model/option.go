@@ -2,7 +2,14 @@ package dbmodel
 
 import (
 	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
+)
+
+// Interface checks.
+var (
+	_ dhcpmodel.DHCPOptionAccessor      = (*DHCPOption)(nil)
+	_ dhcpmodel.DHCPOptionFieldAccessor = (*DHCPOptionField)(nil)
 )
 
 // Represents a DHCP option field.
@@ -49,7 +56,7 @@ func (option DHCPOption) GetEncapsulate() string {
 }
 
 // Returns option fields belonging to the option.
-func (option DHCPOption) GetFields() (returnedFields []keaconfig.DHCPOptionField) {
+func (option DHCPOption) GetFields() (returnedFields []dhcpmodel.DHCPOptionFieldAccessor) {
 	for _, field := range option.Fields {
 		returnedFields = append(returnedFields, field)
 	}
@@ -69,4 +76,27 @@ func (option DHCPOption) GetUniverse() storkutil.IPType {
 // Returns option space name.
 func (option DHCPOption) GetSpace() string {
 	return option.Space
+}
+
+// Creates DHCP option instance in Stork from a DHCP option in Kea.
+func NewDHCPOptionFromKea(optionData keaconfig.SingleOptionData, universe storkutil.IPType, lookup keaconfig.DHCPOptionDefinitionLookup) (*DHCPOption, error) {
+	optionAccessor, err := keaconfig.CreateDHCPOption(optionData, universe, lookup)
+	if err != nil {
+		return nil, err
+	}
+	option := &DHCPOption{
+		AlwaysSend:  optionAccessor.IsAlwaysSend(),
+		Code:        optionAccessor.GetCode(),
+		Encapsulate: optionAccessor.GetEncapsulate(),
+		Name:        optionAccessor.GetName(),
+		Space:       optionAccessor.GetSpace(),
+		Universe:    optionAccessor.GetUniverse(),
+	}
+	for _, f := range optionAccessor.GetFields() {
+		option.Fields = append(option.Fields, DHCPOptionField{
+			FieldType: f.GetFieldType(),
+			Values:    f.GetValues(),
+		})
+	}
+	return option, nil
 }

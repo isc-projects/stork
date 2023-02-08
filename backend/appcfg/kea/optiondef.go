@@ -1,5 +1,7 @@
 package keaconfig
 
+import dhcpmodel "isc.org/stork/datamodel/dhcp"
+
 // DHCP option type enum, as defined in Kea.
 type DHCPOptionType = string
 
@@ -49,9 +51,9 @@ type DHCPOptionDefinition interface {
 type DHCPOptionDefinitionLookup interface {
 	// Checks if a definition of the specified option exists for the
 	// given daemon.
-	DefinitionExists(int64, DHCPOption) bool
+	DefinitionExists(int64, dhcpmodel.DHCPOptionAccessor) bool
 	// Searches for an option definition for the specified daemon ID and option value.
-	Find(int64, DHCPOption) DHCPOptionDefinition
+	Find(int64, dhcpmodel.DHCPOptionAccessor) DHCPOptionDefinition
 }
 
 // Checks if the option is an array (has an array of option fields).
@@ -94,7 +96,7 @@ func (def dhcpOptionDefinition) GetType() DHCPOptionType {
 // the second returned parameter is false and the option field type
 // is empty. For an empty option this function always returns false and
 // empty option field type.
-func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (DHCPOptionFieldType, bool) {
+func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (dhcpmodel.DHCPOptionFieldType, bool) {
 	switch def.GetType() {
 	case EmptyOption:
 		return "", false

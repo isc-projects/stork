@@ -29,13 +29,13 @@ type KeaConfigSubnet struct {
 // Represents a shared network with subnets within Kea configuration.
 type KeaConfigSharedNetwork struct {
 	Name    string
-	Subnet4 []KeaConfigSubnet
-	Subnet6 []KeaConfigSubnet
+	Subnet4 []keaconfig.Subnet4
+	Subnet6 []keaconfig.Subnet6
 }
 
 // Represents a subnet retrieved from database from app table,
 // form config json field.
-type KeaSubnet struct {
+/*type KeaSubnet struct {
 	ID             int
 	AppID          int
 	Subnet         string
@@ -43,7 +43,7 @@ type KeaSubnet struct {
 	SharedNetwork  string
 	MachineAddress string
 	AgentPort      int64
-}
+}*/
 
 // Represents a shared network retrieved from database from app table,
 // from config json field.

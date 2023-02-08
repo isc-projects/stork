@@ -1,11 +1,16 @@
-package keaconfig
+package keaconfig_test
 
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	require "github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
+
+//go:generate mockgen -package=keaconfig_test -destination=optionmock_test.go isc.org/stork/datamodel/dhcp DHCPOptionAccessor
 
 // DHCP option field used in the tests implementing the DHCPOptionField
 // interface.
@@ -22,11 +27,6 @@ type testDHCPOption struct {
 	fields      []testDHCPOptionField
 	name        string
 	space       string
-}
-
-// DHCP option definition lookup used in the tests.
-type testDHCPOptionDefinitionLookup struct {
-	hasDefinition bool
 }
 
 // Convenience function creating new testDHCPOption instance.
@@ -64,7 +64,7 @@ func (option testDHCPOption) GetEncapsulate() string {
 }
 
 // Returns option fields belonging to the option.
-func (option testDHCPOption) GetFields() (returnedFields []DHCPOptionField) {
+func (option testDHCPOption) GetFields() (returnedFields []dhcpmodel.DHCPOptionFieldAccessor) {
 	for _, field := range option.fields {
 		returnedFields = append(returnedFields, field)
 	}
@@ -84,18 +84,6 @@ func (option testDHCPOption) GetSpace() string {
 // Returns option universe (i.e., IPv4 or IPv6).
 func (option testDHCPOption) GetUniverse() storkutil.IPType {
 	return storkutil.IPv4
-}
-
-// Checks if a definition of the specified option exists for the
-// given daemon.
-func (lookup testDHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option DHCPOption) bool {
-	return lookup.hasDefinition
-}
-
-// Finds option definition for the specified option.
-func (lookup testDHCPOptionDefinitionLookup) Find(daemonID int64, option DHCPOption) DHCPOptionDefinition {
-	stdLookup := NewStdDHCPOptionDefinitionLookup()
-	return stdLookup.FindByCodeSpace(option.GetCode(), option.GetSpace(), option.GetUniverse())
 }
 
 // Test that a DHCP option in the Kea format is created from the Stork's
@@ -164,12 +152,12 @@ func TestCreateSingleOptionDataMultiplFields(t *testing.T) {
 		space: "foobar",
 	}
 
-	lookup := &testDHCPOptionDefinitionLookup{
-		hasDefinition: true,
-	}
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(true)
 
 	// Convert the option from the Stork to Kea format.
-	data, err := CreateSingleOptionData(1, lookup, option)
+	data, err := keaconfig.CreateSingleOptionData(1, lookup, option)
 	require.NoError(t, err)
 	require.NotNil(t, data)
 
@@ -197,12 +185,12 @@ func TestCreateSingleOptionDataBinaryField(t *testing.T) {
 		},
 	}
 
-	lookup := &testDHCPOptionDefinitionLookup{
-		hasDefinition: true,
-	}
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(true)
 
 	// Convert the option from the Stork to Kea format.
-	data, err := CreateSingleOptionData(1, lookup, option)
+	data, err := keaconfig.CreateSingleOptionData(1, lookup, option)
 	require.NoError(t, err)
 	require.NotNil(t, data)
 
@@ -283,12 +271,12 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 		space: "foo",
 	}
 
-	lookup := &testDHCPOptionDefinitionLookup{
-		hasDefinition: false,
-	}
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(false)
 
 	// Convert the option from the Stork to Kea format.
-	data, err := CreateSingleOptionData(1, lookup, option)
+	data, err := keaconfig.CreateSingleOptionData(1, lookup, option)
 	require.NoError(t, err)
 	require.NotNil(t, data)
 
@@ -306,7 +294,7 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 // Test that an option received from Kea is correctly parsed into the Stork's
 // representation of an option.
 func TestCreateDHCPOptionCSV(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		AlwaysSend: true,
 		Code:       244,
 		CSVFormat:  true,
@@ -314,7 +302,10 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 		Name:       "foo",
 		Space:      "bar",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
 	require.NoError(t, err)
 	require.True(t, option.IsAlwaysSend())
 	require.EqualValues(t, 244, option.GetCode())
@@ -325,41 +316,41 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 
 	fields := option.GetFields()
 	require.Len(t, fields, 9)
-	require.Equal(t, IPv4AddressField, fields[0].GetFieldType())
+	require.Equal(t, dhcpmodel.IPv4AddressField, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.Equal(t, "192.0.2.1", fields[0].GetValues()[0])
 
-	require.Equal(t, StringField, fields[1].GetFieldType())
+	require.Equal(t, dhcpmodel.StringField, fields[1].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.Equal(t, "xyz", fields[1].GetValues()[0])
 
-	require.Equal(t, BoolField, fields[2].GetFieldType())
+	require.Equal(t, dhcpmodel.BoolField, fields[2].GetFieldType())
 	require.Len(t, fields[2].GetValues(), 1)
 	require.Equal(t, true, fields[2].GetValues()[0])
 
-	require.Equal(t, Uint32Field, fields[3].GetFieldType())
+	require.Equal(t, dhcpmodel.Uint32Field, fields[3].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.EqualValues(t, 1020, fields[3].GetValues()[0])
 
-	require.Equal(t, IPv6PrefixField, fields[4].GetFieldType())
+	require.Equal(t, dhcpmodel.IPv6PrefixField, fields[4].GetFieldType())
 	require.Len(t, fields[4].GetValues(), 2)
 	require.Equal(t, "3000::", fields[4].GetValues()[0])
 	require.EqualValues(t, 64, fields[4].GetValues()[1])
 
-	require.Equal(t, PsidField, fields[5].GetFieldType())
+	require.Equal(t, dhcpmodel.PsidField, fields[5].GetFieldType())
 	require.Len(t, fields[5].GetValues(), 2)
 	require.EqualValues(t, 90, fields[5].GetValues()[0])
 	require.EqualValues(t, 2, fields[5].GetValues()[1])
 
-	require.Equal(t, FqdnField, fields[6].GetFieldType())
+	require.Equal(t, dhcpmodel.FqdnField, fields[6].GetFieldType())
 	require.Len(t, fields[6].GetValues(), 1)
 	require.EqualValues(t, "foobar.example.com.", fields[6].GetValues()[0])
 
-	require.Equal(t, IPv6AddressField, fields[7].GetFieldType())
+	require.Equal(t, dhcpmodel.IPv6AddressField, fields[7].GetFieldType())
 	require.Len(t, fields[7].GetValues(), 1)
 	require.EqualValues(t, "2001:db8:1::12", fields[7].GetValues()[0])
 
-	require.Equal(t, Int32Field, fields[8].GetFieldType())
+	require.Equal(t, dhcpmodel.Int32Field, fields[8].GetFieldType())
 	require.Len(t, fields[8].GetValues(), 1)
 	require.EqualValues(t, -5, fields[8].GetValues()[0])
 }
@@ -367,7 +358,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 // Test that an option in a hex bytes format received from Kea is correctly parsed
 // into the Stork's representation of an option.
 func TestCreateDHCPOptionHex(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		AlwaysSend: false,
 		Code:       2048,
 		CSVFormat:  false,
@@ -375,7 +366,10 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 		Name:       "foobar",
 		Space:      "baz",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 2048, option.GetCode())
@@ -386,7 +380,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 
 	fields := option.GetFields()
 	require.Len(t, fields, 1)
-	require.Equal(t, BinaryField, fields[0].GetFieldType())
+	require.Equal(t, dhcpmodel.BinaryField, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.Equal(t, "0102030405060708090A", fields[0].GetValues()[0])
 }
@@ -394,13 +388,16 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 // Test that an empty option received from Kea is correctly parsed into the
 // Stork's representation of an option.
 func TestCreateDHCPOptionEmpty(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:      333,
 		CSVFormat: true,
 		Name:      "foobar",
 		Space:     "baz",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
 	require.EqualValues(t, 333, option.GetCode())
@@ -413,44 +410,56 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 
 // Test encapsulated option space setting for top-level DHCPv4 options.
 func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:  253,
-		Space: DHCPv4OptionSpace,
+		Space: dhcpmodel.DHCPv4OptionSpace,
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
 	require.NoError(t, err)
 	require.Equal(t, "option-253", option.GetEncapsulate())
 }
 
 // Test encapsulated option space setting for DHCPv4 suboptions.
 func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:  1,
 		Space: "option-253",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
 	require.NoError(t, err)
 	require.Equal(t, "option-253.1", option.GetEncapsulate())
 }
 
 // Test encapsulated option space setting for top-level DHCPv6 options.
 func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:  1024,
-		Space: DHCPv6OptionSpace,
+		Space: dhcpmodel.DHCPv6OptionSpace,
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.Equal(t, "option-1024", option.GetEncapsulate())
 }
 
 // Test encapsulated option space setting for DHCPv6 suboptions.
 func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:  1,
 		Space: "option-1024",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.Equal(t, "option-1024.1", option.GetEncapsulate())
 }
@@ -458,14 +467,18 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 // Test that a standard option definition is used for setting the
 // encapsulated option space and setting the option field types.
 func TestCreateStandardDHCPOption(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:      89,
 		CSVFormat: true,
 		Data:      "10, 9, 6, 192.0.2.1, 3000::/64",
 		Name:      "s46-rule",
 		Space:     "s46-cont-mape-options",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv6, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	stdLookup := keaconfig.NewStdDHCPOptionDefinitionLookup()
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(stdLookup.FindByCodeSpace(optionData.Code, optionData.Space, storkutil.IPv6))
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, option)
 	require.False(t, option.IsAlwaysSend())
@@ -477,19 +490,19 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 
 	fields := option.GetFields()
 	require.Len(t, fields, 5)
-	require.Equal(t, Uint8Field, fields[0].GetFieldType())
+	require.Equal(t, dhcpmodel.Uint8Field, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.EqualValues(t, 10, fields[0].GetValues()[0])
-	require.Equal(t, Uint8Field, fields[1].GetFieldType())
+	require.Equal(t, dhcpmodel.Uint8Field, fields[1].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.EqualValues(t, 9, fields[1].GetValues()[0])
-	require.Equal(t, Uint8Field, fields[2].GetFieldType())
+	require.Equal(t, dhcpmodel.Uint8Field, fields[2].GetFieldType())
 	require.Len(t, fields[2].GetValues(), 1)
 	require.EqualValues(t, 6, fields[2].GetValues()[0])
-	require.Equal(t, IPv4AddressField, fields[3].GetFieldType())
+	require.Equal(t, dhcpmodel.IPv4AddressField, fields[3].GetFieldType())
 	require.Len(t, fields[3].GetValues(), 1)
 	require.Equal(t, "192.0.2.1", fields[3].GetValues()[0])
-	require.Equal(t, IPv6PrefixField, fields[4].GetFieldType())
+	require.Equal(t, dhcpmodel.IPv6PrefixField, fields[4].GetFieldType())
 	require.Len(t, fields[4].GetValues(), 2)
 	require.Equal(t, "3000::", fields[4].GetValues()[0])
 	require.Equal(t, 64, fields[4].GetValues()[1])
@@ -498,14 +511,18 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 // Test that an option instance is successfully created using an option
 // definition with binary field types.
 func TestCreateStandardDHCPOptionBinary(t *testing.T) {
-	optionData := SingleOptionData{
+	optionData := keaconfig.SingleOptionData{
 		Code:      97,
 		CSVFormat: true,
 		Data:      "1, 010203040102",
 		Name:      "uuid-guid",
 		Space:     "dhcp4",
 	}
-	option, err := CreateDHCPOption(optionData, storkutil.IPv4, &testDHCPOptionDefinitionLookup{})
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	stdLookup := keaconfig.NewStdDHCPOptionDefinitionLookup()
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(stdLookup.FindByCodeSpace(optionData.Code, optionData.Space, storkutil.IPv4))
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, option)
 	require.False(t, option.IsAlwaysSend())
@@ -517,10 +534,10 @@ func TestCreateStandardDHCPOptionBinary(t *testing.T) {
 
 	fields := option.GetFields()
 	require.Len(t, fields, 2)
-	require.Equal(t, Uint8Field, fields[0].GetFieldType())
+	require.Equal(t, dhcpmodel.Uint8Field, fields[0].GetFieldType())
 	require.Len(t, fields[0].GetValues(), 1)
 	require.EqualValues(t, 1, fields[0].GetValues()[0])
-	require.Equal(t, BinaryField, fields[1].GetFieldType())
+	require.Equal(t, dhcpmodel.BinaryField, fields[1].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.EqualValues(t, "010203040102", fields[1].GetValues()[0])
 }

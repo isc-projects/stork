@@ -362,7 +362,7 @@ func isAnyIPReservationInPools(reservations []dbmodel.IPReservation, pools []kea
 }
 
 // Check if any of the listed IP reservations is within any of the prefix pools.
-func isAnyIPReservationInPDPools(reservations []dbmodel.IPReservation, pdPools []keaconfig.PdPool) bool {
+func isAnyIPReservationInPDPools(reservations []dbmodel.IPReservation, pdPools []keaconfig.PDPool) bool {
 	for _, reservation := range reservations {
 		parsedReservation := storkutil.ParseIP(reservation.Address)
 		if parsedReservation == nil || !parsedReservation.Prefix {
@@ -498,7 +498,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 }
 
 // Check if any of the listed prefixes is within any of the prefix pools.
-func isAnyPrefixInPools(prefixes []string, pools []keaconfig.PdPool) bool {
+func isAnyPrefixInPools(prefixes []string, pools []keaconfig.PDPool) bool {
 	for _, pd := range prefixes {
 		parsedReservation := storkutil.ParseIP(pd)
 		if parsedReservation == nil {
@@ -522,7 +522,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 		ID           int64
 		Subnet       string
 		Pools        []keaconfig.Pool
-		PDPools      []keaconfig.PdPool
+		PDPools      []keaconfig.PDPool
 		Reservations []struct {
 			IPAddresses []string
 			Prefixes    []string
@@ -1216,7 +1216,7 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 	type subnet struct {
 		ID           int64
 		Subnet       string
-		PDPools      []keaconfig.PdPool
+		PDPools      []keaconfig.PDPool
 		Reservations []struct {
 			Prefixes []string
 		}

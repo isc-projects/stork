@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
 )
@@ -749,7 +749,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 			{
 				Code:  254,
 				Name:  "foo",
-				Space: keaconfig.DHCPv4OptionSpace,
+				Space: dhcpmodel.DHCPv4OptionSpace,
 			},
 		},
 	})
@@ -810,7 +810,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet, 1)
 	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Code)
 	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet[0].Name)
-	require.Equal(t, keaconfig.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Space)
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Space)
 }
 
 // Test that daemon's associations with multiple hosts can be removed.

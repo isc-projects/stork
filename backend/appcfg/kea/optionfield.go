@@ -9,39 +9,9 @@ import (
 	"strings"
 
 	errors "github.com/pkg/errors"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
-
-// Type of a DHCP option field.
-type DHCPOptionFieldType = string
-
-// Supported types of DHCP option fields.
-const (
-	BinaryField      DHCPOptionFieldType = "binary"
-	StringField      DHCPOptionFieldType = "string"
-	BoolField        DHCPOptionFieldType = "bool"
-	Uint8Field       DHCPOptionFieldType = "uint8"
-	Uint16Field      DHCPOptionFieldType = "uint16"
-	Uint32Field      DHCPOptionFieldType = "uint32"
-	Int8Field        DHCPOptionFieldType = "int8"
-	Int16Field       DHCPOptionFieldType = "int16"
-	Int32Field       DHCPOptionFieldType = "int32"
-	IPv4AddressField DHCPOptionFieldType = "ipv4-address"
-	IPv6AddressField DHCPOptionFieldType = "ipv6-address"
-	IPv6PrefixField  DHCPOptionFieldType = "ipv6-prefix"
-	PsidField        DHCPOptionFieldType = "psid"
-	FqdnField        DHCPOptionFieldType = "fqdn"
-)
-
-// An interface to an option field. It returns an option field type
-// and its value(s). Database model representing DHCP option fields
-// implements this interface.
-type DHCPOptionField interface {
-	// Returns option field type.
-	GetFieldType() string
-	// Returns option field value(s).
-	GetValues() []any
-}
 
 // Represents a DHCP option field and implements DHCPOptionField interface. It
 // is returned by the CreateDHCPOption function.
@@ -62,37 +32,37 @@ func (field dhcpOptionField) GetValues() []any {
 
 // Checks if the option is always returned to a DHCP client, regardless
 // if the client has requested it or not.
-func (option dhcpOption) IsAlwaysSend() bool {
+func (option DHCPOption) IsAlwaysSend() bool {
 	return option.AlwaysSend
 }
 
 // Returns option code.
-func (option dhcpOption) GetCode() uint16 {
+func (option DHCPOption) GetCode() uint16 {
 	return option.Code
 }
 
 // Returns an encapsulated option space name.
-func (option dhcpOption) GetEncapsulate() string {
+func (option DHCPOption) GetEncapsulate() string {
 	return option.Encapsulate
 }
 
 // Returns option fields belonging to the option.
-func (option dhcpOption) GetFields() (returnedFields []DHCPOptionField) {
+func (option DHCPOption) GetFields() (returnedFields []dhcpmodel.DHCPOptionFieldAccessor) {
 	return option.Fields
 }
 
 // Returns option name.
-func (option dhcpOption) GetName() string {
+func (option DHCPOption) GetName() string {
 	return option.Name
 }
 
 // Returns option universe (i.e., IPv4 or IPv6).
-func (option dhcpOption) GetUniverse() storkutil.IPType {
+func (option DHCPOption) GetUniverse() storkutil.IPType {
 	return option.Universe
 }
 
 // Returns option space name.
-func (option dhcpOption) GetSpace() string {
+func (option DHCPOption) GetSpace() string {
 	return option.Space
 }
 
@@ -113,36 +83,36 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 	var field dhcpOptionField
 
 	// Is it a bool value?
-	if bv, err := parseBoolField(value); err == nil {
+	if bv, err := ParseBoolField(value); err == nil {
 		field = dhcpOptionField{
-			FieldType: BoolField,
+			FieldType: dhcpmodel.BoolField,
 			Values:    []any{bv},
 		}
 		return field
 	}
 	// Is it an unsigned number?
-	if iv, err := parseUint32Field(value); err == nil {
+	if iv, err := ParseUint32Field(value); err == nil {
 		field = dhcpOptionField{
-			FieldType: Uint32Field,
+			FieldType: dhcpmodel.Uint32Field,
 			Values:    []any{iv},
 		}
 		return field
 	}
 	// Is it a negative number.
-	if iv, err := parseInt32Field(value); err == nil {
+	if iv, err := ParseInt32Field(value); err == nil {
 		field = dhcpOptionField{
-			FieldType: Int32Field,
+			FieldType: dhcpmodel.Int32Field,
 			Values:    []any{iv},
 		}
 		return field
 	}
 	// Is it an IP address or prefix?
-	if ip, err := parseIPField(value); err == nil {
+	if ip, err := ParseIPField(value); err == nil {
 		switch ip.Protocol {
 		// Is it an IPv4 address?
 		case storkutil.IPv4:
 			field = dhcpOptionField{
-				FieldType: IPv4AddressField,
+				FieldType: dhcpmodel.IPv4AddressField,
 				Values:    []any{value},
 			}
 			return field
@@ -151,7 +121,7 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 			// Is it a prefix?
 			if ip.Prefix {
 				field = dhcpOptionField{
-					FieldType: IPv6PrefixField,
+					FieldType: dhcpmodel.IPv6PrefixField,
 					Values: []any{
 						ip.NetworkPrefix,
 						ip.PrefixLength,
@@ -160,7 +130,7 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 			} else {
 				// Is it an IPv6 address?
 				field = dhcpOptionField{
-					FieldType: IPv6AddressField,
+					FieldType: dhcpmodel.IPv6AddressField,
 					Values:    []any{value},
 				}
 			}
@@ -171,23 +141,23 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 	if fqdn, err := storkutil.ParseFqdn(value); err == nil {
 		if !fqdn.IsPartial() {
 			field = dhcpOptionField{
-				FieldType: FqdnField,
+				FieldType: dhcpmodel.FqdnField,
 				Values:    []any{value},
 			}
 			return field
 		}
 	}
 	// Is it PSID?
-	if psid, psidLen, err := parsePsidField(value); err == nil {
+	if psid, psidLen, err := ParsePsidField(value); err == nil {
 		field = dhcpOptionField{
-			FieldType: PsidField,
+			FieldType: dhcpmodel.PsidField,
 			Values:    []any{psid, psidLen},
 		}
 		return field
 	}
 	// It must be a string.
 	field = dhcpOptionField{
-		FieldType: StringField,
+		FieldType: dhcpmodel.StringField,
 		Values:    []any{value},
 	}
 	return field
@@ -196,56 +166,56 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 // Parses the DHCP option field value specified as a string given
 // its type specified as fieldType. If the value doesn't match the
 // specified type an error is returned.
-func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOptionField, error) {
+func ParseDHCPOptionField(fieldType dhcpmodel.DHCPOptionFieldType, value string) (dhcpmodel.DHCPOptionFieldAccessor, error) {
 	field := dhcpOptionField{
 		FieldType: fieldType,
 	}
 	switch fieldType {
-	case BoolField:
-		bv, err := parseBoolField(value)
+	case dhcpmodel.BoolField:
+		bv, err := ParseBoolField(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{bv}
 		return field, nil
-	case Uint8Field:
-		iv, err := parseUint8Field(value)
+	case dhcpmodel.Uint8Field:
+		iv, err := ParseUint8Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case Uint16Field:
-		iv, err := parseUint16Field(value)
+	case dhcpmodel.Uint16Field:
+		iv, err := ParseUint16Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case Uint32Field:
-		iv, err := parseUint32Field(value)
+	case dhcpmodel.Uint32Field:
+		iv, err := ParseUint32Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case Int8Field:
-		iv, err := parseInt8Field(value)
+	case dhcpmodel.Int8Field:
+		iv, err := ParseInt8Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case Int16Field:
-		iv, err := parseInt16Field(value)
+	case dhcpmodel.Int16Field:
+		iv, err := ParseInt16Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case Int32Field:
-		iv, err := parseInt32Field(value)
+	case dhcpmodel.Int32Field:
+		iv, err := ParseInt32Field(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{iv}
-	case IPv4AddressField:
-		ip, err := parseIPField(value)
+	case dhcpmodel.IPv4AddressField:
+		ip, err := ParseIPField(value)
 		if err != nil {
 			return nil, err
 		}
@@ -253,8 +223,8 @@ func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOpti
 			return nil, errors.Errorf("%s is not a valid IPv4 address option field value", value)
 		}
 		field.Values = []any{value}
-	case IPv6AddressField:
-		ip, err := parseIPField(value)
+	case dhcpmodel.IPv6AddressField:
+		ip, err := ParseIPField(value)
 		if err != nil {
 			return nil, err
 		}
@@ -262,8 +232,8 @@ func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOpti
 			return nil, errors.Errorf("%s is not a valid IPv6 address option field value", value)
 		}
 		field.Values = []any{value}
-	case IPv6PrefixField:
-		ip, err := parseIPField(value)
+	case dhcpmodel.IPv6PrefixField:
+		ip, err := ParseIPField(value)
 		if err != nil {
 			return nil, err
 		}
@@ -274,14 +244,14 @@ func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOpti
 			ip.NetworkPrefix,
 			ip.PrefixLength,
 		}
-	case FqdnField:
+	case dhcpmodel.FqdnField:
 		_, err := storkutil.ParseFqdn(value)
 		if err != nil {
 			return nil, err
 		}
 		field.Values = []any{value}
-	case PsidField:
-		psid, psidLen, err := parsePsidField(value)
+	case dhcpmodel.PsidField:
+		psid, psidLen, err := ParsePsidField(value)
 		if err != nil {
 			return nil, err
 		}
@@ -293,7 +263,7 @@ func parseDHCPOptionField(fieldType DHCPOptionFieldType, value string) (DHCPOpti
 }
 
 // Parse boolean option field.
-func parseBoolField(value string) (bool, error) {
+func ParseBoolField(value string) (bool, error) {
 	bv, err := strconv.ParseBool(value)
 	if err != nil {
 		return false, errors.Errorf("%s is not a valid bool option field value", value)
@@ -302,7 +272,7 @@ func parseBoolField(value string) (bool, error) {
 }
 
 // Parse uint8 option field.
-func parseUint8Field(value string) (uint8, error) {
+func ParseUint8Field(value string) (uint8, error) {
 	iv, err := strconv.ParseUint(value, 10, 8)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint8 option field value", value)
@@ -311,7 +281,7 @@ func parseUint8Field(value string) (uint8, error) {
 }
 
 // Parse uint16 option field.
-func parseUint16Field(value string) (uint16, error) {
+func ParseUint16Field(value string) (uint16, error) {
 	iv, err := strconv.ParseUint(value, 10, 16)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint16 option field value", value)
@@ -320,7 +290,7 @@ func parseUint16Field(value string) (uint16, error) {
 }
 
 // Parse uint32 option field.
-func parseUint32Field(value string) (uint32, error) {
+func ParseUint32Field(value string) (uint32, error) {
 	iv, err := strconv.ParseUint(value, 10, 32)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint32 option field value", value)
@@ -329,7 +299,7 @@ func parseUint32Field(value string) (uint32, error) {
 }
 
 // Parse int8 option field.
-func parseInt8Field(value string) (int8, error) {
+func ParseInt8Field(value string) (int8, error) {
 	iv, err := strconv.ParseInt(value, 10, 8)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint8 option field value", value)
@@ -338,7 +308,7 @@ func parseInt8Field(value string) (int8, error) {
 }
 
 // Parse int16 option field.
-func parseInt16Field(value string) (int16, error) {
+func ParseInt16Field(value string) (int16, error) {
 	iv, err := strconv.ParseInt(value, 10, 16)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint16 option field value", value)
@@ -347,7 +317,7 @@ func parseInt16Field(value string) (int16, error) {
 }
 
 // Parse int32 option field.
-func parseInt32Field(value string) (int32, error) {
+func ParseInt32Field(value string) (int32, error) {
 	iv, err := strconv.ParseInt(value, 10, 32)
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint32 option field value", value)
@@ -356,7 +326,7 @@ func parseInt32Field(value string) (int32, error) {
 }
 
 // Parse IPv4 address, IPv6 address or IPv6 prefix option field.
-func parseIPField(value string) (*storkutil.ParsedIP, error) {
+func ParseIPField(value string) (*storkutil.ParsedIP, error) {
 	ip := storkutil.ParseIP(value)
 	if ip == nil {
 		return nil, errors.Errorf("%s is neither an IP address nor prefix", value)
@@ -365,7 +335,7 @@ func parseIPField(value string) (*storkutil.ParsedIP, error) {
 }
 
 // Parse PSID option field.
-func parsePsidField(value string) (uint16, uint8, error) {
+func ParsePsidField(value string) (uint16, uint8, error) {
 	pv := strings.Split(value, "/")
 	if len(pv) != 2 {
 		return 0, 0, errors.Errorf("psid value %s should have the psid/psidLength format", value)
@@ -384,7 +354,7 @@ func parsePsidField(value string) (uint16, uint8, error) {
 // Converts a binary option field from Stork to Kea format. The conversion
 // is the same regardless of the csv-format setting. It removes the colons
 // and spaces if they are used as separators.
-func convertBinaryField(field DHCPOptionField) (string, error) {
+func ConvertBinaryField(field dhcpmodel.DHCPOptionFieldAccessor) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in binary option field, have %d", len(values))
@@ -409,7 +379,7 @@ func convertBinaryField(field DHCPOptionField) (string, error) {
 // there is one option field value and that this value is a string. If the
 // textFormat is set to true, it returns the original string. Otherwise, it
 // converts the string to the hex format.
-func convertStringField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertStringField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in string option field, have %d", len(values))
@@ -431,7 +401,7 @@ func convertStringField(field DHCPOptionField, textFormat bool) (string, error) 
 // there is one option field value and that this value is a boolean. If the
 // textFormat is set to true, it returns "true" or "false". Otherwise, it
 // returns "01" or "00" (i.e., hex format).
-func convertBoolField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertBoolField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in bool option field, have %d", len(values))
@@ -454,7 +424,7 @@ func convertBoolField(field DHCPOptionField, textFormat bool) (string, error) {
 // that this value is a number. If the textFormat is set to true, it returns
 // the value converted to a string. Otherwise, it converts the value to the
 // hex format.
-func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in int option field, have %d", len(values))
@@ -465,28 +435,28 @@ func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
 	value := reflect.ValueOf(values[0])
 	ivalue := value.Convert(reflect.TypeOf((*int64)(nil)).Elem())
 	switch field.GetFieldType() {
-	case Uint8Field:
+	case dhcpmodel.Uint8Field:
 		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint8 {
 			return "", errors.Errorf("uint8 option field value must be between 0 and %d", math.MaxUint8)
 		}
 		if !textFormat {
 			return fmt.Sprintf("%02X", ivalue.Int()), nil
 		}
-	case Uint16Field:
+	case dhcpmodel.Uint16Field:
 		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint16 {
 			return "", errors.Errorf("uint16 option field value must be between 0 and %d", math.MaxUint16)
 		}
 		if !textFormat {
 			return fmt.Sprintf("%04X", ivalue.Int()), nil
 		}
-	case Uint32Field:
+	case dhcpmodel.Uint32Field:
 		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint32 {
 			return "", errors.Errorf("uint32 option field value must be between 0 and %d", math.MaxUint32)
 		}
 		if !textFormat {
 			return fmt.Sprintf("%08X", ivalue.Int()), nil
 		}
-	case Int8Field:
+	case dhcpmodel.Int8Field:
 		if ivalue.Int() < math.MinInt8 || ivalue.Int() > math.MaxInt8 {
 			return "", errors.Errorf("int8 option field value must be between %d and %d", math.MinInt8, math.MaxInt8)
 		}
@@ -494,7 +464,7 @@ func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
 			// Cast integer to unsigned integer before hex conversion.
 			return fmt.Sprintf("%02X", uint8(ivalue.Int())), nil
 		}
-	case Int16Field:
+	case dhcpmodel.Int16Field:
 		if ivalue.Int() < math.MinInt16 || ivalue.Int() > math.MaxInt16 {
 			return "", errors.Errorf("int16 option field value must be between %d and %d", math.MinInt16, math.MaxInt16)
 		}
@@ -502,7 +472,7 @@ func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
 			// Cast integer to unsigned integer before hex conversion.
 			return fmt.Sprintf("%04X", uint16(ivalue.Int())), nil
 		}
-	case Int32Field:
+	case dhcpmodel.Int32Field:
 		if ivalue.Int() < math.MinInt32 || ivalue.Int() > math.MaxInt32 {
 			return "", errors.Errorf("int32 option field value must be between %d and %d", math.MinInt32, math.MaxInt32)
 		}
@@ -518,7 +488,7 @@ func convertIntField(field DHCPOptionField, textFormat bool) (string, error) {
 // that there is one option field value and that this value is a string with
 // a valid IPv4 address. If the textFormat is set to true, it returns the
 // original string. Otherwise, it converts the IPv4 address to the hex format.
-func convertIPv4AddressField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertIPv4AddressField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in IPv4 address option field, have %d", len(values))
@@ -541,7 +511,7 @@ func convertIPv4AddressField(field DHCPOptionField, textFormat bool) (string, er
 // that there is one option field value and that this value is a string with
 // a valid IPv6 address. If the textFormat is set to true, it returns the
 // original string. Otherwise, it converts the IPv6 address to the hex format.
-func convertIPv6AddressField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertIPv6AddressField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in IPv6 address option field, have %d", len(values))
@@ -565,7 +535,7 @@ func convertIPv6AddressField(field DHCPOptionField, textFormat bool) (string, er
 // prefix and the second one is a prefix length. If the textFormat is set to
 // true, it returns the prefix in a prefix/length format. Otherwise, it
 // converts the values to the hex format and returns them concatenated.
-func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertIPv6PrefixField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 2 {
 		return "", errors.Errorf("IPv6 prefix option field must contain two values, it has %d", len(values))
@@ -597,7 +567,7 @@ func convertIPv6PrefixField(field DHCPOptionField, textFormat bool) (string, err
 // textFormat is set to true, it returns the option field value in the
 // PSID/PSIDLen format. Otherwise, it converts the option fields to the hex
 // format and returns them concatenated.
-func convertPsidField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertPsidField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 2 {
 		return "", errors.Errorf("psid option field must contain two values, it has %d", len(values))
@@ -627,7 +597,7 @@ func convertPsidField(field DHCPOptionField, textFormat bool) (string, error) {
 // string. Otherwise, it converts the FQDN to the hex format. A partial
 // FQDN should lack a terminating dot. A full FQDN should include a terminating
 // dot.
-func convertFqdnField(field DHCPOptionField, textFormat bool) (string, error) {
+func ConvertFqdnField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (string, error) {
 	values := field.GetValues()
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in FQDN option field, have %d", len(values))

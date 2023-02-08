@@ -99,6 +99,8 @@ func overrideIntoDatabaseSubnet(dbi dbops.DBI, existingSubnet *dbmodel.Subnet, c
 	// Prefix delegation pools.
 	pdPools := overrideIntoPDPools(existingSubnet.PrefixPools, changedSubnet.PrefixPools)
 	existingSubnet.PrefixPools = pdPools
+
+	existingSubnet.Join(changedSubnet)
 	return nil
 }
 
@@ -173,6 +175,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 					networkForUpdate.Subnets = append(networkForUpdate.Subnets, *existingSubnet)
 				}
 			}
+			networkForUpdate.Join(network)
 			networks = append(networks, networkForUpdate)
 		} else {
 			networks = append(networks, *network)
@@ -216,7 +219,12 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 	for _, s := range subnetList {
 		if subnetMap, ok := s.(map[string]interface{}); ok {
 			// Parse the configured subnet.
-			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig, lookup)
+			var subnet *dbmodel.Subnet
+			if family == 4 {
+				subnet, err = dbmodel.NewSubnet4FromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig, lookup)
+			} else {
+				subnet, err = dbmodel.NewSubnet6FromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig, lookup)
+			}
 			if err != nil {
 				log.Warnf("Skipping invalid subnet: %v", err)
 				continue
@@ -231,6 +239,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 						subnet.Prefix, err)
 					continue
 				}
+				existingSubnet.Join(subnet)
 				subnets = append(subnets, *existingSubnet)
 			} else {
 				subnets = append(subnets, *subnet)

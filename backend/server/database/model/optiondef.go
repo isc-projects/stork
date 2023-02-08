@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
 
@@ -23,7 +24,7 @@ func NewDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
 
 // Checks if a definition of the specified option exists for the
 // given daemon.
-func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option keaconfig.DHCPOption) bool {
+func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option dhcpmodel.DHCPOptionAccessor) bool {
 	switch option.GetUniverse() {
 	case storkutil.IPv4:
 		return (option.GetSpace() == "dhcp4" &&
@@ -43,6 +44,6 @@ func (lookup DHCPOptionDefinitionLookup) DefinitionExists(daemonID int64, option
 // Finds option definition for the specified option. Internally, it queries standard
 // Kea option definitions defined in the keaconfig package. In the future it will also
 // be able to search for the runtime definitions in the database.
-func (lookup DHCPOptionDefinitionLookup) Find(daemonID int64, option keaconfig.DHCPOption) keaconfig.DHCPOptionDefinition {
+func (lookup DHCPOptionDefinitionLookup) Find(daemonID int64, option dhcpmodel.DHCPOptionAccessor) keaconfig.DHCPOptionDefinition {
 	return lookup.keaStdLookup.FindByCodeSpace(option.GetCode(), option.GetSpace(), option.GetUniverse())
 }

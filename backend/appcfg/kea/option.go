@@ -5,37 +5,9 @@ import (
 	"strings"
 
 	errors "github.com/pkg/errors"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
-
-// DHCP option space (one of dhcp4 or dhcp6).
-type DHCPOptionSpace = string
-
-// Top level DHCP option spaces.
-const (
-	DHCPv4OptionSpace DHCPOptionSpace = "dhcp4"
-	DHCPv6OptionSpace DHCPOptionSpace = "dhcp6"
-)
-
-// An interface to a DHCP option. Database model representing DHCP options
-// implements this interface.
-type DHCPOption interface {
-	// Returns a boolean flag indicating if the option should be
-	// always returned, regardless whether it is requested or not.
-	IsAlwaysSend() bool
-	// Returns option code.
-	GetCode() uint16
-	// Returns encapsulated option space name.
-	GetEncapsulate() string
-	// Returns option fields.
-	GetFields() []DHCPOptionField
-	// Returns option name.
-	GetName() string
-	// Returns option space.
-	GetSpace() string
-	// Returns the universe (i.e., IPv4 or IPv6).
-	GetUniverse() storkutil.IPType
-}
 
 // Represents a DHCP option in the format used by Kea (i.e., an item of the
 // option-data list).
@@ -54,7 +26,7 @@ type SingleOptionData struct {
 // specifies the option value as a comma separated list. Otherwise, it
 // converts the option fields to a hex form and sets the csv-format to
 // false. The lookup interface must not be nil.
-func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, option DHCPOption) (*SingleOptionData, error) {
+func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, option dhcpmodel.DHCPOptionAccessor) (*SingleOptionData, error) {
 	// Create Kea representation of the option. Set csv-format to
 	// true for all options for which the definitions are known.
 	data := &SingleOptionData{
@@ -72,24 +44,24 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 			err   error
 		)
 		switch field.GetFieldType() {
-		case BinaryField:
-			value, err = convertBinaryField(field)
-		case StringField:
-			value, err = convertStringField(field, data.CSVFormat)
-		case BoolField:
-			value, err = convertBoolField(field, data.CSVFormat)
-		case Uint8Field, Uint16Field, Uint32Field, Int8Field, Int16Field, Int32Field:
-			value, err = convertIntField(field, data.CSVFormat)
-		case IPv4AddressField:
-			value, err = convertIPv4AddressField(field, data.CSVFormat)
-		case IPv6AddressField:
-			value, err = convertIPv6AddressField(field, data.CSVFormat)
-		case IPv6PrefixField:
-			value, err = convertIPv6PrefixField(field, data.CSVFormat)
-		case PsidField:
-			value, err = convertPsidField(field, data.CSVFormat)
-		case FqdnField:
-			value, err = convertFqdnField(field, data.CSVFormat)
+		case dhcpmodel.BinaryField:
+			value, err = ConvertBinaryField(field)
+		case dhcpmodel.StringField:
+			value, err = ConvertStringField(field, data.CSVFormat)
+		case dhcpmodel.BoolField:
+			value, err = ConvertBoolField(field, data.CSVFormat)
+		case dhcpmodel.Uint8Field, dhcpmodel.Uint16Field, dhcpmodel.Uint32Field, dhcpmodel.Int8Field, dhcpmodel.Int16Field, dhcpmodel.Int32Field:
+			value, err = ConvertIntField(field, data.CSVFormat)
+		case dhcpmodel.IPv4AddressField:
+			value, err = ConvertIPv4AddressField(field, data.CSVFormat)
+		case dhcpmodel.IPv6AddressField:
+			value, err = ConvertIPv6AddressField(field, data.CSVFormat)
+		case dhcpmodel.IPv6PrefixField:
+			value, err = ConvertIPv6PrefixField(field, data.CSVFormat)
+		case dhcpmodel.PsidField:
+			value, err = ConvertPsidField(field, data.CSVFormat)
+		case dhcpmodel.FqdnField:
+			value, err = ConvertFqdnField(field, data.CSVFormat)
 		default:
 			err = errors.Errorf("unsupported option field type %s", field.GetFieldType())
 		}
@@ -113,11 +85,11 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 
 // Represents a DHCP option and implements DHCPOption interface. It is returned
 // by the CreateDHCPOption function.
-type dhcpOption struct {
+type DHCPOption struct {
 	AlwaysSend  bool
 	Code        uint16
 	Encapsulate string
-	Fields      []DHCPOptionField
+	Fields      []dhcpmodel.DHCPOptionFieldAccessor
 	Name        string
 	Space       string
 	Universe    storkutil.IPType
@@ -125,8 +97,8 @@ type dhcpOption struct {
 
 // Creates an instance of a DHCP option in Stork from the option representation
 // in Kea.
-func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lookup DHCPOptionDefinitionLookup) (DHCPOption, error) {
-	option := dhcpOption{
+func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lookup DHCPOptionDefinitionLookup) (dhcpmodel.DHCPOptionAccessor, error) {
+	option := DHCPOption{
 		AlwaysSend: optionData.AlwaysSend,
 		Code:       optionData.Code,
 		Name:       optionData.Name,
@@ -145,7 +117,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 		// Generate the encapsulated option space name because option
 		// definition does not exist in Stork for this option.
 		switch option.Space {
-		case DHCPv4OptionSpace, DHCPv6OptionSpace:
+		case dhcpmodel.DHCPv4OptionSpace, dhcpmodel.DHCPv6OptionSpace:
 			option.Encapsulate = fmt.Sprintf("option-%d", option.Code)
 		default:
 			option.Encapsulate = fmt.Sprintf("%s.%d", option.Space, option.Code)
@@ -162,7 +134,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 		values := strings.Split(data, ",")
 		for i, raw := range values {
 			v := strings.TrimSpace(raw)
-			var field DHCPOptionField
+			var field dhcpmodel.DHCPOptionFieldAccessor
 			if def != nil {
 				fieldType, ok := GetDHCPOptionDefinitionFieldType(def, i)
 				if !ok {
@@ -173,7 +145,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 				// field with checking whether or not its value has that
 				// format.
 				var err error
-				if field, err = parseDHCPOptionField(fieldType, v); err != nil {
+				if field, err = ParseDHCPOptionField(fieldType, v); err != nil {
 					return nil, err
 				}
 			} else {
@@ -190,7 +162,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 	// of hexadecimal digits. Sanitize colons and whitespaces.
 	data = strings.ReplaceAll(strings.ReplaceAll(data, " ", ""), ":", "")
 	field := dhcpOptionField{
-		FieldType: BinaryField,
+		FieldType: dhcpmodel.BinaryField,
 		Values:    []any{data},
 	}
 	option.Fields = append(option.Fields, field)

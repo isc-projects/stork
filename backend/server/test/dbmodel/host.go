@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -264,16 +264,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Code: 23,
 							Fields: []dbmodel.DHCPOptionField{
 								{
-									FieldType: keaconfig.IPv6AddressField,
+									FieldType: dhcpmodel.IPv6AddressField,
 									Values:    []any{"3001:dbef:1e5::"},
 								},
 								{
-									FieldType: keaconfig.IPv6AddressField,
+									FieldType: dhcpmodel.IPv6AddressField,
 									Values:    []any{"3002:abc::"},
 								},
 							},
 							Name:     "dns-servers",
-							Space:    keaconfig.DHCPv6OptionSpace,
+							Space:    dhcpmodel.DHCPv6OptionSpace,
 							Universe: storkutil.IPv6,
 						},
 					},
@@ -291,16 +291,16 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Code: 23,
 							Fields: []dbmodel.DHCPOptionField{
 								{
-									FieldType: keaconfig.IPv6AddressField,
+									FieldType: dhcpmodel.IPv6AddressField,
 									Values:    []any{"3001:dbef:1e5::"},
 								},
 								{
-									FieldType: keaconfig.IPv6AddressField,
+									FieldType: dhcpmodel.IPv6AddressField,
 									Values:    []any{"3002:abc::"},
 								},
 							},
 							Name:     "dns-servers",
-							Space:    keaconfig.DHCPv6OptionSpace,
+							Space:    dhcpmodel.DHCPv6OptionSpace,
 							Universe: storkutil.IPv6,
 						},
 					},

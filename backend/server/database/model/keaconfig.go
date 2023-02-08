@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-pg/pg/v10/types"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	storkutil "isc.org/stork/util"
 )
@@ -134,25 +133,29 @@ func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
 
 // Converts a structure holding subnet in Kea format to Stork representation
 // of the subnet.
-func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
+func convertSubnet4FromKea(keaSubnet *keaconfig.Subnet4, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
 	// Kea allows providing the subnet prefix in a non-canonical form, but
 	// Postgres rejects this value due to validation rules on the CIDR column.
 	// E.g., 192.168.1.1/24 is a valid prefix for Kea, but Postgres expects
 	// 192.168.1.0/24. We need to convert the prefix to its canonical form to
 	// avoid a database error.
-	cidr := storkutil.ParseIP(keaSubnet.Subnet)
-	if cidr == nil {
-		// It should never happen because Kea doesn't allow for prefixes that
-		// aren't IP addresses.
-		return nil, errors.Errorf("invalid subnet prefix: %s", keaSubnet.Subnet)
+	prefix, err := keaSubnet.GetCanonicalPrefix()
+	if err != nil {
+		return nil, err
 	}
-	prefix := cidr.GetNetworkPrefixWithLength()
-
 	convertedSubnet := &Subnet{
-		Prefix:      prefix,
-		ClientClass: keaSubnet.ClientClass,
+		Prefix: prefix,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID:      daemon.ID,
+				LocalSubnetID: daemon.GetLocalSubnetID(prefix),
+				KeaParameters: keaSubnet.GetSubnetParameters(),
+			},
+		},
 	}
-
+	if keaSubnet.ClientClass != nil {
+		convertedSubnet.ClientClass = *keaSubnet.ClientClass
+	}
 	for _, p := range keaSubnet.Pools {
 		addressPool, err := NewAddressPoolFromRange(p.Pool)
 		if err != nil {
@@ -161,17 +164,64 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source Hos
 		addressPool.SubnetID = keaSubnet.ID
 		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
 	}
-	for _, p := range keaSubnet.PdPools {
-		prefix := storkutil.FormatCIDRNotation(p.Prefix, p.PrefixLen)
-		var excludedPrefix string
-		if p.ExcludedPrefix != "" && p.ExcludedPrefixLen != 0 {
-			excludedPrefix = storkutil.FormatCIDRNotation(p.ExcludedPrefix, p.ExcludedPrefixLen)
-		}
-		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix)
+	for _, r := range keaSubnet.Reservations {
+		host, err := NewHostFromKeaConfigReservation(r, daemon, source, lookup)
 		if err != nil {
 			return nil, err
 		}
-		prefixPool.SubnetID = keaSubnet.ID
+		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
+	}
+	for _, d := range keaSubnet.OptionData {
+		option, err := NewDHCPOptionFromKea(d, storkutil.IPv4, lookup)
+		if err != nil {
+			return nil, err
+		}
+		convertedSubnet.LocalSubnets[0].DHCPOptionSet = append(convertedSubnet.LocalSubnets[0].DHCPOptionSet, *option)
+		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", convertedSubnet.LocalSubnets[0].DHCPOptionSet))
+	}
+	return convertedSubnet, nil
+}
+
+// Converts a structure holding subnet in Kea format to Stork representation
+// of the subnet.
+func convertSubnet6FromKea(keaSubnet *keaconfig.Subnet6, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
+	// Kea allows providing the subnet prefix in a non-canonical form, but
+	// Postgres rejects this value due to validation rules on the CIDR column.
+	// E.g., 192.168.1.1/24 is a valid prefix for Kea, but Postgres expects
+	// 192.168.1.0/24. We need to convert the prefix to its canonical form to
+	// avoid a database error.
+	prefix, err := keaSubnet.GetCanonicalPrefix()
+	if err != nil {
+		return nil, err
+	}
+	convertedSubnet := &Subnet{
+		Prefix: prefix,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID:      daemon.ID,
+				LocalSubnetID: daemon.GetLocalSubnetID(prefix),
+				KeaParameters: keaSubnet.GetSubnetParameters(),
+			},
+		},
+	}
+	if keaSubnet.ClientClass != nil {
+		convertedSubnet.ClientClass = *keaSubnet.ClientClass
+	}
+	for _, p := range keaSubnet.Pools {
+		lb, ub, err := p.GetBoundaries()
+		if err != nil {
+			return nil, err
+		}
+		addressPool := NewAddressPool(lb, ub, keaSubnet.ID)
+		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
+	}
+	for _, p := range keaSubnet.PDPools {
+		prefix := p.GetCanonicalPrefix()
+		excludedPrefix := p.GetCanonicalExcludedPrefix()
+		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix, keaSubnet.ID)
+		if err != nil {
+			return nil, err
+		}
 		convertedSubnet.PrefixPools = append(convertedSubnet.PrefixPools, *prefixPool)
 	}
 	for _, r := range keaSubnet.Reservations {
@@ -179,30 +229,15 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source Hos
 		if err != nil {
 			return nil, err
 		}
-
-		// We need to check if the host with the same set of reservations already
-		// exists. If so, then we may need to merge the new host with it.
-		found := false
-		for i, c := range convertedSubnet.Hosts {
-			if c.HasEqualIPReservations(host) {
-				// Go over the identifiers of the new host and for each that doesn't
-				// exist, create it in the existing host.
-				for j, id := range host.HostIdentifiers {
-					if exists, _ := c.HasIdentifier(id.Type, id.Value); !exists {
-						convertedSubnet.Hosts[i].HostIdentifiers = append(convertedSubnet.Hosts[i].HostIdentifiers, host.HostIdentifiers[j])
-					}
-					// We just take the first identifier, because Kea host reservation
-					// never has more than one.
-					break
-				}
-				found = true
-				break
-			}
+		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
+	}
+	for _, d := range keaSubnet.OptionData {
+		option, err := NewDHCPOptionFromKea(d, storkutil.IPv4, lookup)
+		if err != nil {
+			return nil, err
 		}
-		if !found {
-			// Existing reservation not found, add the whole host.
-			convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
-		}
+		convertedSubnet.LocalSubnets[0].DHCPOptionSet = append(convertedSubnet.LocalSubnets[0].DHCPOptionSet, *option)
+		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", convertedSubnet.LocalSubnets[0].DHCPOptionSet))
 	}
 	return convertedSubnet, nil
 }
@@ -211,28 +246,67 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source Hos
 // The family designates if the shared network contains IPv4 (if 4) or IPv6 (if 6)
 // subnets. If none of the subnets match this value, an error is returned.
 func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*SharedNetwork, error) {
-	var parsedSharedNetwork KeaConfigSharedNetwork
-	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
-	newSharedNetwork := &SharedNetwork{
-		Name:   parsedSharedNetwork.Name,
-		Family: family,
-	}
-
-	for _, subnetList := range [][]KeaConfigSubnet{parsedSharedNetwork.Subnet4, parsedSharedNetwork.Subnet6} {
-		for _, s := range subnetList {
+	var newSharedNetwork *SharedNetwork
+	switch family {
+	case 4:
+		var parsedSharedNetwork keaconfig.SharedNetwork4
+		_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
+		newSharedNetwork = &SharedNetwork{
+			Name: parsedSharedNetwork.Name,
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID:      daemon.ID,
+					KeaParameters: parsedSharedNetwork.GetSharedNetworkParameters(),
+				},
+			},
+		}
+		for _, s := range parsedSharedNetwork.Subnet4 {
 			keaSubnet := s
-			subnet, err := convertSubnetFromKea(&keaSubnet, daemon, source, lookup)
-			if err == nil {
-				if subnet.GetFamily() != family {
-					return nil, errors.Errorf("no matching family of the subnet %s with the shared network %s",
-						subnet.Prefix, newSharedNetwork.Name)
-				}
-				newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
-			} else {
+			subnet, err := convertSubnet4FromKea(&keaSubnet, daemon, source, lookup)
+			if err != nil {
 				return nil, err
 			}
+			newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
+		}
+		for _, d := range parsedSharedNetwork.OptionData {
+			option, err := NewDHCPOptionFromKea(d, storkutil.IPv4, lookup)
+			if err != nil {
+				return nil, err
+			}
+			newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet = append(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet, *option)
+			newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet))
+		}
+
+	default:
+		var parsedSharedNetwork keaconfig.SharedNetwork6
+		_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
+		newSharedNetwork = &SharedNetwork{
+			Name: parsedSharedNetwork.Name,
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID:      daemon.ID,
+					KeaParameters: parsedSharedNetwork.GetSharedNetworkParameters(),
+				},
+			},
+		}
+		for _, s := range parsedSharedNetwork.Subnet6 {
+			keaSubnet := s
+			subnet, err := convertSubnet6FromKea(&keaSubnet, daemon, source, lookup)
+			if err != nil {
+				return nil, err
+			}
+			newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
+		}
+		for _, d := range parsedSharedNetwork.OptionData {
+			option, err := NewDHCPOptionFromKea(d, storkutil.IPv4, lookup)
+			if err != nil {
+				return nil, err
+			}
+			newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet = append(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet, *option)
+			newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet))
 		}
 	}
+	newSharedNetwork.Family = family
 
 	// Update shared network family based on the subnets family.
 	if len(newSharedNetwork.Subnets) > 0 {
@@ -242,11 +316,20 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int, dae
 	return newSharedNetwork, nil
 }
 
-// Creates new subnet instance from the pointer to the map of interfaces.
-func NewSubnetFromKea(rawSubnet *map[string]interface{}, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
-	var parsedSubnet KeaConfigSubnet
+// Creates new IPv4 subnet instance in Stork from the Kea subnet configuration.
+// It decodes the raw configuration provided as a map of interfaces.
+func NewSubnet4FromKea(rawSubnet *map[string]any, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
+	var parsedSubnet keaconfig.Subnet4
 	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
-	return convertSubnetFromKea(&parsedSubnet, daemon, source, lookup)
+	return convertSubnet4FromKea(&parsedSubnet, daemon, source, lookup)
+}
+
+// Creates new IPv6 subnet instance in Stork from the Kea subnet configuration.
+// It decodes the raw configuration provided as a map of interfaces.
+func NewSubnet6FromKea(rawSubnet *map[string]any, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Subnet, error) {
+	var parsedSubnet keaconfig.Subnet6
+	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
+	return convertSubnet6FromKea(&parsedSubnet, daemon, source, lookup)
 }
 
 // Creates new host instance from the host reservation extracted from the
@@ -316,25 +399,11 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 		universe = storkutil.IPv6
 	}
 	for _, d := range reservation.OptionData {
-		option, err := keaconfig.CreateDHCPOption(d, universe, lookup)
+		hostOption, err := NewDHCPOptionFromKea(d, universe, lookup)
 		if err != nil {
 			return nil, err
 		}
-		hostOption := DHCPOption{
-			AlwaysSend:  option.IsAlwaysSend(),
-			Code:        option.GetCode(),
-			Encapsulate: option.GetEncapsulate(),
-			Name:        option.GetName(),
-			Space:       option.GetSpace(),
-			Universe:    option.GetUniverse(),
-		}
-		for _, f := range option.GetFields() {
-			hostOption.Fields = append(hostOption.Fields, DHCPOptionField{
-				FieldType: f.GetFieldType(),
-				Values:    f.GetValues(),
-			})
-		}
-		lh.DHCPOptionSet = append(lh.DHCPOptionSet, hostOption)
+		lh.DHCPOptionSet = append(lh.DHCPOptionSet, *hostOption)
 		lh.DHCPOptionSetHash = storkutil.Fnv128(fmt.Sprintf("%+v", lh.DHCPOptionSet))
 	}
 	host.LocalHosts = append(host.LocalHosts, lh)

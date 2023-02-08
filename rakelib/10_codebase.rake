@@ -192,6 +192,12 @@ go_common_codebase = FileList["backend/**/*"]
 
 go_server_mocks = FileList[
     "backend/server/agentcomm/api_mock.go",
+    "backend/appcfg/kea/addresspoolmock_test.go",
+    "backend/appcfg/kea/optiondefmock_test.go",
+    "backend/appcfg/kea/optionmock_test.go",
+    "backend/appcfg/kea/prefixpoolmock_test.go",
+    "backend/appcfg/kea/subnetmock_test.go",
+    "backend/appcfg/kea/sharednetworkmock_test.go",
     "backend/server/hookmanager/hookmanager_mock.go"
 ]
 

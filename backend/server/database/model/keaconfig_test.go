@@ -78,32 +78,6 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 	require.Len(t, parsedNetwork.Subnets[0].Hosts, 1)
 }
 
-// Test that subnets within a shared network are verified to catch
-// those which family is not matching with the shared network family.
-func TestNewSharedNetworkFromKeaFamilyClash(t *testing.T) {
-	rawNetwork := map[string]interface{}{
-		"name": "foo",
-		"subnet4": []map[string]interface{}{
-			{
-				"id":     1,
-				"subnet": "192.0.2.0/24",
-			},
-		},
-		"subnet6": []map[string]interface{}{
-			{
-				"id":     2,
-				"subnet": "2001:db8:1::/64",
-			},
-		},
-	}
-
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
-	lookup := NewDHCPOptionDefinitionLookup()
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4, daemon, HostDataSourceConfig, lookup)
-	require.Error(t, err)
-	require.Nil(t, parsedNetwork)
-}
-
 // Verifies that the subnet instance can be created by parsing Kea
 // configuration.
 func TestNewSubnetFromKea(t *testing.T) {
@@ -150,10 +124,10 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 	}
 
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 234
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
 	require.Zero(t, parsedSubnet.ID)
@@ -167,18 +141,20 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.EqualValues(t, 120, parsedSubnet.PrefixPools[0].DelegatedLen)
 	require.Equal(t, "2001:db8:1:1:1::/128", parsedSubnet.PrefixPools[0].ExcludedPrefix)
 
-	require.Len(t, parsedSubnet.Hosts, 1)
-	require.Len(t, parsedSubnet.Hosts[0].HostIdentifiers, 2)
+	require.Len(t, parsedSubnet.Hosts, 2)
+	require.Len(t, parsedSubnet.Hosts[0].HostIdentifiers, 1)
 	require.Equal(t, "duid", parsedSubnet.Hosts[0].HostIdentifiers[0].Type)
 	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, parsedSubnet.Hosts[0].HostIdentifiers[0].Value)
-	require.Equal(t, "hw-address", parsedSubnet.Hosts[0].HostIdentifiers[1].Type)
-	require.Equal(t, []byte{1, 1, 1, 1, 1, 1}, parsedSubnet.Hosts[0].HostIdentifiers[1].Value)
+	require.Equal(t, "hw-address", parsedSubnet.Hosts[1].HostIdentifiers[0].Type)
+	require.Equal(t, []byte{1, 1, 1, 1, 1, 1}, parsedSubnet.Hosts[1].HostIdentifiers[0].Value)
 
-	require.Len(t, parsedSubnet.Hosts[0].IPReservations, 4)
-	require.Equal(t, "2001:db8:1::1", parsedSubnet.Hosts[0].IPReservations[0].Address)
-	require.Equal(t, "2001:db8:1::2", parsedSubnet.Hosts[0].IPReservations[1].Address)
-	require.Equal(t, "3000:1::/64", parsedSubnet.Hosts[0].IPReservations[2].Address)
-	require.Equal(t, "3000:2::/64", parsedSubnet.Hosts[0].IPReservations[3].Address)
+	for i := 0; i < 2; i++ {
+		require.Len(t, parsedSubnet.Hosts[0].IPReservations, 4)
+		require.Equal(t, "2001:db8:1::1", parsedSubnet.Hosts[1].IPReservations[0].Address)
+		require.Equal(t, "2001:db8:1::2", parsedSubnet.Hosts[1].IPReservations[1].Address)
+		require.Equal(t, "3000:1::/64", parsedSubnet.Hosts[1].IPReservations[2].Address)
+		require.Equal(t, "3000:2::/64", parsedSubnet.Hosts[1].IPReservations[3].Address)
+	}
 
 	require.Len(t, parsedSubnet.Hosts[0].LocalHosts, 1)
 	require.Equal(t, parsedSubnet.Hosts[0].ID, parsedSubnet.Hosts[0].LocalHosts[0].HostID)
@@ -197,7 +173,7 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.Error(t, err)
@@ -215,7 +191,7 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -228,12 +204,12 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	rawSubnet := map[string]interface{}{
 		"subnet": "fe80::42",
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -251,7 +227,7 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -264,12 +240,12 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	rawSubnet := map[string]interface{}{
 		"subnet": "2001:db8:1::42/64",
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnetFromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)

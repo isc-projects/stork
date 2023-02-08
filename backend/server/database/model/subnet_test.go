@@ -14,7 +14,9 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // Simple mock for utilizationStatistics for testing purposes.
@@ -691,6 +693,16 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 							},
 						},
 					},
+					LocalSubnets: []*LocalSubnet{
+						{
+							LocalSubnetID: 13,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DHCPOptionSetHash: "xyz",
 				},
 			},
 		},
@@ -719,6 +731,11 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 				},
 			},
+			LocalSubnets: []*LocalSubnet{
+				{
+					SubnetID: 14,
+				},
+			},
 		},
 	}
 	// Attempt to create the global shared network and subnet.
@@ -730,6 +747,14 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	returnedSubnets, err := GetAllSubnets(db, 0)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 2)
+	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
+	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
+
+	// There should be one shared network.
+	returnedNetworks, err := GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returnedNetworks, 1)
+	require.Len(t, returnedNetworks[0].LocalSharedNetworks, 1)
 
 	returnedHosts, err := GetHostsBySubnetID(db, returnedSubnets[0].ID)
 	require.NoError(t, err)
@@ -1297,4 +1322,209 @@ func TestSubnetsByPageFiltersSetIPv6Family(t *testing.T) {
 
 	// Assert
 	require.EqualValues(t, 6, *filters.Family)
+}
+
+// Test implementation of the keaconfig.Subnet interface (GetID() function).
+func TestSubnetGetID(t *testing.T) {
+	subnet := Subnet{
+		LocalSubnets: []*LocalSubnet{
+			{
+				SubnetID: 10,
+				DaemonID: 110,
+			},
+			{
+				SubnetID: 11,
+				DaemonID: 111,
+			},
+		},
+	}
+	require.EqualValues(t, 10, subnet.GetID(110))
+	require.EqualValues(t, 11, subnet.GetID(111))
+	require.Zero(t, subnet.GetID(1000))
+}
+
+// Test implementation of the keaconfig.Subnet interface (GetKeaParameters()
+// function).
+func TestSubnetGetKeaParameters(t *testing.T) {
+	subnet := Subnet{
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: 110,
+				KeaParameters: &keaconfig.SubnetParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+			{
+				DaemonID: 111,
+				KeaParameters: &keaconfig.SubnetParameters{
+					Allocator: storkutil.Ptr("iterative"),
+				},
+			},
+		},
+	}
+	params0 := subnet.GetKeaParameters(110)
+	require.NotNil(t, params0)
+	require.Equal(t, "random", *params0.Allocator)
+	params1 := subnet.GetKeaParameters(111)
+	require.NotNil(t, params1)
+	require.Equal(t, "iterative", *params1.Allocator)
+
+	require.Nil(t, subnet.GetKeaParameters(1000))
+}
+
+// Test implementation of the dhcpmodel.SubnetAccessor interface (GetPrefix() function).
+func TestSubnetGetPrefix(t *testing.T) {
+	subnet := Subnet{
+		Prefix: "3001::/64",
+	}
+	require.Equal(t, "3001::/64", subnet.GetPrefix())
+}
+
+// Test implementation of the dhcpmodel.SubnetAccessor interface (GetAddressPools() function).
+func TestSubnetGetAddressPools(t *testing.T) {
+	subnet := Subnet{
+		AddressPools: []AddressPool{
+			{
+				LowerBound: "192.0.2.1",
+				UpperBound: "192.0.2.10",
+			},
+			{
+				LowerBound: "192.0.2.20",
+				UpperBound: "192.0.2.30",
+			},
+		},
+	}
+	pools := subnet.GetAddressPools()
+	require.Len(t, pools, 2)
+	require.Equal(t, "192.0.2.1", pools[0].GetLowerBound())
+	require.Equal(t, "192.0.2.10", pools[0].GetUpperBound())
+	require.Equal(t, "192.0.2.20", pools[1].GetLowerBound())
+	require.Equal(t, "192.0.2.30", pools[1].GetUpperBound())
+}
+
+// Test implementation of the dhcpmodel.SubnetAccessor interface (GetPrefixPools() function).
+func TestSubnetGetPrefixPools(t *testing.T) {
+	subnet := Subnet{
+		PrefixPools: []PrefixPool{
+			{
+				Prefix:       "2001:db8:1:1::/64",
+				DelegatedLen: 80,
+			},
+			{
+				Prefix:       "2001:db8:1:2::/64",
+				DelegatedLen: 80,
+			},
+		},
+	}
+	pools := subnet.GetPrefixPools()
+	require.Len(t, pools, 2)
+	require.Equal(t, "2001:db8:1:1::/64", pools[0].GetModel().Prefix)
+	require.EqualValues(t, 80, pools[0].GetModel().DelegatedLen)
+	require.Equal(t, "2001:db8:1:2::/64", pools[1].GetModel().Prefix)
+	require.EqualValues(t, 80, pools[1].GetModel().DelegatedLen)
+}
+
+// Test implementation of the dhcpmodel.SubnetAccessor interface (GetDHCPOptions() function).
+func TestSubnetGetDHCPOptions(t *testing.T) {
+	subnet := Subnet{
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: 110,
+				DHCPOptionSet: []DHCPOption{
+					{
+						Code:  7,
+						Space: dhcpmodel.DHCPv4OptionSpace,
+					},
+				},
+			},
+			{
+				DaemonID: 111,
+				DHCPOptionSet: []DHCPOption{
+					{
+						Code:  8,
+						Space: dhcpmodel.DHCPv4OptionSpace,
+					},
+				},
+			},
+		},
+	}
+	options0 := subnet.GetDHCPOptions(110)
+	require.Len(t, options0, 1)
+	require.EqualValues(t, 7, options0[0].GetCode())
+
+	options1 := subnet.GetDHCPOptions(111)
+	require.Len(t, options1, 1)
+	require.EqualValues(t, 8, options1[0].GetCode())
+
+	require.Nil(t, subnet.GetDHCPOptions(1000))
+}
+
+// Test that LocalSubnet instance is appended to the Subnet when there is
+// no corresponding LocalSubnet, and it is replaced when the corresponding
+// LocalSubnet exists.
+func TestLocalSubnet(t *testing.T) {
+	// Create a subnet with one local subnet.
+	subnet := Subnet{
+		ID: 123,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: 1,
+				KeaParameters: &keaconfig.SubnetParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+		},
+	}
+	// Create another local shared network and ensure there are now two.
+	subnet.SetLocalSubnet(&LocalSubnet{
+		DaemonID: 2,
+	})
+	require.Len(t, subnet.LocalSubnets, 2)
+	require.EqualValues(t, 1, subnet.LocalSubnets[0].DaemonID)
+	require.EqualValues(t, 2, subnet.LocalSubnets[1].DaemonID)
+
+	// Replace the first instance with a new one.
+	subnet.SetLocalSubnet(&LocalSubnet{
+		DaemonID: 1,
+		KeaParameters: &keaconfig.SubnetParameters{
+			Allocator: storkutil.Ptr("iterative"),
+		},
+	})
+	require.Len(t, subnet.LocalSubnets, 2)
+	require.EqualValues(t, 1, subnet.LocalSubnets[0].DaemonID)
+	require.EqualValues(t, 2, subnet.LocalSubnets[1].DaemonID)
+	require.NotNil(t, subnet.LocalSubnets[0].KeaParameters)
+	require.Equal(t, "iterative", *subnet.LocalSubnets[0].KeaParameters.Allocator)
+}
+
+// Test that LocalSubnets between two Subnet instances can be combined in a
+// single instance.
+func TestJoinSubnets(t *testing.T) {
+	subnet0 := Subnet{
+		ID: 1,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: 1,
+			},
+			{
+				DaemonID: 2,
+			},
+		},
+	}
+	subnet1 := Subnet{
+		ID: 1,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: 2,
+			},
+			{
+				DaemonID: 3,
+			},
+		},
+	}
+	subnet0.Join(&subnet1)
+	require.Len(t, subnet0.LocalSubnets, 3)
+	require.EqualValues(t, 1, subnet0.LocalSubnets[0].DaemonID)
+	require.EqualValues(t, 2, subnet0.LocalSubnets[1].DaemonID)
+	require.EqualValues(t, 3, subnet0.LocalSubnets[2].DaemonID)
 }

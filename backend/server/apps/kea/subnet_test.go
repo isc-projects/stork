@@ -739,7 +739,8 @@ func TestDetectNetworkUpdateClientClass(t *testing.T) {
 
 	v4ConfigJSON, _ := json.Marshal(v4Config)
 	app := createAppWithSubnets(t, db, 0, string(v4ConfigJSON), "")
-	_ = CommitAppIntoDB(db, app, fec, nil, lookup)
+	err := CommitAppIntoDB(db, app, fec, nil, lookup)
+	require.NoError(t, err)
 
 	// Act
 	// Update the config.
@@ -747,7 +748,7 @@ func TestDetectNetworkUpdateClientClass(t *testing.T) {
 	v4ConfigJSON, _ = json.Marshal(v4Config)
 	kea4Config, _ := dbmodel.NewKeaConfigFromJSON(string(v4ConfigJSON))
 	app.Daemons[0].KeaDaemon.Config = kea4Config
-	err := CommitAppIntoDB(db, app, fec, nil, lookup)
+	err = CommitAppIntoDB(db, app, fec, nil, lookup)
 
 	// Assert
 	require.NoError(t, err)

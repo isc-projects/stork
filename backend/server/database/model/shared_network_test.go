@@ -5,8 +5,84 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
+
+// Test implementation of the keaconfig.SharedNetwork interface (GetName() function).
+func TestSharedNetworkGetName(t *testing.T) {
+	network := SharedNetwork{
+		Name: "my-secret-network",
+	}
+	require.Equal(t, "my-secret-network", network.GetName())
+}
+
+// Test implementation of the keaconfig.SharedNetwork interface (GetKeaParameters()
+// function).
+func TestSharedNetworkGetKeaParameters(t *testing.T) {
+	network := SharedNetwork{
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 110,
+				KeaParameters: &keaconfig.SharedNetworkParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+			{
+				DaemonID: 111,
+				KeaParameters: &keaconfig.SharedNetworkParameters{
+					Allocator: storkutil.Ptr("iterative"),
+				},
+			},
+		},
+	}
+	params0 := network.GetKeaParameters(110)
+	require.NotNil(t, params0)
+	require.Equal(t, "random", *params0.Allocator)
+	params1 := network.GetKeaParameters(111)
+	require.NotNil(t, params1)
+	require.Equal(t, "iterative", *params1.Allocator)
+
+	require.Nil(t, network.GetKeaParameters(1000))
+}
+
+// Test implementation of the dhcpmodel.SharedNetworkAccessor interface
+// (GetDHCPOptions() function).
+func TestSharedNetworkGetDHCPOptions(t *testing.T) {
+	network := SharedNetwork{
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 110,
+				DHCPOptionSet: []DHCPOption{
+					{
+						Code:  7,
+						Space: dhcpmodel.DHCPv4OptionSpace,
+					},
+				},
+			},
+			{
+				DaemonID: 111,
+				DHCPOptionSet: []DHCPOption{
+					{
+						Code:  8,
+						Space: dhcpmodel.DHCPv4OptionSpace,
+					},
+				},
+			},
+		},
+	}
+	options0 := network.GetDHCPOptions(110)
+	require.Len(t, options0, 1)
+	require.EqualValues(t, 7, options0[0].GetCode())
+
+	options1 := network.GetDHCPOptions(111)
+	require.Len(t, options1, 1)
+	require.EqualValues(t, 8, options1[0].GetCode())
+
+	require.Nil(t, network.GetDHCPOptions(1000))
+}
 
 // Tests that the shared network can be added and retrieved.
 func TestAddSharedNetwork(t *testing.T) {
@@ -135,6 +211,47 @@ func TestAddSharedNetworkSubnetsFamilyClash(t *testing.T) {
 	}
 	err := AddSharedNetwork(db, network)
 	require.Error(t, err)
+}
+
+func TestAddLocalSharedNetworks(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+	network := &SharedNetwork{
+		Name:   "my name",
+		Family: 4,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+				KeaParameters: &keaconfig.SharedNetworkParameters{
+					Authoritative: storkutil.Ptr(true),
+					Allocator:     storkutil.Ptr("iterative"),
+					Interface:     storkutil.Ptr("eth0"),
+				},
+			},
+		},
+	}
+	err := AddSharedNetwork(db, network)
+	require.NoError(t, err)
+	require.NotZero(t, network.ID)
+
+	err = AddLocalSharedNetworks(db, network)
+	require.NoError(t, err)
+
+	returned, err := GetSharedNetwork(db, network.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Equal(t, "my name", returned.Name)
+
+	require.Len(t, returned.LocalSharedNetworks, 1)
+	require.EqualValues(t, returned.LocalSharedNetworks[0].DaemonID, apps[0].Daemons[0].ID)
+	require.EqualValues(t, returned.LocalSharedNetworks[0].SharedNetworkID, network.ID)
+
+	require.NotNil(t, returned.LocalSharedNetworks[0].KeaParameters)
+	require.True(t, *returned.LocalSharedNetworks[0].KeaParameters.Authoritative)
+	require.Equal(t, "iterative", *returned.LocalSharedNetworks[0].KeaParameters.Allocator)
+	require.Equal(t, "eth0", *returned.LocalSharedNetworks[0].KeaParameters.Interface)
 }
 
 // Tests that shared networks can be fetched by family.
@@ -354,4 +471,176 @@ func TestDeleteStaleSharedNetworks(t *testing.T) {
 	count, err = DeleteEmptySharedNetworks(db)
 	require.NoError(t, err)
 	require.Zero(t, count)
+}
+
+// Test that an association of a daemon with a shared network can be
+// deleted, and other associations remain.
+func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add a shared network.
+	network := SharedNetwork{
+		Name:   "my name",
+		Family: 4,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSharedNetwork(db, &network)
+	require.NoError(t, err)
+
+	// Associate two daemons with the shared network.
+	err = AddLocalSharedNetworks(db, &network)
+	require.NoError(t, err)
+
+	// Delete the first daemon's association with the shared network.
+	n, err := DeleteDaemonFromSharedNetworks(db, apps[0].Daemons[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, n)
+
+	// Get the shared network fromn the database.
+	returned, err := GetSharedNetwork(db, network.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Ensure that the second association remains.
+	require.Len(t, returned.LocalSharedNetworks, 1)
+	require.EqualValues(t, apps[1].Daemons[0].ID, returned.LocalSharedNetworks[0].DaemonID)
+}
+
+// Test deleting a shared network associated with no daemons.
+func TestDeleteOrphanedSharedNetworks(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add a shared network.
+	network := SharedNetwork{
+		Name:   "my name",
+		Family: 4,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSharedNetwork(db, &network)
+	require.NoError(t, err)
+
+	// Associate two daemons with the shared network.
+	err = AddLocalSharedNetworks(db, &network)
+	require.NoError(t, err)
+
+	// No shared networks should be deleted because the sole shared network
+	// is associated with two daemons.
+	n, err := DeleteOrphanedSharedNetworks(db)
+	require.NoError(t, err)
+	require.Zero(t, n)
+
+	// Delete one of the associations.
+	n, err = DeleteDaemonFromSharedNetworks(db, apps[0].Daemons[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, n)
+
+	// The shared network should not be deleted yet.
+	n, err = DeleteOrphanedSharedNetworks(db)
+	require.NoError(t, err)
+	require.Zero(t, n)
+
+	// Delete the second association.
+	n, err = DeleteDaemonFromSharedNetworks(db, apps[1].Daemons[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, n)
+
+	// The shared network has no associations (is orphaned) and should be deleted.
+	n, err = DeleteOrphanedSharedNetworks(db)
+	require.NoError(t, err)
+	require.EqualValues(t, n, 1)
+
+	// Make sure that the shared network has been deleted.
+	returned, err := GetSharedNetwork(db, network.ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+}
+
+// Test that LocalSharedNetwork instance is appended to the SharedNetwork
+// when there is no corresponding LocalSharedNetwork, and it is replaced
+// when the corresponding LocalSharedNetwork exists.
+func TestLocalSharedNetwork(t *testing.T) {
+	// Create a shared network with one local shared network.
+	sharedNetwork := SharedNetwork{
+		Name: "foo",
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 1,
+				KeaParameters: &keaconfig.SharedNetworkParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+		},
+	}
+	// Create another local shared network and ensure there are now two.
+	sharedNetwork.SetLocalSharedNetwork(&LocalSharedNetwork{
+		DaemonID: 2,
+	})
+	require.Len(t, sharedNetwork.LocalSharedNetworks, 2)
+	require.EqualValues(t, 1, sharedNetwork.LocalSharedNetworks[0].DaemonID)
+	require.EqualValues(t, 2, sharedNetwork.LocalSharedNetworks[1].DaemonID)
+
+	// Replace the first instance with a new one.
+	sharedNetwork.SetLocalSharedNetwork(&LocalSharedNetwork{
+		DaemonID: 1,
+		KeaParameters: &keaconfig.SharedNetworkParameters{
+			Allocator: storkutil.Ptr("iterative"),
+		},
+	})
+	require.Len(t, sharedNetwork.LocalSharedNetworks, 2)
+	require.EqualValues(t, 1, sharedNetwork.LocalSharedNetworks[0].DaemonID)
+	require.EqualValues(t, 2, sharedNetwork.LocalSharedNetworks[1].DaemonID)
+	require.NotNil(t, sharedNetwork.LocalSharedNetworks[0].KeaParameters)
+	require.Equal(t, "iterative", *sharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)
+}
+
+// Test that LocalSharedNetworks between two SharedNetwork instances can be
+// combined in a single instance.
+func TestJoinSharedNetworks(t *testing.T) {
+	sharedNetwork0 := SharedNetwork{
+		Name: "foo",
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 1,
+			},
+			{
+				DaemonID: 2,
+			},
+		},
+	}
+	sharedNetwork1 := SharedNetwork{
+		Name: "foo",
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 2,
+			},
+			{
+				DaemonID: 3,
+			},
+		},
+	}
+	sharedNetwork0.Join(&sharedNetwork1)
+	require.Len(t, sharedNetwork0.LocalSharedNetworks, 3)
+	require.EqualValues(t, 1, sharedNetwork0.LocalSharedNetworks[0].DaemonID)
+	require.EqualValues(t, 2, sharedNetwork0.LocalSharedNetworks[1].DaemonID)
+	require.EqualValues(t, 3, sharedNetwork0.LocalSharedNetworks[2].DaemonID)
 }

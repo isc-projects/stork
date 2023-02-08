@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	errors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
@@ -15,49 +15,49 @@ import (
 func flattenDHCPOptionField(fieldType string, restField *models.DHCPOptionField) ([]any, error) {
 	var values []any
 	switch fieldType {
-	case keaconfig.Uint8Field:
+	case dhcpmodel.Uint8Field:
 		uintValue, err := strconv.ParseUint(restField.Values[0], 10, 8)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to uint8", restField.Values[0])
 		}
 		values = append(values, uint8(uintValue))
-	case keaconfig.Uint16Field:
+	case dhcpmodel.Uint16Field:
 		uintValue, err := strconv.ParseUint(restField.Values[0], 10, 16)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to uint16", restField.Values[0])
 		}
 		values = append(values, uint16(uintValue))
-	case keaconfig.Uint32Field:
+	case dhcpmodel.Uint32Field:
 		uintValue, err := strconv.ParseUint(restField.Values[0], 10, 32)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to uint32", restField.Values[0])
 		}
 		values = append(values, uint32(uintValue))
-	case keaconfig.Int8Field:
+	case dhcpmodel.Int8Field:
 		intValue, err := strconv.ParseInt(restField.Values[0], 10, 8)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to int8", restField.Values[0])
 		}
 		values = append(values, int8(intValue))
-	case keaconfig.Int16Field:
+	case dhcpmodel.Int16Field:
 		intValue, err := strconv.ParseInt(restField.Values[0], 10, 16)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to int16", restField.Values[0])
 		}
 		values = append(values, int16(intValue))
-	case keaconfig.Int32Field:
+	case dhcpmodel.Int32Field:
 		intValue, err := strconv.ParseInt(restField.Values[0], 10, 32)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to int32", restField.Values[0])
 		}
 		values = append(values, int32(intValue))
-	case keaconfig.BoolField:
+	case dhcpmodel.BoolField:
 		boolValue, err := strconv.ParseBool(restField.Values[0])
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert option field value %s to boolean", restField.Values[0])
 		}
 		values = append(values, boolValue)
-	case keaconfig.IPv6PrefixField:
+	case dhcpmodel.IPv6PrefixField:
 		if len(restField.Values) < 2 {
 			return nil, errors.New("invalid number of values in the IPv6 prefix option field")
 		}
@@ -67,7 +67,7 @@ func flattenDHCPOptionField(fieldType string, restField *models.DHCPOptionField)
 			return nil, errors.Wrapf(err, "failed to convert IPv6 prefix length %s to a number", restField.Values[1])
 		}
 		values = append(values, uint8(prefixLen))
-	case keaconfig.PsidField:
+	case dhcpmodel.PsidField:
 		if len(restField.Values) < 2 {
 			return nil, errors.New("invalid number of values in the PSID option field")
 		}
@@ -119,9 +119,9 @@ func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.D
 		} else {
 			// Set top-level option space.
 			if storkutil.IPType(restOption.Universe) == storkutil.IPv4 {
-				option.Space = keaconfig.DHCPv4OptionSpace
+				option.Space = dhcpmodel.DHCPv4OptionSpace
 			} else {
-				option.Space = keaconfig.DHCPv6OptionSpace
+				option.Space = dhcpmodel.DHCPv6OptionSpace
 			}
 		}
 		// Try to find a definition for this option to see what option space
@@ -177,7 +177,7 @@ func (r *RestAPI) unflattenDHCPOptions(options []dbmodel.DHCPOption, space strin
 		// In that case, select options belonging to dhcp4 or dhcp6 option
 		// spaces. Otherwise, check if the specified option space matches
 		// the current option's space. If so, convert the option.
-		if (space == "" && (option.Space == keaconfig.DHCPv4OptionSpace || option.Space == keaconfig.DHCPv6OptionSpace)) ||
+		if (space == "" && (option.Space == dhcpmodel.DHCPv4OptionSpace || option.Space == dhcpmodel.DHCPv6OptionSpace)) ||
 			space == option.Space {
 			restOption := &models.DHCPOption{
 				AlwaysSend:  option.AlwaysSend,

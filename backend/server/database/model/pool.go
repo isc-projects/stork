@@ -5,18 +5,53 @@ import (
 	"time"
 
 	errors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
 
+// Interface checks.
+var (
+	_ keaconfig.AddressPool        = (*AddressPool)(nil)
+	_ dhcpmodel.PrefixPoolAccessor = (*PrefixPool)(nil)
+)
+
 // Reflects IPv4 or IPv6 address pool.
 type AddressPool struct {
-	ID         int64
-	CreatedAt  time.Time
-	LowerBound string
-	UpperBound string
-	SubnetID   int64
-	Subnet     *Subnet `pg:"rel:has-one"`
+	ID                int64
+	CreatedAt         time.Time
+	LowerBound        string
+	UpperBound        string
+	DHCPOptionSet     []DHCPOption
+	DHCPOptionSetHash string
+	SubnetID          int64
+	Subnet            *Subnet `pg:"rel:has-one"`
+
+	KeaParameters *keaconfig.PoolParameters
+}
+
+// Returns lower pool boundary.
+func (ap *AddressPool) GetLowerBound() string {
+	return ap.LowerBound
+}
+
+// Returns upper pool boundary.
+func (ap *AddressPool) GetUpperBound() string {
+	return ap.UpperBound
+}
+
+// Returns a slice of interfaces describing the DHCP options for a pool.
+func (ap *AddressPool) GetKeaParameters() *keaconfig.PoolParameters {
+	return ap.KeaParameters
+}
+
+// Returns a slice of interfaces describing the DHCP options for a pool.
+func (ap *AddressPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor) {
+	for i := range ap.DHCPOptionSet {
+		accessors = append(accessors, ap.DHCPOptionSet[i])
+	}
+	return
 }
 
 // Checks equality of the address pool's own data without database-related members
@@ -28,13 +63,34 @@ func (ap *AddressPool) HasEqualData(other *AddressPool) bool {
 
 // Reflects IPv6 address pool.
 type PrefixPool struct {
-	ID             int64
-	CreatedAt      time.Time
-	Prefix         string
-	DelegatedLen   int
-	ExcludedPrefix string
-	SubnetID       int64
-	Subnet         *Subnet `pg:"rel:has-one"`
+	ID                int64
+	CreatedAt         time.Time
+	Prefix            string
+	DelegatedLen      int
+	ExcludedPrefix    string
+	DHCPOptionSet     []DHCPOption
+	DHCPOptionSetHash string
+	SubnetID          int64
+	Subnet            *Subnet `pg:"rel:has-one"`
+
+	KeaParameters *keaconfig.PoolParameters
+}
+
+// Returns a pointer to a structure holding the delegated prefix data.
+func (pp *PrefixPool) GetModel() *dhcpmodel.PrefixPool {
+	return &dhcpmodel.PrefixPool{
+		Prefix:         pp.Prefix,
+		DelegatedLen:   pp.DelegatedLen,
+		ExcludedPrefix: pp.ExcludedPrefix,
+	}
+}
+
+// Returns a slice of interfaces describing the DHCP options for a pool.
+func (pp *PrefixPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor) {
+	for i := range pp.DHCPOptionSet {
+		accessors = append(accessors, pp.DHCPOptionSet[i])
+	}
+	return
 }
 
 // Checks equality of the prefix pool's own data without database-related members
@@ -43,6 +99,17 @@ func (pp *PrefixPool) HasEqualData(other *PrefixPool) bool {
 	return pp.Prefix == other.Prefix &&
 		pp.DelegatedLen == other.DelegatedLen &&
 		pp.ExcludedPrefix == other.ExcludedPrefix
+}
+
+// Creates a new address pool given the address range and the ID of the
+// subnet the pool belongs to.
+func NewAddressPool(lb, ub net.IP, subnetID int64) *AddressPool {
+	pool := &AddressPool{
+		LowerBound: lb.String(),
+		UpperBound: ub.String(),
+		SubnetID:   subnetID,
+	}
+	return pool
 }
 
 // Creates new instance of the address pool from the address range. The
@@ -63,7 +130,7 @@ func NewAddressPoolFromRange(addressRange string) (*AddressPool, error) {
 // Creates new instance of the pool for prefix delegation from the prefix,
 // delegated length, and optional excluded prefix. It validates the prefix
 // provided to verify if it follows CIDR notation.
-func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string) (*PrefixPool, error) {
+func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, subnetID int64) (*PrefixPool, error) {
 	prefixIP, prefixNet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		err = errors.Errorf("unable to parse the pool prefix %s", prefix)
@@ -75,9 +142,11 @@ func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string) (*Pre
 		return nil, err
 	}
 
-	pool := &PrefixPool{}
-	pool.Prefix = prefixNet.String()
-	pool.DelegatedLen = delegatedLen
+	pool := &PrefixPool{
+		SubnetID:     subnetID,
+		Prefix:       prefixNet.String(),
+		DelegatedLen: delegatedLen,
+	}
 
 	if excludedPrefix != "" {
 		excludedIP, excludedNet, err := net.ParseCIDR(excludedPrefix)

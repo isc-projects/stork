@@ -481,7 +481,7 @@ func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Eve
 	return false
 }
 
-// Removes associations between the daemon, subnets and hosts.
+// Removes associations between the daemon, shared networks, subnets and hosts.
 func deleteDaemonAssociations(tx *pg.Tx, daemon *dbmodel.Daemon) error {
 	// Remove associations between the daemon and the existing hosts.
 	// We will recreate the associations using new configuration.
@@ -493,6 +493,13 @@ func deleteDaemonAssociations(tx *pg.Tx, daemon *dbmodel.Daemon) error {
 	// Remove associations between the daemon and the subnets. We will
 	// recreate the associations using new configuration.
 	_, err = dbmodel.DeleteDaemonFromSubnets(tx, daemon.ID)
+	if err != nil {
+		return err
+	}
+
+	// Remove associations between the daemon and the subnets. We will
+	// recreate the associations using new configuration.
+	_, err = dbmodel.DeleteDaemonFromSharedNetworks(tx, daemon.ID)
 	if err != nil {
 		return err
 	}
@@ -515,14 +522,14 @@ func deleteEmptyAndOrphanedObjects(tx *pg.Tx) error {
 		return err
 	}
 
-	// Remove the subnets that no longer belong to any app.
+	// Remove the subnets that no longer belong to any daemon.
 	_, err = dbmodel.DeleteOrphanedSubnets(tx)
 	if err != nil {
 		return err
 	}
 
-	// Delete shared networks which became empty as a result of this update.
-	_, err = dbmodel.DeleteEmptySharedNetworks(tx)
+	// Delete the shared networks that no longer belong to any daemon.
+	_, err = dbmodel.DeleteOrphanedSharedNetworks(tx)
 	if err != nil {
 		return err
 	}
@@ -602,7 +609,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 				}
 			}
 
-			// Remove daemon associations with hosts and subnets.
+			// Remove daemon associations with hosts, subnets and shared networks.
 			err = deleteDaemonAssociations(tx, daemon)
 			if err != nil {
 				return err

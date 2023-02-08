@@ -4,7 +4,11 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 )
+
+//go:generate mockgen -package=keaconfig_test -destination=optiondefmock_test.go isc.org/stork/appcfg/kea DHCPOptionDefinition
+//go:generate mockgen -package=keaconfig_test -destination=optiondeflookupmock_test.go isc.org/stork/appcfg/kea DHCPOptionDefinitionLookup
 
 // Test DHCPOptionDefinition interface.
 func TestDHCPOptionDefinition(t *testing.T) {
@@ -51,7 +55,7 @@ func TestDHCPOptionDefinitionFieldTypeSimple(t *testing.T) {
 	}
 	fieldType, ok := GetDHCPOptionDefinitionFieldType(def, 0)
 	require.True(t, ok)
-	require.Equal(t, StringField, fieldType)
+	require.Equal(t, dhcpmodel.StringField, fieldType)
 
 	fieldType, ok = GetDHCPOptionDefinitionFieldType(def, 1)
 	require.False(t, ok)
@@ -68,7 +72,7 @@ func TestDHCPOptionDefinitionFieldTypeSimpleArray(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		fieldType, ok := GetDHCPOptionDefinitionFieldType(def, i)
 		require.True(t, ok)
-		require.Equal(t, Uint8Field, fieldType)
+		require.Equal(t, dhcpmodel.Uint8Field, fieldType)
 	}
 }
 
@@ -84,11 +88,11 @@ func TestDHCPOptionDefinitionFieldTypeRecord(t *testing.T) {
 	}
 	fieldType, ok := GetDHCPOptionDefinitionFieldType(def, 0)
 	require.True(t, ok)
-	require.Equal(t, PsidField, fieldType)
+	require.Equal(t, dhcpmodel.PsidField, fieldType)
 
 	fieldType, ok = GetDHCPOptionDefinitionFieldType(def, 1)
 	require.True(t, ok)
-	require.Equal(t, StringField, fieldType)
+	require.Equal(t, dhcpmodel.StringField, fieldType)
 
 	fieldType, ok = GetDHCPOptionDefinitionFieldType(def, 2)
 	require.False(t, ok)
@@ -112,15 +116,15 @@ func TestDHCPOptionDefinitionFieldTypeRecordArray(t *testing.T) {
 		offset := i * len(def.RecordTypes)
 		fieldType, ok := GetDHCPOptionDefinitionFieldType(def, offset)
 		require.True(t, ok)
-		require.Equal(t, Uint8Field, fieldType)
+		require.Equal(t, dhcpmodel.Uint8Field, fieldType)
 
 		fieldType, ok = GetDHCPOptionDefinitionFieldType(def, offset+1)
 		require.True(t, ok)
-		require.Equal(t, Uint16Field, fieldType)
+		require.Equal(t, dhcpmodel.Uint16Field, fieldType)
 
 		fieldType, ok = GetDHCPOptionDefinitionFieldType(def, offset+2)
 		require.True(t, ok)
-		require.Equal(t, Uint32Field, fieldType)
+		require.Equal(t, dhcpmodel.Uint32Field, fieldType)
 	}
 }
 

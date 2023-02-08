@@ -1,10 +1,13 @@
-package keaconfig
+package keaconfig_test
 
 import (
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	require "github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 )
 
 // Test host returning static values and implementing Host interface.
@@ -111,7 +114,7 @@ func (host testHost) GetBootFileName(int64) string {
 }
 
 // Returns static DHCP options.
-func (host testHost) GetDHCPOptions(int64) (options []DHCPOption) {
+func (host testHost) GetDHCPOptions(int64) (options []dhcpmodel.DHCPOptionAccessor) {
 	testOptions := []testDHCPOption{
 		{
 			code:        5,
@@ -137,9 +140,10 @@ func (host testHost) GetDHCPOptions(int64) (options []DHCPOption) {
 // Test conversion of the host to Kea reservation.
 func TestCreateReservation(t *testing.T) {
 	host := createDefaultTestHost()
-	var lookup testDHCPOptionDefinitionLookup
-
-	reservation, err := CreateReservation(1, lookup, host)
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).AnyTimes().Return(false)
+	reservation, err := keaconfig.CreateReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 	require.Equal(t, "010203040506", reservation.HWAddress)
@@ -165,9 +169,10 @@ func TestCreateReservation(t *testing.T) {
 // in host_cmds command.
 func TestCreateHostCmdsReservation(t *testing.T) {
 	host := createDefaultTestHost()
-	var lookup testDHCPOptionDefinitionLookup
-
-	reservation, err := CreateHostCmdsReservation(1, lookup, host)
+	controller := gomock.NewController(t)
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).AnyTimes().Return(false)
+	reservation, err := keaconfig.CreateHostCmdsReservation(1, lookup, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 	require.Equal(t, "010203040506", reservation.HWAddress)
@@ -192,7 +197,7 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 // reservation from Kea.
 func TestCreateHostCmdsDeletedReservation(t *testing.T) {
 	host := createDefaultTestHost()
-	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 
@@ -210,7 +215,7 @@ func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
 		Type  string
 		Value []byte
 	}{}
-	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
 	require.Error(t, err)
 	require.Nil(t, reservation)
 }
@@ -220,7 +225,7 @@ func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
 func TestCreateHostCmdsDeletedReservationSubnetIDError(t *testing.T) {
 	host := createDefaultTestHost()
 	host.subnetIDTuple.err = errors.New("error getting subnet ID")
-	reservation, err := CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
 	require.Error(t, err)
 	require.Nil(t, reservation)
 }

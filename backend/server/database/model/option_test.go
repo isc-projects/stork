@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
 
@@ -20,7 +21,7 @@ func TestDHCPOptionInterface(t *testing.T) {
 		Universe:    storkutil.IPv6,
 		Fields: []DHCPOptionField{
 			{
-				FieldType: keaconfig.StringField,
+				FieldType: dhcpmodel.StringField,
 				Values:    []interface{}{"bar"},
 			},
 		},
@@ -33,7 +34,33 @@ func TestDHCPOptionInterface(t *testing.T) {
 	require.Equal(t, "dhcp6", option.GetSpace())
 	require.Equal(t, storkutil.IPv6, option.GetUniverse())
 	require.Len(t, option.GetFields(), 1)
-	require.Equal(t, keaconfig.StringField, option.GetFields()[0].GetFieldType())
+	require.Equal(t, dhcpmodel.StringField, option.GetFields()[0].GetFieldType())
 	require.Len(t, option.GetFields()[0].GetValues(), 1)
 	require.Equal(t, "bar", option.GetFields()[0].GetValues()[0])
+}
+
+// Test creating a DHCP option in Stork from a DHCP option in Kea.
+func TestNewDHCPOptionFromKea(t *testing.T) {
+	optionData := keaconfig.SingleOptionData{
+		AlwaysSend: true,
+		Code:       23,
+		CSVFormat:  true,
+		Data:       "8",
+		Name:       "option-foo",
+		Space:      dhcpmodel.DHCPv4OptionSpace,
+	}
+	lookup := NewDHCPOptionDefinitionLookup()
+	option, err := NewDHCPOptionFromKea(optionData, storkutil.IPv4, lookup)
+	require.NoError(t, err)
+	require.NotNil(t, option)
+
+	require.True(t, option.IsAlwaysSend())
+	require.EqualValues(t, 23, option.GetCode())
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, option.GetSpace())
+	require.Equal(t, "option-foo", option.GetName())
+	fields := option.GetFields()
+	require.Len(t, fields, 1)
+	require.Equal(t, "uint8", fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.EqualValues(t, 8, fields[0].GetValues()[0])
 }

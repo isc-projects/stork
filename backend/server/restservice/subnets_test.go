@@ -89,6 +89,12 @@ func TestGetSubnets(t *testing.T) {
 					UpperBound: "192.168.0.200",
 				},
 			},
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID:      a4.Daemons[0].ID,
+					LocalSubnetID: 1,
+				},
+			},
 		},
 	}
 
@@ -128,6 +134,12 @@ func TestGetSubnets(t *testing.T) {
 	appSubnets = []dbmodel.Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID:      a6.Daemons[0].ID,
+					LocalSubnetID: 2,
+				},
+			},
 		},
 	}
 	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6.Daemons[0])
@@ -193,6 +205,17 @@ func TestGetSubnets(t *testing.T) {
 		Subnets: []dbmodel.Subnet{
 			{
 				Prefix: "5001:db8:1::/64",
+				LocalSubnets: []*dbmodel.LocalSubnet{
+					{
+						DaemonID:      a46.Daemons[1].ID,
+						LocalSubnetID: 21,
+					},
+				},
+			},
+		},
+		LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+			{
+				DaemonID: a46.Daemons[1].ID,
 			},
 		},
 	}
@@ -209,6 +232,12 @@ func TestGetSubnets(t *testing.T) {
 				UpperBound: "192.118.0.200",
 			},
 		},
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      a46.Daemons[0].ID,
+				LocalSubnetID: 3,
+			},
+		},
 		AddrUtilization: 420,
 	}
 
@@ -222,6 +251,12 @@ func TestGetSubnets(t *testing.T) {
 			{
 				LowerBound: "3001:db8:1::",
 				UpperBound: "3001:db8:1:0:ffff::ffff",
+			},
+		},
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      a46.Daemons[1].ID,
+				LocalSubnetID: 4,
 			},
 		},
 		AddrUtilization: 240,
@@ -435,6 +470,17 @@ func TestGetSharedNetworks(t *testing.T) {
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "192.1.0.0/24",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 11,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+				{
+					DaemonID: a4.Daemons[0].ID,
 				},
 			},
 		},
@@ -444,9 +490,21 @@ func TestGetSharedNetworks(t *testing.T) {
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "192.2.0.0/24",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 12,
+						},
+					},
 				},
 				{
 					Prefix: "192.3.0.0/24",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 13,
+						},
+					},
 				},
 			},
 		},
@@ -497,9 +555,21 @@ func TestGetSharedNetworks(t *testing.T) {
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID:      a6.Daemons[0].ID,
+							LocalSubnetID: 21,
+						},
+					},
 				},
 				{
 					Prefix: "6001:db8:1::/64",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID:      a6.Daemons[0].ID,
+							LocalSubnetID: 22,
+						},
+					},
 				},
 			},
 		},

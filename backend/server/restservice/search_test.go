@@ -200,6 +200,16 @@ func TestSearchRecords(t *testing.T) {
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
+					LocalSubnets: []*dbmodel.LocalSubnet{
+						{
+							DaemonID: a46.Daemons[1].ID,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+				{
+					DaemonID: a46.Daemons[1].ID,
 				},
 			},
 		},
@@ -214,6 +224,11 @@ func TestSearchRecords(t *testing.T) {
 					UpperBound: "192.118.0.200",
 				},
 			},
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID: a46.Daemons[0].ID,
+				},
+			},
 		},
 		{
 			Prefix: "3001:db8:1::/64",
@@ -221,6 +236,11 @@ func TestSearchRecords(t *testing.T) {
 				{
 					LowerBound: "3001:db8:1::",
 					UpperBound: "3001:db8:1:0:ffff::ffff",
+				},
+			},
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID: a46.Daemons[1].ID,
 				},
 			},
 		},

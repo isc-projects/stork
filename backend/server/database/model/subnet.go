@@ -13,9 +13,14 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
+
+// Interface checks.
+var _ keaconfig.Subnet = (*Subnet)(nil)
 
 // Custom statistic type to redefine JSON marshalling.
 type SubnetStats map[string]interface{}
@@ -132,6 +137,11 @@ type LocalSubnet struct {
 
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
+
+	KeaParameters *keaconfig.SubnetParameters
+
+	DHCPOptionSet     []DHCPOption
+	DHCPOptionSetHash string
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.
@@ -157,15 +167,57 @@ type Subnet struct {
 	StatsCollectedAt time.Time
 }
 
-// Hook executed after inserting a subnet to the database. It updates subnet
-// id on the hosts belonging to this subnet.
-func (s *Subnet) AfterInsert(ctx context.Context) error {
-	if s != nil && s.ID != 0 {
-		for i := range s.Hosts {
-			s.Hosts[i].SubnetID = s.ID
+// Returns local subnet id for the specified daemon.
+func (s *Subnet) GetID(daemonID int64) int64 {
+	for _, ls := range s.LocalSubnets {
+		if ls.DaemonID == daemonID {
+			return ls.SubnetID
+		}
+	}
+	return 0
+}
+
+// Returns the Kea DHCP parameters for the subnet configured in the specified daemon.
+func (s *Subnet) GetKeaParameters(daemonID int64) *keaconfig.SubnetParameters {
+	for _, ls := range s.LocalSubnets {
+		if ls.DaemonID == daemonID {
+			return ls.KeaParameters
 		}
 	}
 	return nil
+}
+
+// Returns subnet prefix.
+func (s *Subnet) GetPrefix() string {
+	return s.Prefix
+}
+
+// Returns a slice of interfaces to the subnet address pools.
+func (s *Subnet) GetAddressPools() (accessors []dhcpmodel.AddressPoolAccessor) {
+	for i := range s.AddressPools {
+		accessors = append(accessors, &s.AddressPools[i])
+	}
+	return
+}
+
+// Returns a slice of interfaces to the subnet delegated prefix pools.
+func (s *Subnet) GetPrefixPools() (accessors []dhcpmodel.PrefixPoolAccessor) {
+	for i := range s.PrefixPools {
+		accessors = append(accessors, &s.PrefixPools[i])
+	}
+	return
+}
+
+// Returns DHCP options for the subnet configured in the specified daemon.
+func (s *Subnet) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptionAccessor) {
+	for _, ls := range s.LocalSubnets {
+		if ls.DaemonID == daemonID {
+			for i := range ls.DHCPOptionSet {
+				accessors = append(accessors, ls.DHCPOptionSet[i])
+			}
+		}
+	}
+	return
 }
 
 // Return family of the subnet.
@@ -175,6 +227,41 @@ func (s *Subnet) GetFamily() int {
 		family = 6
 	}
 	return family
+}
+
+// Sets LocalSharedNetwork instance for the SharedNetwork. If the corresponding
+// LocalSharedNetwork (having the same daemon ID) already exists, it is replaced
+// with the specified instance. Otherwise, the instance is appended to the slice
+// of LocalSharedNetwork.
+func (s *Subnet) SetLocalSubnet(localSubnet *LocalSubnet) {
+	for i, lsn := range s.LocalSubnets {
+		if lsn.DaemonID == localSubnet.DaemonID {
+			s.LocalSubnets[i] = localSubnet
+			return
+		}
+	}
+	s.LocalSubnets = append(s.LocalSubnets, localSubnet)
+}
+
+// Combines two hosts into a single host by copying LocalHost data from
+// the other host. It returns a boolean value indicating whether or not
+// joining the hosts was successful. It returns false when joined hosts
+// are not the same ones (have different identifiers, hostnames etc.).
+func (s *Subnet) Join(other *Subnet) {
+	for i := range other.LocalSubnets {
+		s.SetLocalSubnet(other.LocalSubnets[i])
+	}
+}
+
+// Hook executed after inserting a subnet to the database. It updates subnet
+// id on the hosts belonging to this subnet.
+func (s *Subnet) AfterInsert(ctx context.Context) error {
+	if s != nil && s.ID != 0 {
+		for i := range s.Hosts {
+			s.Hosts[i].SubnetID = s.ID
+		}
+	}
+	return nil
 }
 
 // Add address and prefix pools from the subnet instance and remove the ones
@@ -286,6 +373,26 @@ func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 		})
 	}
 	return addSubnetWithPools(dbi.(*pg.Tx), subnet)
+}
+
+// Iterates over the LocalSubnet instances of a Subnet and inserts them or
+// updates in the database.
+func AddLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
+	for i := range subnet.LocalSubnets {
+		subnet.LocalSubnets[i].SubnetID = subnet.ID
+		q := dbi.Model(subnet.LocalSubnets[i]).
+			OnConflict("(daemon_id, subnet_id) DO UPDATE").
+			Set("local_subnet_id = EXCLUDED.local_subnet_id").
+			Set("kea_parameters = EXCLUDED.kea_parameters").
+			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
+			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
+		_, err := q.Insert()
+		if err != nil {
+			return pkgerrors.Wrapf(err, "problem associating the daemon %d with the subnet %s",
+				subnet.LocalSubnets[i].DaemonID, subnet.Prefix)
+		}
+	}
+	return nil
 }
 
 // Fetches the subnet and its pools by id from the database.
@@ -663,10 +770,14 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 				return nil, err
 			}
 		}
-
-		err = AddDaemonToSubnet(tx, subnet, daemon)
+		// Ensure that the daemon IDs are set.
+		for i := range subnet.LocalSubnets {
+			if subnet.LocalSubnets[i].DaemonID == 0 {
+				subnet.LocalSubnets[i].DaemonID = daemon.ID
+			}
+		}
+		err = AddLocalSubnets(tx, subnet)
 		if err != nil {
-			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea daemon of ID %d", subnet.Prefix, daemon.ID)
 			return nil, err
 		}
 
@@ -699,6 +810,15 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 					network.Name)
 				return nil, err
 			}
+		}
+		// Ensure that the daemon IDs are set.
+		for i := range network.LocalSharedNetworks {
+			if network.LocalSharedNetworks[i].DaemonID == 0 {
+				network.LocalSharedNetworks[i].DaemonID = daemon.ID
+			}
+		}
+		if err = AddLocalSharedNetworks(tx, network); err != nil {
+			return nil, err
 		}
 		// Associate subnets with the daemon.
 		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, daemon)

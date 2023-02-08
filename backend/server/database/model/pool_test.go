@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -45,22 +47,24 @@ func TestNewAddressPoolFromRange(t *testing.T) {
 // Test that the prefix pool instance can be created from the prefix
 // and the delegated length.
 func TestNewPrefixPool(t *testing.T) {
-	pool, err := NewPrefixPool("2001:db8:1::/64", 96, "")
+	pool, err := NewPrefixPool("2001:db8:1::/64", 96, "", 1)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
 	require.Equal(t, "2001:db8:1::/64", pool.Prefix)
 	require.EqualValues(t, 96, pool.DelegatedLen)
 	require.Empty(t, pool.ExcludedPrefix)
+	require.EqualValues(t, 1, pool.SubnetID)
 
 	// IPv4 is not accepted.
-	_, err = NewPrefixPool("192.0.2.0/24", 24, "")
+	_, err = NewPrefixPool("192.0.2.0/24", 24, "", 2)
 	require.Error(t, err)
 
 	// Non-empty excluded prefix
-	pool, err = NewPrefixPool("2001:db8:1::/64", 96, "2001:db8:1:42::/80")
+	pool, err = NewPrefixPool("2001:db8:1::/64", 96, "2001:db8:1:42::/80", 3)
 	require.NoError(t, err)
 	require.EqualValues(t, "2001:db8:1:42::/80", pool.ExcludedPrefix)
+	require.EqualValues(t, 3, pool.SubnetID)
 }
 
 func TestAddDeleteAddressPool(t *testing.T) {
@@ -141,6 +145,38 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	require.NotEmpty(t, returnedSubnets)
 	returnedSubnet = returnedSubnets[0]
 	require.Empty(t, returnedSubnet.PrefixPools)
+}
+
+// Test the implementation of the dhcpmodel.PrefixPoolAccessor interface
+// (GetModel() function).
+func TestPrefixPoolGetModel(t *testing.T) {
+	pool := PrefixPool{
+		Prefix:         "3001::/80",
+		DelegatedLen:   88,
+		ExcludedPrefix: "3001::/96",
+	}
+	model := pool.GetModel()
+	require.Equal(t, "3001::/80", model.Prefix)
+	require.EqualValues(t, 88, model.DelegatedLen)
+	require.Equal(t, "3001::/96", model.ExcludedPrefix)
+}
+
+// Test the implementation of the dhcpmodel.PrefixPoolAccessor interface
+// (GetDHCPOptions() function).
+func TestPrefixPoolGetDHCPOptions(t *testing.T) {
+	pool := PrefixPool{
+		Prefix: "3001::/80",
+		DHCPOptionSet: []DHCPOption{
+			{
+				Code:  7,
+				Space: dhcpmodel.DHCPv4OptionSpace,
+			},
+		},
+	}
+	options := pool.GetDHCPOptions()
+	require.Len(t, options, 1)
+	require.EqualValues(t, 7, options[0].GetCode())
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, options[0].GetSpace())
 }
 
 // Test that two prefix pools have unequal data if their prefixes differ.
@@ -264,6 +300,54 @@ func TestPrefixPoolHasEqualDataTheSame(t *testing.T) {
 	// Assert
 	require.True(t, equalityFirstSecond)
 	require.True(t, equalitySecondFirst)
+}
+
+// Test the implementation of the dhcpmodel.AddressPoolAccessor interface
+// (GetLowerBound() and GetUpperBound() functions).
+func TestAddressPoolGetBounds(t *testing.T) {
+	pool := AddressPool{
+		LowerBound: "192.0.2.1",
+		UpperBound: "192.0.2.10",
+	}
+	require.Equal(t, "192.0.2.1", pool.GetLowerBound())
+	require.Equal(t, "192.0.2.10", pool.GetUpperBound())
+}
+
+// Test the implementation of the keaconfig.AddressPool interface
+// (GetKeaParameters() function).
+func TestAddressPoolGetKeaParameters(t *testing.T) {
+	clientClass := "foo"
+	pool := AddressPool{
+		LowerBound: "2001:db8:1::cafe",
+		UpperBound: "2001:db8:1::ffff",
+		KeaParameters: &keaconfig.PoolParameters{
+			ClientClassParameters: keaconfig.ClientClassParameters{
+				ClientClass: &clientClass,
+			},
+		},
+	}
+	params := pool.GetKeaParameters()
+	require.NotNil(t, params)
+	require.Equal(t, "foo", *params.ClientClass)
+}
+
+// Test the implementation of the dhcpmodel.AddressPoolAccessor interface
+// (GetDHCPOptions() function).
+func TestAddressPoolGetDHCPOptions(t *testing.T) {
+	pool := AddressPool{
+		LowerBound: "2001:db8:1::cafe",
+		UpperBound: "2001:db8:1::ffff",
+		DHCPOptionSet: []DHCPOption{
+			{
+				Code:  10,
+				Space: dhcpmodel.DHCPv6OptionSpace,
+			},
+		},
+	}
+	options := pool.GetDHCPOptions()
+	require.Len(t, options, 1)
+	require.EqualValues(t, 10, options[0].GetCode())
+	require.Equal(t, dhcpmodel.DHCPv6OptionSpace, options[0].GetSpace())
 }
 
 // Test that two address pools have equal data if their IDs differ.

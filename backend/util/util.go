@@ -372,6 +372,12 @@ func IsNilPtr(obj interface{}) bool {
 	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
 }
 
+// Returns a pointer to the specified value. It is useful to
+// create pointers from the literals.
+func Ptr[T any](value T) *T {
+	return &value
+}
+
 // Checks if the specified value is a whole number.
 func IsWholeNumber(value interface{}) bool {
 	if value == nil {

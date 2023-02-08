@@ -2,6 +2,7 @@ package keaconfig
 
 import (
 	"github.com/pkg/errors"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
 
@@ -18,7 +19,7 @@ type Host interface {
 	GetNextServer(int64) string
 	GetServerHostname(int64) string
 	GetBootFileName(int64) string
-	GetDHCPOptions(int64) []DHCPOption
+	GetDHCPOptions(int64) []dhcpmodel.DHCPOptionAccessor
 }
 
 // Represents host reservation within Kea configuration.

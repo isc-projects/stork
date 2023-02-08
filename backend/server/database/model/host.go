@@ -11,7 +11,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -953,7 +953,7 @@ func (host Host) GetBootFileName(daemonID int64) (bootFileName string) {
 
 // Returns DHCP options associated with the host and for a specified
 // daemon ID.
-func (host Host) GetDHCPOptions(daemonID int64) (options []keaconfig.DHCPOption) {
+func (host Host) GetDHCPOptions(daemonID int64) (options []dhcpmodel.DHCPOptionAccessor) {
 	for _, lh := range host.LocalHosts {
 		if lh.DaemonID == daemonID {
 			for _, o := range lh.DHCPOptionSet {

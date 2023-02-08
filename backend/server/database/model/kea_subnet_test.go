@@ -94,6 +94,17 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							UpperBound: "192.1.0.200",
 						},
 					},
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 11,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID: a4.Daemons[0].ID,
 				},
 			},
 		},
@@ -113,6 +124,17 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							UpperBound: "192.2.0.200",
 						},
 					},
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 12,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID: a4.Daemons[0].ID,
 				},
 			},
 		},
@@ -129,6 +151,12 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 				{
 					LowerBound: "192.168.0.150",
 					UpperBound: "192.168.0.200",
+				},
+			},
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a4.Daemons[0].ID,
+					LocalSubnetID: 1,
 				},
 			},
 		},
@@ -178,6 +206,17 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a6.Daemons[0].ID,
+							LocalSubnetID: 21,
+						},
+					},
+				},
+			},
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID: a6.Daemons[0].ID,
 				},
 			},
 		},
@@ -186,6 +225,12 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	appSubnets = []Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a6.Daemons[0].ID,
+					LocalSubnetID: 2,
+				},
+			},
 		},
 	}
 	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0])
@@ -259,6 +304,12 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					UpperBound: "192.168.0.200",
 				},
 			},
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a46.Daemons[0].ID,
+					LocalSubnetID: 3,
+				},
+			},
 		},
 		{
 			Prefix: "3001:db8:1::/64",
@@ -277,6 +328,12 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					Prefix:         "3001:db8:1:2::/80",
 					DelegatedLen:   96,
 					ExcludedPrefix: "3001:db8:1:2:1::/112",
+				},
+			},
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a46.Daemons[1].ID,
+					LocalSubnetID: 4,
 				},
 			},
 		},
@@ -584,6 +641,12 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "192.1.0.0/24",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 11,
+						},
+					},
 				},
 			},
 		},
@@ -593,9 +656,21 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "192.2.0.0/24",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 12,
+						},
+					},
 				},
 				{
 					Prefix: "192.3.0.0/24",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a4.Daemons[0].ID,
+							LocalSubnetID: 13,
+						},
+					},
 				},
 			},
 		},
@@ -604,6 +679,12 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	appSubnets := []Subnet{
 		{
 			Prefix: "192.168.0.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a4.Daemons[0].ID,
+					LocalSubnetID: 1,
+				},
+			},
 		},
 	}
 	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4.Daemons[0])
@@ -654,9 +735,21 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a6.Daemons[0].ID,
+							LocalSubnetID: 21,
+						},
+					},
 				},
 				{
 					Prefix: "6001:db8:1::/64",
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID:      a6.Daemons[0].ID,
+							LocalSubnetID: 22,
+						},
+					},
 				},
 			},
 		},
@@ -665,6 +758,12 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	appSubnets = []Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      a6.Daemons[0].ID,
+					LocalSubnetID: 2,
+				},
+			},
 		},
 	}
 	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0])
