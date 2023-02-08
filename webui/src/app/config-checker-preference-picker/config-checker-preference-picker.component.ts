@@ -213,6 +213,12 @@ export class ConfigCheckerPreferencePickerComponent {
                     'database and suggesting replacing it with the ' +
                     'configuration backend command hook.'
                 )
+            case 'agent_credentials_over_https':
+                return (
+                    'The checker verifying if the Stork agent communicates ' +
+                    'with the Kea Control Agent using the HTTPS protocol when the ' +
+                    'HTTP authentication credentials (i.e., Basic Auth) are configured.'
+                )
             default:
                 return ''
         }

@@ -56,7 +56,14 @@ const mockData: ConfigChecker[] = [
             'unknown',
         ],
         state: ConfigChecker.StateEnum.Disabled,
-        triggers: ['manual', 'internal', 'config change', 'host reservations change', 'Stork agent config change', 'unknown'],
+        triggers: [
+            'manual',
+            'internal',
+            'config change',
+            'host reservations change',
+            'Stork agent config change',
+            'unknown',
+        ],
         globallyEnabled: true,
     },
     {
