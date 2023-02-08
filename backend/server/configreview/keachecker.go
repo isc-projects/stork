@@ -1192,7 +1192,8 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 	return NewReport(ctx, "Basic HTTP authentication is weak on its own as "+
 		"there are known dictionary attacks, but those attacks require a "+
 		"'man in the middle' to get access to the HTTP traffic. That can be "+
-		"eliminated by using basic HTTP authentication exclusively over TLS.").
-		referencingDaemon(ctx.subjectDaemon).
-		create()
+		"eliminated by using basic HTTP authentication exclusively over TLS. "+
+		"Configure the 'trust-anchor', 'cert-file', and 'key-file' "+
+		"properties in the Kea Control Agent {daemon} configuration to use "+
+		"the secure protocol.").referencingDaemon(ctx.subjectDaemon).create()
 }

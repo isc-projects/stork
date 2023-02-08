@@ -3600,6 +3600,96 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
 	)
 }
 
+// Test that the credentials over HTTPS checker returns an error for the
+// not-CA daemons.
+func TestCredentialsOverHTTPSForNonCADaemon(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+
+	// Act
+	report, err := credentialsOverHTTPS(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.ErrorContains(t, err, "unsupported daemon")
+}
+
+// Test that the credentials over HTTPS checker returns no report if the
+// HTTP credentials are not provided in the Stork agent.
+func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
+	ctx.subjectDaemon.App = &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			State: dbmodel.MachineState{
+				AgentUsesHTTPCredentials: false,
+			},
+		},
+	}
+
+	// Act
+	report, err := credentialsOverHTTPS(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the credentials over HTTPS checker founds an issue if the HTTP
+// credentials are provided but the Stork agent and Kea Control Agent don't
+// communicate over the secure protocol.
+func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
+	ctx.subjectDaemon.App = &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			State: dbmodel.MachineState{
+				AgentUsesHTTPCredentials: true,
+			},
+		},
+	}
+
+	// Act
+	report, err := credentialsOverHTTPS(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "Configure the 'trust-anchor', "+
+		"'cert-file', and 'key-file' properties in the Kea Control Agent "+
+		"{daemon} configuration to use the secure protocol.")
+}
+
+// Test that the credentials over HTTPS checker founds no issue if the HTTP
+// credentials are provided and the Stork agent and Kea Control Agent
+// communicate over the secure protocol.
+func TestCredentialsOverHTTPSForProvidedCredentialsWithTLS(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+        "trust-anchor": "foo",
+        "cert-file": "/bar",
+        "key-file": "/baz"
+    } }`)
+	ctx.subjectDaemon.App = &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			State: dbmodel.MachineState{
+				AgentUsesHTTPCredentials: true,
+			},
+		},
+	}
+
+	// Act
+	report, err := credentialsOverHTTPS(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
