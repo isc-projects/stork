@@ -8,6 +8,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	kea "isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
@@ -190,28 +191,37 @@ func TestConditionallyBeginKeaConfigReviews(t *testing.T) {
 	dispatcher := &storktest.FakeDispatcher{}
 
 	// New daemon. The review should be initiated.
-	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher, false)
 	require.Len(t, dispatcher.CallLog, 1)
 	require.Equal(t, "BeginReview", dispatcher.CallLog[0].CallName)
 
 	// There are no "same daemons". The review should be
 	// performed again.
-	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher, false)
 	require.Len(t, dispatcher.CallLog, 2)
 	require.Equal(t, "BeginReview", dispatcher.CallLog[1].CallName)
 
 	// Neither daemon's configuration nor dispatcher's signature
 	// have changed. The review should not be performed.
 	state.SameConfigDaemons["dhcp4"] = true
-	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher, false)
 	require.Len(t, dispatcher.CallLog, 3)
 	require.Equal(t, "GetSignature", dispatcher.CallLog[2].CallName)
 
 	// Modify the dispatcher's signature. It should result in
 	// another config review.
 	dispatcher.Signature = "new signature"
-	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher, false)
 	require.Len(t, dispatcher.CallLog, 5)
 	require.Equal(t, "GetSignature", dispatcher.CallLog[3].CallName)
 	require.Equal(t, "BeginReview", dispatcher.CallLog[4].CallName)
+
+	// Stork agent configuration changed. The review should be performed again.
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher, true)
+	require.Len(t, dispatcher.CallLog, 8)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[5].CallName)
+	require.Equal(t, configreview.StorkAgentConfigModified, dispatcher.CallLog[5].Trigger)
+	require.Equal(t, "GetSignature", dispatcher.CallLog[6].CallName)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[7].CallName)
+	require.Equal(t, configreview.ConfigModified, dispatcher.CallLog[7].Trigger)
 }

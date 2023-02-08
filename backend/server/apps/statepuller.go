@@ -254,6 +254,8 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		return ""
 	}
 
+	storkAgentChanged := isStorkAgentConfigurationChanged(dbMachine, state)
+
 	// store machine's state in db
 	err = updateMachineFields(db, dbMachine, state)
 	if err != nil {
@@ -278,7 +280,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 			if err == nil {
 				// Let's now identify new daemons or the daemons with updated
 				// configurations and schedule configuration reviews for them
-				conditionallyBeginKeaConfigReviews(dbApp, state, reviewDispatcher)
+				conditionallyBeginKeaConfigReviews(dbApp, state, reviewDispatcher, storkAgentChanged)
 			}
 		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
@@ -303,13 +305,18 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 // This function iterates over the app's daemons and checks if a new config
 // review should be performed. It is performed when daemon's configuration
 // or dispatcher's signature has changed.
-func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateMeta, reviewDispatcher configreview.Dispatcher) {
+func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateMeta, reviewDispatcher configreview.Dispatcher, storkAgentConfigChanged bool) {
 	for i, daemon := range dbApp.Daemons {
 		// Let's make sure that the config pointer is set. It can be nil
 		// when the daemon is inactive.
 		if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
 			continue
 		}
+
+		if storkAgentConfigChanged {
+			_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], configreview.StorkAgentConfigModified, nil)
+		}
+
 		if state != nil && state.SameConfigDaemons != nil {
 			if ok := state.SameConfigDaemons[daemon.Name]; ok && state.SameConfigDaemons[daemon.Name] {
 				if daemon.ConfigReview != nil &&
@@ -322,4 +329,11 @@ func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateM
 		}
 		_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], configreview.ConfigModified, nil)
 	}
+}
+
+// The Stork server doesn't gather the Stork agent configuration, so we cannot
+// detect its change. It compares the current agent state and the database
+// entry to only recognize the HTTP credentials state was changed.
+func isStorkAgentConfigurationChanged(machine *dbmodel.Machine, agentState *agentcomm.State) bool {
+	return machine.State.AgentUsesHTTPCredentials != agentState.AgentUsesHTTPCredentials
 }
