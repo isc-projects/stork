@@ -50,6 +50,9 @@ const (
 	// Config review is triggered as a result of the hosts modifications
 	// in the host database.
 	DBHostsModified Trigger = "host reservations change"
+	// Config review is triggered as a result of the configuration change of
+	// the Stork agent.
+	StorkAgentConfigModified Trigger = "Stork agent config change"
 )
 
 // Returns default config review triggers. They are by default used by
@@ -906,6 +909,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "address_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), addressPoolsExhaustedByReservations)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "pd_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), delegatedPrefixPoolsExhaustedByReservations)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_cmds_and_cb_mutual_exclusion", GetDefaultTriggers(), subnetCmdsAndConfigBackendMutualExclusion)
+	dispatcher.RegisterChecker(KeaCADaemon, "agent_credentials_over_https", ExtendDefaultTriggers(StorkAgentConfigModified), credentialsOverHTTPS)
 }
 
 // Fetches all checker preferences from the database and loads them into
