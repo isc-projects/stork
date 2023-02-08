@@ -1,3 +1,10 @@
+* 292 [func] slawek
+
+    Added the configuration review checker to verify that the Stork agent and
+    Kea Control Agent communicate over TLS if the Kea Control Agent requires
+    the HTTP credentials (i.e., Basic Auth).
+    (Gitlab #945)
+
 * 291 [build] slawek
 
     Upgrade the docker compose used in demo and system tests to V2 version.
