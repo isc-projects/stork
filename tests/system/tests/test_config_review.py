@@ -3,7 +3,7 @@ from core.wrappers import Server, Kea
 
 
 @kea_parametrize("agent-kea-config-review")
-def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Kea):
+def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea):
     """Test that the Stork server performs Kea configuration review and returns
     the reports."""
     server_service.log_in_as_admin()
