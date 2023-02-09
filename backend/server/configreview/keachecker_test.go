@@ -3054,7 +3054,7 @@ func TestAddressPoolsExhaustedByReservationsConsidersDatabaseReservations(t *tes
 		"1. Pool 'fe80::1-fe80::1' of the '[42] fe80::/16' subnet")
 }
 
-// Test that the error is returned if the non-DHCP daemon is checking.
+// Test that the error is returned if the non-DHCP daemon is checked.
 func TestDelegatedPrefixPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
@@ -3085,8 +3085,8 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForMissingSubnets(t *testing
 	require.Nil(t, err)
 }
 
-// Test that the no issue report is returned if the number of reservations is
-// less then the number of available prefixes in pool.
+// Test that no issue report is returned if the number of reservations is
+// less then the number of available prefixes in the pool.
 func TestDelegatedPrefixPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
