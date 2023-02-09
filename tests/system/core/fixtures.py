@@ -176,7 +176,7 @@ def server_service(request):
 @pytest.fixture
 def kea_service(request):
     """
-    A fixture that setup the Kea service and guarantees that it is
+    A fixture setting up the Kea service and guarantees that it is
     operational.
 
     Parameters
@@ -209,7 +209,7 @@ def kea_service(request):
 @pytest.fixture
 def ha_pair_service(request):
     """
-    A fixture that setup the Kea High-Availability pair services and
+    A fixture setting up the Kea High-Availability pair services and
     guarantees that they are operational.
 
     Parameters
@@ -249,7 +249,7 @@ def ha_pair_service(request):
 
 def _prepare_kea_wrapper(request, service_name: str, suppress_registration: bool, config_dirname="kea"):
     """
-    The helper function that setup the Kea Server service and guarantees that
+    The helper function setting up the Kea Server service and guarantees that
     it is operational.
 
     Parameters
