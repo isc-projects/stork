@@ -230,7 +230,8 @@ func CalculateDelegatedPrefixRangeSize(prefixLength, delegatedLength int) *big.I
 	return big.NewInt(0).Exp(
 		big.NewInt(2),
 		big.NewInt(int64(delegatedLength-prefixLength)),
-		nil)
+		nil,
+	)
 }
 
 // Returns network prefix as a binary string without delimiters. It
