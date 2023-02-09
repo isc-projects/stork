@@ -3138,13 +3138,13 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForEqualReservationsAndAddre
                     {
                         "prefixes": [
                             "fe80::0/127",
-                            "fe80::4/127",
-                            "fe80::8/127"
+                            "fe80::2/127",
+                            "fe80::4/127"
                         ]
                     },
                     {
                         "prefixes": [
-                            "fe80::12/127"
+                            "fe80::6/127"
                         ]
                     }
                 ]
@@ -3184,7 +3184,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimi
 
 			pool := map[string]any{
 				"prefix":        prefix,
-				"prefix-len":    112,
+				"prefix-len":    127,
 				"delegated-len": 127,
 			}
 			pools = append(pools, pool)
@@ -3227,13 +3227,13 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimi
 	require.Contains(t, *report.content, "configuration contains delegated prefix "+
 		"pools with the number of in-pool PD reservations equal to their size")
 	require.Contains(t, *report.content,
-		"1. Pool 'fe80::0:1/112 del. 127' of the 'fe80::0:0/112' subnet")
+		"1. Pool 'fe80::0:1/127 del. 127' of the 'fe80::0:0/112' subnet")
 	require.Contains(t, *report.content,
-		"8. Pool 'fe80::1:1/112 del. 127' of the 'fe80::1:0/112' subnet")
+		"8. Pool 'fe80::1:1/127 del. 127' of the 'fe80::1:0/112' subnet")
 	require.Contains(t, *report.content, "\n10.")
 	require.NotContains(t, *report.content, "\n11.")
 	require.NotContains(t, *report.content,
-		"Pool 'fe80::1:4/112 del. 127' of the 'fe80::1:0/112' subnet")
+		"Pool 'fe80::1:4/127 del. 127' of the 'fe80::1:0/112' subnet")
 }
 
 // Test that the report contains the subnet IDs if provided.
@@ -3244,7 +3244,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsReportContainsSubnetID(t *te
             "subnet6": [{
                 "id": 42,
                 "subnet": "fe80::/16",
-                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 16, "delegated-len": 80 }],
+                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 80, "delegated-len": 80 }],
                 "reservations": [{ "prefixes": ["fe80::/80"] }]
             }]
         }
@@ -3257,7 +3257,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsReportContainsSubnetID(t *te
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content,
-		"1. Pool 'fe80::/16 del. 80' of the '[42] fe80::/16' subnet")
+		"1. Pool 'fe80::/80 del. 80' of the '[42] fe80::/16' subnet")
 }
 
 // Test that the IP reservations from the database are considered when checking
@@ -3275,7 +3275,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
             "subnet6": [{
                 "id": 42,
                 "subnet": "fe80::/16",
-                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 64, "delegated-len": 80 }]
+                "pd-pools": [{ "prefix": "fe80::", "prefix-len": 80, "delegated-len": 80 }]
             }]
         }
     }`
@@ -3292,7 +3292,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content,
-		"1. Pool 'fe80::/64 del. 80' of the '[42] fe80::/16' subnet")
+		"1. Pool 'fe80::/80 del. 80' of the '[42] fe80::/16' subnet")
 }
 
 // Benchmark measuring performance of a Kea configuration checker that detects

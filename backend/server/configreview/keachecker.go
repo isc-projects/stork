@@ -1206,17 +1206,15 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 		for _, pool := range subnet.PDPools {
 			// Calculate the pool size.
 			// Pool size = 2 power to the number of the wildcard bytes.
-			poolSize := big.NewInt(2)
-			poolSize.Exp(poolSize, big.NewInt(int64(128-pool.DelegatedLen)), nil)
+			poolSize := storkutil.CalculateDelegatedPrefixRangeSize(
+				pool.PrefixLen, pool.DelegatedLen,
+			)
 
 			// Count the reservations in a pool.
 			reservationsInPoolCount := big.NewInt(0)
 			for _, prefix := range reservedPrefixes {
 				if prefix.IsInPrefixRange(pool.Prefix, pool.PrefixLen, pool.DelegatedLen) {
-					// Increment by prefix size.
-					prefixSize := big.NewInt(2)
-					prefixSize.Exp(prefixSize, big.NewInt(int64(128-prefix.PrefixLength)), nil)
-					reservationsInPoolCount.Add(reservationsInPoolCount, prefixSize)
+					reservationsInPoolCount.Add(reservationsInPoolCount, big.NewInt(1))
 				}
 			}
 
