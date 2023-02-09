@@ -369,3 +369,38 @@ func TestCalculateRangeSizeIPv6(t *testing.T) {
 			big.NewInt(2),
 		), size)
 }
+
+// Test that the size of the delegated prefix pool is calculated properly.
+func TestCalculateDelegatedPrefixRangeSize(t *testing.T) {
+	t.Run("delegated length lowers than prefix length", func(t *testing.T) {
+		require.Equal(t, big.NewInt(0), CalculateDelegatedPrefixRangeSize(2, 1))
+	})
+
+	t.Run("delegated length equals prefix length", func(t *testing.T) {
+		require.Equal(t, big.NewInt(1), CalculateDelegatedPrefixRangeSize(42, 42))
+	})
+
+	t.Run("delegated length equals prefix length", func(t *testing.T) {
+		require.Equal(t, big.NewInt(1), CalculateDelegatedPrefixRangeSize(42, 42))
+	})
+
+	t.Run("small number of delegated prefixes", func(t *testing.T) {
+		require.Equal(t,
+			big.NewInt(4),
+			CalculateDelegatedPrefixRangeSize(42, 44),
+		)
+	})
+
+	t.Run("big number of delegated prefixes", func(t *testing.T) {
+		require.Equal(t,
+			big.NewInt(0).Mul(
+				big.NewInt(0).Add(
+					big.NewInt(0).SetUint64(math.MaxUint64),
+					big.NewInt(1),
+				),
+				big.NewInt(2),
+			),
+			CalculateDelegatedPrefixRangeSize(1, 66),
+		)
+	})
+}

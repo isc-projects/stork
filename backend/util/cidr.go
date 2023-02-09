@@ -219,6 +219,20 @@ func CalculateRangeSize(lb, ub net.IP) *big.Int {
 	return size
 }
 
+// Calculates the number of delegated prefixes in the delegated prefix range.
+func CalculateDelegatedPrefixRangeSize(prefixLength, delegatedLength int) *big.Int {
+	if delegatedLength < prefixLength {
+		// Invalid arguments.
+		return big.NewInt(0)
+	}
+
+	// Number of delegated prefixes = 2 ^ (delegated length - prefix length).
+	return big.NewInt(0).Exp(
+		big.NewInt(2),
+		big.NewInt(int64(delegatedLength-prefixLength)),
+		nil)
+}
+
 // Returns network prefix as a binary string without delimiters. It
 // contains only the prefix bytes without leading zeros. The IPv4 prefixes are
 // prepended by the constant term to avoid collisions with the IPv6 ones.
