@@ -1,7 +1,7 @@
 * 279 [func] slawek
 
-    Added a Kea configuration checker that validates if all available addresses
-    in IP pools are not reserved for hosts.
+    Added the Kea configuration checkers reporting when there are static
+    reservations for all addresses or delegated prefixes in the pools.
     (Gitlab #941)
 
 * 278 [func] slawek
