@@ -380,10 +380,6 @@ func TestCalculateDelegatedPrefixRangeSize(t *testing.T) {
 		require.Equal(t, big.NewInt(1), CalculateDelegatedPrefixRangeSize(42, 42))
 	})
 
-	t.Run("delegated length equals prefix length", func(t *testing.T) {
-		require.Equal(t, big.NewInt(1), CalculateDelegatedPrefixRangeSize(42, 42))
-	})
-
 	t.Run("small number of delegated prefixes", func(t *testing.T) {
 		require.Equal(t,
 			big.NewInt(4),
