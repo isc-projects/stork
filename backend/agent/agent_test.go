@@ -47,14 +47,14 @@ func mockRndc(command []string) ([]byte, error) {
 
 // mockRndcError mocks an error.
 func mockRndcError(command []string) ([]byte, error) {
-	log.Debugf("mock rndc: error")
+	log.Debugf("Mock rndc: error")
 
 	return []byte(""), errors.Errorf("mocking an error")
 }
 
 // mockRndcEmpty mocks empty output.
 func mockRndcEmpty(command []string) ([]byte, error) {
-	log.Debugf("mock rndc: empty")
+	log.Debugf("Mock rndc: empty")
 
 	return []byte(""), nil
 }

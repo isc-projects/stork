@@ -214,7 +214,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 func addApp(tx *pg.Tx, app *App) ([]*Daemon, error) {
 	_, err := tx.Model(app).Insert()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "Problem inserting app %v", app)
+		return nil, pkgerrors.Wrapf(err, "problem inserting app %v", app)
 	}
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {

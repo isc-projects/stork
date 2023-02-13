@@ -958,7 +958,7 @@ func LoadAndValidateCheckerPreferences(db dbops.DBI, d Dispatcher) error {
 			// 2. The dispatch group selector list was modified, and a given daemon is no longer related to this checker.
 			// 3. The hook that provided a custom checker was removed.
 			// Log the error message and skip the preference.
-			log.Errorf("cannot load the config review checker preference: [%s] due to %+v", preference.String(), err)
+			log.Errorf("Cannot load the config review checker preference: [%s] due to %+v", preference.String(), err)
 		}
 	}
 	return nil

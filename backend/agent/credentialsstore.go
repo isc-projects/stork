@@ -109,12 +109,12 @@ func (cs *CredentialsStore) RemoveBasicAuth(address string, port int64) {
 func (cs *CredentialsStore) Read(reader io.Reader) error {
 	rawContent, err := io.ReadAll(reader)
 	if err != nil {
-		return errors.Wrap(err, "Cannot read the credentials")
+		return errors.Wrap(err, "cannot read the credentials")
 	}
 	var content CredentialsStoreContent
 	err = json.Unmarshal(rawContent, &content)
 	if err != nil {
-		return errors.Wrap(err, "Cannot parse the credentials")
+		return errors.Wrap(err, "cannot parse the credentials")
 	}
 	return cs.loadContent(&content)
 }

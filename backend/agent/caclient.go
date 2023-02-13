@@ -41,7 +41,7 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 		tlsConfig.RootCAs = certPool
 		tlsConfig.Certificates = certificates
 	} else {
-		log.Warnf("cannot read TLS credentials, use HTTP protocol, %+v", err)
+		log.Warnf("Cannot read TLS credentials, use HTTP protocol, %+v", err)
 	}
 
 	httpTransport := &http.Transport{
@@ -64,12 +64,12 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 			err = errors.WithMessagef(err, "cannot read the credentials file (%s)", CredentialsFile)
 		}
 		if err == nil {
-			log.Infof("configured to use the Basic Auth credentials from file (%s)", CredentialsFile)
+			log.Infof("Configured to use the Basic Auth credentials from file (%s)", CredentialsFile)
 		} else {
-			log.Warnf("cannot read the Basic Auth credentials from file (%s), %+v", CredentialsFile, err)
+			log.Warnf("Cannot read the Basic Auth credentials from file (%s), %+v", CredentialsFile, err)
 		}
 	} else {
-		log.Infof("the Basic Auth credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
+		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
 	}
 
 	client := &HTTPClient{

@@ -273,7 +273,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
 		msg := "unable to begin transaction because user is not logged in"
-		log.Error("problem with creating transaction context because user has no session")
+		log.Error("Problem with creating transaction context because user has no session")
 		return nil, nil, nil, nil, http.StatusForbidden, msg
 	}
 	// Create configuration context.
@@ -359,14 +359,14 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
 		msg := "unable to submit because user is not logged in"
-		log.Error("problem with recovering transaction context because user has no session")
+		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "transaction expired"
-		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
 
@@ -432,14 +432,14 @@ func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactio
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
 		msg := "unable to cancel transaction because user is not logged in"
-		log.Error("problem with recovering transaction context because user has no session")
+		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "transaction expired"
-		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
 	r.ConfigManager.Done(cctx)
@@ -593,7 +593,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
 		msg := "unable to begin transaction because user is not logged in"
-		log.Error("problem with creating transaction context because user has no session")
+		log.Error("Problem with creating transaction context because user has no session")
 		rsp := dhcp.NewDeleteHostDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
 		})

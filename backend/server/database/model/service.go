@@ -202,7 +202,7 @@ func addService(tx *pg.Tx, service *Service) error {
 	// Insert generic information into the service table.
 	_, err := tx.Model(service).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "Problem adding new service")
+		err = pkgerrors.Wrapf(err, "problem adding new service")
 		return err
 	}
 

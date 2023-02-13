@@ -62,7 +62,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		select {
 		case event := <-ch:
 			// send received event to subscriber and flush the connection
-			log.Printf("to %p sent %s", s, event)
+			log.Printf("To %p sent %s", s, event)
 			fmt.Fprintf(w, "data: %s\n\n", event)
 			// Not all ResponseWriter instances implement http.Flusher interface.
 			// Test if this instance implement it before attempting to use it.

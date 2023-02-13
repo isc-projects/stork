@@ -115,7 +115,7 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 	var rndcCommand []string
 	rndcCommand = append(rndcCommand, rc.BaseCommand...)
 	rndcCommand = append(rndcCommand, command...)
-	log.Debugf("rndc: %+v", rndcCommand)
+	log.Debugf("Rndc: %+v", rndcCommand)
 
 	return rc.execute(rndcCommand)
 }
@@ -142,14 +142,14 @@ func getRndcKey(contents, name string) (controlKey string) {
 		pattern = regexp.MustCompile(`(?s)algorithm\s+\"(\S+)\";`)
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
-			log.Warnf("no key algorithm found for name %s", name)
+			log.Warnf("No key algorithm found for name %s", name)
 			return ""
 		}
 
 		pattern = regexp.MustCompile(`(?s)secret\s+\"(\S+)\";`)
 		secret := pattern.FindStringSubmatch(key[2])
 		if len(secret) < 2 {
-			log.Warnf("no key secret found for name %s", name)
+			log.Warnf("No key secret found for name %s", name)
 			return ""
 		}
 
@@ -181,7 +181,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	pattern := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{(?:\s*\S+\s*;\s*)+\}(.*);`)
 	match := pattern.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
-		log.Warnf("cannot parse BIND 9 inet configuration: no match (%+v)", config)
+		log.Warnf("Cannot parse BIND 9 inet configuration: no match (%+v)", config)
 		return "", 0, ""
 	}
 
@@ -192,19 +192,19 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	case 3:
 		address = inetSpec[0]
 		if inetSpec[1] != "port" {
-			log.Warnf("cannot parse BIND 9 control port: bad port statement (%+v)", inetSpec)
+			log.Warnf("Cannot parse BIND 9 control port: bad port statement (%+v)", inetSpec)
 			return "", 0, ""
 		}
 
 		iPort, err := strconv.Atoi(inetSpec[2])
 		if err != nil {
-			log.Warnf("cannot parse BIND 9 control port: %+v (%+v)", inetSpec, err)
+			log.Warnf("Cannot parse BIND 9 control port: %+v (%+v)", inetSpec, err)
 			return "", 0, ""
 		}
 		port = int64(iPort)
 	case 2:
 	default:
-		log.Warnf("cannot parse BIND 9 inet_spec configuration: no match (%+v)", inetSpec)
+		log.Warnf("Cannot parse BIND 9 inet_spec configuration: no match (%+v)", inetSpec)
 		return "", 0, ""
 	}
 
@@ -350,7 +350,7 @@ func getPotentialNamedConfLocations() []string {
 // collected data or nil if the Bind 9 is not recognized or any error occurs.
 func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor) App {
 	if len(match) < 3 {
-		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
+		log.Warnf("Problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil
 	}
 
@@ -380,7 +380,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	// no config file so nothing to do
 	if bind9ConfPath == "" {
-		log.Warnf("cannot find config file for BIND 9")
+		log.Warnf("Cannot find config file for BIND 9")
 		return nil
 	}
 
@@ -397,12 +397,12 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec)
 	if err != nil {
-		log.Warnf("cannot find BIND 9 %s: %s", namedCheckconfExec, err)
+		log.Warnf("Cannot find BIND 9 %s: %s", namedCheckconfExec, err)
 		return nil
 	}
 	out, err := executor.Output(namedCheckconfPath, "-p", bind9ConfPath)
 	if err != nil {
-		log.Warnf("cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
+		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
 		return nil
 	}
 	cfgText := string(out)
@@ -410,7 +410,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
-		log.Warnf("found BIND 9 config file (%s) but cannot parse controls clause", bind9ConfPath)
+		log.Warnf("Found BIND 9 config file (%s) but cannot parse controls clause", bind9ConfPath)
 		return nil
 	}
 	accessPoints := []AccessPoint{
@@ -431,7 +431,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Key:     key,
 		})
 	} else {
-		log.Warnf("cannot parse BIND 9 statistics-channels clause")
+		log.Warnf("Cannot parse BIND 9 statistics-channels clause")
 	}
 
 	// rndc is the command to interface with BIND 9.
@@ -444,7 +444,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	rndcClient := NewRndcClient(rndc)
 	err = rndcClient.DetermineDetails(baseNamedDir, bind9ConfDir, ctrlAddress, ctrlPort, ctrlKey)
 	if err != nil {
-		log.Warnf("cannot determine BIND 9 rndc details: %s", err)
+		log.Warnf("Cannot determine BIND 9 rndc details: %s", err)
 		return nil
 	}
 

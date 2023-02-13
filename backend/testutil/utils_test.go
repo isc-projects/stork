@@ -63,12 +63,12 @@ func TestCaptureOutputReadStderr(t *testing.T) {
 func TestCaptureOutputReadLog(t *testing.T) {
 	// Act
 	stdout, stderr, err := CaptureOutput(func() {
-		logrus.Info("foo")
+		logrus.Info("Foo")
 	})
 
 	// Assert
 	require.NoError(t, err)
-	require.Contains(t, string(stdout), "foo")
+	require.Contains(t, string(stdout), "Foo")
 	require.Len(t, stderr, 0)
 }
 

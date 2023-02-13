@@ -435,7 +435,7 @@ func (sa *StorkAgent) Serve() error {
 	addr := net.JoinHostPort(sa.Settings.String("host"), strconv.Itoa(sa.Settings.Int("port")))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to listen on: %s", addr)
+		return errors.Wrapf(err, "failed to listen on: %s", addr)
 	}
 
 	// Start serving gRPC
@@ -443,7 +443,7 @@ func (sa *StorkAgent) Serve() error {
 		"address": lis.Addr(),
 	}).Infof("Started serving Stork Agent")
 	if err := sa.server.Serve(lis); err != nil {
-		return errors.Wrapf(err, "Failed to serve on: %s", addr)
+		return errors.Wrapf(err, "failed to serve on: %s", addr)
 	}
 	return nil
 }

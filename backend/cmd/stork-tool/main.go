@@ -273,7 +273,7 @@ func runHookInspect(settings *cli.Context) error {
 	hookPath := settings.String("path")
 	fileInfo, err := os.Stat(hookPath)
 	if err != nil {
-		return errors.Wrapf(err, "Cannot stat the hook path: '%s'", hookPath)
+		return errors.Wrapf(err, "cannot stat the hook path: '%s'", hookPath)
 	}
 
 	mode := fileInfo.Mode()

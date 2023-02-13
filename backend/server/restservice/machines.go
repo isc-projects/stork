@@ -1559,7 +1559,7 @@ func (r *RestAPI) RenameApp(ctx context.Context, params services.RenameAppParams
 	}
 	r.EventCenter.AddInfoEvent(fmt.Sprintf("{app} renamed from %s", oldApp.Name), newApp, machine)
 
-	log.Infof("app %s successfully renamed to %s", oldApp.Name, newApp.Name)
+	log.Infof("App %s successfully renamed to %s", oldApp.Name, newApp.Name)
 
 	// Rename was ok.
 	rsp := services.NewRenameAppOK()

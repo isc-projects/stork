@@ -34,7 +34,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		ColumnExpr("COUNT(*) FILTER (WHERE machine.error IS NOT NULL) AS \"unreachable_machines\"").
 		Select(&metrics)
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot calculate global metrics")
+		return nil, errors.Wrap(err, "cannot calculate global metrics")
 	}
 
 	err = db.Model().
@@ -44,7 +44,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		Select(&metrics.SubnetMetrics)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot calculate subnet metrics")
+		return nil, errors.Wrap(err, "cannot calculate subnet metrics")
 	}
 
 	err = db.Model().
@@ -54,7 +54,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		Select(&metrics.SharedNetworkMetrics)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot calculate shared network metrics")
+		return nil, errors.Wrap(err, "cannot calculate shared network metrics")
 	}
 
 	return &metrics, nil
