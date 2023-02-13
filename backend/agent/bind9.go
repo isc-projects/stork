@@ -58,6 +58,7 @@ func (ba *Bind9App) GetConfiguredDaemons() []string {
 const (
 	namedCheckconfExec = "named-checkconf"
 	rndcExec           = "rndc"
+	namedExec          = "named"
 )
 
 // rndc key file name.
@@ -348,6 +349,47 @@ func getPotentialNamedConfLocations() []string {
 	}
 }
 
+// Parses output of the named -V, which contains default paths for named, rndc
+// configurations among many other things. Returns two strings:
+// default path for named configuration, default path for rndc configuration.
+// strings may be nil if parsing fails.
+
+// The output of named -V contains the following info we're looking for:
+//
+// default paths:
+//
+//	named configuration:  /etc/bind/named.conf
+//	rndc configuration:   /etc/bind/rndc.conf
+//	DNSSEC root key:      /etc/bind/bind.keys
+//	nsupdate session key: //run/named/session.key
+//	named PID file:       //run/named/named.pid
+//	named lock file:      //run/named/named.lock
+//	geoip-directory:      /usr/share/GeoIP
+func parseNamedDefaultPaths(output []byte) (string, string) {
+	// Using []byte is inconvenient to use, let's convert to plain string first.
+	text := string(output)
+
+	// Let's use 2 regexps to find interesting string.
+	namedConfPattern := regexp.MustCompile(`named configuration: *(\/.*)`)
+	rndcConfPattern := regexp.MustCompile(`rndc configuration: *(\/.*)`)
+	namedConfMatch := namedConfPattern.FindStringSubmatch(text)
+	rndcConfMatch := rndcConfPattern.FindStringSubmatch(text)
+
+	// If found, Match is an array of strings. match[0] is always full string,
+	// match[1] is the first (and only in this case) group.
+	if len(namedConfMatch) < 2 {
+		log.Warnf("Unable to find 'named configuration:' line in 'named -V' output.")
+		return "", ""
+	}
+
+	if len(rndcConfMatch) < 2 {
+		log.Warnf("Unable to find 'rndc configuration:' line in 'named -V' output.")
+		return "", ""
+	}
+
+	return namedConfMatch[1], rndcConfMatch[1]
+}
+
 // Detects the running Bind 9 application.
 // It accepts the components of the Bind 9 process name (the "match" argument),
 // the current working directory of the process (the "cwd" argument; it may be
@@ -435,7 +477,25 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
-		log.Warnf("Found BIND 9 config file (%s) but cannot parse controls clause", bind9ConfPath)
+		log.Warnf("Found BIND 9 config file (%s) but cannot parse controls clause.", bind9ConfPath)
+
+		namedPath, err := determineBinPath(baseNamedDir, namedExec)
+		if err != nil {
+			log.Warnf("cannot determine BIND 9 executable %s: %s", namedExec, err)
+			return nil
+		}
+
+		log.Infof("Attempting to extract paths from '%s -V' output", namedPath)
+		out, err := executor.Output(namedPath, "-V")
+		if err != nil {
+			log.Warnf("Attempt to run '%s -V' failed. I give up. Error: %s", namedPath, err)
+			return nil
+		}
+
+		namedConf, rndcConf := parseNamedDefaultPaths(out)
+		log.Infof("TODO: Ran `named -V`, determined config file path %s and rndc config file path %s", namedConf, rndcConf)
+
+		// Give up
 		return nil
 	}
 	accessPoints := []AccessPoint{
