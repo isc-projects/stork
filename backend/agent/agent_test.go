@@ -64,6 +64,8 @@ func setupAgentTest() (*StorkAgent, context.Context) {
 	return setupAgentTestWithHooks(nil)
 }
 
+// Initializes StorkAgent instance and context used by the tests. Loads the
+// given list of callout carriers (hooks' contents).
 func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context) {
 	httpClient := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
