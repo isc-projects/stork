@@ -288,7 +288,7 @@ func runHookInspect(settings *cli.Context) error {
 		inspectHookFile(hookPath, library, err)
 		return nil
 	default:
-		return errors.Errorf("Unsupported file mode: '%s'", mode.String())
+		return errors.Errorf("unsupported file mode: '%s'", mode.String())
 	}
 }
 

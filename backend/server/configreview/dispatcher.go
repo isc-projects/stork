@@ -749,7 +749,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 	if daemon != nil {
 		groupSelectors := getDispatchGroupSelectors(daemon.Name)
 		if len(groupSelectors) == 0 {
-			return nil, pkgerrors.Errorf("No dispatch group selectors for daemon with name: %s", daemon.Name)
+			return nil, pkgerrors.Errorf("no dispatch group selectors for daemon with name: %s", daemon.Name)
 		}
 
 		availableSelectors = make(map[DispatchGroupSelector]bool, len(groupSelectors))
@@ -839,7 +839,7 @@ func (d *dispatcherImpl) isCheckerAvailableForDaemon(checkerName string, daemon 
 // the global state. If the checker is unknown returns error.
 func (d *dispatcherImpl) SetCheckerState(daemon *dbmodel.Daemon, checkerName string, state CheckerState) error {
 	if daemon != nil && !d.isCheckerAvailableForDaemon(checkerName, daemon) {
-		return pkgerrors.Errorf("The %s checker isn't registered to use with the %s daemon", checkerName, daemon.Name)
+		return pkgerrors.Errorf("the %s checker isn't registered to use with the %s daemon", checkerName, daemon.Name)
 	}
 
 	if daemon == nil {

@@ -144,7 +144,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet, daemon *Daemon, source Hos
 	if cidr == nil {
 		// It should never happen because Kea doesn't allow for prefixes that
 		// aren't IP addresses.
-		return nil, errors.Errorf("Invalid subnet prefix: %s", keaSubnet.Subnet)
+		return nil, errors.Errorf("invalid subnet prefix: %s", keaSubnet.Subnet)
 	}
 	prefix := cidr.GetNetworkPrefixWithLength()
 

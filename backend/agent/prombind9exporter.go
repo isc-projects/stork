@@ -1117,7 +1117,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// Parse traffic stats.
 	trafficIfc, ok := rsp["traffic"]
 	if !ok {
-		return pkgerrors.Errorf("No 'traffic' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'traffic' in response: %+v", rsp)
 	}
 	traffic, ok := trafficIfc.(map[string]interface{})
 	if !ok {
