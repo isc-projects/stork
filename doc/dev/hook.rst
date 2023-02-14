@@ -28,59 +28,6 @@ All the hooks must be compiled for the used Stork application (agent or server)
 and its exact version. If the hook directory contains non-hook files or
 out-of-date hooks, then Stork will not run.
 
-End-user troubleshooting
-========================
-
-This section describes the solutions for some common issues with the hooks.
-
---------------
-
-:Issue:    Hook directory contains non-hook files.
-:Error:    ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short``  
-           ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
-:Solution: The file under a given path is not valid Stork hook. Remove it.      
-
---------------
-
-:Issue:    Hook directory contains out-of-date hook (wrong version).
-:Error:    ``Cannot start the Stork Server: incompatible hook version: 1.0.0``  
-           ``Cannot start the Stork Agent: incompatible hook version: 1.0.0``
-:Solution: The hook is out-of-date. It's incompatible with the Stork core
-           application. Update or remove it.
-
---------------
-
-:Issue:    Hook directory contains Go plugin but that is not a hook; Hook doesn't contain required symbol.
-:Error:    ``Cannot start the Stork Server: plugin: symbol Version not found in plugin``
-:Solution: Fix or remove invalid plugin.
-
---------------
-
-:Issue:    Hook directory contains hook for another application.
-:Error:    ``Cannot start the Stork Server: hook library dedicated for another program: Stork Agent``  
-           ``Cannot start the Stork Agent: hook library dedicated for another program: Stork Server``
-:Solution: Move the incompatible hooks to a separate directory.
-
---------------
-
-:Issue:    Hook directory doesn't exist.
-:Warning:  ``cannot find plugin paths in: /var/lib/stork-server/hooks: cannot list hook directory: /var/lib/stork-server/hooks: open /var/lib/stork-server/hooks: no such file or directory``
-:Solution: Create the hook directory or change the path in the configuration.
-
---------------
-
-:Issue:    Directory is not readable.
-:Error:    ``Cannot start the Stork Server: open [HOOK DIRECTORY]: permission denied cannot list hook directory``
-:Solution: Grant the right for read the hook directory for the Stork user.
-
---------------
-
-:Issue:    Directory is a file.
-:Error:    ``Cannot start the Stork Server: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
-:Solution: Change the hook directory path.
-
---------------
-
 Hook To Do list
 ===============
 

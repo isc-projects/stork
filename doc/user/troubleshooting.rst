@@ -181,7 +181,7 @@ This section describes the solutions for some common issues with the Stork agent
 --------------
 
 :Issue:       Stork shows only Kea Control Agent tab on the application page. It detects no Kea DHCP servers,
-              although the DHCP daemons are running and allocating leases. 
+              although the DHCP daemons are running and allocating leases.
 :Description: There are only a single tab titled "CA" on the Kea application page but no data about any DHCP daemon or
               DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
               agent logs comprises the ``The Kea application has no DHCP daemons configured`` message.
@@ -192,6 +192,55 @@ This section describes the solutions for some common issues with the Stork agent
               This property is missing by default if you install Kea from the Debian/Ubuntu repository.
               To avoid this and similar problems, we recommend to use our official packages available on
               `CloudSmith <https://cloudsmith.io/~isc/repos>`_.
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
+              ``Cannot start the Stork Agent: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+:Solution:    Remove the given file from the hook directory.
+:Explanation: The file under a given path is not valid Stork hook.
+
+--------------
+
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: incompatible hook version: 1.0.0``
+:Solution:    Update the given hook.
+:Explanation: The hook is out-of-date. It's incompatible with the Stork core
+              application.
+
+--------------
+
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: plugin: symbol Version not found in plugin``
+:Solution:    Remove or fix the given file.
+:Explanation: Hook directory contains Go plugin but that is not a hook; Hook
+              doesn't contain required symbol.
+
+--------------
+
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: hook library dedicated for another program: Stork Server``
+:Solution:    Move the incompatible hooks to a separate directory.
+
+--------------
+
+:Issue:       Stork agent starts but the hooks aren't loaded. The logs comprise
+              the following message:
+              ``Cannot find plugin paths in: /var/lib/stork-agent/hooks: cannot list hook directory: /var/lib/stork-agent/hooks: open /var/lib/stork-agent/hooks: no such file or directory``
+:Solution:    Create the hook directory or change the path in the configuration.
+:Explanation: Hook directory doesn't exist.
+
+--------------
+
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: open [HOOK DIRECTORY]: permission denied cannot list hook directory``
+:Solution:    Grant the right for read the hook directory for the Stork user.
+:Explanation: The hook directory is not readable.
+
+--------------
+
+:Issue:       Stork agent doesn't start with the following error:
+              ``Cannot start the Stork Agent: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
+:Solution:    Change the hook directory path.
+:Explanation: Directory is a file.
 
 ``stork-server``
 ================
@@ -250,3 +299,55 @@ This section describes the solutions for some common issues with the Stork serve
               initially granted to all users except the database owner. The stork server needs this permission to
               perform the database migration on startup. You can grant this permission or use the Stork tool to migrate
               the schema as the maintenance database user (e.g., superuser).
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
+              ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+:Solution:    Remove the given file from the hook directory.
+:Explanation: The file under a given path is not valid Stork hook.
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: incompatible hook version: 1.0.0``
+:Solution:    Update the given hook.
+:Explanation: The hook is out-of-date. It's incompatible with the Stork core
+              application.
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: plugin: symbol Version not found in plugin``
+:Solution:    Remove or fix the given file.
+:Explanation: Hook directory contains Go plugin but that is not a hook; Hook
+              doesn't contain required symbol.
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: hook library dedicated for another program: Stork Agent``
+:Solution:    Move the incompatible hooks to a separate directory.
+
+--------------
+
+:Issue:       Stork server starts but the hooks aren't loaded. The logs comprise
+              the following message:
+              ``Cannot find plugin paths in: /var/lib/stork-server/hooks: cannot list hook directory: /var/lib/stork-server/hooks: open /var/lib/stork-server/hooks: no such file or directory``
+:Solution:    Create the hook directory or change the path in the configuration.
+:Explanation: Hook directory doesn't exist.
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: open [HOOK DIRECTORY]: permission denied cannot list hook directory``
+:Solution:    Grant the right for read the hook directory for the Stork user.
+:Explanation: The hook directory is not readable.
+
+--------------
+
+:Issue:       Stork server doesn't start with the following error:
+              ``Cannot start the Stork Server: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
+:Solution:    Change the hook directory path.
+:Explanation: Directory is a file.
