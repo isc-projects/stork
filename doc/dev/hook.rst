@@ -129,7 +129,8 @@ Missing parts
 
 The hook support is still under development. The list of implemented and
 planned features is available on
-[the Wiki page](https://gitlab.isc.org/isc-projects/stork/-/wikis/Hook-To-Do-List_.)
+`the Wiki page
+<https://gitlab.isc.org/isc-projects/stork/-/wikis/Hook-To-Do-List_>`_
 
 Initialization
 --------------
