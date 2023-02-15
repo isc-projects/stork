@@ -10,42 +10,31 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/h2non/gock.v1"
 )
 
 // Fake app monitor that returns some predefined list of apps.
-type PromFakeAppMonitor struct {
-	Apps []App
-}
-
-func (fam *PromFakeAppMonitor) GetApps() []App {
-	log.Println("GetApps")
-	ka := &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
+func newFakeMonitorWithDefaults() *FakeAppMonitor {
+	fam := &FakeAppMonitor{
+		Apps: []App{
+			&KeaApp{
+				BaseApp: BaseApp{
+					Type:         AppTypeKea,
+					AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
+				},
+				HTTPClient:        nil,
+				ConfiguredDaemons: []string{"dhcp4", "dhcp6"},
+			},
 		},
-		HTTPClient: nil,
 	}
-	return []App{ka}
-}
-
-func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
-	return nil
-}
-
-func (fam *PromFakeAppMonitor) Shutdown() {
-}
-
-func (fam *PromFakeAppMonitor) Start(storkAgent *StorkAgent) {
+	return fam
 }
 
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
-	fam := &PromFakeAppMonitor{}
+	fam := newFakeMonitorWithDefaults()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	pke := NewPromKeaExporter(settings, fam)
 	defer pke.Shutdown()
@@ -72,12 +61,15 @@ func TestPromKeaExporterStart(t *testing.T) {
 		Post("/").
 		Persist().
 		Reply(200).
-		BodyString(`[{"result":0, "arguments": {
+		BodyString(`[{
+			"result":0,
+			"arguments": {
                     "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
                     "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
-                }}]`)
+            }
+		}]`)
 
-	fam := &PromFakeAppMonitor{}
+	fam := newFakeMonitorWithDefaults()
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
 	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
@@ -278,7 +270,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 			}
 		}]`)
 
-	fam := &PromFakeAppMonitor{}
+	fam := newFakeMonitorWithDefaults()
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
 	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
@@ -456,7 +448,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
                     "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
                 }}]`)
 
-	fam := &PromFakeAppMonitor{}
+	fam := newFakeMonitorWithDefaults()
 
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
@@ -513,7 +505,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 			"reclaimed-declined-addresses": [ [ 21, "2019-07-22 10:04:28.386740" ] ]
 		}}]`)
 
-	fam := &PromFakeAppMonitor{}
+	fam := newFakeMonitorWithDefaults()
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
 	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
@@ -543,4 +535,57 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	require.Equal(t, 19.0, testutil.ToFloat64(pke.Global6StatMap["cumulative-assigned-pds"]))
 	require.Equal(t, 20.0, testutil.ToFloat64(pke.Global6StatMap["reclaimed-leases"]))
 	require.Equal(t, 21.0, testutil.ToFloat64(pke.Global6StatMap["reclaimed-declined-addresses"]))
+}
+
+// Test that the Prometheus exporter sends the get-statics-all request only
+// to the configured daemons.
+func TestSendRequestOnlyForDetectedDaemons(t *testing.T) {
+	// Arrange
+	defer gock.Off()
+	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result":0,
+			"arguments": {
+				"pkt6-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+            }
+		}]`)
+
+	fam := &FakeAppMonitor{}
+	fam.Apps = append(fam.Apps, &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
+		},
+		HTTPClient: nil,
+		// Reduced list of the configured daemons.
+		ConfiguredDaemons: []string{"dhcp6"},
+	})
+
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+
+	pke := NewPromKeaExporter(settings, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(pke.HTTPClient.client)
+
+	// Act
+	err := pke.collectStats()
+
+	// Assert
+	require.NoError(t, err)
 }

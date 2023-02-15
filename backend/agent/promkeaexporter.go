@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -62,11 +61,11 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, &dhcpLabelsJSONs)
 	// Parse JSON content
 	if err != nil {
-		return pkgerrors.Wrap(err, "problem parsing DHCP4 labels from Kea")
+		return errors.Wrap(err, "problem parsing DHCP4 labels from Kea")
 	}
 
 	if len(dhcpLabelsJSONs) == 0 {
-		return pkgerrors.New("empty JSON list")
+		return errors.New("empty JSON list")
 	}
 
 	dhcpLabelsJSON := dhcpLabelsJSONs[0]
@@ -81,7 +80,7 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 		if dhcpLabelsJSON.Text != nil {
 			reason = *dhcpLabelsJSON.Text
 		}
-		return pkgerrors.Errorf("problem with content of DHCP labels response from Kea: %s", reason)
+		return errors.Errorf("problem with content of DHCP labels response from Kea: %s", reason)
 	}
 
 	// Result is OK, parse the mapping content
@@ -127,14 +126,14 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 	var obj ResponseRaw
 	err := json.Unmarshal(b, &obj)
 	if err != nil {
-		outerError := pkgerrors.Wrapf(err, "failed to parse responses from Kea")
+		outerError := errors.Wrapf(err, "failed to parse responses from Kea")
 		// Kea sends the error as a single item, not array,
 		var singleItem ResponseRawItem
 		err = json.Unmarshal(b, &singleItem)
 		if err != nil {
 			return outerError
 		}
-		return pkgerrors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
+		return errors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
 	}
 
 	// Retrieve values of mixed-type arrays.
@@ -147,9 +146,9 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 					log.Warnf("Problem connecting to dhcp daemon: %s", text)
 					continue
 				}
-				return pkgerrors.Errorf("response result from Kea != 0: %d, text: %s", item.Result, text)
+				return errors.Errorf("response result from Kea != 0: %d, text: %s", item.Result, text)
 			}
-			return pkgerrors.Errorf("response result from Kea != 0: %d", item.Result)
+			return errors.Errorf("response result from Kea != 0: %d", item.Result)
 		}
 
 		// daemon 0 is dhcp4, 1 is dhcp6
@@ -164,7 +163,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		}
 
 		if item.Arguments == nil {
-			return pkgerrors.Errorf("problem with arguments: %+v", item)
+			return errors.Errorf("problem with arguments: %+v", item)
 		}
 
 		for statName, statValueOuterList := range *item.Arguments {
@@ -773,33 +772,65 @@ func (pke *PromKeaExporter) collectStats() error {
 		"pkt6-sent":     true,
 	}
 
-	// Request to kea dhcp daemons for getting all stats. Both v4 and v6 is queried because
-	// here we do not have knowledge which are active.
-	requestData := `{
-             "command":"statistic-get-all",
-             "service":["dhcp4", "dhcp6"],
-             "arguments": {}
-        }`
+	// Request to kea dhcp daemons for getting all stats.
+	requestData := map[string]any{
+		"command": "statistic-get-all",
+		// Send the request only to the configured daemons.
+		"service":   nil,
+		"arguments": map[string]any{},
+	}
 
-	// go through all kea apps discovered by monitor and query them for stats
+	// Set of the services (daemons) that support the get-statistics-all
+	// command.
+	supportedServices := map[string]bool{
+		"dhcp4": true,
+		"dhcp6": true,
+	}
+
+	// Go through all kea apps discovered by monitor and query them for stats.
 	apps := pke.AppMonitor.GetApps()
 	for _, app := range apps {
-		// ignore non-kea apps
+		// Ignore non-kea apps.
 		if app.GetBaseApp().Type != AppTypeKea {
 			continue
 		}
+
+		// Collect the list of the configured DHCP daemons in a given app to
+		// avoid sending requests to non-existing daemons.
+		var services []string
+		for _, daemon := range app.GetConfiguredDaemons() {
+			if _, ok := supportedServices[daemon]; ok {
+				services = append(services, daemon)
+			}
+		}
+		if len(services) == 0 {
+			err := errors.Errorf("missing configured daemons in the application: %+v", app.GetBaseApp())
+			lastErr = err
+			log.WithError(err).Error("The Kea application has no DHCP daemons configured")
+			continue
+		}
+		requestData["service"] = services
 
 		// get stats from kea
 		ctrl, err := getAccessPoint(app, AccessPointControl)
 		if err != nil {
 			lastErr = err
-			log.Errorf("Problem getting stats from Kea, bad Kea access control point: %+v", err)
+			log.WithError(err).Error("Problem getting stats from Kea, bad Kea access control point")
+			continue
+		}
+
+		requestDataBytes, err := json.Marshal(requestData)
+		if err != nil {
+			err = errors.Wrap(err, "cannot serialize a request to JSON")
+			lastErr = err
+			log.WithError(err).Error("Problem serializing the statistics request to JSON")
 			continue
 		}
 
 		// Fetching statistics
-		responseData, err := pke.sendCommandToKeaCA(ctrl, requestData)
+		responseData, err := pke.sendCommandToKeaCA(ctrl, string(requestDataBytes))
 		if err != nil {
+			lastErr = err
 			log.Errorf("Problem fetching stats from Kea: %+v", err)
 			continue
 		}
@@ -837,12 +868,12 @@ func (pke *PromKeaExporter) sendCommandToKeaCA(ctrl *AccessPoint, request string
 	caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
 	httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "problem getting stats from Kea")
+		return nil, errors.Wrap(err, "problem getting stats from Kea")
 	}
 	body, err := io.ReadAll(httpRsp.Body)
 	httpRsp.Body.Close()
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "problem reading stats response from Kea")
+		return nil, errors.Wrap(err, "problem reading stats response from Kea")
 	}
 	return body, nil
 }

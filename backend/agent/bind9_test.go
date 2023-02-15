@@ -48,3 +48,16 @@ func TestSystemCommandExecutorOnFail(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, output)
 }
+
+// Test that the list of the configured daemon contains only the named daemon.
+func TestGetConfiguredDaemons(t *testing.T) {
+	// Arrange
+	app := &Bind9App{}
+
+	// Act
+	daemons := app.GetConfiguredDaemons()
+
+	// Assert
+	require.Len(t, daemons, 1)
+	require.Contains(t, daemons, "named")
+}

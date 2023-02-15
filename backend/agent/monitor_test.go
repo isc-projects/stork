@@ -100,111 +100,59 @@ func TestGetApp(t *testing.T) {
 	wg.Wait()
 }
 
-func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
-	// check reading from non existing file
+// Test that the reading from non existing file causes an error.
+func TestReadKeaConfigNonExisting(t *testing.T) {
+	// Arrange
 	path := "/tmp/non-existing-path"
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(path)
-	require.Zero(t, port)
-	require.Empty(t, address)
-	require.False(t, useSecureProtocol)
+
+	// Act
+	config, err := readKeaConfig(path)
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, config)
 }
 
-func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
-	// prepare kea conf file
-	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
-	require.NoError(t, err)
+// Test that reading from a file with bad content causes an error.
+func TestReadKeaConfigBadContent(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	path, _ := sb.Write("config", "random content")
 
-	defer os.Remove(tmpFile.Name())
+	// Act
+	config, err := readKeaConfig(path)
 
-	text := []byte("random content")
-	_, err = tmpFile.Write(text)
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	// check reading from prepared file with bad content
-	// so 0 should be returned as port
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
-	require.Zero(t, port)
-	require.Empty(t, address)
-	require.False(t, useSecureProtocol)
+	// Assert
+	require.Nil(t, config)
+	require.Error(t, err)
 }
 
-func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
-	// prepare kea conf file
-	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
-	require.NoError(t, err)
-
-	defer os.Remove(tmpFile.Name())
-
-	text := []byte(`{ "Control-agent": {
+// Test that reading from proper file causes no error.
+func TestReadKeaConfigOk(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	configRaw := `{ "Control-agent": {
 		"http-host": "host.example.org",
 		"http-port": 1234
-	} }`)
-	_, err = tmpFile.Write(text)
-	require.NoError(t, err)
+	} }`
+	path, _ := sb.Write("config", configRaw)
 
-	err = tmpFile.Close()
-	require.NoError(t, err)
+	// Act
+	config, err := readKeaConfig(path)
 
-	// check reading from proper file
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, config)
+
+	port, _ := config.GetHTTPPort()
 	require.EqualValues(t, 1234, port)
+
+	address, _ := config.GetHTTPHost()
 	require.Equal(t, "host.example.org", address)
-	require.False(t, useSecureProtocol)
-}
 
-func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
-	// prepare kea conf file
-	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
-	require.NoError(t, err)
-
-	defer os.Remove(tmpFile.Name())
-
-	text := []byte(`{ "Control-agent": {
-		"http-host": "0.0.0.0",
-		"http-port": 1234
-	} }`)
-	_, err = tmpFile.Write(text)
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	// check reading from proper file;
-	// if CA is listening on 0.0.0.0 then 127.0.0.1 should be returned
-	// as it is not possible to connect to 0.0.0.0
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
-	require.EqualValues(t, 1234, port)
-	require.Equal(t, "127.0.0.1", address)
-	require.False(t, useSecureProtocol)
-}
-
-func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
-	// prepare kea conf file
-	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
-	require.NoError(t, err)
-
-	defer os.Remove(tmpFile.Name())
-
-	text := []byte(`{ "Control-agent": {
-		"http-host": "::",
-		"http-port": 1234
-	} }`)
-	_, err = tmpFile.Write(text)
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	// check reading from proper file;
-	// if CA is listening on :: then ::1 should be returned
-	// as it is not possible to connect to ::
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
-	require.EqualValues(t, 1234, port)
-	require.Equal(t, "::1", address)
-	require.False(t, useSecureProtocol)
+	require.False(t, config.UseSecureProtocol())
 }
 
 func TestDetectApps(t *testing.T) {

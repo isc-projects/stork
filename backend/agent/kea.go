@@ -14,10 +14,11 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// It holds common and Kea specifc runtime information.
+// It holds common and Kea specific runtime information.
 type KeaApp struct {
 	BaseApp
-	HTTPClient *HTTPClient // to communicate with Kea Control Agent
+	HTTPClient        *HTTPClient // to communicate with Kea Control Agent
+	ConfiguredDaemons []string
 }
 
 // Get base information about Kea app.
@@ -175,32 +176,26 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
-func getCtrlTargetFromKeaConfig(path string) (address string, port int64, useSecureProtocol bool) {
+// Returns a list of the configured daemons in a given application.
+func (ka *KeaApp) GetConfiguredDaemons() []string {
+	return ka.ConfiguredDaemons
+}
+
+// Reads the Kea configuration file, resolves the includes, and parses the content.
+func readKeaConfig(path string) (*keaconfig.Map, error) {
 	text, err := storkutil.ReadFileWithIncludes(path)
 	if err != nil {
-		log.Warnf("Cannot read Kea config file: %+v", err)
-		return
+		err = errors.WithMessage(err, "Cannot read Kea config file")
+		return nil, err
 	}
 
 	config, err := keaconfig.NewFromJSON(text)
 	if err != nil {
-		log.Warnf("Cannot parse Kea Control Agent config file: %+v", err)
-		return
+		err = errors.WithMessage(err, "Cannot parse Kea Control Agent config file")
+		return nil, err
 	}
 
-	// Port
-	port, ok := config.GetHTTPPort()
-	if !ok {
-		log.Warn("Cannot parse the port")
-		return
-	}
-
-	// Address
-	address, _ = config.GetHTTPHost()
-
-	// Secure protocol
-	useSecureProtocol = config.UseSecureProtocol()
-	return
+	return config, err
 }
 
 func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
@@ -215,16 +210,31 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 		keaConfPath = path.Join(cwd, keaConfPath)
 	}
 
-	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(keaConfPath)
-	if address == "" || port == 0 {
+	config, err := readKeaConfig(keaConfPath)
+	if err != nil {
+		log.WithError(err).Error("Invalid Kea Control Agent config")
 		return nil
 	}
+
+	// Port
+	port, ok := config.GetHTTPPort()
+	if !ok || port == 0 {
+		log.Warn("Cannot parse the port")
+		return nil
+	}
+
+	// Address
+	address, _ := config.GetHTTPHost()
+	if address == "" {
+		return nil
+	}
+
 	accessPoints := []AccessPoint{
 		{
 			Type:              AccessPointControl,
 			Address:           address,
 			Port:              port,
-			UseSecureProtocol: useSecureProtocol,
+			UseSecureProtocol: config.UseSecureProtocol(),
 		},
 	}
 	keaApp := &KeaApp{
@@ -232,7 +242,8 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 			Type:         AppTypeKea,
 			AccessPoints: accessPoints,
 		},
-		HTTPClient: httpClient,
+		HTTPClient:        httpClient,
+		ConfiguredDaemons: config.GetControlSockets().ConfiguredDaemonNames(),
 	}
 
 	return keaApp
