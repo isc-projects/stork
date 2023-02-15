@@ -336,6 +336,10 @@ type PromKeaExporter struct {
 	Adr6StatsMap   map[string]*prometheus.GaugeVec
 	Global4StatMap map[string]prometheus.Gauge
 	Global6StatMap map[string]prometheus.Gauge
+
+	// Set of the ignored stats as they are estimated by summing sub-stats
+	// (like ack, nak, etc) or not-supported.
+	ignoredStats map[string]bool
 }
 
 // Create new Prometheus Kea Exporter.
@@ -351,6 +355,13 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		Adr6StatsMap:   nil,
 		Global4StatMap: nil,
 		Global6StatMap: nil,
+		ignoredStats: map[string]bool{
+			// Stats estimated by summing sub-stats.
+			"pkt4-received": true,
+			"pkt4-sent":     true,
+			"pkt6-received": true,
+			"pkt6-sent":     true,
+		},
 	}
 
 	factory := promauto.With(pke.Registry)
@@ -724,6 +735,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				statisticDescriptor.Stat.With(prometheus.Labels{"operation": statisticDescriptor.Operation}).Set(statEntry.Value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
+				ignoredStats[statName] = true
 			}
 		case strings.HasPrefix(statName, "subnet["):
 			// Check if collecting the per-subnet metrics is enabled.
@@ -750,12 +762,14 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statEntry.Value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
+				ignoredStats[statName] = true
 			}
 		default:
 			if globalGauge, ok := globalStatMap[statName]; ok {
 				globalGauge.Set(statEntry.Value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
+				ignoredStats[statName] = true
 			}
 		}
 	}
@@ -764,13 +778,6 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 // Collect stats from all Kea apps.
 func (pke *PromKeaExporter) collectStats() error {
 	var lastErr error
-	// these stats are ignored as they are estimated by summing sub-stats (like ack, nak, etc)
-	ignoredStats := map[string]bool{
-		"pkt4-received": true,
-		"pkt4-sent":     true,
-		"pkt6-received": true,
-		"pkt6-sent":     true,
-	}
 
 	// Request to kea dhcp daemons for getting all stats.
 	requestData := map[string]any{
@@ -853,11 +860,11 @@ func (pke *PromKeaExporter) collectStats() error {
 		// required commands.
 		if response.Dhcp4 != nil {
 			subnetNameLookup.setFamily(4)
-			pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, response.Dhcp4, ignoredStats, subnetNameLookup)
+			pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, response.Dhcp4, pke.ignoredStats, subnetNameLookup)
 		}
 		if response.Dhcp6 != nil {
 			subnetNameLookup.setFamily(6)
-			pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, response.Dhcp6, ignoredStats, subnetNameLookup)
+			pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, response.Dhcp6, pke.ignoredStats, subnetNameLookup)
 		}
 	}
 	return lastErr

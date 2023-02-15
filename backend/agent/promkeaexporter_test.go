@@ -589,3 +589,49 @@ func TestSendRequestOnlyForDetectedDaemons(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 }
+
+// Test that the encountered unsupported Kea statistics are appended to the
+// ignore list. It avoids producing a lot of duplicated log entries that grow
+// the log file significantly.
+func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
+	// Arrange
+	defer gock.Off()
+	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4", "dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result":0,
+			"arguments": {
+				"foo": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+            }
+		}]`)
+
+	fam := newFakeMonitorWithDefaults()
+
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+
+	pke := NewPromKeaExporter(settings, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(pke.HTTPClient.client)
+
+	// Act
+	err := pke.collectStats()
+
+	// Assert
+	require.NoError(t, err)
+	require.Contains(t, pke.ignoredStats, "foo")
+}
