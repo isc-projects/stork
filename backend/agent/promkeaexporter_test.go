@@ -296,7 +296,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	// Wait for collecting.
 	require.Eventually(t, func() bool {
 		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
-	}, 2*time.Second, 500*time.Millisecond)
+	}, 10*time.Second, 500*time.Millisecond)
 
 	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "10.0.0.0/8"})
 
