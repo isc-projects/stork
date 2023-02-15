@@ -539,7 +539,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 
 // Test that the Prometheus exporter sends the get-statics-all request only
 // to the configured daemons.
-func TestSendRequestOnlyForDetectedDaemons(t *testing.T) {
+func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 	// Arrange
 	defer gock.Off()
 	gock.CleanUnmatchedRequest()
