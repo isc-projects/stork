@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"os"
 	"path"
 	"sync"
 	"testing"
 
-	pkgerrors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
@@ -261,72 +259,41 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 
 // Creates a basic Kea configuration file.
 // Caller is responsible for remove the file.
-func makeKeaConfFile() (*os.File, error) {
-	// prepare kea conf file
-	file, err := os.CreateTemp(os.TempDir(), "prefix-")
-	if err != nil {
-		return nil, pkgerrors.Wrap(err, "cannot create temporary file")
-	}
+func makeKeaConfFile() (string, func()) {
+	sb := testutil.NewSandbox()
+	clean := func() { sb.Close() }
 
-	text := []byte(`{ "Control-agent": {
+	path, _ := sb.Write("config", `{ "Control-agent": {
 		"http-host": "localhost",
-		"http-port": 45634
+		"http-port": 45634,
+		"control-sockets": {
+			"dhcp4": { },
+			"dhcp6": { },
+			"d2": { }
+		}
 	} }`)
-	if _, err = file.Write(text); err != nil {
-		return nil, pkgerrors.Wrap(err, "failed to write to temporary file")
-	}
-	if err := file.Close(); err != nil {
-		return nil, pkgerrors.Wrap(err, "failed to close a temporary file")
-	}
 
-	return file, nil
+	return path, clean
 }
 
 // Creates a basic Kea configuration file with include statement.
 // It returns both inner and outer files.
 // Caller is responsible for removing the files.
-func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, err error) {
+func makeKeaConfFileWithInclude() (string, func()) {
+	sb := testutil.NewSandbox()
 	// prepare kea conf file
-	parentConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
-
-	if err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "cannot create temporary file for parent config")
-	}
-
-	childConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
-	if err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "cannot create temporary file for child config")
-	}
-
-	text := []byte(`{
+	childPath, _ := sb.Write("child", `{
 		"http-host": "localhost",
 		"http-port": 45634
 	}`)
 
-	if _, err = childConfig.Write(text); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "failed to write to temporary file")
-	}
-	if err := childConfig.Close(); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "failed to close to temporary file")
-	}
+	text := fmt.Sprintf("{ \"Control-agent\": <?include \"%s\"?> }", childPath)
+	parentPath, _ := sb.Write("parent", text)
 
-	text = []byte(fmt.Sprintf("{ \"Control-agent\": <?include \"%s\"?> }", childConfig.Name()))
-	if _, err = parentConfig.Write(text); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "failed to write to temporary file")
-	}
-	if err := parentConfig.Close(); err != nil {
-		return nil, nil, pkgerrors.Wrap(err, "failed to close to temporary file")
-	}
-
-	return parentConfig, childConfig, nil
+	return parentPath, func() { sb.Close() }
 }
 
 func TestDetectKeaApp(t *testing.T) {
-	tmpFile, err := makeKeaConfFile()
-	require.NoError(t, err)
-	tmpFilePath := tmpFile.Name()
-	defer os.Remove(tmpFilePath)
-
 	checkApp := func(app App) {
 		require.NotNil(t, app)
 		require.Equal(t, AppTypeKea, app.GetBaseApp().Type)
@@ -340,30 +307,34 @@ func TestDetectKeaApp(t *testing.T) {
 
 	httpClient := NewHTTPClient(false)
 
-	// check kea app detection
-	app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
-	checkApp(app)
+	t.Run("config file without include statement", func(t *testing.T) {
+		tmpFilePath, clean := makeKeaConfFile()
+		defer clean()
 
-	// check kea app detection when kea conf file is relative to CWD of kea process
-	cwd, file := path.Split(tmpFilePath)
-	app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
-	checkApp(app)
+		// check kea app detection
+		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		checkApp(app)
 
-	// Check configuration with an include statement
-	tmpFile, nestedFile, err := makeKeaConfFileWithInclude()
-	require.NoError(t, err)
-	tmpFilePath = tmpFile.Name()
-	defer os.Remove(tmpFilePath)
-	defer os.Remove(nestedFile.Name())
+		// check kea app detection when kea conf file is relative to CWD of kea process
+		cwd, file := path.Split(tmpFilePath)
+		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		checkApp(app)
+	})
 
-	// check kea app detection
-	app = detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
-	checkApp(app)
+	t.Run("config file with include statement", func(t *testing.T) {
+		// Check configuration with an include statement
+		tmpFilePath, clean := makeKeaConfFileWithInclude()
+		defer clean()
 
-	// check kea app detection when kea conf file is relative to CWD of kea process
-	cwd, file = path.Split(tmpFilePath)
-	app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
-	checkApp(app)
+		// check kea app detection
+		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		checkApp(app)
+
+		// check kea app detection when kea conf file is relative to CWD of kea process
+		cwd, file := path.Split(tmpFilePath)
+		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		checkApp(app)
+	})
 }
 
 func TestGetAccessPoint(t *testing.T) {
@@ -495,4 +466,23 @@ func TestPrintNewOrUpdatedAppsNoAppDetectedWarning(t *testing.T) {
 
 	// Assert
 	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
+}
+
+// Test that the configured Kea daemons are recognized properly.
+func TestDetectConfiguredDaemons(t *testing.T) {
+	// Arrange
+	configPath, clean := makeKeaConfFile()
+	defer clean()
+
+	httpClient := NewHTTPClient(false)
+
+	// Act
+	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
+	configuredDaemons := app.GetConfiguredDaemons()
+
+	// Assert
+	require.Len(t, configuredDaemons, 3)
+	require.Contains(t, configuredDaemons, "dhcp4")
+	require.Contains(t, configuredDaemons, "dhcp6")
+	require.Contains(t, configuredDaemons, "d2")
 }
