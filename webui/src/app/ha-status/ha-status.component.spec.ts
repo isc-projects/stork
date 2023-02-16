@@ -45,7 +45,7 @@ describe('HaStatusComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should present a waiting indicator during loading data', fakeAsync(() => {
+    it('should present a waiting indicator during initial loading', fakeAsync(() => {
         // Mock the API response.
         spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
             of({
@@ -53,10 +53,12 @@ describe('HaStatusComponent', () => {
             } as ServicesStatus & HttpEvent<ServicesStatus>)
         )
 
-        // Initially there is no waiting indicator.
-        expect(component.loading).toBeFalse()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.loadedOnce).toBeFalse()
         let spinner = fixture.debugElement.query(By.directive(ProgressSpinner))
-        expect(spinner).toBeNull()
+        expect(spinner).not.toBeNull()
 
         // Execute ngOnInit hook.
         fixture.detectChanges()
@@ -64,7 +66,7 @@ describe('HaStatusComponent', () => {
         discardPeriodicTasks()
 
         // Check if the component is in the loading state.
-        expect(component.loading).toBeTrue()
+        expect(component.loadedOnce).toBeFalse()
 
         // Check if the waiting indicator is presented.
         spinner = fixture.debugElement.query(By.directive(ProgressSpinner))
@@ -87,8 +89,8 @@ describe('HaStatusComponent', () => {
         // Continue the API response processing.
         tick()
 
-        // Check if the data loading is done.
-        expect(component.loading).toBeFalse()
+        // Check if the initial data loading is done.
+        expect(component.loadedOnce).toBeTrue()
         // Render the updated data.
         fixture.detectChanges()
 
@@ -102,7 +104,7 @@ describe('HaStatusComponent', () => {
         )
     }))
 
-    it('should present a placeholder on the data loading failure', fakeAsync(() => {
+    it('should not present a placeholder on the initial data loading failure', fakeAsync(() => {
         // Mock the API response.
         spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(throwError(new HttpErrorResponse({ status: 500 })))
 
@@ -114,17 +116,17 @@ describe('HaStatusComponent', () => {
         // Continue the API response processing.
         tick()
 
-        // Check if the data loading is done.
-        expect(component.loading).toBeFalse()
+        // Check if the data aren't marked as loaded.
+        expect(component.loadedOnce).toBeFalse()
         // Render the updated data.
         fixture.detectChanges()
 
-        // Check if there is no waiting indicator.
+        // Check if there still is a waiting indicator.
         const spinner = fixture.debugElement.query(By.directive(ProgressSpinner))
-        expect(spinner).toBeNull()
+        expect(spinner).not.toBeNull()
 
-        // Check if there is the empty data placeholder.
-        expect(fixture.debugElement.nativeElement.textContent).toContain(
+        // Check if there isn't the empty data placeholder.
+        expect(fixture.debugElement.nativeElement.textContent).not.toContain(
             'High Availability is not enabled on this server.'
         )
     }))
