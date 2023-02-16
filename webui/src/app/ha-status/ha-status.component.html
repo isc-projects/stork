@@ -31,6 +31,6 @@
             </p-panel>
         </div>
     </div>
-    <p-progressSpinner *ngIf="!hasStatus() && loading"></p-progressSpinner>
-    <div *ngIf="!hasStatus() && !loading">High Availability is not enabled on this server.</div>
+    <p-progressSpinner *ngIf="!hasStatus() && !loadedOnce"></p-progressSpinner>
+    <div *ngIf="!hasStatus() && loadedOnce">High Availability is not enabled on this server.</div>
 </div>

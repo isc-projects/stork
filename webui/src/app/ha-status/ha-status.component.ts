@@ -25,9 +25,9 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     private _receivedStatus: Record<string, KeaStatusHaServers>
 
     /**
-     * Indicates if the data loading is in progress.
+     * Indicates if the data were loaded at least once.
      */
-    loading: boolean = false
+    loadedOnce: boolean = false
 
     constructor(private servicesApi: ServicesService, private messageService: MessageService) {}
 
@@ -136,7 +136,6 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * This function is invoked periodically to refresh the status.
      */
     private refreshStatus() {
-        this.loading = true
         this.servicesApi
             .getAppServicesStatus(this.appId)
             .toPromise()
@@ -149,6 +148,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                         }
                     }
                 }
+                this.loadedOnce = true
             })
             .catch((err) => {
                 this.messageService.add({
@@ -157,9 +157,6 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                     detail: getErrorMessage(err),
                 })
                 this._receivedStatus = null
-            })
-            .finally(() => {
-                this.loading = false
             })
     }
 
