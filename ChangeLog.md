@@ -1,3 +1,9 @@
+* 283 [bug] slawek
+
+    Fixed a problem periodically showing the HA loading indicator when High
+    Availability was not configured.
+    (Gitlab #969)
+
 * 282 [bug] slawek
 
     Fixed the problem with displaying subnet utilization bars on the shared
