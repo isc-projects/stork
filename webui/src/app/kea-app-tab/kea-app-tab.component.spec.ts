@@ -284,7 +284,7 @@ describe('KeaAppTabComponent', () => {
         expect(component.docAnchorFromHookLibrary('kea-dhcp4')).toBeUndefined()
     })
 
-    it('should display no hooks when no app is loaded', () => {
+    it('should display an empty placeholder when no app is loaded', () => {
         // Check legend.
         const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
         expect(hooksFieldset).toBeTruthy()
@@ -295,7 +295,7 @@ describe('KeaAppTabComponent', () => {
         expect(div).toBeTruthy()
         const divElement = div.nativeElement
         expect(divElement).toBeTruthy()
-        expect(divElement.innerText).toEqual('no hooks')
+        expect(divElement.innerText).toEqual('No hooks')
     })
 
     it('should display hook libraries', () => {
