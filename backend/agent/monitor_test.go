@@ -282,13 +282,13 @@ func makeKeaConfFile() (string, func()) {
 func makeKeaConfFileWithInclude() (string, func()) {
 	sb := testutil.NewSandbox()
 	// prepare kea conf file
-	childPath, _ := sb.Write("child", `{
+	childPath, _ := sb.Write("child.json", `{
 		"http-host": "localhost",
 		"http-port": 45634
 	}`)
 
 	text := fmt.Sprintf("{ \"Control-agent\": <?include \"%s\"?> }", childPath)
-	parentPath, _ := sb.Write("parent", text)
+	parentPath, _ := sb.Write("parent.json", text)
 
 	return parentPath, func() { sb.Close() }
 }
