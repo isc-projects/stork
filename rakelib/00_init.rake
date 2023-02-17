@@ -355,7 +355,7 @@ def fetch_file(url, target)
 
     if ENV["CI"] == "true"
         # Suppress verbose output on the CI.
-        wget.append "-q"
+        wget.append "--no-verbose"
     end
 
     wget.append url
