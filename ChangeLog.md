@@ -1,3 +1,9 @@
+* 294 [build] slawek
+
+    Changed the executable paths configured in the default SystemD service
+    files to absolute.
+    (Gitlab #972)
+
 * 293 [bug] slawek
 
     Fixed a problem whereby a user not assigned to any groups could not log out.
