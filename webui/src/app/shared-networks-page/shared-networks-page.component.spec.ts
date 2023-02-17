@@ -8,7 +8,7 @@ import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { RouterModule } from '@angular/router'
-import { DHCPService, SharedNetwork } from '../backend'
+import { DHCPService, SharedNetwork, SharedNetworks } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -20,6 +20,7 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { NumberPipe } from '../pipes/number.pipe'
+import { HttpEvent } from '@angular/common/http'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -56,7 +57,7 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     beforeEach(() => {
-        const fakeResponses: any = [
+        const fakeResponses: SharedNetworks[] = [
             {
                 items: [
                     {
@@ -71,11 +72,17 @@ describe('SharedNetworksPageComponent', () => {
                                         appName: 'kea@localhost',
                                         id: 1,
                                         machineAddress: 'localhost',
-                                        machineHostname: 'lv-pc',
+                                        machineHostname: 'lv-pc'
                                     },
                                 ],
                                 pools: ['1.0.0.4-1.0.255.254'],
                                 subnet: '1.0.0.0/16',
+                                statsCollectedAt: '2023-02-17T13:06:00.2134Z',
+                                stats: {
+                                    'assigned-addresses': '42',
+                                    'total-addresses': '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                    'declined-addresses': '0'
+                                }
                             },
                         ],
                         stats: {
@@ -119,9 +126,9 @@ describe('SharedNetworksPageComponent', () => {
         ]
         spyOn(dhcpService, 'getSharedNetworks').and.returnValues(
             // The shared networks are fetched twice before the unit test starts.
-            of(fakeResponses[0]),
-            of(fakeResponses[0]),
-            of(fakeResponses[1])
+            of(fakeResponses[0] as HttpEvent<SharedNetworks>),
+            of(fakeResponses[0] as HttpEvent<SharedNetworks>),
+            of(fakeResponses[1] as HttpEvent<SharedNetworks>)
         )
 
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
@@ -133,7 +140,7 @@ describe('SharedNetworksPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should convert statistics to big integers', async () => {
+    it('should convert shared network statistics to big integers', async () => {
         // Act
         await fixture.whenStable()
 
@@ -148,6 +155,23 @@ describe('SharedNetworksPageComponent', () => {
             )
         )
         expect(stats['declined-addresses']).toBe(BigInt('-2'))
+    })
+
+    it('should convert subnet statistics to big integers', async () => {
+        // Act
+        await fixture.whenStable()
+
+        // Assert
+        const stats: { [key: string]: BigInt } = component.networks[0].subnets[0].stats as any
+        expect(stats['assigned-addresses']).toBe(
+            BigInt('42')
+        )
+        expect(stats['total-addresses']).toBe(
+            BigInt(
+                '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
+            )
+        )
+        expect(stats['declined-addresses']).toBe(BigInt('0'))
     })
 
     it('should not fail on empty statistics', async () => {
