@@ -1,3 +1,10 @@
+* 282 [bug] slawek
+
+    Fixed the problem with displaying subnet bars on the shared network page.
+    They were always shown using the double style, even if there were no PD or
+    NA statistics.
+    (Gitlab #970)
+
 * 281 [func] slawek
 
     Added a preliminary implementation of the hook framework.
