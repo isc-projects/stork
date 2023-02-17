@@ -101,9 +101,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             .getSharedNetworks(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
             .pipe(
                 map((sharedNetworks) => {
-                    sharedNetworks.items.forEach((sharedNetwork) => {
-                        parseSubnetsStatisticValues([sharedNetwork])
-                    })
+                    parseSubnetsStatisticValues(sharedNetworks.items)
                     return sharedNetworks
                 })
             )

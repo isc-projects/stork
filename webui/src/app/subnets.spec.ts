@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { Subnet } from './backend'
+import { SharedNetwork, Subnet } from './backend'
 
 import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from './subnets'
 
@@ -117,5 +117,26 @@ describe('subnets', () => {
         // Assert
         // No throw
         expect().nothing()
+    })
+
+    it('parse nested stats', () => {
+        // Arrange
+        const sharedNetworks: SharedNetwork[] = [{
+            stats: { 'foo': '42' },
+            subnets: [{
+                stats: { 'bar': '24' },
+                localSubnets: [{
+                    stats: { 'baz': '4224' }
+                }]
+            }]
+        }]
+
+        // Act
+        parseSubnetsStatisticValues(sharedNetworks)
+
+        // Assert
+        expect(sharedNetworks[0].stats['foo']).toBe(BigInt(42))
+        expect(sharedNetworks[0].subnets[0].stats['bar']).toBe(BigInt(24))
+        expect(sharedNetworks[0].subnets[0].localSubnets[0].stats['baz']).toBe(BigInt(4224))
     })
 })
