@@ -58,6 +58,18 @@ end
 
 CLEAN.append "dist"
 
+sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file =
+    's/'+ # Regex begin
+    '\(ExecStart=\)'+ # Pattern to match - the parameter name.
+                      # The parameter name is saved in the first capture group.
+    '/'+ # Delimiter.
+    # Replacement:
+    '\1'+ # Copy the parameter name.
+    default_os_binary_directory.gsub('/', '\/')+ # Append the escaped absolute binary
+                                                 # directory before the relative path.
+    '\/'+ # Escaped path delimiter.
+    '/g' # Regex end
+
 ##############
 ### Agent ###
 ##############
@@ -79,9 +91,14 @@ end
 agent_dist_system_dir = "dist/agent/lib/systemd/system/"
 directory agent_dist_system_dir
 agent_dist_system_service_file = File.join(agent_dist_system_dir, "isc-stork-agent.service")
-file agent_dist_system_service_file => [agent_dist_system_dir, "etc/isc-stork-agent.service"] do
+file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-stork-agent.service"] do
     sh "cp", "-a", "etc/isc-stork-agent.service", agent_dist_system_service_file
     sh "chmod", "644", agent_dist_system_service_file
+    # Use the abolute path to the executable
+    sh SED,
+        "-i", # Modify in place
+        sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex
+        agent_dist_system_service_file # File to modify
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
@@ -163,9 +180,14 @@ end
 server_dist_system_dir = "dist/server/lib/systemd/system/"
 directory server_dist_system_dir
 server_dist_system_service_file = File.join(server_dist_system_dir, "isc-stork-server.service")
-file server_dist_system_service_file => [server_dist_system_dir, "etc/isc-stork-server.service"] do
+file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-stork-server.service"] do
     sh "cp", "-a", "etc/isc-stork-server.service", server_dist_system_service_file
     sh "chmod", "644", server_dist_system_service_file
+    # Use the abolute path to the executable
+    sh SED,
+        "-i", # Modify in place
+        sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex
+        server_dist_system_service_file # File to modify
 end
 
 server_etc_files = FileList["etc/server.env"]
