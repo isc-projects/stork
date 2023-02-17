@@ -2,7 +2,6 @@ package configreview
 
 import (
 	"fmt"
-	"math/big"
 	"net/url"
 	"sort"
 	"strconv"
@@ -1135,15 +1134,15 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 			poolSize := storkutil.CalculateRangeSize(lb, ub)
 
 			// Count the reservations in a pool.
-			reservationsInPoolCount := big.NewInt(0)
+			reservationsInPoolCount := storkutil.NewBigCounter(0)
 			for _, address := range reservedAddresses {
 				if address.IsInRange(lb, ub) {
 					// Increment by one.
-					reservationsInPoolCount.Add(reservationsInPoolCount, big.NewInt(1))
+					reservationsInPoolCount.AddUint64(1)
 				}
 			}
 
-			if poolSize.Cmp(reservationsInPoolCount) > 0 {
+			if poolSize.Cmp(reservationsInPoolCount.ToBigInt()) > 0 {
 				// The pool size is greater than the number of reservations
 				// within it.
 				continue
@@ -1276,14 +1275,14 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 			)
 
 			// Count the reservations in a pool.
-			reservationsInPoolCount := big.NewInt(0)
+			reservationsInPoolCount := storkutil.NewBigCounter(0)
 			for _, prefix := range reservedPrefixes {
 				if prefix.IsInPrefixRange(pool.Prefix, pool.PrefixLen, pool.DelegatedLen) {
-					reservationsInPoolCount.Add(reservationsInPoolCount, big.NewInt(1))
+					reservationsInPoolCount.AddUint64(1)
 				}
 			}
 
-			if poolSize.Cmp(reservationsInPoolCount) > 0 {
+			if poolSize.Cmp(reservationsInPoolCount.ToBigInt()) > 0 {
 				// The pool size is greater than the number of reservations
 				// within it.
 				continue
