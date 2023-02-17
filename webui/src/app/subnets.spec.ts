@@ -121,15 +121,21 @@ describe('subnets', () => {
 
     it('parse nested stats', () => {
         // Arrange
-        const sharedNetworks: SharedNetwork[] = [{
-            stats: { 'foo': '42' },
-            subnets: [{
-                stats: { 'bar': '24' },
-                localSubnets: [{
-                    stats: { 'baz': '4224' }
-                }]
-            }]
-        }]
+        const sharedNetworks: SharedNetwork[] = [
+            {
+                stats: { foo: '42' },
+                subnets: [
+                    {
+                        stats: { bar: '24' },
+                        localSubnets: [
+                            {
+                                stats: { baz: '4224' },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ]
 
         // Act
         parseSubnetsStatisticValues(sharedNetworks)

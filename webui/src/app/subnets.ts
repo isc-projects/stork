@@ -60,7 +60,7 @@ export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] 
             if (typeof subnet.stats[statName] !== 'string') {
                 return
             }
-            
+
             try {
                 subnet.stats[statName] = BigInt(subnet.stats[statName])
             } catch {

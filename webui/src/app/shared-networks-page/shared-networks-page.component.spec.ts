@@ -72,7 +72,7 @@ describe('SharedNetworksPageComponent', () => {
                                         appName: 'kea@localhost',
                                         id: 1,
                                         machineAddress: 'localhost',
-                                        machineHostname: 'lv-pc'
+                                        machineHostname: 'lv-pc',
                                     },
                                 ],
                                 pools: ['1.0.0.4-1.0.255.254'],
@@ -80,9 +80,10 @@ describe('SharedNetworksPageComponent', () => {
                                 statsCollectedAt: '2023-02-17T13:06:00.2134Z',
                                 stats: {
                                     'assigned-addresses': '42',
-                                    'total-addresses': '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
-                                    'declined-addresses': '0'
-                                }
+                                    'total-addresses':
+                                        '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                    'declined-addresses': '0',
+                                },
                             },
                         ],
                         stats: {
@@ -163,13 +164,9 @@ describe('SharedNetworksPageComponent', () => {
 
         // Assert
         const stats: { [key: string]: BigInt } = component.networks[0].subnets[0].stats as any
-        expect(stats['assigned-addresses']).toBe(
-            BigInt('42')
-        )
+        expect(stats['assigned-addresses']).toBe(BigInt('42'))
         expect(stats['total-addresses']).toBe(
-            BigInt(
-                '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
-            )
+            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
         expect(stats['declined-addresses']).toBe(BigInt('0'))
     })
