@@ -236,7 +236,7 @@ RUN apt-get update \
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 ARG KEA_REPO
 ARG KEA_VERSION
-RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
+RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
         --no-install-recommends \
@@ -372,7 +372,7 @@ RUN apt-get update \
         && touch /usr/bin/systemctl \
         && chmod a+x /usr/bin/systemctl
 ARG STORK_CS_VERSION
-RUN wget -q -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
+RUN wget --no-verbose -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
         --no-install-recommends \
