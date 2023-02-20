@@ -168,7 +168,7 @@ func TestEvent(t *testing.T) {
 	require.Empty(t, events)
 }
 
-// Test that the event level is converted to the human-readable form
+// Test that the event level is converted to the human-readable form.
 func TestConvertLevelToString(t *testing.T) {
 	require.EqualValues(t, "info", EvInfo.String())
 	require.EqualValues(t, "warning", EvWarning.String())

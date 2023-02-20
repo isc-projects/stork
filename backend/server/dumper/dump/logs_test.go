@@ -73,6 +73,6 @@ func TestLogDumpExecute(t *testing.T) {
 		"foo",
 		42,
 		"/var/log/foo.log",
-		4000,
+		40000,
 	}, logSource.Calls[0])
 }

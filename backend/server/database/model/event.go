@@ -8,6 +8,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 )
 
+// The event severity level.
 type EventLevel int64
 
 // Event levels.
