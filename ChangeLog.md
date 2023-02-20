@@ -1,3 +1,9 @@
+* 287 [func] slawek
+
+    Added a human-readable representation of the event level in the dump
+    package.
+    (Gitlab #971)
+
 * 286 [func] marcin
 
     Refactored the code pertaining to processing the Kea configuration in the
