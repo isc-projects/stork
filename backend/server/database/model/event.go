@@ -8,12 +8,28 @@ import (
 	pkgerrors "github.com/pkg/errors"
 )
 
+type EventLevel int64
+
 // Event levels.
 const (
-	EvInfo    int64 = 0 // informational
-	EvWarning int64 = 1 // someone should look into this
-	EvError   int64 = 2 // there is a serious problem
+	EvInfo    EventLevel = 0 // informational
+	EvWarning EventLevel = 1 // someone should look into this
+	EvError   EventLevel = 2 // there is a serious problem
 )
+
+// Returns a human-readable representation of the event level.
+func (t EventLevel) String() string {
+	switch t {
+	case EvInfo:
+		return "info"
+	case EvWarning:
+		return "warning"
+	case EvError:
+		return "error"
+	default:
+		return "unknown"
+	}
+}
 
 // Relations between the event and other entities.
 type Relations struct {
@@ -29,7 +45,7 @@ type Event struct {
 	ID        int64
 	CreatedAt time.Time
 	Text      string
-	Level     int64 `pg:",use_zero"`
+	Level     EventLevel `pg:",use_zero"`
 	Relations *Relations
 	Details   string
 }
@@ -55,7 +71,7 @@ func AddEvent(db *pg.DB, event *Event) error {
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
+func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}

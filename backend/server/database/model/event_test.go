@@ -107,7 +107,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
 	for _, ev := range events {
-		require.Contains(t, []int64{EvWarning, EvError}, ev.Level)
+		require.Contains(t, []EventLevel{EvWarning, EvError}, ev.Level)
 	}
 
 	// get only error events
@@ -166,4 +166,12 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 0, total)
 	require.NotNil(t, events)
 	require.Empty(t, events)
+}
+
+// Test that the event level is converted to the human-readable form
+func TestConvertLevelToString(t *testing.T) {
+	require.EqualValues(t, "info", EvInfo.String())
+	require.EqualValues(t, "warning", EvWarning.String())
+	require.EqualValues(t, "error", EvError.String())
+	require.EqualValues(t, "unknown", EventLevel(42).String())
 }

@@ -12,6 +12,12 @@ type EventsDump struct {
 	machineID int64
 }
 
+// Extended event structure to contain more details.
+type EventExtended struct {
+	dbmodel.Event
+	LevelTxt string
+}
+
 // Constructs new events dump instance.
 func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 	return &EventsDump{
@@ -37,8 +43,16 @@ func (d *EventsDump) Execute() error {
 		return err
 	}
 
+	eventsExtended := make([]EventExtended, len(events))
+	for i, event := range events {
+		eventsExtended[i] = EventExtended{
+			Event:    event,
+			LevelTxt: event.Level.String(),
+		}
+	}
+
 	d.AppendArtifact(NewBasicStructArtifact(
-		"latest", events,
+		"latest", eventsExtended,
 	))
 	return nil
 }

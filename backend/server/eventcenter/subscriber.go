@@ -25,7 +25,7 @@ type subscriberFilters dbmodel.Relations
 type Subscriber struct {
 	serverURL *url.URL
 	useFilter bool
-	level     int64
+	level     dbmodel.EventLevel
 	filters   subscriberFilters
 }
 
@@ -92,8 +92,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	if err != nil {
 		return err
 	}
-
-	s.level = level
+	s.level = dbmodel.EventLevel(level)
 
 	// There are additional query parameters supported by the server: appType and
 	// daemonName. They are mutually exclusive with app and daemon parmameters.

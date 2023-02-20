@@ -52,14 +52,16 @@ func TestEventsDumpExecute(t *testing.T) {
 	require.EqualValues(t, 1, dump.GetArtifactsNumber())
 	artifact := dump.GetArtifact(0).(dumppkg.StructArtifact)
 	artifactContent := artifact.GetStruct()
-	events, ok := artifactContent.([]dbmodel.Event)
+	events, ok := artifactContent.([]dumppkg.EventExtended)
 	require.True(t, ok)
 
 	require.Len(t, events, 2)
 	event := events[0]
 	require.EqualValues(t, "bar", event.Text)
+	require.EqualValues(t, "info", event.LevelTxt)
 	event = events[1]
 	require.EqualValues(t, "foo", event.Text)
+	require.EqualValues(t, "warning", event.LevelTxt)
 }
 
 // Test that the dump contains an empty list if there is no event.
@@ -86,7 +88,7 @@ func TestEventsDumpExecuteNoEvents(t *testing.T) {
 	artifact := dump.GetArtifact(0).(dumppkg.StructArtifact)
 	artifactContent := artifact.GetStruct()
 	require.NotNil(t, artifactContent)
-	events, ok := artifactContent.([]dbmodel.Event)
+	events, ok := artifactContent.([]dumppkg.EventExtended)
 	require.True(t, ok)
 	require.Len(t, events, 0)
 }
