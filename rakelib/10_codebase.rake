@@ -384,6 +384,9 @@ namespace :gen do
 
         desc 'Generate standard DHCP option definitions for the backend'
         task :std_option_defs => [std_option_defs4_go_file, std_option_defs6_go_file]
+
+        desc 'Generate all Go mocks'
+        task :mocks => GO_MOCKS
     end
 
     namespace :ui do
@@ -392,9 +395,6 @@ namespace :gen do
 
         desc 'Generate Swagger API files'
         task :swagger => [open_api_generator_webui_dir]
-
-        desc 'Generate all Go mocks'
-        task :mocks => GO_MOCKS
     end
 
     desc 'Generate standard DHCP option definitions for the backend and the UI'
