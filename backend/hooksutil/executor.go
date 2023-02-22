@@ -136,3 +136,24 @@ func CallSingle[TSpecification any, TOutput any](he *HookExecutor, caller func(T
 	}
 	return callCallout(carriers[0].(TSpecification), caller)
 }
+
+// Calls the callouts sequentially until first success. Success means non-empty
+// data are returned, It is dedicated to implement the chain of responsibility
+// pattern. Returns a default value if no callout was called.
+func CallUntilSuccess[TSpecification any, TOutput comparable](he *HookExecutor, caller func(TSpecification) TOutput) (output TOutput) {
+	t := reflect.TypeOf((*TSpecification)(nil)).Elem()
+	var defaultOutput TOutput
+
+	carriers, ok := he.registeredCarriers[t]
+	if !ok {
+		return
+	}
+
+	for _, carrier := range carriers {
+		output = callCallout(carrier.(TSpecification), caller)
+		if output != defaultOutput {
+			return output
+		}
+	}
+	return
+}

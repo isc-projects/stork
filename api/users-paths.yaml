@@ -13,13 +13,17 @@
           schema:
             type: object
             required:
-              - useremail
-              - userpassword
+              - authenticationId
+              - identifier
+              - secret
             properties:
-              useremail:
+              authenticationId:
+                description: Unique ID of the authentication method
+                type: string
+              identifier:
                 description: E-mail of the user logging to the system
                 type: string
-              userpassword:
+              secret:
                 description: User password to log in to the system
                 type: string
       responses:

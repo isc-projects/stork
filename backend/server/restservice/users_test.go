@@ -857,9 +857,9 @@ func TestCreateSessionInvalidCredentials(t *testing.T) {
 
 	params := users.CreateSessionParams{}
 	// provide wrong credentials - it should raise an error
-	params.Credentials.Useremail = &user.Email
+	params.Credentials.Identifier = &user.Email
 	bad := "bad pass"
-	params.Credentials.Userpassword = &bad
+	params.Credentials.Secret = &bad
 	rsp := rapi.CreateSession(ctx2, params)
 	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
 }
@@ -889,8 +889,8 @@ func TestCreateSession(t *testing.T) {
 
 	params := users.CreateSessionParams{}
 	// provide correct credentials - it should create a new session
-	params.Credentials.Useremail = &user.Email
-	params.Credentials.Userpassword = &user.Password
+	params.Credentials.Identifier = &user.Email
+	params.Credentials.Secret = &user.Password
 	rsp := rapi.CreateSession(ctx2, params)
 	require.IsType(t, &users.CreateSessionOK{}, rsp)
 	okRsp := rsp.(*users.CreateSessionOK)

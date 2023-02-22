@@ -19,24 +19,6 @@ type authenticationCalloutCarrier interface { //nolint:unused
 
 //go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
 
-// Test that the authentication hook is detected properly.
-func TestHasAuthenticationHook(t *testing.T) {
-	// Arrange
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock := NewMockAuthenticationCalloutCarrier(ctrl)
-
-	hookManager := NewHookManager()
-	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock})
-
-	// Act
-	hasHook := hookManager.HasAuthenticationHook()
-
-	// Assert
-	require.True(t, hasHook)
-}
-
 // Test that the authentication callout is called.
 func TestAuthenticate(t *testing.T) {
 	// Arrange
@@ -63,7 +45,7 @@ func TestAuthenticate(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, &username, &password)
+	user, err := hookManager.Authenticate(context.Background(), nil, "default", &username, &password)
 
 	// Assert
 	require.NoError(t, err)
@@ -92,7 +74,7 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -121,7 +103,7 @@ func TestAuthenticateReturnError(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
 
 	// Assert
 	require.ErrorContains(t, err, "foo")
@@ -135,7 +117,7 @@ func TestAuthenticateDefault(t *testing.T) {
 	hookManager := NewHookManager()
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
 
 	// Assert
 	require.NoError(t, err)

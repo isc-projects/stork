@@ -15,6 +15,8 @@ func init() {
 	orm.RegisterTable((*SystemUserToGroup)(nil))
 }
 
+const AuthenticationMethodIDDefault string = "default"
+
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
 	ID       int

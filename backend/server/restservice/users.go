@@ -53,20 +53,20 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 
 func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	user := &dbmodel.SystemUser{}
-	var login string
+	var identifier string
 
-	if params.Credentials.Useremail != nil {
-		login = *params.Credentials.Useremail
+	if params.Credentials.Identifier != nil {
+		identifier = *params.Credentials.Identifier
 	}
 
-	if strings.Contains(login, "@") {
-		user.Email = login
+	if strings.Contains(identifier, "@") {
+		user.Email = identifier
 	} else {
-		user.Login = login
+		user.Login = identifier
 	}
 
-	if params.Credentials.Userpassword != nil {
-		user.Password = *params.Credentials.Userpassword
+	if params.Credentials.Secret != nil {
+		user.Password = *params.Credentials.Secret
 	}
 
 	ok, err := dbmodel.Authenticate(r.DB, user)
@@ -78,12 +78,26 @@ func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmo
 
 // Attempts to login the user to the system.
 func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
-	var user *dbmodel.SystemUser
+	var systemUser *dbmodel.SystemUser
 	var err error
 
-	if r.HookManager.HasAuthenticationHook() {
-		calloutUser, calloutErr := r.HookManager.Authenticate(ctx, params.HTTPRequest, params.Credentials.Useremail, params.Credentials.Userpassword)
-		err = calloutErr
+	if *params.Credentials.AuthenticationID != dbmodel.AuthenticationMethodIDDefault {
+		calloutUser, err := r.HookManager.Authenticate(
+			ctx,
+			params.HTTPRequest,
+			*params.Credentials.AuthenticationID,
+			params.Credentials.Identifier,
+			params.Credentials.Secret,
+		)
+
+		if calloutUser == nil || err != nil {
+			log.
+				WithError(err).
+				WithField("method", params.Credentials.AuthenticationID).
+				WithField("identifier", params.Credentials.Identifier).
+				Error("Cannot authenticate a user")
+			return users.NewCreateSessionBadRequest()
+		}
 
 		var groups []*dbmodel.SystemGroup
 		for _, g := range calloutUser.Groups {
@@ -92,7 +106,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			})
 		}
 
-		user = &dbmodel.SystemUser{
+		systemUser = &dbmodel.SystemUser{
 			ID:       int(calloutUser.ID),
 			Login:    calloutUser.Login,
 			Email:    calloutUser.Email,
@@ -101,24 +115,30 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			Groups:   groups,
 		}
 	} else {
-		user, err = r.defaultAuthentication(params)
-	}
-
-	if user != nil {
-		err = r.SessionManager.LoginHandler(ctx, user)
-	}
-
-	if user == nil || err != nil {
-		if err != nil {
-			log.Error(err)
+		systemUser, err = r.defaultAuthentication(params)
+		if systemUser == nil || err != nil {
+			log.
+				WithError(err).
+				WithField("method", params.Credentials.AuthenticationID).
+				WithField("identifier", params.Credentials.Identifier).
+				Error("Cannot authenticate a user")
+			return users.NewCreateSessionBadRequest()
 		}
+	}
+
+	err = r.SessionManager.LoginHandler(ctx, systemUser)
+	if err != nil {
+		log.
+			WithError(err).
+			WithField("identifier", params.Credentials.Identifier).
+			Error("Cannot log in a user")
 		return users.NewCreateSessionBadRequest()
 	}
 
 	// Hide the password
-	user.Password = ""
+	systemUser.Password = ""
 
-	rspUser := newRestUser(*user)
+	rspUser := newRestUser(*systemUser)
 	return users.NewCreateSessionOK().WithPayload(rspUser)
 }
 
