@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork/hooks/server/authenticationcallouts"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
@@ -526,4 +529,40 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 
 	rsp := users.NewGetGroupsOK().WithPayload(groups)
 	return rsp
+}
+
+// Get authentication methods supported by server. Endpoint is allowed without log in.
+func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.GetAuthenticationMethodsParams) middleware.Responder {
+	metadata := r.HookManager.GetAuthenticationMetadata()
+
+	methods := []*models.AuthenticationMethod{}
+	for _, meta := range metadata {
+		method := &models.AuthenticationMethod{
+			ID:          meta.GetID(),
+			Description: meta.GetDescription(),
+			Name:        meta.GetName(),
+			IconURL:     path.Join("assets", "authentications", url.PathEscape(meta.GetID())) + ".png",
+		}
+
+		if metaForm, ok := meta.(authenticationcallouts.AuthenticationMetadataForm); ok {
+			method.FormLabelIdentifier = metaForm.GetIdentifierFormLabel()
+			method.FormLabelSecret = metaForm.GetSecretFormLabel()
+		}
+
+		methods = append(methods, method)
+	}
+
+	methods = append(methods, &models.AuthenticationMethod{
+		ID:                  "default",
+		Name:                "Default",
+		Description:         "Default Stork authentication based on credentials from the internal database",
+		FormLabelIdentifier: "Email/Login",
+		FormLabelSecret:     "Password",
+		IconURL:             "assets/authentications/default.png",
+	})
+
+	return users.NewGetAuthenticationMethodsOK().WithPayload(&models.AuthenticationMethods{
+		Items: methods,
+		Total: int64(len(methods)),
+	})
 }

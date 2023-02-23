@@ -83,10 +83,6 @@
 
   AuthenticationMethod:
     type: object
-    required:
-      - id
-      - name
-      - description
     properties:
       id:
         type: string

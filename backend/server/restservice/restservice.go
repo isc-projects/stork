@@ -323,11 +323,10 @@ func (r *RestAPI) Serve() (err error) {
 
 	err = prepareAuthenticationIcons(r.HookManager, r.Settings.StaticFilesDir)
 	if err != nil {
+		// It is not a critical error.
 		log.
 			WithError(err).
 			Warning("cannot prepare the authentication icons")
-		// It is not a critical error.
-		err = nil
 	}
 
 	// Initiate the http handler, with the objects that are implementing the business logic.

@@ -363,9 +363,8 @@ func TestCallSequentialUntilProcessed(t *testing.T) {
 		carrier.Bar()
 		if carrierIdx == 1 {
 			return CallStatusProcessed, carrier.Foo()
-		} else {
-			return CallStatusSkipped, 0
 		}
+		return CallStatusSkipped, 0
 	})
 
 	// Assert
