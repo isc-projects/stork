@@ -18,6 +18,12 @@ type mockCalloutSpecificationBar interface {
 	Bar() bool
 }
 
+// FooBar callout specification.
+type mockCalloutSpecificationFooBar interface {
+	mockCalloutSpecificationFoo
+	mockCalloutSpecificationBar
+}
+
 // Foo mock callout carrier implementation.
 type mockCalloutCarrierFooImpl struct {
 	fooCount int
@@ -313,4 +319,93 @@ func TestCallSequential(t *testing.T) {
 
 	// 6. Bar mock shouldn't be called.
 	require.Zero(t, barMock.barCount)
+}
+
+// Test that the empty output and false status is returned if there is no
+// carriers registered.
+func TestCallSequentialUntilProcessedForMissingCarriers(t *testing.T) {
+	// Arrange
+	executor := NewHookExecutor([]reflect.Type{})
+
+	// Act
+	ok, result := CallSequentialUntilProcessed(executor, func(carrier mockCalloutSpecificationFoo) (CallStatus, int) {
+		return CallStatusProcessed, carrier.Foo()
+	})
+
+	// Assert
+	require.False(t, ok)
+	require.Zero(t, result)
+}
+
+// Test that the carrier execution stops on first callout that processed the
+// data.
+func TestCallSequentialUntilProcessed(t *testing.T) {
+	// Arrange
+	executor := NewHookExecutor([]reflect.Type{
+		reflect.TypeOf((*mockCalloutSpecificationFooBar)(nil)).Elem(),
+	})
+
+	mocks := []*mockCalloutCarrierFooBarImpl{
+		newMockCalloutCarrierFooBar(),
+		newMockCalloutCarrierFooBar(),
+		newMockCalloutCarrierFooBar(),
+	}
+
+	for _, mock := range mocks {
+		executor.registerCalloutCarrier(mock)
+	}
+
+	carrierIdx := -1
+
+	// Act
+	ok, result := CallSequentialUntilProcessed(executor, func(carrier mockCalloutSpecificationFooBar) (CallStatus, int) {
+		carrierIdx++
+		carrier.Bar()
+		if carrierIdx == 1 {
+			return CallStatusProcessed, carrier.Foo()
+		} else {
+			return CallStatusSkipped, 0
+		}
+	})
+
+	// Assert
+	require.True(t, ok)
+	require.EqualValues(t, 1, result)
+
+	require.Zero(t, 0, mocks[0].fooCount)
+	require.EqualValues(t, 1, mocks[0].barCount)
+
+	require.EqualValues(t, 1, mocks[1].fooCount)
+	require.EqualValues(t, 1, mocks[1].barCount)
+
+	require.Zero(t, mocks[2].fooCount)
+	require.Zero(t, mocks[2].barCount)
+}
+
+// Test that the empty output and false status is returned if all registered
+// carrier return the skipped status.
+func TestCallSequentialUntilProcessedAllSkipped(t *testing.T) {
+	// Arrange
+	executor := NewHookExecutor([]reflect.Type{
+		reflect.TypeOf((*mockCalloutSpecificationFoo)(nil)).Elem(),
+	})
+
+	mocks := []*mockCalloutCarrierFooImpl{
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
+		newMockCalloutCarrierFoo(),
+	}
+
+	for _, mock := range mocks {
+		executor.registerCalloutCarrier(mock)
+	}
+
+	// Act
+	ok, result := CallSequentialUntilProcessed(executor, func(carrier mockCalloutSpecificationFoo) (CallStatus, int) {
+		return CallStatusSkipped, 42
+	})
+
+	// Assert
+	require.False(t, ok)
+	require.Zero(t, result)
 }
