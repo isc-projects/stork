@@ -188,7 +188,6 @@
       description: >-
         Returns all groups defined for the system.
       operationId: getGroups
-      security: []
       tags:
         - Users
       parameters:
@@ -200,6 +199,25 @@
           description: List of groups returned.
           schema:
             $ref: "#/definitions/Groups"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /authentications:
+    get:
+      summary: List the authentication methods.
+      description: >-
+        Returns all authentication methods supported by the server.
+      operationId: getAuthenticationMethods
+      security: []
+      tags:
+        - Users
+      responses:
+        200:
+          description: List of the authentication methods returned.
+          schema:
+            $ref: "#/definitions/AuthenticationMethods"
         default:
           description: generic error response
           schema:

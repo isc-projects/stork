@@ -80,3 +80,34 @@
           $ref: '#/definitions/Group'
       total:
         type: integer
+
+  AuthenticationMethod:
+    type: object
+    properties:
+      required:
+        - id
+        - name
+        - description
+      items:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        iconUrl:
+          type: string
+        formLabelIdentifier:
+          type: string
+        formLabelSecret:
+          type: string
+
+  AuthenticationMethods:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/AuthenticationMethod'
+      total:
+        type: integer
