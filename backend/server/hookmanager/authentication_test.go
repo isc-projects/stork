@@ -17,7 +17,8 @@ type authenticationCalloutCarrier interface { //nolint:unused
 	hooks.CalloutCarrier
 }
 
-//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
+//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier AuthenticationMetadata
+//go:generate mockgen -package=hookmanager -destination=authenticationcallouts_mock.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
 
 // Test that the authentication callout is called.
 func TestAuthenticate(t *testing.T) {
@@ -27,6 +28,11 @@ func TestAuthenticate(t *testing.T) {
 
 	username := "foo"
 	password := "bar"
+
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return("mock")
 
 	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
@@ -40,12 +46,15 @@ func TestAuthenticate(t *testing.T) {
 			Groups:   []int{1, 2, 3},
 		}, nil).
 		Times(1)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock)
 
 	hookManager := NewHookManager()
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "default", &username, &password)
+	user, err := hookManager.Authenticate(context.Background(), nil, "mock", &username, &password)
 
 	// Assert
 	require.NoError(t, err)
@@ -58,11 +67,19 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	metadataMock1 := NewMockAuthenticationMetadata(ctrl)
+	metadataMock1.EXPECT().
+		GetID().
+		Return("mock1")
+
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&authenticationcallouts.User{}, nil).
 		Times(1)
+	mock1.EXPECT().
+		GetMetadata().
+		Return(metadataMock1)
 
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
@@ -74,7 +91,7 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "mock1", nil, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -87,11 +104,19 @@ func TestAuthenticateReturnError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	metadataMock1 := NewMockAuthenticationMetadata(ctrl)
+	metadataMock1.EXPECT().
+		GetID().
+		Return("mock1")
+
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("foo")).
 		Times(1)
+	mock1.EXPECT().
+		GetMetadata().
+		Return(metadataMock1)
 
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
@@ -103,7 +128,7 @@ func TestAuthenticateReturnError(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "mock1", nil, nil)
 
 	// Assert
 	require.ErrorContains(t, err, "foo")
@@ -117,10 +142,10 @@ func TestAuthenticateDefault(t *testing.T) {
 	hookManager := NewHookManager()
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "", nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "default", nil, nil)
 
 	// Assert
-	require.NoError(t, err)
+	require.ErrorContains(t, err, "authentication method is not supported")
 	require.Nil(t, user)
 }
 
@@ -130,11 +155,19 @@ func TestUnauthenticate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	metadataMock1 := NewMockAuthenticationMetadata(ctrl)
+	metadataMock1.EXPECT().
+		GetID().
+		Return("mock1")
+
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(nil).
 		Times(1)
+	mock1.EXPECT().
+		GetMetadata().
+		Return(metadataMock1)
 
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
@@ -146,7 +179,7 @@ func TestUnauthenticate(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	err := hookManager.Unauthenticate(context.Background())
+	err := hookManager.Unauthenticate(context.Background(), "mock1")
 
 	// Assert
 	require.NoError(t, err)
@@ -158,11 +191,19 @@ func TestUnauthenticateError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	metadataMock1 := NewMockAuthenticationMetadata(ctrl)
+	metadataMock1.EXPECT().
+		GetID().
+		Return("mock1")
+
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(errors.New("foo")).
 		Times(1)
+	mock1.EXPECT().
+		GetMetadata().
+		Return(metadataMock1)
 
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
@@ -174,7 +215,7 @@ func TestUnauthenticateError(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	err := hookManager.Unauthenticate(context.Background())
+	err := hookManager.Unauthenticate(context.Background(), "mock1")
 
 	// Assert
 	require.ErrorContains(t, err, "foo")

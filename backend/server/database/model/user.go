@@ -15,6 +15,8 @@ func init() {
 	orm.RegisterTable((*SystemUserToGroup)(nil))
 }
 
+// The authentication ID of the default authentication method (email and
+// password stored in the database).
 const AuthenticationMethodIDDefault string = "default"
 
 // Represents a user held in system_user table in the database.

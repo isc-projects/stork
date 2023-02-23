@@ -3,8 +3,18 @@ package hooksutil
 import (
 	"reflect"
 
-	"github.com/sirupsen/logrus"
 	"isc.org/stork/hooks"
+)
+
+// The status of callout call.
+type CallStatus int
+
+const (
+	// The hook didn't handle the call. E.g.: It doesn't support a specific
+	// use case related to the passed arguments. The call output is empty.
+	CallStatusSkipped CallStatus = iota
+	// The hook handled the call and returned a result.
+	CallStatusProcessed CallStatus = iota
 )
 
 // Function that calls a specific callout in the callout carrier.
@@ -100,7 +110,7 @@ func (he *HookExecutor) HasRegistered(calloutSpecificationType reflect.Type) boo
 
 // Calls the specific callout using the caller object.
 // It can be used to monitor performance in the future.
-func callCallout[TSpecification any, TOutput any](carrier TSpecification, caller func(TSpecification) TOutput) TOutput {
+func callCallout[TSpecification any, TOutput any](carrier TSpecification, caller func(TSpecification) (CallStatus, TOutput)) (CallStatus, TOutput) {
 	return caller(carrier)
 }
 
@@ -114,46 +124,30 @@ func CallSequential[TSpecification any, TOutput any](he *HookExecutor, caller fu
 
 	var results []TOutput
 	for _, carrier := range carriers {
-		result := callCallout(carrier.(TSpecification), caller)
+		_, result := callCallout(carrier.(TSpecification), func(innerCarrier TSpecification) (CallStatus, TOutput) {
+			return CallStatusProcessed, caller(innerCarrier)
+		})
 		results = append(results, result)
 	}
 	return results
 }
 
-// Calls the specific callout from a first callout carrier if any was
-// registered. It is dedicated to cases when only one hook with a given callout
-// is expected.
-// Returns a default value if no callout was called.
-func CallSingle[TSpecification any, TOutput any](he *HookExecutor, caller func(TSpecification) TOutput) (output TOutput) {
+// Call the specific callout for all callout carriers sequentially, but stop on
+// the first carrier that reports the call was processed.
+func CallSequentialUntilProcessed[TSpecification any, TOutput any](he *HookExecutor, caller func(TSpecification) (CallStatus, TOutput)) (processed bool, output TOutput) {
 	t := reflect.TypeOf((*TSpecification)(nil)).Elem()
-	carriers, ok := he.registeredCarriers[t]
-	if !ok || len(carriers) == 0 {
-		return
-	} else if len(carriers) > 1 {
-		logrus.
-			WithField("carrier", t.Name()).
-			Warn("there are many registered callout carriers but expected a single one")
-	}
-	return callCallout(carriers[0].(TSpecification), caller)
-}
-
-// Calls the callouts sequentially until first success. Success means non-empty
-// data are returned, It is dedicated to implement the chain of responsibility
-// pattern. Returns a default value if no callout was called.
-func CallUntilSuccess[TSpecification any, TOutput comparable](he *HookExecutor, caller func(TSpecification) TOutput) (output TOutput) {
-	t := reflect.TypeOf((*TSpecification)(nil)).Elem()
-	var defaultOutput TOutput
-
 	carriers, ok := he.registeredCarriers[t]
 	if !ok {
 		return
 	}
 
 	for _, carrier := range carriers {
-		output = callCallout(carrier.(TSpecification), caller)
-		if output != defaultOutput {
-			return output
+		status, result := callCallout(carrier.(TSpecification), caller)
+		if status == CallStatusSkipped {
+			continue
 		}
+
+		return true, result
 	}
 	return
 }

@@ -17,33 +17,40 @@ func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, 
 		err  error
 	}
 
-	data := hooksutil.CallUntilSuccess(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) *output {
+	ok, data := hooksutil.CallSequentialUntilProcessed(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) (hooksutil.CallStatus, *output) {
 		if carrier.GetMetadata().GetID() != authenticationMethodID {
 			// Go to next authentication callout.
-			return nil
+			return hooksutil.CallStatusSkipped, nil
 		}
 
 		user, err := carrier.Authenticate(ctx, request, identifier, secret)
-		return &output{
+		return hooksutil.CallStatusProcessed, &output{
 			user: user,
 			err:  err,
 		}
 	})
 
-	if data == nil {
+	if !ok {
 		return nil, errors.Errorf("the '%s' authentication method is not supported", authenticationMethodID)
 	}
 	return data.user, data.err
 }
 
-// Callout to unauthenticate a user (close session). It accepts a context that
-// should contain the session ID set up in the Authenticate callout.
-func (hm *HookManager) Unauthenticate(ctx context.Context) error {
-	return hooksutil.CallUntilSuccess(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) error {
-		return carrier.Unauthenticate(ctx)
+// Callout to unauthenticate a user (close session). It can be used to notify
+// the external authentication provider.
+func (hm *HookManager) Unauthenticate(ctx context.Context, authenticationMethodID string) error {
+	_, err := hooksutil.CallSequentialUntilProcessed(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) (hooksutil.CallStatus, error) {
+		if carrier.GetMetadata().GetID() != authenticationMethodID {
+			// Go to next authentication callout.
+			return hooksutil.CallStatusSkipped, nil
+		}
+		return hooksutil.CallStatusProcessed, carrier.Unauthenticate(ctx)
 	})
+
+	return err
 }
 
+// Callout to obtain the metadata of the authentication method provided by a hook.
 func (hm *HookManager) GetAuthenticationMetadata() []authenticationcallouts.AuthenticationMetadata {
 	return hooksutil.CallSequential(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) authenticationcallouts.AuthenticationMetadata {
 		return carrier.GetMetadata()

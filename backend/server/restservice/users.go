@@ -81,7 +81,17 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	var systemUser *dbmodel.SystemUser
 	var err error
 
-	if *params.Credentials.AuthenticationID != dbmodel.AuthenticationMethodIDDefault {
+	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" || *params.Credentials.AuthenticationID == dbmodel.AuthenticationMethodIDDefault {
+		systemUser, err = r.defaultAuthentication(params)
+		if systemUser == nil || err != nil {
+			log.
+				WithError(err).
+				WithField("method", params.Credentials.AuthenticationID).
+				WithField("identifier", params.Credentials.Identifier).
+				Error("Cannot authenticate a user")
+			return users.NewCreateSessionBadRequest()
+		}
+	} else {
 		calloutUser, err := r.HookManager.Authenticate(
 			ctx,
 			params.HTTPRequest,
@@ -114,16 +124,6 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			Name:     calloutUser.Name,
 			Groups:   groups,
 		}
-	} else {
-		systemUser, err = r.defaultAuthentication(params)
-		if systemUser == nil || err != nil {
-			log.
-				WithError(err).
-				WithField("method", params.Credentials.AuthenticationID).
-				WithField("identifier", params.Credentials.Identifier).
-				Error("Cannot authenticate a user")
-			return users.NewCreateSessionBadRequest()
-		}
 	}
 
 	err = r.SessionManager.LoginHandler(ctx, systemUser)
@@ -149,7 +149,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 		log.Error(err)
 		return users.NewDeleteSessionBadRequest()
 	}
-	_ = r.HookManager.Unauthenticate(ctx)
+	_ = r.HookManager.Unauthenticate(ctx, "default")
 	return users.NewDeleteSessionOK()
 }
 
@@ -363,7 +363,7 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 
 	_, currentUser := r.SessionManager.Logged(ctx)
 	if currentUser.ID == id {
-		log.WithField("userid", id).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
+		log.WithField("userID", id).Infof("Failed to delete user account for logged in user %s", currentUser.Identity())
 
 		msg := "User account with provided login/email tries to delete itself"
 		rspErr := models.APIError{
@@ -375,10 +375,9 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 
 	su, err := dbmodel.GetUserByID(r.DB, id)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"userid": id,
-		}).Errorf("Failed to fetch user with ID %d from the database with error: %s", id,
-			err.Error())
+		log.WithField("userID", id).
+			WithError(err).
+			Errorf("Failed to fetch user with ID %d from the database", id)
 
 		msg := fmt.Sprintf("Failed to fetch user with ID %d from the database", id)
 		rspErr := models.APIError{
@@ -389,7 +388,7 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	}
 	if su == nil {
 		msg := fmt.Sprintf("Failed to find user with ID %d in the database", id)
-		log.WithField("userid", id).Error(msg)
+		log.WithField("userID", id).Error(msg)
 
 		rspErr := models.APIError{
 			Message: &msg,
@@ -401,11 +400,11 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	err = dbmodel.DeleteUser(r.DB, su)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"userid": id,
+			"userID": id,
 			"login":  su.Login,
 			"email":  su.Email,
-		}).Errorf("Failed to delete user account for user %s: %s",
-			su.Identity(), err.Error())
+		}).WithError(err).Errorf("Failed to delete user account for user %s",
+			su.Identity())
 
 		msg := fmt.Sprintf("Failed to delete user account for user %s", su.Identity())
 		rspErr := models.APIError{
@@ -418,7 +417,7 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	err = r.SessionManager.LogoutUser(ctx, su)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"userid": id,
+			"userID": id,
 			"login":  su.Login,
 			"email":  su.Email,
 		}).WithError(err).Errorf("Failed to logout user account for user %s", su.Identity())
