@@ -1338,7 +1338,6 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 	AddApp(db, app)
 
 	// Run the actual benchmark.
-	rand.Seed(time.Now().UTC().UnixNano())
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		subnetIndex := rand.Intn(len(subnets))

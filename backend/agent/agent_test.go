@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -601,7 +600,6 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 func TestTailTextFile(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	rand.Seed(time.Now().UnixNano())
 	filename := fmt.Sprintf("test%d.log", rand.Int63())
 	f, err := os.Create(filename)
 	require.NoError(t, err)

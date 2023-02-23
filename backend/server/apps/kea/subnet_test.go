@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	require "github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
@@ -822,8 +821,6 @@ func BenchmarkFindMatchingSubnet(b *testing.B) {
 	// Index the subnets.
 	existingSubnets := dbmodel.NewIndexedSubnets(subnets)
 	existingSubnets.Populate()
-
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	// The actual benchmark starts here.
 	b.ResetTimer()
