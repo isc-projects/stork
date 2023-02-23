@@ -83,24 +83,23 @@
 
   AuthenticationMethod:
     type: object
+    required:
+      - id
+      - name
+      - description
     properties:
-      required:
-        - id
-        - name
-        - description
-      items:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        iconUrl:
-          type: string
-        formLabelIdentifier:
-          type: string
-        formLabelSecret:
-          type: string
+      id:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      iconUrl:
+        type: string
+      formLabelIdentifier:
+        type: string
+      formLabelSecret:
+        type: string
 
   AuthenticationMethods:
     type: object
