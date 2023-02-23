@@ -149,6 +149,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 		log.Error(err)
 		return users.NewDeleteSessionBadRequest()
 	}
+	// ToDo: Use a specific authentication method.
 	_ = r.HookManager.Unauthenticate(ctx, "default")
 	return users.NewDeleteSessionOK()
 }

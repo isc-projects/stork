@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"reflect"
 	"strconv"
 	"time"
@@ -32,6 +34,7 @@ import (
 	"isc.org/stork/server/gen/restapi/operations"
 	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
+	storkutil "isc.org/stork/util"
 )
 
 // The container for REST API settings. It contains the struct tags with the
@@ -274,8 +277,59 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 	return nil
 }
 
+// Prepare a subdirectory in the static asset directory with the authentication
+// icons. The icons are retrivied from registered hooks.
+func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFilesDirectory string) error {
+	iconDirectory := path.Join(staticFilesDirectory, "assets", "authentications")
+
+	var errs []error
+
+	// Create icons for the authentication provided by hooks.
+	for _, metadata := range hookManager.GetAuthenticationMetadata() {
+		iconContent, err := metadata.GetIcon()
+		if err != nil {
+			errs = append(errs, pkgerrors.Wrapf(err, "cannot read icon for hook authentication: %s", metadata.GetID()))
+			continue
+		}
+		defer iconContent.Close()
+
+		iconPath := path.Join(iconDirectory, path.Clean("/"+metadata.GetID()))
+		iconFile, err := os.Create(iconPath)
+		if err != nil {
+			errs = append(errs, pkgerrors.Wrapf(err, "cannot open the icon file to write: %s", iconPath))
+			continue
+		}
+		_, err = io.Copy(iconFile, iconContent)
+		if err != nil {
+			errs = append(errs, pkgerrors.Wrapf(err, "cannot write the icon file: %s", iconPath))
+		}
+	}
+
+	return storkutil.CombineErrors("preparing authentication icons failed", errs)
+}
+
 // Serve the API.
 func (r *RestAPI) Serve() (err error) {
+	if r.Settings.StaticFilesDir == "" {
+		devPath := "./webui/dist/stork"
+		// Check if the Stork is running in the development environment.
+		if _, err := os.Stat(devPath); errors.Is(err, os.ErrNotExist) {
+			// No development environment. Use the default production path.
+			r.Settings.StaticFilesDir = "/usr/share/stork/www"
+		} else {
+			r.Settings.StaticFilesDir = devPath
+		}
+	}
+
+	err = prepareAuthenticationIcons(r.HookManager, r.Settings.StaticFilesDir)
+	if err != nil {
+		log.
+			WithError(err).
+			Warning("cannot prepare the authentication icons")
+		// It is not a critical error.
+		err = nil
+	}
+
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
 		GeneralAPI:      r,
@@ -332,16 +386,6 @@ func (r *RestAPI) Serve() (err error) {
 		httpServer.IdleTimeout = s.CleanupTimeout
 	}
 
-	if s.StaticFilesDir == "" {
-		devPath := "./webui/dist/stork"
-		// Check if the Stork is running in the development environment.
-		if _, err := os.Stat(devPath); errors.Is(err, os.ErrNotExist) {
-			// No development environment. Use the default production path.
-			s.StaticFilesDir = "/usr/share/stork/www"
-		} else {
-			s.StaticFilesDir = devPath
-		}
-	}
 	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, r.EventCenter)
 
 	if r.TLS {
