@@ -293,7 +293,7 @@ func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFile
 		}
 		defer iconContent.Close()
 
-		iconPath := path.Join(iconDirectory, path.Clean("/"+metadata.GetID()))
+		iconPath := path.Join(iconDirectory, path.Clean("/"+metadata.GetID())+".png")
 		iconFile, err := os.Create(iconPath)
 		if err != nil {
 			errs = append(errs, pkgerrors.Wrapf(err, "cannot open the icon file to write: %s", iconPath))

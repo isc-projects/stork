@@ -1,15 +1,24 @@
 package restservice
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"os"
+	"path"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/hooks"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
 	appstest "isc.org/stork/server/apps/test"
 	dbtest "isc.org/stork/server/database/test"
+	"isc.org/stork/server/hookmanager"
 	storktest "isc.org/stork/server/test"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
+	"isc.org/stork/testutil"
 )
 
 // Tests instantiating RestAPI.
@@ -108,4 +117,93 @@ func TestNewRestAPI(t *testing.T) {
 	api, err = NewRestAPI()
 	require.Error(t, err)
 	require.Nil(t, api)
+}
+
+// Test that the authentication icons are extracted from callout carriers.
+func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	// Create directory structure.
+	_, _ = sb.Join("assets/authentications/default.png")
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	carrierMocks := []hooks.CalloutCarrier{}
+
+	for i := 0; i < 2; i++ {
+		metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+		metadataMock.EXPECT().GetID().Return(fmt.Sprintf("mock-%d", i))
+		metadataMock.EXPECT().
+			GetIcon().
+			Return(
+				io.NopCloser(
+					bytes.NewReader(
+						[]byte(fmt.Sprintf("mock-%d", i)),
+					),
+				), nil,
+			)
+
+		carrierMock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+		carrierMock.EXPECT().GetMetadata().Return(metadataMock)
+		carrierMocks = append(carrierMocks, carrierMock)
+	}
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarriers(carrierMocks)
+
+	// Act
+	err := prepareAuthenticationIcons(hookManager, sb.BasePath)
+
+	// Assert
+	require.NoError(t, err)
+
+	for i := 0; i < 2; i++ {
+		iconPath := path.Join(sb.BasePath, "assets", "authentications", fmt.Sprintf("mock-%d.png", i))
+		require.FileExists(t, iconPath)
+		content, _ := os.ReadFile(iconPath)
+		require.EqualValues(t, fmt.Sprintf("mock-%d", i), string(content))
+	}
+}
+
+// Test that the error is returned if the icon directory is not writable.
+func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	// Create directory structure.
+	defaultIconPath, _ := sb.Join("assets/authentications/default.png")
+	iconDirectory := path.Dir(defaultIconPath)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().GetID().Return("mock")
+	metadataMock.EXPECT().
+		GetIcon().
+		Return(
+			io.NopCloser(
+				bytes.NewReader(
+					[]byte("mock"),
+				),
+			), nil,
+		)
+
+	carrierMock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	carrierMock.EXPECT().GetMetadata().Return(metadataMock)
+	carrierMocks := []hooks.CalloutCarrier{carrierMock}
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarriers(carrierMocks)
+
+	// Remove the write rights.
+	_ = os.Chmod(iconDirectory, 0o400)
+
+	// Act
+	err := prepareAuthenticationIcons(hookManager, sb.BasePath)
+
+	// Assert
+	require.ErrorContains(t, err, "cannot open the icon file to write")
 }
