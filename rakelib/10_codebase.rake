@@ -217,7 +217,8 @@ go_server_mocks = FileList[
     "backend/appcfg/kea/prefixpoolmock_test.go",
     "backend/appcfg/kea/subnetmock_test.go",
     "backend/appcfg/kea/sharednetworkmock_test.go",
-    "backend/server/hookmanager/hookmanager_mock.go"
+    "backend/server/hookmanager/hookmanager_mock.go",
+    "backend/server/hookmanager/authenticationcallouts_mock.go",
 ]
 
 go_agent_mocks = FileList[

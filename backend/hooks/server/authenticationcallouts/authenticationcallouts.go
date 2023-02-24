@@ -15,7 +15,7 @@ type AuthenticationMetadata interface {
 	GetName() string
 	// Returns a description of the authentication method.
 	GetDescription() string
-	// Returns an icon of the authentication method.
+	// Returns an icon of the authentication method in the PNG format.
 	// The resource should be open only on demand. Caller is responsible for
 	// closing the reader.
 	GetIcon() (io.ReadCloser, error)

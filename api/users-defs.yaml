@@ -90,8 +90,6 @@
         type: string
       description:
         type: string
-      iconUrl:
-        type: string
       formLabelIdentifier:
         type: string
       formLabelSecret:

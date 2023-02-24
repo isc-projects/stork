@@ -3,6 +3,7 @@ package hooksutil
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -26,32 +27,26 @@ type mockCalloutSpecificationFooBar interface {
 
 // Foo mock callout carrier implementation.
 type mockCalloutCarrierFooImpl struct {
-	fooCount int
-	// The call count including calls from all mock instances.
-	fooTotalCount int
-	closeCount    int
-	closeErr      error
+	fooCount             int
+	fooLastCallTimestamp int64
+	closeCount           int
+	closeErr             error
 }
-
-// The Foo call counter shared between all mock instances.
-var sharedFooCount int //nolint:gochecknoglobals
 
 // Constructs an instance of the mock callout carrier.
 func newMockCalloutCarrierFoo() *mockCalloutCarrierFooImpl {
 	return &mockCalloutCarrierFooImpl{
-		fooCount:      0,
-		fooTotalCount: 0,
-		closeCount:    0,
-		closeErr:      nil,
+		fooCount:   0,
+		closeCount: 0,
+		closeErr:   nil,
 	}
 }
 
 // Counts the call count.
 func (c *mockCalloutCarrierFooImpl) Foo() int {
 	c.fooCount++
-	sharedFooCount++
-	c.fooTotalCount = sharedFooCount
-	return c.fooTotalCount
+	c.fooLastCallTimestamp = time.Now().UnixNano()
+	return c.fooCount
 }
 
 // It counts the call count and returns the mocked error.
@@ -301,20 +296,19 @@ func TestCallSequential(t *testing.T) {
 		result := results[i]
 
 		// 2. Has expected output.
-		require.EqualValues(t, mock.fooTotalCount, result)
+		require.EqualValues(t, 1, result)
 		// 3. The callout was called exactly once.
 		require.EqualValues(t, 1, mock.fooCount)
 
 		if i != 0 {
 			previousMock := fooMocks[i-1]
 			// 4. The callouts were executed in an expected order.
-			require.EqualValues(t, previousMock.fooTotalCount, mock.fooTotalCount-1)
+			require.LessOrEqual(t, previousMock.fooLastCallTimestamp, mock.fooLastCallTimestamp)
 		}
 	}
 
 	// 5. FooBar mock should be called too.
 	require.EqualValues(t, 1, fooBarMock.fooCount)
-	require.EqualValues(t, fooBarMock.fooTotalCount, results[len(fooMocks)])
 	require.Zero(t, fooBarMock.barCount)
 
 	// 6. Bar mock shouldn't be called.

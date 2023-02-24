@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -535,13 +533,19 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.GetAuthenticationMethodsParams) middleware.Responder {
 	metadata := r.HookManager.GetAuthenticationMetadata()
 
-	methods := []*models.AuthenticationMethod{}
+	methods := []*models.AuthenticationMethod{{
+		ID:                  "default",
+		Name:                "Default",
+		Description:         "Default Stork authentication based on credentials from the internal database",
+		FormLabelIdentifier: "Email/Login",
+		FormLabelSecret:     "Password",
+	}}
+
 	for _, meta := range metadata {
 		method := &models.AuthenticationMethod{
 			ID:          meta.GetID(),
 			Description: meta.GetDescription(),
 			Name:        meta.GetName(),
-			IconURL:     path.Join("assets", "authentications", url.PathEscape(meta.GetID())) + ".png",
 		}
 
 		if metaForm, ok := meta.(authenticationcallouts.AuthenticationMetadataForm); ok {
@@ -551,15 +555,6 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 
 		methods = append(methods, method)
 	}
-
-	methods = append(methods, &models.AuthenticationMethod{
-		ID:                  "default",
-		Name:                "Default",
-		Description:         "Default Stork authentication based on credentials from the internal database",
-		FormLabelIdentifier: "Email/Login",
-		FormLabelSecret:     "Password",
-		IconURL:             "assets/authentications/default.png",
-	})
 
 	return users.NewGetAuthenticationMethodsOK().WithPayload(&models.AuthenticationMethods{
 		Items: methods,
