@@ -30,25 +30,42 @@
         </div>
 
         <div style="margin-top: 10vh">
-            <form [formGroup]="loginForm">
-                <div>
+            <p-progressSpinner *ngIf="!authenticationMethods"></p-progressSpinner>
+            <form [formGroup]="loginForm" *ngIf="authenticationMethods">
+                <div *ngIf="authenticationMethods.length > 1">
+                    <p-selectButton
+                        name="authenticationMethod"
+                        id="authenticationMethod"
+                        formControlName="authenticationMethod"
+                        [options]="authenticationMethods"
+                        [(ngModel)]="authenticationMethod">
+                        <ng-template let-item>
+                            <img src="/assets/authorizations/{{ item.id }}.png" />
+                            <span>{{ item.name }}</span>
+                        </ng-template>
+                    </p-selectButton>
+                    <p>
+                        {{ authenticationMethod.description }}
+                    </p>
+                </div>
+                <div *ngIf="authenticationMethod.formLabelIdentifier">
                     <input
                         type="text"
-                        name="username"
-                        id="username"
-                        formControlName="username"
-                        placeholder="User name"
+                        name="identifier"
+                        id="identifier"
+                        formControlName="identifier"
+                        [placeholder]="authenticationMethod.formLabelIdentifier"
                         style="width: 100%"
                     />
                 </div>
 
-                <div style="margin-top: 8px">
+                <div style="margin-top: 8px" *ngIf="authenticationMethod.formLabelSecret">
                     <input
                         type="password"
-                        name="password"
-                        id="password"
-                        formControlName="password"
-                        placeholder="Password"
+                        name="secret"
+                        id="secret"
+                        formControlName="secret"
+                        [placeholder]="authenticationMethod.formLabelSecret"
                         style="width: 100%"
                         (keyup)="keyUp($event)"
                     />

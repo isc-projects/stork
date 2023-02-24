@@ -9,23 +9,8 @@
         - in: body
           name: credentials
           description: Credentials provided by the user upon logging in to the system
-          required: true
           schema:
-            type: object
-            required:
-              - authenticationId
-              - identifier
-              - secret
-            properties:
-              authenticationId:
-                description: Unique ID of the authentication method
-                type: string
-              identifier:
-                description: E-mail of the user logging to the system
-                type: string
-              secret:
-                description: User password to log in to the system
-                type: string
+            $ref: "#/definitions/SessionCredentials"
       responses:
         200:
           description: Login successful

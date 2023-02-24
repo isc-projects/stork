@@ -2,19 +2,14 @@ import { Injectable } from '@angular/core'
 import { HttpClient } from '@angular/common/http'
 import { Router, ActivatedRoute } from '@angular/router'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, shareReplay, switchMap } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
 import { UsersService } from './backend/api/users.service'
+import { AuthenticationMethod } from "./backend/model/authenticationMethod"
+import { SessionCredentials } from './backend/model/sessionCredentials'
 
-/**
- * Represents credentials of the user who is logging in to the system.
- */
-class Credentials {
-    useremail: string
-    userpassword: string
-}
 
 export class User {
     id: number
@@ -41,6 +36,7 @@ export class AuthService {
     private currentUserSubject: BehaviorSubject<User>
     public currentUser: Observable<User>
     public user: User
+    private authenticationMethods: Observable<AuthenticationMethod[]>
 
     constructor(
         private http: HttpClient,
@@ -50,6 +46,10 @@ export class AuthService {
     ) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
+        this.authenticationMethods = api.getAuthenticationMethods().pipe(
+            map((methods) => methods.items),
+            shareReplay(1)
+        )
     }
 
     /**
@@ -62,13 +62,14 @@ export class AuthService {
     /**
      * Attempts to create a session for a user.
      *
-     * @param username Specified user name.
-     * @param password Specified password.
+     * @param identifier Specified identifier (e.g., user name).
+     * @param secret Specified secret (e.g., password).
+     * @param authenticationId Specified authentication method ID.
      * @param returnUrl URL to return to after successful login.
      */
-    login(username: string, password: string, returnUrl: string) {
+    login(authenticationId: string, identifier: string, secret: string, returnUrl: string) {
         let user: User
-        const credentials: Credentials = { useremail: username, userpassword: password }
+        const credentials: SessionCredentials = { authenticationId, identifier, secret }
         this.api.createSession(credentials).subscribe(
             (data) => {
                 if (data.id != null) {
@@ -132,5 +133,14 @@ export class AuthService {
             }
         }
         return false
+    }
+
+    /**
+     * Fetches the list of the supported authentication methods and caches them.
+     * 
+     * @returns List of authentication methods supported by the backend.
+     */
+    getAuthenticationMethods(): Observable<AuthenticationMethod[]> {
+        return this.authenticationMethods
     }
 }
