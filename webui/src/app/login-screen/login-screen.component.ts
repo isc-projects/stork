@@ -44,20 +44,24 @@ export class LoginScreenComponent implements OnInit, OnDestroy {
             secret: ['', Validators.required],
         })
 
-        this.subscriptions.add(this.api.getVersion().subscribe(
-            (data) => {
-                console.info(data)
-                this.version = data.version
-            },
-            (error) => {
-                console.log(error)
-            }
-        ))
+        this.subscriptions.add(
+            this.api.getVersion().subscribe(
+                (data) => {
+                    console.info(data)
+                    this.version = data.version
+                },
+                (error) => {
+                    console.log(error)
+                }
+            )
+        )
 
-        this.subscriptions.add(this.auth.getAuthenticationMethods().subscribe(methods => {
-            this.authenticationMethods = methods
-            this.authenticationMethod = methods[0]
-        }))
+        this.subscriptions.add(
+            this.auth.getAuthenticationMethods().subscribe((methods) => {
+                this.authenticationMethods = methods
+                this.authenticationMethod = methods[0]
+            })
+        )
     }
 
     ngOnDestroy(): void {
@@ -84,12 +88,7 @@ export class LoginScreenComponent implements OnInit, OnDestroy {
     }
 
     private performLogin() {
-        this.auth.login(
-            this.authenticationMethod.id,
-            this.f.identifier.value,
-            this.f.secret.value,
-            this.returnUrl
-        )
+        this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
         this.router.navigate([this.returnUrl])
     }
 }

@@ -7,9 +7,8 @@ import { map, shareReplay, switchMap } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 
 import { UsersService } from './backend/api/users.service'
-import { AuthenticationMethod } from "./backend/model/authenticationMethod"
+import { AuthenticationMethod } from './backend/model/authenticationMethod'
 import { SessionCredentials } from './backend/model/sessionCredentials'
-
 
 export class User {
     id: number
@@ -137,7 +136,7 @@ export class AuthService {
 
     /**
      * Fetches the list of the supported authentication methods and caches them.
-     * 
+     *
      * @returns List of authentication methods supported by the backend.
      */
     getAuthenticationMethods(): Observable<AuthenticationMethod[]> {

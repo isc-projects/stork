@@ -38,7 +38,8 @@
                         id="authenticationMethod"
                         formControlName="authenticationMethod"
                         [options]="authenticationMethods"
-                        [(ngModel)]="authenticationMethod">
+                        [(ngModel)]="authenticationMethod"
+                    >
                         <ng-template let-item>
                             <img src="/assets/authorizations/{{ item.id }}.png" />
                             <span>{{ item.name }}</span>
