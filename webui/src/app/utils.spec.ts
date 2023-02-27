@@ -1,4 +1,4 @@
-import { clamp, stringToHex, getErrorMessage, humanCount, formatShortExcludedPrefix } from './utils'
+import { clamp, stringToHex, getErrorMessage, humanCount, formatShortExcludedPrefix, getGrafanaUrl } from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -208,5 +208,11 @@ describe('utils', () => {
         expect(() => formatShortExcludedPrefix(prefix, excludedPrefix)).toThrowError(
             'Given IPv6 is not confirm to a valid IPv6 address'
         )
+    })
+
+    it('should produce a valid link Grafana URL even if the base URL contains a segment', () => {
+        const baseURL = 'http://grafana.url/segment'
+        const grafanaURL = getGrafanaUrl(baseURL, 'dhcp4')
+        expect(grafanaURL).toBe('http://grafana.url/segment/d/hRf18FvWz/')
     })
 })
