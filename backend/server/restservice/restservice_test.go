@@ -170,12 +170,6 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 // Test that the error is returned if the icon directory is not writable.
 func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	// Arrange
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-	// Create directory structure.
-	defaultIconPath, _ := sb.Join("assets/authentications/default.png")
-	iconDirectory := path.Dir(defaultIconPath)
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -198,12 +192,8 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	hookManager := hookmanager.NewHookManager()
 	hookManager.RegisterCalloutCarriers(carrierMocks)
 
-	// Remove the write rights.
-	err := os.Chmod(iconDirectory, 0o400)
-	require.NoError(t, err)
-
 	// Act
-	err = prepareAuthenticationIcons(hookManager, sb.BasePath)
+	err := prepareAuthenticationIcons(hookManager, "/non/existing/directory")
 
 	// Assert
 	require.ErrorContains(t, err, "cannot open the icon file to write")
