@@ -106,14 +106,16 @@ export function humanCount(count: string | bigint | number) {
 /**
  * Build URL to Grafana dashboard
  */
-export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
+export function getGrafanaUrl(grafanaBaseUrl: string, name: string, subnet?: string, instance?: string): string {
     let url = null
     if (name === 'dhcp4') {
         if (instance) {
             instance += ':9547'
         }
-        const b = grafanaBaseUrl.replace(/\/+$/, '')
-        url = new URL('/d/hRf18FvWz/', b)
+        if (!grafanaBaseUrl.endsWith('/')) {
+            grafanaBaseUrl += '/'
+        }
+        url = new URL('./d/hRf18FvWz/', grafanaBaseUrl)
     } else {
         return ''
     }
