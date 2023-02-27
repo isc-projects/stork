@@ -25,6 +25,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 class App {
     id: number
@@ -53,6 +54,7 @@ describe('AppsPageComponent', () => {
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
+                ProgressSpinnerModule,
             ],
             declarations: [
                 AppsPageComponent,

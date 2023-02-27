@@ -5,6 +5,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { UsersService } from './backend'
 import { RouterModule, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('AuthService', () => {
     beforeEach(() =>
@@ -17,7 +18,7 @@ describe('AuthService', () => {
                 },
                 MessageService,
             ],
-            imports: [HttpClientTestingModule],
+            imports: [HttpClientTestingModule, ProgressSpinnerModule],
         })
     )
 

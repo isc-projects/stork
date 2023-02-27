@@ -6,6 +6,7 @@ import { GeneralService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { RouterModule, Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
@@ -13,7 +14,7 @@ describe('LoginScreenComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
+            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule, ProgressSpinnerModule],
             declarations: [LoginScreenComponent],
             providers: [
                 GeneralService,
