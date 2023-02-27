@@ -198,7 +198,6 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "Smith",
 		Name:     "John",
-		Password: "pass",
 	}
 
 	conflict, err := dbmodel.CreateUser(rapi.DB, user)

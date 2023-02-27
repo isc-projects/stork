@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -26,9 +27,14 @@ type SystemUser struct {
 	Email    string
 	Lastname string
 	Name     string
-	Password string `pg:"password_hash"`
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
+}
+
+// Represents a user password entry in system_user_password table in the database.
+type SystemUserPassword struct {
+	ID       int
+	Password string `pg:"password_hash"`
 }
 
 // Represents an association table between the system user and group tables.
@@ -62,18 +68,18 @@ func (user *SystemUser) Identity() string {
 }
 
 // Creates associations of the user with its groups.
-func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
-	var assocs []SystemUserToGroup
+func createUserGroups(dbi dbops.DBI, user *SystemUser) (err error) {
+	var associations []SystemUserToGroup
 
 	if len(user.Groups) > 0 {
 		for _, g := range user.Groups {
-			assocs = append(assocs, SystemUserToGroup{
+			associations = append(associations, SystemUserToGroup{
 				UserID:  user.ID,
 				GroupID: g.ID,
 			})
 		}
 
-		_, err = db.Model(&assocs).OnConflict("DO NOTHING").Insert()
+		_, err = dbi.Model(&associations).OnConflict("DO NOTHING").Insert()
 	}
 
 	return err
@@ -83,18 +89,48 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 // the created user information is in conflict with some existing user in the
 // database, e.g. duplicated login or email.
 func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
-	tx, err := db.Begin()
+	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		conflict, err = createUser(tx, user)
+		return err
+	})
+	return
+}
+
+// Creates new user in the database with a given password. The returned
+// conflict value indicates if the created user information is in conflict
+// with some existing user in the database, e.g. duplicated login or email.
+func CreateUserWithPassword(db *pg.DB, user *SystemUser, password string) (conflict bool, err error) {
+	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		conflict, err = createUser(tx, user)
+		if err != nil {
+			return err
+		}
+
+		password := &SystemUserPassword{
+			ID:       user.ID,
+			Password: password,
+		}
+
+		_, err := tx.Model(password).Insert()
+		return pkgerrors.Wrapf(err, "unable to insert a password for the created user %s", user.Identity())
+	})
+	return
+}
+
+// Internal function to create a user inside transaction. The returned
+// conflict value indicates if the created user information is in conflict
+// with some existing user in the database, e.g. duplicated login or email.
+func createUser(dbi dbops.DBI, user *SystemUser) (conflict bool, err error) {
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
 		return false, err
 	}
-	defer dbops.RollbackOnError(tx, &err)
 
-	_, err = db.Model(user).Insert()
+	_, err = dbi.Model(user).Insert()
 
 	// If insert was successful, create associations of the user with groups.
 	if err == nil {
-		err = createUserGroups(db, user)
+		err = createUserGroups(dbi, user)
 	}
 
 	if err != nil {
@@ -104,10 +140,6 @@ func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		}
 
 		err = pkgerrors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
-	}
-
-	if err == nil {
-		err = tx.Commit()
 	}
 
 	return conflict, err
@@ -171,12 +203,12 @@ func DeleteUser(db *pg.DB, user *SystemUser) (err error) {
 
 // Sets new password for the given user id.
 func SetPassword(db *pg.DB, id int, password string) (err error) {
-	user := SystemUser{
+	userPassword := SystemUserPassword{
 		ID:       id,
 		Password: password,
 	}
 
-	result, err := db.Model(&user).Column("password_hash").WherePK().Update()
+	result, err := db.Model(&userPassword).Column("password_hash").WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "database operation error while trying to set new password for user ID %d",
 			id)
@@ -190,10 +222,10 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 // Checks if the old password matches the one in the database and modifies
 // it to the new password if it does.
 func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, error) {
-	user := SystemUser{
+	password := SystemUserPassword{
 		ID: id,
 	}
-	ok, err := db.Model(&user).
+	ok, err := db.Model(&password).
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
 			oldPassword, id).Exists()
 	if err != nil {
@@ -211,11 +243,12 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 
 // Finds the user in the database by login or email and verifies that the provided password
 // is correct.
-func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
+func Authenticate(db *pg.DB, user *SystemUser, password string) (bool, error) {
 	// Using authentication technique described here: https://www.postgresql.org/docs/8.3/pgcrypto.html
 	err := db.Model(user).Relation("Groups").
+		Join("RIGHT JOIN system_user_password").JoinOn("system_user.id = system_user_password.id").
 		Where("password_hash = crypt(?, password_hash) AND (login = ? OR email = ?)",
-			user.Password, user.Login, user.Email).First()
+			password, user.Login, user.Email).First()
 	if err != nil {
 		// Failing to find an entry is not really an error. It merely means that the
 		// authentication failed, so return false in this case.
@@ -227,13 +260,6 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 		return false, err
 	}
 
-	// We don't want to return password hash in the password field so we
-	// set it to an empty string, which serves two purposes. First, the
-	// password hash is not interpreted as password. Second, when using the
-	// returned SystemUser instance to update the database the password will
-	// remain unmodified in the database. The database treats empty password
-	// as an indication that the old password must be preserved.
-	user.Password = ""
 	return true, err
 }
 

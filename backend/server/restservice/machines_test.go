@@ -2288,7 +2288,6 @@ func TestGetAccessPointKeyIsRestrictedToSuperAdmins(t *testing.T) {
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 	user := &dbmodel.SystemUser{
 		Login:    "foo",
-		Password: "bar",
 		Name:     "baz",
 		Lastname: "boz",
 		Groups:   []*dbmodel.SystemGroup{{ID: dbmodel.AdminGroupID}},

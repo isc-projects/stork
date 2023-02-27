@@ -167,7 +167,6 @@ func TestDeleteUserEmptyParams(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "White",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -209,7 +208,6 @@ func TestDeleteUserInvalidUserID(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "White",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -254,7 +252,6 @@ func TestDeleteUserSameUserAsSession(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "White",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -299,7 +296,6 @@ func TestDeleteUser(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "White",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -315,7 +311,6 @@ func TestDeleteUser(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err = dbmodel.CreateUser(db, &su2)
 	require.False(t, con)
@@ -368,7 +363,6 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Email:    "john@example.org",
 		Lastname: "White",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -384,7 +378,6 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 		Groups: []*dbmodel.SystemGroup{
 			{
 				ID: dbmodel.SuperAdminGroupID,
@@ -439,7 +432,6 @@ func TestUpdateUserEmptyParams(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
@@ -469,7 +461,6 @@ func TestUpdateUserEmptyRequest(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
@@ -501,7 +492,6 @@ func TestUpdateUserMissingData(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
@@ -535,7 +525,6 @@ func TestUpdateUserInvalidUserID(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
@@ -556,8 +545,8 @@ func TestUpdateUserInvalidUserID(t *testing.T) {
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
-// Tests that user account can be updated via REST API.
-func TestUpdateUser(t *testing.T) {
+// Tests that user account with password can be updated via REST API.
+func TestUpdateUserWithPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -571,9 +560,8 @@ func TestUpdateUser(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := dbmodel.CreateUser(db, &su)
+	con, err := dbmodel.CreateUserWithPassword(db, &su, "secret")
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -608,6 +596,55 @@ func TestUpdateUser(t *testing.T) {
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
+// Tests that user account without password can be updated via REST API.
+func TestUpdateUserWithoutPassword(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Modify some values and update the user.
+	su.Lastname = "Born"
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: newRestUser(su),
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserOK{}, rsp)
+
+	// Also check that the user has been updated in the database.
+	returned, err := dbmodel.GetUserByID(db, su.ID)
+	require.NoError(t, err)
+	require.Equal(t, su.Lastname, returned.Lastname)
+
+	// An attempt to update non-existing user (non matching ID) should
+	// result in an error 409.
+	su.ID = 123
+	params = users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: newRestUser(su),
+		},
+	}
+	rsp = rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, 409, getStatusCode(*defaultRsp))
+}
+
 // Tests that update user password with missing data is rejected via REST API.
 func TestUpdateUserPasswordMissingData(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -622,7 +659,6 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -639,7 +675,8 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 	require.Equal(t, "Failed to update password for user: missing data", *defaultRsp.Payload.Message)
 }
 
-// Tests that user password can be updated via REST API.
+// Tests that user password can be updated via REST API if user account has
+// assigned the password.
 func TestUpdateUserPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -653,9 +690,8 @@ func TestUpdateUserPassword(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := dbmodel.CreateUser(db, user)
+	con, err := dbmodel.CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -682,6 +718,40 @@ func TestUpdateUserPassword(t *testing.T) {
 	}
 	rsp = rapi.UpdateUserPassword(ctx, params)
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
+// Tests that user password can't be updated via REST API if user account doesn't
+// have assigned the password.
+func TestUpdateUserPasswordForNonPasswordUser(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+	}
+	con, err := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Update user password via the API.
+	params := users.UpdateUserPasswordParams{
+		ID: int64(user.ID),
+		Passwords: &models.PasswordChange{
+			Newpassword: storkutil.Ptr(models.Password("updated")),
+		},
+	}
+	rsp := rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
+
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 }
@@ -720,7 +790,6 @@ func TestGetUsers(t *testing.T) {
 		Lastname: "Doe",
 		Login:    "johndoe",
 		Name:     "John",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -786,7 +855,6 @@ func TestGetUser(t *testing.T) {
 		Lastname: "Doe",
 		Login:    "johndoe",
 		Name:     "John",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -824,7 +892,6 @@ func TestCreateSessionEmptyParams(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -849,9 +916,8 @@ func TestCreateSessionInvalidCredentials(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := dbmodel.CreateUser(db, user)
+	con, err := dbmodel.CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -884,9 +950,9 @@ func TestCreateSession(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := dbmodel.CreateUser(db, user)
+	password := "pass"
+	con, err := dbmodel.CreateUserWithPassword(db, user, password)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -897,7 +963,7 @@ func TestCreateSession(t *testing.T) {
 	params := users.CreateSessionParams{
 		Credentials: &models.SessionCredentials{
 			Identifier: &user.Email,
-			Secret:     &user.Password,
+			Secret:     &password,
 		},
 	}
 	// provide correct credentials - it should create a new session
@@ -914,7 +980,7 @@ func TestCreateSession(t *testing.T) {
 // Test that the default authentication method is always returned.
 func TestGetAuthenticationMethodsDefault(t *testing.T) {
 	// Arrange
-	dbSettings := dbops.NewDatabaseSettings()
+	dbSettings := &dbops.DatabaseSettings{}
 	ctx := context.Background()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, hookManager)
@@ -959,7 +1025,7 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	hookManager := hookmanager.NewHookManager()
 	hookManager.RegisterCalloutCarriers(mocks)
 
-	dbSettings := dbops.NewDatabaseSettings()
+	dbSettings := &dbops.DatabaseSettings{}
 	ctx := context.Background()
 	rapi, _ := NewRestAPI(dbSettings, hookManager)
 

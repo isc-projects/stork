@@ -32,7 +32,6 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
@@ -117,7 +116,6 @@ func TestGetDueConfigChanges(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
@@ -205,7 +203,6 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
@@ -262,7 +259,6 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
@@ -331,7 +327,6 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)

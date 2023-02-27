@@ -431,7 +431,6 @@ func TestCommitDue(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
@@ -518,7 +517,6 @@ func TestCommitDueErrors(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
@@ -587,7 +585,6 @@ func TestDeleteUserDropDueChanges(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)

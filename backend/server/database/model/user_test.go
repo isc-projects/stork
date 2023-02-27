@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	faker "github.com/brianvoe/gofakeit"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
@@ -22,9 +23,8 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 			Email:    fmt.Sprintf("%s@example.org", login),
 			Lastname: faker.LastName(),
 			Name:     faker.FirstName(),
-			Password: faker.Word(),
 		}
-		_, err := CreateUser(db, user)
+		_, err := CreateUserWithPassword(db, user, faker.Word())
 		require.NoError(t, err, "failed for index %d, login %s", i, user.Login)
 	}
 }
@@ -36,10 +36,9 @@ func TestDefaultUserAuthenticate(t *testing.T) {
 
 	// Use default credentials of the admin user.
 	user := &SystemUser{
-		Login:    "admin",
-		Password: "admin",
+		Login: "admin",
 	}
-	authOk, err := Authenticate(db, user)
+	authOk, err := Authenticate(db, user, "admin")
 	require.NoError(t, err)
 	require.True(t, authOk)
 
@@ -48,8 +47,7 @@ func TestDefaultUserAuthenticate(t *testing.T) {
 	require.True(t, user.InGroup(&SystemGroup{Name: "super-admin"}))
 
 	// Using wrong password should cause the authentication to fail.
-	user.Password = "wrong"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "wrong")
 	require.NoError(t, err)
 	require.False(t, authOk)
 }
@@ -64,47 +62,37 @@ func TestNewUserAuthenticate(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := CreateUser(db, user)
+	con, err := CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
 
 	require.Greater(t, user.ID, 0)
 
-	authOk, err := Authenticate(db, user)
+	authOk, err := Authenticate(db, user, "pass")
 	require.NoError(t, err)
 	require.True(t, authOk)
-	// Returned password should be empty.
-	require.Empty(t, user.Password)
 
 	// Modifying user's password should be possible.
-	user.Password = "new password"
-	con, err = UpdateUser(db, user)
-	require.False(t, con)
+	err = SetPassword(db, user.ID, "new password")
 	require.NoError(t, err)
 
 	// Authentication using old password should fail.
-	user.Password = "pass"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "pass")
 	require.NoError(t, err)
 	require.False(t, authOk)
 
 	// But it should pass with the new password.
-	user.Password = "new password"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "new password")
 	require.NoError(t, err)
 	require.True(t, authOk)
 
 	// If password is empty, it should remain unmodified in the database.
-	user.Password = ""
-	con, err = UpdateUser(db, user)
-	require.False(t, con)
+	err = SetPassword(db, user.ID, "")
 	require.NoError(t, err)
 
 	// Make sure that we can still authenticate (because the password hasn't changed).
-	user.Password = "new password"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "new password")
 	require.NoError(t, err)
 	require.True(t, authOk)
 }
@@ -120,11 +108,97 @@ func TestUpdateNoUser(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := UpdateUser(db, user)
 	require.True(t, con)
 	require.Error(t, err)
+}
+
+// Test that the user is created properly.
+func TestCreateUser(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:    "foobar",
+		Email:    "foo@bar.org",
+		Lastname: "Bar",
+		Name:     "Foo",
+	}
+
+	// Act
+	conflict, err := CreateUser(db, user)
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, conflict)
+	// Check if all data are inserted properly.
+	dbUser, err := GetUserByID(db, user.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, "foobar", dbUser.Login)
+	require.EqualValues(t, "foo@bar.org", dbUser.Email)
+	require.EqualValues(t, "Bar", dbUser.Lastname)
+	require.EqualValues(t, "Foo", dbUser.Name)
+	// Check if there is no password entry.
+	password := &SystemUserPassword{}
+	password.ID = dbUser.ID
+	err = db.Model(password).WherePK().Select()
+	require.ErrorIs(t, err, pg.ErrNoRows)
+}
+
+// Test that the user with password is created properly.
+func TestCreateUserWithPassword(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:    "foobar",
+		Email:    "foo@bar.org",
+		Lastname: "Bar",
+		Name:     "Foo",
+	}
+
+	// Act
+	conflict, err := CreateUserWithPassword(db, user, "barfoo")
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, conflict)
+	// Check if all data are inserted properly.
+	dbUser, err := GetUserByID(db, user.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, "foobar", dbUser.Login)
+	require.EqualValues(t, "foo@bar.org", dbUser.Email)
+	require.EqualValues(t, "Bar", dbUser.Lastname)
+	require.EqualValues(t, "Foo", dbUser.Name)
+	// Check if there is a password entry.
+	password := &SystemUserPassword{}
+	password.ID = dbUser.ID
+	err = db.Model(password).WherePK().Select()
+	require.NoError(t, err)
+}
+
+// Test that the user with an empty password cannot be created.
+func TestCreateUserWithEmptyPassword(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:    "foobar",
+		Email:    "foo@bar.org",
+		Lastname: "Bar",
+		Name:     "Foo",
+	}
+
+	// Act
+	conflict, err := CreateUserWithPassword(db, user, "")
+
+	// Assert
+	require.Error(t, err)
+	require.False(t, conflict)
 }
 
 // Tests that conflict flag is returned when the inserted user is in
@@ -138,7 +212,6 @@ func TestCreateConflict(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := CreateUser(db, user)
 	require.False(t, con)
@@ -148,7 +221,6 @@ func TestCreateConflict(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err = CreateUser(db, user)
 	require.True(t, con)
@@ -165,7 +237,6 @@ func TestDeleteUser(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
 	con, err := CreateUser(db, user)
 	require.False(t, con)
@@ -190,9 +261,8 @@ func TestSetPassword(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := CreateUser(db, user)
+	con, err := CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -203,20 +273,17 @@ func TestSetPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// Authenticate with the new password.
-	user.Password = "newpass"
-	authOk, err := Authenticate(db, user)
+	authOk, err := Authenticate(db, user, "newpass")
 	require.NoError(t, err)
 	require.True(t, authOk)
 
 	// Also check that authentication with invalid password fails.
-	user.Password = "NewPass"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "NewPass")
 	require.NoError(t, err)
 	require.False(t, authOk)
 
 	// And finally check the original password doesn't work anymore.
-	user.Password = "pass"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "pass")
 	require.NoError(t, err)
 	require.False(t, authOk)
 }
@@ -242,9 +309,8 @@ func TestChangePassword(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 	}
-	con, err := CreateUser(db, user)
+	con, err := CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -254,7 +320,7 @@ func TestChangePassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// Still should authenticate with the current password.
-	authOk, err := Authenticate(db, user)
+	authOk, err := Authenticate(db, user, "pass")
 	require.NoError(t, err)
 	require.True(t, authOk)
 
@@ -264,8 +330,7 @@ func TestChangePassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// Authenticate with the new password.
-	user.Password = "newpass"
-	authOk, err = Authenticate(db, user)
+	authOk, err = Authenticate(db, user, "newpass")
 	require.NoError(t, err)
 	require.True(t, authOk)
 }
@@ -402,7 +467,6 @@ func TestUserGroups(t *testing.T) {
 		Email:    "test@example.org",
 		Lastname: "Smith",
 		Name:     "John",
-		Password: "pass",
 		Groups: []*SystemGroup{
 			{
 				ID: SuperAdminGroupID,
@@ -469,7 +533,6 @@ func TestAddToGroupByID(t *testing.T) {
 		Email:    "test@example.org",
 		Lastname: "Smith",
 		Name:     "John",
-		Password: "pass",
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
@@ -509,7 +572,6 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
-		Password: "pass",
 		Groups: []*SystemGroup{
 			{
 				ID: SuperAdminGroupID,

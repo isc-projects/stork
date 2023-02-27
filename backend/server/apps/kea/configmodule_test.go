@@ -481,7 +481,6 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
@@ -1071,7 +1070,6 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
@@ -1365,7 +1363,6 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 		Login:    "test",
 		Lastname: "test",
 		Name:     "test",
-		Password: "test",
 	}
 	_, err = dbmodel.CreateUser(db, user)
 	require.NoError(t, err)

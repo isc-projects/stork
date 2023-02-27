@@ -54,7 +54,7 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 
 func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	user := &dbmodel.SystemUser{}
-	var identifier string
+	var identifier, secret string
 
 	if params.Credentials.Identifier != nil {
 		identifier = *params.Credentials.Identifier
@@ -67,10 +67,10 @@ func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmo
 	}
 
 	if params.Credentials.Secret != nil {
-		user.Password = *params.Credentials.Secret
+		secret = *params.Credentials.Secret
 	}
 
-	ok, err := dbmodel.Authenticate(r.DB, user)
+	ok, err := dbmodel.Authenticate(r.DB, user, secret)
 	if !ok {
 		return nil, err
 	}
@@ -140,9 +140,6 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			Error("Cannot log in a user")
 		return users.NewCreateSessionBadRequest()
 	}
-
-	// Hide the password
-	systemUser.Password = ""
 
 	rspUser := newRestUser(*systemUser)
 	return users.NewCreateSessionOK().WithPayload(rspUser)
@@ -265,14 +262,13 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Email:    *u.Email,
 		Lastname: *u.Lastname,
 		Name:     *u.Name,
-		Password: string(*p),
 	}
 
 	for _, gid := range u.Groups {
 		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
-	con, err := dbmodel.CreateUser(r.DB, su)
+	con, err := dbmodel.CreateUserWithPassword(r.DB, su, string(*p))
 	if err != nil {
 		if con {
 			log.WithFields(log.Fields{
@@ -313,7 +309,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil || p == nil {
+	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
 		log.Warn("Failed to update user account: missing data")
 
 		msg := "Failed to update user account: missing data"
@@ -329,7 +325,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Email:    *u.Email,
 		Lastname: *u.Lastname,
 		Name:     *u.Name,
-		Password: string(*p),
 	}
 
 	for _, gid := range u.Groups {
@@ -359,6 +354,28 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		}
 		rsp := users.NewUpdateUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
+	}
+
+	password := ""
+	if p != nil {
+		password = string(*p)
+	}
+	if password != "" {
+		err = dbmodel.SetPassword(r.DB, int(*u.ID), password)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"userID": *u.ID,
+				"login":  *u.Login,
+				"email":  *u.Email,
+			}).WithError(err).Errorf("Failed to update password for user %s", su.Identity())
+
+			msg := fmt.Sprintf("Failed to update password for user %s", su.Identity())
+			rspErr := models.APIError{
+				Message: &msg,
+			}
+			rsp := users.NewUpdateUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+			return rsp
+		}
 	}
 
 	return users.NewUpdateUserOK()
