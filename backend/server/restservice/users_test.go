@@ -2,10 +2,14 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/hooks"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -905,4 +909,72 @@ func TestCreateSession(t *testing.T) {
 	delParams := users.DeleteSessionParams{}
 	rsp = rapi.DeleteSession(ctx2, delParams)
 	require.IsType(t, &users.DeleteSessionOK{}, rsp)
+}
+
+// Test that the default authentication method is always returned.
+func TestGetAuthenticationMethodsDefault(t *testing.T) {
+	// Arrange
+	dbSettings := dbops.NewDatabaseSettings()
+	ctx := context.Background()
+	hookManager := hookmanager.NewHookManager()
+	rapi, _ := NewRestAPI(dbSettings, hookManager)
+
+	// Act
+	response := rapi.GetAuthenticationMethods(ctx, users.GetAuthenticationMethodsParams{})
+
+	// Assert
+	require.IsType(t, &users.GetAuthenticationMethodsOK{}, response)
+	responseOk := response.(*users.GetAuthenticationMethodsOK)
+	require.EqualValues(t, 1, responseOk.Payload.Total)
+	require.Len(t, responseOk.Payload.Items, 1)
+	require.EqualValues(t, "default", responseOk.Payload.Items[0].ID)
+}
+
+// Test that the authentication methods from hooks are included in the response.
+func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	var mocks []hooks.CalloutCarrier
+	for i := 0; i < 3; i++ {
+		metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+		metadataMock.EXPECT().
+			GetID().
+			Return(fmt.Sprintf("mock-%d", i))
+		metadataMock.EXPECT().
+			GetDescription().
+			Return(fmt.Sprintf("description-%d", i))
+		metadataMock.EXPECT().
+			GetName().
+			Return(fmt.Sprintf("name-%d", i))
+
+		mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+		mock.EXPECT().
+			GetMetadata().
+			Return(metadataMock).
+			Times(1)
+
+		mocks = append(mocks, mock)
+	}
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarriers(mocks)
+
+	dbSettings := dbops.NewDatabaseSettings()
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, hookManager)
+
+	// Act
+	response := rapi.GetAuthenticationMethods(ctx, users.GetAuthenticationMethodsParams{})
+
+	// Assert
+	require.IsType(t, &users.GetAuthenticationMethodsOK{}, response)
+	responseOk := response.(*users.GetAuthenticationMethodsOK)
+	require.EqualValues(t, 4, responseOk.Payload.Total)
+	require.Len(t, responseOk.Payload.Items, 4)
+
+	require.EqualValues(t, "default", responseOk.Payload.Items[0].ID)
+
+	for i, method := range responseOk.Payload.Items[1:] {
+		require.EqualValues(t, fmt.Sprintf("mock-%d", i), method.ID)
+	}
 }
