@@ -2,6 +2,7 @@ package hookmanager
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
@@ -219,4 +220,53 @@ func TestUnauthenticateError(t *testing.T) {
 
 	// Assert
 	require.ErrorContains(t, err, "foo")
+}
+
+// Test that all authentication metadata are returned.
+func TestGetAuthenticationMetadata(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var mocks []hooks.CalloutCarrier
+
+	for i := 0; i < 3; i++ {
+		metadataMock := NewMockAuthenticationMetadata(ctrl)
+		metadataMock.EXPECT().
+			GetID().
+			Return(fmt.Sprintf("mock-%d", i))
+
+		mock := NewMockAuthenticationCalloutCarrier(ctrl)
+		mock.EXPECT().
+			GetMetadata().
+			Return(metadataMock).
+			Times(1)
+
+		mocks = append(mocks, mock)
+	}
+
+	hookManager := NewHookManager()
+	hookManager.RegisterCalloutCarriers(mocks)
+
+	// Act
+	results := hookManager.GetAuthenticationMetadata()
+
+	// Assert
+	require.Len(t, results, 3)
+	for i, result := range results {
+		require.EqualValues(t, fmt.Sprintf("mock-%d", i), result.GetID())
+	}
+}
+
+// Test that an empty slice is returned if no authentication carrier is
+// registered.
+func TestGetAuthenticationMetadataNoCalloutCarriers(t *testing.T) {
+	// Arrange
+	hookManager := NewHookManager()
+
+	// Act
+	results := hookManager.GetAuthenticationMetadata()
+
+	// Assert
+	require.Len(t, results, 0)
 }
