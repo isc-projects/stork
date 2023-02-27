@@ -1,3 +1,8 @@
+* 289 [bug] slawek
+
+    Fixed ignoring any URL segments in the Grafana base address.
+    (Gitlab #980)
+
 * 288 [bug] razvan
 
     The content of subnets column is now sorted.
