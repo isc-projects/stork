@@ -82,6 +82,11 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	var systemUser *dbmodel.SystemUser
 	var err error
 
+	if params.Credentials == nil {
+		log.Warning(("Cannot authenticate a user due to missing credentials"))
+		return users.NewCreateSessionBadRequest()
+	}
+
 	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" || *params.Credentials.AuthenticationID == dbmodel.AuthenticationMethodIDDefault {
 		systemUser, err = r.defaultAuthentication(params)
 		if systemUser == nil || err != nil {
