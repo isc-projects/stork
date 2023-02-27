@@ -108,12 +108,14 @@ namespace :unittest do
         BENCHMARK - Execute benchmarks - default: false
         SHORT - Run short test routine - default: false
         HEADLESS - Run in headless mode - default: false
+        VERBOSE - Print results for successful cases - default: false
         See "db:migrate" task for the database-related parameters
     '
     task :backend => [RICHGO, "db:remove_remaining", "db:migrate"] + go_dev_codebase do
         scope = ENV["SCOPE"] || "./..."
         benchmark = ENV["BENCHMARK"] || "false"
         short = ENV["SHORT"] || "false"
+        verbose = ENV["VERBOSE"] || "false"
 
         opts = []
 
@@ -129,6 +131,10 @@ namespace :unittest do
             opts += ["-short"]
         end
 
+        if verbose == "true"
+            opts += ["-v"]
+        end
+
         with_cov_tests = scope == "./..." && ENV["TEST"].nil?
 
         if with_cov_tests
@@ -140,7 +146,7 @@ namespace :unittest do
         end
 
         Dir.chdir('backend') do
-            sh RICHGO, "test", *opts, "-race", "-v", scope
+            sh RICHGO, "test", *opts, "-race", scope
 
             if with_cov_tests
                 out = `"#{GO}" tool cover -func=coverage.out`
