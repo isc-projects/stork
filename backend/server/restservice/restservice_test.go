@@ -199,10 +199,11 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	hookManager.RegisterCalloutCarriers(carrierMocks)
 
 	// Remove the write rights.
-	_ = os.Chmod(iconDirectory, 0o400)
+	err := os.Chmod(iconDirectory, 0o400)
+	require.NoError(t, err)
 
 	// Act
-	err := prepareAuthenticationIcons(hookManager, sb.BasePath)
+	err = prepareAuthenticationIcons(hookManager, sb.BasePath)
 
 	// Assert
 	require.ErrorContains(t, err, "cannot open the icon file to write")
