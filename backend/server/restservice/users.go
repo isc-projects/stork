@@ -136,7 +136,8 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 		conflict, err := dbmodel.CreateUser(r.DB, systemUser)
 		if conflict {
-			internalID, err := dbmodel.GetUserIDByExternalID(
+			var internalID int
+			internalID, err = dbmodel.GetUserIDByExternalID(
 				r.DB,
 				*params.Credentials.AuthenticationID,
 				calloutUser.ID,
