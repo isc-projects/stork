@@ -264,7 +264,7 @@ func TestCreateUsersWithDuplicatedPasswordFromTheSameAuthentication(t *testing.T
 }
 
 // Test that logins and emails of the users from the different authentication
-// services may be duplicated
+// services may be duplicated.
 func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

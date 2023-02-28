@@ -312,7 +312,7 @@ func TestMigration51PreserveExternalAccounts(t *testing.T) {
 
 	// The system user model without new fields.
 	type legacyUser struct {
-		tableName struct{} `pg:"system_user"`
+		tableName struct{} `pg:"system_user"` //nolint:unused
 		ID        int
 		Login     string
 		Email     string
