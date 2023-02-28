@@ -165,6 +165,7 @@ func TestCreateUser(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
+	require.EqualValues(t, "default", dbUser.AuthenticationMethod)
 	// Check if there is no password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -198,6 +199,7 @@ func TestCreateUserWithPassword(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
+	require.EqualValues(t, "default", dbUser.AuthenticationMethod)
 	// Check if there is a password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -224,6 +226,78 @@ func TestCreateUserWithEmptyPassword(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.False(t, conflict)
+}
+
+// Test that logins and emails of the users from the same authentication service
+// must be unique.
+func TestCreateUsersWithDuplicatedPasswordFromTheSameAuthentication(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:    "same",
+		Email:    "same",
+		Name:     "n",
+		Lastname: "l",
+	}
+
+	_, _ = CreateUser(db, user)
+
+	// Act
+	_, errLogin := createUser(db, &SystemUser{
+		Login:    "same",
+		Email:    "unique",
+		Name:     "n-login",
+		Lastname: "l-login",
+	})
+	_, errEmail := createUser(db, &SystemUser{
+		Login:    "unique",
+		Email:    "same",
+		Name:     "n-email",
+		Lastname: "l-email",
+	})
+
+	// Assert
+	require.Error(t, errLogin)
+	require.Error(t, errEmail)
+}
+
+// Test that logins and emails of the users from the different authentication
+// services may be duplicated
+func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:    "same",
+		Email:    "same",
+		Name:     "n",
+		Lastname: "l",
+	}
+
+	_, _ = CreateUser(db, user)
+
+	// Act
+	_, errLogin := CreateUser(db, &SystemUser{
+		Login:                "same",
+		Email:                "unique",
+		AuthenticationMethod: "foo",
+		Name:                 "n-login",
+		Lastname:             "l-login",
+	})
+	_, errEmail := CreateUser(db, &SystemUser{
+		Login:                "unique",
+		Email:                "same",
+		AuthenticationMethod: "foo",
+		Name:                 "n-email",
+		Lastname:             "l-email",
+	})
+
+	// Assert
+	require.NoError(t, errLogin)
+	require.NoError(t, errEmail)
 }
 
 // Tests that conflict flag is returned when the inserted user is in
