@@ -979,9 +979,53 @@ func TestCreateSession(t *testing.T) {
 	require.IsType(t, &users.DeleteSessionOK{}, rsp)
 }
 
+// Test that the deleting session of the user authorized by an external service
+// works properly.
+func TestDeleteSessionOfExternalUser(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	authenticationMethod := "external"
+
+	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethod)
+
+	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	mock.EXPECT().
+		Unauthenticate(gomock.Any()).
+		Return(nil).
+		Times(1)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
+		ID:                   42,
+		AuthenticationMethod: authenticationMethod,
+	})
+
+	// Act
+	rsp := rapi.DeleteSession(ctx, users.DeleteSessionParams{})
+
+	// Assert
+	require.IsType(t, &users.DeleteSessionOK{}, rsp)
+}
+
 // Tests that new session can be created for a logged user that uses the
 // external authentication.
-func TestCreateSessionExternal(t *testing.T) {
+func TestCreateSessionOfExternalUser(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

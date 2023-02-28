@@ -178,13 +178,18 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 // Attempts to logout a user from the system.
 func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionParams) middleware.Responder {
-	err := r.SessionManager.LogoutHandler(ctx)
-	if err != nil {
-		log.Error(err)
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
 		return users.NewDeleteSessionBadRequest()
 	}
-	// ToDo: Use a specific authentication method.
-	_ = r.HookManager.Unauthenticate(ctx, "internal")
+
+	err := r.SessionManager.LogoutHandler(ctx)
+	if err != nil {
+		log.WithError(err).Error("Cannot logout user")
+		return users.NewDeleteSessionBadRequest()
+	}
+
+	_ = r.HookManager.Unauthenticate(ctx, user.AuthenticationMethod)
 	return users.NewDeleteSessionOK()
 }
 
