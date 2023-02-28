@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
+	"isc.org/stork/hooks/server/authenticationcallouts"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -937,7 +938,8 @@ func TestCreateSessionInvalidCredentials(t *testing.T) {
 	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
 }
 
-// Tests that new session can be created for a logged user.
+// Tests that new session can be created for a logged user that uses the
+// internal authentication.
 func TestCreateSession(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -975,6 +977,62 @@ func TestCreateSession(t *testing.T) {
 	delParams := users.DeleteSessionParams{}
 	rsp = rapi.DeleteSession(ctx2, delParams)
 	require.IsType(t, &users.DeleteSessionOK{}, rsp)
+}
+
+// Tests that new session can be created for a logged user that uses the
+// external authentication.
+func TestCreateSessionExternal(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	identifier := "foo@example.com"
+	secret := "secret"
+	authenticationMethod := "external"
+
+	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethod)
+
+	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	mock.EXPECT().
+		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
+		Return(&authenticationcallouts.User{
+			ID:       "external-id",
+			Login:    "foo",
+			Email:    identifier,
+			Lastname: "oof",
+			Name:     "ofo",
+		}, nil).
+		Times(1)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	params := users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:       &identifier,
+			Secret:           &secret,
+			AuthenticationID: &authenticationMethod,
+		},
+	}
+	rsp := rapi.CreateSession(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp)
+	okRsp := rsp.(*users.CreateSessionOK)
+	require.Greater(t, *okRsp.Payload.ID, int64(0))
 }
 
 // Test that the internal authentication method is always returned.

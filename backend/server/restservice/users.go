@@ -125,12 +125,41 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		}
 
 		systemUser = &dbmodel.SystemUser{
-			ID:       int(calloutUser.ID),
-			Login:    calloutUser.Login,
-			Email:    calloutUser.Email,
-			Lastname: calloutUser.Lastname,
-			Name:     calloutUser.Name,
-			Groups:   groups,
+			Login:                calloutUser.Login,
+			Email:                calloutUser.Email,
+			Lastname:             calloutUser.Lastname,
+			Name:                 calloutUser.Name,
+			Groups:               groups,
+			AuthenticationMethod: *params.Credentials.AuthenticationID,
+			ExternalID:           calloutUser.ID,
+		}
+
+		conflict, err := dbmodel.CreateUser(r.DB, systemUser)
+		if conflict {
+			internalID, err := dbmodel.GetUserIDByExternalID(
+				r.DB,
+				*params.Credentials.AuthenticationID,
+				calloutUser.ID,
+			)
+			if err != nil {
+				log.
+					WithError(err).
+					WithField("method", params.Credentials.AuthenticationID).
+					WithField("identifier", *params.Credentials.Identifier).
+					Error("Cannot fetch the internal user ID")
+				return users.NewCreateSessionBadRequest()
+			}
+
+			systemUser.ID = internalID
+			_, err = dbmodel.UpdateUser(r.DB, systemUser)
+		}
+		if err != nil {
+			log.
+				WithError(err).
+				WithField("method", params.Credentials.AuthenticationID).
+				WithField("identifier", *params.Credentials.Identifier).
+				Error("Cannot authenticate a user")
+			return users.NewCreateSessionBadRequest()
 		}
 	}
 

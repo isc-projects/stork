@@ -28,6 +28,7 @@ type SystemUser struct {
 	Lastname             string
 	Name                 string
 	AuthenticationMethod string `pg:"auth_method"`
+	ExternalID           string
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
@@ -157,7 +158,12 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
-	result, err := db.Model(user).ExcludeColumn("auth_method").WherePK().Update()
+	result, err := db.
+		Model(user).
+		ExcludeColumn("auth_method").
+		ExcludeColumn("external_id").
+		WherePK().
+		Update()
 	if err == nil {
 		if result.RowsAffected() <= 0 {
 			conflict = true
@@ -319,6 +325,27 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 		return nil, pkgerrors.Wrapf(err, "problem fetching user %v from the database", id)
 	}
 	return user, err
+}
+
+// Fetches the internal database ID of the user using the authentication method
+// and the external user ID. Returns zero and no error if the user doesn't
+// exist.
+func GetUserIDByExternalID(db *dbops.PgDB, authenticationMethod, externalID string) (internalID int, err error) {
+	err = db.Model((*SystemUser)(nil)).
+		Column("id").
+		Where("auth_method = ?", authenticationMethod).
+		Where("external_id = ?", externalID).
+		Select(&internalID)
+	if errors.Is(err, pg.ErrNoRows) {
+		return 0, nil
+	}
+	err = pkgerrors.Wrapf(
+		err,
+		"cannot fetch internal ID of the user authorized by %s with %s ID",
+		authenticationMethod,
+		externalID,
+	)
+	return
 }
 
 // Associates a user with a group. Currently only insertion by group id is supported.

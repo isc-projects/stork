@@ -35,8 +35,13 @@ func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) err
 // Register callout carriers.
 func (hm *HookManager) RegisterCalloutCarriers(carriers []hooks.CalloutCarrier) {
 	for _, carrier := range carriers {
-		hm.executor.registerCalloutCarrier(carrier)
+		hm.RegisterCalloutCarrier(carrier)
 	}
+}
+
+// Register a callout carrier.
+func (hm *HookManager) RegisterCalloutCarrier(carrier hooks.CalloutCarrier) {
+	hm.executor.registerCalloutCarrier(carrier)
 }
 
 // Get accessor of the executor to use with the Call functions.

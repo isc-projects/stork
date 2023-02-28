@@ -114,29 +114,33 @@ func TestUpdateNoUser(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that the authentication method cannot be changed.
-func TestUpdateUserAuthenticationMethod(t *testing.T) {
+// Test that the authentication method and external ID cannot be changed.
+func TestUpdateUserFixedMembers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	user := &SystemUser{
-		Email:    "foo@bar",
-		Lastname: "Bar",
-		Name:     "Foo",
+		Email:                "foo@bar",
+		Lastname:             "Bar",
+		Name:                 "Foo",
+		AuthenticationMethod: "foo",
+		ExternalID:           "foo",
 	}
 
 	_, _ = CreateUser(db, user)
 
 	// Act
-	user.AuthenticationMethod = "foobar"
+	user.AuthenticationMethod = "bar"
+	user.ExternalID = "bar"
 	conflict, err := UpdateUser(db, user)
 
 	// Assert
 	require.NoError(t, err)
 	require.False(t, conflict)
 	user, _ = GetUserByID(db, user.ID)
-	require.EqualValues(t, "internal", user.AuthenticationMethod)
+	require.EqualValues(t, "foo", user.AuthenticationMethod)
+	require.EqualValues(t, "foo", user.ExternalID)
 }
 
 // Test that the user is created properly.
@@ -284,6 +288,7 @@ func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testin
 		Login:                "same",
 		Email:                "unique",
 		AuthenticationMethod: "foo",
+		ExternalID:           "ex-id-1",
 		Name:                 "n-login",
 		Lastname:             "l-login",
 	})
@@ -291,6 +296,7 @@ func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testin
 		Login:                "unique",
 		Email:                "same",
 		AuthenticationMethod: "foo",
+		ExternalID:           "ex-id-2",
 		Name:                 "n-email",
 		Lastname:             "l-email",
 	})
@@ -618,6 +624,36 @@ func TestUserGroups(t *testing.T) {
 	require.Len(t, returned.Groups, 1)
 	require.False(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
+}
+
+// Test that the internal database ID is fetched by the authentication method
+// and the external ID properly.
+func TestGetUserIDByExternalID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:                "login",
+		Email:                "email@example.com",
+		Lastname:             "Last",
+		Name:                 "Name",
+		AuthenticationMethod: "method",
+		ExternalID:           "externalID",
+	}
+
+	_, _ = CreateUser(db, user)
+
+	// Act
+	nonExistUserID, nonExistErr := GetUserIDByExternalID(db, "method", "nonExistingID")
+	internalID, err := GetUserIDByExternalID(db, "method", "externalID")
+
+	// Assert
+	require.NoError(t, nonExistErr)
+	require.Zero(t, nonExistUserID)
+
+	require.NoError(t, err)
+	require.EqualValues(t, user.ID, internalID)
 }
 
 // Test that user can be associated with a group and then the groups

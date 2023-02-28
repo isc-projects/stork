@@ -36,7 +36,7 @@ type AuthenticationMetadataForm interface {
 // heavy dbmodel dependencies.
 type User struct {
 	// It must be a unique and persistent ID.
-	ID       int64
+	ID       string
 	Login    string
 	Email    string
 	Lastname string

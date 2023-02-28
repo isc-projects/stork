@@ -47,12 +47,30 @@ func init() {
 
 			ALTER TABLE system_user
                ADD CONSTRAINT system_user_email_unique_idx UNIQUE (auth_method, email);
+
+			-- Add a column for an external ID.
+			ALTER TABLE system_user ADD COLUMN external_id TEXT;
+
+			ALTER TABLE system_user
+				ADD CONSTRAINT system_user_external_id_unique_idx UNIQUE (auth_method, external_id);
+
+			ALTER TABLE system_user
+				ADD CONSTRAINT system_user_external_id_required_for_external_users CHECK (
+					(auth_method = 'internal') = (external_id IS NULL)
+				);
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
 			-- We cannot drop the rows representing the external users
 			-- because it causes to drop the related data.
+
+			-- Drop the external ID column.
+			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_required_for_external_users;
+
+			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_unique_idx;
+
+			ALTER TABLE system_user DROP COLUMN external_id;
 
 			-- Modify logins and emails of the external users to ensure they
 			-- are unique.

@@ -27,8 +27,8 @@ func TestAuthenticate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	username := "foo"
-	password := "bar"
+	identifier := "foo"
+	secret := "bar"
 
 	metadataMock := NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().
@@ -37,9 +37,9 @@ func TestAuthenticate(t *testing.T) {
 
 	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
-		Authenticate(gomock.Any(), gomock.Any(), &username, &password).
+		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
 		Return(&authenticationcallouts.User{
-			ID:       42,
+			ID:       "42",
 			Login:    "foo",
 			Email:    "foo@example.com",
 			Lastname: "oof",
@@ -52,26 +52,26 @@ func TestAuthenticate(t *testing.T) {
 		Return(metadataMock)
 
 	hookManager := NewHookManager()
-	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock})
+	hookManager.RegisterCalloutCarrier(mock)
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "mock", &username, &password)
+	user, err := hookManager.Authenticate(context.Background(), nil, "mock", &identifier, &secret)
 
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "foo@example.com", user.Email)
 }
 
-// Test that only first authentication callout is called.
-func TestAuthenticateIsSingle(t *testing.T) {
+// Test that only first matching authentication callout is called.
+func TestAuthenticateOnlyFirst(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	metadataMock1 := NewMockAuthenticationMetadata(ctrl)
-	metadataMock1.EXPECT().
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
 		GetID().
-		Return("mock1")
+		Return("mock")
 
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
@@ -80,7 +80,7 @@ func TestAuthenticateIsSingle(t *testing.T) {
 		Times(1)
 	mock1.EXPECT().
 		GetMetadata().
-		Return(metadataMock1)
+		Return(metadataMock)
 
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
@@ -92,7 +92,7 @@ func TestAuthenticateIsSingle(t *testing.T) {
 	hookManager.RegisterCalloutCarriers([]hooks.CalloutCarrier{mock1, mock2})
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "mock1", nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "mock", nil, nil)
 
 	// Assert
 	require.NoError(t, err)

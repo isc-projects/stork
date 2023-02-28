@@ -300,6 +300,7 @@ func TestMigration51PreserveExternalAccounts(t *testing.T) {
 		Name:                 "Foo",
 		Lastname:             "Oof",
 		AuthenticationMethod: "bar",
+		ExternalID:           "foo",
 	}
 
 	_, _ = dbmodel.CreateUser(db, externalUser)
