@@ -114,6 +114,31 @@ func TestUpdateNoUser(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test that the authentication method cannot be changed.
+func TestUpdateUserAuthenticationMethod(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Email:    "foo@bar",
+		Lastname: "Bar",
+		Name:     "Foo",
+	}
+
+	_, _ = CreateUser(db, user)
+
+	// Act
+	user.AuthenticationMethod = "foobar"
+	conflict, err := UpdateUser(db, user)
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, conflict)
+	user, _ = GetUserByID(db, user.ID)
+	require.EqualValues(t, "default", user.AuthenticationMethod)
+}
+
 // Test that the user is created properly.
 func TestCreateUser(t *testing.T) {
 	// Arrange

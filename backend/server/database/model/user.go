@@ -22,11 +22,12 @@ const AuthenticationMethodIDDefault string = "default"
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
-	ID       int
-	Login    string
-	Email    string
-	Lastname string
-	Name     string
+	ID                   int
+	Login                string
+	Email                string
+	Lastname             string
+	Name                 string
+	AuthenticationMethod string `pg:"auth_method"`
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
@@ -156,7 +157,7 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
-	result, err := db.Model(user).WherePK().Update()
+	result, err := db.Model(user).ExcludeColumn("auth_method").WherePK().Update()
 	if err == nil {
 		if result.RowsAffected() <= 0 {
 			conflict = true
