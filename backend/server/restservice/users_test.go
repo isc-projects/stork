@@ -787,10 +787,12 @@ func TestGetUsers(t *testing.T) {
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
-		Email:    "jd@example.org",
-		Lastname: "Doe",
-		Login:    "johndoe",
-		Name:     "John",
+		Email:                "jd@example.org",
+		Lastname:             "Doe",
+		Login:                "johndoe",
+		Name:                 "John",
+		AuthenticationMethod: "LDAP",
+		ExternalID:           "34ddae6b-f702-469d-8796-63c853496c49",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -829,12 +831,16 @@ func TestGetUsers(t *testing.T) {
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Name)
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Lastname)
 	require.Equal(t, "", *okRsp.Payload.Items[0].Email)
+	require.Equal(t, dbmodel.AuthenticationMethodIDInternal, *okRsp.Payload.Items[0].AuthenticationMethod)
+	require.Empty(t, *&okRsp.Payload.Items[0].ExternalID)
 
 	// Check the user we just added
 	require.Equal(t, "johndoe", *okRsp.Payload.Items[1].Login)
 	require.Equal(t, "John", *okRsp.Payload.Items[1].Name)
 	require.Equal(t, "Doe", *okRsp.Payload.Items[1].Lastname)
 	require.Equal(t, "jd@example.org", *okRsp.Payload.Items[1].Email)
+	require.Equal(t, "LDAP", *okRsp.Payload.Items[1].AuthenticationMethod)
+	require.Equal(t, "34ddae6b-f702-469d-8796-63c853496c49", *&okRsp.Payload.Items[1].ExternalID)
 
 	// Make sure the ID of the new user is different.
 	// TODO: implement new test that add 100 users and verifies uniqueness of their IDs

@@ -6,6 +6,7 @@
       - email
       - name
       - lastname
+      - authenticationMethod
     properties:
       id:
         type: integer
@@ -16,6 +17,10 @@
       name:
         type: string
       lastname:
+        type: string
+      authenticationMethod:
+        type: string
+      externalID:
         type: string
       groups:
         type: array

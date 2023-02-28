@@ -21,12 +21,14 @@ import (
 func newRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.ID)
 	r := &models.User{
-		Email:    &u.Email,
-		Name:     &u.Name,
-		ID:       &id,
-		Lastname: &u.Lastname,
-		Login:    &u.Login,
-		Groups:   []int64{},
+		Email:                &u.Email,
+		Name:                 &u.Name,
+		ID:                   &id,
+		Lastname:             &u.Lastname,
+		Login:                &u.Login,
+		Groups:               []int64{},
+		AuthenticationMethod: &u.AuthenticationMethod,
+		ExternalID:           u.ExternalID,
 	}
 
 	// Append an array of groups.

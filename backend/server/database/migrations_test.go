@@ -282,7 +282,7 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 // is preserved if the migration is reverted.
 func TestMigration51PreserveExternalAccounts(t *testing.T) {
 	// Arrange
-	db, _, teardown := SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	internalUser := &dbmodel.SystemUser{
