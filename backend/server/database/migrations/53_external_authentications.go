@@ -33,7 +33,7 @@ func init() {
                 FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
 			-- Add a column for an authentication method.
-			ALTER TABLE system_user ADD COLUMN auth_method TEXT DEFAULT 'default' NOT NULL;
+			ALTER TABLE system_user ADD COLUMN auth_method TEXT DEFAULT 'internal' NOT NULL;
 
 			-- Update constraints for login and email.
 			ALTER TABLE system_user
@@ -60,7 +60,7 @@ func init() {
 			SET email = n.email || '.' || n.auth_method,
 				login = n.login || '_' || n.auth_method
 			FROM system_user n
-			WHERE o.id = n.id AND o.auth_method != 'default';
+			WHERE o.id = n.id AND o.auth_method != 'internal';
 
 			-- Restore the original unique indexes.
 			ALTER TABLE system_user

@@ -136,7 +136,7 @@ func TestUpdateUserAuthenticationMethod(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, conflict)
 	user, _ = GetUserByID(db, user.ID)
-	require.EqualValues(t, "default", user.AuthenticationMethod)
+	require.EqualValues(t, "internal", user.AuthenticationMethod)
 }
 
 // Test that the user is created properly.
@@ -165,7 +165,7 @@ func TestCreateUser(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
-	require.EqualValues(t, "default", dbUser.AuthenticationMethod)
+	require.EqualValues(t, "internal", dbUser.AuthenticationMethod)
 	// Check if there is no password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -199,7 +199,7 @@ func TestCreateUserWithPassword(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
-	require.EqualValues(t, "default", dbUser.AuthenticationMethod)
+	require.EqualValues(t, "internal", dbUser.AuthenticationMethod)
 	// Check if there is a password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID

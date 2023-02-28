@@ -977,8 +977,8 @@ func TestCreateSession(t *testing.T) {
 	require.IsType(t, &users.DeleteSessionOK{}, rsp)
 }
 
-// Test that the default authentication method is always returned.
-func TestGetAuthenticationMethodsDefault(t *testing.T) {
+// Test that the internal authentication method is always returned.
+func TestGetAuthenticationMethodsInternal(t *testing.T) {
 	// Arrange
 	dbSettings := &dbops.DatabaseSettings{}
 	ctx := context.Background()
@@ -993,7 +993,7 @@ func TestGetAuthenticationMethodsDefault(t *testing.T) {
 	responseOk := response.(*users.GetAuthenticationMethodsOK)
 	require.EqualValues(t, 1, responseOk.Payload.Total)
 	require.Len(t, responseOk.Payload.Items, 1)
-	require.EqualValues(t, "default", responseOk.Payload.Items[0].ID)
+	require.EqualValues(t, "internal", responseOk.Payload.Items[0].ID)
 }
 
 // Test that the authentication methods from hooks are included in the response.
@@ -1038,7 +1038,7 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	require.EqualValues(t, 4, responseOk.Payload.Total)
 	require.Len(t, responseOk.Payload.Items, 4)
 
-	require.EqualValues(t, "default", responseOk.Payload.Items[0].ID)
+	require.EqualValues(t, "internal", responseOk.Payload.Items[0].ID)
 
 	for i, method := range responseOk.Payload.Items[1:] {
 		require.EqualValues(t, fmt.Sprintf("mock-%d", i), method.ID)

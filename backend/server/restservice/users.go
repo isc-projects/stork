@@ -52,7 +52,9 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 	return r
 }
 
-func (r *RestAPI) defaultAuthentication(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+// The internal authentication flow based on the login and password stored in
+// the database.
+func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	user := &dbmodel.SystemUser{}
 	var identifier, secret string
 
@@ -87,12 +89,12 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		return users.NewCreateSessionBadRequest()
 	}
 
-	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" || *params.Credentials.AuthenticationID == dbmodel.AuthenticationMethodIDDefault {
-		systemUser, err = r.defaultAuthentication(params)
+	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" || *params.Credentials.AuthenticationID == dbmodel.AuthenticationMethodIDInternal {
+		systemUser, err = r.internalAuthentication(params)
 		if systemUser == nil || err != nil {
 			log.
 				WithError(err).
-				WithField("method", "default").
+				WithField("method", dbmodel.AuthenticationMethodIDInternal).
 				WithField("identifier", *params.Credentials.Identifier).
 				Error("Cannot authenticate a user")
 			return users.NewCreateSessionBadRequest()
@@ -153,7 +155,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 		return users.NewDeleteSessionBadRequest()
 	}
 	// ToDo: Use a specific authentication method.
-	_ = r.HookManager.Unauthenticate(ctx, "default")
+	_ = r.HookManager.Unauthenticate(ctx, "internal")
 	return users.NewDeleteSessionOK()
 }
 
@@ -556,9 +558,9 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 	metadata := r.HookManager.GetAuthenticationMetadata()
 
 	methods := []*models.AuthenticationMethod{{
-		ID:                  "default",
-		Name:                "Default",
-		Description:         "Default Stork authentication based on credentials from the internal database",
+		ID:                  "internal",
+		Name:                "Internal",
+		Description:         "Internal Stork authentication based on credentials from the internal database",
 		FormLabelIdentifier: "Email/Login",
 		FormLabelSecret:     "Password",
 	}}

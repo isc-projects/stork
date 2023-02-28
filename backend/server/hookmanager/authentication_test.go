@@ -136,14 +136,14 @@ func TestAuthenticateReturnError(t *testing.T) {
 	require.Nil(t, user)
 }
 
-// Test that the authentication callout returns a default value if no callouts
+// Test that the authentication callout returns a default value (nil) if no callouts
 // are registered.
 func TestAuthenticateDefault(t *testing.T) {
 	// Arrange
 	hookManager := NewHookManager()
 
 	// Act
-	user, err := hookManager.Authenticate(context.Background(), nil, "default", nil, nil)
+	user, err := hookManager.Authenticate(context.Background(), nil, "internal", nil, nil)
 
 	// Assert
 	require.ErrorContains(t, err, "authentication method is not supported")
