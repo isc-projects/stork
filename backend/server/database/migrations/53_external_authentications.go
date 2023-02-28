@@ -33,11 +33,48 @@ func init() {
                 FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
 			-- Add a column for an authentication method.
-			ALTER TABLE system_user ADD COLUMN auth_method VARCHAR(255) DEFAULT 'default';
+			ALTER TABLE system_user ADD COLUMN auth_method TEXT DEFAULT 'default' NOT NULL;
+
+			-- Update constraints for login and email.
+			ALTER TABLE system_user
+               DROP CONSTRAINT system_user_login_unique_idx;
+
+			ALTER TABLE system_user
+               ADD CONSTRAINT system_user_login_unique_idx UNIQUE (auth_method, login);
+
+			ALTER TABLE system_user
+               DROP CONSTRAINT system_user_email_unique_idx;
+
+			ALTER TABLE system_user
+               ADD CONSTRAINT system_user_email_unique_idx UNIQUE (auth_method, email);
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+			-- We cannot drop the rows representing the external users
+			-- because it causes to drop the related data.
+
+			-- Modify logins and emails of the external users to ensure they
+			-- are unique.
+			UPDATE system_user o
+			SET email = n.email || '.' || n.auth_method,
+				login = n.login || '_' || n.auth_method
+			FROM system_user n
+			WHERE o.id = n.id AND o.auth_method != 'default';
+
+			-- Restore the original unique indexes.
+			ALTER TABLE system_user
+               DROP CONSTRAINT system_user_login_unique_idx;
+
+			ALTER TABLE system_user
+               ADD CONSTRAINT system_user_login_unique_idx UNIQUE (login);
+
+			ALTER TABLE system_user
+               DROP CONSTRAINT system_user_email_unique_idx;
+
+			ALTER TABLE system_user
+               ADD CONSTRAINT system_user_email_unique_idx UNIQUE (email);
+
 			-- Drop the authentication method column.
 			ALTER TABLE system_user DROP COLUMN auth_method;
 
@@ -46,7 +83,8 @@ func init() {
 
 			-- Create the password hash column in the system user table.
 			-- Generate the random password for all rows.
-			ALTER TABLE system_user ADD COLUMN password_hash TEXT NOT NULL DEFAULT crypt(md5(random()::text), gen_salt('bf'));
+			ALTER TABLE system_user
+			ADD COLUMN password_hash TEXT NOT NULL DEFAULT crypt(md5(random()::text), gen_salt('bf'));
 
 			-- Drop the default statement.
 			ALTER TABLE system_user ALTER COLUMN password_hash DROP DEFAULT;

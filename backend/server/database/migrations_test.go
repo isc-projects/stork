@@ -277,3 +277,54 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 6, family)
 }
+
+// Test that the user account created using the external authorization service
+// is preserved if the migration is reverted.
+func TestMigration51PreserveExternalAccounts(t *testing.T) {
+	// Arrange
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
+
+	internalUser := &dbmodel.SystemUser{
+		Login:    "foo",
+		Email:    "foo@example.com",
+		Name:     "Foo",
+		Lastname: "Oof",
+	}
+
+	_, _ = dbmodel.CreateUserWithPassword(db, internalUser, "foo")
+
+	externalUser := &dbmodel.SystemUser{
+		Login:                "foo",
+		Email:                "foo@example.com",
+		Name:                 "Foo",
+		Lastname:             "Oof",
+		AuthenticationMethod: "bar",
+	}
+
+	_, _ = dbmodel.CreateUser(db, externalUser)
+
+	// Act
+	_, _, err := dbops.Migrate(db, "down", "50")
+
+	// Assert
+	require.NoError(t, err)
+
+	// The system user model without new fields.
+	type legacyUser struct {
+		tableName struct{} `pg:"system_user"`
+		ID        int
+		Login     string
+		Email     string
+	}
+
+	internalLegacyUser := &legacyUser{ID: internalUser.ID}
+	_ = db.Model(internalLegacyUser).WherePK().Select()
+	require.EqualValues(t, "foo", internalLegacyUser.Login)
+	require.EqualValues(t, "foo@example.com", internalLegacyUser.Email)
+
+	externalLegacyUser := &legacyUser{ID: externalUser.ID}
+	_ = db.Model(externalLegacyUser).WherePK().Select()
+	require.EqualValues(t, "foo_bar", externalLegacyUser.Login)
+	require.EqualValues(t, "foo@example.com.bar", externalLegacyUser.Email)
+}
