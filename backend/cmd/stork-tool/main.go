@@ -157,20 +157,28 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 	db := getDBConn(settings)
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
+	if err == nil && newVersion == 0 {
+		// Init operation doesn't fetch the database version but it doesn't
+		// change the version.
+		newVersion, err = dbops.CurrentVersion(db)
+		oldVersion = newVersion
+	}
 	_ = db.Close()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	if newVersion != oldVersion {
+	availVersion := dbops.AvailableVersion()
+
+	switch {
+	case newVersion != oldVersion:
 		log.Infof("Migrated database from version %d to %d\n", oldVersion, newVersion)
-	} else {
-		availVersion := dbops.AvailableVersion()
-		if availVersion == oldVersion {
-			log.Infof("Database version is %d (up-to-date)\n", oldVersion)
-		} else {
-			log.Infof("Database version is %d (new version %d available)\n", oldVersion, availVersion)
-		}
+	case newVersion == 0:
+		log.Infof("Database schema is empty (version 0)")
+	case availVersion == oldVersion:
+		log.Infof("Database version is %d (up-to-date)\n", oldVersion)
+	default:
+		log.Infof("Database version is %d (new version %d available)\n", oldVersion, availVersion)
 	}
 }
 

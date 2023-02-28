@@ -500,10 +500,14 @@ namespace :db do
     end
 
     desc 'Migrate (and create) database to the newest version
+        FORCE_MIGRATION - reset database to the initial state and perform all migration again - default: false
         See db:setup_envvars task for more options.'
     task :migrate => [:setup_envvars, TOOL_BINARY_FILE] do
         sh TOOL_BINARY_FILE, "db-create"
         sh TOOL_BINARY_FILE, "db-init"
+        if ENV["FORCE_MIGRATION"] == "true"
+            sh TOOL_BINARY_FILE, "db-reset"
+        end
         sh TOOL_BINARY_FILE, "db-up"
     end
 
@@ -644,7 +648,6 @@ namespace :gen do
             end
         end
     end
-
 end
 
 
