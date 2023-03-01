@@ -3,7 +3,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { UntypedFormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms'
+import { ActivatedRoute, Router } from '@angular/router'
+import { UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms'
 import { UsersService } from '../backend'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -16,7 +17,6 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { MenuModule } from 'primeng/menu'
 import { RouterTestingModule } from '@angular/router/testing'
 import { PasswordModule } from 'primeng/password'
-import { PasswordChangeFormComponent } from '../password-change-form/password-change-form.component'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -24,25 +24,27 @@ describe('PasswordChangePageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [UntypedFormBuilder, UsersService, MessageService],
+            providers: [
+                UntypedFormBuilder,
+                UsersService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
             imports: [
-                BreadcrumbModule,
-                MenuModule,
                 HttpClientTestingModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
                 PanelModule,
-                PasswordModule,
+                NoopAnimationsModule,
+                BreadcrumbModule,
+                OverlayPanelModule,
+                MenuModule,
                 RouterTestingModule,
                 ReactiveFormsModule,
+                PasswordModule,
             ],
-            declarations: [
-                PasswordChangePageComponent,
-                PasswordChangeFormComponent,
-                BreadcrumbsComponent,
-                SettingsMenuComponent,
-                HelpTipComponent,
-            ],
+            declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
         }).compileComponents()
     }))
 
