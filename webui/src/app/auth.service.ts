@@ -20,11 +20,7 @@ export class AuthService {
     public user: User
     private authenticationMethods: Observable<AuthenticationMethod[]>
 
-    constructor(
-        private api: UsersService,
-        private router: Router,
-        private msgSrv: MessageService
-    ) {
+    constructor(private api: UsersService, private router: Router, private msgSrv: MessageService) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
         this.authenticationMethods = api.getAuthenticationMethods().pipe(
@@ -65,7 +61,7 @@ export class AuthService {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Invalid login or password',
-                    detail: message
+                    detail: message,
                 })
             }
         )
