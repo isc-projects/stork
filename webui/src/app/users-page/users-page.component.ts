@@ -195,7 +195,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         // The new tab is now current one
         this.userTab = userTab
         this.tabs.push({
-            label: tabType === UserTabType.NewUser ? 'new account' : user.login || user.email,
+            label: tabType === UserTabType.NewUser ? 'New account' : user.login || user.email,
             routerLink: userTab.tabRoute,
         })
         this.switchToTab(this.tabs.length - 1)
@@ -269,7 +269,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             userPassword2: ['', Validators.required],
         })
 
-        // Search opened tabs for the 'new account' type.
+        // Search opened tabs for the 'New account' type.
         for (const i in this.openedTabs) {
             if (this.openedTabs[i].tabType === UserTabType.NewUser) {
                 // The tab exists, simply activate it.
@@ -581,6 +581,15 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      */
     userFormCancel() {
         this.closeActiveTab()
+    }
+
+    /**
+     * Indicates if the user in an active tab is managed by an internal
+     * authentication service
+     */
+    isInternalUser() {
+        const authenticationMethod = this.userTab.user.authenticationMethod
+        return authenticationMethod == '' || authenticationMethod == 'internal'
     }
 
     /**

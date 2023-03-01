@@ -49,7 +49,7 @@
                     <b>External ID:</b>
                 </div>
                 <div class="col-11">
-                    {{ currentUser.externalId }}
+                    {{ currentUser.externalId ?? '(not specified)' }}
                 </div>
             </div>
         </p-panel>
