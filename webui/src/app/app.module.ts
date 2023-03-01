@@ -110,6 +110,7 @@ import { HumanCountPipe } from './pipes/human-count.pipe'
 import { LocaltimePipe } from './pipes/localtime.pipe'
 import { SurroundPipe } from './pipes/surround.pipe'
 import { AccessPointKeyComponent } from './access-point-key/access-point-key.component'
+import { PasswordChangeFormComponent } from './password-change-form/password-change-form.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -176,6 +177,7 @@ export function cfgFactory() {
         NumberPipe,
         SurroundPipe,
         AccessPointKeyComponent,
+        PasswordChangeFormComponent,
     ],
     imports: [
         BrowserModule,
