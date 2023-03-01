@@ -9,6 +9,7 @@ import { AuthService } from './auth.service'
 import { LoadingService } from './loading.service'
 import { SettingService } from './setting.service'
 import { ServerDataService } from './server-data.service'
+import { User } from './backend'
 
 @Component({
     selector: 'app-root',
@@ -18,7 +19,7 @@ import { ServerDataService } from './server-data.service'
 export class AppComponent implements OnInit {
     storkVersion = 'unknown'
     storkBuildDate = 'unknown'
-    currentUser = null
+    currentUser: User = null
     loadingInProgress = new Observable()
     userMenuItems: MenuItem[]
 

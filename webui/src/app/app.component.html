@@ -36,7 +36,7 @@
     </div>
 
     <p-splitButton
-        label="Logout ({{ this.currentUser.username || this.currentUser.email }})"
+        label="Logout ({{ this.currentUser.login || this.currentUser.email }})"
         icon="pi pi-sign-out"
         id="logout-button"
         [style]="{ margin: '0 0.4em 0 0.25em' }"
