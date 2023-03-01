@@ -6,7 +6,6 @@ import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'prime
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
-import { UserAccount } from '../backend/model/models'
 import { Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 
@@ -452,6 +451,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             name: this.userform.controls.userfirst.value,
             lastname: this.userform.controls.userlast.value,
             groups: [this.userform.controls.usergroup.value.id],
+            authenticationMethod: 'internal',
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
@@ -490,6 +490,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             name: this.userform.controls.userfirst.value,
             lastname: this.userform.controls.userlast.value,
             groups: [this.userform.controls.usergroup.value.id],
+            authenticationMethod: 'internal',
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
