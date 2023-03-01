@@ -8,6 +8,7 @@ import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
 import { Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
+import { User } from '../backend'
 
 /**
  * An enum specifying tab types in the user view
@@ -32,12 +33,12 @@ export class UserTab {
     /**
      * Instance of the reactive form belonging to the tab
      */
-    public userform: UntypedFormGroup
+    public userForm: UntypedFormGroup
 
     /**
      * Constructor
      */
-    constructor(public tabType: UserTabType, public user: any) {}
+    constructor(public tabType: UserTabType, public user: User) {}
 
     /**
      * Returns route associated with this tab
@@ -134,8 +135,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *
      * @returns instance of the form or null if the current tab includes no form.
      */
-    get userform(): UntypedFormGroup {
-        return this.userTab ? this.userTab.userform : null
+    get userForm(): UntypedFormGroup {
+        return this.userTab ? this.userTab.userForm : null
     }
 
     /**
@@ -213,40 +214,40 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         // validator which checks if the password and confirmed password
         // match. The validator allows leaving an empty password in which
         // case the password won't be modified.
-        const userform = this.formBuilder.group(
+        const userForm = this.formBuilder.group(
             {
-                userlogin: ['', Validators.required],
-                useremail: ['', Validators.email],
-                userfirst: ['', Validators.required],
-                userlast: ['', Validators.required],
-                usergroup: ['', Validators.required],
-                userpassword: ['', Validators.minLength(8)],
-                userpassword2: ['', Validators.minLength(8)],
+                userLogin: ['', Validators.required],
+                userEmail: ['', Validators.email],
+                userFirst: ['', Validators.required],
+                userLast: ['', Validators.required],
+                userGroup: ['', Validators.required],
+                userPassword: ['', Validators.minLength(8)],
+                userPassword2: ['', Validators.minLength(8)],
             },
-            { validators: [matchPasswords('userpassword', 'userpassword2')] }
+            { validators: [matchPasswords('userPassword', 'userPassword2')] }
         )
 
         // Modify the current tab type to 'edit'.
         tab.tabType = UserTabType.EditedUser
 
         // Set default values for the fields which may be edited by the user.
-        userform.patchValue({
-            userlogin: this.userTab.user.login,
-            useremail: this.userTab.user.email,
-            userfirst: this.userTab.user.name,
-            userlast: this.userTab.user.lastname,
+        userForm.patchValue({
+            userLogin: this.userTab.user.login,
+            userEmail: this.userTab.user.email,
+            userFirst: this.userTab.user.name,
+            userLast: this.userTab.user.lastname,
         })
 
         if (this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
-            userform.patchValue({
-                usergroup: {
+            userForm.patchValue({
+                userGroup: {
                     id: this.groups[this.userTab.user.groups[0] - 1].id,
                     name: this.groups[this.userTab.user.groups[0] - 1].name,
                 },
             })
         }
 
-        this.userTab.userform = userform
+        this.userTab.userForm = userForm
     }
 
     /**
@@ -258,14 +259,14 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     showNewUserTab() {
         // Specify the validators for the new user form. The last two
         // validators require password and confirmed password to exist.
-        const userform = this.formBuilder.group({
-            userlogin: ['', Validators.required],
-            useremail: ['', Validators.email],
-            userfirst: ['', Validators.required],
-            userlast: ['', Validators.required],
-            usergroup: ['', Validators.required],
-            userpassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
-            userpassword2: ['', Validators.required],
+        const userForm = this.formBuilder.group({
+            userLogin: ['', Validators.required],
+            userEmail: ['', Validators.email],
+            userFirst: ['', Validators.required],
+            userLast: ['', Validators.required],
+            userGroup: ['', Validators.required],
+            userPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
+            userPassword2: ['', Validators.required],
         })
 
         // Search opened tabs for the 'new account' type.
@@ -278,7 +279,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
         // The tab doesn't exist, so open it and activate it.
         this.addUserTab(UserTabType.NewUser, null)
-        this.userTab.userform = userform
+        this.userTab.userForm = userForm
     }
 
     /**
@@ -446,14 +447,14 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     private newUserSave() {
         const user = {
             id: 0,
-            login: this.userform.controls.userlogin.value,
-            email: this.userform.controls.useremail.value,
-            name: this.userform.controls.userfirst.value,
-            lastname: this.userform.controls.userlast.value,
-            groups: [this.userform.controls.usergroup.value.id],
-            authenticationMethod: 'internal',
+            login: this.userForm.controls.userLogin.value,
+            email: this.userForm.controls.userEmail.value,
+            name: this.userForm.controls.userFirst.value,
+            lastname: this.userForm.controls.userLast.value,
+            groups: [this.userForm.controls.userGroup.value.id],
+            authenticationMethod: '',
         }
-        const password = this.userform.controls.userpassword.value
+        const password = this.userForm.controls.userPassword.value
         const account = { user, password }
         this.usersApi
             .createUser(account)
@@ -485,14 +486,14 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     private editedUserSave() {
         const user = {
             id: this.userTab.user.id,
-            login: this.userform.controls.userlogin.value,
-            email: this.userform.controls.useremail.value,
-            name: this.userform.controls.userfirst.value,
-            lastname: this.userform.controls.userlast.value,
-            groups: [this.userform.controls.usergroup.value.id],
-            authenticationMethod: 'internal',
+            login: this.userForm.controls.userLogin.value,
+            email: this.userForm.controls.userEmail.value,
+            name: this.userForm.controls.userFirst.value,
+            lastname: this.userForm.controls.userLast.value,
+            groups: [this.userForm.controls.userGroup.value.id],
+            authenticationMethod: '',
         }
-        const password = this.userform.controls.userpassword.value
+        const password = this.userForm.controls.userPassword.value
         const account = { user, password }
         this.usersApi
             .updateUser(account)

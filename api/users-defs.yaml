@@ -20,7 +20,7 @@
         type: string
       authenticationMethod:
         type: string
-      externalID:
+      externalId:
         type: string
       groups:
         type: array

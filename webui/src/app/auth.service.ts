@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core'
-import { HttpClient } from '@angular/common/http'
-import { Router, ActivatedRoute } from '@angular/router'
+import { Router } from '@angular/router'
 import { BehaviorSubject, Observable } from 'rxjs'
 import { map, shareReplay, switchMap } from 'rxjs/operators'
 
@@ -9,24 +8,8 @@ import { MessageService } from 'primeng/api'
 import { UsersService } from './backend/api/users.service'
 import { AuthenticationMethod } from './backend/model/authenticationMethod'
 import { SessionCredentials } from './backend/model/sessionCredentials'
-
-export class User {
-    id: number
-    username: string
-    email: string
-    firstName: string
-    lastName: string
-    groups: number[]
-}
-
-/**
- * Represents system group fetched from the database.
- */
-export class SystemGroup {
-    id: number
-    name: string
-    description: string
-}
+import { User } from './backend'
+import { getErrorMessage } from './utils'
 
 @Injectable({
     providedIn: 'root',
@@ -38,7 +21,6 @@ export class AuthService {
     private authenticationMethods: Observable<AuthenticationMethod[]>
 
     constructor(
-        private http: HttpClient,
         private api: UsersService,
         private router: Router,
         private msgSrv: MessageService
@@ -70,24 +52,8 @@ export class AuthService {
         let user: User
         const credentials: SessionCredentials = { authenticationId, identifier, secret }
         this.api.createSession(credentials).subscribe(
-            (data) => {
-                if (data.id != null) {
-                    user = new User()
-
-                    user.id = data.id
-                    user.username = data.login
-                    user.email = data.email
-                    user.firstName = data.name
-                    user.lastName = data.lastname
-
-                    // Store groups the user belongs to.
-                    user.groups = []
-                    for (const i in data.groups) {
-                        if (data.groups.hasOwnProperty(i)) {
-                            user.groups.push(data.groups[i])
-                        }
-                    }
-
+            (user) => {
+                if (user.id != null) {
                     this.currentUserSubject.next(user)
                     localStorage.setItem('currentUser', JSON.stringify(user))
                     // ToDo: Unhandled exception from promise
@@ -95,7 +61,12 @@ export class AuthService {
                 }
             },
             (err) => {
-                this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
+                const message = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Invalid login or password',
+                    detail: message
+                })
             }
         )
         return user

@@ -25,7 +25,7 @@
                     <b>Login:</b>
                 </div>
                 <div class="col-11">
-                    {{ currentUser.username }}
+                    {{ currentUser.login }}
                 </div>
                 <div class="col-1">
                     <b>Email:</b>
@@ -38,6 +38,18 @@
                 </div>
                 <div class="col-11">
                     {{ groupName }}
+                </div>
+                <div class="col-1">
+                    <b>Authentication:</b>
+                </div>
+                <div class="col-11">
+                    {{ currentUser.authenticationMethod }}
+                </div>
+                <div class="col-1">
+                    <b>External ID:</b>
+                </div>
+                <div class="col-11">
+                    {{ currentUser.externalId }}
                 </div>
             </div>
         </p-panel>

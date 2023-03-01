@@ -61,6 +61,8 @@
                 <th>First name</th>
                 <th>Last name</th>
                 <th>Group</th>
+                <th>Authentication</th>
+                <th>External ID</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-u>
@@ -75,6 +77,8 @@
                 <td align="center">{{ u.name }}</td>
                 <td align="center">{{ u.lastname }}</td>
                 <td align="center">{{ u.groups.length > 0 ? getGroupName(u.groups[0]) : 0 }}</td>
+                <td align="center">{{ u.authenticationMethod }}</td>
+                <td align="center">{{ u.externalId }}</td>
             </tr>
         </ng-template>
         <ng-template pTemplate="paginatorright" let-state>
@@ -125,6 +129,22 @@
                         <div class="col-2">Group:</div>
                         <div class="col-10">
                             {{ userTab.user.groups.length > 0 ? getGroupName(userTab.user.groups[0]) : 0 }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="grid">
+                        <div class="col-2">Authentication:</div>
+                        <div class="col-10">
+                            {{ userTab.user.authenticationMethod }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12" *ngIf="userTab.user.authenticationMethod != 'internal'">
+                    <div class="grid">
+                        <div class="col-2">External ID:</div>
+                        <div class="col-10">
+                            {{ userTab.user.externalId }}
                         </div>
                     </div>
                 </div>
@@ -188,7 +208,7 @@
                 </p-panel>
             </div>
             <div class="col-7">
-                <form [formGroup]="userform">
+                <form [formGroup]="userForm">
                     <p-panel header="User account">
                         <div class="grid">
                             <div class="col-2">Login*:</div>
@@ -198,7 +218,7 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            formControlName="userlogin"
+                                            formControlName="userLogin"
                                             id="user-login"
                                             class="user-input"
                                             pattern="[a-zA-Z0-9_]*"
@@ -209,8 +229,8 @@
                                             severity="error"
                                             text="Login must only contain letters, digits, or underscore"
                                             *ngIf="
-                                                !userform.controls['userlogin'].valid &&
-                                                userform.controls['userlogin'].dirty
+                                                !userForm.controls['userLogin'].valid &&
+                                                userForm.controls['userLogin'].dirty
                                             "
                                         ></p-message>
                                     </div>
@@ -225,7 +245,7 @@
                                             pInputText
                                             type="text"
                                             class="user-input"
-                                            formControlName="useremail"
+                                            formControlName="userEmail"
                                             id="usermail"
                                         />
                                     </div>
@@ -234,9 +254,9 @@
                                             severity="error"
                                             text="Email is incorrect"
                                             *ngIf="
-                                                !userform.controls['useremail'].valid &&
-                                                userform.controls['useremail'].dirty &&
-                                                userform.controls['useremail'].touched
+                                                !userForm.controls['userEmail'].valid &&
+                                                userForm.controls['userEmail'].dirty &&
+                                                userForm.controls['userEmail'].touched
                                             "
                                         ></p-message>
                                     </div>
@@ -250,8 +270,8 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            formControlName="userfirst"
-                                            id="userfirst"
+                                            formControlName="userFirst"
+                                            id="userFirst"
                                             class="user-input"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
@@ -259,11 +279,11 @@
                                     <div class="col-12">
                                         <p-message
                                             severity="error"
-                                            text="Firstname is invalid"
+                                            text="First name is invalid"
                                             *ngIf="
-                                                !userform.controls['userfirst'].valid &&
-                                                userform.controls['userfirst'].dirty &&
-                                                userform.controls['userfirst'].touched
+                                                !userForm.controls['userFirst'].valid &&
+                                                userForm.controls['userFirst'].dirty &&
+                                                userForm.controls['userFirst'].touched
                                             "
                                         ></p-message>
                                     </div>
@@ -277,8 +297,8 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            formControlName="userlast"
-                                            id="userlast"
+                                            formControlName="userLast"
+                                            id="userLast"
                                             class="user-input"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
@@ -288,9 +308,9 @@
                                             severity="error"
                                             text="Lastname is invalid"
                                             *ngIf="
-                                                !userform.controls['userlast'].valid &&
-                                                userform.controls['userlast'].dirty &&
-                                                userform.controls['userlast'].touched
+                                                !userForm.controls['userLast'].valid &&
+                                                userForm.controls['userLast'].dirty &&
+                                                userForm.controls['userLast'].touched
                                             "
                                         ></p-message>
                                     </div>
@@ -303,8 +323,8 @@
                                     <div class="col-12">
                                         <p-dropdown
                                             [options]="userGroups"
-                                            formControlName="usergroup"
-                                            id="usergroup"
+                                            formControlName="userGroup"
+                                            id="userGroup"
                                             [style]="{ width: '14em' }"
                                         ></p-dropdown>
                                     </div>
@@ -313,9 +333,9 @@
                                             severity="error"
                                             text="Please select a group"
                                             *ngIf="
-                                                !userform.controls['usergroup'].valid &&
-                                                userform.controls['usergroup'].dirty &&
-                                                userform.controls['usergroup'].touched
+                                                !userForm.controls['userGroup'].valid &&
+                                                userForm.controls['userGroup'].dirty &&
+                                                userForm.controls['userGroup'].touched
                                             "
                                         ></p-message>
                                     </div>
@@ -327,8 +347,8 @@
                                 <div class="grid">
                                     <div class="col-12">
                                         <p-password
-                                            formControlName="userpassword"
-                                            inputId="userpassword"
+                                            formControlName="userPassword"
+                                            inputId="userPassword"
                                             inputStyleClass="user-input"
                                             styleClass="password-component"
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
@@ -339,9 +359,9 @@
                                             severity="error"
                                             text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long"
                                             *ngIf="
-                                                !userform.controls['userpassword'].valid &&
-                                                userform.controls['userpassword'].dirty &&
-                                                userform.controls['userpassword'].touched
+                                                !userForm.controls['userPassword'].valid &&
+                                                userForm.controls['userPassword'].dirty &&
+                                                userForm.controls['userPassword'].touched
                                             "
                                         ></p-message>
                                     </div>
@@ -354,11 +374,11 @@
                                     <div class="col-12">
                                         <p-password
                                             [feedback]="false"
-                                            formControlName="userpassword2"
-                                            inputId="userpassword2"
+                                            formControlName="userPassword2"
+                                            inputId="userPassword2"
                                             inputStyleClass="user-input"
                                             styleClass="password-component"
-                                            pattern="{{ userform.controls['userpassword'].value }}"
+                                            pattern="{{ userForm.controls['userPassword'].value }}"
                                         ></p-password>
                                     </div>
                                     <div class="col-12">
@@ -366,8 +386,8 @@
                                             severity="error"
                                             text="Passwords must match"
                                             *ngIf="
-                                                !userform.controls['userpassword2'].valid &&
-                                                userform.controls['userpassword2'].dirty
+                                                !userForm.controls['userPassword2'].valid &&
+                                                userForm.controls['userPassword2'].dirty
                                             "
                                         ></p-message>
                                     </div>
@@ -378,7 +398,7 @@
                                 <button
                                     type="submit"
                                     pButton
-                                    [disabled]="userform.invalid"
+                                    [disabled]="userForm.invalid"
                                     class="btn btn-success"
                                     icon="pi pi-pencil"
                                     label="Save"

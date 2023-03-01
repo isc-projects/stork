@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
+import { User } from '../backend'
 
 /**
  * This component is for displaying information about the user's account.
@@ -13,13 +14,13 @@ import { ServerDataService } from '../server-data.service'
 export class ProfilePageComponent implements OnInit {
     breadcrumbs = [{ label: 'User Profile' }]
 
-    currentUser = null
+    currentUser: User = null
     private groups: any[]
     public groupName: string
 
     constructor(private auth: AuthService, private serverData: ServerDataService) {
-        this.auth.currentUser.subscribe((x) => {
-            this.currentUser = x
+        this.auth.currentUser.subscribe((user) => {
+            this.currentUser = user
         })
     }
 
@@ -46,9 +47,9 @@ export class ProfilePageComponent implements OnInit {
      * them is returned (typically the case for the admin account).
      */
     public get profilePanelHeader(): string {
-        let hdr = this.currentUser.firstName
-        if (this.currentUser.firstName !== this.currentUser.lastName) {
-            hdr += ' ' + this.currentUser.lastName
+        let hdr = this.currentUser.name
+        if (this.currentUser.name !== this.currentUser.lastname) {
+            hdr += ' ' + this.currentUser.lastname
         }
         return hdr
     }
