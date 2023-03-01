@@ -310,10 +310,10 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	con, err := dbmodel.CreateUserWithPassword(r.DB, su, string(*p))
 	if err != nil {
 		if con {
-			log.WithFields(log.Fields{
-				"login": *u.Login,
-				"email": *u.Email,
-			}).Infof("Failed to create conflicting user account for user %s: %s", su.Identity(), err.Error())
+			log.
+				WithField("user", su.Identity()).
+				WithError(err).
+				Info("Failed to create conflicting user account")
 
 			msg := "User account with provided login/email already exists"
 			rspErr := models.APIError{
@@ -321,7 +321,10 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 			}
 			return users.NewCreateUserDefault(http.StatusConflict).WithPayload(&rspErr)
 		}
-		log.Errorf("Failed to create new user account for user %s: %s", su.Identity(), err.Error())
+		log.
+			WithField("user", su.Identity()).
+			WithError(err).
+			Error("Failed to create new user account")
 
 		msg := fmt.Sprintf("Failed to create new user account for user %s", su.Identity())
 		rspErr := models.APIError{
