@@ -318,15 +318,33 @@ func TestFileServerMiddelware(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("access to the non-existing file with traversal", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/public/directory/../foobar")
+
+		// Assert
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
+		require.NoError(t, err)
+	})
+
 	t.Run("access to the restricted directory", func(t *testing.T) {
 		// Act
 		content, status, err := requestFileContent("/../restricted")
 
 		// Assert
-		require.Equal(t, "index", content)
-		// It cannot return any custom status not to reveal the state of the
-		// non-public files.
-		require.Equal(t, 200, status)
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the restricted non-existing file", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/../restricted/foobar")
+
+		// Assert
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
 }

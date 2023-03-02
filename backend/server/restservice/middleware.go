@@ -99,15 +99,34 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api") || r.URL.Path == "/swagger.json" {
-			// serve API request
+			// Serve API request.
 			next.ServeHTTP(w, r)
 		} else {
-			pth := path.Join(staticFilesDir, r.URL.Path)
-			if _, err := os.Stat(pth); os.IsNotExist(err) {
-				// if file does not exist then return content of index.html
+			// The "r.URL.Path" is provided by the user and must be treated as
+			// untrusted. Otherwise, it can be used to perform the Path
+			// Traversal attack. The below "resourcePath" has limited usage; it
+			// is only used to check the existence of the resource. It means
+			// that without the "path.Clean" call, the attacker could check the
+			// existence of any file on the filesystem (available for a user
+			// that runs the Stork) but couldn't read its content because the
+			// resource reading is performed by "http.FileServer" call that
+			// sanitizes the path on its own.
+			urlPath := r.URL.Path
+			if !strings.HasPrefix(urlPath, "/") {
+				// The resource path must be rooted to work the "path.Clean"
+				// function properly. It causes the returned path to not point
+				// to any file outside the root directory (in this context, it
+				// is the "staticFilesDir" directory).
+				// The web framework always returns a rooted path, but the
+				// "url" package doesn't guarantee it.
+				urlPath = "/" + urlPath
+			}
+			resourcePath := path.Join(staticFilesDir, path.Clean(urlPath))
+			if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
+				// If file does not exist then return content of index.html.
 				http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
 			} else {
-				// if file exists then serve it
+				// If file exists then serve it.
 				http.FileServer(http.Dir(staticFilesDir)).ServeHTTP(w, r)
 			}
 		}
