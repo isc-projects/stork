@@ -1,6 +1,7 @@
 package restservice
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
+	"isc.org/stork/testutil"
 )
 
 // Check if fileServerMiddleware works and handles requests correctly.
@@ -215,4 +217,116 @@ func TestLoggingMiddlewareHelpers(t *testing.T) {
 	// check Header
 	hdr := lrw.Header()
 	require.Empty(t, hdr)
+}
+
+// Test that the file middleware. Includes the test to check if the middleware
+// is not vulnerable to the Path Traversal attack used to check if a given path
+// exists on the filesystem.
+func TestFileServerMiddelware(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	_, _ = sb.Write("restricted/secret", "password")
+	_, _ = sb.Write("public/index.html", "index")
+	publicDirectory, _ := sb.Write("public/file", "open")
+	publicDirectory = path.Dir(publicDirectory)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	middelware := fileServerMiddleware(nextHandler, publicDirectory)
+
+	requestFileContent := func(path string) (string, int, error) {
+		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
+		writer := httptest.NewRecorder()
+		middelware.ServeHTTP(writer, request)
+		response := writer.Result()
+		content, err := io.ReadAll(response.Body)
+		defer response.Body.Close()
+		return string(content), response.StatusCode, err
+	}
+
+	t.Run("access to the public file", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("file")
+
+		// Assert
+		require.Equal(t, "open", content)
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the public file with traversal", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("directory/../file")
+
+		// Assert
+		require.Equal(t, "open", content)
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the index", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/")
+
+		// Assert
+		require.Equal(t, "index", content)
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the index", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/")
+
+		// Assert
+		require.Equal(t, "index", content)
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the non-exist file", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/foobar")
+
+		// Assert
+		require.Equal(t, "index", content)
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the restricted file", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/../restricted/secret")
+
+		// Assert
+		require.Equal(t, "index", content)
+		// It cannot return any custom status not to reveal the state of the
+		// non-public files.
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the restricted file using a relative path", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("../restricted/secret")
+
+		// Assert
+		require.Equal(t, "index", content)
+		// It cannot return any custom status not to reveal the state of the
+		// non-public files.
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the restricted directory", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("/../restricted")
+
+		// Assert
+		require.Equal(t, "index", content)
+		// It cannot return any custom status not to reveal the state of the
+		// non-public files.
+		require.Equal(t, 200, status)
+		require.NoError(t, err)
+	})
 }
