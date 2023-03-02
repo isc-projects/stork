@@ -42,21 +42,21 @@ describe('SettingsMenuComponent', () => {
 
     it('should show the password change menu item for the internal user', () => {
         spyOnProperty(authService, 'currentUserValue', 'get').and.returnValue({
-            authenticationMethod: 'internal'
+            authenticationMethod: 'internal',
         } as User)
         component.ngOnInit()
 
         expect(component.items[0].items.length).toBe(2)
-        expect(component.items[0].items.some(i => i.label === 'Change password')).toBeTrue()
+        expect(component.items[0].items.some((i) => i.label === 'Change password')).toBeTrue()
     })
 
     it('should hide the password change menu item for the external user', () => {
         spyOnProperty(authService, 'currentUserValue', 'get').and.returnValue({
-            authenticationMethod: 'external'
+            authenticationMethod: 'external',
         } as User)
         component.ngOnInit()
 
         expect(component.items[0].items.length).toBe(1)
-        expect(component.items[0].items.some(i => i.label === 'Change password')).toBeFalse()
+        expect(component.items[0].items.some((i) => i.label === 'Change password')).toBeFalse()
     })
 })
