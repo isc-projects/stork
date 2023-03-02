@@ -1,3 +1,9 @@
+* 296 [bug] slawek
+
+    Fixed the path traversal vulnerability that allowed everyone to check the
+    existence of any file on the filesystem.
+    (Gitlab #987)
+
 * 295 [bug] slawek
 
     Fixed fetching the authorization keys from BIND 9 configuration. The key
