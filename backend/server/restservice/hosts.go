@@ -234,7 +234,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Filter the daemons with host_cmds hook library.
-			if _, _, exists := daemons[i].KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); exists {
+			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds"); exists {
 				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()

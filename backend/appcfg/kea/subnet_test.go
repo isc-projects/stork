@@ -11,7 +11,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-//go:generate mockgen -package=keaconfig_test -destination=subnetmock_test.go isc.org/stork/appcfg/kea Subnet
+//go:generate mockgen -package=keaconfig_test -destination=subnetmock_test.go isc.org/stork/appcfg/kea SubnetAccessor
 
 // Alias for the storkutil.Ptr function.
 func ptr[T any](value T) *T {
@@ -237,22 +237,23 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.True(t, *params.MatchClientID)
 	require.Equal(t, "0.0.0.0", *params.NextServer)
 	require.True(t, *params.StoreExtendedInfo)
-	require.Len(t, params.OptionData, 1)
-	require.True(t, params.OptionData[0].AlwaysSend)
-	require.EqualValues(t, 3, params.OptionData[0].Code)
-	require.True(t, params.OptionData[0].CSVFormat)
-	require.Equal(t, "192.0.3.1", params.OptionData[0].Data)
-	require.Equal(t, "routers", params.OptionData[0].Name)
-	require.Equal(t, "dhcp4", params.OptionData[0].Space)
-	require.Len(t, params.Pools, 2)
-	require.Equal(t, "phones_server1", params.Pools[0].ClientClass)
-	require.Empty(t, params.Pools[0].OptionData)
-	require.Equal(t, "192.1.0.1-192.1.0.200", params.Pools[0].Pool)
-	require.Len(t, params.Pools[0].RequireClientClasses, 1)
-	require.Equal(t, "phones_server2", params.Pools[1].ClientClass)
-	require.Empty(t, params.Pools[1].OptionData)
-	require.Equal(t, "192.3.0.1-192.3.0.200", params.Pools[1].Pool)
-	require.Empty(t, params.Pools[1].RequireClientClasses)
+	require.Len(t, params.GetDHCPOptions(), 1)
+	require.True(t, params.GetDHCPOptions()[0].AlwaysSend)
+	require.EqualValues(t, 3, params.GetDHCPOptions()[0].Code)
+	require.True(t, params.GetDHCPOptions()[0].CSVFormat)
+	require.Equal(t, "192.0.3.1", params.GetDHCPOptions()[0].Data)
+	require.Equal(t, "routers", params.GetDHCPOptions()[0].Name)
+	require.Equal(t, "dhcp4", params.GetDHCPOptions()[0].Space)
+	require.Len(t, params.GetPools(), 2)
+	require.Equal(t, "phones_server1", params.GetPools()[0].ClientClass)
+	require.Empty(t, params.GetPools()[0].OptionData)
+	require.Equal(t, "192.1.0.1-192.1.0.200", params.GetPools()[0].Pool)
+	require.Len(t, params.GetPools()[0].RequireClientClasses, 1)
+	require.Equal(t, "phones_server2", params.GetPools()[1].ClientClass)
+	require.Empty(t, params.GetPools()[1].OptionData)
+	require.Equal(t, "192.3.0.1-192.3.0.200", params.GetPools()[1].Pool)
+	require.Empty(t, params.GetPDPools())
+	require.Empty(t, params.GetPools()[1].RequireClientClasses)
 	require.EqualValues(t, 40, *params.RebindTimer)
 	require.Len(t, params.Relay.IPAddresses, 1)
 	require.Equal(t, "192.168.56.1", params.Relay.IPAddresses[0])
@@ -264,11 +265,11 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.EqualValues(t, 0.75, *params.T2Percent)
 	require.EqualValues(t, 0.25, *params.CacheThreshold)
 	require.EqualValues(t, 1000, *params.CacheMaxAge)
-	require.Len(t, params.Reservations, 1)
-	require.Equal(t, "01:11:22:33:44:55:66", params.Reservations[0].CircuitID)
-	require.Equal(t, "192.0.2.204", params.Reservations[0].IPAddress)
-	require.Equal(t, "foo.example.org", params.Reservations[0].Hostname)
-	require.Len(t, params.Reservations[0].OptionData, 1)
+	require.Len(t, params.GetReservations(), 1)
+	require.Equal(t, "01:11:22:33:44:55:66", params.GetReservations()[0].CircuitID)
+	require.Equal(t, "192.0.2.204", params.GetReservations()[0].IPAddress)
+	require.Equal(t, "foo.example.org", params.GetReservations()[0].Hostname)
+	require.Len(t, params.GetReservations()[0].OptionData, 1)
 	require.Len(t, params.RequireClientClasses, 1)
 	require.Equal(t, "late", params.RequireClientClasses[0])
 	require.Equal(t, "myhost.example.org", *params.ServerHostname)
@@ -299,6 +300,15 @@ func TestGetCanonicalPrefixMandatorySubnetParametersInvalidPrefix(t *testing.T) 
 	require.Error(t, err)
 }
 
+// Test getting a subnet prefix without a conversion to a canonical form.
+func TestGetPrefixMandatorySubnetParameters(t *testing.T) {
+	params := keaconfig.MandatorySubnetParameters{
+		Subnet: "192.0.2.1/24",
+	}
+	prefix := params.GetPrefix()
+	require.Equal(t, "192.0.2.1/24", prefix)
+}
+
 // Test getting a canonical prefix for an IPv4 subnet.
 func TestGetCanonicalPrefixSubnet4(t *testing.T) {
 	subnet4 := keaconfig.Subnet4{
@@ -321,6 +331,28 @@ func TestGetCanonicalPrefixSubnet6(t *testing.T) {
 	prefix, err := subnet6.GetCanonicalPrefix()
 	require.NoError(t, err)
 	require.Equal(t, "2001:db8:1::/64", prefix)
+}
+
+// Test getting a prefix for an IPv4 subnet.
+func TestGetPrefixSubnet4(t *testing.T) {
+	subnet4 := keaconfig.Subnet4{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "192.0.2.1/24",
+		},
+	}
+	prefix := subnet4.GetPrefix()
+	require.Equal(t, "192.0.2.1/24", prefix)
+}
+
+// Test getting a prefix for an IPv6 subnet.
+func TestGetPrefixSubnet6(t *testing.T) {
+	subnet6 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "2001:db8:1:0:0::/64",
+		},
+	}
+	prefix := subnet6.GetPrefix()
+	require.Equal(t, "2001:db8:1:0:0::/64", prefix)
 }
 
 // Test that the Kea IPv4 subnet configuration parameters are returned
@@ -396,31 +428,31 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.Equal(t, "eth0", *params.Interface)
 	require.Equal(t, "ethx", *params.InterfaceID)
 	require.True(t, *params.StoreExtendedInfo)
-	require.Len(t, params.OptionData, 1)
-	require.True(t, params.OptionData[0].AlwaysSend)
-	require.EqualValues(t, 7, params.OptionData[0].Code)
-	require.True(t, params.OptionData[0].CSVFormat)
-	require.Equal(t, "15", params.OptionData[0].Data)
-	require.Equal(t, "preference", params.OptionData[0].Name)
-	require.Equal(t, "dhcp6", params.OptionData[0].Space)
-	require.Len(t, params.Pools, 2)
-	require.Equal(t, "phones_server1", params.Pools[0].ClientClass)
-	require.Empty(t, params.Pools[0].OptionData)
-	require.Equal(t, "2001:db8:0:1::-2001:db8:0:1:ffff:ffff:ffff:ffff", params.Pools[0].Pool)
-	require.Len(t, params.Pools[0].RequireClientClasses, 1)
-	require.Len(t, params.PDPools, 1)
-	require.Equal(t, "phones_server1", params.PDPools[0].ClientClass)
-	require.EqualValues(t, 64, params.PDPools[0].DelegatedLen)
-	require.Equal(t, "2001:db8:1::", params.PDPools[0].ExcludedPrefix)
-	require.EqualValues(t, 72, params.PDPools[0].ExcludedPrefixLen)
-	require.Empty(t, params.PDPools[0].OptionData)
-	require.Equal(t, "2001:db8:1::", params.PDPools[0].Prefix)
-	require.Equal(t, 48, params.PDPools[0].PrefixLen)
-	require.Empty(t, params.PDPools[0].RequireClientClasses)
-	require.Equal(t, "phones_server2", params.Pools[1].ClientClass)
-	require.Empty(t, params.Pools[1].OptionData)
-	require.Equal(t, "2001:db8:0:3::-2001:db8:0:3:ffff:ffff:ffff:ffff", params.Pools[1].Pool)
-	require.Empty(t, params.Pools[1].RequireClientClasses)
+	require.Len(t, params.GetDHCPOptions(), 1)
+	require.True(t, params.GetDHCPOptions()[0].AlwaysSend)
+	require.EqualValues(t, 7, params.GetDHCPOptions()[0].Code)
+	require.True(t, params.GetDHCPOptions()[0].CSVFormat)
+	require.Equal(t, "15", params.GetDHCPOptions()[0].Data)
+	require.Equal(t, "preference", params.GetDHCPOptions()[0].Name)
+	require.Equal(t, "dhcp6", params.GetDHCPOptions()[0].Space)
+	require.Len(t, params.GetPools(), 2)
+	require.Equal(t, "phones_server1", params.GetPools()[0].ClientClass)
+	require.Empty(t, params.GetPools()[0].OptionData)
+	require.Equal(t, "2001:db8:0:1::-2001:db8:0:1:ffff:ffff:ffff:ffff", params.GetPools()[0].Pool)
+	require.Len(t, params.GetPools()[0].RequireClientClasses, 1)
+	require.Len(t, params.GetPDPools(), 1)
+	require.Equal(t, "phones_server1", params.GetPDPools()[0].ClientClass)
+	require.EqualValues(t, 64, params.GetPDPools()[0].DelegatedLen)
+	require.Equal(t, "2001:db8:1::", params.GetPDPools()[0].ExcludedPrefix)
+	require.EqualValues(t, 72, params.GetPDPools()[0].ExcludedPrefixLen)
+	require.Empty(t, params.GetPDPools()[0].OptionData)
+	require.Equal(t, "2001:db8:1::", params.GetPDPools()[0].Prefix)
+	require.Equal(t, 48, params.GetPDPools()[0].PrefixLen)
+	require.Empty(t, params.GetPDPools()[0].RequireClientClasses)
+	require.Equal(t, "phones_server2", params.GetPools()[1].ClientClass)
+	require.Empty(t, params.GetPools()[1].OptionData)
+	require.Equal(t, "2001:db8:0:3::-2001:db8:0:3:ffff:ffff:ffff:ffff", params.GetPools()[1].Pool)
+	require.Empty(t, params.GetPools()[1].RequireClientClasses)
 	require.EqualValues(t, 2000, *params.PreferredLifetime)
 	require.EqualValues(t, 1500, *params.MinPreferredLifetime)
 	require.EqualValues(t, 2500, *params.MaxPreferredLifetime)
@@ -434,12 +466,12 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.EqualValues(t, 0.75, *params.T2Percent)
 	require.EqualValues(t, 0.25, *params.CacheThreshold)
 	require.EqualValues(t, 10, *params.CacheMaxAge)
-	require.Len(t, params.Reservations, 1)
-	require.Equal(t, "01:02:03:04:05:06:07:08:09:0A", params.Reservations[0].DUID)
-	require.Len(t, params.Reservations[0].IPAddresses, 1)
-	require.Equal(t, "2001:db8:1:cafe::1", params.Reservations[0].IPAddresses[0])
-	require.Equal(t, "foo.example.com", params.Reservations[0].Hostname)
-	require.Len(t, params.Reservations[0].OptionData, 1)
+	require.Len(t, params.GetReservations(), 1)
+	require.Equal(t, "01:02:03:04:05:06:07:08:09:0A", params.GetReservations()[0].DUID)
+	require.Len(t, params.GetReservations()[0].IPAddresses, 1)
+	require.Equal(t, "2001:db8:1:cafe::1", params.GetReservations()[0].IPAddresses[0])
+	require.Equal(t, "foo.example.com", params.GetReservations()[0].Hostname)
+	require.Len(t, params.GetReservations()[0].OptionData, 1)
 	require.Len(t, params.RequireClientClasses, 1)
 	require.Equal(t, "late", params.RequireClientClasses[0])
 	require.Equal(t, "2001:db8::/32", params.Subnet)
@@ -500,7 +532,7 @@ func TestCreateSubnet4(t *testing.T) {
 	controller := gomock.NewController(t)
 
 	// Mock a subnet in Stork.
-	mock := NewMockSubnet(controller)
+	mock := NewMockSubnetAccessor(controller)
 	poolMock := NewMockAddressPool(controller)
 
 	// A mock to define an address pool.
@@ -634,16 +666,16 @@ func TestCreateSubnet4(t *testing.T) {
 	require.EqualValues(t, 1000, *subnet4.MaxValidLifetime)
 	require.EqualValues(t, 500, *subnet4.MinValidLifetime)
 	require.Equal(t, "192.0.2.1", *subnet4.NextServer)
-	require.Len(t, subnet4.OptionData, 1)
-	require.EqualValues(t, 5, subnet4.OptionData[0].Code)
-	require.Equal(t, "dhcp4", subnet4.OptionData[0].Space)
-	require.Len(t, subnet4.Pools, 1)
-	require.Equal(t, "192.0.2.10-192.0.2.20", subnet4.Pools[0].Pool)
-	require.Equal(t, "baz", subnet4.Pools[0].ClientClass)
-	require.Len(t, subnet4.Pools[0].RequireClientClasses, 1)
-	require.Len(t, subnet4.Pools[0].OptionData, 1)
-	require.EqualValues(t, 6, subnet4.Pools[0].OptionData[0].Code)
-	require.Equal(t, "dhcp4", subnet4.Pools[0].OptionData[0].Space)
+	require.Len(t, subnet4.GetDHCPOptions(), 1)
+	require.EqualValues(t, 5, subnet4.GetDHCPOptions()[0].Code)
+	require.Equal(t, "dhcp4", subnet4.GetDHCPOptions()[0].Space)
+	require.Len(t, subnet4.GetPools(), 1)
+	require.Equal(t, "192.0.2.10-192.0.2.20", subnet4.GetPools()[0].Pool)
+	require.Equal(t, "baz", subnet4.GetPools()[0].ClientClass)
+	require.Len(t, subnet4.GetPools()[0].RequireClientClasses, 1)
+	require.Len(t, subnet4.GetPools()[0].OptionData, 1)
+	require.EqualValues(t, 6, subnet4.GetPools()[0].OptionData[0].Code)
+	require.Equal(t, "dhcp4", subnet4.GetPools()[0].OptionData[0].Space)
 	require.EqualValues(t, 300, *subnet4.RebindTimer)
 	require.Len(t, subnet4.Relay.IPAddresses, 1)
 	require.Equal(t, "10.0.0.1", subnet4.Relay.IPAddresses[0])
@@ -668,7 +700,7 @@ func TestCreateSubnet6(t *testing.T) {
 	controller := gomock.NewController(t)
 
 	// Mock a subnet in Stork.
-	mock := NewMockSubnet(controller)
+	mock := NewMockSubnetAccessor(controller)
 	poolMock := NewMockAddressPool(controller)
 	pdPoolMock := NewMockPrefixPool(controller)
 
@@ -817,25 +849,25 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Equal(t, "etx0", *subnet6.Interface)
 	require.EqualValues(t, 1000, *subnet6.MaxValidLifetime)
 	require.EqualValues(t, 500, *subnet6.MinValidLifetime)
-	require.Len(t, subnet6.OptionData, 1)
-	require.EqualValues(t, 5, subnet6.OptionData[0].Code)
-	require.Equal(t, "dhcp6", subnet6.OptionData[0].Space)
-	require.Len(t, subnet6.Pools, 1)
-	require.Equal(t, "2001:db8:1::10-2001:db8:1::20", subnet6.Pools[0].Pool)
-	require.Equal(t, "baz", subnet6.Pools[0].ClientClass)
-	require.Len(t, subnet6.Pools[0].RequireClientClasses, 1)
-	require.Len(t, subnet6.Pools[0].OptionData, 1)
-	require.EqualValues(t, 6, subnet6.Pools[0].OptionData[0].Code)
-	require.Equal(t, "dhcp6", subnet6.Pools[0].OptionData[0].Space)
-	require.Len(t, subnet6.PDPools, 1)
-	require.Equal(t, "3001::", subnet6.PDPools[0].Prefix)
-	require.EqualValues(t, 16, subnet6.PDPools[0].PrefixLen)
-	require.Equal(t, "3001:1::", subnet6.PDPools[0].ExcludedPrefix)
-	require.EqualValues(t, 64, subnet6.PDPools[0].ExcludedPrefixLen)
-	require.Equal(t, "baz", subnet6.PDPools[0].ClientClass)
-	require.Len(t, subnet6.PDPools[0].OptionData, 1)
-	require.EqualValues(t, 7, subnet6.PDPools[0].OptionData[0].Code)
-	require.Equal(t, "dhcp6", subnet6.PDPools[0].OptionData[0].Space)
+	require.Len(t, subnet6.GetDHCPOptions(), 1)
+	require.EqualValues(t, 5, subnet6.GetDHCPOptions()[0].Code)
+	require.Equal(t, "dhcp6", subnet6.GetDHCPOptions()[0].Space)
+	require.Len(t, subnet6.GetPools(), 1)
+	require.Equal(t, "2001:db8:1::10-2001:db8:1::20", subnet6.GetPools()[0].Pool)
+	require.Equal(t, "baz", subnet6.GetPools()[0].ClientClass)
+	require.Len(t, subnet6.GetPools()[0].RequireClientClasses, 1)
+	require.Len(t, subnet6.GetPools()[0].OptionData, 1)
+	require.EqualValues(t, 6, subnet6.GetPools()[0].OptionData[0].Code)
+	require.Equal(t, "dhcp6", subnet6.GetPools()[0].OptionData[0].Space)
+	require.Len(t, subnet6.GetPDPools(), 1)
+	require.Equal(t, "3001::", subnet6.GetPDPools()[0].Prefix)
+	require.EqualValues(t, 16, subnet6.GetPDPools()[0].PrefixLen)
+	require.Equal(t, "3001:1::", subnet6.GetPDPools()[0].ExcludedPrefix)
+	require.EqualValues(t, 64, subnet6.GetPDPools()[0].ExcludedPrefixLen)
+	require.Equal(t, "baz", subnet6.GetPDPools()[0].ClientClass)
+	require.Len(t, subnet6.GetPDPools()[0].OptionData, 1)
+	require.EqualValues(t, 7, subnet6.GetPDPools()[0].OptionData[0].Code)
+	require.Equal(t, "dhcp6", subnet6.GetPDPools()[0].OptionData[0].Space)
 	require.Len(t, subnet6.RequireClientClasses, 1)
 	require.Equal(t, "foo", subnet6.RequireClientClasses[0])
 	require.EqualValues(t, 300, *subnet6.RebindTimer)

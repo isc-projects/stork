@@ -291,7 +291,7 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	err := dbApp.Daemons[0].SetConfigFromJSON(`{"Dhcp4": {}}`)
 	require.NoError(t, err)
 	err = dbApp.Daemons[1].SetConfigFromJSON(`{
-        "CtrlAgent": {
+        "Control-agent": {
             "loggers": [
                 {
                     "name": "kea-ca",

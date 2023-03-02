@@ -1,29 +1,772 @@
 package keaconfig
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
 )
 
-// Returns test Kea configuration lacking hooks libraries configurations.
-func getTestConfigWithoutHooks(t *testing.T) *Map {
-	configStr := `{
-        "Dhcp4": {
-            "valid-lifetime": 1000
-        }
-    }`
+// Returns the DHCPv4 server configuration with all configuration keys.
+func getAllKeysDHCPv4() string {
+	return `
+	{
+		"Dhcp4": {
+			"allocator": "iterative",
+			"authoritative": false,
+			"boot-file-name": "/dev/null",
+			"client-classes": [
+				{
+					"boot-file-name": "/tmp/bootfile.efi",
+					"name": "phones_server1",
+					"next-server": "10.2.3.4",
+					"option-data": [],
+					"option-def": [],
+					"server-hostname": "",
+					"test": "member('HA_server1')",
+					"valid-lifetime": 6000,
+					"min-valid-lifetime": 4000,
+					"max-valid-lifetime": 8000
+				},
+				{
+					"boot-file-name": "",
+					"name": "phones_server2",
+					"next-server": "0.0.0.0",
+					"option-data": [],
+					"option-def": [],
+					"server-hostname": "",
+					"test": "member('HA_server2')"
+				},
+				{
+					"name": "late",
+					"only-if-required": true,
+					"test": "member('ALL')"
+				},
+				{
+					"name": "my-template-class",
+					"template-test": "substring(option[61].hex, 0, all)"
+				}
+			],
+			"compatibility": {
+				"ignore-rai-link-selection": false,
+				"lenient-option-parsing": true
+			},
+			"control-socket": {
+				"socket-name": "/tmp/kea4-ctrl-socket",
+				"socket-type": "unix"
+			},
+			"ddns-generated-prefix": "myhost",
+			"ddns-override-client-update": false,
+			"ddns-override-no-update": false,
+			"ddns-qualifying-suffix": "",
+			"ddns-replace-client-name": "never",
+			"ddns-send-updates": true,
+			"ddns-update-on-renew": true,
+			"ddns-use-conflict-resolution": true,
+			"decline-probation-period": 86400,
+			"dhcp-ddns": {
+				"enable-updates": false,
+				"max-queue-size": 1024,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP",
+				"sender-ip": "0.0.0.0",
+				"sender-port": 0,
+				"server-ip": "127.0.0.1",
+				"server-port": 53001,
+				"generated-prefix": "myhost",
+				"hostname-char-replacement": "x",
+				"hostname-char-set": "[^A-Za-z0-9.-]",
+				"override-client-update": false,
+				"override-no-update": false,
+				"qualifying-suffix": "",
+				"replace-client-name": "never"
+			},
+			"dhcp4o6-port": 6767,
+			"echo-client-id": true,
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 25,
+				"hold-reclaimed-time": 3600,
+				"max-reclaim-leases": 100,
+				"max-reclaim-time": 250,
+				"reclaim-timer-wait-time": 10,
+				"unwarned-reclaim-cycles": 5
+			},
+			"hooks-libraries": [
+				{
+					"library": "/opt/lib/kea/hooks/libdhcp_lease_cmds.so",
+					"parameters": { }
+				}
+			],
+			"hosts-databases": [
+				{
+					"name": "keatest",
+					"host": "localhost",
+					"password": "keatest",
+					"port": 3306,
+					"type": "mysql",
+					"user": "keatest",
+					"readonly": false,
+					"trust-anchor": "my-ca",
+					"cert-file": "my-cert",
+					"key-file": "my-key",
+					"cipher-list": "AES"
+				},
+				{
+					"name": "keatest",
+					"host": "localhost",
+					"password": "keatest",
+					"port": 5432,
+					"type": "postgresql",
+					"user": "keatest",
+					"tcp-user-timeout": 100
+				},
+				{
+					"name": "keatest",
+					"password": "keatest",
+					"port": 9042,
+					"type": "mysql",
+					"user": "keatest",
+					"reconnect-wait-time": 3000,
+					"max-reconnect-tries": 3,
+					"on-fail": "stop-retry-exit",
+					"connect-timeout": 100,
+					"read-timeout": 120,
+					"write-timeout": 180
+				}
+			],
+			"host-reservation-identifiers": [
+				"hw-address",
+				"duid",
+				"circuit-id",
+				"client-id",
+				"flex-id"
+			],
+			"interfaces-config": {
+				"dhcp-socket-type": "udp",
+				"interfaces": [
+					"eth0"
+				],
+				"outbound-interface": "same-as-inbound",
+				"re-detect": true,
+				"service-sockets-require-all": true,
+				"service-sockets-max-retries": 5,
+				"service-sockets-retry-wait-time": 5000
+			},
+			"early-global-reservations-lookup": true,
+			"ip-reservations-unique": true,
+			"reservations-lookup-first": true,
+			"lease-database": {
+				"lfc-interval": 3600,
+				"max-row-errors": 100,
+				"name": "/tmp/kea-dhcp4.csv",
+				"persist": true,
+				"type": "memfile"
+			},
+			"match-client-id": false,
+			"next-server": "192.0.2.123",
+			"parked-packet-limit": 128,
+			"option-data": [
+				{
+					"always-send": false,
+					"code": 6,
+					"csv-format": true,
+					"data": "192.0.3.1, 192.0.3.2",
+					"name": "domain-name-servers",
+					"space": "dhcp4"
+				}
+			],
+			"option-def": [
+				{
+					"array": false,
+					"code": 6,
+					"encapsulate": "",
+					"name": "my-option",
+					"record-types": "uint8, uint16",
+					"space": "my-space",
+					"type": "record"
+				}
+			],
+			"rebind-timer": 40,
+			"renew-timer": 30,
+			"store-extended-info": true,
+			"statistic-default-sample-count": 0,
+			"statistic-default-sample-age": 60,
+			"multi-threading": {
+				"enable-multi-threading": false,
+				"thread-pool-size": 0,
+				"packet-queue-size": 0
+			},
+			"sanity-checks": {
+				"lease-checks": "warn",
+				"extended-info-checks": "fix"
+			},
+			"shared-networks": [
+				{
+					"allocator": "random",
+					"authoritative": false,
+					"boot-file-name": "/dev/null",
+					"client-class": "",
+					"ddns-generated-prefix": "myhost",
+					"ddns-override-client-update": false,
+					"ddns-override-no-update": false,
+					"ddns-qualifying-suffix": "",
+					"ddns-replace-client-name": "never",
+					"ddns-send-updates": true,
+					"ddns-update-on-renew": true,
+					"ddns-use-conflict-resolution": true,
+					"hostname-char-replacement": "x",
+					"hostname-char-set": "[^A-Za-z0-9.-]",
+					"interface": "eth0",
+					"match-client-id": true,
+					"name": "my-secret-network",
+					"next-server": "192.0.2.123",
+					"option-data": [],
+					"relay": {
+						"ip-addresses": []
+					},
+					"rebind-timer": 41,
+					"renew-timer": 31,
+					"calculate-tee-times": true,
+					"t1-percent": 0.5,
+					"t2-percent": 0.75,
+					"cache-threshold": 0.25,
+					"cache-max-age": 1000,
+					"reservation-mode": "all",
+					"reservations-global": false,
+					"reservations-in-subnet": true,
+					"reservations-out-of-pool": false,
+					"require-client-classes": [ "late" ],
+					"store-extended-info": false,
+					"server-hostname": "",
+					"subnet4": [
+						{
+							"4o6-interface": "",
+							"4o6-interface-id": "",
+							"4o6-subnet": "2001:db8:1:1::/64",
+							"allocator": "iterative",
+							"authoritative": false,
+							"boot-file-name": "",
+							"client-class": "",
+							"ddns-generated-prefix": "myhost",
+							"ddns-override-client-update": false,
+							"ddns-override-no-update": false,
+							"ddns-qualifying-suffix": "",
+							"ddns-replace-client-name": "never",
+							"ddns-send-updates": true,
+							"ddns-update-on-renew": true,
+							"ddns-use-conflict-resolution": true,
+							"hostname-char-replacement": "x",
+							"hostname-char-set": "[^A-Za-z0-9.-]",
+							"id": 1,
+							"interface": "eth0",
+							"match-client-id": true,
+							"next-server": "0.0.0.0",
+							"store-extended-info": true,
+							"option-data": [
+								{
+									"always-send": false,
+									"code": 3,
+									"csv-format": true,
+									"data": "192.0.3.1",
+									"name": "routers",
+									"space": "dhcp4"
+								}
+							],
+							"pools": [
+								{
+									"client-class": "phones_server1",
+									"option-data": [],
+									"pool": "192.1.0.1 - 192.1.0.200",
+									"require-client-classes": [ "late" ]
+								},
+								{
+									"client-class": "phones_server2",
+									"option-data": [],
+									"pool": "192.3.0.1 - 192.3.0.200",
+									"require-client-classes": []
+								}
+							],
+							"rebind-timer": 40,
+							"relay": {
+								"ip-addresses": [
+									"192.168.56.1"
+								]
+							},	
+							"renew-timer": 30,
+							"reservation-mode": "all",
+							"reservations-global": false,
+							"reservations-in-subnet": true,
+							"reservations-out-of-pool": false,
+							"calculate-tee-times": true,
+							"t1-percent": 0.5,
+							"t2-percent": 0.75,
+							"cache-threshold": 0.25,
+							"cache-max-age": 1000,
+							"reservations": [
+								{
+									"circuit-id": "01:11:22:33:44:55:66",
+									"ip-address": "192.0.2.204",
+									"hostname": "foo.example.org",
+									"option-data": [
+										{
+											"name": "vivso-suboptions",
+											"data": "4491"
+										}
+									]
+								}
+							],
+							"require-client-classes": [ "late" ],
+							"server-hostname": "",
+							"subnet": "192.0.0.0/8",
+							"valid-lifetime": 6000,
+							"min-valid-lifetime": 4000,
+							"max-valid-lifetime": 8000
+						}
+					],
+					"valid-lifetime": 6001,
+					"min-valid-lifetime": 4001,
+					"max-valid-lifetime": 8001
+				}
+			],
+			"server-hostname": "",
+			"subnet4": [],
+			"valid-lifetime": 6000,
+			"min-valid-lifetime": 4000,
+			"max-valid-lifetime": 8000,
+			"reservations": [],
+			"config-control": {
+				"config-databases": [
+					{
+						"name": "config",
+						"type": "mysql"
+					}
+				],
+				"config-fetch-wait-time": 30
+			},
+			"server-tag": "my DHCPv4 server",
+			"dhcp-queue-control": {
+				"enable-queue": true,
+				"queue-type": "kea-ring4",
+				"capacity": 64
+			},
+			"reservation-mode": "all",
+			"reservations-global": false,
+			"reservations-in-subnet": true,
+			"reservations-out-of-pool": false,
+			"calculate-tee-times": true,
+			"t1-percent": 0.5,
+			"t2-percent": 0.75,
+			"cache-threshold": 0.25,
+			"cache-max-age": 1000,
+			"hostname-char-replacement": "x",
+			"hostname-char-set": "[^A-Za-z0-9.-]",
+			"loggers": [
+				{
+					"debuglevel": 99,
+					"name": "kea-dhcp4",
+					"output_options": [
+						{
+							"flush": true,
+							"maxsize": 10240000,
+							"maxver": 1,
+							"output": "stdout",
+							"pattern": "%D{%Y-%m-%d %H:%M:%S.%q} %-5p [%c/%i] %m\n"
+						}
+					],
+					"severity": "INFO"
+				}
+			],
+			"user-context": { }
+		}
+	}
+`
+}
 
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	return cfg
+// Returns the DHCPv6 server configuration with all configuration keys.
+func getAllKeysDHCPv6() string {
+	return `{
+		"Dhcp6": {
+			"allocator": "iterative",
+			"pd-allocator": "random",
+			"client-classes": [
+				{
+					"name": "phones_server1",
+					"option-data": [],
+					"test": "member('HA_server1')",
+					"valid-lifetime": 6000,
+					"min-valid-lifetime": 4000,
+					"max-valid-lifetime": 8000,
+					"preferred-lifetime": 7000,
+					"min-preferred-lifetime": 5000,
+					"max-preferred-lifetime": 9000
+				},
+				{
+					"name": "phones_server2",
+					"option-data": [],
+							"test": "member('HA_server2')"
+				},
+				{
+					"name": "late",
+					"only-if-required": true,
+					"test": "member('ALL')"
+				},
+				{
+					"name": "my-template-class",
+					"template-test": "substring(option[1].hex, 0, all)"
+				}
+			],
+			"compatibility": {
+				"lenient-option-parsing": true
+			},
+			"control-socket": {
+				"socket-name": "/tmp/kea6-ctrl-socket",
+				"socket-type": "unix"
+			},
+			"ddns-generated-prefix": "myhost",
+			"ddns-override-client-update": false,
+			"ddns-override-no-update": false,
+			"ddns-qualifying-suffix": "",
+			"ddns-replace-client-name": "never",
+			"ddns-send-updates": true,
+			"ddns-update-on-renew": true,
+			"ddns-use-conflict-resolution": true,
+			"decline-probation-period": 86400,
+			"dhcp-ddns": {
+				"enable-updates": false,
+				"max-queue-size": 1024,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP",
+				"sender-ip": "::1",
+				"sender-port": 0,
+				"server-ip": "::1",
+				"server-port": 53001,
+				"generated-prefix": "myhost",
+				"hostname-char-replacement": "x",
+				"hostname-char-set": "[^A-Za-z0-9.-]",
+				"override-client-update": false,
+				"override-no-update": false,
+				"qualifying-suffix": "",
+				"replace-client-name": "never"
+			},
+			"dhcp4o6-port": 0,
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 25,
+				"hold-reclaimed-time": 3600,
+				"max-reclaim-leases": 100,
+				"max-reclaim-time": 250,
+				"reclaim-timer-wait-time": 10,
+				"unwarned-reclaim-cycles": 5
+			},
+			"hooks-libraries": [
+				{
+					"library": "/opt/lib/kea/hooks/libdhcp_lease_cmds.so",
+					"parameters": { }
+				}
+			],
+			"hosts-databases": [
+				{
+					"name": "keatest",
+					"host": "localhost",
+					"password": "keatest",
+					"port": 3306,
+					"type": "mysql",
+					"user": "keatest",
+					"readonly": false,
+					"trust-anchor": "my-ca",
+					"cert-file": "my-cert",
+					"key-file": "my-key",
+					"cipher-list": "AES"
+				},
+				{
+					"name": "keatest",
+					"host": "localhost",
+					"password": "keatest",
+					"port": 5432,
+					"type": "postgresql",
+					"user": "keatest",
+					"tcp-user-timeout": 100
+				},
+				{
+					"name": "keatest",
+					"password": "keatest",
+					"port": 9042,
+					"type": "mysql",
+					"user": "keatest",
+					"reconnect-wait-time": 3000,
+					"max-reconnect-tries": 3,
+					"on-fail": "stop-retry-exit",
+					"connect-timeout": 100,
+					"read-timeout": 120,
+					"write-timeout": 180
+				}
+			],
+			"host-reservation-identifiers": [
+				"hw-address",
+				"duid",
+				"flex-id"
+			],
+			"interfaces-config": {
+				"interfaces": [
+					"eth0"
+				],
+				"re-detect": true,
+				"service-sockets-require-all": true,
+				"service-sockets-max-retries": 5,
+				"service-sockets-retry-wait-time": 5000
+			},
+			"early-global-reservations-lookup": true,
+			"ip-reservations-unique": true,
+			"reservations-lookup-first": true,
+			"lease-database": {
+				"lfc-interval": 3600,
+				"max-row-errors": 100,
+				"name": "/tmp/kea-dhcp6.csv",
+				"persist": true,
+				"type": "memfile"
+			},
+			"mac-sources": [ "duid" ],
+			"option-data": [
+				{
+					"always-send": false,
+					"code": 23,
+					"csv-format": true,
+					"data": "2001:db8:2::45, 2001:db8:2::100",
+					"name": "dns-servers",
+					"space": "dhcp6"
+				}
+			],
+			"option-def": [
+				{
+					"array": false,
+					"code": 6,
+					"encapsulate": "",
+					"name": "my-option",
+					"record-types": "uint8, uint16",
+					"space": "my-space",
+					"type": "record"
+				}
+			],
+			"parked-packet-limit": 128,
+			"preferred-lifetime": 50,
+			"min-preferred-lifetime": 40,
+			"max-preferred-lifetime": 60,
+			"rebind-timer": 40,
+			"relay-supplied-options": [ "110", "120", "130" ],
+			"renew-timer": 30,
+			"store-extended-info": true,
+			"statistic-default-sample-count": 0,
+			"statistic-default-sample-age": 60,
+			"multi-threading": {
+				"enable-multi-threading": false,
+				"thread-pool-size": 0,
+				"packet-queue-size": 0
+			},
+			"sanity-checks": {
+				"lease-checks": "warn",
+				"extended-info-checks": "fix"
+			},
+			"server-id": {
+				"type": "EN",
+				"enterprise-id": 2495,
+				"identifier": "0123456789",
+				"persist": false
+			},
+			"shared-networks": [
+				{
+					"allocator": "random",
+					"pd-allocator": "iterative",
+					"client-class": "",
+					"ddns-generated-prefix": "myhost",
+					"ddns-override-client-update": false,
+					"ddns-override-no-update": false,
+					"ddns-qualifying-suffix": "",
+					"ddns-replace-client-name": "never",
+					"ddns-send-updates": true,
+					"ddns-update-on-renew": true,
+					"ddns-use-conflict-resolution": true,
+					"hostname-char-replacement": "x",
+					"hostname-char-set": "[^A-Za-z0-9.-]",
+					"interface": "eth0",
+					"interface-id": "",
+					"name": "my-secret-network",
+					"option-data": [],
+					"preferred-lifetime": 2000,
+					"min-preferred-lifetime": 1500,
+					"max-preferred-lifetime": 2500,
+					"rapid-commit": false,
+					"relay": {
+						"ip-addresses": []
+					},
+					"rebind-timer": 41,
+					"renew-timer": 31,
+					"calculate-tee-times": true,
+					"t1-percent": 0.5,
+					"t2-percent": 0.75,
+					"cache-threshold": 0.25,
+					"cache-max-age": 10,
+					"reservations-global": false,
+					"reservations-in-subnet": true,
+					"reservations-out-of-pool": false,
+					"require-client-classes": [ "late" ],
+					"store-extended-info": false,
+					"subnet6": [
+						{
+							"allocator": "iterative",
+							"pd-allocator": "iterative",
+							"client-class": "",
+							"ddns-generated-prefix": "myhost",
+							"ddns-override-client-update": false,
+							"ddns-override-no-update": false,
+							"ddns-qualifying-suffix": "",
+							"ddns-replace-client-name": "never",
+							"ddns-send-updates": true,
+							"ddns-update-on-renew": true,
+							"ddns-use-conflict-resolution": true,
+							"hostname-char-replacement": "x",
+							"hostname-char-set": "[^A-Za-z0-9.-]",
+							"id": 1,
+							"interface": "eth0",
+							"interface-id": "",
+							"store-extended-info": true,
+							"option-data": [
+								{
+									"always-send": false,
+									"code": 7,
+									"csv-format": false,
+									"data": "0xf0",
+									"name": "preference",
+									"space": "dhcp6"
+								}
+							],
+							"pd-pools": [
+								{
+									"client-class": "phones_server1",
+									"delegated-len": 64,
+									"excluded-prefix": "2001:db8:1::",
+									"excluded-prefix-len": 72,
+									"option-data": [],
+									"prefix": "2001:db8:1::",
+									"prefix-len": 48,
+									"require-client-classes": []
+								}
+							],
+							"pools": [
+								{
+									"client-class": "phones_server1",
+									"option-data": [],
+									"pool": "2001:db8:0:1::/64",
+									"require-client-classes": [ "late" ]
+								},
+								{
+									"client-class": "phones_server2",
+									"option-data": [],
+									"pool": "2001:db8:0:3::/64",
+									"require-client-classes": []
+								}
+							],
+							"preferred-lifetime": 2000,
+							"min-preferred-lifetime": 1500,
+							"max-preferred-lifetime": 2500,
+							"rapid-commit": false,
+							"rebind-timer": 40,
+							"relay": {
+								"ip-addresses": [
+									"2001:db8:0:f::1"
+								]
+							},
+							"renew-timer": 30,
+							"reservation-mode": "all",
+							"reservations-global": false,
+							"reservations-in-subnet": true,
+							"reservations-out-of-pool": false,
+							"calculate-tee-times": true,
+							"t1-percent": 0.5,
+							"t2-percent": 0.75,
+							"cache-threshold": 0.25,
+							"cache-max-age": 10,
+							"reservations": [
+								{
+									"duid": "01:02:03:04:05:06:07:08:09:0A",
+									"ip-addresses": [ "2001:db8:1:cafe::1" ],
+									"prefixes": [ "2001:db8:2:abcd::/64" ],
+									"hostname": "foo.example.com",
+									"option-data": [
+										{
+											"name": "vendor-opts",
+											"data": "4491"
+										}
+									]
+								}
+							],
+							"require-client-classes": [ "late" ],
+							"subnet": "2001:db8::/32",
+							"valid-lifetime": 6000,
+							"min-valid-lifetime": 4000,
+							"max-valid-lifetime": 8000
+						}
+					],
+					"valid-lifetime": 6001,
+					"min-valid-lifetime": 4001,
+					"max-valid-lifetime": 8001
+				}
+			],
+			"subnet6": [],
+			"valid-lifetime": 6000,
+			"min-valid-lifetime": 4000,
+			"max-valid-lifetime": 8000,
+			"reservations": [],
+			"config-control": {
+				"config-databases": [
+					{
+						"name": "config",
+						"type": "mysql"
+					}
+				],
+				"config-fetch-wait-time": 30
+			},
+			"server-tag": "my DHCPv6 server",
+			"dhcp-queue-control": {
+				"enable-queue": true,
+				"queue-type": "kea-ring6",
+				"capacity": 64
+			},
+			"reservation-mode": "all",
+			"reservations-global": false,
+			"reservations-in-subnet": true,
+			"reservations-out-of-pool": false,
+			"data-directory": "/tmp",
+			"calculate-tee-times": true,
+			"t1-percent": 0.5,
+			"t2-percent": 0.75,
+			"cache-threshold": 0.25,
+			"cache-max-age": 10,
+			"hostname-char-replacement": "x",
+			"hostname-char-set": "[^A-Za-z0-9.-]",
+			"loggers": [
+				{
+					"debuglevel": 99,
+					"name": "kea-dhcp6",
+					"output_options": [
+						{
+							"flush": true,
+							"maxsize": 10240000,
+							"maxver": 1,
+							"output": "stdout",
+							"pattern": "%D{%Y-%m-%d %H:%M:%S.%q} %-5p [%c/%i] %m\n"
+						}
+					],
+					"severity": "INFO"
+				}
+			],
+			"user-context": { }
+		}
+	}
+`
 }
 
 // Returns test Kea configuration with empty list of hooks libraries.
-func getTestConfigEmptyHooks(t *testing.T) *Map {
+func getTestConfigEmptyHooks(t *testing.T) *Config {
 	configStr := `{
         "Dhcp4": {
             "valid-lifetime": 1000,
@@ -31,81 +774,7 @@ func getTestConfigEmptyHooks(t *testing.T) *Map {
         }
     }`
 
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	return cfg
-}
-
-// Returns test Kea configuration including two hooks libraries.
-func getTestConfigWithHooks(t *testing.T) *Map {
-	configStr := `{
-        "Dhcp4": {
-            "hooks-libraries": [
-                {
-                    "library": "/usr/lib/kea/libdhcp_lease_cmds.so"
-                },
-                {
-                    "library": "/usr/lib/kea/libdhcp_ha.so",
-                    "parameters": {
-                        "high-availability": [{
-                            "this-server-name": "server1",
-                            "mode": "load-balancing",
-                            "heartbeat-delay": 10000,
-                            "max-response-delay": 10000,
-                            "max-ack-delay": 5000,
-                            "max-unacked-clients": 5,
-                            "peers": [{
-                                "name": "server1",
-                                "url": "http://192.168.56.33:8000/",
-                                "role": "primary",
-                                "auto-failover": true
-                            }, {
-                                "name": "server2",
-                                "url": "http://192.168.56.66:8000/",
-                                "role": "secondary",
-                                "auto-failover": true
-                            }, {
-                                "name": "server3",
-                                "url": "http://192.168.56.99:8000/",
-                                "role": "backup",
-                                "auto-failover": false
-                            }]
-                        }]
-                    }
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	return cfg
-}
-
-// Returns test HA configuration which lacks some parameters.
-func getTestMinimalHAConfig(t *testing.T) *Map {
-	configStr := `{
-        "Dhcp4": {
-            "hooks-libraries": [
-                {
-                    "library": "/usr/lib/kea/libdhcp_ha.so",
-                    "parameters": {
-                        "high-availability": [{
-                            "this-server-name": "server1",
-                            "mode": "load-balancing",
-                            "heartbeat-delay": 10000
-                        }]
-                    }
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -113,7 +782,7 @@ func getTestMinimalHAConfig(t *testing.T) *Map {
 }
 
 // Returns test Kea configuration including multiple IPv4 subnets.
-func getTestConfigWithIPv4Subnets(t *testing.T) *Map {
+func getTestConfigWithIPv4Subnets(t *testing.T) *Config {
 	configStr := `{
         "Dhcp4": {
             "shared-networks": [
@@ -126,9 +795,17 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *Map {
                         },
                         {
                             "id": 678,
-                            "subnet": "10.2.0.0/16"
+                            "subnet": "10.2.1.0/16"
                         }
-                    ]
+                    ],
+					"option-data": [
+						{
+							"code": 5,
+							"name": "name-servers",
+							"space": "dhcp4",
+							"data": "192.0.2.1"
+						}
+					]
                 },
                 {
                     "name": "bar",
@@ -161,294 +838,40 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *Map {
         }
     }`
 
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	return cfg
 }
 
-// Returns test Kea configuration including multiple IPv6 subnets.
-func getTestConfigWithIPv6Subnets(t *testing.T) *Map {
+// Returns a configuration including global DHCP reservations.
+func getTestConfigWithGlobalReservations(t *testing.T, rootName string) *Config {
 	configStr := `{
-        "Dhcp6": {
-            "shared-networks": [
-                {
-                    "name": "foo",
-                    "subnet6": [
-                        {
-                            "id": 567,
-                            "subnet": "3000:1::/32"
-                        },
-                        {
-                            "id": 678,
-                            "subnet": "3000:2::/32"
-                        }
-                    ]
-                },
-                {
-                    "name": "bar",
-                    "subnet6": [
-                        {
-                            "id": 789,
-                            "subnet": "3000:3::/32"
-                        },
-                        {
-                            "id": 890,
-                            "subnet": "3000:4::/32"
-                        }
-                    ]
-                }
-            ],
-            "subnet6": [
-                {
-                    "id": 123,
-                    "subnet": "2001:db8:1::/64"
-                },
-                {
-                    "id": 234,
-                    "subnet": "2001:db8:2::/64",
-                    "pd-pools": [
-                        {
-                            "prefix": "3000::/16",
-                            "prefix-len": 64,
-                            "delegated-len": 96
-                        }
-                    ]
-                },
-                {
-                    "id": 345,
-                    "subnet": "2001:db8:3::/64"
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	return cfg
-}
-
-// Tests that Logging key is ignored as non-root key.
-func TestGetRootNameNoRoot(t *testing.T) {
-	cfg, err := NewFromJSON(`
-        {
-            "Logging": { }
-        }
-    `)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	root, ok := cfg.GetRootName()
-	require.False(t, ok)
-	require.Empty(t, root)
-}
-
-// Tests that new configuration map can be created.
-func TestNewMap(t *testing.T) {
-	cfg := map[string]interface{}{
-		"key": "value",
-	}
-	c := New(&cfg)
-	require.NotNil(t, c)
-	require.Contains(t, *c, "key")
-}
-
-// Tests that the configuration root key can be found.
-func TestGetRootName(t *testing.T) {
-	cfg, err := NewFromJSON(`
-        {
-            "Logging": { },
-            "Dhcp4": {
-                "subnet4": [ ]
-            }
-        }
-    `)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	root, ok := cfg.GetRootName()
-	require.True(t, ok)
-	require.Equal(t, "Dhcp4", root)
-}
-
-// Test that a list of configurations of all hooks libraries can be retrieved
-// from the Kea configuration.
-func TestGetHooksLibraries(t *testing.T) {
-	cfg := getTestConfigWithHooks(t)
-
-	libraries := cfg.GetHooksLibraries()
-	require.Len(t, libraries, 2)
-
-	library := libraries[0]
-	require.Equal(t, "/usr/lib/kea/libdhcp_lease_cmds.so", library.Library)
-	require.Empty(t, library.Parameters)
-
-	library = libraries[1]
-	require.Equal(t, "/usr/lib/kea/libdhcp_ha.so", library.Library)
-	require.Contains(t, library.Parameters, "high-availability")
-}
-
-// Test that empty list of hooks is returned when the configuration lacks
-// hooks-libraries parameter.
-func TestGetHooksLibrariesNoHooks(t *testing.T) {
-	cfg := getTestConfigWithoutHooks(t)
-
-	libraries := cfg.GetHooksLibraries()
-	require.Empty(t, libraries)
-}
-
-// Test that configuration of the selected hooks library can be retrieved
-// from the Kea configuration.
-func TestGetHooksLibrary(t *testing.T) {
-	cfg := getTestConfigWithHooks(t)
-
-	path, params, ok := cfg.GetHooksLibrary("libdhcp_ha")
-	require.True(t, ok)
-	require.Equal(t, "/usr/lib/kea/libdhcp_ha.so", path)
-	require.Contains(t, params, "high-availability")
-}
-
-// Test the case when Kea configuration contains empty hooks list and
-// one of the hooks is requested by name.
-func TestGetHooksLibraryEmptyHooks(t *testing.T) {
-	cfg := getTestConfigEmptyHooks(t)
-
-	path, params, ok := cfg.GetHooksLibrary("libdhcp_ha")
-	require.False(t, ok)
-	require.Empty(t, path)
-	require.Empty(t, params)
-}
-
-// Test that the configuration of the HA hooks library can be retrieved
-// and parsed.
-func TestGetHAHooksLibrary(t *testing.T) {
-	cfg := getTestConfigWithHooks(t)
-
-	path, params, ok := cfg.GetHAHooksLibrary()
-	require.True(t, ok)
-
-	require.NotNil(t, params.ThisServerName)
-	require.NotNil(t, params.Mode)
-	require.NotNil(t, params.HeartbeatDelay)
-	require.NotNil(t, params.MaxResponseDelay)
-	require.NotNil(t, params.MaxAckDelay)
-	require.NotNil(t, params.MaxUnackedClients)
-
-	require.Equal(t, "/usr/lib/kea/libdhcp_ha.so", path)
-	require.Equal(t, "server1", *params.ThisServerName)
-	require.Equal(t, "load-balancing", *params.Mode)
-	require.Equal(t, 10000, *params.HeartbeatDelay)
-	require.Equal(t, 10000, *params.MaxResponseDelay)
-	require.Equal(t, 5000, *params.MaxAckDelay)
-	require.Equal(t, 5, *params.MaxUnackedClients)
-	require.Len(t, params.Peers, 3)
-
-	peersFound := make(map[string]bool)
-
-	for _, peer := range params.Peers {
-		require.NotNil(t, peer.Name)
-		require.NotNil(t, peer.URL)
-		require.NotNil(t, peer.Role)
-		require.NotNil(t, peer.AutoFailover)
-		peersFound[*peer.Name] = true
-		switch *peer.Name {
-		case "server1":
-			require.Equal(t, "http://192.168.56.33:8000/", *peer.URL)
-			require.Equal(t, "primary", *peer.Role)
-			require.True(t, *peer.AutoFailover)
-		case "server2":
-			require.Equal(t, "http://192.168.56.66:8000/", *peer.URL)
-			require.Equal(t, "secondary", *peer.Role)
-			require.True(t, *peer.AutoFailover)
-		case "server3":
-			require.Equal(t, "http://192.168.56.99:8000/", *peer.URL)
-			require.Equal(t, "backup", *peer.Role)
-			require.False(t, *peer.AutoFailover)
+		"%s": {
+			"reservations": [
+				{
+					"hw-address": "01:02:03:04:05:06",
+					"hostname": "foo.example.org"
+				},
+				{
+					"duid": "01:01:01:01",
+					"client-classes": ["bar"]
+				}
+			]
 		}
-	}
+	}`
+	cfg, err := NewConfig(fmt.Sprintf(configStr, rootName))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
 
-	// There should be three distinct peers found.
-	require.Len(t, peersFound, 3)
+	return cfg
 }
 
-// Test that parameters not included in the HA configuration are set
-// to nil.
-func TestGetHAHooksLibraryOptionals(t *testing.T) {
-	cfg := getTestMinimalHAConfig(t)
-
-	_, params, ok := cfg.GetHAHooksLibrary()
-	require.True(t, ok)
-
-	// These parameters were specified.
-	require.NotNil(t, params.ThisServerName)
-	require.NotNil(t, params.Mode)
-	require.NotNil(t, params.HeartbeatDelay)
-
-	// These parameters weren't.
-	require.Nil(t, params.MaxResponseDelay)
-	require.Nil(t, params.MaxAckDelay)
-	require.Nil(t, params.MaxUnackedClients)
-}
-
-// Test the case when Kea configuration contains empty hooks list and
-// HA hooks library is requested.
-func TestGetHAHooksLibraryEmptyHooks(t *testing.T) {
-	cfg := getTestConfigEmptyHooks(t)
-
-	path, params, ok := cfg.GetHAHooksLibrary()
-	require.False(t, ok)
-	require.Empty(t, path)
-	require.Empty(t, params.ThisServerName)
-}
-
-// Checks if the HA peer structure validation works as expected.
-func TestPeerParametersSet(t *testing.T) {
-	p := Peer{}
-	require.False(t, p.IsSet())
-
-	name := "server1"
-	p.Name = &name
-	require.False(t, p.IsSet())
-
-	url := "http://example.org/"
-	p.URL = &url
-	require.False(t, p.IsSet())
-
-	role := "primary"
-	p.Role = &role
-	require.True(t, p.IsSet())
-
-	autoFailover := true
-	p.AutoFailover = &autoFailover
-	require.True(t, p.IsSet())
-}
-
-// Checks if the HA configuration validation works as expected.
-func TestHAConfigParametersSet(t *testing.T) {
-	cfg := HA{}
-
-	require.False(t, cfg.IsSet())
-
-	thisServerName := "server1"
-	cfg.ThisServerName = &thisServerName
-	require.False(t, cfg.IsSet())
-
-	haMode := "load-balancing"
-	cfg.Mode = &haMode
-	require.True(t, cfg.IsSet())
-
-	p := Peer{}
-	cfg.Peers = append(cfg.Peers, p)
-	require.False(t, cfg.IsSet())
-}
-
-// Verifies that a list of loggers is parsed correctly for a daemon.
-func TestGetLoggers(t *testing.T) {
+// Returns a configuration with loggers.
+func getTestConfigWithLoggers(t *testing.T, rootName string) *Config {
 	configStr := `{
-        "Dhcp4": {
+        "%s": {
             "loggers": [
                 {
                     "name": "kea-dhcp4",
@@ -473,9 +896,195 @@ func TestGetLoggers(t *testing.T) {
         }
     }`
 
-	cfg, err := NewFromJSON(configStr)
+	configStr = fmt.Sprintf(configStr, rootName)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
+	return cfg
+}
+
+// Returns test Kea configuration including multiple IPv6 subnets.
+func getTestConfigWithIPv6Subnets(t *testing.T) *Config {
+	configStr := `{
+        "Dhcp6": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet6": [
+                        {
+                            "id": 567,
+                            "subnet": "3000:1::/32"
+                        },
+                        {
+                            "id": 678,
+                            "subnet": "3000:2::/32"
+                        }
+                    ],
+					"option-data": [
+						{
+							"code": 33,
+							"name": "bcmcs-server-dns",
+							"data": "foo.example.org",
+							"space": "dhcp6"
+						}
+					]
+                },
+                {
+                    "name": "bar",
+                    "subnet6": [
+                        {
+                            "id": 789,
+                            "subnet": "3000:3::/32"
+                        },
+                        {
+                            "id": 890,
+                            "subnet": "3000:4::/32"
+                        }
+                    ]
+                }
+            ],
+            "subnet6": [
+                {
+                    "id": 123,
+                    "subnet": "2001:db8:1:0::/64"
+                },
+                {
+                    "id": 234,
+                    "subnet": "2001:db8:2::/64",
+                    "pd-pools": [
+                        {
+                            "prefix": "3000::/16",
+                            "prefix-len": 64,
+                            "delegated-len": 96
+                        }
+                    ]
+                },
+                {
+                    "id": 345,
+                    "subnet": "2001:db8:3::/64"
+                }
+            ]
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	return cfg
+}
+
+// Test that Kea DHCPv4 configuration is recognised and parsed.
+func TestDecodeDHCPv4(t *testing.T) {
+	var config Config
+	err := json.Unmarshal([]byte(getAllKeysDHCPv4()), &config)
+	require.NoError(t, err)
+
+	require.NotNil(t, config.DHCPv4Config)
+
+	marshalled, err := json.Marshal(config)
+	require.NoError(t, err)
+
+	require.JSONEq(t, getAllKeysDHCPv4(), string(marshalled))
+}
+
+// Test that Kea DHCPv6 configuration is recognised and parsed.
+func TestDecodeDHCPv6(t *testing.T) {
+	var config Config
+	err := json.Unmarshal([]byte(getAllKeysDHCPv6()), &config)
+	require.NoError(t, err)
+
+	require.NotNil(t, config.DHCPv6Config)
+
+	marshalled, err := json.Marshal(config)
+	require.NoError(t, err)
+
+	require.JSONEq(t, getAllKeysDHCPv6(), string(marshalled))
+}
+
+// Tests that the configuration can contain comments.
+func TestNewConfigWithComments(t *testing.T) {
+	configStr := `{
+		"Dhcp4": {
+			// A comment.
+		}
+	}`
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+}
+
+// Test instantiating a new config from a map.
+func TestNewConfigFromMap(t *testing.T) {
+	cfgMap := &map[string]any{
+		"Dhcp4": map[string]any{
+			"subnet4": []any{
+				map[string]any{
+					"id":     123,
+					"subnet": "192.0.2.0/24",
+				},
+			},
+		},
+	}
+	cfg := NewConfigFromMap(cfgMap)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Raw)
+	require.NotNil(t, cfg.DHCPv4Config)
+	subnets := cfg.GetSubnets()
+	require.Len(t, subnets, 1)
+	require.EqualValues(t, 123, subnets[0].GetID())
+	require.Equal(t, "192.0.2.0/24", subnets[0].GetPrefix())
+}
+
+// Test that DHCPv4 config is returned as a common data accessor.
+func TestGetCommonConfigAccessorDHCPv4(t *testing.T) {
+	cfg := &Config{
+		DHCPv4Config: &DHCPv4Config{},
+	}
+	require.NotNil(t, cfg)
+	accessor := cfg.getCommonConfigAccessor()
+	require.NotNil(t, accessor)
+	require.Equal(t, cfg.DHCPv4Config, accessor)
+}
+
+// Test that DHCPv6 config is returned as a common data accessor.
+func TestGetCommonConfigAccessorDHCPv6(t *testing.T) {
+	cfg := &Config{
+		DHCPv6Config: &DHCPv6Config{},
+	}
+	require.NotNil(t, cfg)
+	accessor := cfg.getCommonConfigAccessor()
+	require.NotNil(t, accessor)
+	require.Equal(t, cfg.DHCPv6Config, accessor)
+}
+
+// Test that Control Agent config is returned as a common data accessor.
+func TestGetCommonConfigAccessorCtrlAgent(t *testing.T) {
+	cfg := &Config{
+		CtrlAgentConfig: &CtrlAgentConfig{},
+	}
+	require.NotNil(t, cfg)
+	accessor := cfg.getCommonConfigAccessor()
+	require.NotNil(t, accessor)
+	require.Equal(t, cfg.CtrlAgentConfig, accessor)
+}
+
+// Test that D2 config is returned as a common data accessor.
+func TestGetCommonConfigAccessorD2(t *testing.T) {
+	cfg := &Config{
+		D2Config: &D2Config{},
+	}
+	require.NotNil(t, cfg)
+	accessor := cfg.getCommonConfigAccessor()
+	require.NotNil(t, accessor)
+	require.Equal(t, cfg.D2Config, accessor)
+}
+
+// Verifies that a list of loggers is parsed correctly for a daemon.
+func TestGetLoggers(t *testing.T) {
+	cfg := getTestConfigWithLoggers(t, "Dhcp4")
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.DHCPv4Config)
 
 	loggers := cfg.GetLoggers()
 	require.Len(t, loggers, 2)
@@ -514,9 +1123,10 @@ func TestGetControlSockets(t *testing.T) {
         }
     }`
 
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.CtrlAgentConfig)
 
 	sockets := cfg.GetControlSockets()
 
@@ -562,13 +1172,13 @@ func TestConfiguredDaemonNames(t *testing.T) {
         }
     }`
 
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	sockets := cfg.GetControlSockets()
 
-	names := sockets.ConfiguredDaemonNames()
+	names := sockets.GetConfiguredDaemonNames()
 	require.Len(t, names, 4)
 
 	require.Contains(t, names, "dhcp4")
@@ -592,14 +1202,14 @@ func TestConfiguredDaemonNames(t *testing.T) {
         }
     }`
 
-	cfg, err = NewFromJSON(configStr)
+	cfg, err = NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	sockets = cfg.GetControlSockets()
 
 	// This time only two sockets have been configured.
-	names = sockets.ConfiguredDaemonNames()
+	names = sockets.GetConfiguredDaemonNames()
 	require.Len(t, names, 2)
 
 	require.Contains(t, names, "dhcp4")
@@ -666,7 +1276,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// All configurations used together.
 	t.Run("all configs present", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, leaseDatabase, hostsDatabase, hostsDatabases, configDatabases, legalConfig)
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -680,7 +1290,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// No database configuration.
 	t.Run("no configs present", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, "", "", "", "", "")
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -694,7 +1304,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// lease-database
 	t.Run("lease-database only", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, leaseDatabase, "", "", "", "")
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -713,7 +1323,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// hosts-database
 	t.Run("hosts-database only", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, "", hostsDatabase, "", "", "")
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -732,7 +1342,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// hosts-databases
 	t.Run("hosts-databases only", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, "", "", hostsDatabases, "", "")
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -756,7 +1366,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// config-databases
 	t.Run("config-databases only", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, "", "", "", configDatabases, "")
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -780,7 +1390,7 @@ func TestGetAllDatabases(t *testing.T) {
 	// legal logging hook
 	t.Run("legal logging only", func(t *testing.T) {
 		configStr := fmt.Sprintf(configTemplate, "", "", "", "", legalConfig)
-		cfg, err := NewFromJSON(configStr)
+		cfg, err := NewConfig(configStr)
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
@@ -808,11 +1418,11 @@ func TestGetGlobalReservationModesEnableAll(t *testing.T) {
             "reservation-mode": "disabled"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	// The new settings take precedence over the deprecated
 	// reservation-mode setting.
@@ -838,11 +1448,11 @@ func TestGetGlobalReservationModesDisableAll(t *testing.T) {
             "reservation-mode": "out-of-pool"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	// The new settings take precedence over the deprecated
 	// reservation-mode setting.
@@ -864,11 +1474,11 @@ func TestGetGlobalReservationModesDeprecatedDisabled(t *testing.T) {
             "reservation-mode": "disabled"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	val, set := modes.IsGlobal()
 	require.False(t, val)
@@ -888,11 +1498,11 @@ func TestGetGlobalReservationModesDeprecatedGlobal(t *testing.T) {
             "reservation-mode": "global"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	val, set := modes.IsGlobal()
 	require.True(t, val)
@@ -912,11 +1522,11 @@ func TestGetGlobalReservationModesDeprecatedOutOfPool(t *testing.T) {
             "reservation-mode": "out-of-pool"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	val, set := modes.IsGlobal()
 	require.False(t, val)
@@ -936,11 +1546,11 @@ func TestGetGlobalReservationModesDeprecatedAll(t *testing.T) {
             "reservation-mode": "all"
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	val, set := modes.IsGlobal()
 	require.False(t, val)
@@ -959,11 +1569,11 @@ func TestGetGlobalReservationModesDefaults(t *testing.T) {
 	configStr := `{
         "Dhcp4": { }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	modes := cfg.GetGlobalReservationModes()
+	modes := cfg.GetGlobalReservationParameters()
 	require.NotNil(t, modes)
 	val, set := modes.IsGlobal()
 	require.False(t, val)
@@ -979,32 +1589,32 @@ func TestGetGlobalReservationModesDefaults(t *testing.T) {
 // Test a function implementing host reservation mode checking using
 // Kea inheritance scheme.
 func TestIsInAnyReservationModes(t *testing.T) {
-	modes := []ReservationModes{
+	modes := []ReservationParameters{
 		{
-			OutOfPool: nil,
+			ReservationsOutOfPool: nil,
 		},
 		{
-			OutOfPool: new(bool),
+			ReservationsOutOfPool: new(bool),
 		},
 		{
-			OutOfPool: new(bool),
+			ReservationsOutOfPool: new(bool),
 		},
 	}
-	*modes[2].OutOfPool = true
+	*modes[2].ReservationsOutOfPool = true
 
-	require.True(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+	require.True(t, IsInAnyReservationModes(func(modes ReservationParameters) (bool, bool) {
 		return modes.IsOutOfPool()
 	}, modes[0], modes[1], modes[2]))
 
-	require.True(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+	require.True(t, IsInAnyReservationModes(func(modes ReservationParameters) (bool, bool) {
 		return modes.IsOutOfPool()
 	}, modes[0], modes[2], modes[1]))
 
-	require.False(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+	require.False(t, IsInAnyReservationModes(func(modes ReservationParameters) (bool, bool) {
 		return modes.IsOutOfPool()
 	}, modes[1], modes[0]))
 
-	require.False(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+	require.False(t, IsInAnyReservationModes(func(modes ReservationParameters) (bool, bool) {
 		return modes.IsOutOfPool()
 	}, modes[0], modes[0]))
 }
@@ -1012,30 +1622,29 @@ func TestIsInAnyReservationModes(t *testing.T) {
 // Test that the sensitive data are hidden.
 func TestHideSensitiveData(t *testing.T) {
 	// Arrange
-	input := map[string]interface{}{
-		"foo":      "bar",
+	config, err := NewConfig(`{
+		"foo": "bar",
 		"password": "xxx",
-		"token":    "",
-		"secret":   "aaa",
-		"first": map[string]interface{}{
-			"foo":      "baz",
+		"token": "",
+		"secret": "aaa",
+		"first": {
+			"foo": "baz",
 			"Password": 42,
-			"Token":    nil,
-			"Secret":   "bbb",
-			"second": map[string]interface{}{
-				"foo":      "biz",
+			"Token": null,
+			"Secret": "bbb",
+			"second": {
+				"foo": "biz",
 				"passworD": true,
-				"tokeN":    "yyy",
-				"secreT":   "ccc",
-			},
-		},
-	}
-
-	keaMap := New(&input)
+				"tokeN": "yyy",
+				"secreT": "ccc"
+			}
+		}
+	}`)
+	require.NoError(t, err)
 
 	// Act
-	keaMap.HideSensitiveData()
-	data := *keaMap
+	config.HideSensitiveData()
+	data := config.Raw
 
 	// Assert
 	// Top level
@@ -1072,7 +1681,7 @@ func TestGetClientClasses(t *testing.T) {
 			]
         }
     }`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1087,7 +1696,7 @@ func TestGetClientClassesNonExisting(t *testing.T) {
 		"Dhcp4": {
 		}
 	}`
-	cfg, err := NewFromJSON(configStr)
+	cfg, err := NewConfig(configStr)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1095,44 +1704,17 @@ func TestGetClientClassesNonExisting(t *testing.T) {
 	require.Empty(t, clientClasses)
 }
 
-// Test that client classes can be deleted from the configuration.
-func TestDeleteClientClasses(t *testing.T) {
-	configStr := `{
-        "Dhcp4": {
-            "client-classes": [
-				{
-					"name": "foo"
-				},
-				{
-					"name": "bar"
-				}
-			]
-        }
-    }`
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	// Delete client classes multiple times and make sure they
-	// are gone and there is no panic.
-	for i := 0; i < 2; i++ {
-		cfg.DeleteClientClasses()
-		clientClasses := cfg.GetClientClasses()
-		require.Empty(t, clientClasses)
-	}
-}
-
 // Test that the subnet ID can be extracted from the Kea configuration for
 // an IPv4 subnet having specified prefix.
 func TestGetLocalIPv4SubnetID(t *testing.T) {
 	cfg := getTestConfigWithIPv4Subnets(t)
 
-	require.EqualValues(t, 567, cfg.GetLocalSubnetID("10.1.0.0/16"))
-	require.EqualValues(t, 678, cfg.GetLocalSubnetID("10.2.0.1/16"))
-	require.EqualValues(t, 123, cfg.GetLocalSubnetID("192.0.2.0/24"))
-	require.EqualValues(t, 234, cfg.GetLocalSubnetID("192.0.3.0/24"))
-	require.EqualValues(t, 345, cfg.GetLocalSubnetID("10.0.0.0/8"))
-	require.EqualValues(t, 0, cfg.GetLocalSubnetID("10.0.0.0/16"))
+	require.EqualValues(t, 567, cfg.GetSubnetByPrefix("10.1.0.0/16").GetID())
+	require.EqualValues(t, 678, cfg.GetSubnetByPrefix("10.2.1.0/16").GetID())
+	require.EqualValues(t, 123, cfg.GetSubnetByPrefix("192.0.2.0/24").GetID())
+	require.EqualValues(t, 234, cfg.GetSubnetByPrefix("192.0.3.0/24").GetID())
+	require.EqualValues(t, 345, cfg.GetSubnetByPrefix("10.0.0.0/8").GetID())
+	require.Nil(t, cfg.GetSubnetByPrefix("10.0.0.0/16"))
 }
 
 // Test that the subnet ID can be extracted from the Kea configuration for
@@ -1140,232 +1722,12 @@ func TestGetLocalIPv4SubnetID(t *testing.T) {
 func TestGetLocalIPv6SubnetID(t *testing.T) {
 	cfg := getTestConfigWithIPv6Subnets(t)
 
-	require.EqualValues(t, 567, cfg.GetLocalSubnetID("3000:0001::/32"))
-	require.EqualValues(t, 678, cfg.GetLocalSubnetID("3000:2::/32"))
-	require.EqualValues(t, 123, cfg.GetLocalSubnetID("2001:db8:1:0::/64"))
-	require.EqualValues(t, 234, cfg.GetLocalSubnetID("2001:db8:2::/64"))
-	require.EqualValues(t, 345, cfg.GetLocalSubnetID("2001:db8:3::/64"))
-	require.EqualValues(t, 0, cfg.GetLocalSubnetID("2001:db8:4::/64"))
-}
-
-// Test that it is possible to parse IPv4 shared-networks list into a custom
-// structure.
-func TestDecodeIPv4SharedNetworks(t *testing.T) {
-	cfg := getTestConfigWithIPv4Subnets(t)
-
-	networks := []struct {
-		Name    string
-		Subnet4 []struct {
-			Subnet string
-		}
-	}{}
-	err := cfg.DecodeSharedNetworks(&networks)
-	require.NoError(t, err)
-	require.Len(t, networks, 2)
-	require.Len(t, networks[0].Subnet4, 2)
-	require.Equal(t, "10.1.0.0/16", networks[0].Subnet4[0].Subnet)
-	require.Equal(t, "10.2.0.0/16", networks[0].Subnet4[1].Subnet)
-	require.Len(t, networks[1].Subnet4, 2)
-	require.Equal(t, "10.3.0.0/16", networks[1].Subnet4[0].Subnet)
-	require.Equal(t, "10.4.0.0/16", networks[1].Subnet4[1].Subnet)
-}
-
-// Test that it is possible to parse IPv6 shared-networks list into a custom
-// structure.
-func TestDecodeIPv6SharedNetworks(t *testing.T) {
-	cfg := getTestConfigWithIPv6Subnets(t)
-
-	networks := []struct {
-		Name    string
-		Subnet6 []struct {
-			Subnet string
-		}
-	}{}
-	err := cfg.DecodeSharedNetworks(&networks)
-	require.NoError(t, err)
-	require.Len(t, networks, 2)
-	require.Len(t, networks[0].Subnet6, 2)
-	require.Equal(t, "3000:1::/32", networks[0].Subnet6[0].Subnet)
-	require.Equal(t, "3000:2::/32", networks[0].Subnet6[1].Subnet)
-	require.Len(t, networks[1].Subnet6, 2)
-	require.Equal(t, "3000:3::/32", networks[1].Subnet6[0].Subnet)
-	require.Equal(t, "3000:4::/32", networks[1].Subnet6[1].Subnet)
-}
-
-// Test that an error is returned when the shared-networks list
-// is malformed, i.e., does not match the specified structure.
-func TestDecodeMalformedSharedNetworks(t *testing.T) {
-	configStr := `{
-        "Dhcp4": {
-            "shared-networks": [
-                {
-                    "name": 1234
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	networks := []struct {
-		Name string
-	}{}
-	err = cfg.DecodeSharedNetworks(&networks)
-	require.Error(t, err)
-}
-
-// Test that it is possible to parse subnet4 list into a custom
-// structure.
-func TestDecodeIPv4TopLevelSubnets(t *testing.T) {
-	cfg := getTestConfigWithIPv4Subnets(t)
-
-	subnets := []struct {
-		Subnet string
-	}{}
-	err := cfg.DecodeTopLevelSubnets(&subnets)
-	require.NoError(t, err)
-	require.Len(t, subnets, 3)
-	require.Equal(t, "192.0.2.0/24", subnets[0].Subnet)
-	require.Equal(t, "192.0.3.0/24", subnets[1].Subnet)
-	require.Equal(t, "10.0.0.0/8", subnets[2].Subnet)
-}
-
-// Test that it is possible to parse subnet6 list into a custom
-// structure.
-func TestDecodeIPv6TopLevelSubnets(t *testing.T) {
-	cfg := getTestConfigWithIPv6Subnets(t)
-
-	subnets := []struct {
-		Subnet  string
-		PdPools []struct {
-			Prefix       string
-			PrefixLen    int
-			DelegatedLen int
-		}
-	}{}
-	err := cfg.DecodeTopLevelSubnets(&subnets)
-	require.NoError(t, err)
-	require.Len(t, subnets, 3)
-	require.Equal(t, "2001:db8:1::/64", subnets[0].Subnet)
-	require.Equal(t, "2001:db8:2::/64", subnets[1].Subnet)
-	require.Equal(t, "2001:db8:3::/64", subnets[2].Subnet)
-
-	require.Len(t, subnets[1].PdPools, 1)
-}
-
-// Test that an error is returned when the subnet6 list
-// is malformed, i.e., does not match the specified structure.
-func TestDecodeMalformedSubnets(t *testing.T) {
-	configStr := `{
-        "Dhcp6": {
-            "subnet6": [
-                {
-                    "subnet": 1234
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	subnets := []struct {
-		Subnet string
-	}{}
-	err = cfg.DecodeTopLevelSubnets(&subnets)
-	require.Error(t, err)
-}
-
-// Test that reservation modes can be parsed at various configuration
-// levels, i.e., top-level subnet, shared network and subnet embedded
-// in a shared network.
-func TestDecodeIPv4SubnetsWithHostReservationModes(t *testing.T) {
-	configStr := `{
-        "Dhcp4": {
-            "shared-networks": [
-                {
-                    "name": "foo",
-                    "subnet4": [
-                        {
-                            "id": 567,
-                            "subnet": "10.1.0.0/16",
-                            "reservation-mode": "global"
-                        }
-                    ],
-                    "reservations-in-subnet": true,
-                    "reservations-out-of-pool": true
-                }
-            ],
-            "subnet4": [
-                {
-                    "id": 123,
-                    "subnet": "192.0.2.0/24",
-                    "reservations-in-subnet": true
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	// Parse the top-level subnet.
-	subnets := []struct {
-		Subnet string
-		ReservationModes
-	}{}
-	err = cfg.DecodeTopLevelSubnets(&subnets)
-	require.NoError(t, err)
-
-	require.Len(t, subnets, 1)
-	val, set := subnets[0].ReservationModes.IsInSubnet()
-	require.True(t, val)
-	require.True(t, set)
-	val, set = subnets[0].ReservationModes.IsOutOfPool()
-	require.False(t, val)
-	require.False(t, set)
-	val, set = subnets[0].ReservationModes.IsGlobal()
-	require.False(t, val)
-	require.False(t, set)
-
-	// Parse the shared network.
-	networks := []struct {
-		Name    string
-		Subnet4 []struct {
-			Subnet string
-			ReservationModes
-		}
-		ReservationModes
-	}{}
-	err = cfg.DecodeSharedNetworks(&networks)
-	require.NoError(t, err)
-	require.Len(t, networks, 1)
-	val, set = networks[0].ReservationModes.IsInSubnet()
-	require.True(t, val)
-	require.True(t, set)
-	val, set = networks[0].ReservationModes.IsOutOfPool()
-	require.True(t, val)
-	require.True(t, set)
-	val, set = networks[0].ReservationModes.IsGlobal()
-	require.False(t, val)
-	require.False(t, set)
-
-	// Validate the reservation modes specified for the subnet within
-	// the shared network.
-	require.Len(t, networks[0].Subnet4, 1)
-	val, set = networks[0].Subnet4[0].ReservationModes.IsGlobal()
-	require.True(t, val)
-	require.True(t, set)
-	val, set = networks[0].Subnet4[0].ReservationModes.IsInSubnet()
-	require.False(t, val)
-	require.True(t, set)
-	val, set = networks[0].Subnet4[0].ReservationModes.IsOutOfPool()
-	require.False(t, val)
-	require.True(t, set)
+	require.EqualValues(t, 567, cfg.GetSubnetByPrefix("3000:1::/32").GetID())
+	require.EqualValues(t, 678, cfg.GetSubnetByPrefix("3000:2:0::/32").GetID())
+	require.EqualValues(t, 123, cfg.GetSubnetByPrefix("2001:db8:1::/64").GetID())
+	require.EqualValues(t, 234, cfg.GetSubnetByPrefix("2001:db8:2::/64").GetID())
+	require.EqualValues(t, 345, cfg.GetSubnetByPrefix("2001:db8:3::/64").GetID())
+	require.Nil(t, cfg.GetSubnetByPrefix("2001:db8:4::/64"))
 }
 
 // Test that the top-level multi-threading parameters are returned properly.
@@ -1381,7 +1743,8 @@ func TestGetMultiThreadingEntry(t *testing.T) {
 		}
 	}`
 
-	config, _ := NewFromJSON(configStr)
+	config, err := NewConfig(configStr)
+	require.NoError(t, err)
 
 	// Act
 	multiThreading := config.GetMultiThreading()
@@ -1401,7 +1764,7 @@ func TestGetMultiThreadingEntry(t *testing.T) {
 func TestGetMultiThreadingEntryMissingParameters(t *testing.T) {
 	// Arrange
 	configStr := `{ "Dhcp4": { "multi-threading": { } } }`
-	config, _ := NewFromJSON(configStr)
+	config, _ := NewConfig(configStr)
 
 	// Act
 	multiThreading := config.GetMultiThreading()
@@ -1418,11 +1781,115 @@ func TestGetMultiThreadingEntryMissingParameters(t *testing.T) {
 func TestGetMultiThreadingEntryNotExists(t *testing.T) {
 	// Arrange
 	configStr := `{ "Dhcp4": { } }`
-	config, _ := NewFromJSON(configStr)
+	config, _ := NewConfig(configStr)
 
 	// Act
 	multiThreading := config.GetMultiThreading()
 
 	// Assert
 	require.Nil(t, multiThreading)
+}
+
+// Test getting all shared networks from the DHCPv4 config.
+func TestGetSharedNetworks4(t *testing.T) {
+	cfg := getTestConfigWithIPv4Subnets(t)
+	require.NotNil(t, cfg)
+
+	sharedNetworks := cfg.GetSharedNetworks(false)
+	require.Len(t, sharedNetworks, 2)
+
+	for i := 0; i < len(sharedNetworks); i++ {
+		require.IsType(t, (*SharedNetwork4)(nil), sharedNetworks[i])
+	}
+	require.Equal(t, "foo", sharedNetworks[0].GetName())
+	require.Len(t, sharedNetworks[0].GetSubnets(), 2)
+	require.Len(t, sharedNetworks[0].GetDHCPOptions(), 1)
+	require.Equal(t, "bar", sharedNetworks[1].GetName())
+	require.Len(t, sharedNetworks[1].GetSubnets(), 2)
+}
+
+// Test getting all shared networks from the DHCPv6 config.
+func TestGetSharedNetworks6(t *testing.T) {
+	cfg := getTestConfigWithIPv6Subnets(t)
+	require.NotNil(t, cfg)
+
+	sharedNetworks := cfg.GetSharedNetworks(false)
+	require.Len(t, sharedNetworks, 2)
+
+	for i := 0; i < len(sharedNetworks); i++ {
+		require.IsType(t, (*SharedNetwork6)(nil), sharedNetworks[i])
+	}
+	require.Equal(t, "foo", sharedNetworks[0].GetName())
+	require.Len(t, sharedNetworks[0].GetSubnets(), 2)
+	require.Len(t, sharedNetworks[0].GetDHCPOptions(), 1)
+	require.Equal(t, "bar", sharedNetworks[1].GetName())
+	require.Len(t, sharedNetworks[1].GetSubnets(), 2)
+	require.Empty(t, sharedNetworks[1].GetDHCPOptions())
+}
+
+// Test getting all top-level IPv4 subnets from the DHCPv4 config.
+func TestGetSubnets4(t *testing.T) {
+	cfg := getTestConfigWithIPv4Subnets(t)
+	require.NotNil(t, cfg)
+
+	subnets := cfg.GetSubnets()
+	require.Len(t, subnets, 3)
+
+	for i := 0; i < len(subnets); i++ {
+		require.IsType(t, (*Subnet4)(nil), subnets[i])
+	}
+	require.EqualValues(t, 123, subnets[0].GetID())
+	require.Equal(t, "192.0.2.0/24", subnets[0].GetPrefix())
+	require.EqualValues(t, 234, subnets[1].GetID())
+	require.Equal(t, "192.0.3.0/24", subnets[1].GetPrefix())
+	require.EqualValues(t, 345, subnets[2].GetID())
+	require.Equal(t, "10.0.0.0/8", subnets[2].GetPrefix())
+}
+
+// Test getting all top-level IPv6 subnets from the DHCPv4 config.
+func TestGetSubnets6(t *testing.T) {
+	cfg := getTestConfigWithIPv6Subnets(t)
+
+	require.NotNil(t, cfg)
+
+	subnets := cfg.GetSubnets()
+	require.Len(t, subnets, 3)
+
+	for i := 0; i < len(subnets); i++ {
+		require.IsType(t, (*Subnet6)(nil), subnets[i])
+	}
+	require.EqualValues(t, 123, subnets[0].GetID())
+	require.Equal(t, "2001:db8:1:0::/64", subnets[0].GetPrefix())
+	require.EqualValues(t, 234, subnets[1].GetID())
+	require.Equal(t, "2001:db8:2::/64", subnets[1].GetPrefix())
+	require.EqualValues(t, 345, subnets[2].GetID())
+	require.Equal(t, "2001:db8:3::/64", subnets[2].GetPrefix())
+}
+
+// Test getting global DHCPv4 host reservations.
+func TestGetReservations4(t *testing.T) {
+	cfg := getTestConfigWithGlobalReservations(t, "Dhcp4")
+	require.NotNil(t, cfg)
+
+	reservations := cfg.GetReservations()
+	require.Len(t, reservations, 2)
+	require.Equal(t, "01:02:03:04:05:06", reservations[0].HWAddress)
+	require.Equal(t, "foo.example.org", reservations[0].Hostname)
+	require.Equal(t, "01:01:01:01", reservations[1].DUID)
+	require.Len(t, reservations[1].ClientClasses, 1)
+	require.Equal(t, "bar", reservations[1].ClientClasses[0])
+}
+
+// Test getting global DHCPv6 host reservations.
+func TestGetReservations6(t *testing.T) {
+	cfg := getTestConfigWithGlobalReservations(t, "Dhcp6")
+	require.NotNil(t, cfg)
+
+	reservations := cfg.GetReservations()
+	require.Len(t, reservations, 2)
+	require.Equal(t, "01:02:03:04:05:06", reservations[0].HWAddress)
+	require.Equal(t, "foo.example.org", reservations[0].Hostname)
+	require.Equal(t, "01:01:01:01", reservations[1].DUID)
+	require.Len(t, reservations[1].ClientClasses, 1)
+	require.Equal(t, "bar", reservations[1].ClientClasses[0])
 }

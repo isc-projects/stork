@@ -277,7 +277,7 @@ func GetLeases6ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 	daemon := app.GetDaemonByName(daemonName)
 	if daemon != nil && daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
-		if _, _, ok := daemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_lease_cmds"); ok {
+		if _, _, ok := daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_lease_cmds"); ok {
 			return true
 		}
 	}

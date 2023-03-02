@@ -151,7 +151,7 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 		// Daemons can be returned out of order from the database, so we
 		// have to iterate over them.
 		if daemon.Name == dbmodel.DaemonNameDHCPv4 {
-			config := *daemon.KeaDaemon.Config.Map
+			config := daemon.KeaDaemon.Config.Raw
 			secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
 			require.Nil(t, secret)
 			require.Empty(t, machine.AgentToken)

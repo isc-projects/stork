@@ -27,13 +27,13 @@ const (
 
 // DHCP option definition in the format used by Kea.
 type dhcpOptionDefinition struct {
-	Array       bool             `mapstructure:"array" json:"array,omitempty"`
-	Code        uint16           `mapstructure:"code" json:"code"`
-	Encapsulate string           `mapstructure:"encapsulate" json:"encapsulate"`
-	Name        string           `mapstructure:"name" json:"name"`
-	RecordTypes []DHCPOptionType `mapstructure:"record-types" json:"record-types"`
-	Space       string           `mapstructure:"space" json:"space"`
-	OptionType  DHCPOptionType   `mapstructure:"type" json:"type"`
+	Array       bool             `json:"array,omitempty"`
+	Code        uint16           `json:"code"`
+	Encapsulate string           `json:"encapsulate"`
+	Name        string           `json:"name"`
+	RecordTypes []DHCPOptionType `json:"record-types"`
+	Space       string           `json:"space"`
+	OptionType  DHCPOptionType   `json:"type"`
 }
 
 // DHCP option definition interface.

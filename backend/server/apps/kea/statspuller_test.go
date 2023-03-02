@@ -584,12 +584,15 @@ func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames
 	subnetsConfig, _ := dbmodel.NewKeaConfigFromJSON(subnetsConfigRaw)
 
 	// Appends the HA configuration
-	haHooks := (*haConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
-	subnetHooks := (*subnetsConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
+	haHooks := (haConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
+	subnetHooks := (subnetsConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
 
 	subnetHooks = append(subnetHooks, haHooks...)
 
-	(*subnetsConfig.Map)[rootName].(map[string]interface{})["hooks-libraries"] = subnetHooks
+	(subnetsConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"] = subnetHooks
+
+	m, _ := json.Marshal(subnetsConfig)
+	_ = json.Unmarshal(m, subnetsConfig)
 
 	return subnetsConfig
 }
@@ -891,13 +894,11 @@ func TestGetHATestConfigWithSubnets(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, config)
-	path, params, ok := config.GetHAHooksLibrary()
+	path, params, ok := config.GetHookLibraries().GetHAHookLibrary()
 	require.True(t, ok)
 	require.NotEmpty(t, path)
-	require.Equal(t, "server1", *params.ThisServerName)
-	var subnets []interface{}
-	err := config.DecodeTopLevelSubnets(&subnets)
-	require.NoError(t, err)
+	require.Equal(t, "server1", *params.GetFirst().ThisServerName)
+	subnets := config.GetSubnets()
 	require.NotEmpty(t, subnets)
 }
 

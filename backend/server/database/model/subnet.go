@@ -20,7 +20,7 @@ import (
 )
 
 // Interface checks.
-var _ keaconfig.Subnet = (*Subnet)(nil)
+var _ keaconfig.SubnetAccessor = (*Subnet)(nil)
 
 // Custom statistic type to redefine JSON marshalling.
 type SubnetStats map[string]interface{}

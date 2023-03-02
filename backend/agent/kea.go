@@ -72,7 +72,7 @@ func collectKeaAllowedLogs(response *keactrl.Response) []string {
 		log.Warn("Skipped refreshing viewable log files because config-get response has no arguments")
 		return nil
 	}
-	cfg := keaconfig.New(response.Arguments)
+	cfg := keaconfig.NewConfigFromMap(response.Arguments)
 	if cfg == nil {
 		log.Warn("Skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
 		return nil
@@ -137,7 +137,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 		return nil, errors.Errorf("empty arguments received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
 	// The returned configuration has unexpected structure.
-	config := keaconfig.New(rawConfig)
+	config := keaconfig.NewConfigFromMap(rawConfig)
 	if config == nil {
 		return nil, errors.Errorf("unable to parse the config received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
@@ -145,7 +145,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// Control Agent should be configured to forward commands to some
 	// daemons behind it.
 	sockets := config.GetControlSockets()
-	daemonNames := sockets.ConfiguredDaemonNames()
+	daemonNames := sockets.GetConfiguredDaemonNames()
 
 	// Apparently, it isn't configured to forward commands to the daemons behind it.
 	if len(daemonNames) == 0 {
@@ -182,14 +182,14 @@ func (ka *KeaApp) GetConfiguredDaemons() []string {
 }
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
-func readKeaConfig(path string) (*keaconfig.Map, error) {
+func readKeaConfig(path string) (*keaconfig.Config, error) {
 	text, err := storkutil.ReadFileWithIncludes(path)
 	if err != nil {
 		err = errors.WithMessage(err, "Cannot read Kea config file")
 		return nil, err
 	}
 
-	config, err := keaconfig.NewFromJSON(text)
+	config, err := keaconfig.NewConfig(text)
 	if err != nil {
 		err = errors.WithMessage(err, "Cannot parse Kea Control Agent config file")
 		return nil, err
@@ -240,7 +240,7 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 			AccessPoints: accessPoints,
 		},
 		HTTPClient:        httpClient,
-		ConfiguredDaemons: config.GetControlSockets().ConfiguredDaemonNames(),
+		ConfiguredDaemons: config.GetControlSockets().GetConfiguredDaemonNames(),
 	}
 
 	return keaApp

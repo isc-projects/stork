@@ -16,7 +16,7 @@ import (
 // The checker verifying if the stat_cmds hooks library is loaded.
 func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	if _, _, present := config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
+	if _, _, present := config.GetHookLibrary("libdhcp_stat_cmds"); !present {
 		r, err := NewReport(ctx, "The Kea Statistics Commands library "+
 			"(libdhcp_stat_cmds) provides commands for retrieving accurate "+
 			"DHCP lease statistics for Kea DHCP servers. Stork sends these "+
@@ -35,7 +35,7 @@ func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
 // host backend is in use.
 func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	if _, _, present := config.GetHooksLibrary("libdhcp_host_cmds"); !present {
+	if _, _, present := config.GetHookLibrary("libdhcp_host_cmds"); !present {
 		databases := config.GetAllDatabases()
 		if len(databases.Hosts) > 0 {
 			r, err := NewReport(ctx, "Kea can be configured to store host "+
@@ -58,41 +58,17 @@ func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
 // is empty or contains only one subnet.
 func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	// Create a structure into which the shared networks will be decoded.
-	decodedSharedNetworks := &[]struct {
-		Name    string
-		Subnet4 []struct {
-			Subnet string
-		}
-		Subnet6 []struct {
-			Subnet string
-		}
-	}{}
-	// Parse shared-networks list.
-	err := config.DecodeSharedNetworks(decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
+	// Get parsed shared-networks list.
+	sharedNetworks := config.GetSharedNetworks(false)
+
 	// Iterate over the shared-networks and check if any of them is
 	// empty or contains only one subnet.
 	emptyCount := int64(0)
 	singleCount := int64(0)
-	for _, net := range *decodedSharedNetworks {
-		// Fetch the number of subnets in the shared network.
-		var subnetsCount int
-		switch ctx.subjectDaemon.Name {
-		case dbmodel.DaemonNameDHCPv4:
-			subnetsCount = len(net.Subnet4)
-		case dbmodel.DaemonNameDHCPv6:
-			subnetsCount = len(net.Subnet6)
-		default:
-			return nil, errors.Errorf(
-				"unsupported daemon %s", ctx.subjectDaemon.Name,
-			)
-		}
+	for _, net := range sharedNetworks {
 		// Depending on whether there are no subnets or there is a single
 		// subnet let's update the respective counters.
-		switch subnetsCount {
+		switch len(net.GetSubnets()) {
 		case 0:
 			emptyCount++
 		case 1:
@@ -149,40 +125,10 @@ func createSubnetDispensableReport(ctx *ReviewContext, dispensableCount int64) (
 // Implementation of a checker verifying if an IPv4 subnet can be removed
 // because it includes no pools and no reservations.
 func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
-	type subnet4 struct {
-		ID     int64
-		Subnet string
-		Pools  []struct {
-			Pool string
-		}
-		Reservations []struct{}
-	}
-	// Create a structure into which the shared networks will be decoded.
-	type sharedNetwork struct {
-		Name    string
-		Subnet4 []subnet4
-	}
-	decodedSharedNetworks := &[]sharedNetwork{}
-
-	// Parse shared-networks list.
+	// Get parsed shared-networks list including top-level subnets.
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	err := config.DecodeSharedNetworks(decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
+	sharedNetworks := config.GetSharedNetworks(true)
 
-	// Parse top-level subnets.
-	var decodedSubnets4 []subnet4
-	err = config.DecodeTopLevelSubnets(&decodedSubnets4)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create an artificial shared network comprising the top-level
-	// subnets. It will make the code below more readable.
-	*decodedSharedNetworks = append(*decodedSharedNetworks, sharedNetwork{
-		Subnet4: decodedSubnets4,
-	})
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
@@ -191,10 +137,10 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
-	for _, net := range *decodedSharedNetworks {
-		for _, subnet := range net.Subnet4 {
-			if len(subnet.Pools) == 0 && len(subnet.Reservations) == 0 &&
-				(!hostCmds || len(dbHosts[subnet.ID]) == 0) {
+	for _, net := range sharedNetworks {
+		for _, subnet := range net.GetSubnets() {
+			if len(subnet.GetPools()) == 0 && len(subnet.GetReservations()) == 0 &&
+				(!hostCmds || len(dbHosts[subnet.GetID()]) == 0) {
 				dispensableCount++
 			}
 		}
@@ -205,47 +151,10 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 // Implementation of a checker verifying if an IPv6 subnet can be removed
 // because it includes no pools, no prefix delegation pools and no reservations.
 func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
-	type subnet6 struct {
-		ID     int64
-		Subnet string
-		Pools  []struct {
-			Pool string
-		}
-		PDPools []struct {
-			Prefix       string
-			PrefixLen    int
-			DelegatedLen int
-		}
-		Reservations []struct {
-			IPAddresses []string
-		}
-	}
-	// Create a structure into which the shared networks will be decoded.
-	type sharedNetwork struct {
-		Name    string
-		Subnet6 []subnet6
-	}
-	decodedSharedNetworks := &[]sharedNetwork{}
-
-	// Parse shared-networks list.
+	// Get parsed shared-networks list including top level subnets.
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	err := config.DecodeSharedNetworks(decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
+	sharedNetworks := config.GetSharedNetworks(true)
 
-	// Parse top-level subnets.
-	var decodedSubnets6 []subnet6
-	err = config.DecodeTopLevelSubnets(&decodedSubnets6)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create an artificial shared network comprising the top-level
-	// subnets. It will make the code below more readable.
-	*decodedSharedNetworks = append(*decodedSharedNetworks, sharedNetwork{
-		Subnet6: decodedSubnets6,
-	})
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
@@ -254,16 +163,16 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
-	for _, net := range *decodedSharedNetworks {
-		for _, subnet := range net.Subnet6 {
+	for _, net := range sharedNetworks {
+		for _, subnet := range net.GetSubnets() {
 			// Empty address pools.
-			if len(subnet.Pools) == 0 &&
+			if len(subnet.GetPools()) == 0 &&
 				// Empty delegated prefix pools.
-				len(subnet.PDPools) == 0 &&
+				len(subnet.GetPDPools()) == 0 &&
 				// Empty host reservations
-				len(subnet.Reservations) == 0 &&
+				len(subnet.GetReservations()) == 0 &&
 				// Missing host cmds hook or empty DB host reservations.
-				(!hostCmds || len(dbHosts[subnet.ID]) == 0) {
+				(!hostCmds || len(dbHosts[subnet.GetID()]) == 0) {
 				dispensableCount++
 			}
 		}
@@ -295,7 +204,7 @@ func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts 
 	if ctx.db == nil {
 		return false, dbHosts, nil
 	}
-	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
+	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds"); present {
 		hosts, _, err := dbmodel.GetHostsByDaemonID(
 			ctx.db,
 			ctx.subjectDaemon.ID,
@@ -382,46 +291,13 @@ func isAnyIPReservationInPDPools(reservations []dbmodel.IPReservation, pdPools [
 // mode when there are IPv4 subnets with all host reservations outside of the
 // dynamic pools.
 func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
-	type subnet4 struct {
-		ID           int64
-		Subnet       string
-		Pools        []keaconfig.Pool
-		Reservations []struct {
-			IPAddress string
-		}
-		keaconfig.ReservationModes
-	}
-	// Create a structure into which the shared networks will be decoded.
-	type sharedNetwork struct {
-		Name    string
-		Subnet4 []subnet4
-		keaconfig.ReservationModes
-	}
-	// Parse shared-networks list.
-	var decodedSharedNetworks []sharedNetwork
+	// Get parsed shared-networks list with top-level subnets.
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	err := config.DecodeSharedNetworks(&decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
-	// Parse top-level subnets.
-	var decodedSubnets4 []subnet4
-	err = config.DecodeTopLevelSubnets(&decodedSubnets4)
-	if err != nil {
-		return nil, err
-	}
-	// Create an artificial shared network comprising the top-level
-	// subnets. It will make the code below more readable.
-	decodedSharedNetworks = append(decodedSharedNetworks, sharedNetwork{
-		Subnet4: decodedSubnets4,
-	})
+	sharedNetworks := config.GetSharedNetworks(true)
+
 	// Get global host reservation mode settings.
-	globalModes := config.GetGlobalReservationModes()
-	if globalModes == nil {
-		return nil, errors.New(
-			"problem getting global reservation modes from Kea configuration",
-		)
-	}
+	globalParameters := config.GetGlobalReservationParameters()
+
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
@@ -430,31 +306,31 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)
-	for _, net := range decodedSharedNetworks {
-		for _, subnet := range net.Subnet4 {
+	for _, net := range sharedNetworks {
+		for _, subnet := range net.GetSubnets() {
 			// Check if out-of-pool host reservation mode has been enabled at
 			// any level of inheritance from the subnet to the global scope.
 			// If that mode has been already enabled there is nothing to do for
 			// this subnet.
-			if keaconfig.IsInAnyReservationModes(func(modes keaconfig.ReservationModes) (bool, bool) {
+			if keaconfig.IsInAnyReservationModes(func(modes keaconfig.ReservationParameters) (bool, bool) {
 				return modes.IsOutOfPool()
-			}, subnet.ReservationModes, net.ReservationModes, *globalModes) {
+			}, subnet.GetSubnetParameters().ReservationParameters, net.GetSharedNetworkParameters().ReservationParameters, globalParameters) {
 				continue
 			}
 			// If there are no reservations in this subnet there is nothing
 			// to do.
-			if len(subnet.Reservations) == 0 && len(dbHosts) == 0 {
+			if len(subnet.GetReservations()) == 0 && len(dbHosts) == 0 {
 				continue
 			}
 			inPool := false
 			ipResrvExist := false
 			// Check if at least one reservation is within a pool.
-			for _, reservation := range subnet.Reservations {
+			for _, reservation := range subnet.GetReservations() {
 				if len(reservation.IPAddress) > 0 {
 					ipResrvExist = true
 					// Check if the IP address belongs to any of the pools. If
 					// it does, move to the next subnet.
-					if isAnyAddressInPools([]string{reservation.IPAddress}, subnet.Pools) {
+					if isAnyAddressInPools([]string{reservation.IPAddress}, subnet.GetPools()) {
 						inPool = true
 						break
 					}
@@ -463,10 +339,10 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			// If there is no in-pool reservation in the configured reservations
 			// let's check if there are some in the host database.
 			if !inPool {
-				for _, dbHost := range dbHosts[subnet.ID] {
+				for _, dbHost := range dbHosts[subnet.GetID()] {
 					ipResrvExist = true
 					if len(dbHost.IPReservations) > 0 {
-						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.Pools) {
+						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.GetPools()) {
 							inPool = true
 							break
 						}
@@ -518,48 +394,13 @@ func isAnyPrefixInPools(prefixes []string, pools []keaconfig.PDPool) bool {
 // mode when there are IPv6 subnets with all host reservations outside of the
 // dynamic pools.
 func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
-	type subnet6 struct {
-		ID           int64
-		Subnet       string
-		Pools        []keaconfig.Pool
-		PDPools      []keaconfig.PDPool
-		Reservations []struct {
-			IPAddresses []string
-			Prefixes    []string
-		}
-		keaconfig.ReservationModes
-	}
-	// Create a structure into which the shared networks will be decoded.
-	type sharedNetwork struct {
-		Name    string
-		Subnet6 []subnet6
-		keaconfig.ReservationModes
-	}
-	// Parse shared-networks list.
-	var decodedSharedNetworks []sharedNetwork
+	// Get shared networks list including root subnets.
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	err := config.DecodeSharedNetworks(&decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
-	// Parse top-level subnets.
-	var decodedSubnets6 []subnet6
-	err = config.DecodeTopLevelSubnets(&decodedSubnets6)
-	if err != nil {
-		return nil, err
-	}
-	// Create an artificial shared network comprising the top-level
-	// subnets. It will make the code below more readable.
-	decodedSharedNetworks = append(decodedSharedNetworks, sharedNetwork{
-		Subnet6: decodedSubnets6,
-	})
+	sharedNetworks := config.GetSharedNetworks(true)
+
 	// Get global host reservation mode settings.
-	globalModes := config.GetGlobalReservationModes()
-	if globalModes == nil {
-		return nil, errors.New(
-			"problem getting global reservation modes from Kea configuration",
-		)
-	}
+	globalParameters := config.GetGlobalReservationParameters()
+
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
@@ -568,32 +409,32 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)
-	for _, net := range decodedSharedNetworks {
-		for _, subnet := range net.Subnet6 {
+	for _, net := range sharedNetworks {
+		for _, subnet := range net.GetSubnets() {
 			// Check if out-of-pool host reservation mode has been enabled at
 			// any level of inheritance from the subnet to the global scope.
 			// If that mode has been already enabled there is nothing to do for
 			// this subnet.
-			if keaconfig.IsInAnyReservationModes(func(modes keaconfig.ReservationModes) (bool, bool) {
+			if keaconfig.IsInAnyReservationModes(func(modes keaconfig.ReservationParameters) (bool, bool) {
 				return modes.IsOutOfPool()
-			}, subnet.ReservationModes, net.ReservationModes, *globalModes) {
+			}, subnet.GetSubnetParameters().ReservationParameters, net.GetSharedNetworkParameters().ReservationParameters, globalParameters) {
 				continue
 			}
 			// If there are no reservations in this subnet there is nothing
 			// to do.
-			if len(subnet.Reservations) == 0 && len(dbHosts) == 0 {
+			if len(subnet.GetReservations()) == 0 && len(dbHosts) == 0 {
 				continue
 			}
 			inPool := false
 			ipResrvExist := false
 			// Check if at least one reservation is within a pool.
-			for _, reservation := range subnet.Reservations {
+			for _, reservation := range subnet.GetReservations() {
 				if len(reservation.IPAddresses) > 0 || len(reservation.Prefixes) > 0 {
 					ipResrvExist = true
 					// Check if any of the IP addresses or delegated prefixes
 					// belong to any of the pools. If so, move to the next subnet.
-					if isAnyAddressInPools(reservation.IPAddresses, subnet.Pools) ||
-						isAnyPrefixInPools(reservation.Prefixes, subnet.PDPools) {
+					if isAnyAddressInPools(reservation.IPAddresses, subnet.GetPools()) ||
+						isAnyPrefixInPools(reservation.Prefixes, subnet.GetPDPools()) {
 						inPool = true
 						break
 					}
@@ -602,11 +443,11 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			// If there is no in-pool reservation in the configured reservations
 			// let's check if there are some in the host database.
 			if !inPool {
-				for _, dbHost := range dbHosts[subnet.ID] {
+				for _, dbHost := range dbHosts[subnet.GetID()] {
 					ipResrvExist = true
 					if len(dbHost.IPReservations) > 0 {
-						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.Pools) ||
-							isAnyIPReservationInPDPools(dbHost.IPReservations, subnet.PDPools) {
+						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.GetPools()) ||
+							isAnyIPReservationInPDPools(dbHost.IPReservations, subnet.GetPDPools()) {
 							inPool = true
 							break
 						}
@@ -652,14 +493,9 @@ func reservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	return checkDHCPv6ReservationsOutOfPool(ctx)
 }
 
-type minimalSubnet struct {
-	ID     int64
-	Subnet string
-}
-
 type minimalSubnetPair struct {
-	parent minimalSubnet
-	child  minimalSubnet
+	parent keaconfig.Subnet
+	child  keaconfig.Subnet
 }
 
 // The checker validates that subnets (global or from shared networks) don't
@@ -674,32 +510,19 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	var decodedSubnets []minimalSubnet
 	// Global subnets.
-	err := config.DecodeTopLevelSubnets(&decodedSubnets)
-	if err != nil {
-		return nil, err
-	}
+	subnets := config.GetSubnets()
 
 	// Subnets belonging to the shared networks.
-	type minimalSharedNetwork struct {
-		Subnet4 []minimalSubnet
-		Subnet6 []minimalSubnet
-	}
-	var decodedSharedNetworks []minimalSharedNetwork
-	err = config.DecodeSharedNetworks(&decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
+	sharedNetworks := config.GetSharedNetworks(false)
 
-	for _, sharedNetwork := range decodedSharedNetworks {
-		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet4...)
-		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet6...)
+	for _, sharedNetwork := range sharedNetworks {
+		subnets = append(subnets, sharedNetwork.GetSubnets()...)
 	}
 
 	// Limits the overlaps count to avoid producing too huge review message.
 	maxOverlaps := 10
-	overlaps := findOverlaps(decodedSubnets, maxOverlaps)
+	overlaps := findOverlaps(subnets, maxOverlaps)
 	if len(overlaps) == 0 {
 		return nil, nil
 	}
@@ -712,17 +535,17 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 	overlappingMessages := make([]string, len(overlaps))
 	for i, overlap := range overlaps {
 		parentID := ""
-		if overlap.parent.ID != 0 {
-			parentID = fmt.Sprintf("[%d] ", overlap.parent.ID)
+		if overlap.parent.GetID() != 0 {
+			parentID = fmt.Sprintf("[%d] ", overlap.parent.GetID())
 		}
 		childID := ""
-		if overlap.child.ID != 0 {
-			childID = fmt.Sprintf("[%d] ", overlap.child.ID)
+		if overlap.child.GetID() != 0 {
+			childID = fmt.Sprintf("[%d] ", overlap.child.GetID())
 		}
 
 		message := fmt.Sprintf("%d. %s%s is overlapped by %s%s", i+1,
-			parentID, overlap.parent.Subnet,
-			childID, overlap.child.Subnet)
+			parentID, overlap.parent.GetPrefix(),
+			childID, overlap.child.GetPrefix())
 		overlappingMessages[i] = message
 	}
 	overlapMessage := strings.Join(overlappingMessages, "; ")
@@ -737,10 +560,10 @@ func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
 // Search for prefix overlaps in the provided set of subnets.
 // The execution is stopped early if an expected name of founded overlaps is
 // reached.
-func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
+func findOverlaps(subnets []keaconfig.Subnet, maxOverlaps int) (overlaps []minimalSubnetPair) {
 	// Pair of the subnet and its binary prefix.
 	type subnetWithPrefix struct {
-		subnet       minimalSubnet
+		subnet       keaconfig.Subnet
 		binaryPrefix string
 	}
 
@@ -748,7 +571,7 @@ func findOverlaps(subnets []minimalSubnet, maxOverlaps int) (overlaps []minimalS
 	subnetPrefixes := make([]subnetWithPrefix, len(subnets))
 
 	for i, subnet := range subnets {
-		cidr := storkutil.ParseIP(subnet.Subnet)
+		cidr := storkutil.ParseIP(subnet.GetPrefix())
 		if cidr == nil || !cidr.Prefix {
 			continue
 		}
@@ -805,48 +628,33 @@ func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	var decodedSubnets []minimalSubnet
-	// Global subnets.
-	err := config.DecodeTopLevelSubnets(&decodedSubnets)
-	if err != nil {
-		return nil, err
-	}
+	// Global subnets and shared networks.
+	subnets := config.GetSubnets()
+	sharedNetworks := config.GetSharedNetworks(false)
 
-	// Subnets belonging to the shared networks.
-	type minimalSharedNetwork struct {
-		Subnet4 []minimalSubnet
-		Subnet6 []minimalSubnet
-	}
-	var decodedSharedNetworks []minimalSharedNetwork
-	err = config.DecodeSharedNetworks(&decodedSharedNetworks)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, sharedNetwork := range decodedSharedNetworks {
-		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet4...)
-		decodedSubnets = append(decodedSubnets, sharedNetwork.Subnet6...)
+	for _, sharedNetwork := range sharedNetworks {
+		subnets = append(subnets, sharedNetwork.GetSubnets()...)
 	}
 
 	maxIssues := 10
 	var issues []string
 
-	for _, decodedSubnet := range decodedSubnets {
-		prefix, ok := getCanonicalPrefix(decodedSubnet.Subnet)
+	for _, subnet := range subnets {
+		prefix, ok := getCanonicalPrefix(subnet.GetPrefix())
 		if ok {
 			continue
 		}
 
 		subnetID := ""
-		if decodedSubnet.ID != 0 {
-			subnetID = fmt.Sprintf("[%d] ", decodedSubnet.ID)
+		if subnet.GetID() != 0 {
+			subnetID = fmt.Sprintf("[%d] ", subnet.GetID())
 		}
 
 		issue := fmt.Sprintf(
 			"%d. %s%s is invalid prefix",
 			len(issues)+1,
 			subnetID,
-			decodedSubnet.Subnet,
+			subnet.GetPrefix(),
 		)
 
 		if prefix != "" {
@@ -911,13 +719,13 @@ func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	_, haConfig, ok := config.GetHAHooksLibrary()
+	_, haConfig, ok := config.GetHookLibraries().GetHAHookLibrary()
 	if !ok {
 		// There is no HA configured.
 		return nil, nil
 	}
 
-	haMultiThreadingConfig := haConfig.MultiThreading
+	haMultiThreadingConfig := haConfig.GetFirst().MultiThreading
 	if haMultiThreadingConfig != nil &&
 		haMultiThreadingConfig.EnableMultiThreading != nil &&
 		*haMultiThreadingConfig.EnableMultiThreading {
@@ -950,21 +758,21 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	_, haConfig, ok := config.GetHAHooksLibrary()
+	_, haConfig, ok := config.GetHookLibraries().GetHAHookLibrary()
 	if !ok {
 		// There is no HA configured.
 		return nil, nil
 	}
 
-	if haConfig.MultiThreading == nil ||
-		haConfig.MultiThreading.EnableMultiThreading == nil ||
-		!*haConfig.MultiThreading.EnableMultiThreading {
+	if haConfig.GetFirst().MultiThreading == nil ||
+		haConfig.GetFirst().MultiThreading.EnableMultiThreading == nil ||
+		!*haConfig.GetFirst().MultiThreading.EnableMultiThreading {
 		// There is no HA+MT configured.
 		return nil, nil
 	}
 
-	if haConfig.MultiThreading.HTTPDedicatedListener == nil ||
-		!*haConfig.MultiThreading.HTTPDedicatedListener {
+	if haConfig.GetFirst().MultiThreading.HTTPDedicatedListener == nil ||
+		!*haConfig.GetFirst().MultiThreading.HTTPDedicatedListener {
 		// The dedicated listener is disabled.
 		return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
 			"use dedicated HTTP listeners to handle communication between HA "+
@@ -979,8 +787,8 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 	// The loop checks if the subject daemon connects directly to the
 	// dedicated listeners on the external peers.
-	for _, peer := range haConfig.Peers {
-		if !peer.IsSet() {
+	for _, peer := range haConfig.GetFirst().Peers {
+		if !peer.IsValid() {
 			// Invalid peer. Skip.
 			continue
 		}
@@ -1064,28 +872,14 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
-	type subnet struct {
-		ID           int64
-		Subnet       string
-		Pools        []keaconfig.Pool
-		Reservations []struct {
-			IPAddress   string
-			IPAddresses []string
-		}
-	}
-
 	type reportData struct {
-		Subnet subnet
+		Subnet keaconfig.Subnet
 		Pool   string
 	}
 
 	// Retrieve the subnet data (IPv4 and IPv6).
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	var subnets []subnet
-	err := config.DecodeTopLevelSubnets(&subnets)
-	if err != nil {
-		return nil, err
-	}
+	subnets := config.GetSubnets()
 
 	// Collected data to report.
 	const maxIssues = 10
@@ -1101,7 +895,7 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 		// Parse all reservations in a subnet.
 		reservedAddresses := []*storkutil.ParsedIP{}
 
-		for _, reservation := range subnet.Reservations {
+		for _, reservation := range subnet.GetReservations() {
 			if reservation.IPAddress != "" {
 				parsedIP := storkutil.ParseIP(reservation.IPAddress)
 				reservedAddresses = append(reservedAddresses, parsedIP)
@@ -1112,7 +906,7 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 			}
 		}
 
-		for _, host := range dbHosts[subnet.ID] {
+		for _, host := range dbHosts[subnet.GetID()] {
 			for _, reservation := range host.GetIPReservations() {
 				parsedIP := storkutil.ParseIP(reservation)
 				if !parsedIP.Prefix {
@@ -1123,7 +917,7 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 
 		// Iterate over the address pools and check if they are exhausted by
 		// IP reservations.
-		for _, pool := range subnet.Pools {
+		for _, pool := range subnet.GetPools() {
 			// Parse a pool.
 			lb, ub, err := storkutil.ParseIPRange(pool.Pool)
 			if err != nil {
@@ -1172,13 +966,13 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 	messages := make([]string, len(issues))
 	for i, issue := range issues {
 		subnetID := ""
-		if issue.Subnet.ID != 0 {
-			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.ID)
+		if issue.Subnet.GetID() != 0 {
+			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.GetID())
 		}
 
 		messages[i] = fmt.Sprintf(
 			"%d. Pool '%s' of the '%s%s' subnet.",
-			i+1, issue.Pool, subnetID, issue.Subnet.Subnet,
+			i+1, issue.Pool, subnetID, issue.Subnet.GetPrefix(),
 		)
 	}
 
@@ -1213,27 +1007,14 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
-	type subnet struct {
-		ID           int64
-		Subnet       string
-		PDPools      []keaconfig.PDPool
-		Reservations []struct {
-			Prefixes []string
-		}
-	}
-
 	type reportData struct {
-		Subnet subnet
+		Subnet keaconfig.Subnet
 		Pool   string
 	}
 
 	// Retrieve the subnet data (IPv4 and IPv6).
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	var subnets []subnet
-	err := config.DecodeTopLevelSubnets(&subnets)
-	if err != nil {
-		return nil, err
-	}
+	subnets := config.GetSubnets()
 
 	// Collected data to report.
 	const maxIssues = 10
@@ -1249,14 +1030,14 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 		// Parse all reservations in a subnet.
 		reservedPrefixes := []*storkutil.ParsedIP{}
 
-		for _, reservation := range subnet.Reservations {
+		for _, reservation := range subnet.GetReservations() {
 			for _, prefix := range reservation.Prefixes {
 				parsedIP := storkutil.ParseIP(prefix)
 				reservedPrefixes = append(reservedPrefixes, parsedIP)
 			}
 		}
 
-		for _, host := range dbHosts[subnet.ID] {
+		for _, host := range dbHosts[subnet.GetID()] {
 			for _, reservation := range host.GetIPReservations() {
 				parsedIP := storkutil.ParseIP(reservation)
 				if parsedIP.Prefix {
@@ -1267,7 +1048,7 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 
 		// Iterate over the PD pools and check if they are exhausted by
 		// IP reservations.
-		for _, pool := range subnet.PDPools {
+		for _, pool := range subnet.GetPDPools() {
 			// Calculate the pool size.
 			// Pool size = 2 power to the number of the wildcard bytes.
 			poolSize := storkutil.CalculateDelegatedPrefixRangeSize(
@@ -1319,13 +1100,13 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 	messages := make([]string, len(issues))
 	for i, issue := range issues {
 		subnetID := ""
-		if issue.Subnet.ID != 0 {
-			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.ID)
+		if issue.Subnet.GetID() != 0 {
+			subnetID = fmt.Sprintf("[%d] ", issue.Subnet.GetID())
 		}
 
 		messages[i] = fmt.Sprintf(
 			"%d. Pool '%s' of the '%s%s' subnet.",
-			i+1, issue.Pool, subnetID, issue.Subnet.Subnet,
+			i+1, issue.Pool, subnetID, issue.Subnet.GetPrefix(),
 		)
 	}
 
@@ -1362,7 +1143,7 @@ func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, err
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	if _, _, present := config.GetHooksLibrary("libdhcp_subnet_cmds"); !present {
+	if _, _, present := config.GetHookLibrary("libdhcp_subnet_cmds"); !present {
 		// Missing subnet commands hook.
 		return nil, nil
 	}

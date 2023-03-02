@@ -104,43 +104,26 @@ func overrideIntoDatabaseSubnet(dbi dbops.DBI, existingSubnet *dbmodel.Subnet, c
 	return nil
 }
 
-// For a given Kea configuration it detects the shared networks matching this
-// configuration. All existing shared network matching the given configuration
-// are returned as they are. If there is no match a new shared network instance
-// is returned.
 func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon *dbmodel.Daemon, lookup keaconfig.DHCPOptionDefinitionLookup) (networks []dbmodel.SharedNetwork, err error) {
-	// Get all shared networks and the subnets within those networks from the
-	// application configuration.
-	networkList, ok := config.GetTopLevelList("shared-networks")
-	if !ok {
+	networksList := config.GetSharedNetworks(false)
+	if len(networksList) == 0 {
 		return networks, err
 	}
 
-	// If there are no shared networks there is nothing to do.
-	if len(networkList) == 0 {
-		return networks, nil
-	}
-
-	// We have to match the configured shared networks with the ones we
-	// already have in the database.
 	dbNetworks, err := dbmodel.GetAllSharedNetworks(dbi, family)
 	if err != nil {
-		return []dbmodel.SharedNetwork{}, err
+		return networks, err
 	}
 
-	// For each network in the app's configuration we will do such matching.
-	for _, n := range networkList {
-		networkMap, ok := n.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		// Parse the configured network.
-		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family, daemon, dbmodel.HostDataSourceConfig, lookup)
+	for _, n := range networksList {
+		var network *dbmodel.SharedNetwork
+		network, err = dbmodel.NewSharedNetworkFromKea(n, family, daemon, dbmodel.HostDataSourceConfig, lookup)
 		if err != nil {
 			log.Warnf("Skipping invalid shared network: %v", err)
 			continue
 		}
-		dbNetwork, err := sharedNetworkExists(dbi, network, dbNetworks)
+		var dbNetwork *dbmodel.SharedNetwork
+		dbNetwork, err = sharedNetworkExists(dbi, network, dbNetworks)
 		if err != nil {
 			return []dbmodel.SharedNetwork{}, err
 		}
@@ -189,14 +172,8 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 // are returned as they are. If there is no match a new subnet instance is
 // returned.
 func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon *dbmodel.Daemon, lookup keaconfig.DHCPOptionDefinitionLookup) (subnets []dbmodel.Subnet, err error) {
-	subnetParamName := "subnet4"
-	if family == 6 {
-		subnetParamName = "subnet6"
-	}
-
-	// Get top level subnets not associated with any shared networks.
-	subnetList, ok := config.GetTopLevelList(subnetParamName)
-	if !ok || len(subnetList) == 0 {
+	subnetList := config.GetSubnets()
+	if len(subnetList) == 0 {
 		return subnets, err
 	}
 
@@ -206,47 +183,40 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 	// of subnets grows.
 	dbSubnets, err := dbmodel.GetGlobalSubnets(dbi, family)
 	if err != nil {
-		return []dbmodel.Subnet{}, err
+		return subnets, err
 	}
 	indexedSubnets := dbmodel.NewIndexedSubnets(dbSubnets)
 	if ok := indexedSubnets.Populate(); !ok {
 		err = errors.Errorf("failed to build indexes for existing subnets because duplicates are present")
 
-		return []dbmodel.Subnet{}, err
+		return subnets, err
 	}
 
 	// Iterate over the configured subnets.
 	for _, s := range subnetList {
-		if subnetMap, ok := s.(map[string]interface{}); ok {
-			// Parse the configured subnet.
-			var subnet *dbmodel.Subnet
-			if family == 4 {
-				subnet, err = dbmodel.NewSubnet4FromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig, lookup)
-			} else {
-				subnet, err = dbmodel.NewSubnet6FromKea(&subnetMap, daemon, dbmodel.HostDataSourceConfig, lookup)
-			}
+		// Parse the configured subnet.
+		subnet, err := dbmodel.NewSubnetFromKea(s, daemon, dbmodel.HostDataSourceConfig, lookup)
+		if err != nil {
+			log.Warnf("Skipping invalid subnet: %v", err)
+			continue
+		}
+		existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
+		if existingSubnet != nil {
+			// Subnet already exists and may contain some updated data. Let's
+			// override the data from the new subnet into the existing subnet.
+			err := overrideIntoDatabaseSubnet(dbi, existingSubnet, subnet)
 			if err != nil {
-				log.Warnf("Skipping invalid subnet: %v", err)
+				log.Warnf("Skipping subnet %s after data override failure: %v",
+					subnet.Prefix, err)
 				continue
 			}
-			existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
-			if existingSubnet != nil {
-				// Subnet already exists and may contain some updated data. Let's
-				// override the data from the new subnet into the existing subnet.
-				err := overrideIntoDatabaseSubnet(dbi, existingSubnet, subnet)
-				if err != nil {
-					log.Warnf("Skipping subnet %s after data override failure: %v",
-						subnet.Prefix, err)
-					continue
-				}
-				existingSubnet.Join(subnet)
-				subnets = append(subnets, *existingSubnet)
-			} else {
-				subnets = append(subnets, *subnet)
-			}
+			existingSubnet.Join(subnet)
+			subnets = append(subnets, *existingSubnet)
+		} else {
+			subnets = append(subnets, *subnet)
 		}
 	}
-	return subnets, err
+	return subnets, nil
 }
 
 // For a given Kea daemon it detects the shared networks and subnets this Kea
@@ -256,7 +226,7 @@ func detectDaemonNetworks(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup keaconfi
 	// If this is not a Kea daemon or the configuration is unknown
 	// there is nothing to do.
 	if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
-		return networks, subnets, nil
+		return networks, subnets, err
 	}
 
 	var family int
@@ -266,7 +236,7 @@ func detectDaemonNetworks(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup keaconfi
 	case dhcp6:
 		family = 6
 	default:
-		return networks, subnets, nil
+		return networks, subnets, err
 	}
 
 	// Detect shared networks and the subnets.
@@ -279,9 +249,8 @@ func detectDaemonNetworks(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup keaconfi
 	// Detect top level subnets.
 	detectedSubnets, err := detectSubnets(dbi, daemon.KeaDaemon.Config, family, daemon, lookup)
 	if err != nil {
-		return []dbmodel.SharedNetwork{}, subnets, err
+		return []dbmodel.SharedNetwork{}, []dbmodel.Subnet{}, err
 	}
 	subnets = append(subnets, detectedSubnets...)
-
 	return networks, subnets, nil
 }

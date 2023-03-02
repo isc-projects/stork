@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -41,10 +40,6 @@ type KeaDHCPDaemon struct {
 	ID          int64
 	KeaDaemonID int64
 	Stats       KeaDHCPDaemonStats
-
-	// Optionally initialized structure holding indexed collection
-	// of subnets. It is created from the KeaDaemon.Config field.
-	IndexedSubnets *keaconfig.IndexedSubnets `pg:"-"`
 }
 
 // A structure holding common information for all Kea daemons. It
@@ -503,15 +498,11 @@ func (d *Daemon) GetHAOverview() (overviews []DaemonServiceOverview) {
 // it extracts some configuration information and populates to the daemon structures,
 // e.g. logging configuration. The config should be a pointer to the KeaConfig
 // structure. The config_hash is a hash created from the specified configuration.
-func (d *Daemon) SetConfigWithHash(config interface{}, configHash string) error {
+func (d *Daemon) SetConfigWithHash(config *KeaConfig, configHash string) error {
 	if d.KeaDaemon != nil {
-		parsedConfig, ok := config.(*KeaConfig)
-		if !ok {
-			return pkgerrors.Errorf("error setting non-Kea config for Kea daemon %s", d.Name)
-		}
 		existingLogTargets := d.LogTargets
 		d.LogTargets = []*LogTarget{}
-		loggers := parsedConfig.GetLoggers()
+		loggers := config.GetLoggers()
 		for _, logger := range loggers {
 			targets := NewLogTargetsFromKea(logger)
 			for i := range targets {
@@ -529,14 +520,14 @@ func (d *Daemon) SetConfigWithHash(config interface{}, configHash string) error 
 				d.LogTargets = append(d.LogTargets, targets[i])
 			}
 		}
-		d.KeaDaemon.Config = parsedConfig
+		d.KeaDaemon.Config = config
 		d.KeaDaemon.ConfigHash = configHash
 	}
 	return nil
 }
 
 // Sets new configuration of the daemon with empty hash.
-func (d *Daemon) SetConfig(config interface{}) error {
+func (d *Daemon) SetConfig(config *KeaConfig) error {
 	return d.SetConfigWithHash(config, "")
 }
 
@@ -566,23 +557,9 @@ func (d *Daemon) GetLocalSubnetID(prefix string) int64 {
 	if d.KeaDaemon == nil {
 		return 0
 	}
-	// If subnets happen to be indexed, use the index to locate the subnet because
-	// it is a lot faster than full scan.
-	if d.KeaDaemon.KeaDHCPDaemon != nil && d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets != nil {
-		is := d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets
-		if subnet, ok := is.ByPrefix[prefix]; ok {
-			if id, ok := subnet["id"].(float64); ok {
-				return int64(id)
-			}
-		}
-
-		return 0
-	}
-
-	// No index for subnets for this daemon. We have to do full subnets scan.
 	if d.KeaDaemon.Config != nil {
-		if id := d.KeaDaemon.Config.GetLocalSubnetID(prefix); id > 0 {
-			return id
+		if subnet := d.KeaDaemon.Config.GetSubnetByPrefix(prefix); subnet != nil {
+			return subnet.GetID()
 		}
 	}
 	return 0

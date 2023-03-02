@@ -980,7 +980,7 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 
 	// Files and backends.
 	if dbDaemon.KeaDaemon.Config != nil {
-		daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config)
+		daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
 	}
 	return daemon
 }

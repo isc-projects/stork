@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -157,7 +158,7 @@ func TestHostCmdsPresent(t *testing.T) {
 	// The host backend is in use and the library is loaded.
 	configStr := `{
         "Dhcp4": {
-            "hosts-database": [
+            "hosts-databases": [
                 {
                     "type": "mysql"
                 }
@@ -1694,7 +1695,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 // Test that no overlaps are detected for empty subnet list.
 func TestFindOverlapsEmptySubnets(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{}
+	subnets := []keaconfig.Subnet{}
 
 	// Act
 	overlaps := findOverlaps(subnets, 42)
@@ -1706,15 +1707,55 @@ func TestFindOverlapsEmptySubnets(t *testing.T) {
 // Test that no overlaps are detected for non-overlapping subnets.
 func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/24"},
-		{ID: 2, Subnet: "192.168.1.0/24"},
-		{ID: 3, Subnet: "192.168.2.0/24"},
-		{ID: 4, Subnet: "192.168.3.0/24"},
-		{ID: 5, Subnet: "3001:0::/80"},
-		{ID: 6, Subnet: "3001:1::/80"},
-		{ID: 7, Subnet: "3001:2::/80"},
-		{ID: 8, Subnet: "3001:3::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.1.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "192.168.2.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     4,
+				Subnet: "192.168.3.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:1::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     7,
+				Subnet: "3001:2::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     8,
+				Subnet: "3001:3::/80",
+			},
+		},
 	}
 
 	// Act
@@ -1727,11 +1768,31 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 // Test that duplicated prefixes are detected as overlaps.
 func TestFindOverlapsForDuplicates(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/24"},
-		{ID: 2, Subnet: "192.168.0.0/24"},
-		{ID: 5, Subnet: "3001:0::/80"},
-		{ID: 6, Subnet: "3001:0::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:0::/80",
+			},
+		},
 	}
 
 	// Act
@@ -1739,23 +1800,53 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 2, overlaps[1].parent.ID)
-	require.EqualValues(t, 1, overlaps[1].child.ID)
-	require.EqualValues(t, 6, overlaps[0].parent.ID)
-	require.EqualValues(t, 5, overlaps[0].child.ID)
+	require.EqualValues(t, 2, overlaps[1].parent.GetID())
+	require.EqualValues(t, 1, overlaps[1].child.GetID())
+	require.EqualValues(t, 6, overlaps[0].parent.GetID())
+	require.EqualValues(t, 5, overlaps[0].child.GetID())
 }
 
 // Test that duplicated prefixes are detected as overlaps even if the prefix is
 // repeatedly duplicated.
 func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/24"},
-		{ID: 2, Subnet: "192.168.0.0/24"},
-		{ID: 3, Subnet: "192.168.0.0/24"},
-		{ID: 5, Subnet: "3001:0::/80"},
-		{ID: 6, Subnet: "3001:0::/80"},
-		{ID: 7, Subnet: "3001:0::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:0::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     7,
+				Subnet: "3001:0::/80",
+			},
+		},
 	}
 
 	// Act
@@ -1763,29 +1854,49 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 6)
-	require.EqualValues(t, 2, overlaps[5].parent.ID)
-	require.EqualValues(t, 1, overlaps[5].child.ID)
-	require.EqualValues(t, 3, overlaps[4].parent.ID)
-	require.EqualValues(t, 1, overlaps[4].child.ID)
-	require.EqualValues(t, 3, overlaps[3].parent.ID)
-	require.EqualValues(t, 2, overlaps[3].child.ID)
-	require.EqualValues(t, 6, overlaps[2].parent.ID)
-	require.EqualValues(t, 5, overlaps[2].child.ID)
-	require.EqualValues(t, 7, overlaps[1].parent.ID)
-	require.EqualValues(t, 5, overlaps[1].child.ID)
-	require.EqualValues(t, 7, overlaps[0].parent.ID)
-	require.EqualValues(t, 6, overlaps[0].child.ID)
+	require.EqualValues(t, 2, overlaps[5].parent.GetID())
+	require.EqualValues(t, 1, overlaps[5].child.GetID())
+	require.EqualValues(t, 3, overlaps[4].parent.GetID())
+	require.EqualValues(t, 1, overlaps[4].child.GetID())
+	require.EqualValues(t, 3, overlaps[3].parent.GetID())
+	require.EqualValues(t, 2, overlaps[3].child.GetID())
+	require.EqualValues(t, 6, overlaps[2].parent.GetID())
+	require.EqualValues(t, 5, overlaps[2].child.GetID())
+	require.EqualValues(t, 7, overlaps[1].parent.GetID())
+	require.EqualValues(t, 5, overlaps[1].child.GetID())
+	require.EqualValues(t, 7, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
 }
 
 // Test that overlaps are detected for the same network but different prefix
 // lengths.
 func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/16"},
-		{ID: 2, Subnet: "192.168.0.0/24"},
-		{ID: 5, Subnet: "3001:0::/64"},
-		{ID: 6, Subnet: "3001:0::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/16",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.0.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/64",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:0::/80",
+			},
+		},
 	}
 
 	// Act
@@ -1793,48 +1904,117 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[1].parent.ID)
-	require.EqualValues(t, 2, overlaps[1].child.ID)
-	require.EqualValues(t, 5, overlaps[0].parent.ID)
-	require.EqualValues(t, 6, overlaps[0].child.ID)
+	require.EqualValues(t, 1, overlaps[1].parent.GetID())
+	require.EqualValues(t, 2, overlaps[1].child.GetID())
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
 }
 
 // Test that overlaps are detected when one prefix is contained by another.
 func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/16"},
-		{ID: 2, Subnet: "192.168.5.0/24"},
-		{ID: 5, Subnet: "3001:0::/16"},
-		{ID: 6, Subnet: "3001:1::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/16",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.5.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:0::/80",
+			},
+		},
 	}
-
 	// Act
 	overlaps := findOverlaps(subnets, 42)
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 1, overlaps[1].parent.ID)
-	require.EqualValues(t, 2, overlaps[1].child.ID)
-	require.EqualValues(t, 5, overlaps[0].parent.ID)
-	require.EqualValues(t, 6, overlaps[0].child.ID)
+	require.EqualValues(t, 1, overlaps[1].parent.GetID())
+	require.EqualValues(t, 2, overlaps[1].child.GetID())
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
 }
 
 // Test that the searching for overlaps is stopped if the limit is exceeded on
 // duplicated subnets.
 func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/16"},
-		{ID: 2, Subnet: "192.168.5.0/24"},
-		{ID: 3, Subnet: "192.68.5.0/24"},
-		{ID: 4, Subnet: "192.68.5.0/24"},
-		{ID: 5, Subnet: "3001:0::/16"},
-		{ID: 6, Subnet: "3001:1::/80"},
-		{ID: 7, Subnet: "2001:0::/16"},
-		{ID: 8, Subnet: "2001:0::/16"},
-		{ID: 9, Subnet: "4001:0::/16"},
-		{ID: 10, Subnet: "4001:0::/16"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/16",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.5.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "192.68.5.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     4,
+				Subnet: "192.68.5.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001:0::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:1::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     7,
+				Subnet: "2001:0::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     8,
+				Subnet: "2001:0::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     9,
+				Subnet: "4001:0::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     10,
+				Subnet: "4001:0::/16",
+			},
+		},
 	}
 
 	// Act
@@ -1842,25 +2022,65 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 5, overlaps[0].parent.ID)
-	require.EqualValues(t, 6, overlaps[0].child.ID)
-	require.EqualValues(t, 10, overlaps[1].parent.ID)
-	require.EqualValues(t, 9, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
+	require.EqualValues(t, 10, overlaps[1].parent.GetID())
+	require.EqualValues(t, 9, overlaps[1].child.GetID())
 }
 
 // Test that the searching for overlaps is stopped if the limit of overlapping
 // subnets is exceeded.
 func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 	// Arrange
-	subnets := []minimalSubnet{
-		{ID: 1, Subnet: "192.168.0.0/16"},
-		{ID: 2, Subnet: "192.168.5.0/24"},
-		{ID: 3, Subnet: "192.68.0.0/16"},
-		{ID: 4, Subnet: "192.68.5.0/24"},
-		{ID: 5, Subnet: "3001::/16"},
-		{ID: 6, Subnet: "3001:1::/80"},
-		{ID: 7, Subnet: "2001::/16"},
-		{ID: 8, Subnet: "2001:1::/80"},
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.168.0.0/16",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.168.5.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "192.68.0.0/16",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     4,
+				Subnet: "192.68.5.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "3001::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "3001:1::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     7,
+				Subnet: "2001::/16",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     8,
+				Subnet: "2001:1::/80",
+			},
+		},
 	}
 
 	// Act
@@ -1868,10 +2088,10 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 5, overlaps[0].parent.ID)
-	require.EqualValues(t, 6, overlaps[0].child.ID)
-	require.EqualValues(t, 7, overlaps[1].parent.ID)
-	require.EqualValues(t, 8, overlaps[1].child.ID)
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
+	require.EqualValues(t, 7, overlaps[1].parent.GetID())
+	require.EqualValues(t, 8, overlaps[1].child.GetID())
 }
 
 // Test that error is generated for non-DHCP daemon.
@@ -2025,22 +2245,6 @@ func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Nil(t, report)
-}
-
-// Test that error is returned for an empty JSON.
-func TestSubnetsOverlappingForEmptyJSON(t *testing.T) {
-	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
-	_ = daemon.SetConfigFromJSON(`{ }`)
-	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
-
-	// Act
-	report, err := subnetsOverlapping(ctx)
-
-	// Assert
-	require.Error(t, err)
 	require.Nil(t, report)
 }
 
@@ -3579,7 +3783,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 // Generates subnets of which some have overlapping prefixes.
 // The overlapping factor must be in range from 0 (no overlaps) to 1 (100% overlaps).
 // Each overlapped subnet is contained in exactly one other subnet.
-func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalSubnet) {
+func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []keaconfig.Subnet) {
 	overlappingStep := int(float32(n) * overlappingFactor)
 
 	for i := 0; i < n; i++ {
@@ -3599,11 +3803,13 @@ func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []minimalS
 
 		prefix := fmt.Sprintf("%d.%d.%d.%d/%d", part1, part2, part3, part4, mask)
 
-		subnet := minimalSubnet{
-			ID:     id,
-			Subnet: prefix,
+		subnet := keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     id,
+				Subnet: prefix,
+			},
 		}
-		subnets = append(subnets, subnet)
+		subnets = append(subnets, &subnet)
 	}
 
 	return subnets

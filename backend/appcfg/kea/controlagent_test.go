@@ -22,11 +22,11 @@ func TestKeaControlAgentConfigurationFromJSON(t *testing.T) {
 	}`
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, config.IsControlAgent())
+	require.True(t, config.IsCtrlAgent())
 	host, ok := config.GetHTTPHost()
 	require.True(t, ok)
 	require.EqualValues(t, "192.168.100.1", host)
@@ -70,11 +70,11 @@ func TestKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T) {
 	}`
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, config.IsControlAgent())
+	require.True(t, config.IsCtrlAgent())
 	host, ok := config.GetHTTPHost()
 	require.True(t, ok)
 	require.EqualValues(t, "192.168.100.1", host)
@@ -115,11 +115,11 @@ func TestKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 	}`
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, config.IsControlAgent())
+	require.True(t, config.IsCtrlAgent())
 	host, ok := config.GetHTTPHost()
 	require.True(t, ok)
 	require.EqualValues(t, "192.168.100.1", host)
@@ -148,11 +148,11 @@ func TestKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 	}`
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, config.IsControlAgent())
+	require.True(t, config.IsCtrlAgent())
 	host, ok := config.GetHTTPHost()
 	require.False(t, ok)
 	require.EqualValues(t, "127.0.0.1", host)
@@ -178,14 +178,14 @@ func TestKeaControlAgentConfigurationFromEmptyString(t *testing.T) {
 	data := ""
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.Error(t, err)
 	require.Nil(t, config)
 }
 
-// Test that the invalid JSON parsing returns an error.
+// Test parsing unsupported daemon configuration.
 func TestKeaControlAgentConfigurationFromInvalidJSON(t *testing.T) {
 	// Arrange
 	data := `{
@@ -195,14 +195,14 @@ func TestKeaControlAgentConfigurationFromInvalidJSON(t *testing.T) {
 	}`
 
 	// Act
-	config, err := NewFromJSON(data)
+	cfg, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.False(t, config.IsControlAgent())
-	port, ok := config.GetHTTPPort()
-	require.True(t, ok)
-	require.EqualValues(t, 8001, port)
+	require.False(t, cfg.IsCtrlAgent())
+	require.False(t, cfg.IsDHCPv4())
+	require.False(t, cfg.IsDHCPv6())
+	require.False(t, cfg.IsD2())
 }
 
 // Test that the real Kea Control Agent configuration is parsed.
@@ -329,11 +329,11 @@ func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	`
 
 	// Act
-	config, err := NewFromJSON(data)
+	config, err := NewConfig(data)
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, config.IsControlAgent())
+	require.True(t, config.IsCtrlAgent())
 	host, ok := config.GetHTTPHost()
 	require.True(t, ok)
 	require.EqualValues(t, "192.168.100.1", host)
@@ -362,10 +362,10 @@ func TestKeaControlAgentConfigurationResolveHost(t *testing.T) {
 	jsonZeroHost := `{ "Control-agent": { "http-host": "0.0.0.0" } }`
 	jsonColonHost := `{ "Control-agent": { "http-host": "::" } }`
 
-	configNoHost, _ := NewFromJSON(jsonNoHost)
-	configEmptyHost, _ := NewFromJSON(jsonEmptyHost)
-	configZeroHost, _ := NewFromJSON(jsonZeroHost)
-	configColonHost, _ := NewFromJSON(jsonColonHost)
+	configNoHost, _ := NewConfig(jsonNoHost)
+	configEmptyHost, _ := NewConfig(jsonEmptyHost)
+	configZeroHost, _ := NewConfig(jsonZeroHost)
+	configColonHost, _ := NewConfig(jsonColonHost)
 
 	// Act
 	hostNoHost, okNoHost := configNoHost.GetHTTPHost()
@@ -408,7 +408,7 @@ func TestKeaControlAgentConfigurationDoNotUseSecureProtocol(t *testing.T) {
 		name := fmt.Sprintf("case-%d", i)
 		testData := data
 		t.Run(name, func(t *testing.T) {
-			config, _ := NewFromJSON(testData)
+			config, _ := NewConfig(testData)
 			// Act
 			useSecure := config.UseSecureProtocol()
 
@@ -429,11 +429,46 @@ func TestKeaControlAgentConfigurationUseSecureProtocol(t *testing.T) {
 		}
 	}`
 
-	config, _ := NewFromJSON(data)
+	config, _ := NewConfig(data)
 
 	// Act
 	useSecure := config.UseSecureProtocol()
 
 	// Assert
 	require.True(t, useSecure)
+}
+
+// Test getting hook libraries for a Kea Control Agent.
+func TestGetControlAgentHookLibraries(t *testing.T) {
+	cfg := &CtrlAgentConfig{
+		HookLibraries: []HookLibrary{
+			{
+				Library: "libca_cax",
+			},
+		},
+	}
+
+	hooks := cfg.GetHookLibraries()
+	require.Len(t, hooks, 1)
+	require.Equal(t, "libca_cax", hooks[0].Library)
+}
+
+// Test getting loggers configurations for a Kea Control Agent.
+func TestGetControlAgentLoggers(t *testing.T) {
+	cfg := &CtrlAgentConfig{
+		Loggers: []Logger{
+			{
+				Name:       "kea-ctrl-agent",
+				Severity:   "DEBUG",
+				DebugLevel: 99,
+			},
+		},
+	}
+
+	libraries := cfg.GetLoggers()
+	require.Len(t, libraries, 1)
+
+	require.Equal(t, "kea-ctrl-agent", libraries[0].Name)
+	require.Equal(t, "DEBUG", libraries[0].Severity)
+	require.EqualValues(t, 99, libraries[0].DebugLevel)
 }

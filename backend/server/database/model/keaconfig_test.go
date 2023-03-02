@@ -7,6 +7,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
 )
@@ -20,50 +21,59 @@ func TestNewKeaConfigFromNil(t *testing.T) {
 	require.Nil(t, configNil)
 }
 
-// Test that KeaConfig is constructed from an empty map.
+// Test that KeaConfig isn't constructed from an empty map.
 func TestNewKeaConfigFromEmptyMap(t *testing.T) {
 	// Act
 	configEmpty := NewKeaConfig(&map[string]interface{}{})
 
 	// Assert
-	require.EqualValues(t, map[string]interface{}{}, *configEmpty.Map)
+	require.NotNil(t, configEmpty)
+	require.NotNil(t, configEmpty.Raw)
+	require.Nil(t, configEmpty.DHCPv4Config)
+	require.Nil(t, configEmpty.DHCPv6Config)
+	require.Nil(t, configEmpty.D2Config)
+	require.Nil(t, configEmpty.CtrlAgentConfig)
 }
 
 // Test that KeaConfig is constructed from a filled map.
 func TestNewKeaConfigFromFilledMap(t *testing.T) {
 	// Act
-	configFilled := NewKeaConfig(&map[string]interface{}{"Dhcp4": "foo"})
-	root, ok := configFilled.GetRootName()
+	configFilled := NewKeaConfig(&map[string]any{"Dhcp4": map[string]any{"foo": "bar"}})
 
 	// Assert
-	require.True(t, ok)
-	require.EqualValues(t, "Dhcp4", root)
+	require.NotNil(t, configFilled.DHCPv4Config)
 }
 
 // Verifies that the shared network instance can be created by parsing
 // Kea configuration.
 func TestNewSharedNetworkFromKea(t *testing.T) {
-	rawNetwork := map[string]interface{}{
-		"name": "foo",
-		"subnet6": []map[string]interface{}{
+	network := &keaconfig.SharedNetwork6{
+		Name: "foo",
+		Subnet6: []keaconfig.Subnet6{
 			{
-				"id":     1,
-				"subnet": "2001:db8:2::/64",
-				"reservations": []interface{}{
-					map[string]interface{}{
-						"hw-address": "01:02:03:04:05:06",
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "2001:db8:2::/64",
+				},
+				CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+					Reservations: []keaconfig.Reservation{
+						{
+							HWAddress: "01:02:03:04:05:06",
+						},
 					},
 				},
 			},
 			{
-				"id":     2,
-				"subnet": "2001:db8:1::/64",
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "2001:db8:1::/64",
+				},
 			},
 		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6, daemon, HostDataSourceConfig, lookup)
+	parsedNetwork, err := NewSharedNetworkFromKea(network, 6, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
@@ -81,45 +91,49 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 // Verifies that the subnet instance can be created by parsing Kea
 // configuration.
 func TestNewSubnetFromKea(t *testing.T) {
-	rawSubnet := map[string]interface{}{
-		"id":     1,
-		"subnet": "2001:db8:1::/64",
-		"pools": []interface{}{
-			map[string]interface{}{
-				"pool": "2001:db8:1:1::/120",
+	keaSubnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			ID:     1,
+			Subnet: "2001:db8:1::/64",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					Pool: "2001:db8:1:1::/120",
+				},
+			},
+			Reservations: []keaconfig.Reservation{
+				{
+					DUID: "01:02:03:04:05:06",
+					IPAddresses: []string{
+						"2001:db8:1::1",
+						"2001:db8:1::2",
+					},
+					Prefixes: []string{
+						"3000:1::/64",
+						"3000:2::/64",
+					},
+				},
+				{
+					HWAddress: "01:01:01:01:01:01",
+					IPAddresses: []string{
+						"2001:db8:1::1",
+						"2001:db8:1::2",
+					},
+					Prefixes: []string{
+						"3000:1::/64",
+						"3000:2::/64",
+					},
+				},
 			},
 		},
-		"pd-pools": []interface{}{
-			map[string]interface{}{
-				"prefix":              "2001:db8:1:1::",
-				"prefix-len":          96,
-				"delegated-len":       120,
-				"excluded-prefix":     "2001:db8:1:1:1::",
-				"excluded-prefix-len": 128,
-			},
-		},
-		"reservations": []interface{}{
-			map[string]interface{}{
-				"duid": "01:02:03:04:05:06",
-				"ip-addresses": []interface{}{
-					"2001:db8:1::1",
-					"2001:db8:1::2",
-				},
-				"prefixes": []interface{}{
-					"3000:1::/64",
-					"3000:2::/64",
-				},
-			},
-			map[string]interface{}{
-				"hw-address": "01:01:01:01:01:01",
-				"ip-addresses": []interface{}{
-					"2001:db8:1::1",
-					"2001:db8:1::2",
-				},
-				"prefixes": []interface{}{
-					"3000:1::/64",
-					"3000:2::/64",
-				},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix:            "2001:db8:1:1::",
+				PrefixLen:         96,
+				DelegatedLen:      120,
+				ExcludedPrefix:    "2001:db8:1:1:1::",
+				ExcludedPrefixLen: 128,
 			},
 		},
 	}
@@ -127,7 +141,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 234
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
 	require.Zero(t, parsedSubnet.ID)
@@ -165,15 +179,17 @@ func TestNewSubnetFromKea(t *testing.T) {
 // Test that the error is returned when the subnet prefix is invalid.
 func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 	// Arrange
-	rawSubnet := map[string]interface{}{
-		"subnet": "invalid",
+	keaSubnet := keaconfig.Subnet4{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "invalid",
+		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.Error(t, err)
@@ -183,15 +199,17 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 // Test that the default mask is added to IPv4 subnet prefix if missing.
 func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 	// Arrange
-	rawSubnet := map[string]interface{}{
-		"subnet": "10.42.42.42",
+	keaSubnet := keaconfig.Subnet4{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "10.42.42.42",
+		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -201,15 +219,17 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 // Test that the default mask is added to IPv6 subnet prefix if missing.
 func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	// Arrange
-	rawSubnet := map[string]interface{}{
-		"subnet": "fe80::42",
+	keaSubnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::42",
+		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -219,15 +239,17 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 // Test that the IPv4 subnet prefix is converted from non-canonical to canonical form.
 func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 	// Arrange
-	rawSubnet := map[string]interface{}{
-		"subnet": "10.42.42.42/8",
+	keaSubnet := keaconfig.Subnet4{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "10.42.42.42/8",
+		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet4FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -237,125 +259,21 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 // Test that the IPv6 subnet prefix is converted from non-canonical to canonical form.
 func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	// Arrange
-	rawSubnet := map[string]interface{}{
-		"subnet": "2001:db8:1::42/64",
+	keaSubnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "2001:db8:1::42/64",
+		},
 	}
 	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
 	daemon.ID = 42
 
 	// Act
 	lookup := NewDHCPOptionDefinitionLookup()
-	parsedSubnet, err := NewSubnet6FromKea(&rawSubnet, daemon, HostDataSourceConfig, lookup)
+	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
 
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "2001:db8:1::/64", parsedSubnet.Prefix)
-}
-
-// Verifies that the host instance can be created by parsing Kea
-// DHCPv4 configuration.
-func TestNewV4HostFromKea(t *testing.T) {
-	rawHost := map[string]interface{}{
-		"hw-address":      "01:02:03:04:05:06",
-		"ip-address":      "192.0.2.5",
-		"hostname":        "hostname.example.org",
-		"next-server":     "192.0.2.3",
-		"server-hostname": "my-server-host",
-		"boot-file-name":  "/tmp/bootfile",
-	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
-	daemon.ID = 123
-	lookup := NewDHCPOptionDefinitionLookup()
-	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig, lookup)
-	require.NoError(t, err)
-	require.NotNil(t, parsedHost)
-
-	// Host identifiers.
-	require.Len(t, parsedHost.HostIdentifiers, 1)
-	require.Equal(t, "hw-address", parsedHost.HostIdentifiers[0].Type)
-	require.Len(t, parsedHost.IPReservations, 1)
-	require.Equal(t, "192.0.2.5", parsedHost.IPReservations[0].Address)
-
-	// Local host.
-	require.Len(t, parsedHost.LocalHosts, 1)
-	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
-	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
-	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
-
-	// Boot fields.
-	require.Equal(t, "192.0.2.3", parsedHost.LocalHosts[0].NextServer)
-	require.Equal(t, "my-server-host", parsedHost.LocalHosts[0].ServerHostname)
-	require.Equal(t, "/tmp/bootfile", parsedHost.LocalHosts[0].BootFileName)
-}
-
-// Verifies that the host instance can be created by parsing Kea
-// DHCPv6 configuration.
-func TestNewV6HostFromKea(t *testing.T) {
-	rawHost := map[string]interface{}{
-		"duid": "01:02:03:04",
-		"ip-addresses": []interface{}{
-			"2001:db8:1::1",
-			"2001:db8:1::2",
-		},
-		"prefixes": []interface{}{
-			"3000:1::/64",
-			"3000:2::/64",
-		},
-		"hostname":       "hostname.example.org",
-		"client-classes": []string{"foo", "bar"},
-		"option-data": []interface{}{
-			map[string]interface{}{
-				"always-send": true,
-				"code":        23,
-				"csv-format":  true,
-				"data":        "2001:db8:1::15,2001:db8:1::16",
-				"name":        "dns-servers",
-				"space":       "dhcp6",
-			},
-		},
-	}
-
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
-	daemon.ID = 123
-	lookup := NewDHCPOptionDefinitionLookup()
-	parsedHost, err := NewHostFromKea(&rawHost, daemon, HostDataSourceConfig, lookup)
-	require.NoError(t, err)
-	require.NotNil(t, parsedHost)
-
-	// Host identifiers.
-	require.Len(t, parsedHost.HostIdentifiers, 1)
-	require.Equal(t, "duid", parsedHost.HostIdentifiers[0].Type)
-	require.Len(t, parsedHost.IPReservations, 4)
-
-	// IP reservations.
-	require.Equal(t, "2001:db8:1::1", parsedHost.IPReservations[0].Address)
-	require.Equal(t, "2001:db8:1::2", parsedHost.IPReservations[1].Address)
-	require.Equal(t, "3000:1::/64", parsedHost.IPReservations[2].Address)
-	require.Equal(t, "3000:2::/64", parsedHost.IPReservations[3].Address)
-	require.Equal(t, "hostname.example.org", parsedHost.Hostname)
-	require.Len(t, parsedHost.LocalHosts, 1)
-	require.Equal(t, parsedHost.ID, parsedHost.LocalHosts[0].HostID)
-	require.EqualValues(t, 123, parsedHost.LocalHosts[0].DaemonID)
-	require.Equal(t, HostDataSourceConfig, parsedHost.LocalHosts[0].DataSource)
-
-	// Client classes
-	require.Len(t, parsedHost.LocalHosts[0].ClientClasses, 2)
-	require.Equal(t, "foo", parsedHost.LocalHosts[0].ClientClasses[0])
-	require.Equal(t, "bar", parsedHost.LocalHosts[0].ClientClasses[1])
-
-	// DHCP options
-	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet, 1)
-	require.True(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].AlwaysSend)
-	require.EqualValues(t, 23, parsedHost.LocalHosts[0].DHCPOptionSet[0].Code)
-	require.Equal(t, "dns-servers", parsedHost.LocalHosts[0].DHCPOptionSet[0].Name)
-	require.Equal(t, "dhcp6", parsedHost.LocalHosts[0].DHCPOptionSet[0].Space)
-	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields, 2)
-	require.Equal(t, "ipv6-address", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].FieldType)
-	require.Len(t, parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values, 1)
-	require.Equal(t, "2001:db8:1::15", parsedHost.LocalHosts[0].DHCPOptionSet[0].Fields[0].Values[0])
-
-	// Make sure the hash is computed.
-	require.NotEmpty(t, parsedHost.LocalHosts[0].DHCPOptionSetHash)
 }
 
 // Test that log targets can be created from parsed Kea logger config.
@@ -381,43 +299,6 @@ func TestNewLogTargetsFromKea(t *testing.T) {
 	require.Equal(t, "logger-name", targets[1].Name)
 	require.Equal(t, "/tmp/log", targets[1].Output)
 	require.Equal(t, "debug", targets[1].Severity)
-}
-
-// Test convenience function which populates indexed subnets for an app.
-func TestPopulateIndexedSubnetsForApp(t *testing.T) {
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
-	require.NotNil(t, daemon)
-	require.NotNil(t, daemon.KeaDaemon)
-	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
-
-	err := daemon.SetConfigFromJSON(`{
-        "Dhcp4": {
-            "subnet4": [
-                {
-                    "subnet": "192.0.2.0/24"
-                },
-                {
-                    "subnet": "10.0.0.0/8"
-                }
-            ]
-        }
-	}`)
-	require.NoError(t, err)
-
-	app := &App{
-		Daemons: []*Daemon{
-			daemon,
-		},
-	}
-
-	err = PopulateIndexedSubnets(app)
-	require.NoError(t, err)
-
-	indexedSubnets := app.Daemons[0].KeaDaemon.KeaDHCPDaemon.IndexedSubnets
-	require.NotNil(t, indexedSubnets)
-	require.Len(t, indexedSubnets.ByPrefix, 2)
-	require.Contains(t, indexedSubnets.ByPrefix, "192.0.2.0/24")
-	require.Contains(t, indexedSubnets.ByPrefix, "10.0.0.0/8")
 }
 
 // Test that appended value is properly scanned.
@@ -470,69 +351,19 @@ func TestKeaConfigAppendAndScanValue(t *testing.T) {
 			// Assert
 			require.NoError(t, appendErr)
 			require.NoError(t, scanErr)
-			require.EqualValues(t, inputConfig.Map, outputConfig.Map)
+			require.EqualValues(t, inputConfig.Config, outputConfig.Config)
 		})
 	}
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for empty string.
-func TestKeaConfigIsAsKeaConfigMapForEmptyString(t *testing.T) {
-	// Arrange
-	json := ""
-
-	// Act
-	keaMap, errMap := keaconfig.NewFromJSON(json)
-	keaConfig, errConfig := NewKeaConfigFromJSON(json)
-
-	// Assert
-	require.Error(t, errMap)
-	require.Error(t, errConfig)
-
-	require.Nil(t, keaMap)
-	require.Nil(t, keaConfig)
-}
-
-// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON.
-func TestKeaConfigIsAsKeaConfigMapForEmptyJSON(t *testing.T) {
-	// Arrange
-	json := "{}"
-
-	// Act
-	keaMap, errMap := keaconfig.NewFromJSON(json)
-	keaConfig, errConfig := NewKeaConfigFromJSON(json)
-
-	// Assert
-	require.NoError(t, errMap)
-	require.NoError(t, errConfig)
-
-	require.EqualValues(t, keaMap, keaConfig.Map)
-}
-
-// Test that KeaConfig and keaconfig.Map are parsed the same for non-map JSON.
-func TestKeaConfigIsAsKeaConfigMapNonMapJSON(t *testing.T) {
-	// Arrange
-	json := "foo"
-
-	// Act
-	keaMap, errMap := keaconfig.NewFromJSON(json)
-	keaConfig, errConfig := NewKeaConfigFromJSON(json)
-
-	// Assert
-	require.Error(t, errMap)
-	require.Error(t, errConfig)
-
-	require.Nil(t, keaMap)
-	require.Nil(t, keaConfig)
-}
-
-// Test that KeaConfig and keaconfig.Map are parsed the same for NULL from database.
+// Test that KeaConfig and keaconfig.Config are parsed the same for NULL from database.
 func TestKeaConfigIsAsKeaConfigMapForNullFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	var resMap struct {
-		Config *keaconfig.Map
+		Config *keaconfig.Config
 	}
 
 	var resConfig struct {
@@ -553,14 +384,14 @@ func TestKeaConfigIsAsKeaConfigMapForNullFromDatabase(t *testing.T) {
 	require.Nil(t, resConfig.Config)
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for empty string from the database.
+// Test that KeaConfig and keaconfig.Config are parsed the same for empty string from the database.
 func TestKeaConfigIsAsKeaConfigMapForEmptyStringFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	var resMap struct {
-		Config *keaconfig.Map
+		Config *keaconfig.Config
 	}
 
 	var resConfig struct {
@@ -585,14 +416,14 @@ func TestKeaConfigIsAsKeaConfigMapForEmptyStringFromDatabase(t *testing.T) {
 	require.EqualValues(t, "22P02", pgErrConfig.Field('C'))
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON from the database.
+// Test that KeaConfig and keaconfig.Config are parsed the same for empty JSON from the database.
 func TestKeaConfigIsAsKeaConfigMapForEmptyJSONFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	var resMap struct {
-		Config *keaconfig.Map
+		Config *keaconfig.Config
 	}
 
 	var resConfig struct {
@@ -608,10 +439,10 @@ func TestKeaConfigIsAsKeaConfigMapForEmptyJSONFromDatabase(t *testing.T) {
 	// Assert
 	require.NoError(t, errMap)
 	require.NoError(t, errConfig)
-	require.EqualValues(t, resMap.Config, resConfig.Config.Map)
+	require.EqualValues(t, resMap.Config, resConfig.Config.Config)
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for JSON
+// Test that KeaConfig and keaconfig.Config are parsed the same for JSON
 // from a database containing single quote in value.
 func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.T) {
 	// Arrange
@@ -619,7 +450,7 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	defer teardown()
 
 	var resMap struct {
-		Config *keaconfig.Map
+		Config *keaconfig.Config
 	}
 
 	var resConfig struct {
@@ -635,8 +466,8 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	// Assert
 	require.NoError(t, errMap)
 	require.NoError(t, errConfig)
-	require.EqualValues(t, resMap.Config, resConfig.Config.Map)
-	rawConfig := *(*map[string]interface{})(resMap.Config)
+	require.EqualValues(t, resMap.Config, resConfig.Config.Config)
+	rawConfig := resMap.Config.Raw
 	require.EqualValues(t, "b'r", rawConfig["foo"])
 }
 
@@ -647,7 +478,7 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 
 	// 50MB
 	hugeValue := strings.Repeat("a", 50*1024*1024)
-	rawConfig := map[string]interface{}{"Dhcp4": hugeValue}
+	rawConfig := map[string]any{"Dhcp4": map[string]any{"b": hugeValue}}
 	keaConfig := NewKeaConfig(&rawConfig)
 
 	machine := &Machine{
@@ -671,7 +502,7 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	addedDaemonID := addedDaemons[0].ID
 	addedDaemon, err := GetDaemonByID(db, addedDaemonID)
 	require.NoError(t, err)
-	require.EqualValues(t, keaConfig.Map, addedDaemon.KeaDaemon.Config.Map)
+	require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
 }
 
 // Test that nil value is stored as a database NULL (not JSON null) in the database.
@@ -700,4 +531,78 @@ func TestStoreNilValueInDatabase(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Nil(t, dbDaemon.KeaDaemon.Config)
+}
+
+// Test creating a host from a DHCPv4 reservation.
+func TestNewHostFromKeaDHCPv4Reservation(t *testing.T) {
+	reservation := keaconfig.Reservation{
+		HWAddress:      "01:02:03:04:05:06",
+		IPAddress:      "192.0.2.1",
+		Hostname:       "foo.example.org",
+		ClientClasses:  []string{"foo", "bar"},
+		NextServer:     "192.0.2.2",
+		BootFileName:   "/tmp/boot",
+		ServerHostname: "host.example.org",
+		OptionData: []keaconfig.SingleOptionData{
+			{
+				AlwaysSend: true,
+				Code:       5,
+				CSVFormat:  true,
+				Data:       "10.0.1.1",
+				Name:       "domain-name-server",
+				Space:      dhcpmodel.DHCPv4OptionSpace,
+			},
+		},
+	}
+	daemon := &Daemon{
+		ID: 1,
+	}
+	lookup := NewDHCPOptionDefinitionLookup()
+	host, err := NewHostFromKeaConfigReservation(reservation, daemon, HostDataSourceAPI, lookup)
+	require.NoError(t, err)
+	require.NotNil(t, host)
+
+	require.Len(t, host.HostIdentifiers, 1)
+	require.Equal(t, "hw-address", host.HostIdentifiers[0].Type)
+	require.Equal(t, []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}, host.HostIdentifiers[0].Value)
+	require.Equal(t, "foo.example.org", host.Hostname)
+	require.Len(t, host.IPReservations, 1)
+	require.Equal(t, "192.0.2.1", host.IPReservations[0].Address)
+	require.Len(t, host.LocalHosts, 1)
+	require.EqualValues(t, 1, host.LocalHosts[0].DaemonID)
+	require.Equal(t, "/tmp/boot", host.LocalHosts[0].BootFileName)
+	require.Len(t, host.LocalHosts[0].ClientClasses, 2)
+	require.Equal(t, "foo", host.LocalHosts[0].ClientClasses[0])
+	require.Equal(t, "bar", host.LocalHosts[0].ClientClasses[1])
+	require.Len(t, host.LocalHosts[0].DHCPOptionSet, 1)
+	require.Equal(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
+	require.Equal(t, "192.0.2.2", host.LocalHosts[0].NextServer)
+	require.Equal(t, "host.example.org", host.LocalHosts[0].ServerHostname)
+}
+
+// Test creating a host from a DHCPv6 reservation.
+func TestNewHostFromKeaDHCPv6Reservation(t *testing.T) {
+	reservation := keaconfig.Reservation{
+		DUID:        "01:02:03:04:05:06",
+		IPAddresses: []string{"2001:db8:1::1", "2001:db8:1::2"},
+		Prefixes:    []string{"3000::/116"},
+	}
+	daemon := &Daemon{
+		ID: 1,
+	}
+	lookup := NewDHCPOptionDefinitionLookup()
+	host, err := NewHostFromKeaConfigReservation(reservation, daemon, HostDataSourceAPI, lookup)
+	require.NoError(t, err)
+	require.NotNil(t, host)
+
+	require.Len(t, host.HostIdentifiers, 1)
+	require.Equal(t, "duid", host.HostIdentifiers[0].Type)
+	require.Equal(t, []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}, host.HostIdentifiers[0].Value)
+	require.Len(t, host.IPReservations, 3)
+	require.Equal(t, "2001:db8:1::1", host.IPReservations[0].Address)
+	require.Equal(t, "2001:db8:1::2", host.IPReservations[1].Address)
+	require.Equal(t, "3000::/116", host.IPReservations[2].Address)
+	require.Len(t, host.LocalHosts, 1)
+	require.EqualValues(t, 1, host.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
 }

@@ -10,7 +10,7 @@ import (
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 )
 
-//go:generate mockgen -package=keaconfig_test -destination=sharednetworkmock_test.go isc.org/stork/appcfg/kea SharedNetwork
+//go:generate mockgen -package=keaconfig_test -destination=sharednetworkmock_test.go isc.org/stork/appcfg/kea SharedNetworkAccessor
 
 // Returns a JSON structure with all configurable DHCPv4 shared network parameters
 // in Kea. It has been initially created from the Kea's all-keys.json file and then
@@ -333,7 +333,7 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	controller := gomock.NewController(t)
 
 	// Mock a shared network in Stork.
-	mock := NewMockSharedNetwork(controller)
+	mock := NewMockSharedNetworkAccessor(controller)
 
 	// Shared network name.
 	mock.EXPECT().GetName().Return("my-secret-network")
@@ -460,7 +460,7 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	controller := gomock.NewController(t)
 
 	// Mock a subnet in Stork.
-	mock := NewMockSharedNetwork(controller)
+	mock := NewMockSharedNetworkAccessor(controller)
 
 	// Shared network name.
 	mock.EXPECT().GetName().Return("my-secret-network")

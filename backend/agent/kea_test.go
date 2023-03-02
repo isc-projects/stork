@@ -98,7 +98,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 	caResponseJSON := `[{
         "result": 0,
         "arguments": {
-            "CtrlAgent": {
+            "Control-agent": {
                 "control-sockets": {
                     "dhcp4": {
                         "socket-name": "/tmp/dhcp4.sock"

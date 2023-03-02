@@ -260,9 +260,7 @@ func TestUpdateApp(t *testing.T) {
 	// Make sure that the configuration specified in the JSON format was
 	// read and parsed correctly.
 	require.NotNil(t, returned.Daemons[0].KeaDaemon.Config)
-	rootName, ok := returned.Daemons[0].KeaDaemon.Config.GetRootName()
-	require.True(t, ok)
-	require.Equal(t, "Dhcp4", rootName)
+	require.NotNil(t, returned.Daemons[0].KeaDaemon.Config.DHCPv4Config)
 
 	require.NotNil(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.NotZero(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID)

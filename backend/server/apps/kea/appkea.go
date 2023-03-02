@@ -28,7 +28,7 @@ func GetDaemonHooks(dbDaemon *dbmodel.Daemon) (hooks []string) {
 	if dbDaemon.KeaDaemon == nil || dbDaemon.KeaDaemon.Config == nil {
 		return
 	}
-	libraries := dbDaemon.KeaDaemon.Config.GetHooksLibraries()
+	libraries := dbDaemon.KeaDaemon.Config.GetHookLibraries()
 	for _, library := range libraries {
 		hooks = append(hooks, library.Library)
 	}
@@ -651,14 +651,6 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 		// Add events to the database.
 		addOnCommitAppEvents(app, addedDaemons, deletedDaemons, state, eventCenter)
-
-		// Associating a daemon with subnets is expensive operation. It involves finding
-		// local subnet id for each subnet. In order for this operation to be efficient
-		// we have to index subnets in the Kea configurations so the local subnet id
-		// can be quickly found by subnet prefix.
-		if err = dbmodel.PopulateIndexedSubnets(app); err != nil {
-			return err
-		}
 
 		for _, daemon := range app.Daemons {
 			// For the given daemon, iterate over the networks and subnets and update their

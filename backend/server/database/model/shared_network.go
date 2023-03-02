@@ -14,7 +14,7 @@ import (
 )
 
 // Interface checks.
-var _ keaconfig.SharedNetwork = (*SharedNetwork)(nil)
+var _ keaconfig.SharedNetworkAccessor = (*SharedNetwork)(nil)
 
 // A structure reflecting shared_network SQL table. This table holds
 // information about DHCP shared networks. A shared network groups

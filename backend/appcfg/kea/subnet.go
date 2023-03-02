@@ -8,85 +8,105 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var (
+	_ Subnet = (*Subnet4)(nil)
+	_ Subnet = (*Subnet6)(nil)
+)
+
 // An interface representing a subnet in Stork, extended with Kea-specific
 // subnet DHCP configuration.
-type Subnet interface {
+type SubnetAccessor interface {
 	dhcpmodel.SubnetAccessor
 	GetID(int64) int64
 	GetKeaParameters(int64) *SubnetParameters
 }
 
+// An interface representing a subnet in Kea. It is implemented by the
+// Subnet4 and Subnet6. This interface is used in functions that
+// identically process the DHCPv4 and DHCPv6 subnets. Their actual
+// type is hidden behind this interface.
+type Subnet interface {
+	GetID() int64
+	GetPrefix() string
+	GetCanonicalPrefix() (string, error)
+	GetPools() []Pool
+	GetPDPools() []PDPool
+	GetReservations() []Reservation
+	GetSubnetParameters() *SubnetParameters
+	GetDHCPOptions() []SingleOptionData
+}
+
 // Represents a relay configuration for a subnet in Kea.
 type Relay struct {
-	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses"`
+	IPAddresses []string `json:"ip-addresses"`
 }
 
 // Represents DHCPv4-over-DHCPv6 subnet configuration parameters in Kea.
 type FourOverSixParameters struct {
-	FourOverSixInterface   *string `mapstructure:"4o6-interface" json:"4o6-interface,omitempty"`
-	FourOverSixInterfaceID *string `mapstructure:"4o6-interface-id" json:"4o6-interface-id,omitempty"`
-	FourOverSixSubnet      *string `mapstructure:"4o6-subnet" json:"4o6-subnet,omitempty"`
+	FourOverSixInterface   *string `json:"4o6-interface,omitempty"`
+	FourOverSixInterfaceID *string `json:"4o6-interface-id,omitempty"`
+	FourOverSixSubnet      *string `json:"4o6-subnet,omitempty"`
 }
 
 // Represents DDNS configuration parameters in Kea.
 type DDNSParameters struct {
-	DDNSGeneratedPrefix       *string `mapstructure:"ddns-generated-prefix" json:"ddns-generated-prefix,omitempty"`
-	DDNSOverrideClientUpdate  *bool   `mapstructure:"ddns-override-client-update" json:"ddns-override-client-update,omitempty"`
-	DDNSOverrideNoUpdate      *bool   `mapstructure:"ddns-override-no-update" json:"ddns-override-no-update,omitempty"`
-	DDNSQualifyingSuffix      *string `mapstructure:"ddns-qualifying-suffix" json:"ddns-qualifying-suffix,omitempty"`
-	DDNSReplaceClientName     *string `mapstructure:"ddns-replace-client-name" json:"ddns-replace-client-name,omitempty"`
-	DDNSSendUpdates           *bool   `mapstructure:"ddns-send-updates" json:"ddns-send-updates,omitempty"`
-	DDNSUpdateOnReview        *bool   `mapstructure:"ddns-update-on-renew" json:"ddns-update-on-renew,omitempty"`
-	DDNSUseConflictResolution *bool   `mapstructure:"ddns-use-conflict-resolution" json:"ddns-use-conflict-resolution,omitempty"`
+	DDNSGeneratedPrefix       *string `json:"ddns-generated-prefix,omitempty"`
+	DDNSOverrideClientUpdate  *bool   `json:"ddns-override-client-update,omitempty"`
+	DDNSOverrideNoUpdate      *bool   `json:"ddns-override-no-update,omitempty"`
+	DDNSQualifyingSuffix      *string `json:"ddns-qualifying-suffix,omitempty"`
+	DDNSReplaceClientName     *string `json:"ddns-replace-client-name,omitempty"`
+	DDNSSendUpdates           *bool   `json:"ddns-send-updates,omitempty"`
+	DDNSUpdateOnReview        *bool   `json:"ddns-update-on-renew,omitempty"`
+	DDNSUseConflictResolution *bool   `json:"ddns-use-conflict-resolution,omitempty"`
 }
 
 // Represents Kea configuration parameters for hostname manipulation.
 type HostnameCharParameters struct {
-	HostnameCharReplacement *string `mapstructure:"hostname-char-replacement" json:"hostname-char-replacement,omitempty"`
-	HostnameCharSet         *string `mapstructure:"hostname-char-set" json:"hostname-char-set,omitempty"`
+	HostnameCharReplacement *string `json:"hostname-char-replacement,omitempty"`
+	HostnameCharSet         *string `json:"hostname-char-set,omitempty"`
 }
 
 // Represents Kea configuration parameters for selecting host reservation modes.
 type ReservationParameters struct {
-	ReservationMode       *string `mapstructure:"reservation-mode" json:"reservation-mode,omitempty"`
-	ReservationsGlobal    *bool   `mapstructure:"reservations-global" json:"reservations-global,omitempty"`
-	ReservationsInSubnet  *bool   `mapstructure:"reservations-in-subnet" json:"reservations-in-subnet,omitempty"`
-	ReservationsOutOfPool *bool   `mapstructure:"reservations-out-of-pool" json:"reservations-out-of-pool,omitempty"`
+	ReservationMode       *string `json:"reservation-mode,omitempty"`
+	ReservationsGlobal    *bool   `json:"reservations-global,omitempty"`
+	ReservationsInSubnet  *bool   `json:"reservations-in-subnet,omitempty"`
+	ReservationsOutOfPool *bool   `json:"reservations-out-of-pool,omitempty"`
 }
 
 // Represents DHCP timer configuration parameters in Kea.
 type TimerParameters struct {
-	RenewTimer        *int64   `mapstructure:"renew-timer" json:"renew-timer,omitempty"`
-	RebindTimer       *int64   `mapstructure:"rebind-timer" json:"rebind-timer,omitempty"`
-	T1Percent         *float32 `mapstructure:"t1-percent" json:"t1-percent,omitempty"`
-	T2Percent         *float32 `mapstructure:"t2-percent" json:"t2-percent,omitempty"`
-	CalculateTeeTimes *bool    `mapstructure:"calculate-tee-times" json:"calculate-tee-times,omitempty"`
+	RenewTimer        *int64   `json:"renew-timer,omitempty"`
+	RebindTimer       *int64   `json:"rebind-timer,omitempty"`
+	T1Percent         *float32 `json:"t1-percent,omitempty"`
+	T2Percent         *float32 `json:"t2-percent,omitempty"`
+	CalculateTeeTimes *bool    `json:"calculate-tee-times,omitempty"`
 }
 
 // Represents DHCP lease caching parameters in Kea.
 type CacheParameters struct {
-	CacheThreshold *float32 `mapstructure:"cache-threshold" json:"cache-threshold,omitempty"`
-	CacheMaxAge    *int64   `mapstructure:"cache-max-age" json:"cache-max-age,omitempty"`
+	CacheThreshold *float32 `json:"cache-threshold,omitempty"`
+	CacheMaxAge    *int64   `json:"cache-max-age,omitempty"`
 }
 
 // Represents client-class configuration in Kea.
 type ClientClassParameters struct {
-	ClientClass          *string  `mapstructure:"client-class" json:"client-class,omitempty"`
-	RequireClientClasses []string `mapstructure:"require-client-classes" json:"require-client-classes,omitempty"`
+	ClientClass          *string  `json:"client-class,omitempty"`
+	RequireClientClasses []string `json:"require-client-classes,omitempty"`
 }
 
 // Represents valid lifetime configuration parameters in Kea.
 type ValidLifetimeParameters struct {
-	ValidLifetime    *int64 `mapstructure:"valid-lifetime" json:"valid-lifetime,omitempty"`
-	MinValidLifetime *int64 `mapstructure:"min-valid-lifetime" json:"min-valid-lifetime,omitempty"`
-	MaxValidLifetime *int64 `mapstructure:"max-valid-lifetime" json:"max-valid-lifetime,omitempty"`
+	ValidLifetime    *int64 `json:"valid-lifetime,omitempty"`
+	MinValidLifetime *int64 `json:"min-valid-lifetime,omitempty"`
+	MaxValidLifetime *int64 `json:"max-valid-lifetime,omitempty"`
 }
 
 // Represents preferred lifetime configuration parameters in Kea.
 type PreferredLifetimeParameters struct {
-	PreferredLifetime    *int64 `mapstructure:"preferred-lifetime" json:"preferred-lifetime,omitempty"`
-	MinPreferredLifetime *int64 `mapstructure:"min-preferred-lifetime" json:"min-preferred-lifetime,omitempty"`
-	MaxPreferredLifetime *int64 `mapstructure:"max-preferred-lifetime" json:"max-preferred-lifetime,omitempty"`
+	PreferredLifetime    *int64 `json:"preferred-lifetime,omitempty"`
+	MinPreferredLifetime *int64 `json:"min-preferred-lifetime,omitempty"`
+	MaxPreferredLifetime *int64 `json:"max-preferred-lifetime,omitempty"`
 }
 
 // Represents mandatory subnet configuration parameters in Kea.
@@ -94,50 +114,50 @@ type PreferredLifetimeParameters struct {
 // it will be auto-generated. So, mandatory means that it is always
 // present in the Kea runtime configuration.
 type MandatorySubnetParameters struct {
-	ID     int64  `mapstructure:"id" json:"id"`
-	Subnet string `mapstructure:"subnet" json:"subnet"`
+	ID     int64  `json:"id"`
+	Subnet string `json:"subnet"`
 }
 
 // Represents Kea subnet parameter groups supported by both DHCPv4
 // and DHCPv6 servers.
 type CommonSubnetParameters struct {
-	CacheParameters         `mapstructure:",squash"`
-	ClientClassParameters   `mapstructure:",squash"`
-	DDNSParameters          `mapstructure:",squash"`
-	HostnameCharParameters  `mapstructure:",squash"`
-	ReservationParameters   `mapstructure:",squash"`
-	TimerParameters         `mapstructure:",squash"`
-	ValidLifetimeParameters `mapstructure:",squash"`
-	Allocator               *string            `mapstructure:"allocator" json:"allocator,omitempty"`
-	Interface               *string            `mapstructure:"interface" json:"interface,omitempty"`
-	StoreExtendedInfo       *bool              `mapstructure:"store-extended-info" json:"store-extended-info,omitempty"`
-	OptionData              []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
-	Pools                   []Pool             `mapstructure:"pools" json:"pools,omitempty"`
-	Relay                   *Relay             `mapstructure:"relay" json:"relay,omitempty"`
-	Reservations            []Reservation      `mapstructure:"reservations" json:"reservations,omitempty"`
+	CacheParameters
+	ClientClassParameters
+	DDNSParameters
+	HostnameCharParameters
+	ReservationParameters
+	TimerParameters
+	ValidLifetimeParameters
+	Allocator         *string            `json:"allocator,omitempty"`
+	Interface         *string            `json:"interface,omitempty"`
+	StoreExtendedInfo *bool              `json:"store-extended-info,omitempty"`
+	OptionData        []SingleOptionData `json:"option-data,omitempty"`
+	Pools             []Pool             `json:"pools,omitempty"`
+	Relay             *Relay             `json:"relay,omitempty"`
+	Reservations      []Reservation      `json:"reservations,omitempty"`
 }
 
 // Represents an IPv4 subnet in Kea.
 type Subnet4 struct {
-	CommonSubnetParameters    `mapstructure:",squash"`
-	FourOverSixParameters     `mapstructure:",squash"`
-	MandatorySubnetParameters `mapstructure:",squash"`
-	Authoritative             *bool   `mapstructure:"authoritative" json:"authoritative,omitempty"`
-	BootFileName              *string `mapstructure:"boot-file-name" json:"boot-file-name,omitempty"`
-	MatchClientID             *bool   `mapstructure:"match-client-id" json:"match-client-id,omitempty"`
-	NextServer                *string `mapstructure:"next-server" json:"next-server,omitempty"`
-	ServerHostname            *string `mapstructure:"server-hostname" json:"server-hostname,omitempty"`
+	CommonSubnetParameters
+	FourOverSixParameters
+	MandatorySubnetParameters
+	Authoritative  *bool   `json:"authoritative,omitempty"`
+	BootFileName   *string `json:"boot-file-name,omitempty"`
+	MatchClientID  *bool   `json:"match-client-id,omitempty"`
+	NextServer     *string `json:"next-server,omitempty"`
+	ServerHostname *string `json:"server-hostname,omitempty"`
 }
 
 // Represents an IPv6 subnet in Kea.
 type Subnet6 struct {
-	CommonSubnetParameters      `mapstructure:",squash"`
-	MandatorySubnetParameters   `mapstructure:",squash"`
-	PreferredLifetimeParameters `mapstructure:",squash"`
-	PDAllocator                 *string  `mapstructure:"pd-allocator" json:"pd-allocator,omitempty"`
-	InterfaceID                 *string  `mapstructure:"interface-id" json:"interface-id,omitempty"`
-	PDPools                     []PDPool `mapstructure:"pd-pools" json:"pd-pools,omitempty"`
-	RapidCommit                 *bool    `mapstructure:"rapid-commit" json:"rapid-commit,omitempty"`
+	CommonSubnetParameters
+	MandatorySubnetParameters
+	PreferredLifetimeParameters
+	PDAllocator *string  `json:"pd-allocator,omitempty"`
+	InterfaceID *string  `json:"interface-id,omitempty"`
+	PDPools     []PDPool `json:"pd-pools,omitempty"`
+	RapidCommit *bool    `json:"rapid-commit,omitempty"`
 }
 
 // Represents a union of DHCP parameters for the DHCPv4 and
@@ -168,6 +188,16 @@ type SubnetParameters struct {
 	StoreExtendedInfo *bool
 }
 
+// Returns a subnet ID.
+func (s MandatorySubnetParameters) GetID() int64 {
+	return s.ID
+}
+
+// Returns the subnet prefix in the format received from Kea.
+func (s MandatorySubnetParameters) GetPrefix() string {
+	return s.Subnet
+}
+
 // Returns a canonical subnet prefix or an error if the prefix is
 // invalid.
 func (s MandatorySubnetParameters) GetCanonicalPrefix() (string, error) {
@@ -178,18 +208,44 @@ func (s MandatorySubnetParameters) GetCanonicalPrefix() (string, error) {
 	return cidr.GetNetworkPrefixWithLength(), nil
 }
 
+// Returns subnet ID.
+func (s *Subnet4) GetID() int64 {
+	return s.MandatorySubnetParameters.GetID()
+}
+
+// Returns the subnet prefix in the format received from Kea.
+func (s *Subnet4) GetPrefix() string {
+	return s.Subnet
+}
+
 // Returns a canonical IPv4 subnet prefix.
 func (s *Subnet4) GetCanonicalPrefix() (string, error) {
 	return s.MandatorySubnetParameters.GetCanonicalPrefix()
 }
 
-// Returns a canonical IPv6 subnet prefix.
-func (s *Subnet6) GetCanonicalPrefix() (string, error) {
-	return s.MandatorySubnetParameters.GetCanonicalPrefix()
+// Returns subnet pools.
+func (s *Subnet4) GetPools() []Pool {
+	return s.Pools
+}
+
+// Returns an empty list of delegated prefix pools. Such pools do not
+// exist in the DHCPv4 subnets.
+func (s *Subnet4) GetPDPools() []PDPool {
+	return []PDPool{}
+}
+
+// Returns subnet host reservations.
+func (s *Subnet4) GetReservations() []Reservation {
+	return s.Reservations
+}
+
+// Returns DHCP options.
+func (s *Subnet4) GetDHCPOptions() []SingleOptionData {
+	return s.OptionData
 }
 
 // Returns Kea-specific IPv4 subnet configuration parameters.
-func (s Subnet4) GetSubnetParameters() *SubnetParameters {
+func (s *Subnet4) GetSubnetParameters() *SubnetParameters {
 	return &SubnetParameters{
 		CacheParameters:         s.CacheParameters,
 		ClientClassParameters:   s.ClientClassParameters,
@@ -211,8 +267,43 @@ func (s Subnet4) GetSubnetParameters() *SubnetParameters {
 	}
 }
 
+// Returns subnet ID.
+func (s *Subnet6) GetID() int64 {
+	return s.MandatorySubnetParameters.GetID()
+}
+
+// Returns the subnet prefix in the format received from Kea.
+func (s *Subnet6) GetPrefix() string {
+	return s.Subnet
+}
+
+// Returns a canonical IPv6 subnet prefix.
+func (s *Subnet6) GetCanonicalPrefix() (string, error) {
+	return s.MandatorySubnetParameters.GetCanonicalPrefix()
+}
+
+// Returns subnet pools.
+func (s *Subnet6) GetPools() []Pool {
+	return s.Pools
+}
+
+// Returns delegated prefix pools for the subnet.
+func (s *Subnet6) GetPDPools() []PDPool {
+	return s.PDPools
+}
+
+// Returns subnet host reservations.
+func (s *Subnet6) GetReservations() []Reservation {
+	return s.Reservations
+}
+
+// Returns DHCP options.
+func (s *Subnet6) GetDHCPOptions() []SingleOptionData {
+	return s.OptionData
+}
+
 // Returns Kea-specific IPv6 subnet configuration parameters.
-func (s Subnet6) GetSubnetParameters() *SubnetParameters {
+func (s *Subnet6) GetSubnetParameters() *SubnetParameters {
 	return &SubnetParameters{
 		CacheParameters:             s.CacheParameters,
 		ClientClassParameters:       s.ClientClassParameters,
@@ -238,7 +329,7 @@ func (s Subnet6) GetSubnetParameters() *SubnetParameters {
 // returning definitions for the converted DHCP options. Finally, the subnet is the
 // interface representing a subnet data model in Stork (e.g., dbmodel.Subnet should
 // implement this interface).
-func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Subnet) (*Subnet4, error) {
+func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet SubnetAccessor) (*Subnet4, error) {
 	// Mandatory parameters.
 	subnet4 := &Subnet4{
 		MandatorySubnetParameters: MandatorySubnetParameters{
@@ -309,7 +400,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 // returning definitions for the converted DHCP options. Finally, the subnet is the
 // interface representing a subnet data model in Stork (e.g., dbmodel.Subnet should
 // implement this interface).
-func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Subnet) (*Subnet6, error) {
+func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet SubnetAccessor) (*Subnet6, error) {
 	subnet6 := &Subnet6{
 		MandatorySubnetParameters: MandatorySubnetParameters{
 			ID:     subnet.GetID(daemonID),

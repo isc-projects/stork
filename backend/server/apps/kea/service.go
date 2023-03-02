@@ -20,8 +20,8 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 	}
 
 	// Get the daemon's HA configuration and check if it is set.
-	_, daemonConfigHA, ok := daemon.KeaDaemon.Config.GetHAHooksLibrary()
-	if !ok || !daemonConfigHA.IsSet() {
+	_, daemonConfigHA, ok := daemon.KeaDaemon.Config.GetHookLibraries().GetHAHookLibrary()
+	if !ok || !daemonConfigHA.GetFirst().IsValid() {
 		return false
 	}
 
@@ -40,20 +40,20 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 		}
 
 		// Get the HA configuration of the daemon belonging to the service.
-		var serviceDaemonConfigHA keaconfig.HA
-		_, serviceDaemonConfigHA, ok = sd.KeaDaemon.Config.GetHAHooksLibrary()
-		if !ok || !serviceDaemonConfigHA.IsSet() || (*daemonConfigHA.Mode != *serviceDaemonConfigHA.Mode) {
+		var serviceDaemonConfigHA keaconfig.HALibraryParams
+		_, serviceDaemonConfigHA, ok = sd.KeaDaemon.Config.GetHookLibraries().GetHAHookLibrary()
+		if !ok || !serviceDaemonConfigHA.GetFirst().IsValid() || (*daemonConfigHA.GetFirst().Mode != *serviceDaemonConfigHA.GetFirst().Mode) {
 			// There is something wrong with the service or the mode is not matching.
 			// This service is not matching.
 			return false
 		}
 
 		// Now we have to compare the peers' configurations.
-		for _, servicePeer := range serviceDaemonConfigHA.Peers {
+		for _, servicePeer := range serviceDaemonConfigHA.GetFirst().Peers {
 			// For the given peer in the service let's find the corresponding one
 			// specified in the daemons's configuration.
 			ok = false
-			for _, daemonPeer := range daemonConfigHA.Peers {
+			for _, daemonPeer := range daemonConfigHA.GetFirst().Peers {
 				if (*daemonPeer.Name == *servicePeer.Name) &&
 					(*daemonPeer.URL == *servicePeer.URL) &&
 					(*daemonPeer.Role == *servicePeer.Role) {
@@ -93,9 +93,9 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel
 	}
 
 	// Check if the configuration contains any HA configuration.
-	if _, params, ok := daemon.KeaDaemon.Config.GetHAHooksLibrary(); ok {
+	if _, params, ok := daemon.KeaDaemon.Config.GetHookLibraries().GetHAHookLibrary(); ok {
 		// Make sure that the required parameters are set.
-		if !params.IsSet() {
+		if !params.GetFirst().IsValid() {
 			return services
 		}
 
@@ -103,9 +103,9 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel
 		// which of the peers' configurations belongs to it. Let's iterate over
 		// the configured peers to identify the one.
 		index := -1
-		for i, p := range params.Peers {
+		for i, p := range params.GetFirst().Peers {
 			// this-server-name matches one of the peers. Remember which one.
-			if *p.Name == *params.ThisServerName {
+			if *p.Name == *params.GetFirst().ThisServerName {
 				index = i
 			}
 		}
@@ -116,7 +116,7 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel
 		}
 
 		// This server configuration found.
-		thisServer := params.Peers[index]
+		thisServer := params.GetFirst().Peers[index]
 
 		// Next, check if there are any existing services matching this daemon.
 		index = -1
@@ -147,7 +147,7 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel
 
 		// Set HA mode, if not set yet.
 		if len(service.HAService.HAMode) == 0 {
-			service.HAService.HAMode = *params.Mode
+			service.HAService.HAMode = *params.GetFirst().Mode
 		}
 
 		// Depending on the role of this server we will be setting different column

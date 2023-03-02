@@ -1972,7 +1972,7 @@ func TestGetKeaStorages(t *testing.T) {
             ]
         }
     }`
-	keaConfig, err := keaconfig.NewFromJSON(configString)
+	keaConfig, err := keaconfig.NewConfig(configString)
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -2081,7 +2081,7 @@ func TestGetKeaStoragesLeaseDatabase(t *testing.T) {
             }
         }
     }`
-	keaConfig, err := keaconfig.NewFromJSON(configString)
+	keaConfig, err := keaconfig.NewConfig(configString)
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -2110,7 +2110,7 @@ func TestGetKeaStoragesForensicDatabase(t *testing.T) {
             ]
         }
     }`
-	keaConfig, err := keaconfig.NewFromJSON(configString)
+	keaConfig, err := keaconfig.NewConfig(configString)
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 

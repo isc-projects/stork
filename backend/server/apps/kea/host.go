@@ -164,7 +164,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 	// Ensure that the daemon has host_cmds hooks library loaded. Otherwise,
 	// we're unable to get the hosts from this daemon.
 	config := daemon.KeaDaemon.Config
-	if _, _, ok := config.GetHooksLibrary("libdhcp_host_cmds"); !ok {
+	if _, _, ok := config.GetHookLibrary("libdhcp_host_cmds"); !ok {
 		log.Infof("Skip pulling host reservations for daemon %d because it lacks host_cmds hook", daemon.ID)
 		return false, nil
 	}
@@ -619,22 +619,17 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon, lookup k
 		return hosts, err
 	}
 	// Get the top level (global) reservations.
-	if reservationsList, ok := daemon.KeaDaemon.Config.GetTopLevelList("reservations"); ok {
-		if len(reservationsList) == 0 {
-			return hosts, err
+	reservationsList := daemon.KeaDaemon.Config.GetReservations()
+	if len(reservationsList) == 0 {
+		return hosts, err
+	}
+	for _, reservation := range reservationsList {
+		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon, dbmodel.HostDataSourceConfig, lookup)
+		if err != nil {
+			log.Warnf("Skipping invalid host reservation: %v", reservation)
+			continue
 		}
-		// Iterate over the reservations found.
-		for _, r := range reservationsList {
-			if reservationMap, ok := r.(map[string]interface{}); ok {
-				// Parse the reservation.
-				host, err := dbmodel.NewHostFromKea(&reservationMap, daemon, dbmodel.HostDataSourceConfig, lookup)
-				if err != nil {
-					log.Warnf("Skipping invalid host reservation: %v", reservationMap)
-					return hosts, err
-				}
-				hosts = append(hosts, *host)
-			}
-		}
+		hosts = append(hosts, *host)
 	}
 	// Overrides new hosts into the existing global hosts.
 	return overrideIntoDatabaseHosts(dbi, int64(0), hosts)

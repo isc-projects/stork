@@ -5,5 +5,5 @@ package keaconfig
 // all we need for current use cases. It will have extra fields
 // when we need them.
 type ClientClass struct {
-	Name string
+	Name string `json:"name"`
 }

@@ -12,12 +12,12 @@ import (
 // Represents a DHCP option in the format used by Kea (i.e., an item of the
 // option-data list).
 type SingleOptionData struct {
-	AlwaysSend bool   `mapstructure:"always-send" json:"always-send,omitempty"`
-	Code       uint16 `mapstructure:"code" json:"code,omitempty"`
-	CSVFormat  bool   `mapstructure:"csv-format" json:"csv-format"`
-	Data       string `mapstructure:"data" json:"data,omitempty"`
-	Name       string `mapstructure:"name" json:"name,omitempty"`
-	Space      string `mapstructure:"space" json:"space,omitempty"`
+	AlwaysSend bool   `json:"always-send,omitempty"`
+	Code       uint16 `json:"code,omitempty"`
+	CSVFormat  bool   `json:"csv-format"`
+	Data       string `json:"data,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Space      string `json:"space,omitempty"`
 }
 
 // Creates a SingleOptionData instance from the DHCP option model used

@@ -281,7 +281,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			if d.KeaDaemon.Config != nil {
 				// Ignore the daemons without the statistic hook to avoid
 				// confusing error messages.
-				if _, _, present := d.KeaDaemon.Config.GetHooksLibrary("libdhcp_stat_cmds"); !present {
+				if _, _, present := d.KeaDaemon.Config.GetHookLibrary("libdhcp_stat_cmds"); !present {
 					continue
 				}
 			}

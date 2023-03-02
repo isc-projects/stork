@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -841,54 +840,6 @@ func TestGetLocalSubnetID(t *testing.T) {
 			{
 				KeaDaemon: &KeaDaemon{
 					Config: config,
-				},
-			},
-		},
-	}
-
-	// Try to find a non-existing subnet.
-	require.Zero(t, app.Daemons[0].GetLocalSubnetID("192.0.3.0/24"))
-	// Next, try to find the existing subnet.
-	require.EqualValues(t, 1, app.Daemons[0].GetLocalSubnetID("192.0.2.0/24"))
-}
-
-// Test that local subnet id of a Kea subnet can be extracted from the indexed
-// collection of subnets.
-func TestGetLocalSubnetIDWithIndexing(t *testing.T) {
-	config, err := NewKeaConfigFromJSON(`{
-		"Dhcp4": {
-            "subnet4": [
-				{
-					"id":     1,
-					"subnet": "192.0.2.0/24"
-				}
-            ]
-        }
-    }`)
-	require.NotNil(t, config)
-	require.NoError(t, err)
-
-	// Index subnets stored in the configuration.
-	indexedSubnets := keaconfig.NewIndexedSubnets(config)
-	require.NotNil(t, indexedSubnets)
-	err = indexedSubnets.Populate()
-	require.NoError(t, err)
-
-	// Create an app and assign indexed subnets with it.
-	accessPoints := []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, true)
-	app := &App{
-		ID:           0,
-		MachineID:    0,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					KeaDHCPDaemon: &KeaDHCPDaemon{
-						IndexedSubnets: indexedSubnets,
-					},
 				},
 			},
 		},

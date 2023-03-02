@@ -30,10 +30,10 @@ type PoolParameters struct {
 
 // Represents an address pool structure within a Kea configuration.
 type Pool struct {
-	ClientClass          string             `mapstructure:"client-class" json:"client-class,omitempty"`
-	OptionData           []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
-	Pool                 string             `mapstructure:"pool" json:"pool"`
-	RequireClientClasses []string           `mapstructure:"require-client-classes" json:"require-client-classes,omitempty"`
+	ClientClass          string             `json:"client-class,omitempty"`
+	OptionData           []SingleOptionData `json:"option-data,omitempty"`
+	Pool                 string             `json:"pool"`
+	RequireClientClasses []string           `json:"require-client-classes,omitempty"`
 }
 
 // A custom unmarshal function for a Kea address pool. It removes whitespaces from

@@ -15,13 +15,13 @@ type PrefixPool interface {
 // Represents prefix delegation pool structure within Kea configuration.
 type PDPool struct {
 	Prefix               string
-	PrefixLen            int                `mapstructure:"prefix-len" json:"prefix-len"`
-	DelegatedLen         int                `mapstructure:"delegated-len" json:"delegated-len"`
-	ExcludedPrefix       string             `mapstructure:"excluded-prefix" json:"excluded-prefix,omitempty"`
-	ExcludedPrefixLen    int                `mapstructure:"excluded-prefix-len" json:"excluded-prefix-len,omitempty"`
-	ClientClass          string             `mapstructure:"client-class" json:"client-class,omitempty"`
-	RequireClientClasses []string           `mapstructure:"require-client-classes" json:"require-client-classes,omitempty"`
-	OptionData           []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
+	PrefixLen            int                `json:"prefix-len"`
+	DelegatedLen         int                `json:"delegated-len"`
+	ExcludedPrefix       string             `json:"excluded-prefix,omitempty"`
+	ExcludedPrefixLen    int                `json:"excluded-prefix-len,omitempty"`
+	ClientClass          string             `json:"client-class,omitempty"`
+	RequireClientClasses []string           `json:"require-client-classes,omitempty"`
+	OptionData           []SingleOptionData `json:"option-data,omitempty"`
 }
 
 // Returns a delegated prefix pool in a canonical form.

@@ -2,29 +2,45 @@ package keaconfig
 
 import dhcpmodel "isc.org/stork/datamodel/dhcp"
 
+var (
+	_ SharedNetwork = (*SharedNetwork4)(nil)
+	_ SharedNetwork = (*SharedNetwork6)(nil)
+)
+
 // An interface representing a shared network in Stork, extended with Kea-specific
 // shared network DHCP configuration.
-type SharedNetwork interface {
+type SharedNetworkAccessor interface {
 	dhcpmodel.SharedNetworkAccessor
 	GetName() string
 	GetKeaParameters(int64) *SharedNetworkParameters
 }
 
+// An interface representing a shared network in Kea. It is implemented
+// by the SharedNetwork4 and SharedNetwork6. This interface is used in
+// functions that identically process the DHCPv4 and DHCPv6 shared
+// networks. Their actual type is hidden behind this interface.
+type SharedNetwork interface {
+	GetName() string
+	GetSubnets() []Subnet
+	GetSharedNetworkParameters() *SharedNetworkParameters
+	GetDHCPOptions() []SingleOptionData
+}
+
 // Represents Kea shared network parameter groups supported by both
 // DHCPv4 and DHCPv6 servers.
 type CommonSharedNetworkParameters struct {
-	CacheParameters         `mapstructure:",squash"`
-	ClientClassParameters   `mapstructure:",squash"`
-	DDNSParameters          `mapstructure:",squash"`
-	HostnameCharParameters  `mapstructure:",squash"`
-	ReservationParameters   `mapstructure:",squash"`
-	TimerParameters         `mapstructure:",squash"`
-	ValidLifetimeParameters `mapstructure:",squash"`
-	Allocator               *string            `mapstructure:"allocator" json:"allocator,omitempty"`
-	Interface               *string            `mapstructure:"interface" json:"interface,omitempty"`
-	StoreExtendedInfo       *bool              `mapstructure:"store-extended-info" json:"store-extended-info,omitempty"`
-	OptionData              []SingleOptionData `mapstructure:"option-data" json:"option-data,omitempty"`
-	Relay                   *Relay             `mapstructure:"relay" json:"relay,omitempty"`
+	CacheParameters
+	ClientClassParameters
+	DDNSParameters
+	HostnameCharParameters
+	ReservationParameters
+	TimerParameters
+	ValidLifetimeParameters
+	Allocator         *string            `json:"allocator,omitempty"`
+	Interface         *string            `json:"interface,omitempty"`
+	StoreExtendedInfo *bool              `json:"store-extended-info,omitempty"`
+	OptionData        []SingleOptionData `json:"option-data,omitempty"`
+	Relay             *Relay             `json:"relay,omitempty"`
 }
 
 // Represents a union of DHCP parameters for the DHCPv4 and
@@ -56,25 +72,43 @@ type SharedNetworkParameters struct {
 
 // Represents an IPv4 shared network in Kea.
 type SharedNetwork4 struct {
-	CommonSharedNetworkParameters `mapstructure:",squash"`
-	Authoritative                 *bool     `mapstructure:"authoritative" json:"authoritative,omitempty"`
-	BootFileName                  *string   `mapstructure:"boot-file-name" json:"boot-file-name,omitempty"`
-	MatchClientID                 *bool     `mapstructure:"match-client-id" json:"match-client-id,omitempty"`
-	Name                          string    `mapstructure:"name" json:"name"`
-	NextServer                    *string   `mapstructure:"next-server" json:"next-server,omitempty"`
-	ServerHostname                *string   `mapstructure:"server-hostname" json:"server-hostname,omitempty"`
-	Subnet4                       []Subnet4 `mapstructure:"subnet4" json:"subnet4,omitempty"`
+	CommonSharedNetworkParameters
+	Authoritative  *bool     `json:"authoritative,omitempty"`
+	BootFileName   *string   `json:"boot-file-name,omitempty"`
+	MatchClientID  *bool     `json:"match-client-id,omitempty"`
+	Name           string    `json:"name"`
+	NextServer     *string   `json:"next-server,omitempty"`
+	ServerHostname *string   `json:"server-hostname,omitempty"`
+	Subnet4        []Subnet4 `json:"subnet4,omitempty"`
 }
 
 // Represents an IPv6 shared network in Kea.
 type SharedNetwork6 struct {
-	CommonSharedNetworkParameters `mapstructure:",squash"`
-	PreferredLifetimeParameters   `mapstructure:",squash"`
-	PDAllocator                   *string   `mapstructure:"pd-allocator" json:"pd-allocator,omitempty"`
-	InterfaceID                   *string   `mapstructure:"interface-id" json:"interface-id,omitempty"`
-	Name                          string    `mapstructure:"name" json:"name"`
-	RapidCommit                   *bool     `mapstructure:"rapid-commit" json:"rapid-commit,omitempty"`
-	Subnet6                       []Subnet6 `mapstructure:"subnet6" json:"subnet6,omitempty"`
+	CommonSharedNetworkParameters
+	PreferredLifetimeParameters
+	PDAllocator *string   `json:"pd-allocator,omitempty"`
+	InterfaceID *string   `json:"interface-id,omitempty"`
+	Name        string    `json:"name"`
+	RapidCommit *bool     `json:"rapid-commit,omitempty"`
+	Subnet6     []Subnet6 `json:"subnet6,omitempty"`
+}
+
+// Returns shared network name.
+func (s SharedNetwork4) GetName() string {
+	return s.Name
+}
+
+// Returns shared network subnets.
+func (s SharedNetwork4) GetSubnets() (subnets []Subnet) {
+	for i := range s.Subnet4 {
+		subnets = append(subnets, &s.Subnet4[i])
+	}
+	return
+}
+
+// Returns shared network DHCP options.
+func (s SharedNetwork4) GetDHCPOptions() []SingleOptionData {
+	return s.OptionData
 }
 
 // Returns Kea-specific DHCPv4 shared network configuration parameters.
@@ -97,6 +131,24 @@ func (s SharedNetwork4) GetSharedNetworkParameters() *SharedNetworkParameters {
 		ServerHostname:          s.ServerHostname,
 		StoreExtendedInfo:       s.StoreExtendedInfo,
 	}
+}
+
+// Returns shared network name.
+func (s SharedNetwork6) GetName() string {
+	return s.Name
+}
+
+// Returns shared network subnets.
+func (s SharedNetwork6) GetSubnets() (subnets []Subnet) {
+	for i := range s.Subnet6 {
+		subnets = append(subnets, &s.Subnet6[i])
+	}
+	return
+}
+
+// Returns shared network DHCP options.
+func (s SharedNetwork6) GetDHCPOptions() []SingleOptionData {
+	return s.OptionData
 }
 
 // Returns Kea-specific DHCPv6 shared network configuration parameters.
@@ -126,7 +178,7 @@ func (s SharedNetwork6) GetSharedNetworkParameters() *SharedNetworkParameters {
 // is an interface returning definitions for the converted DHCP options. Finally, the
 // sharedNetwork is the interface representing a shared network data model in Stork
 // (e.g., dbmodel.SharedNetwork should implement this interface).
-func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetwork) (*SharedNetwork4, error) {
+func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetworkAccessor) (*SharedNetwork4, error) {
 	sharedNetwork4 := &SharedNetwork4{
 		Name: sharedNetwork.GetName(),
 	}
@@ -166,7 +218,7 @@ func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 // is an interface returning definitions for the converted DHCP options. Finally, the
 // sharedNetwork is the interface representing a shared network data model in Stork
 // (e.g., dbmodel.SharedNetwork should implement this interface).
-func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetwork) (*SharedNetwork6, error) {
+func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetworkAccessor) (*SharedNetwork6, error) {
 	sharedNetwork6 := &SharedNetwork6{
 		Name: sharedNetwork.GetName(),
 	}

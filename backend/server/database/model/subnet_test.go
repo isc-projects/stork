@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"math/rand"
 	"sort"
 	"testing"
 	"time"
@@ -1226,7 +1225,7 @@ func BenchmarkAddSubnet(b *testing.B) {
 // indexed and unindexed subnets. Thus, this benchmark contains two test cases,
 // one checking performance of the function with indexing and without indexing.
 // The function execution time should be significantly longer without indexing.
-func BenchmarkAddDaemonToSubnet(b *testing.B) {
+/*func BenchmarkAddDaemonToSubnet(b *testing.B) {
 	testCases := []string{"without indexing", "with indexing"}
 
 	// Run sub tests.
@@ -1298,7 +1297,7 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 			}
 		})
 	}
-}
+} */
 
 // Test that the shorthand for setting IPv4 family works properly.
 func TestSubnetsByPageFiltersSetIPv4Family(t *testing.T) {
