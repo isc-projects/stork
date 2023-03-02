@@ -299,10 +299,8 @@ func TestFileServerMiddelware(t *testing.T) {
 		content, status, err := requestFileContent("/../restricted/secret")
 
 		// Assert
-		require.Equal(t, "index", content)
-		// It cannot return any custom status not to reveal the state of the
-		// non-public files.
-		require.Equal(t, 200, status)
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
 
@@ -311,10 +309,8 @@ func TestFileServerMiddelware(t *testing.T) {
 		content, status, err := requestFileContent("../restricted/secret")
 
 		// Assert
-		require.Equal(t, "index", content)
-		// It cannot return any custom status not to reveal the state of the
-		// non-public files.
-		require.Equal(t, 200, status)
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
 
