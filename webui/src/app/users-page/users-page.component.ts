@@ -589,7 +589,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      */
     isInternalUser() {
         const authenticationMethod = this.userTab.user.authenticationMethod
-        return authenticationMethod == '' || authenticationMethod == 'internal'
+        return authenticationMethod === '' || authenticationMethod === 'internal'
     }
 
     /**

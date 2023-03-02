@@ -17,7 +17,6 @@ import { getErrorMessage } from './utils'
 export class AuthService {
     private currentUserSubject: BehaviorSubject<User>
     public currentUser: Observable<User>
-    public user: User
     private authenticationMethods: Observable<AuthenticationMethod[]>
 
     constructor(private api: UsersService, private router: Router, private msgSrv: MessageService) {
@@ -99,6 +98,16 @@ export class AuthService {
             }
         }
         return false
+    }
+
+    /**
+     * Convenience function checking if the current user was authenticated
+     * using the credentials stored in the Stork database.
+     *
+     * @returns true if the user has super-admin group.
+     */
+    isInternalUser(): boolean {
+        return this.currentUserValue?.authenticationMethod === 'internal'
     }
 
     /**

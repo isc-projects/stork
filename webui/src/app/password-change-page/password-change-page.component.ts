@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
-import { Router } from '@angular/router'
 
 import { MessageService } from 'primeng/api'
-import { PasswordModule } from 'primeng/password'
 
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
@@ -23,7 +21,6 @@ export class PasswordChangePageComponent implements OnInit {
     passwordChangeForm: UntypedFormGroup
 
     constructor(
-        private router: Router,
         private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
@@ -36,6 +33,14 @@ export class PasswordChangePageComponent implements OnInit {
             newPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
             confirmPassword: ['', Validators.required],
         })
+    }
+
+    /**
+     * Indicates if the user was authenticated by the external authentication
+     * service.
+     */
+    get isExternalUser(): boolean {
+        return !this.auth.isInternalUser()
     }
 
     /**

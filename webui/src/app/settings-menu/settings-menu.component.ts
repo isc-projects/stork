@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { MenuItem } from 'primeng/api'
+import { AuthService } from '../auth.service'
 
 /**
  * This component provides a menu for navigating between different
@@ -15,7 +16,7 @@ import { MenuItem } from 'primeng/api'
 export class SettingsMenuComponent implements OnInit {
     items: MenuItem[]
 
-    constructor() {}
+    constructor(public auth: AuthService) {}
 
     /**
      * Initializes the menu items.
@@ -31,14 +32,21 @@ export class SettingsMenuComponent implements OnInit {
                         icon: 'pi pi-user',
                         routerLink: '/profile/settings',
                     },
-                    {
-                        label: 'Change password',
-                        id: 'change-password',
-                        icon: 'pi pi-lock',
-                        routerLink: '/profile/password',
-                    },
                 ],
             },
         ]
+
+        if (this.auth.isInternalUser()) {
+            // Only users authenticated using the credentials stored in the Stork
+            // database can change the password using the Stork UI.
+            // ToDo: This button should always be available but the external
+            // users should be redirected to the external change password endpoint.
+            this.items[0].items.push({
+                label: 'Change password',
+                id: 'change-password',
+                icon: 'pi pi-lock',
+                routerLink: '/profile/password',
+            })
+        }
     }
 }
