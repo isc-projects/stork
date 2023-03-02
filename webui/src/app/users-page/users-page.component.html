@@ -205,10 +205,14 @@
                     </p>
                     <br />
                     <p>The user password remains unchanged if it is left blank while saving the form.</p>
-                    <p-message *ngIf="!isInternalUser"
+                    <p-message
+                        *ngIf="!isInternalUser"
                         severity="info"
-                        text="The external authorization service '{{ userTab.user.authenticationMethod }}' manages this user 
-                            profile. It can be only modified via the administrator panel of the authentication service.">
+                        text="The external authorization service '{{
+                            userTab.user.authenticationMethod
+                        }}' manages this user 
+                            profile. It can be only modified via the administrator panel of the authentication service."
+                    >
                     </p-message>
                 </p-panel>
             </div>
@@ -232,8 +236,7 @@
                                     severity="error"
                                     text="Login must only contain letters, digits, or underscore"
                                     *ngIf="
-                                        !userForm.controls['userLogin'].valid &&
-                                        userForm.controls['userLogin'].dirty
+                                        !userForm.controls['userLogin'].valid && userForm.controls['userLogin'].dirty
                                     "
                                 ></p-message>
                             </div>
