@@ -1,6 +1,7 @@
 package eventcenter
 
 import (
+	"math"
 	"net/url"
 	"strconv"
 
@@ -91,6 +92,13 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	level, err := getQueryValueAsInt64("level", queryValues)
 	if err != nil {
 		return err
+	}
+
+	// Prevent integer overflow.
+	if level < math.MinInt32 {
+		level = math.MinInt32
+	} else if level > math.MaxInt32 {
+		level = math.MaxInt32
 	}
 	s.level = int(level)
 
