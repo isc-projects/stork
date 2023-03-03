@@ -208,8 +208,6 @@ export default {
     },
 } as Meta
 
-const fb: FormBuilder = new FormBuilder()
-
 const Template: Story<HostFormComponent> = (args: HostFormComponent) => ({
     props: args,
 })

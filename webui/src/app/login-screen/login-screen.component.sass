@@ -1,0 +1,116 @@
+.login-screen__wrapper
+    // Use the full page width and height.
+    position: absolute
+    top: 0
+    right: 0
+    bottom: 0
+    left: 0
+
+.login-screen
+    // Blue background.
+    background-color: #005b9f
+    // White text.
+    color: white
+    // Enable flex.
+    display: flex
+    // Organize the items vertically.
+    flex-direction: column
+    // Center the items horizontally.
+    align-items: center
+    // Use full width.
+    width: 100%
+    // Use full height but allow to expand over if needed.
+    min-height: 100%
+
+.login-screen__content
+    // Enable flex.
+    display: flex
+    // Organize the items vertically.
+    flex-direction: column
+    // Center the items horizontally.
+    align-items: center
+    // Use full width.
+    width: 100%
+
+.login-screen__logo
+    // Use fancy font.
+    font-family: 'Mansalva', cursive
+    // Use big font.
+    font-size: 14rem
+    // Set the top spacing.
+    margin-top: 5vh
+    a
+        // Override default color for links.
+        color: white
+
+.login-screen__version
+    // Make version indistinctive.
+    font-style: italic
+
+.login-screen-intro
+    // Bigger text.
+    font-size: 2rem
+    a
+        // Override default color for links.
+        color: white
+        // Add underline to links.
+        text-decoration: underline
+
+.login-screen__authentication
+    // Add top spacing.
+    margin-top: 10vh
+    // Use the limited, fixed width.
+    width: 60%
+
+.login-screen__authentication-selector
+    ::ng-deep .p-selectbutton.p-buttonset
+        // Set the same height for all buttons.
+        display: flex
+        flex-wrap: wrap
+        .p-button
+            // Expand buttons to justify them pretty if the number of buttons
+            // causes wrapping.
+            flex-grow: 1
+            // Center the content inside the expanded button.
+            justify-content: center
+            * + *
+                // Add spacing between icon and text if the icon exists.
+                margin-left: 5px
+    p
+        // Justify the authentication description.
+        text-align: justify
+
+.login-screen__authentication-inputs
+    // Limit the maximum width of the input area to be convenient for typing.
+    max-width: 400px
+    // Center the input area.
+    margin: auto
+    input, button
+        // Expand to full width.
+        width: 100%
+
+    & > div:not(:first-child)
+        // Spacing between inputs.
+        margin-top: 8px
+    & > div:last-child
+        // Spacing between button and above input.
+        margin-top: 18px
+
+.login-screen__authentication-loader
+    // Center the loader spinner horizontally.
+    display: block
+    text-align: center
+
+.login-screen__authentication-selector
+    // Center the selector and description horizontally.
+    display: flex
+    flex-direction: column
+    align-items: center
+
+.login-screen__footer
+    // Use small font.
+    font-size: 0.7rem
+    // Center horizontally and align to the bottom.
+    margin: auto 0 5px 0
+    // A little spacing on top.
+    padding-top: 8px

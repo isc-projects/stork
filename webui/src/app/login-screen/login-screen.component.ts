@@ -64,6 +64,10 @@ export class LoginScreenComponent implements OnInit, OnDestroy {
         )
     }
 
+    onMissingIcon(ev: Event) {
+        ;(ev.target as HTMLElement).classList.add('hidden')
+    }
+
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
     }

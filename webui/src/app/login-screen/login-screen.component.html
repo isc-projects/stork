@@ -1,91 +1,76 @@
-<div
-    style="
-        background-color: #005b9f;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        align-content: space-between;
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-    "
->
-    <div style="display: flex; flex-direction: column; align-items: center">
-        <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh">
-            <img src="/assets/stork-logo-big.png" />
-            <a href="https://stork.isc.org" target="blank" class="no-underline" style="color: white">Stork</a>
+<div class="login-screen__wrapper">
+    <div class="login-screen">
+        <div class="login-screen__content">
+            <div class="login-screen__logo">
+                <img src="/assets/stork-logo-big.png" />
+                <a href="https://stork.isc.org" target="blank" class="no-underline">Stork</a>
+            </div>
+            <div class="login-screen__version">version: {{ version }}</div>
+
+            <div class="login-screen-intro">
+                Dashboard for
+                <a href="https://kea.isc.org" target="blank">ISC Kea</a>
+                and
+                <a href="https://bind.isc.org" target="blank">ISC BIND 9</a>
+            </div>
+
+            <div class="login-screen__authentication">
+                <p-progressSpinner
+                    class="login-screen__authentication-loader"
+                    *ngIf="!authenticationMethods"
+                ></p-progressSpinner>
+                <form [formGroup]="loginForm" *ngIf="authenticationMethods">
+                    <div class="login-screen__authentication-selector" *ngIf="authenticationMethods.length > 1">
+                        <p-selectButton
+                            name="authenticationMethod"
+                            id="authenticationMethod"
+                            formControlName="authenticationMethod"
+                            [options]="authenticationMethods"
+                            [(ngModel)]="authenticationMethod"
+                        >
+                            <ng-template let-item>
+                                <img src="/assets/authorizations/{{ item.id }}.png" (error)="onMissingIcon($event)" />
+                                <span>{{ item.name }}</span>
+                            </ng-template>
+                        </p-selectButton>
+                        <p>
+                            {{ authenticationMethod.description }}
+                        </p>
+                    </div>
+                    <div class="login-screen__authentication-inputs">
+                        <div *ngIf="authenticationMethod.formLabelIdentifier">
+                            <input
+                                type="text"
+                                name="identifier"
+                                id="identifier"
+                                formControlName="identifier"
+                                [placeholder]="authenticationMethod.formLabelIdentifier"
+                            />
+                        </div>
+                        <div *ngIf="authenticationMethod.formLabelSecret">
+                            <input
+                                type="password"
+                                name="secret"
+                                id="secret"
+                                formControlName="secret"
+                                [placeholder]="authenticationMethod.formLabelSecret"
+                                (keyup)="keyUp($event)"
+                            />
+                        </div>
+                        <div>
+                            <button
+                                pButton
+                                id="sign-in-button"
+                                type="button"
+                                label="Sign In"
+                                (click)="signIn()"
+                            ></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div style="font-style: italic">version: {{ version }}</div>
 
-        <div style="font-size: 2rem">
-            Dashboard for
-            <a href="https://kea.isc.org" target="blank" style="color: white; text-decoration: underline">ISC Kea</a>
-            and
-            <a href="https://bind.isc.org" target="blank" style="color: white; text-decoration: underline"
-                >ISC BIND 9</a
-            >
-        </div>
-
-        <div style="margin-top: 10vh">
-            <p-progressSpinner *ngIf="!authenticationMethods"></p-progressSpinner>
-            <form [formGroup]="loginForm" *ngIf="authenticationMethods">
-                <div *ngIf="authenticationMethods.length > 1">
-                    <p-selectButton
-                        name="authenticationMethod"
-                        id="authenticationMethod"
-                        formControlName="authenticationMethod"
-                        [options]="authenticationMethods"
-                        [(ngModel)]="authenticationMethod"
-                    >
-                        <ng-template let-item>
-                            <img src="/assets/authorizations/{{ item.id }}.png" />
-                            <span>{{ item.name }}</span>
-                        </ng-template>
-                    </p-selectButton>
-                    <p>
-                        {{ authenticationMethod.description }}
-                    </p>
-                </div>
-                <div *ngIf="authenticationMethod.formLabelIdentifier">
-                    <input
-                        type="text"
-                        name="identifier"
-                        id="identifier"
-                        formControlName="identifier"
-                        [placeholder]="authenticationMethod.formLabelIdentifier"
-                        style="width: 100%"
-                    />
-                </div>
-
-                <div style="margin-top: 8px" *ngIf="authenticationMethod.formLabelSecret">
-                    <input
-                        type="password"
-                        name="secret"
-                        id="secret"
-                        formControlName="secret"
-                        [placeholder]="authenticationMethod.formLabelSecret"
-                        style="width: 100%"
-                        (keyup)="keyUp($event)"
-                    />
-                </div>
-                <div style="margin-top: 18px">
-                    <button
-                        pButton
-                        id="sign-in-button"
-                        type="button"
-                        label="Sign In"
-                        style="width: 100%"
-                        (click)="signIn()"
-                    ></button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div style="font-size: 0.7rem; margin: auto 0 5px 0; padding-top: 8px">
-        Copyright 2019-2023 by ISC. All Rights Reserved.
+        <div class="login-screen__footer">Copyright 2019-2023 by ISC. All Rights Reserved.</div>
     </div>
 </div>

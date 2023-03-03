@@ -7,6 +7,9 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { RouterModule, Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { RouterTestingModule } from '@angular/router/testing'
+import { SelectButtonModule } from 'primeng/selectbutton'
+import { ButtonModule } from 'primeng/button'
 
 describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
@@ -14,23 +17,17 @@ describe('LoginScreenComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule, ProgressSpinnerModule],
-            declarations: [LoginScreenComponent],
-            providers: [
-                GeneralService,
-                UsersService,
-                MessageService,
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParams: {} },
-                    },
-                },
+            imports: [
+                ReactiveFormsModule,
+                FormsModule,
+                RouterTestingModule,
+                HttpClientTestingModule,
+                ProgressSpinnerModule,
+                SelectButtonModule,
+                ButtonModule,
             ],
+            declarations: [LoginScreenComponent],
+            providers: [GeneralService, UsersService, MessageService],
         }).compileComponents()
     }))
 
