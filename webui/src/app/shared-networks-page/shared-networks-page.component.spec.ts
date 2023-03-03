@@ -124,12 +124,128 @@ describe('SharedNetworksPageComponent', () => {
                 ],
                 total: 10496,
             },
+            {
+                items: [
+                    {
+                        name: 'cat',
+                        subnets: [
+                            // Subnet represented by the double utilization bar.
+                            {
+                                clientClass: 'class-00-00',
+                                id: 5,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 1,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                    },
+                                ],
+                                subnet: 'fe80:1::/64',
+                                statsCollectedAt: '2023-03-03T10:51:00.0000Z',
+                                stats: {
+                                    'assigned-nas': '42',
+                                    'total-nas':
+                                        '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                    'declined-nas': '0',
+                                    'assigned-pds': '24',
+                                    'total-pds':
+                                        '9012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                },
+                                addrUtilization: 10,
+                                pdUtilization: 15,
+                            },
+                            // Subnet represented by the single NA utilization bar.
+                            {
+                                clientClass: 'class-00-00',
+                                id: 6,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 1,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                    },
+                                ],
+                                subnet: 'fe80:2::/64',
+                                statsCollectedAt: '2023-03-03T10:51:00.0000Z',
+                                stats: {
+                                    'assigned-nas': '42',
+                                    'total-nas':
+                                        '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                    'declined-nas': '0',
+                                    'assigned-pds': '0',
+                                    'total-pds': '0',
+                                },
+                                addrUtilization: 20,
+                                pdUtilization: 0,
+                            },
+                            // Subnet represented by the single PD utilization bar.
+                            {
+                                clientClass: 'class-00-00',
+                                id: 7,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 1,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                    },
+                                ],
+                                subnet: 'fe80:3::/64',
+                                statsCollectedAt: '2023-03-03T10:51:00.0000Z',
+                                stats: {
+                                    'assigned-nas': '0',
+                                    'total-nas': '0',
+                                    'declined-nas': '0',
+                                    'assigned-pds': '0',
+                                    'total-pds':
+                                        '9012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                },
+                                addrUtilization: 0,
+                                pdUtilization: 35,
+                            },
+                            // Subnet represented by the double utilization bar
+                            {
+                                clientClass: 'class-00-00',
+                                id: 8,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 2,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                    },
+                                ],
+                                subnet: 'fe80:4::/64',
+                                statsCollectedAt: '2023-03-03T10:51:00.0000Z',
+                                stats: {
+                                    'assigned-nas': '0',
+                                    'total-nas': '0',
+                                    'declined-nas': '0',
+                                    'assigned-pds': '0',
+                                    'total-pds': '0',
+                                },
+                                addrUtilization: 0,
+                                pdUtilization: 0,
+                            },
+                        ],
+                        statsCollectedAt: '1970-01-01T12:00:00.0Z',
+                    },
+                ],
+                total: 10496,
+            },
         ]
         spyOn(dhcpService, 'getSharedNetworks').and.returnValues(
             // The shared networks are fetched twice before the unit test starts.
             of(fakeResponses[0] as HttpEvent<SharedNetworks>),
             of(fakeResponses[0] as HttpEvent<SharedNetworks>),
-            of(fakeResponses[1] as HttpEvent<SharedNetworks>)
+            of(fakeResponses[1] as HttpEvent<SharedNetworks>),
+            of(fakeResponses[2] as HttpEvent<SharedNetworks>)
         )
 
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
@@ -205,5 +321,53 @@ describe('SharedNetworksPageComponent', () => {
             subnets: [{ subnet: 'fe80::/64' }],
         })
         expect(component.isAnyIPv6SubnetVisible).toBeTrue()
+    })
+
+    it('should display proper utilization bars', async () => {
+        component.loadNetworks({})
+        await fixture.whenStable()
+        component.loadNetworks({})
+        await fixture.whenStable()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.networks.length).toBe(1)
+        expect(component.networks[0].subnets.length).toBe(4)
+
+        const barElements = fixture.debugElement.queryAll(By.directive(SubnetBarComponent))
+        expect(barElements.length).toBe(4)
+
+        for (let i = 0; i < barElements.length; i++) {
+            const barElement = barElements[i]
+            const bar: SubnetBarComponent = barElement.componentInstance
+            expect(bar.isIPv6).toBeTrue()
+
+            switch (i) {
+                case 0:
+                    expect(bar.hasZeroAddressStats).toBeFalse()
+                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
+                    expect(bar.addrUtilization).toBe(10)
+                    expect(bar.pdUtilization).toBe(15)
+                    break
+                case 1:
+                    expect(bar.hasZeroAddressStats).toBeFalse()
+                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
+                    expect(bar.addrUtilization).toBe(20)
+                    expect(bar.pdUtilization).toBe(0)
+                    break
+                case 2:
+                    expect(bar.hasZeroAddressStats).toBeTrue()
+                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
+                    expect(bar.addrUtilization).toBe(0)
+                    expect(bar.pdUtilization).toBe(35)
+                    break
+                case 3:
+                    expect(bar.hasZeroAddressStats).toBeTrue()
+                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
+                    expect(bar.addrUtilization).toBe(0)
+                    expect(bar.pdUtilization).toBe(0)
+                    break
+            }
+        }
     })
 })
