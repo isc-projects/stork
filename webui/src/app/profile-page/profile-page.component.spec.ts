@@ -28,12 +28,7 @@ describe('ProfilePageComponent', () => {
                 MessageService,
                 UsersService,
                 ServicesService,
-                {
-                    provide: AuthService,
-                    useValue: {
-                        currentUser: of({}),
-                    },
-                },
+                AuthService,
                 {
                     provide: ActivatedRoute,
                     useValue: {},

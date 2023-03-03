@@ -17,6 +17,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { MenuModule } from 'primeng/menu'
 import { RouterTestingModule } from '@angular/router/testing'
 import { PasswordModule } from 'primeng/password'
+import { MessageModule } from 'primeng/message'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -43,6 +44,7 @@ describe('PasswordChangePageComponent', () => {
                 RouterTestingModule,
                 ReactiveFormsModule,
                 PasswordModule,
+                MessageModule,
             ],
             declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
         }).compileComponents()
