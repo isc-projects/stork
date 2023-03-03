@@ -1,7 +1,6 @@
 import { Meta, Story, moduleMetadata } from '@storybook/angular'
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { RouterModule } from '@angular/router'
 import { HttpClientModule } from '@angular/common/http'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { AuthenticationMethod, AuthenticationMethods, GeneralService, UsersService, Version } from '../backend'
@@ -11,6 +10,7 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { ToastModule } from 'primeng/toast'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
+import { action } from '@storybook/addon-actions'
 
 export default {
     title: 'App/LoginScreen',
@@ -121,9 +121,9 @@ ManyButtons.parameters = {
     ],
 }
 
-export const SingleButton = Template.bind({})
+export const SingleMethod = Template.bind({})
 
-SingleButton.parameters = {
+SingleMethod.parameters = {
     mockData: [
         {
             url: 'http://localhost/api/authentications',
@@ -142,6 +142,22 @@ SingleButton.parameters = {
                     },
                 ],
             } as AuthenticationMethods,
+        },
+    ],
+}
+
+export const FailedFetch = Template.bind({})
+
+FailedFetch.parameters = {
+    mockData: [
+        {
+            url: 'http://localhost/api/authentications',
+            method: 'GET',
+            status: 500,
+            delay: 500,
+            response: () => {
+                action('onFetchAuthenticationMethods')()
+            },
         },
     ],
 }

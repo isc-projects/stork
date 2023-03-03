@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { map, shareReplay, switchMap } from 'rxjs/operators'
+import { map, retry, shareReplay } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
@@ -23,6 +23,7 @@ export class AuthService {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
         this.authenticationMethods = api.getAuthenticationMethods().pipe(
+            retry(),
             map((methods) => methods.items),
             shareReplay(1)
         )
