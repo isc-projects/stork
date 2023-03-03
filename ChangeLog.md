@@ -1,8 +1,8 @@
 * 282 [bug] slawek
 
-    Fixed the problem with displaying subnet bars on the shared network page.
-    They were always shown using the double style, even if there were no PD or
-    NA statistics.
+    Fixed the problem with displaying subnet utilization bars on the shared
+    network page. The bars for IA_NA and IA_PD were always shown, even when
+    they had no corresponding subnet pools.
     (Gitlab #970)
 
 * 281 [func] slawek
