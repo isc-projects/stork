@@ -29,6 +29,25 @@ This section describes the solutions for some common issues with the Stork agent
               about locations being checked. Also, you may define ``STORK_BIND9_CONFIG`` environment variable to specify
               exact location of the BIND 9 configuration file.
 
+              For BIND 9, make sure that the rndc channel is enabled. By
+              default, it is enabled, even if the ``controls`` clause is
+              missing. Stork is able to detect default values, so typically
+              there is no adminitrative action required, unless the rndc channel
+              was expilicitly disabled.
+
+              Also, make sure that BIND 9 has statistics channel enabled. That
+              is done by adding ``statistics-channels`` entry. Typically, this
+              looks like the following:
+
+              ```
+              statistics-channels {
+                  inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+              };
+              ```
+
+              but it may vary greatly, depending on your setup. Please consult
+              BIND 9 ARM for details.
+
 :Explanation: If the "Last Refreshed" column has a value, and the "Error" column value has no errors,
               the communication between ``stork-server`` and ``stork-agent`` works correctly, which implies that
               the cause of the problem is between the Stork agent and the daemons. The most likely issue is that none of
