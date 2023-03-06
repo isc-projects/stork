@@ -225,9 +225,6 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 
 	// Address
 	address, _ := config.GetHTTPHost()
-	if address == "" {
-		return nil
-	}
 
 	accessPoints := []AccessPoint{
 		{
