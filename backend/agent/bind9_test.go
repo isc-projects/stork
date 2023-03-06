@@ -127,17 +127,17 @@ threads support is enabled`
 // - CASE 2: controls block with no options (return nothing)
 // - CASE 3: controls block with options (return the address).
 func TestGetCtrlAddressFromBind9Config(t *testing.T) {
-
+	// Define test cases
 	type testCase struct {
-		config string
-		exp_addr string
-		exp_port int64
-		exp_key string
+		config  string
+		expAddr string
+		expPort int64
+		expKey  string
 	}
 
-	testCases := [] testCase {
+	testCases := []testCase{
 		// CASE 1: default config from Ubuntu 22.04
-		{ config: `
+		{config: `
 		options {
 			directory "/var/cache/bind";
 			listen-on-v6  {
@@ -156,20 +156,20 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 		zone "127.in-addr.arpa" {
 			type master;
 			file "/etc/bind/db.127";
-		};`, exp_addr: "127.0.0.1", exp_port: 953, exp_key: "" },
+		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
 		// CASE 2: added empty controls section (disabled rndc)
-		{ config: "controls { };", exp_addr: "", exp_port: 0, exp_key: "" },
+		{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
 		// CASE 3: added controls section with options
-		{ config: `
+		{config: `
 		controls {
 			inet 192.0.2.1 allow { localhost; };
-		};`, exp_addr: "192.0.2.1", exp_port: 953, exp_key: "" },
+		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
 	}
 
 	for _, test := range testCases {
 		a, b, c := getCtrlAddressFromBind9Config(test.config)
-		require.Equal(t, a, test.exp_addr)
-		require.Equal(t, b, test.exp_port)
-		require.Equal(t, c, test.exp_key)
+		require.Equal(t, a, test.expAddr)
+		require.Equal(t, b, test.expPort)
+		require.Equal(t, c, test.expKey)
 	}
 }
