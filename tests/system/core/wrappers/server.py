@@ -106,11 +106,11 @@ class Server(ComposeServiceWrapper):
 
     # Authentication
 
-    def log_in(self, username: str, password: str) -> User:
+    def log_in(self, username: str, password: str, authentication='internal') -> User:
         """Logs in a user. Returns the user info."""
         api_instance = UsersApi(self._api_client)
         user, _, headers = api_instance.create_session(credentials=dict(
-            useremail=username, userpassword=password
+            identifier=username, secret=password, authentication_id=authentication
         ), _return_http_data_only=False)
         session_cookie = headers["Set-Cookie"]
         self._api_client.cookie = session_cookie
