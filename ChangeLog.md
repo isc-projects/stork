@@ -3,7 +3,7 @@
     The Prometheus exporter no longer attempts to communicate with
     non-configured Kea servers. It avoids producing repetitive error logs in
     the Kea Control Agent and the Stork Agent.
-    (Gitlab #535)
+    (Gitlab #933)
 
 * 283 [bug] slawek
 
