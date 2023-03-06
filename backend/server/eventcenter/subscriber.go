@@ -1,7 +1,6 @@
 package eventcenter
 
 import (
-	"math"
 	"net/url"
 	"strconv"
 
@@ -26,7 +25,7 @@ type subscriberFilters dbmodel.Relations
 type Subscriber struct {
 	serverURL *url.URL
 	useFilter bool
-	level     int
+	level     int64
 	filters   subscriberFilters
 }
 
@@ -94,13 +93,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 		return err
 	}
 
-	// Prevent integer overflow.
-	if level < math.MinInt32 {
-		level = math.MinInt32
-	} else if level > math.MaxInt32 {
-		level = math.MaxInt32
-	}
-	s.level = int(level)
+	s.level = level
 
 	// There are additional query parameters supported by the server: appType and
 	// daemonName. They are mutually exclusive with app and daemon parmameters.

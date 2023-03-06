@@ -107,7 +107,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
 	for _, ev := range events {
-		require.Contains(t, []int{EvWarning, EvError}, ev.Level)
+		require.Contains(t, []int64{EvWarning, EvError}, ev.Level)
 	}
 
 	// get only error events

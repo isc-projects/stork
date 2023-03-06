@@ -10,9 +10,9 @@ import (
 
 // Event levels.
 const (
-	EvInfo    = 0 // informational
-	EvWarning = 1 // someone should look into this
-	EvError   = 2 // there is a serious problem
+	EvInfo    int64 = 0 // informational
+	EvWarning int64 = 1 // someone should look into this
+	EvError   int64 = 2 // there is a serious problem
 )
 
 // Relations between the event and other entities.
@@ -29,7 +29,7 @@ type Event struct {
 	ID        int64
 	CreatedAt time.Time
 	Text      string
-	Level     int `pg:",use_zero"`
+	Level     int64 `pg:",use_zero"`
 	Relations *Relations
 	Details   string
 }

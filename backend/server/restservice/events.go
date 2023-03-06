@@ -30,7 +30,7 @@ func (r *RestAPI) getEvents(offset, limit int64, level int64, daemonType *string
 			ID:        dbEvent.ID,
 			CreatedAt: strfmt.DateTime(dbEvent.CreatedAt),
 			Text:      dbEvent.Text,
-			Level:     int64(dbEvent.Level),
+			Level:     dbEvent.Level,
 			Details:   dbEvent.Details,
 		}
 		events.Items = append(events.Items, &event)
