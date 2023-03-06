@@ -822,7 +822,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		ctrl, err := getAccessPoint(app, AccessPointControl)
 		if err != nil {
 			lastErr = err
-			log.WithError(err).Error("Problem getting stats from Kea, bad Kea access control point")
+			log.WithError(err).Error("Problem getting stats from Kea: bad Kea access control point")
 			continue
 		}
 
