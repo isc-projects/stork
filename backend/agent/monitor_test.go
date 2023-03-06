@@ -486,3 +486,28 @@ func TestDetectConfiguredDaemons(t *testing.T) {
 	require.Contains(t, configuredDaemons, "dhcp6")
 	require.Contains(t, configuredDaemons, "d2")
 }
+
+// Test that the configured Kea daemons are recognized properly even if a single
+// daemon is provided.
+func TestDetectConfiguredSingleDaemon(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	configPath, _ := sb.Write("config", `{ "Control-agent": {
+		"http-port": 45634,
+		"control-sockets": {
+			"dhcp4": { }
+		}
+	} }`)
+
+	httpClient := NewHTTPClient(false)
+
+	// Act
+	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
+	configuredDaemons := app.GetConfiguredDaemons()
+
+	// Assert
+	require.Len(t, configuredDaemons, 1)
+	require.Contains(t, configuredDaemons, "dhcp4")
+}
