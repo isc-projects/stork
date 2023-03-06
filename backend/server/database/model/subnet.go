@@ -244,9 +244,7 @@ func (s *Subnet) SetLocalSubnet(localSubnet *LocalSubnet) {
 }
 
 // Combines two hosts into a single host by copying LocalHost data from
-// the other host. It returns a boolean value indicating whether or not
-// joining the hosts was successful. It returns false when joined hosts
-// are not the same ones (have different identifiers, hostnames etc.).
+// the other host.
 func (s *Subnet) Join(other *Subnet) {
 	for i := range other.LocalSubnets {
 		s.SetLocalSubnet(other.LocalSubnets[i])

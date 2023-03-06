@@ -449,9 +449,7 @@ func (sn *SharedNetwork) SetLocalSharedNetwork(localSharedNetwork *LocalSharedNe
 }
 
 // Combines two hosts into a single host by copying LocalHost data from
-// the other host. It returns a boolean value indicating whether or not
-// joining the hosts was successful. It returns false when joined hosts
-// are not the same ones (have different identifiers, hostnames etc.).
+// the other host.
 func (sn *SharedNetwork) Join(other *SharedNetwork) {
 	for i := range other.LocalSharedNetworks {
 		sn.SetLocalSharedNetwork(other.LocalSharedNetworks[i])
