@@ -239,15 +239,21 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
 // port, and secret key (if configured) from the configuration `text`.
 //
+// We need to cover the following cases:
+// - no controls clause - BIND9 will open a control socket on localhost
+// - empty controls clause - no control socket will be opened
+// - controls clause with keys - BIND9 will open a control socket
+//
 // Multiple controls clauses may be configured but currently this function
 // only matches the first one.  Multiple access points may be listed inside
 // a single controls clause, but this function currently only matches the
 // first in the list.  A controls clause may look like this:
 //
-//	controls {
-//		inet 127.0.0.1 allow {localhost;};
-//		inet * port 7766 allow {"rndc-users";} keys {"rndc-remote";};
-//	};
+//		controls {
+//			inet 127.0.0.1 allow {localhost;};
+//			inet * port 7766 allow {"rndc-users";}
+//	     keys {"rndc-remote";};
+//		};
 //
 // In this example, "rndc-users" and "rndc-remote" refer to an acl and key
 // clauses.
@@ -257,13 +263,23 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // same name.
 func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey string) {
 	// Match the following clause:
+	//     controls { /maybe some whitespace chars here/ };
+	pattern := regexp.MustCompile(`(?s)controls\s*{\s*}\s*;`)
+	controls := pattern.FindStringSubmatch(text)
+	if len(controls) > 0 {
+		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
+		return "", 0, ""
+	}
+
+	// Match the following clause:
 	//     controls {
 	//         inet inet_spec [inet_spec] ;
 	//     };
-	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
-	controls := pattern.FindStringSubmatch(text)
+	pattern = regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
+	controls = pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
-		return "", 0, ""
+		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
+		return "127.0.0.1", 953, ""
 	}
 
 	// We only pick the first match, but the controls clause
@@ -508,7 +524,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
-		log.Warnf("Found BIND 9 config file (%s) but cannot parse controls clause.", bind9ConfPath)
+		log.Warnf("Found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", bind9ConfPath)
 		return nil
 	}
 	accessPoints := []AccessPoint{
@@ -529,7 +545,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Key:     key,
 		})
 	} else {
-		log.Warnf("Cannot parse BIND 9 statistics-channels clause")
+		log.Warnf("Cannot parse BIND 9 statistics-channels clause. Unable to gather statistics.")
 	}
 
 	// rndc is the command to interface with BIND 9.
