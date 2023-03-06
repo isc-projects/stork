@@ -725,7 +725,7 @@ func TestUpdateUserPassword(t *testing.T) {
 
 // Tests that user password can't be updated via REST API if user account doesn't
 // have assigned the password.
-func TestUpdateUserPasswordForNonPasswordUser(t *testing.T) {
+func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 

@@ -656,7 +656,7 @@ func TestGetUserIDByExternalID(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, user.ID, dbUser.ID)
 	require.Len(t, dbUser.Groups, 1)
-	require.EqualValues(t, SuperAdminGroupID, dbUser.Groups[0])
+	require.EqualValues(t, SuperAdminGroupID, dbUser.Groups[0].ID)
 }
 
 // Test that user can be associated with a group and then the groups
