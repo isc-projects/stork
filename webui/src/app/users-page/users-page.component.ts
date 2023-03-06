@@ -587,9 +587,10 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * Indicates if the user in an active tab is managed by an internal
      * authentication service
      */
-    isInternalUser() {
-        const authenticationMethod = this.userTab.user.authenticationMethod
-        return authenticationMethod === '' || authenticationMethod === 'internal'
+    get isInternalUser() {
+        const authenticationMethod = this.userTab.user?.authenticationMethod
+        // Empty or null or internal.
+        return !authenticationMethod || authenticationMethod === 'internal'
     }
 
     /**
