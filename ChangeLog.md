@@ -1,9 +1,8 @@
 * 284 [func] slawek
 
-    The Prometheus exporter causes no longer of producing repetitive messages
-    in the Kea Control Agent logs. Fixed bloating of the Stork agent logs
-    caused by periodical printing of the warning about unsupported statistics
-    fetched from the Kea DHCP daemons.
+    The Prometheus exporter no longer attempts to communicate with
+    non-configured Kea servers. It avoids producing repetitive error logs in
+    the Kea Control Agent and the Stork Agent.
     (Gitlab #535)
 
 * 283 [bug] slawek
