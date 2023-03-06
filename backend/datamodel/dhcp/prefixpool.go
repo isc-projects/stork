@@ -6,7 +6,7 @@ import (
 )
 
 // A common interface describing a delegated prefix pool in Stork. It defines the
-// functions used retrieve the generic pool information, and can be used to
+// functions used to retrieve the generic pool information, and can be used to
 // convert the Stork-specific pool data structures to the implementation-specific
 // pool data structures (e.g., the Kea address pools). If we ever integrate
 // Stork with other DHCP server implementations, this interface must not be
@@ -25,7 +25,7 @@ type PrefixPoolAccessor interface {
 // structure exposes the convenience functions returning the prefixes and their
 // lengths separately, rather than in the canonical form. The prefixes are stored
 // in the canonical form in the database. These functions make it convenient to
-// convert the prefixes from the database format to other formats, if ncessary.
+// convert the prefixes from the database format to other formats, if necessary.
 type PrefixPool struct {
 	Prefix         string
 	DelegatedLen   int

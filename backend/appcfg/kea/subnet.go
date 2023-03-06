@@ -89,7 +89,7 @@ type PreferredLifetimeParameters struct {
 	MaxPreferredLifetime *int64 `mapstructure:"max-preferred-lifetime" json:"max-preferred-lifetime,omitempty"`
 }
 
-// Represnts mandatory subnet configuration parameters in Kea.
+// Represents mandatory subnet configuration parameters in Kea.
 // Note that ID can be left unspecified by the user. In this case
 // it will be auto-generated. So, mandatory means that it is always
 // present in the Kea runtime configuration.

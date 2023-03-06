@@ -1,7 +1,7 @@
 package dhcpmodel
 
 // A common interface describing an address pool in Stork. It defines the
-// functions used retrieve the generic pool information, and can be used to
+// functions used to retrieve the generic pool information, and can be used to
 // convert the Stork-specific pool data structures to the implementation-specific
 // pool data structures (e.g., the Kea address pools). If we ever integrate
 // Stork with other DHCP server implementations, this interface must not be

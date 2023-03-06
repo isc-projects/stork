@@ -1,7 +1,7 @@
 package dhcpmodel
 
 // A common interface describing a shared network in Stork. It defines the
-// functions used retrieve the generic shared network information, and can
+// functions used to retrieve the generic shared network information, and can
 // be used to convert the Stork-specific network data structures to the
 // implementation-specific data structures (e.g., the Kea shared networks).
 // If we ever integrate Stork with other DHCP server implementations,

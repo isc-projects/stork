@@ -1,7 +1,7 @@
 package dhcpmodel
 
 // A common interface describing a subnet in Stork. It defines the
-// functions used retrieve the generic subnet information, and can
+// functions used to retrieve the generic subnet information, and can
 // be used to convert the Stork-specific subnet data structures to the
 // implementation-specific subnet data structures (e.g., the Kea subnets).
 // If we ever integrate Stork with other DHCP server implementations,
