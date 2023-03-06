@@ -39,11 +39,11 @@ This section describes the solutions for some common issues with the Stork agent
               is done by adding ``statistics-channels`` entry. Typically, this
               looks like the following:
 
-              ```
-              statistics-channels {
-                  inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
-              };
-              ```
+              .. code-block:: console
+
+                statistics-channels {
+                    inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+                };
 
               but it may vary greatly, depending on your setup. Please consult
               BIND 9 ARM for details.
