@@ -270,10 +270,11 @@ class Server(ComposeServiceWrapper):
     # Create
 
     def create_user(self, login: str, email: str, name: str, lastname: str,
-                    groups: List[int], password: str) -> User:
+                    groups: List[int], password: str, authentication_method: str) -> User:
         """Creates the user account."""
         user = User(id=0, login=login, email=email, name=name,
-                    lastname=lastname, groups=groups)
+                    lastname=lastname, groups=groups,
+                    authentication_method=authentication_method)
         account = UserAccount(user, password)
         api_instance = UsersApi(self._api_client)
         return api_instance.create_user(account=account)
