@@ -322,7 +322,7 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem fetching user %v from the database", id)
+		return nil, pkgerrors.Wrapf(err, "problem fetching user %d from the database", id)
 	}
 	return user, err
 }
@@ -330,22 +330,24 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 // Fetches the internal database ID of the user using the authentication method
 // and the external user ID. Returns zero and no error if the user doesn't
 // exist.
-func GetUserIDByExternalID(db *dbops.PgDB, authenticationMethod, externalID string) (internalID int, err error) {
-	err = db.Model((*SystemUser)(nil)).
+func GetUserByExternalID(db *dbops.PgDB, authenticationMethod, externalID string) (*SystemUser, error) {
+	user := &SystemUser{}
+	err := db.Model(user).
+		Relation("Groups").
 		Column("id").
 		Where("auth_method = ?", authenticationMethod).
 		Where("external_id = ?", externalID).
-		Select(&internalID)
+		Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		return 0, nil
+		return nil, nil
 	}
 	err = pkgerrors.Wrapf(
 		err,
-		"cannot fetch internal ID of the user authorized by %s with %s ID",
+		"problem fetching profile of the user authorized by %s with %s ID",
 		authenticationMethod,
 		externalID,
 	)
-	return
+	return user, err
 }
 
 // Associates a user with a group. Currently only insertion by group id is supported.

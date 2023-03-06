@@ -81,6 +81,61 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
+// The internal authentication flow handled by the hooks.
+func (r *RestAPI) externalAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+	calloutUser, err := r.HookManager.Authenticate(
+		ctx,
+		params.HTTPRequest,
+		*params.Credentials.AuthenticationID,
+		params.Credentials.Identifier,
+		params.Credentials.Secret,
+	)
+
+	if calloutUser == nil || err != nil {
+		return nil, errors.Errorf("cannot authenticate a user")
+	}
+
+	var groups []*dbmodel.SystemGroup
+	for _, g := range calloutUser.Groups {
+		groups = append(groups, &dbmodel.SystemGroup{
+			ID: g,
+		})
+	}
+
+	systemUser := &dbmodel.SystemUser{
+		Login:                calloutUser.Login,
+		Email:                calloutUser.Email,
+		Lastname:             calloutUser.Lastname,
+		Name:                 calloutUser.Name,
+		Groups:               groups,
+		AuthenticationMethod: *params.Credentials.AuthenticationID,
+		ExternalID:           calloutUser.ID,
+	}
+
+	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
+	if conflict {
+		var dbUser *dbmodel.SystemUser
+		dbUser, err = dbmodel.GetUserByExternalID(
+			r.DB,
+			*params.Credentials.AuthenticationID,
+			calloutUser.ID,
+		)
+		if err != nil {
+			return nil, errors.Errorf("cannot fetch the internal user profile")
+		}
+
+		systemUser.ID = dbUser.ID
+
+		if calloutUser.Groups == nil {
+			// The groups are not managed by the hook.
+			systemUser.Groups = dbUser.Groups
+		}
+
+		_, err = dbmodel.UpdateUser(r.DB, systemUser)
+	}
+	return systemUser, err
+}
+
 // Attempts to login the user to the system.
 func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
 	var systemUser *dbmodel.SystemUser
@@ -91,79 +146,27 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		return users.NewCreateSessionBadRequest()
 	}
 
-	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" || *params.Credentials.AuthenticationID == dbmodel.AuthenticationMethodIDInternal {
-		systemUser, err = r.internalAuthentication(params)
-		if systemUser == nil || err != nil {
-			log.
-				WithError(err).
-				WithField("method", dbmodel.AuthenticationMethodIDInternal).
-				WithField("identifier", *params.Credentials.Identifier).
-				Error("Cannot authenticate a user")
-			return users.NewCreateSessionBadRequest()
-		}
+	// Extract the authentication method and normalize the value.
+	var authenticationMethod string
+	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" {
+		authenticationMethod = dbmodel.AuthenticationMethodIDInternal
 	} else {
-		calloutUser, err := r.HookManager.Authenticate(
-			ctx,
-			params.HTTPRequest,
-			*params.Credentials.AuthenticationID,
-			params.Credentials.Identifier,
-			params.Credentials.Secret,
-		)
+		authenticationMethod = *params.Credentials.AuthenticationID
+	}
 
-		if calloutUser == nil || err != nil {
-			log.
-				WithError(err).
-				WithField("method", params.Credentials.AuthenticationID).
-				WithField("identifier", *params.Credentials.Identifier).
-				Error("Cannot authenticate a user")
-			return users.NewCreateSessionBadRequest()
-		}
+	if authenticationMethod == dbmodel.AuthenticationMethodIDInternal {
+		systemUser, err = r.internalAuthentication(params)
+	} else {
+		systemUser, err = r.externalAuthentication(ctx, params)
+	}
 
-		var groups []*dbmodel.SystemGroup
-		for _, g := range calloutUser.Groups {
-			groups = append(groups, &dbmodel.SystemGroup{
-				ID: g,
-			})
-		}
-
-		systemUser = &dbmodel.SystemUser{
-			Login:                calloutUser.Login,
-			Email:                calloutUser.Email,
-			Lastname:             calloutUser.Lastname,
-			Name:                 calloutUser.Name,
-			Groups:               groups,
-			AuthenticationMethod: *params.Credentials.AuthenticationID,
-			ExternalID:           calloutUser.ID,
-		}
-
-		conflict, err := dbmodel.CreateUser(r.DB, systemUser)
-		if conflict {
-			var internalID int
-			internalID, err = dbmodel.GetUserIDByExternalID(
-				r.DB,
-				*params.Credentials.AuthenticationID,
-				calloutUser.ID,
-			)
-			if err != nil {
-				log.
-					WithError(err).
-					WithField("method", params.Credentials.AuthenticationID).
-					WithField("identifier", *params.Credentials.Identifier).
-					Error("Cannot fetch the internal user ID")
-				return users.NewCreateSessionBadRequest()
-			}
-
-			systemUser.ID = internalID
-			_, err = dbmodel.UpdateUser(r.DB, systemUser)
-		}
-		if err != nil {
-			log.
-				WithError(err).
-				WithField("method", params.Credentials.AuthenticationID).
-				WithField("identifier", *params.Credentials.Identifier).
-				Error("Cannot authenticate a user")
-			return users.NewCreateSessionBadRequest()
-		}
+	if systemUser == nil || err != nil {
+		log.
+			WithError(err).
+			WithField("method", authenticationMethod).
+			WithField("identifier", *params.Credentials.Identifier).
+			Error("Cannot authenticate a user")
+		return users.NewCreateSessionBadRequest()
 	}
 
 	err = r.SessionManager.LoginHandler(ctx, systemUser)

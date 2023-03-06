@@ -640,20 +640,23 @@ func TestGetUserIDByExternalID(t *testing.T) {
 		Name:                 "Name",
 		AuthenticationMethod: "method",
 		ExternalID:           "externalID",
+		Groups:               []*SystemGroup{{ID: SuperAdminGroupID}},
 	}
 
 	_, _ = CreateUser(db, user)
 
 	// Act
-	nonExistUserID, nonExistErr := GetUserIDByExternalID(db, "method", "nonExistingID")
-	internalID, err := GetUserIDByExternalID(db, "method", "externalID")
+	nonExistUser, nonExistErr := GetUserByExternalID(db, "method", "nonExistingID")
+	dbUser, err := GetUserByExternalID(db, "method", "externalID")
 
 	// Assert
 	require.NoError(t, nonExistErr)
-	require.Zero(t, nonExistUserID)
+	require.Zero(t, nonExistUser)
 
 	require.NoError(t, err)
-	require.EqualValues(t, user.ID, internalID)
+	require.EqualValues(t, user.ID, dbUser.ID)
+	require.Len(t, dbUser.Groups, 1)
+	require.EqualValues(t, SuperAdminGroupID, dbUser.Groups[0])
 }
 
 // Test that user can be associated with a group and then the groups
