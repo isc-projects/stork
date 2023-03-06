@@ -44,7 +44,7 @@ func (p *PrefixPool) GetPrefix() (string, int, error) {
 
 // Converts an excluded prefix from the canonical form to the prefix/length
 // tuple. It returns an error if the prefix is invalid.
-func (p *PrefixPool) GetDelegatedPrefix() (string, int, error) {
+func (p *PrefixPool) GetExcludedPrefix() (string, int, error) {
 	parsedIP := storkutil.ParseIP(p.ExcludedPrefix)
 	if parsedIP == nil || !parsedIP.Prefix {
 		return "", 0, errors.Errorf("invalid excluded prefix %s", p.ExcludedPrefix)

@@ -349,7 +349,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			return nil, err
 		}
 		// Excluded prefix.
-		excludedPrefix, excludedPrefixLength, err := pool.GetModel().GetDelegatedPrefix()
+		excludedPrefix, excludedPrefixLength, err := pool.GetModel().GetExcludedPrefix()
 		if err != nil {
 			return nil, err
 		}
