@@ -104,9 +104,6 @@ def find_and_prepare_deps(file)
     end
 
     prerequisites_tasks.each do |t|
-        if t.class != Rake::FileTask
-            next
-        end
         if t.instance_variable_get(:@manuall_install)
             # Skips the missing top-level manually-installed prerequisites
             # to avoid interrupting preparing operation. If the
@@ -117,6 +114,10 @@ def find_and_prepare_deps(file)
                 puts "Preparing: #{t}... must be manually installed"
                 next
             end
+        end
+
+        if t.class != Rake::FileTask
+            next
         end
 
         print "Preparing: ", t, "...\n"
@@ -159,7 +160,7 @@ def check_deps(file)
 
     puts "Self-installed dependencies:"
     prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
-        if t.class != Rake::FileTask
+        if t.class != Rake::FileTask && !t.instance_variable_get(:@manuall_install)
             next
         end
 
@@ -167,14 +168,13 @@ def check_deps(file)
         name = path
         _, _, name = path.rpartition("/")
 
-        print_status(name, path, File.exist?(path))
+        print_status(name, path, !t.needed?)
     end
 
     puts "\nManually-installed dependencies:"
 
     manual_install_prerequisites_tasks
-        .map { |p| [p.to_s().rpartition("/")[2], p.to_s() ] }
-        .map { |p, path| [p, path, File.exist?(path)] }
+        .map { |p| [p.to_s().rpartition("/")[2], p.to_s(), !p.needed? ] }
         .sort_by{ |name, _, _| name }
         .each { |args| print_status(*args) }
 end
@@ -362,6 +362,42 @@ def fetch_file(url, target)
     wget.append "-O", target
 
     sh *wget
+end
+
+def is_docker_compose_v2_supported()
+    begin
+        _, _, status = Open3.capture3 DOCKER, "compose"
+        if status == 0
+            return true
+        end
+    rescue
+        # Missing docker command in system.
+    end
+    return false
+end
+
+# Run the docker compose command using the standalone docker-compose program
+# or docker compose plugin.
+def execute_docker_compose(*args)
+    compose = []
+    if is_docker_compose_v2_supported()
+        compose.append DOCKER, "compose"
+    else
+        compose.append which("docker-compose")
+    end
+
+    sh *compose, *args
+end
+
+def capture_docker_compose(*args)
+    compose = []
+    if is_docker_compose_v2_supported()
+        compose.append DOCKER, "compose"
+    else
+        compose.append which("docker-compose")
+    end
+
+    return Open3.capture3(*compose, *args)
 end
 
 ### Recognize the operating system
@@ -563,8 +599,6 @@ PSQL = require_manual_install_on("psql", any_system)
 DROPDB = require_manual_install_on("dropdb", any_system)
 DROPUSER = require_manual_install_on("dropuser", any_system)
 DOCKER = require_manual_install_on("docker", any_system)
-DOCKER_COMPOSE = require_manual_install_on("docker-compose", any_system)
-file DOCKER_COMPOSE => [DOCKER]
 OPENSSL = require_manual_install_on("openssl", any_system)
 GEM = require_manual_install_on("gem", any_system)
 MAKE = require_manual_install_on("make", any_system)
@@ -578,6 +612,31 @@ SCP = require_manual_install_on("scp", any_system)
 CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
 ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
 CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
+
+# Docker compose requirement
+task :DOCKER_COMPOSE => [DOCKER] do
+    fail "docker compose plugin or docker-compose standalone is not installed"
+end
+
+Rake::Task[:DOCKER_COMPOSE].tap do |task|
+    def task.timestamp
+      Time.at 0
+    end
+
+    task.instance_variable_set(:@manuall_install, true)
+
+    def task.needed?
+        # Fail the task if the docker compose or docker-compose is missing.
+        if !is_docker_compose_v2_supported() && which("docker-compose").nil?
+            return true
+        end
+        return false
+    end
+
+    def task.to_s
+        return "docker compose"
+    end
+end
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
