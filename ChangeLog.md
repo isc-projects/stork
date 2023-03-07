@@ -1,3 +1,12 @@
+* 285 [bug] tomek
+
+    BIND 9 detection code has been expanded and is now more robust. It now can
+    also attempt to look at more default locations for config files, use
+    named -V to discover built-in locations and also use STORK_BIND9_CONFIG
+    to explicitly tell where to look for a BIND9 config file. The detection
+    process is also now more verbose. Enabling DEBUG logging level may
+    help.
+
 * 284 [func] slawek
 
     The Prometheus exporter no longer attempts to communicate with
