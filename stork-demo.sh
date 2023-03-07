@@ -4,9 +4,14 @@
 # Exit on error
 set -e
 
-# Check if the docker-compose exists
-if ! command -v docker-compose > /dev/null; then
-    echo "The docker-compose command could not be found"
+# Check if the docker compose or docker-compose exists
+if docker compose > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif command -v docker-compose > /dev/null; then
+    DOCKER_COMPOSE=docker-compose
+else
+    echo "The \"docker compose\" command is not supported and the" \
+         "\"docker-compose\" command could not be found"
     exit 127
 fi
 
@@ -71,7 +76,7 @@ fi
 # Stop the demo
 if [ ${STOP} -eq 1 ]
 then
-    docker-compose \
+    $DOCKER_COMPOSE \
         --project-directory "${SCRIPT_DIR}" \
         -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
         -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
@@ -116,13 +121,13 @@ fi
 DOCKER_BUILDKIT=1 \
 COMPOSE_DOCKER_CLI_BUILD=1 \
 CS_REPO_ACCESS_TOKEN=${ACCESS_TOKEN} \
-docker-compose \
+$DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
     "${PREMIUM_COMPOSE}" \
     build
 # Start Docker containers
-docker-compose \
+$DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
     "${PREMIUM_COMPOSE}" \
