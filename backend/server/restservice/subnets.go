@@ -104,7 +104,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		LocalSubnetID: params.LocalSubnetID,
 	}
 
-	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAny)
+	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAsc)
 	if err != nil {
 		msg := "Cannot get subnets from db"
 		log.Error(err)
@@ -181,7 +181,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	}
 
 	// get shared networks from db
-	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAny)
+	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAsc)
 	if err != nil {
 		msg := "Cannot get shared network from db"
 		log.Error(err)

@@ -448,10 +448,10 @@ func TestGetSharedNetworks(t *testing.T) {
 								"name": "mouse",
 								"subnet4": []map[string]interface{}{{
 									"id":     12,
-									"subnet": "192.2.0.0/24",
+									"subnet": "192.3.0.0/24",
 								}, {
 									"id":     13,
-									"subnet": "192.3.0.0/24",
+									"subnet": "192.2.0.0/24",
 								}},
 							}},
 						},
@@ -489,7 +489,7 @@ func TestGetSharedNetworks(t *testing.T) {
 			Family: 4,
 			Subnets: []dbmodel.Subnet{
 				{
-					Prefix: "192.2.0.0/24",
+					Prefix: "192.3.0.0/24",
 					LocalSubnets: []*dbmodel.LocalSubnet{
 						{
 							DaemonID:      a4.Daemons[0].ID,
@@ -498,7 +498,7 @@ func TestGetSharedNetworks(t *testing.T) {
 					},
 				},
 				{
-					Prefix: "192.3.0.0/24",
+					Prefix: "192.2.0.0/24",
 					LocalSubnets: []*dbmodel.LocalSubnet{
 						{
 							DaemonID:      a4.Daemons[0].ID,
@@ -533,10 +533,10 @@ func TestGetSharedNetworks(t *testing.T) {
 								"name": "fox",
 								"subnet6": []map[string]interface{}{{
 									"id":     21,
-									"subnet": "5001:db8:1::/64",
+									"subnet": "6001:db8:1::/64",
 								}, {
 									"id":     22,
-									"subnet": "6001:db8:1::/64",
+									"subnet": "5001:db8:1::/64",
 								}},
 							}},
 						},
@@ -554,7 +554,7 @@ func TestGetSharedNetworks(t *testing.T) {
 			Family: 6,
 			Subnets: []dbmodel.Subnet{
 				{
-					Prefix: "5001:db8:1::/64",
+					Prefix: "6001:db8:1::/64",
 					LocalSubnets: []*dbmodel.LocalSubnet{
 						{
 							DaemonID:      a6.Daemons[0].ID,
@@ -563,7 +563,7 @@ func TestGetSharedNetworks(t *testing.T) {
 					},
 				},
 				{
-					Prefix: "6001:db8:1::/64",
+					Prefix: "5001:db8:1::/64",
 					LocalSubnets: []*dbmodel.LocalSubnet{
 						{
 							DaemonID:      a6.Daemons[0].ID,
@@ -589,10 +589,22 @@ func TestGetSharedNetworks(t *testing.T) {
 		switch net.Name {
 		case "frog":
 			require.Len(t, net.Subnets, 1)
+			require.EqualValues(t, 1, net.Subnets[0].ID)
+			require.Equal(t, "192.1.0.0/24", net.Subnets[0].Subnet)
 		case "mouse":
 			require.Len(t, net.Subnets, 2)
+			// subnets should be sorted by prefix, not by ID
+			require.EqualValues(t, 3, net.Subnets[0].ID)
+			require.Equal(t, "192.2.0.0/24", net.Subnets[0].Subnet)
+			require.EqualValues(t, 2, net.Subnets[1].ID)
+			require.Equal(t, "192.3.0.0/24", net.Subnets[1].Subnet)
 		case "fox":
 			require.Len(t, net.Subnets, 2)
+			// subnets should be sorted by prefix, not by ID
+			require.EqualValues(t, 5, net.Subnets[0].ID)
+			require.Equal(t, "5001:db8:1::/64", net.Subnets[0].Subnet)
+			require.EqualValues(t, 4, net.Subnets[1].ID)
+			require.Equal(t, "6001:db8:1::/64", net.Subnets[1].Subnet)
 		}
 	}
 

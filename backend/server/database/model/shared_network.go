@@ -330,9 +330,12 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 		q = q.Join("INNER JOIN daemon AS d ON d.id = ls.daemon_id")
 	}
 	// Include address pools, prefix pools and the local subnet info in the results.
-	q = q.Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
-		return q.Order("address_pool.id ASC"), nil
+	q = q.Relation("Subnets", func(q *orm.Query) (*orm.Query, error) {
+		return q.Order("prefix ASC"), nil
 	}).
+		Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("address_pool.id ASC"), nil
+		}).
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
