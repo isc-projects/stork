@@ -453,7 +453,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		if m != nil {
 			bind9ConfPath = m[1]
 			// if path to config is not absolute then join it with CWD of named
-			if path.IsAbs(bind9ConfPath) {
+			if !path.IsAbs(bind9ConfPath) {
 				bind9ConfPath = path.Join(cwd, bind9ConfPath)
 			}
 			log.Debugf("Found BIND 9 config file in %s based on -c parameter of a running process.", bind9ConfPath)
