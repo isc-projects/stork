@@ -1,3 +1,9 @@
+* 291 [build] slawek
+
+    Upgrade the docker compose used in demo and system tests to V2 version.
+    The V1 version is still supported for backward compatibility.
+    (Gitlab #979)
+
 * 290 [func] slawek
 
     Added support for connecting to the Postgres server over sockets. It allows
