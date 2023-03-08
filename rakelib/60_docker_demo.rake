@@ -149,8 +149,8 @@ namespace :demo do
         ENV["DOCKER_BUILDKIT"] = "1"
         
         # Execute the docker-compose commands
-        execute_docker_compose *opts, "build", *build_opts, *services, *additional_services
-        execute_docker_compose *opts, "up", *up_opts, *services, *additional_services
+        sh *:DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
+        sh *:DOCKER_COMPOSE, *opts, "up", *up_opts, *services, *additional_services
     end
     
     ##################
@@ -232,7 +232,7 @@ namespace :demo do
     task :down => [:DOCKER_COMPOSE] do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
-        execute_docker_compose *opts, "down",
+        sh *:DOCKER_COMPOSE, *opts, "down",
             "--volumes",
             "--remove-orphans",
             "--rmi", "local"
@@ -252,7 +252,7 @@ namespace :demo do
         if !ENV["SERVICE"].nil?
             services.append ENV["SERVICE"]
         end
-        execute_docker_compose *opts, "logs", *services
+        sh *:DOCKER_COMPOSE, *opts, "logs", *services
     end
 
     desc 'Run shell inside specific service
@@ -265,7 +265,7 @@ namespace :demo do
         if !ENV["SERVICE_USER"].nil?
             exec_opts.append "--user", ENV["SERVICE_USER"]
         end
-        execute_docker_compose *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
+        sh *:DOCKER_COMPOSE, *opts, "exec", *exec_opts, ENV["SERVICE"], "/bin/sh"
     end
 
     desc "Build the demo containers
@@ -289,7 +289,7 @@ namespace :demo do
         ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
         ENV["DOCKER_BUILDKIT"] = "1"
 
-        execute_docker_compose *opts, "build", *build_opts, *services, *additional_services
+        sh *:DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
     end
     
     #######################
@@ -333,7 +333,7 @@ end
 # Waits for a given docker-compose service be operational (Up and Healthy status)
 def wait_to_be_operational(service)
     opts, _, _, _ = get_docker_opts(nil, false, false, [service])
-    contener_id, _, status = capture_docker_compose(*opts, "ps", "-q")
+    contener_id, _, status = Open3.capture3 *:DOCKER_COMPOSE, *opts, "ps", "-q"
     if status != 0
         fail "Unknown container"
     end

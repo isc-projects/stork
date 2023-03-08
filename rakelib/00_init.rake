@@ -37,6 +37,14 @@ def detect_libc_musl()
     return platform.version == "musl"
 end
 
+# Indicates if the provided task should be considered as a dependency.
+# The dependencies are all file tasks and some particular standard tasks that
+# define the custom logic to set up and check the dependency. They are
+# recognized by the existing :@manuall_install variable.
+def is_dependency_task(t)
+    t.class == Rake::FileTask || !t.instance_variable_get(:@manuall_install).nil?
+end
+
 # Searches for the tasks in the provided file
 def find_tasks(file)
     tasks = []
@@ -104,6 +112,10 @@ def find_and_prepare_deps(file)
     end
 
     prerequisites_tasks.each do |t|
+        if !is_dependency_task(t)
+            next
+        end
+
         if t.instance_variable_get(:@manuall_install)
             # Skips the missing top-level manually-installed prerequisites
             # to avoid interrupting preparing operation. If the
@@ -114,10 +126,6 @@ def find_and_prepare_deps(file)
                 puts "Preparing: #{t}... must be manually installed"
                 next
             end
-        end
-
-        if t.class != Rake::FileTask
-            next
         end
 
         print "Preparing: ", t, "...\n"
@@ -160,7 +168,7 @@ def check_deps(file)
 
     puts "Self-installed dependencies:"
     prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
-        if t.class != Rake::FileTask && !t.instance_variable_get(:@manuall_install)
+        if !is_dependency_task(t)
             next
         end
 
@@ -249,7 +257,7 @@ end
 task :always_rebuild_this_task do |this|
     # Checks if no file task depends on a file task with this prerequisite.
     Rake::Task.tasks().each do |t|
-        if t.class != Rake::FileTask
+        if !is_dependency_task(t)
             next
         end
 
@@ -362,42 +370,6 @@ def fetch_file(url, target)
     wget.append "-O", target
 
     sh *wget
-end
-
-def is_docker_compose_v2_supported()
-    begin
-        _, _, status = Open3.capture3 DOCKER, "compose"
-        if status == 0
-            return true
-        end
-    rescue
-        # Missing docker command in system.
-    end
-    return false
-end
-
-# Run the docker compose command using the standalone docker-compose program
-# or docker compose plugin.
-def execute_docker_compose(*args)
-    compose = []
-    if is_docker_compose_v2_supported()
-        compose.append DOCKER, "compose"
-    else
-        compose.append which("docker-compose")
-    end
-
-    sh *compose, *args
-end
-
-def capture_docker_compose(*args)
-    compose = []
-    if is_docker_compose_v2_supported()
-        compose.append DOCKER, "compose"
-    else
-        compose.append which("docker-compose")
-    end
-
-    return Open3.capture3(*compose, *args)
 end
 
 ### Recognize the operating system
@@ -613,28 +585,59 @@ CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
 ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
 CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
 
-# Docker compose requirement
+# Docker compose requirement task
 task :DOCKER_COMPOSE => [DOCKER] do
+    # The docker compose (or docker-compose) must be manually installed. If it
+    # is installed, the task body is never called.
     fail "docker compose plugin or docker-compose standalone is not installed"
 end
 
 Rake::Task[:DOCKER_COMPOSE].tap do |task|
-    def task.timestamp
-      Time.at 0
-    end
-
+    # The non-file tasks with the manuall_install variable are considered as
+    # dependencies. Set to true to mark it must be manually installed.
     task.instance_variable_set(:@manuall_install, true)
 
-    def task.needed?
-        # Fail the task if the docker compose or docker-compose is missing.
-        if !is_docker_compose_v2_supported() && which("docker-compose").nil?
-            return true
+    # Check if the docker compose plugin is installed.
+    def is_docker_compose_v2_supported()
+        begin
+            _, _, status = Open3.capture3 DOCKER, "compose"
+            return status == 0
+        rescue
+            # Missing docker command in system.
+            return false
         end
-        return false
     end
 
+    # Check if the standalone docker-compose is installed.
+    def is_docker_compose_v1_supported()
+        return !which("docker-compose").nil?
+    end
+
+    # Check if the task should be called. It is internally called by Rake.
+    # Return false if the docker compose or docker-compose is ready to use.
+    def task.needed?
+        # Fail the task if the docker compose or docker-compose is missing.
+        return !is_docker_compose_v2_supported() && !is_docker_compose_v1_supported()
+    end
+
+    # Return the string representation of the task.
     def task.to_s
-        return "docker compose"
+        if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
+            return "#{DOCKER} compose"
+        else
+            return which("docker-compose")
+        end
+    end
+
+    # Handle the splat operator call (*task_name). The splat operator should
+    # be used to call the task-related command.
+    # E.g.: sh *:DOCKER_COMPOSE, --foo, --bar .
+    def task.to_a
+        if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
+            return [DOCKER, "compose"]
+        else
+            return [which("docker-compose")]
+        end
     end
 end
 

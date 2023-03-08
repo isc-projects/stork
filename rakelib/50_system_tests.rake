@@ -228,13 +228,12 @@ namespace :systemtest do
             profiles.append "--profile", "premium"
         end
 
-        execute_docker_compose(
+        sh *:DOCKER_COMPOSE,
             "-f", File.expand_path(File.join(system_tests_dir, "docker-compose.yaml")),
             "--project-directory", File.expand_path("."),
             "--project-name", "stork_tests",
             *profiles,
             *args
-        )
     end
 
     desc 'Down all running services, removes networks and volumes'
