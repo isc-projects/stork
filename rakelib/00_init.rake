@@ -123,7 +123,7 @@ def find_and_prepare_deps(file)
             # prerequisites and it's missing, then the preparing operation is
             # stopped anyway.
             if which(t.to_s).nil?
-                puts "Preparing: #{t}... must be manually installed"
+                puts "Preparing: #{t.name}... must be manually installed"
                 next
             end
         end
@@ -167,7 +167,7 @@ def check_deps(file)
     end
 
     puts "Self-installed dependencies:"
-    prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
+    prerequisites_tasks.sort_by{ |t| t.name().rpartition("/")[2] }.each do |t|
         if !is_dependency_task(t)
             next
         end
@@ -182,7 +182,7 @@ def check_deps(file)
     puts "\nManually-installed dependencies:"
 
     manual_install_prerequisites_tasks
-        .map { |p| [p.to_s().rpartition("/")[2], p.to_s(), !p.needed? ] }
+        .map { |p| [p.name().rpartition("/")[2], p.name(), !p.needed? ] }
         .sort_by{ |name, _, _| name }
         .each { |args| print_status(*args) }
 end
@@ -586,13 +586,16 @@ ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
 CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
 
 # Docker compose requirement task
-task :DOCKER_COMPOSE => [DOCKER] do
+task :docker_compose => [DOCKER] do
     # The docker compose (or docker-compose) must be manually installed. If it
     # is installed, the task body is never called.
     fail "docker compose plugin or docker-compose standalone is not installed"
 end
 
-Rake::Task[:DOCKER_COMPOSE].tap do |task|
+# The constant to use as prerequisites.
+DOCKER_COMPOSE = Rake::Task[:docker_compose]
+
+Rake::Task[:docker_compose].tap do |task|
     # The non-file tasks with the manuall_install variable are considered as
     # dependencies. Set to true to mark it must be manually installed.
     task.instance_variable_set(:@manuall_install, true)
@@ -621,12 +624,18 @@ Rake::Task[:DOCKER_COMPOSE].tap do |task|
     end
 
     # Return the string representation of the task.
-    def task.to_s
+    def task.name
         if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
             return "#{DOCKER} compose"
         else
             return which("docker-compose")
         end
+    end
+
+    # Return the task name. It is used for compatibility with Rake. The
+    # identifier of the task and the to_s output must be the same.
+    def task.to_s
+        return :docker_compose.to_s
     end
 
     # Handle the splat operator call (*task_name). The splat operator should

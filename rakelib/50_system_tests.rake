@@ -92,7 +92,7 @@ desc 'Run system tests
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
     BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR'
-task :systemtest => [PYTEST, :DOCKER_COMPOSE, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
+task :systemtest => [PYTEST, DOCKER_COMPOSE, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
     if !ENV["TEST"].nil?
@@ -214,7 +214,7 @@ namespace :systemtest do
                 - MAJOR.MINOR.PATCH-REVISION
         BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     '
-    task :sh => volume_files + [:DOCKER_COMPOSE, :setup_version_envvars] do |t, args|
+    task :sh => volume_files + [DOCKER_COMPOSE, :setup_version_envvars] do |t, args|
         if ENV["USE_BUILD_KIT"] != "false"
             ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
             ENV["DOCKER_BUILDKIT"] = "1"
@@ -228,7 +228,7 @@ namespace :systemtest do
             profiles.append "--profile", "premium"
         end
 
-        sh *:DOCKER_COMPOSE,
+        sh *DOCKER_COMPOSE,
             "-f", File.expand_path(File.join(system_tests_dir, "docker-compose.yaml")),
             "--project-directory", File.expand_path("."),
             "--project-name", "stork_tests",
