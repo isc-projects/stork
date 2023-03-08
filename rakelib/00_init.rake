@@ -640,7 +640,7 @@ Rake::Task[:docker_compose].tap do |task|
 
     # Handle the splat operator call (*task_name). The splat operator should
     # be used to call the task-related command.
-    # E.g.: sh *:DOCKER_COMPOSE, --foo, --bar .
+    # E.g.: sh *DOCKER_COMPOSE, --foo, --bar
     def task.to_a
         if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
             return [DOCKER, "compose"]
