@@ -600,8 +600,11 @@ class DockerCompose(object):
         services_config = config['services']
         service_config = services_config.get(service_name)
         if service_config is None:
-            raise LookupError(
-                f'service {service_name} not found in the configuration')
+            # Docker-compose V1 returns all services from the configuration
+            # file. Docker-compose V2 strips the services from non-requested
+            # profiles. It means if no premium profile was specified, the
+            # premium services will not appear in the config command output.
+            return True
 
         profiles = service_config.get("profiles")
 
