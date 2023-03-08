@@ -251,8 +251,8 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 //
 //		controls {
 //			inet 127.0.0.1 allow {localhost;};
-//			inet * port 7766 allow {"rndc-users";}
-//	     keys {"rndc-remote";};
+//			inet * port 7766 allow {"rndc-users";};
+//	        keys {"rndc-remote";};
 //		};
 //
 // In this example, "rndc-users" and "rndc-remote" refer to an acl and key
@@ -412,10 +412,10 @@ func parseNamedDefaultPaths(output []byte) (string, string) {
 // empty), and a command executor instance. It uses multiple steps to attempt
 // detection:
 //
-// Step 1: Checks if STORK_BIND9_CONFIG is defined. If it is, uses that.
+// Step 1: Try to parse output of the named -V command.
 // Step 2: Try to parse -c parameter of the running process.
-// Step 3: Try to find named.conf in the default locations.
-// Step 4: Try to parse output of the named -V command.
+// Step 3: Checks if STORK_BIND9_CONFIG is defined. If it is, uses that.
+// Step 4: Try to find named.conf in the default locations.
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.

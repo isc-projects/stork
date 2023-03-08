@@ -72,7 +72,7 @@ func TestParseNamedDefaultPaths(t *testing.T) {
 	output := []byte(input)
 
 	// Call parseNamedDefaultPaths with the output
-	namedConf, RdncConf := parseNamedDefaultPaths(output)
+	namedConf, rdncConf := parseNamedDefaultPaths(output)
 
 	// Assert that the parsed strings are correct
 	require.Equal(t, "/some/path/named.conf", namedConf)
@@ -82,7 +82,7 @@ func TestParseNamedDefaultPaths(t *testing.T) {
 // Old BIND 9 versions don't print the default paths.
 // This test uses actual BIND 9.11.5 output. Makes sure
 // that the function doesn't panic.
-func TestParseNamedDefaultPathsNegative(t *testing.T) {
+func TestParseNamedDefaultPathsForOldBind9Versions(t *testing.T) {
 	// Define input data (actual output from BIND 9.11.5)
 	input := `BIND 9.11.5-P4-5.1+deb10u8-Debian (Extended Support Version) <id:998753c>
 running on Linux x86_64 4.19.0-22-amd64 #1 SMP Debian 4.19.260-1 (2022-09-29)
@@ -135,9 +135,8 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 		expKey  string
 	}
 
-	testCases := []testCase{
-		// CASE 1: default config from Ubuntu 22.04
-		{config: `
+	testCases := map[string]testCase{
+		"CASE 1: default config from Ubuntu 22.04": testCase{config: `
 		options {
 			directory "/var/cache/bind";
 			listen-on-v6  {
@@ -157,19 +156,21 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 			type master;
 			file "/etc/bind/db.127";
 		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
-		// CASE 2: added empty controls section (disabled rndc)
-		{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
-		// CASE 3: added controls section with options
-		{config: `
+		"CASE 2: added empty controls section (disabled rndc)":
+		testCase{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
+		"CASE 3: added controls section with options":
+		testCase{config: `
 		controls {
 			inet 192.0.2.1 allow { localhost; };
 		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
 	}
 
-	for _, test := range testCases {
-		a, b, c := getCtrlAddressFromBind9Config(test.config)
-		require.Equal(t, a, test.expAddr)
-		require.Equal(t, b, test.expPort)
-		require.Equal(t, c, test.expKey)
+	for name, test := range testCases {
+        t.Run(name, func(t *testing.T) {
+		    a, b, c := getCtrlAddressFromBind9Config(test.config)
+		    require.Equal(t, a, test.expAddr)
+		    require.Equal(t, b, test.expPort)
+		    require.Equal(t, c, test.expKey)
+        })
 	}
 }

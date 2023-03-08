@@ -6,6 +6,7 @@
     to explicitly tell where to look for a BIND9 config file. The detection
     process is also now more verbose. Enabling DEBUG logging level may
     help.
+    (Gitlab #831)
 
 * 284 [func] slawek
 

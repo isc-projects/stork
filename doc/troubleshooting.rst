@@ -32,8 +32,8 @@ This section describes the solutions for some common issues with the Stork agent
               For BIND 9, make sure that the rndc channel is enabled. By
               default, it is enabled, even if the ``controls`` clause is
               missing. Stork is able to detect default values, so typically
-              there is no adminitrative action required, unless the rndc channel
-              was expilicitly disabled.
+              there is no administrative action required, unless the rndc channel
+              was explicitly disabled.
 
               Also, make sure that BIND 9 has statistics channel enabled. That
               is done by adding ``statistics-channels`` entry. Typically, this
