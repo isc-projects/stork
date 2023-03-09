@@ -136,7 +136,7 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"CASE 1: default config from Ubuntu 22.04": testCase{config: `
+		"CASE 1: default config from Ubuntu 22.04": {config: `
 		options {
 			directory "/var/cache/bind";
 			listen-on-v6  {
@@ -156,8 +156,8 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 			type master;
 			file "/etc/bind/db.127";
 		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
-		"CASE 2: added empty controls section (disabled rndc)": testCase{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
-		"CASE 3: added controls section with options": testCase{config: `
+		"CASE 2: added empty controls section (disabled rndc)": {config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
+		"CASE 3: added controls section with options": {config: `
 		controls {
 			inet 192.0.2.1 allow { localhost; };
 		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
