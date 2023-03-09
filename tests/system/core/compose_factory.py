@@ -1,12 +1,36 @@
 import os
 from typing import Dict
+import subprocess
 
 from core.compose import DockerCompose
 from core.constants import project_directory, docker_compose_file
 
 
+def detect_docker_compose():
+    """
+    Detect a command to run the docker compose.
+    The docker compose V1 is the standalone docker-compose executable.
+    The docker compose V2 is a plugin to the docker core. It is available
+    as subcommand: docker compose.
+    The docker compose is end of life after June 2023 but it is still used
+    in our CI systems.
+
+    Returns
+    -------
+    list[str]
+        The shell commands needed to run the docker compose.
+    """
+    commands = [["docker", "compose"], ["docker-compose"]]
+    for command in commands:
+        result = subprocess.run(command, check=False, capture_output=True)
+        if result.returncode == 0:
+            return command
+    raise Exception("docker compose or docker-compose are not available")
+
+
 def create_docker_compose(env_vars: Dict[str, str] = None,
-                          build_args: Dict[str, str] = None) -> DockerCompose:
+                          build_args: Dict[str, str] = None,
+                          compose_detector=detect_docker_compose) -> DockerCompose:
     """
     Creates the docker-compose controller that uses the system tests
     docker-compose file.
@@ -31,5 +55,6 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
         build=True,
         default_mapped_hostname=os.environ.get(
             "DEFAULT_MAPPED_ADDRESS", "localhost"
-        )
+        ),
+        compose_base=compose_detector()
     )

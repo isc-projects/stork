@@ -173,7 +173,7 @@ class DockerCompose(object):
             project_name: str = None,
             use_build_kit=True,
             default_mapped_hostname: str = None,
-            compose_base: str = None):
+            compose_base: List[str] = ["docker", "compose"]):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -184,10 +184,7 @@ class DockerCompose(object):
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
-        if compose_base is not None:
-            self._compose_base = compose_base
-        else:
-            self._compose_base = DockerCompose._detect_docker_compose()
+        self._compose_base = compose_base
 
         if build_args is not None:
             build_args_pairs = [("--build-arg", "%s=%s" % pair)
@@ -205,34 +202,6 @@ class DockerCompose(object):
             # Mimics the docker-compose convention
             project_name = os.path.basename(os.path.abspath(project_directory))
         self._project_name = project_name
-
-    @staticmethod
-    def _detect_docker_compose():
-        """
-        Detect a command to run the docker compose.
-        The docker compose V1 is the standalone docker-compose executable.
-        The docker compose V2 is a plugin to the docker core. It is available
-        as subcommand: docker compose.
-        The docker compose is end of life after June 2023 but it is still used
-        in our CI systems.
-
-        Returns
-        -------
-        list[str]
-            The shell commands needed to run the docker compose.
-
-        Raises
-        ------
-        Exception
-            The exception is raised if the docker compose or docker-compose
-            are not available.
-        """
-        commands = [["docker", "compose"], ["docker-compose"]]
-        for command in commands:
-            result = subprocess.run(command, check=False, capture_output=True)
-            if result.returncode == 0:
-                return command
-        raise Exception("docker compose or docker-compose is not available")
 
     def docker_compose_command(self):
         """

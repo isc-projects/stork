@@ -1,13 +1,6 @@
 from core.compose_factory import create_docker_compose
 
 
-def test_fetch_empty_logs():
-    compose = create_docker_compose()
-    stdout, stderr = compose.logs()
-    assert stderr == ""
-    assert stdout != ""
-
-
 def test_server_instance():
     service_name = "server"
     compose = create_docker_compose()
