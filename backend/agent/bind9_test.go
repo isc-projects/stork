@@ -72,11 +72,11 @@ func TestParseNamedDefaultPaths(t *testing.T) {
 	output := []byte(input)
 
 	// Call parseNamedDefaultPaths with the output
-	namedConf, rdncConf := parseNamedDefaultPaths(output)
+	NamedConf, RndcConf := parseNamedDefaultPaths(output)
 
 	// Assert that the parsed strings are correct
-	require.Equal(t, "/some/path/named.conf", namedConf)
-	require.Equal(t, "/other/path/rndc.conf", RdncConf)
+	require.Equal(t, "/some/path/named.conf", NamedConf)
+	require.Equal(t, "/other/path/rndc.conf", RndcConf)
 }
 
 // Old BIND 9 versions don't print the default paths.
@@ -156,21 +156,19 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 			type master;
 			file "/etc/bind/db.127";
 		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
-		"CASE 2: added empty controls section (disabled rndc)":
-		testCase{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
-		"CASE 3: added controls section with options":
-		testCase{config: `
+		"CASE 2: added empty controls section (disabled rndc)": testCase{config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
+		"CASE 3: added controls section with options": testCase{config: `
 		controls {
 			inet 192.0.2.1 allow { localhost; };
 		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
 	}
 
 	for name, test := range testCases {
-        t.Run(name, func(t *testing.T) {
-		    a, b, c := getCtrlAddressFromBind9Config(test.config)
-		    require.Equal(t, a, test.expAddr)
-		    require.Equal(t, b, test.expPort)
-		    require.Equal(t, c, test.expKey)
-        })
+		t.Run(name, func(t *testing.T) {
+			a, b, c := getCtrlAddressFromBind9Config(test.config)
+			require.Equal(t, a, test.expAddr)
+			require.Equal(t, b, test.expPort)
+			require.Equal(t, c, test.expKey)
+		})
 	}
 }
