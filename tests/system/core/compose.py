@@ -159,6 +159,11 @@ class DockerCompose(object):
     default_mapped_address: str
         If provided, then the port command's default address (0.0.0.0) will be
         replaced with this value.
+    compose_base: list[str]
+        Base command to run the docker-compose. Provide "docker-compose" to use
+        docker compose V1 or "docker compose" to use docker compose V2.
+    profiles: list[str]
+        List of profiles to use with docker-compose.
     """
 
     def __init__(
@@ -173,7 +178,8 @@ class DockerCompose(object):
             project_name: str = None,
             use_build_kit=True,
             default_mapped_hostname: str = None,
-            compose_base: List[str] = ["docker", "compose"]):
+            compose_base: List[str] = ["docker", "compose"],
+            profiles=[]):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -185,6 +191,7 @@ class DockerCompose(object):
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
         self._compose_base = compose_base
+        self._profiles = profiles
 
         if build_args is not None:
             build_args_pairs = [("--build-arg", "%s=%s" % pair)
@@ -216,9 +223,11 @@ class DockerCompose(object):
                               "--project-directory", self._project_directory,
                               "--project-name", self._project_name]
         for file in self._compose_file_names:
-            docker_compose_cmd += ['-f', file]
+            docker_compose_cmd.extend(['-f', file])
         if self._env_file:
-            docker_compose_cmd += ['--env-file', self._env_file]
+            docker_compose_cmd.extend(['--env-file', self._env_file])
+        for profile in self._profiles:
+            docker_compose_cmd.extend(["--profile", profile])
         return docker_compose_cmd
 
     def build(self, *service_names):
@@ -471,8 +480,10 @@ class DockerCompose(object):
         It doesn't support scaling.
         """
         cmd = self.docker_compose_command() + ["ps", "-q", service_name]
-        _, container_id, _ = self._call_command(cmd=cmd)
-        if container_id == "":
+        # Docker compose V1 returns status 0 if service is
+        # not found. Docker compose V2 returns status 1.
+        status, container_id, _ = self._call_command(cmd=cmd, check=False)
+        if container_id == "" or status != 0:
             return None
         return container_id
 
@@ -515,6 +526,7 @@ class DockerCompose(object):
 
         _, stdout, _ = self._call_command(cmd)
         services = [line.strip() for line in stdout.split("\n")]
+
         created_services = []
         for service in services:
             container_id = self.get_container_id(service)
@@ -567,25 +579,31 @@ class DockerCompose(object):
         except Exception:
             return None
 
-    def is_premium(self, service_name):
-        """Checks if the given service is in the premium profile."""
+    def is_enabled(self, service_name):
+        """Checks if the given service is enabled. The service is enabled if
+        it has no profiles or has at least one profile provided by the --profile
+        flag or the COMPOSE_PROFILES environment variable."""
         config = self._read_config_yaml()
         services_config = config['services']
         service_config = services_config.get(service_name)
         if service_config is None:
             # Docker-compose V1 returns all services from the configuration
-            # file. Docker-compose V2 strips the services from non-requested
-            # profiles. It means if no premium profile was specified, the
-            # premium services will not appear in the config command output.
+            # file. Docker-compose V2 strips the services from non-enabled
+            # profiles. It means if none of the profile assigned to the service
+            # was specified, the services will not appear in the config command
+            # output.
             return True
 
-        profiles = service_config.get("profiles")
+        service_profiles = service_config.get("profiles")
 
-        if profiles is None:
-            # No profiles specified.
-            return False
+        if service_profiles is None:
+            # No profiles specified. The service is always enabled.
+            return True
 
-        return "premium" in profiles
+        for profile in self._profiles:
+            if profile in service_profiles:
+                return True
+        return False
 
     @memoize
     def _read_config_yaml(self):

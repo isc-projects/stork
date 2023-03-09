@@ -9,7 +9,6 @@ def subprocess_result_mock(status, stdout, stderr):
     return mock
 
 
-def fake_compose_detector():
-    """Return a fixed value of the compose command and to avoid the
-    subprocess call."""
-    return ["docker", "compose"]
+def fake_compose_binary_detector():
+    """Return a fixed value of the compose command to avoid the subprocess call."""
+    return ["foo", "bar"]

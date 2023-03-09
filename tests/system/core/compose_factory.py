@@ -6,7 +6,7 @@ from core.compose import DockerCompose
 from core.constants import project_directory, docker_compose_file
 
 
-def detect_docker_compose():
+def detect_compose_binary():
     """
     Detect a command to run the docker compose.
     The docker compose V1 is the standalone docker-compose executable.
@@ -30,7 +30,7 @@ def detect_docker_compose():
 
 def create_docker_compose(env_vars: Dict[str, str] = None,
                           build_args: Dict[str, str] = None,
-                          compose_detector=detect_docker_compose) -> DockerCompose:
+                          compose_detector=detect_compose_binary) -> DockerCompose:
     """
     Creates the docker-compose controller that uses the system tests
     docker-compose file.
@@ -45,7 +45,17 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
     hostname or IP address can be read from the DEFAULT_MAPPED_ADDRESS. It's
     helpful in Gitlab CI, where the Docker service is available under the
     "docker" hostname.
+
+    The installed docker-compose version is detect using the provided detector.
+    The default detector searches for executables in the system and prefers V2
+    over V1.
+
+    If the CS_REPO_ACCESS_TOKEN is set, the premium profile is enabled.
     """
+    profiles = []
+    if 'CS_REPO_ACCESS_TOKEN' in os.environ:
+        profiles.append("premium")
+
     return DockerCompose(
         project_directory,
         compose_file_name=docker_compose_file,
@@ -56,5 +66,6 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
         default_mapped_hostname=os.environ.get(
             "DEFAULT_MAPPED_ADDRESS", "localhost"
         ),
-        compose_base=compose_detector()
+        compose_base=compose_detector(),
+        profiles=profiles
     )

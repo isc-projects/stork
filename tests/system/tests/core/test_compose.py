@@ -759,9 +759,9 @@ def test_get_pid_unparsable_pid():
     assert pid is None
 
 
-def test_is_premium_reads_config():
+def test_is_enabled_reads_config():
     # Arrange
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", profiles=["premium"])
     mock = MagicMock()
     config = {
         'services': {
@@ -775,7 +775,8 @@ def test_is_premium_reads_config():
                 'profiles': [
                     'non-premium'
                 ]
-            }
+            },
+            'baz': {}
         }
     }
     config_yaml = yaml.safe_dump(config)
@@ -783,19 +784,21 @@ def test_is_premium_reads_config():
     compose._call_command = mock
     base_cmd = compose.docker_compose_command()
     # Act
-    is_foo_premium = compose.is_premium("foo")
-    is_bar_premium = compose.is_premium("bar")
+    is_foo_enabled = compose.is_enabled("foo")
+    is_bar_enabled = compose.is_enabled("bar")
+    is_baz_enabled = compose.is_enabled("baz")
     # Assert
     # Checks if config is memoized.
     mock.assert_called_once()
     cmd = mock.call_args.kwargs["cmd"]
     assert " ".join(cmd).startswith(" ".join(base_cmd))
     assert cmd[-1] == "config"
-    assert is_foo_premium
-    assert not is_bar_premium
+    assert is_foo_enabled
+    assert not is_bar_enabled
+    assert is_baz_enabled
 
 
-def test_is_premium_for_unknown_service():
+def test_is_enabled_for_unknown_service():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
@@ -806,7 +809,7 @@ def test_is_premium_for_unknown_service():
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock
     # Act & Assert
-    assert compose.is_premium("foo")
+    assert compose.is_enabled("foo")
 
 
 @patch("subprocess.run")
@@ -816,6 +819,7 @@ def test_call_command_passes_command(patch: MagicMock):
     patch.assert_called_once()
     cmd = patch.call_args.args[0]
     assert tuple(cmd[-2:]) == ("foo", "bar")
+
 
 @patch("subprocess.run")
 def test_call_command_adds_env_vars(patch: MagicMock):

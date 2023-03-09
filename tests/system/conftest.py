@@ -74,14 +74,11 @@ def pytest_sessionstart(session):
 
 def pytest_collection_modifyitems(session, config, items):
     """
-    Filters out all tests using the premium features if CloudSmith token is
-    not provided.
+    Filters out all tests using the disabled services.
     """
-    if 'CS_REPO_ACCESS_TOKEN' in os.environ:
-        return
 
     compose = create_docker_compose()
-    skip = pytest.mark.skip(reason="Skip due to missing CloudSmith token.")
+    skip = pytest.mark.skip(reason="Skip due to not set the docker-compose profile.")
 
     for item in items:
         if not hasattr(item, "callspec"):
@@ -91,5 +88,7 @@ def pytest_collection_modifyitems(session, config, items):
             service_name = fixture_args.get("service_name")
             if service_name is None:
                 continue
-            if compose.is_premium(service_name):
+            if not compose.is_enabled(service_name):
                 item.add_marker(skip)
+                break
+
