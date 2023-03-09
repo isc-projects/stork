@@ -48,6 +48,11 @@ class ContainerNotRunningException(Exception):
         super().__init__(state)
 
 
+class ContainerRunningException(Exception):
+    def __init__(self, *service_names):
+        super().__init__(service_names)
+
+
 class ContainerExitedException(Exception):
     def __init__(self, state: str):
         super().__init__(state)
@@ -276,12 +281,24 @@ class DockerCompose(object):
 
         self.up(*service_names)
 
-    def stop(self):
+    def down(self):
         """
-        Stops the docker compose environment.
+        Down (stop and remove including volumes) the docker compose environment.
         """
         down_cmd = self.docker_compose_command() + ['down', '-v']
         self._call_command(cmd=down_cmd)
+
+        # It seems that the docker-compose V2 doesn't wait for the finish of
+        # stopping and removing all containers. It causes the new containers to
+        # be created when the old ones' networks still exist, and docker throws
+        # an error. The problem occurs on docker 20.10.12, docker compose
+        # version v2.16.0 on 2023-03-09.
+        @wait_for_success(ContainerRunningException, wait_msg='Wait for down all containers...')
+        def wait_for_stop():
+            existing_services = self.get_created_services()
+            if len(existing_services) != 0:
+                raise ContainerRunningException(*existing_services)
+        wait_for_stop()
 
     def run(self, service_name: str, *args: str, check=True):
         """

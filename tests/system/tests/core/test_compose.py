@@ -241,14 +241,14 @@ def test_start_uses_service_names():
     up_mock.assert_called_once_with(*services)
 
 
-def test_stop_calls_proper_command_and_removes_volumes():
+def test_down_calls_proper_command_and_removes_volumes():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
     compose._call_command = mock
     base_cmd = compose.docker_compose_command()
     # Act
-    compose.stop()
+    compose.down()
     # Assert
     mock.assert_called_once()
     cmd = mock.call_args.kwargs["cmd"]
@@ -847,7 +847,7 @@ def test_call_command_captures_output_by_default(patch: MagicMock):
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
-def test_call_command_suppreses_capturing_output(patch: MagicMock):
+def test_call_command_suppresses_capturing_output(patch: MagicMock):
     compose = DockerCompose("project-dir")
     status, stdout, stderr = compose._call_command([], capture_output=False)
     patch.assert_called_once()
@@ -868,7 +868,7 @@ def test_call_command_checks_output_by_default(patch: MagicMock):
 
 
 @patch("subprocess.run")
-def test_call_command_suppresses_checking_ouput(patch: MagicMock):
+def test_call_command_suppresses_checking_output(patch: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([], check=False)
     patch.assert_called_once()

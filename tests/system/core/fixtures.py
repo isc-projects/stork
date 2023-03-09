@@ -414,7 +414,7 @@ def finish(request):
         if len(service_names) == 0:
             return
 
-         # prepare test directory for logs, etc
+        # prepare test directory for logs, etc
         tests_dir = Path('test-results')
         tests_dir.mkdir(exist_ok=True)
         test_name = function_name
@@ -455,7 +455,7 @@ def finish(request):
 
     def collect_logs_and_down_all():
         collect_logs()
-        # Stop all containers
+        # Down all containers
         compose = create_docker_compose()
-        compose.stop()
+        compose.down()
     request.addfinalizer(collect_logs_and_down_all)

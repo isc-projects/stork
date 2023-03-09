@@ -65,7 +65,7 @@ def pytest_sessionstart(session):
     on the testing end if no interruption happened
     """
     compose = create_docker_compose()
-    compose.stop()
+    compose.down()
     # Remove old test results
     tests_dir = Path('test-results')
     if tests_dir.exists():

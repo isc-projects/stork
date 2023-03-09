@@ -9,7 +9,7 @@ def test_server_instance():
     state = compose.get_service_state(service_name)
     assert state.is_running()
     assert state.is_healthy()
-    compose.stop()
+    compose.down()
 
 
 def test_kea_only_instance():
@@ -21,4 +21,4 @@ def test_kea_only_instance():
     state = compose.get_service_state(service_name)
     assert state.is_running()
     assert state.is_healthy()
-    compose.stop()
+    compose.down()
