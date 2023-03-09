@@ -172,7 +172,8 @@ class DockerCompose(object):
             build_args: Dict[str, str] = None,
             project_name: str = None,
             use_build_kit=True,
-            default_mapped_hostname: str = None):
+            default_mapped_hostname: str = None,
+            compose_base: str = None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -183,7 +184,10 @@ class DockerCompose(object):
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
-        self._compose_base = DockerCompose._detect_docker_compose()
+        if compose_base is not None:
+            self._compose_base = compose_base
+        else:
+            self._compose_base = DockerCompose._detect_docker_compose()
 
         if build_args is not None:
             build_args_pairs = [("--build-arg", "%s=%s" % pair)

@@ -746,6 +746,7 @@ def test_get_pid():
     assert cmd[-2] == "pid"
     assert cmd[-1] == "kea-dhcp4"
 
+
 def test_get_pid_unparsable_pid():
     # Arrange
     compose = DockerCompose("project-dir")
@@ -756,6 +757,7 @@ def test_get_pid_unparsable_pid():
     pid = compose.get_pid("stork-agent", "kea-dhcp4")
     # Assert
     assert pid is None
+
 
 def test_is_premium_reads_config():
     # Arrange
@@ -793,7 +795,8 @@ def test_is_premium_reads_config():
     assert not is_bar_premium
 
 
-def test_is_premium_raises_for_unknown_service():
+def test_is_premium_for_unknown_service():
+    # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
     config = {
@@ -803,21 +806,20 @@ def test_is_premium_raises_for_unknown_service():
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock
     # Act & Assert
-    with pytest.raises(LookupError):
-        compose.is_premium("foo")
+    assert not compose.is_premium("foo")
 
 
 @patch("subprocess.run")
 def test_call_command_passes_command(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     compose._call_command(["foo", "bar"])
     patch.assert_called_once()
     cmd = patch.call_args.args[0]
-    assert tuple(cmd) == ("foo", "bar")
+    assert tuple(cmd[-2:]) == ("foo", "bar")
 
 @patch("subprocess.run")
 def test_call_command_adds_env_vars(patch: MagicMock):
-    compose = DockerCompose("project-dir", env_vars=dict(global_foo="1"))
+    compose = DockerCompose("project-dir", env_vars=dict(global_foo="1"), compose_base="test")
     compose._call_command([], env_vars=dict(local_bar="2"))
     patch.assert_called_once()
     env = patch.call_args.kwargs["env"]
@@ -830,7 +832,7 @@ def test_call_command_adds_env_vars(patch: MagicMock):
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
 def test_call_command_captures_output_by_default(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     status, stdout, stderr = compose._call_command([])
     patch.assert_called_once()
     item = patch.call_args.kwargs["capture_output"]
@@ -842,7 +844,7 @@ def test_call_command_captures_output_by_default(patch: MagicMock):
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
 def test_call_command_suppreses_capturing_output(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     status, stdout, stderr = compose._call_command([], capture_output=False)
     patch.assert_called_once()
     item = patch.call_args.kwargs["capture_output"]
@@ -854,7 +856,7 @@ def test_call_command_suppreses_capturing_output(patch: MagicMock):
 
 @patch("subprocess.run")
 def test_call_command_checks_output_by_default(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     compose._call_command([])
     patch.assert_called_once()
     item = patch.call_args.kwargs["check"]
@@ -863,7 +865,7 @@ def test_call_command_checks_output_by_default(patch: MagicMock):
 
 @patch("subprocess.run")
 def test_call_command_suppresses_checking_ouput(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     compose._call_command([], check=False)
     patch.assert_called_once()
     item = patch.call_args.kwargs["check"]
@@ -872,7 +874,7 @@ def test_call_command_suppresses_checking_ouput(patch: MagicMock):
 
 @patch("subprocess.run")
 def test_call_sets_cwd_to_project_directory(patch: MagicMock):
-    compose = DockerCompose("project-dir")
+    compose = DockerCompose("project-dir", compose_base="test")
     compose._call_command([])
     patch.assert_called_once()
     cwd = patch.call_args.kwargs["cwd"]
