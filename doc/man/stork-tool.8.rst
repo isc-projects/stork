@@ -190,7 +190,7 @@ Common Options
 The following options pertain to both ``db-`` and ``cert-`` commands:
 
 ``--db-url=``
-   Specifies the URL for the Stork PostgreSQL database. It's mutually exclusively with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
+   Specifies the URL for the Stork PostgreSQL database. It's mutually exclusive with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
 
 ``-u|--db-user=``
    Specifies the user name for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
@@ -199,7 +199,7 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-host=``
-   Specifies the name of the host, IP address or socket (containing directory) where the database is available. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address or a socket path for the database connection. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port=``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``

@@ -60,7 +60,7 @@ Arguments
    Specifies the URL to locate and connect to database. It's mutually exclusively with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
 
 ``--db-host``
-   Specifies the name of the host, IP address or socket (containing directory) where the database is available. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address or a socket path for the database connection. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``

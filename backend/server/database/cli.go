@@ -46,7 +46,7 @@ func iterateOverFields(obj any, f func(field reflect.StructField, valueField ref
 		})
 	}
 
-	// Perform until exhaust the queue.
+	// Perform until the queue is exhausted.
 	for len(fieldQueue) != 0 {
 		// Pop first element.
 		pair := fieldQueue[0]
