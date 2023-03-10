@@ -595,7 +595,7 @@ class DockerCompose(object):
             # profiles. It means if none of the profile assigned to the service
             # was specified, the services will not appear in the config command
             # output.
-            return True
+            return False
 
         service_profiles = service_config.get("profiles")
 
