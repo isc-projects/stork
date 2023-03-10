@@ -438,16 +438,38 @@ func TestCombineErrorsForListOfNils(t *testing.T) {
 }
 
 // Test that the socket is recognized properly.
-func TestIsSocket(t *testing.T) {
+func TestSocketIsSocket(t *testing.T) {
 	// Arrange
-	tempFile, _ := os.CreateTemp("", "*")
-	tempName := tempFile.Name()
-	tempFile.Close()
-	os.Remove(tempName)
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
-	listener, _ := net.Listen("unix", tempName)
+	socketName, _ := sb.Join("socket")
+	os.Remove(socketName)
+
+	listener, _ := net.Listen("unix", socketName)
 	defer listener.Close()
 
 	// Act & Assert
-	require.True(t, IsSocket(tempName))
+	require.True(t, IsSocket(socketName))
+}
+
+// Test that the regular file is not recognized as a socket.
+func TestRegularFileIsNotSocket(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	fileName, _ := sb.Join("file")
+
+	// Act & Assert
+	require.False(t, IsSocket(fileName))
+}
+
+// Test that non-existing file is not recognized as a socket.
+func TestNonExistingFileIsNotSocket(t *testing.T) {
+	// Arrange
+	fileName := "/not/exists/path"
+
+	// Act & Assert
+	require.False(t, IsSocket(fileName))
 }
