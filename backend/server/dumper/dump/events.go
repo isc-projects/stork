@@ -12,7 +12,8 @@ type EventsDump struct {
 	machineID int64
 }
 
-// Extended event structure to contain more details.
+// Extended event structure with additional, derived members to improve the
+// dump clarification.
 type EventExtended struct {
 	dbmodel.Event
 	LevelText string
