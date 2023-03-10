@@ -809,7 +809,7 @@ def test_is_enabled_for_unknown_service():
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock
     # Act & Assert
-    assert compose.is_enabled("foo")
+    assert not compose.is_enabled("foo")
 
 
 @patch("subprocess.run")
