@@ -524,7 +524,10 @@ class DockerCompose(object):
         opts = ["ps", "--services"]
         cmd = self.docker_compose_command() + opts
 
-        _, stdout, _ = self._call_command(cmd)
+        _, stdout, _ = self._call_command(cmd, capture_output=True)
+        if stdout.strip() == '':
+            return []
+
         services = [line.strip() for line in stdout.split("\n")]
 
         created_services = []
