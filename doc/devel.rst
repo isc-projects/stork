@@ -682,7 +682,7 @@ are assigned to the consecutive interfaces.
 
     networks:
       storknet:
-        ipv4_address: 172.20.42.200
+        ipv4_address: 172.42.42.200
         priority: 1000
       subnet_00:
         ipv4_address: 172.100.42.200

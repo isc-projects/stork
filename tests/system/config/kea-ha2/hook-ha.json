@@ -13,13 +13,13 @@
                 "peers": [
                     {
                         "name": "server1",
-                        "url": "http://172.20.42.100:8000",
+                        "url": "http://172.42.42.100:8000",
                         "role": "primary",
                         "auto-failover": true
                     },
                     {
                         "name": "server2",
-                        "url": "http://172.20.42.101:8000",
+                        "url": "http://172.42.42.101:8000",
                         "role": "standby",
                         "auto-failover": true
                     }

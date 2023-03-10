@@ -76,7 +76,7 @@ services:
       - "9119"
     networks:
       storknet:
-        ipv4_address: 172.20.42.100
+        ipv4_address: 172.42.42.100
         priority: 1000
       subnet_00:
         ipv4_address: 172.100.42.100
@@ -99,7 +99,7 @@ services:
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
-      STORK_AGENT_HOST: 172.20.42.100
+      STORK_AGENT_HOST: 172.42.42.100
     healthcheck:
       interval: 250ms
       timeout: 1s
@@ -233,10 +233,10 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha2
     environment:
-      STORK_AGENT_HOST: 172.20.42.101
+      STORK_AGENT_HOST: 172.42.42.101
     networks:
       storknet:
-        ipv4_address: 172.20.42.101
+        ipv4_address: 172.42.42.101
         priority: 1000
       subnet_00:
         ipv4_address: 172.100.42.101
@@ -277,10 +277,10 @@ services:
     hostname: agent-bind9
     networks:
       storknet:
-        ipv4_address: 172.20.42.53
+        ipv4_address: 172.42.42.53
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
-      STORK_AGENT_HOST: 172.20.42.53
+      STORK_AGENT_HOST: 172.42.42.53
     ports:
       - "42119:9119"
     volumes:
@@ -296,7 +296,7 @@ services:
     hostname: perfdhcp
     networks:
       storknet:
-        ipv4_address: 172.20.42.200
+        ipv4_address: 172.42.42.200
         priority: 1000
       subnet_00:
         ipv4_address: 172.100.42.200
@@ -355,7 +355,7 @@ services:
     command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
     networks:
       storknet:
-        ipv4_address: 172.20.42.234
+        ipv4_address: 172.42.42.234
     environment:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork
@@ -373,7 +373,7 @@ networks:
     enable_ipv6: true
     ipam:
       config:
-        - subnet: 172.20.42.0/24
+        - subnet: 172.42.42.0/24
         - subnet: 3009:db8:1:42::/64
   subnet_00:
     ipam:
