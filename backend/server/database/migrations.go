@@ -141,20 +141,23 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 
 	// Other things can be done in a transaction.
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
+		hasUser := false
+
 		if force {
 			// Drop an existing user if it exists.
 			if _, err = tx.Exec(fmt.Sprintf("DROP USER IF EXISTS %s;", userName)); err != nil {
 				err = errors.Wrapf(err, `problem dropping the user "%s"`, userName)
 				return
 			}
+		} else {
+			// Check if the user already exists.
+			var hasUserInt int
+			if _, err = tx.Query(pg.Scan(&hasUserInt), fmt.Sprintf("SELECT 1 FROM pg_roles WHERE rolname='%s';", userName)); err != nil {
+				err = errors.Wrapf(err, `problem with checking if the user "%s" exists`, userName)
+				return
+			}
+			hasUser = hasUserInt == 1
 		}
-		// Check if the user already exists.
-		var hasUserInt int
-		if _, err = tx.Query(pg.Scan(&hasUserInt), fmt.Sprintf("SELECT 1 FROM pg_roles WHERE rolname='%s';", userName)); err != nil {
-			err = errors.Wrapf(err, `problem with checking if the user "%s" exists`, userName)
-			return
-		}
-		hasUser := hasUserInt == 1
 
 		// Re-create the user.
 		if hasUser {
