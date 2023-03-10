@@ -50,10 +50,11 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
     The default detector searches for executables in the system and prefers V2
     over V1.
 
-    If the CS_REPO_ACCESS_TOKEN is set, the premium profile is enabled.
+    If the CS_REPO_ACCESS_TOKEN is set to non-empty value, the premium profile
+    is enabled.
     """
     profiles = []
-    if 'CS_REPO_ACCESS_TOKEN' in os.environ:
+    if os.environ.get('CS_REPO_ACCESS_TOKEN', '') != '':
         profiles.append("premium")
 
     return DockerCompose(

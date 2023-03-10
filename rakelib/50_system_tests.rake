@@ -228,7 +228,7 @@ namespace :systemtest do
         ENV["PWD"] = Dir.pwd
 
         profiles = []
-        if !ENV["CS_REPO_ACCESS_TOKEN"].nil?
+        if ENV["CS_REPO_ACCESS_TOKEN"]
             puts "Use the Kea premium containers"
             profiles.append "--profile", "premium"
         end
