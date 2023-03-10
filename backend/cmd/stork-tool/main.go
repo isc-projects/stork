@@ -21,7 +21,8 @@ import (
 const passwordGenRandomLength = 24
 
 // Establish connection to a database with opts from command line.
-func getDBConn(rawFlags *cli.Context) (*dbops.PgDB, func()) {
+// Returns the database instance. It must be closed by caller.
+func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 	flags := &dbops.DatabaseCLIFlags{}
 	flags.ReadFromCLI(rawFlags)
 	settings, err := flags.ConvertToDatabaseSettings()
@@ -39,7 +40,7 @@ func getDBConn(rawFlags *cli.Context) (*dbops.PgDB, func()) {
 	if db == nil {
 		log.Fatal("Unable to create database instance")
 	}
-	return db, func() { db.Close() }
+	return db
 }
 
 // Execute db-create command. It prepares new database for the Stork
@@ -153,10 +154,10 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 		log.Infof("SQL queries tracing set to %s", traceSQL)
 	}
 
-	db, teardown := getDBConn(settings)
+	db := getDBConn(settings)
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
-	teardown()
+	_ = db.Close()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -175,16 +176,16 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 
 // Execute cert export command.
 func runCertExport(settings *cli.Context) error {
-	db, teardown := getDBConn(settings)
-	defer teardown()
+	db := getDBConn(settings)
+	defer db.Close()
 
 	return certs.ExportSecret(db, settings.String("object"), settings.String("file"))
 }
 
 // Execute cert import command.
 func runCertImport(settings *cli.Context) error {
-	db, teardown := getDBConn(settings)
-	defer teardown()
+	db := getDBConn(settings)
+	defer db.Close()
 
 	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
