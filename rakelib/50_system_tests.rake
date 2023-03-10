@@ -91,12 +91,17 @@ desc 'Run system tests
             - MAJOR.MINOR
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
-    BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR'
+    BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
+    EXIT_FIRST - exit on the first error - optional, default: false'
 task :systemtest => [PYTEST, DOCKER_COMPOSE, open_api_generator_python_dir, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
     if !ENV["TEST"].nil?
         opts.append "-k", ENV["TEST"]
+    end
+
+    if ENV["EXIT_FIRST"] == "true"
+        opts.append "--exitfirst"
     end
 
     # ToDo: Remove the below switches after updating OpenAPI Generator.
