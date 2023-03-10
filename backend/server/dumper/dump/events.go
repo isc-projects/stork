@@ -15,7 +15,7 @@ type EventsDump struct {
 // Extended event structure to contain more details.
 type EventExtended struct {
 	dbmodel.Event
-	LevelTxt string
+	LevelText string
 }
 
 // Constructs new events dump instance.
@@ -46,8 +46,8 @@ func (d *EventsDump) Execute() error {
 	eventsExtended := make([]EventExtended, len(events))
 	for i, event := range events {
 		eventsExtended[i] = EventExtended{
-			Event:    event,
-			LevelTxt: event.Level.String(),
+			Event:     event,
+			LevelText: event.Level.String(),
 		}
 	}
 

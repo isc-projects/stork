@@ -58,10 +58,10 @@ func TestEventsDumpExecute(t *testing.T) {
 	require.Len(t, events, 2)
 	event := events[0]
 	require.EqualValues(t, "bar", event.Text)
-	require.EqualValues(t, "info", event.LevelTxt)
+	require.EqualValues(t, "info", event.LevelText)
 	event = events[1]
 	require.EqualValues(t, "foo", event.Text)
-	require.EqualValues(t, "warning", event.LevelTxt)
+	require.EqualValues(t, "warning", event.LevelText)
 }
 
 // Test that the dump contains an empty list if there is no event.
