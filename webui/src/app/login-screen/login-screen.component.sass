@@ -34,14 +34,24 @@
 
 .login-screen__logo
     // Use fancy font.
-    font-family: 'Mansalva', cursive
-    // Use big font.
-    font-size: 14rem
+    font-family: 'Mansalva'
+    // Don't use any particular variant to keep consistency with the logo on
+    // the project webpage.
+    font-variant: none
+    // Use big font - but the text should be lower than logo.
+    font-size: 10rem
     // Set the top spacing.
     margin-top: 5vh
     a
         // Override default color for links.
         color: white
+        // Center logo text vertically.
+        vertical-align: middle
+        // Short spacing between icon and text.
+        margin-left: 2rem
+    img
+        // Center logo icon vertically.
+        vertical-align: middle
 
 .login-screen__version
     // Make version indistinctive.
@@ -50,6 +60,8 @@
 .login-screen-intro
     // Bigger text.
     font-size: 2rem
+    // Small space between version and intro text.
+    margin-top: 1rem
     a
         // Override default color for links.
         color: white
