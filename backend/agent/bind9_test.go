@@ -183,14 +183,14 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 	}
 }
 
-type catCommandExecutor struct{}
+type catCommandExecutor struct{ file string }
 
 // Pretends to run named-checkconf, but instead does a simple read of the
 // specified files contents, similar to "cat" command.
 func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	if strings.Contains(command, "named-checkconf") {
-		fmt.Printf("Pretending to run %s, and instead reading contents of %s.\n", command, args[1])
-
+		// Pretending to run named-checkconf -p <config-file>. The contents of
+		// the file are returned as-is.
 		text, err := ioutil.ReadFile(args[1])
 		if err != nil {
 			// Reading failed.
@@ -200,7 +200,10 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 	}
 
 	if strings.HasSuffix(command, "named") && len(args) > 0 && args[0] == "-V" {
-		text := `fake output of named -V`
+		// Pretending to run named -V
+		text := fmt.Sprintf(`default paths:
+		named configuration:  %s
+		rndc configuration:   /other/path/rndc.conf`, e.file)
 
 		return []byte(text), nil
 	}
@@ -233,6 +236,46 @@ controls {
 	// check BIND 9 app detection
 	executor := &catCommandExecutor{}
 
+	namedDir, err := sb.JoinDir("usr/sbin")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/bin/named-checkconf")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/sbin/rndc")
+	require.NoError(t, err)
+	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "192.0.2.1", point.Address)
+	require.EqualValues(t, 1234, point.Port)
+	require.Empty(t, point.Key)
+}
+
+// Checks detection STEP 3: parse output of the named -V command.
+func TestDetectBind9Step3BindVOutput(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	// create alternate config file...
+	varPath, _ := sb.Join("testing.conf")
+	config := `keys "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+   };
+controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+   };`
+	sb.Write("testing.conf", config)
+
+	// ... and tell the fake executor to return it as the output of named -V
+	executor := &catCommandExecutor{file: varPath}
+
+	// Now run the detection as usual
 	namedDir, err := sb.JoinDir("usr/sbin")
 	require.NoError(t, err)
 	_, err = sb.Join("usr/bin/named-checkconf")

@@ -485,8 +485,10 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			log.Warnf("Attempt to run '%s -V' failed. I give up. Error: %s", namedPath, err)
 			return nil
 		}
-		bind9ConfPath, _ := parseNamedDefaultPaths(out)
-		log.Infof("Found BIND 9 config file in %s based on output of `named -V`.", bind9ConfPath)
+		bind9ConfPath, _ = parseNamedDefaultPaths(out)
+		if len(bind9ConfPath) > 0 {
+			log.Infof("Found BIND 9 config file in %s based on output of `named -V`.", bind9ConfPath)
+		}
 	}
 
 	// STEP 4: If we still don't have anything, let's look at typical locations.
