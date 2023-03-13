@@ -172,7 +172,7 @@ They can be run using Rake:
 
           $ rake unittest:backend
 
-This requires preparing a database in PostgreSQL. 
+This requires running a PostgreSQL server.
 
 One way to avoid doing this manually is by using a Docker container with PostgreSQL,
 which is automatically created when running the following Rake task:
@@ -189,35 +189,37 @@ Unit Tests Database
 -------------------
 
 When a Docker container with a database is not used for unit tests, the
-PostgreSQL server must be started and the following role must be
-created:
+PostgreSQL server must be started. The `storktest` role will be
+created automatically using the `postgres` user and the `postgres` database as
+a maintenance database. If you use different maintenance user or database,
+you can specify by the `DB_MAINTENANCE_USER` and `DB_MAINTENANCE_NAME`
+environment variables.
 
-.. code-block:: psql
+.. code-block:: shell
 
-    postgres=# CREATE USER storktest WITH PASSWORD 'storktest';
-    CREATE ROLE
-    postgres=# ALTER ROLE storktest SUPERUSER;
-    ALTER ROLE
+    rake unittest:backend DB_MAINTENANCE_USER=user DB_MAINTENANCE_NAME=db
 
-To point unit tests to a specific Stork database, set the ``DB_HOST``
+The maintenance credentials are also used to create the test databases.
+
+To point unit tests to a specific database server, set the ``DB_HOST``
 environment variable, e.g.:
 
 .. code:: console
 
           $ rake unittest:backend DB_HOST=host:port
 
-By default it points to ``localhost:5432``.
+It is empty by default, meaning the default Postgres socket is used.
 
-Similarly, if the database setup requires a password other than the default
-``storktest``,  the ``DB_PASSWORD`` variable can be used by issuing
-the following command:
+If the database setup requires a password other than the default ``storktest``,
+the console will prompt to provide credentials. The default password can also
+be overridden by the ``DB_PASSWORD`` variable:
 
 .. code:: console
 
           $ rake unittest:backend DB_PASSWORD=secret123
 
-Note that there is no need to create the ``storktest`` database itself; it is created
-and destroyed by the Rakefile task.
+Note that there is no need to create the ``storktest`` database itself; it is
+created and destroyed by the Rakefile task.
 
 Unit Tests Coverage
 -------------------
