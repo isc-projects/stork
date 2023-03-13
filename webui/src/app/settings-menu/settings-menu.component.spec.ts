@@ -40,7 +40,7 @@ describe('SettingsMenuComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should show the password change menu item for the internal user', () => {
+    it('should show the password change menu item for internal user', () => {
         spyOnProperty(authService, 'currentUserValue', 'get').and.returnValue({
             authenticationMethod: 'internal',
         } as User)
@@ -50,7 +50,7 @@ describe('SettingsMenuComponent', () => {
         expect(component.items[0].items.some((i) => i.label === 'Change password')).toBeTrue()
     })
 
-    it('should hide the password change menu item for the external user', () => {
+    it('should hide the password change menu item for external user', () => {
         spyOnProperty(authService, 'currentUserValue', 'get').and.returnValue({
             authenticationMethod: 'external',
         } as User)
