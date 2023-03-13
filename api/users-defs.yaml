@@ -89,11 +89,11 @@
   SessionCredentials:
     type: object
     required:
-      - authenticationId
+      - authenticationMethod
       - identifier
       - secret
     properties:
-      authenticationId:
+      authenticationMethod:
         description: Unique ID of the authentication method
         type: string
       identifier:

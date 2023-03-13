@@ -29,7 +29,6 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 		Groups:               []int64{},
 		AuthenticationMethod: &u.AuthenticationMethod,
 		ExternalID:           u.ExternalID,
-		Groups:               []int64{},
 	}
 
 	// Append an array of groups.
@@ -87,7 +86,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	calloutUser, err := r.HookManager.Authenticate(
 		ctx,
 		params.HTTPRequest,
-		*params.Credentials.AuthenticationID,
+		*params.Credentials.AuthenticationMethod,
 		params.Credentials.Identifier,
 		params.Credentials.Secret,
 	)
@@ -109,7 +108,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		Lastname:             calloutUser.Lastname,
 		Name:                 calloutUser.Name,
 		Groups:               groups,
-		AuthenticationMethod: *params.Credentials.AuthenticationID,
+		AuthenticationMethod: *params.Credentials.AuthenticationMethod,
 		ExternalID:           calloutUser.ID,
 	}
 
@@ -118,7 +117,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		var dbUser *dbmodel.SystemUser
 		dbUser, err = dbmodel.GetUserByExternalID(
 			r.DB,
-			*params.Credentials.AuthenticationID,
+			*params.Credentials.AuthenticationMethod,
 			calloutUser.ID,
 		)
 		if err != nil {
@@ -149,13 +148,13 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 	// Extract the authentication method and normalize the value.
 	var authenticationMethod string
-	if params.Credentials.AuthenticationID == nil || *params.Credentials.AuthenticationID == "" {
-		authenticationMethod = dbmodel.AuthenticationMethodIDInternal
+	if params.Credentials.AuthenticationMethod == nil || *params.Credentials.AuthenticationMethod == "" {
+		authenticationMethod = dbmodel.AuthenticationMethodInternal
 	} else {
-		authenticationMethod = *params.Credentials.AuthenticationID
+		authenticationMethod = *params.Credentials.AuthenticationMethod
 	}
 
-	if authenticationMethod == dbmodel.AuthenticationMethodIDInternal {
+	if authenticationMethod == dbmodel.AuthenticationMethodInternal {
 		systemUser, err = r.internalAuthentication(params)
 	} else {
 		systemUser, err = r.externalAuthentication(ctx, params)

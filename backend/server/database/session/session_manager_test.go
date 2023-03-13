@@ -42,7 +42,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 		Email:                "johnw@example.org",
 		Lastname:             "White",
 		Name:                 "John C",
-		AuthenticationMethod: dbmodel.AuthenticationMethodIDInternal,
+		AuthenticationMethod: dbmodel.AuthenticationMethodInternal,
 
 		Groups: []*dbmodel.SystemGroup{
 			{

@@ -16,9 +16,9 @@ func init() {
 	orm.RegisterTable((*SystemUserToGroup)(nil))
 }
 
-// The authentication ID of the internal authentication method (email and
-// password stored in the database).
-const AuthenticationMethodIDInternal string = "internal"
+// The authentication method ID of the internal authentication method (email
+// and password stored in the database).
+const AuthenticationMethodInternal string = "internal"
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {

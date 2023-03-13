@@ -41,12 +41,12 @@ export class AuthService {
      *
      * @param identifier Specified identifier (e.g., user name).
      * @param secret Specified secret (e.g., password).
-     * @param authenticationId Specified authentication method ID.
+     * @param authenticationMethod Specified authentication method ID.
      * @param returnUrl URL to return to after successful login.
      */
-    login(authenticationId: string, identifier: string, secret: string, returnUrl: string) {
+    login(authenticationMethod: string, identifier: string, secret: string, returnUrl: string) {
         let user: User
-        const credentials: SessionCredentials = { authenticationId, identifier, secret }
+        const credentials: SessionCredentials = { authenticationMethod, identifier, secret }
         this.api.createSession(credentials).subscribe(
             (user) => {
                 if (user.id != null) {

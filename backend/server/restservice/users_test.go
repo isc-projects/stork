@@ -831,7 +831,7 @@ func TestGetUsers(t *testing.T) {
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Name)
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Lastname)
 	require.Equal(t, "", *okRsp.Payload.Items[0].Email)
-	require.Equal(t, dbmodel.AuthenticationMethodIDInternal, *okRsp.Payload.Items[0].AuthenticationMethod)
+	require.Equal(t, dbmodel.AuthenticationMethodInternal, *okRsp.Payload.Items[0].AuthenticationMethod)
 	require.Empty(t, okRsp.Payload.Items[0].ExternalID)
 
 	// Check the user we just added
@@ -1072,9 +1072,9 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	// Act
 	params := users.CreateSessionParams{
 		Credentials: &models.SessionCredentials{
-			Identifier:       &identifier,
-			Secret:           &secret,
-			AuthenticationID: &authenticationMethod,
+			Identifier:           &identifier,
+			Secret:               &secret,
+			AuthenticationMethod: &authenticationMethod,
 		},
 	}
 	rsp := rapi.CreateSession(ctx, params)
