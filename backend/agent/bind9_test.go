@@ -211,6 +211,38 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 	return nil, nil
 }
 
+// Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
+func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// create alternate config files for each step...
+	config1Path, _ := sb.Join("step1.conf")
+	config1 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	sb.Write("step1.conf", config1)
+
+	// check BIND 9 app detection
+	executor := &catCommandExecutor{}
+
+	// Now run the detection as usual
+	namedDir, err := sb.JoinDir("usr/sbin")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/bin/named-checkconf")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/sbin/rndc")
+	require.NoError(t, err)
+	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "1.1.1.1", point.Address)
+	require.EqualValues(t, 1111, point.Port)
+	require.Empty(t, point.Key)
+}
+
 // Checks detection STEP 2: if BIND9 detection takes STORK_BIND9_CONFIG env var into account.
 func TestDetectBind9Step2EnvVar(t *testing.T) {
 	sb := testutil.NewSandbox()
@@ -290,5 +322,70 @@ controls {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
+	require.Empty(t, point.Key)
+}
+
+// There is no reliable way to test step 4 (checking typical locations). The
+// code is not mockable. We could check if there's BIND config in any of the
+// typical locations, but what exactly are we supposed to do if we find one?
+// The actual Ubuntu 22.04 system is a good example. I have BIND 9 installed
+// and the detection actually detects the BIND 9 config file. However, it fails
+// to read rndc.key file, because it's set to be read by bind user only.
+// Without rndc the BIND detection fails and returns no apps.
+//
+// An alternative approach would be to enable debug logging, then capture the
+// stdout and parse if the messages mention default locations. We _could_ do
+// that, but it's not worth the effort, especially given the detection code
+// is really a simple for loop.
+
+// Checks detection order. Several steps are configured. It checks if the
+// steps order is as expected. There are 3 configs on disk:
+// - step1.conf (which is passed in named -c step1.conf)
+// - step2.conf (which is passed in STORK_BIND9_CONFIG)
+// - step3.conf (which is returned by named -V).
+func TestDetectBind9DetectOrder(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	// create alternate config files for each step...
+	config1Path, _ := sb.Join("step1.conf")
+	config1 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	sb.Write("step1.conf", config1)
+
+	config2Path, _ := sb.Join("step2.conf")
+	config2 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 2.2.2.2 port 2222 allow { localhost; } keys { "foo"; "bar"; }; };`
+	sb.Write("step2.conf", config2)
+
+	config3Path, _ := sb.Join("step3.conf")
+	config3 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 3.3.3.3 port 3333 allow { localhost; } keys { "foo"; "bar"; }; };`
+	sb.Write("step3.conf", config3)
+
+	// ... and tell the fake executor to return it as the output of named -V
+	executor := &catCommandExecutor{file: config3Path}
+
+	// ... and point STORK_BIND9_CONFIG to it
+	os.Setenv("STORK_BIND9_CONFIG", config2Path)
+
+	// Now run the detection as usual
+	namedDir, err := sb.JoinDir("usr/sbin")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/bin/named-checkconf")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/sbin/rndc")
+	require.NoError(t, err)
+	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "1.1.1.1", point.Address) // we expect the STEP 1 (-c parameter) to take precedence
+	require.EqualValues(t, 1111, point.Port)
 	require.Empty(t, point.Key)
 }
