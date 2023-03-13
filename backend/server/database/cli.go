@@ -15,7 +15,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Iterates over the struct members including the nested ones.
+// Iterates over the struct fields. It non-recursively iterates over nested
+// structures using a breadth-first approach. The provided function is called
+// for members that aren't structs. It accepts an object describing the field
+// of the struct (it may be used to retrieve the field name or tags) and
+// another object representing the corresponding value of the iterated object
+// (it may be used to read or modify the field value). If the field value is
+// nil, the value object passed to the callback function will be marked invalid.
 func iterateOverFields(obj any, f func(field reflect.StructField, valueField reflect.Value)) {
 	type fieldValuePair struct {
 		field reflect.StructField
