@@ -51,6 +51,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	db, err := dbops.NewPgDBConn(maintenanceSettings)
 	if db == nil {
 		log.
+			WithField("host", maintenanceSettings.Host).
 			WithField("database", maintenanceSettings.DBName).
 			WithField("user", maintenanceSettings.User).
 			Fatalf("Unable to create database instance: %+v", err)
