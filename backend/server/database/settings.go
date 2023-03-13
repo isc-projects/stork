@@ -155,12 +155,13 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
 	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 
-	if s.Host == "" {
+	switch {
+	case s.Host == "":
 		pgopts.Network = "unix"
-	} else if storkutil.IsSocket(socketPath) {
+	case storkutil.IsSocket(socketPath):
 		pgopts.Addr = socketPath
 		pgopts.Network = "unix"
-	} else {
+	default:
 		pgopts.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
 		pgopts.Network = "tcp"
 		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert)
