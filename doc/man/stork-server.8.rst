@@ -54,7 +54,7 @@ Arguments
    Specifies the user name to be used for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
 ``--db-password=``
-   Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
+   Specifies the database password for database connections. If not specified, the user will be prompted for the password if necessary. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-url``
    Specifies the URL to locate and connect to database. It's mutually exclusively with the host, port, username, and password. ``[$STORK_DATABASE_URL]``

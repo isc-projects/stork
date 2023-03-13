@@ -116,7 +116,7 @@ Options specific to ``db-create`` command:
    Database administrator user name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_USER_NAME]``
 
 ``--db-maintenance-password``
-   Database administrator password; if not specified, the user will be prompted for the password. ``[$STORK_DATABASE_MAINTENANCE_PASSWORD]``
+   Database administrator password; if not specified, the user will be prompted for the password if necessary. ``[$STORK_DATABASE_MAINTENANCE_PASSWORD]``
 
 ``-f``, ``--force``
    Recreate the database and the user if they exist. The default is false.
@@ -196,7 +196,7 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    Specifies the user name for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
 ``--db-password=``
-   Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
+   Specifies the database password for database connections. If not specified, the user will be prompted for the password if necessary. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-host=``
    Specifies the name of the host, IP address or a socket path for the database connection. The default value depends on the system. ``[$STORK_DATABASE_HOST]``

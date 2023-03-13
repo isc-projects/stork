@@ -297,7 +297,7 @@ type DatabaseCLIFlagsWithMaintenance struct {
 	DatabaseCLIFlags
 	MaintenanceDBName   string `short:"m" long:"db-maintenance-name" description:"The existing maintenance database name" env:"STORK_DATABASE_MAINTENANCE_NAME" default:"postgres"`
 	MaintenanceUser     string `short:"a" long:"db-maintenance-user" description:"The Postgres database administrator user name" env:"STORK_DATABASE_MAINTENANCE_USER_NAME" default:"postgres"`
-	MaintenancePassword string `long:"db-maintenance-password" description:"The Postgres database administrator password; if not specified, the user will be prompted for the password" env:"STORK_DATABASE_MAINTENANCE_PASSWORD"`
+	MaintenancePassword string `long:"db-maintenance-password" description:"The Postgres database administrator password; if not specified, the user will be prompted for the password if necessary" env:"STORK_DATABASE_MAINTENANCE_PASSWORD"`
 }
 
 // Returns the database settings needed to connect to the maintenance database
