@@ -414,9 +414,9 @@ func parseNamedDefaultPaths(output []byte) (string, string) {
 // empty), and a command executor instance. It uses multiple steps to attempt
 // detection:
 //
-// Step 1: Try to parse output of the named -V command.
-// Step 2: Try to parse -c parameter of the running process.
-// Step 3: Checks if STORK_BIND9_CONFIG is defined. If it is, uses that.
+// Step 1: Try to parse -c parameter of the running process.
+// Step 2: Checks if STORK_BIND9_CONFIG is defined. If it is, uses that.
+// Step 3: Try to parse output of the named -V command.
 // Step 4: Try to find named.conf in the default locations.
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
@@ -436,46 +436,33 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	paramsPattern := regexp.MustCompile(`-c\s+(\S+)`)
 	m := paramsPattern.FindStringSubmatch(bind9Params)
 
-	// STEP 1: Check if STORK_BIND9_CONFIG variable is specified it is, we'll use
+	// STEP 1: Let's try to parse -c parameter passed to named.
+	log.Debug("Looking for BIND 9 config file in -c parameter of a running process.")
+	if m != nil {
+		bind9ConfPath = m[1]
+		// if path to config is not absolute then join it with CWD of named
+		if !path.IsAbs(bind9ConfPath) {
+			bind9ConfPath = path.Join(cwd, bind9ConfPath)
+		}
+		log.Debugf("Found BIND 9 config file in %s based on -c parameter of a running process.", bind9ConfPath)
+	}
+
+	// STEP 2: Check if STORK_BIND9_CONFIG variable is specified it is, we'll use
 	// whatever value is provided. User knows best *cough*.
-	if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
-		log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
-		if _, err := os.Stat(f); err == nil {
-			bind9ConfPath = f
-			log.Infof("Found BIND 9 config file in %s, based on STORK_BIND9_CONFIG variable", f)
-		} else {
-			log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
-		}
-	}
-
-	// STEP 2: If user didn't specify anything or what he specified is garbage,
-	// let's try to parse -c parameter passed to named.
 	if bind9ConfPath == "" {
-		log.Debug("Looking for BIND 9 config file in -c parameter of a running process.")
-		if m != nil {
-			bind9ConfPath = m[1]
-			// if path to config is not absolute then join it with CWD of named
-			if !path.IsAbs(bind9ConfPath) {
-				bind9ConfPath = path.Join(cwd, bind9ConfPath)
-			}
-			log.Debugf("Found BIND 9 config file in %s based on -c parameter of a running process.", bind9ConfPath)
-		}
-	}
-
-	// STEP 3: If we still don't have anything, let's look at typical locations.
-	if bind9ConfPath == "" {
-		log.Debugf("Looking for BIND 9 config file in typical locations.")
-		// config path not found in cmdline params so try to guess its location
-		for _, f := range getPotentialNamedConfLocations() {
-			log.Debugf("Looking for BIND 9 config file in %s", f)
+		if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
+			log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
 			if _, err := os.Stat(f); err == nil {
 				bind9ConfPath = f
-				log.Infof("Found BIND 9 config file in %s based on typical locations.", bind9ConfPath)
-				break
+				log.Infof("Found BIND 9 config file in %s, based on STORK_BIND9_CONFIG variable", f)
+			} else {
+				log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 			}
 		}
 	}
 
+	// STEP 3: If we still don't have anything, let's try to run named -V and
+	// parse its output.
 	// determine config directory
 	bind9ConfDir := path.Dir(bind9ConfPath)
 
@@ -486,8 +473,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		baseNamedDir, _ = filepath.Split(strings.TrimRight(namedDir, "/"))
 	}
 
-	// STEP 4: If we still don't have anything, let's try to run named -V and
-	// parse its output.
 	if bind9ConfPath == "" {
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
 		namedPath, err := determineBinPath(baseNamedDir, namedExec)
@@ -504,6 +489,20 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Infof("Found BIND 9 config file in %s based on output of `named -V`.", bind9ConfPath)
 	}
 
+	// STEP 4: If we still don't have anything, let's look at typical locations.
+	if bind9ConfPath == "" {
+		log.Debugf("Looking for BIND 9 config file in typical locations.")
+		// config path not found in cmdline params so try to guess its location
+		for _, f := range getPotentialNamedConfLocations() {
+			log.Debugf("Looking for BIND 9 config file in %s", f)
+			if _, err := os.Stat(f); err == nil {
+				bind9ConfPath = f
+				log.Infof("Found BIND 9 config file in %s based on typical locations.", bind9ConfPath)
+				break
+			}
+		}
+	}
+
 	// no config file so nothing to do
 	if bind9ConfPath == "" {
 		log.Warnf("Cannot find config file for BIND 9")
@@ -516,6 +515,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Warnf("Cannot find BIND 9 %s: %s", namedCheckconfExec, err)
 		return nil
 	}
+
 	out, err := executor.Output(namedCheckconfPath, "-p", bind9ConfPath)
 	if err != nil {
 		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)

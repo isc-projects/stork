@@ -26,14 +26,25 @@ This section describes the solutions for some common issues with the Stork agent
               to debug if the processes are running. Currently Stork does not support detecting off-line services. If
               BIND 9 is located in an uncommon location and Stork agent is unable to detect it, there are two steps that
               may be helpful. You may enable DEBUG logging level, so the agent will print more detailed information
-              about locations being checked. Also, you may define ``STORK_BIND9_CONFIG`` environment variable to specify
+              about locations being checked.
+
+              For BIND9, the detection process consists of four steps. The next
+              step is only performed if the previous one failed. The steps are:
+
+              1. Try to parse -c parameter of the running process;
+              2. Use STORK_BIND9_CONFIG environment variable;
+              3. Try to parse output of the named -V command;
+              4. Try to find named.conf in the default locations.
+
+              You may define ``STORK_BIND9_CONFIG`` environment variable to specify
               exact location of the BIND 9 configuration file.
 
               For BIND 9, make sure that the rndc channel is enabled. By
               default, it is enabled, even if the ``controls`` clause is
               missing. Stork is able to detect default values, so typically
               there is no administrative action required, unless the rndc channel
-              was explicitly disabled.
+              was explicitly disabled. Make sure the rndc key is readable by
+              Stork agent.
 
               Also, make sure that BIND 9 has statistics channel enabled. That
               is done by adding ``statistics-channels`` entry. Typically, this
