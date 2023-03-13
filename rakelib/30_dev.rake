@@ -441,7 +441,7 @@ end
 namespace :db do
     desc 'Setup the database environment variables
         DB_NAME - database name - default: env:POSTGRES_DB or storktest
-        DB_HOST - database host - default: env:POSTGRES_ADDR or /var/run/postgresql
+        DB_HOST - database host - default: env:POSTGRES_ADDR or empty
         DB_PORT - database port - default: 5432
         DB_USER - database user - default: env:POSTGRES_USER or storktest
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
@@ -451,7 +451,7 @@ namespace :db do
         DB_MAINTENANCE_PASSWORD - maintenance password - default: empty'
     task :setup_envvars do
         dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-        dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "/var/run/postgresql"
+        dbhost = ENV["STORK_DATABASE_HOST"] || ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || ""
         dbport = ENV["STORK_DATABASE_PORT"] || ENV["DB_PORT"] || "5432"
         dbuser = ENV["STORK_DATABASE_USER_NAME"] || ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
         dbpass = ENV["STORK_DATABASE_PASSWORD"] || ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"

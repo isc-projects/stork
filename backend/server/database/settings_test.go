@@ -97,6 +97,20 @@ func TestConvertToConnectionStringWithSSLMode(t *testing.T) {
 	require.Equal(t, "dbname='stork' user='admin' password='stork' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
 }
 
+// Test that convertToPgOptions function returns the default (empty) unix
+// socket if the host is not provided.
+func TestConvertToPgOptionsWithDefaultHost(t *testing.T) {
+	// Arrange
+	settings := DatabaseSettings{}
+
+	// Act
+	params, _ := settings.convertToPgOptions()
+
+	// Assert
+	require.Empty(t, params.Addr)
+	require.EqualValues(t, "unix", params.Network)
+}
+
 // Test that convertToPgOptions function outputs SSL related parameters.
 func TestConvertToPgOptionsWithSSLMode(t *testing.T) {
 	sb := testutil.NewSandbox()
@@ -106,6 +120,7 @@ func TestConvertToPgOptionsWithSSLMode(t *testing.T) {
 	require.NoError(t, err)
 
 	settings := DatabaseSettings{
+		Host:     "http://postgres",
 		DBName:   "stork",
 		User:     "admin",
 		Password: "stork",
@@ -130,6 +145,7 @@ func TestConvertToPgOptionsWithWrongSSLModeSettings(t *testing.T) {
 	defer sb.Close()
 
 	settings := DatabaseSettings{
+		Host:     "http://postgres",
 		DBName:   "stork",
 		User:     "admin",
 		Password: "stork",

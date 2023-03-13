@@ -155,7 +155,9 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
 	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 
-	if storkutil.IsSocket(socketPath) {
+	if s.Host == "" {
+		pgopts.Network = "unix"
+	} else if storkutil.IsSocket(socketPath) {
 		pgopts.Addr = socketPath
 		pgopts.Network = "unix"
 	} else {

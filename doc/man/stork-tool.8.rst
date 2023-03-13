@@ -199,7 +199,7 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    Specifies the database password for database connections. If not specified, the user will be prompted for the password. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-host=``
-   Specifies the name of the host, IP address or a socket path for the database connection. The default is ``/var/run/postgresql``. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address or a socket path for the database connection. The default value depends on the system. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port=``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``

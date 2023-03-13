@@ -33,7 +33,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 		DatabaseCLIFlags: dbops.DatabaseCLIFlags{
 			DBName: "storktest",
 			User:   "storktest",
-			Host:   "/var/run/postgresql",
+			Host:   "", // Use default.
 			Port:   5432,
 		},
 		MaintenanceDBName: "postgres",
