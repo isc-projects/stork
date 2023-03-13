@@ -263,23 +263,24 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // same name.
 func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey string) {
 	// Match the following clause:
-	//     controls { /maybe some whitespace chars here/ };
-	pattern := regexp.MustCompile(`(?s)controls\s*{\s*}\s*;`)
-	controls := pattern.FindStringSubmatch(text)
-	if len(controls) > 0 {
-		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
-		return "", 0, ""
-	}
-
-	// Match the following clause:
 	//     controls {
 	//         inet inet_spec [inet_spec] ;
 	//     };
-	pattern = regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
-	controls = pattern.FindStringSubmatch(text)
+	// or
+	//     controls { /maybe some whitespace chars here/ };
+	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
+	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
 		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
 		return "127.0.0.1", 953, ""
+	}
+
+	// See if there's any non-whitespace characters in the controls clause.
+	// If not, there's `controls {};`, which means: disable control socket.
+	txt := strings.Join(strings.Fields(controls[1]), "")
+	if len(txt) == 0 {
+		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
+		return "", 0, ""
 	}
 
 	// We only pick the first match, but the controls clause
@@ -399,8 +400,9 @@ func parseNamedDefaultPaths(output []byte) (string, string) {
 	}
 
 	if len(rndcConfMatch) < 2 {
-		log.Warnf("Unable to find 'rndc configuration:' line in 'named -V' output.")
-		return "", ""
+		log.Warnf("Unable to find 'rndc configuration:' in 'named -V', using just named.conf path: %s",
+			namedConfMatch[1])
+		return namedConfMatch[1], ""
 	}
 
 	return namedConfMatch[1], rndcConfMatch[1]

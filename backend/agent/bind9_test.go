@@ -156,8 +156,12 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 			type master;
 			file "/etc/bind/db.127";
 		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
-		"CASE 2: added empty controls section (disabled rndc)": {config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
-		"CASE 3: added controls section with options": {config: `
+		"CASE 2: empty controls section (disabled rndc)": {config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
+		"CASE 3: empty multi-line controls section (disabled rndc)": {config: `controls
+	{
+
+};`, expAddr: "", expPort: 0, expKey: ""},
+		"CASE 4: added controls section with options": {config: `
 		controls {
 			inet 192.0.2.1 allow { localhost; };
 		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
