@@ -25,8 +25,7 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 		return true, nil
 	}
 
-	urlPath := req.URL.Path
-	urlPath = path.Clean(urlPath)
+	urlPath := path.Clean(req.URL.Path)
 	if !strings.HasSuffix(urlPath, "/") {
 		urlPath += "/"
 	}
