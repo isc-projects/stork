@@ -6,7 +6,7 @@ import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { of } from 'rxjs'
+import { from, merge, of, throwError } from 'rxjs'
 import { HttpProgressEvent } from '@angular/common/http'
 
 describe('AuthService', () => {
@@ -53,10 +53,12 @@ describe('AuthService', () => {
 
     it('should fetch the authentication method only once', async () => {
         const usersService: UsersService = TestBed.inject(UsersService)
-        const spy = spyOn(usersService, 'getAuthenticationMethods').and.returnValue(of({
-            total: 1,
-            items: [ { id: 'internal' } ]
-        } as AuthenticationMethods & HttpProgressEvent))
+        const spy = spyOn(usersService, 'getAuthenticationMethods').and.returnValue(
+            of({
+                total: 1,
+                items: [{ id: 'internal' }],
+            } as AuthenticationMethods & HttpProgressEvent)
+        )
 
         const authService = TestBed.inject(AuthService)
         const methods1 = await authService.getAuthenticationMethods().toPromise()
@@ -69,7 +71,28 @@ describe('AuthService', () => {
         expect(methods2[0].id).toBe('internal')
     })
 
-    it('should fetch the authentication method until success', () => {
+    it('should fetch the authentication method until success', async () => {
+        const usersService: UsersService = TestBed.inject(UsersService)
+        const spy = spyOn(usersService, 'getAuthenticationMethods').and.returnValue(
+            from([
+                // The fetch must be retried until success.
+                Error(),
+                Error(),
+                Error(),
+                Error(),
+                Error(),
+                {
+                    total: 1,
+                    items: [{ id: 'internal' }],
+                } as AuthenticationMethods,
+            ]) as any
+        )
 
+        const authService = TestBed.inject(AuthService)
+        const methods = await authService.getAuthenticationMethods().toPromise()
+
+        expect(spy.calls.count()).toBe(1)
+        expect(methods.length).toBe(1)
+        expect(methods[0].id).toBe('internal')
     })
 })
