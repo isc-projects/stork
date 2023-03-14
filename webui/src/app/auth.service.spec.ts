@@ -2,10 +2,12 @@ import { TestBed } from '@angular/core/testing'
 
 import { AuthService } from './auth.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { User, UsersService } from './backend'
-import { RouterModule, Router } from '@angular/router'
+import { AuthenticationMethods, User, UsersService } from './backend'
+import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { of } from 'rxjs'
+import { HttpProgressEvent } from '@angular/common/http'
 
 describe('AuthService', () => {
     beforeEach(() =>
@@ -47,5 +49,27 @@ describe('AuthService', () => {
         const service: AuthService = TestBed.inject(AuthService)
         spyOnProperty(service, 'currentUserValue').and.returnValue(undefined)
         expect(service.isInternalUser()).toBeFalse()
+    })
+
+    it('should fetch the authentication method only once', async () => {
+        const usersService: UsersService = TestBed.inject(UsersService)
+        const spy = spyOn(usersService, 'getAuthenticationMethods').and.returnValue(of({
+            total: 1,
+            items: [ { id: 'internal' } ]
+        } as AuthenticationMethods & HttpProgressEvent))
+
+        const authService = TestBed.inject(AuthService)
+        const methods1 = await authService.getAuthenticationMethods().toPromise()
+        const methods2 = await authService.getAuthenticationMethods().toPromise()
+
+        expect(spy.calls.count()).toBe(1)
+        expect(methods1.length).toBe(1)
+        expect(methods1[0].id).toBe('internal')
+        expect(methods2.length).toBe(1)
+        expect(methods2[0].id).toBe('internal')
+    })
+
+    it('should fetch the authentication method until success', () => {
+
     })
 })
