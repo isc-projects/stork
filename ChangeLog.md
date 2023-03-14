@@ -1,3 +1,9 @@
+* 293 [bug] slawek
+
+    Fix a problem with the unworkable log-out of a user not assigned to any
+    group.
+    (Gitlab #1004)
+
 * 292 [func] slawek
 
     Added the configuration review checker to verify that the Stork Agent and
