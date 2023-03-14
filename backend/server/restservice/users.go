@@ -25,6 +25,7 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 		ID:       &id,
 		Lastname: &u.Lastname,
 		Login:    &u.Login,
+		Groups:   []int64{},
 	}
 
 	// Append an array of groups.
