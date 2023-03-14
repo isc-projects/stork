@@ -23,3 +23,14 @@ def test_users_management(server_service: Server):
 
     server_service.create_user(
         "user", "a@example.org", "John", "Smith", [], "password")
+
+
+def test_user_without_groups(server_service: Server):
+    """Users with no assigned groups must be able to log in and out."""
+    server_service.log_in_as_admin()
+    server_service.create_user(
+        "user", "a@example.org", "John", "Smith", [], "password")
+    server_service.log_out()
+
+    server_service.log_in("user", "password")
+    server_service.log_out()

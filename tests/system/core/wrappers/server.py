@@ -120,6 +120,12 @@ class Server(ComposeServiceWrapper):
         """Logs in an admin. Returns the user info."""
         return self.log_in("admin", "admin")
 
+    def log_out(self):
+        """Logs out the current user."""
+        api_instance = UsersApi(self._api_client)
+        api_instance.delete_session()
+        self._api_client.cookie = None
+
     # List / Search
 
     def list_users(self, limit=10, start=0) -> Users:
