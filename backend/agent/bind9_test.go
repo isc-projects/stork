@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -296,9 +295,6 @@ controls {
 func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
-
-	// TODO: Remove this.
-	logrus.SetLevel(logrus.DebugLevel)
 
 	// create alternate config file...
 	varPath, _ := sb.Join("testing.conf")

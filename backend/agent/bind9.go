@@ -349,12 +349,8 @@ func determineBinPath(baseNamedDir, executable string, executor storkutil.Comman
 	}
 
 	// not found so try to find generally in the system
-	// TODO: Remove this
-	fmt.Printf("#### Looking for %s in system paths\n", executable)
 	fullPath, err := executor.LookPath(executable)
 	if err != nil {
-		// TODO: Remove this
-		fmt.Printf("#### found %s in %s\n", executable, fullPath)
 		return "", errors.Errorf("cannot determine location of %s", executable)
 	}
 	return fullPath, nil
