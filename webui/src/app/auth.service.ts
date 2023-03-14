@@ -57,12 +57,7 @@ export class AuthService {
                 }
             },
             (err) => {
-                const message = getErrorMessage(err)
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Invalid login or password',
-                    detail: message,
-                })
+                this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
             }
         )
         return user
