@@ -36,7 +36,7 @@ func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
 // Verify that users belonging to the super-admin and admin group
 // has appropriate access privileges.
 func TestAuthorize(t *testing.T) {
-	// admin group have limited access to the users' management
+	// Admin group have limited access to the users' management.
 	require.False(t, authorizeAccept(t, 2, "/users?start=0&limit=10", "GET"))
 	require.False(t, authorizeAccept(t, 2, "/users/list", "GET"))
 	require.False(t, authorizeAccept(t, 2, "/users/4/password", "GET"))
@@ -45,7 +45,7 @@ func TestAuthorize(t *testing.T) {
 	require.True(t, authorizeAccept(t, 2, "/users/5/password", "GET"))
 	require.True(t, authorizeAccept(t, 2, "/users//5//password", "GET"))
 
-	// super-admin has no such restrictions
+	// Super-admin has no such restrictions.
 	require.True(t, authorizeAccept(t, 1, "/users?start=0&limit=10", "GET"))
 	require.True(t, authorizeAccept(t, 1, "/users/list", "GET"))
 	require.True(t, authorizeAccept(t, 1, "/users/4/password", "GET"))
@@ -54,16 +54,22 @@ func TestAuthorize(t *testing.T) {
 	require.True(t, authorizeAccept(t, 1, "/users/5/password", "GET"))
 	require.True(t, authorizeAccept(t, 1, "/users//5//password", "GET"))
 
-	// admin group have no restriction on machines
+	// Admin group have no restriction on machines.
 	require.True(t, authorizeAccept(t, 2, "/machines/1/", "GET"))
 
-	// but someone who belongs to no groups would not be able
-	// to access machines
+	// But someone who belongs to no groups would not be able
+	// to access machines.
 	require.False(t, authorizeAccept(t, 0, "/machines/1/", "GET"))
 
-	// the same in case of someone belonging to non existing group
+	// The same in case of someone belonging to non existing group.
 	require.False(t, authorizeAccept(t, 3, "/machines/1/", "GET"))
 
-	// Test that users belonging to none group have privilege to log out.
-	require.True(t, authorizeAccept(t, 3, "/sessions", "DELETE"))
+	// Someone who belongs to no groups would be able to log out.
+	require.True(t, authorizeAccept(t, 0, "/sessions", "DELETE"))
+
+	// Someone who belongs to no groups would be able to its and only its profile.
+	require.True(t, authorizeAccept(t, 0, "/users/5", "GET"))
+	require.True(t, authorizeAccept(t, 0, "/users/5/password", "GET"))
+	require.False(t, authorizeAccept(t, 0, "/users/4", "GET"))
+	require.False(t, authorizeAccept(t, 0, "/users/4/password", "GET"))
 }
