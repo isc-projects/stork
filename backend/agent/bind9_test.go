@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -211,6 +212,12 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 	return nil, nil
 }
 
+// Looks for a given command in the system PATH and returns absolute path if found.
+// (This is the standard behavior that we don't override in tests here.)
+func (e *catCommandExecutor) LookPath(command string) (string, error) {
+	return e.file + "/" + command, nil
+}
+
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	sb := testutil.NewSandbox()
@@ -290,8 +297,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
+	// TODO: Remove this.
+	logrus.SetLevel(logrus.DebugLevel)
 
 	// create alternate config file...
 	varPath, _ := sb.Join("testing.conf")

@@ -93,8 +93,8 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 // Determine rndc details in the system.
 // It find rndc executable and prepare base command with all necessary
 // parameters including rndc secret key.
-func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey string) error {
-	rndcPath, err := determineBinPath(baseNamedDir, rndcExec)
+func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey string, executor storkutil.CommandExecutor) error {
+	rndcPath, err := determineBinPath(baseNamedDir, rndcExec, executor)
 	if err != nil {
 		return err
 	}
@@ -337,7 +337,7 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 }
 
 // Determine executable using base named directory or system default paths.
-func determineBinPath(baseNamedDir, executable string) (string, error) {
+func determineBinPath(baseNamedDir, executable string, executor storkutil.CommandExecutor) (string, error) {
 	// look for executable in base named directory and sbin or bin subdirectory
 	if baseNamedDir != "" {
 		for _, binDir := range []string{"sbin", "bin"} {
@@ -349,8 +349,12 @@ func determineBinPath(baseNamedDir, executable string) (string, error) {
 	}
 
 	// not found so try to find generally in the system
-	fullPath, err := exec.LookPath(executable)
+	// TODO: Remove this
+	fmt.Printf("#### Looking for %s in system paths\n", executable)
+	fullPath, err := executor.LookPath(executable)
 	if err != nil {
+		// TODO: Remove this
+		fmt.Printf("#### found %s in %s\n", executable, fullPath)
 		return "", errors.Errorf("cannot determine location of %s", executable)
 	}
 	return fullPath, nil
@@ -475,7 +479,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	if bind9ConfPath == "" {
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
-		namedPath, err := determineBinPath(baseNamedDir, namedExec)
+		namedPath, err := determineBinPath(baseNamedDir, namedExec, executor)
 		if err != nil {
 			log.Warnf("cannot determine BIND 9 executable %s: %s", namedExec, err)
 			return nil
@@ -512,7 +516,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	}
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
-	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec)
+	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
 	if err != nil {
 		log.Warnf("Cannot find BIND 9 %s: %s", namedCheckconfExec, err)
 		return nil
@@ -560,7 +564,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	// determine rndc details
 	rndcClient := NewRndcClient(rndc)
-	err = rndcClient.DetermineDetails(baseNamedDir, bind9ConfDir, ctrlAddress, ctrlPort, ctrlKey)
+	err = rndcClient.DetermineDetails(baseNamedDir, bind9ConfDir, ctrlAddress, ctrlPort, ctrlKey, executor)
 	if err != nil {
 		log.Warnf("Cannot determine BIND 9 rndc details: %s", err)
 		return nil

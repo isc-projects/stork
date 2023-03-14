@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"os/exec"
 	"path"
 	"sync"
 	"testing"
@@ -205,6 +206,12 @@ func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, er
                  };`
 
 	return []byte(text), nil
+}
+
+// Looks for a given command in the system PATH and returns absolute path if found.
+// (This is the standard behavior that we don't override in tests here.)
+func (e *testCommandExecutor) LookPath(command string) (string, error) {
+	return exec.LookPath(command)
 }
 
 // Check BIND 9 app detection when its conf file is absolute path.

@@ -183,6 +183,7 @@ func SetupLogging() {
 // improve testability and allow mock the operating system operations.
 type CommandExecutor interface {
 	Output(string, ...string) ([]byte, error)
+	LookPath(string) (string, error)
 }
 
 // Executes the given command in the operating system.
@@ -197,6 +198,11 @@ func NewSystemCommandExecutor() CommandExecutor {
 // Executes a given command in the system shell and returns an output.
 func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	return exec.Command(command, args...).Output()
+}
+
+// Looks for a given command in the system PATH and returns absolute path if found.
+func (e *systemCommandExecutor) LookPath(command string) (string, error) {
+	return exec.LookPath(command)
 }
 
 // Convert bytes to hex string.
