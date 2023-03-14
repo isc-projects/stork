@@ -277,7 +277,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 
 	// See if there's any non-whitespace characters in the controls clause.
 	// If not, there's `controls {};`, which means: disable control socket.
-	txt := strings.Join(strings.Fields(controls[1]), "")
+	txt := strings.TrimSpace(controls[1])
 	if len(txt) == 0 {
 		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
 		return "", 0, ""
