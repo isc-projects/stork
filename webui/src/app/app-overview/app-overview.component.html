@@ -19,6 +19,7 @@
                 class="access-point-list__icon--unsecured pi pi-lock-open"
                 pTooltip="unsecured connection"
             ></span>
+            <span class="ml-2" *ngIf="ap.key">Key: {{ ap.key }}</span>
         </td>
     </tr>
 </table>
