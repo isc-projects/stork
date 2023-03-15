@@ -181,8 +181,7 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 				s := fmt.Sprintf("%s: %s (key: %t)", acPt.Type, url, acPt.Key != "")
 				acPts = append(acPts, s)
 			}
-			log.
-				Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
+			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
 		}
 	} else if len(oldApps) == 0 {
 		// Agent is starting up but no app to monitor has been detected.
