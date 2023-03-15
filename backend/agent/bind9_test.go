@@ -390,3 +390,102 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	require.EqualValues(t, 1111, point.Port)
 	require.Empty(t, point.Key)
 }
+
+// Test that the empty string is returned if the configuration content is empty.
+func TestGetRndcKeyEmptyData(t *testing.T) {
+	require.Empty(t, getRndcKey("", "key"))
+}
+
+// Test that the empty string is returned if the configuration content contains
+// no 'key' clause.
+func TestGetRndcKeyInvalidData(t *testing.T) {
+	// Arrange
+	content := "algorithm  bar\nsecret     baz"
+
+	// Act & Assert
+	require.Empty(t, getRndcKey(content, "key"))
+}
+
+// Test that the empty string is returned if the key with a given name doesn't
+// exist.
+func TestGetRndcKeyUnknownKey(t *testing.T) {
+	// Arrange
+	content := `key "foo" {
+		algorithm  bar
+		secret baz
+	};`
+
+	// Act & Assert
+	require.Empty(t, getRndcKey(content, "key"))
+}
+
+// Test that the empty string is returned if a given name is an empty string.
+func TestGetRndcKeyBlankName(t *testing.T) {
+	// Arrange
+	content := `key "foo" {
+		algorithm  bar
+		secret baz
+	};`
+
+	// Act & Assert
+	require.Empty(t, getRndcKey(content, ""))
+}
+
+// Test that the empty string is returned if the algorithm property is missing.
+func TestGetRndcKeyMissingAlgorithm(t *testing.T) {
+	// Arrange
+	content := `key "foo" {
+		secret baz
+	};`
+
+	// Act & Assert
+	require.Empty(t, getRndcKey(content, "foo"))
+}
+
+// Test that the empty string is returned if the secret property is missing.
+func TestGetRndcKeyMissingSecret(t *testing.T) {
+	// Arrange
+	content := `key "foo" {
+		algorithm  bar
+	};`
+
+	// Act & Assert
+	require.Empty(t, getRndcKey(content, "foo"))
+}
+
+// Test that the combination of algorithm and secret is returned if the key
+// configuration entry is valid.
+func TestGetRndcKeyValidData(t *testing.T) {
+	// Arrange
+	content := `key "foo" {
+		algorithm  bar
+		secret baz
+	};`
+
+	// Act
+	key := getRndcKey(content, "foo")
+
+	// Assert
+	require.EqualValues(t, "bar:baz", key)
+}
+
+// Test that the combination of algorithm and secret is returned if the key
+// configuration entry is valid.
+func TestGetRndcKeyValidDataMultipleKeys(t *testing.T) {
+	// Arrange
+	content := `key "oof" {
+		algorithm  bar
+		secret baz
+	};
+	
+	key "foo" {
+		algorithm  bar
+		secret baz
+	};`
+
+	// Act
+	key := getRndcKey(content, "foo")
+
+	// Assert
+	require.EqualValues(t, "bar:baz", key)
+}

@@ -191,18 +191,18 @@ type testCommandExecutor struct{}
 // Returns a fixed output and no error for any data. The output contains the
 // Bind 9 response with statistic channel details.
 func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, error) {
-	text := `keys "foo" {
-                      algorithm "hmac-sha256";
-                      secret "abcd";
-                 };
+	text := `key "foo" {
+				algorithm "hmac-sha256";
+				secret "abcd";
+        	 };
 	         controls {
-                      inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
-                      inet * port 5454 allow { localhost; 1.2.3.4; };
-                 };
-                 statistics-channels {
-                      inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
-                      inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
-                 };`
+				inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
+				inet * port 5454 allow { localhost; 1.2.3.4; };
+            };
+        	statistics-channels {
+				inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
+				inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
+			};`
 
 	return []byte(text), nil
 }
