@@ -39,7 +39,7 @@ The following steps install Stork and its dependencies natively,
 i.e., on the host machine, rather than using Docker images.
 
 First, PostgreSQL must be installed. This is OS-specific, so please
-follow the instructions from the :ref:`installation` chapter.
+follow the instructions from the `installation` chapter in Stork ARM.
 
 Once the database environment is set up, the next step is to build all
 the tools. The first command below downloads some missing dependencies
@@ -68,7 +68,7 @@ the following three commands, one in each console:
     $ rake run:agent
 
 Once all three processes are running, connect to http://localhost:8080
-via a web browser. See :ref:`usage` for information on initial password creation
+via a web browser. See Usage in Stork ARM for information on initial password creation
 or addition of new machines to the server.
 
 The ``run:agent`` runs the agent directly on the current operating
@@ -841,7 +841,7 @@ Docker Containers for Development
 
 To ease development, there are several Docker containers available.
 These containers are used in the Stork demo and are fully
-described in the :ref:`Demo` chapter.
+described in the `Demo` in the Stork ARM chapter.
 
 The following ``Rake`` tasks start these containers.
 
@@ -1115,7 +1115,7 @@ If the agent was already registered with the provided agent token, only the assi
 machine ID is returned without new certificates.
 The agent uses the returned machine ID to verify that the registration was successful.
 
-.. figure:: uml/registration-agent.*
+.. figure:: ../uml/registration-agent.*
 
     Agent registration
 

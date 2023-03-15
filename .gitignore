@@ -26,6 +26,7 @@
 
 # generated documentation
 /doc/_build
+/doc/_build-dev
 /doc/doctrees
 
 # output from backend unit tests coverage
