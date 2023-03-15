@@ -83,6 +83,47 @@ exclude_patterns = [ 'devel/*' ]
 html_theme = 'sphinx_rtd_theme'
 html_logo = '../static/stork-square-100px.png'
 
+templates_path = ["_templates"]
+
+# html_sidebars = {}
+
+# poliastro - html_context = {
+# html_sidebars = {}
+html_context = {
+    "sidebar_external_links_caption": "Links",
+    "sidebar_external_links": [
+        (
+            '<i class="fa fa-gitlab fa-fw"></i> Source code',
+            "https://gitlab.isc.org/isc-projects/stork",
+        ),
+        (
+            '<i class="fa fa-cloud-download fa-fw"></i> Download',
+            "https://cloudsmith.io/~isc/repos/stork/packages/",
+        ),
+        (
+            '<i class="fa fa-book fa-fw"></i> Documentation for users',
+            "https://stork.readthedocs.io",
+        ),
+        (
+            '<i class="fa fa-bug fa-fw"></i> Issue tracker',
+            "https://gitlab.isc.org/isc-projects/stork/-/issues/",
+        ),
+        (
+            '<i class="fa fa-wikipedia-w fa-fw"></i> Wiki',
+            "https://gitlab.isc.org/isc-projects/stork/-/wikis/home",
+        ),
+        (
+            '<i class="fa fa-envelope fa-fw"></i> Mailing list (users)',
+            "https://lists.isc.org/mailman/listinfo/stork-users",
+        ),
+        (
+            '<i class="fa fa-envelope fa-fw"></i> Mailing list (developers)',
+            "https://lists.isc.org/mailman/listinfo/stork-dev",
+        ),
+    ],
+}
+
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
