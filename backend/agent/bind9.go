@@ -219,13 +219,17 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 		// Find a key clause. This pattern is build up like this:
 		// keys\s*                - keys
 		// \{\s*                  - {
-		// \"(\S+)\"\s*;          - key_list (first)
-		// (?:\s*\"\S+\"\s*;\s*)* - key_list (remainder)
-		// \s}\s*                 - }
-		pattern = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;(?:\s*\"\S+\"\s*;\s*)*\}\s*`)
+		// \"(.*?)\"\s*;\s*       - key_list (first)
+		// (?:\s*\".*?\"\s*;\s*)* - key_list (remainder)
+		// \}                     - }
+		pattern = regexp.MustCompile(`(?s)keys\s*\{\s*\"(.*?)\"\s*;\s*(?:\s*\".*?\"\s*;\s*)*\}`)
+
 		keyName := pattern.FindStringSubmatch(match[2])
 		if len(keyName) > 1 {
 			key = getRndcKey(config, keyName[1])
+			if key == "" {
+				log.WithField("key", keyName[1]).Warn("Cannot found key details")
+			}
 		}
 	}
 
@@ -527,6 +531,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Type:    AccessPointControl,
 			Address: ctrlAddress,
 			Port:    ctrlPort,
+			Key:     ctrlKey,
 		},
 	}
 

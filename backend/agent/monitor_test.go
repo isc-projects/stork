@@ -235,6 +235,7 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
+	require.NotEmpty(t, point.Key)
 	point = app.GetBaseApp().AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)

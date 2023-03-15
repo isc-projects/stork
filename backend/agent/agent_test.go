@@ -164,7 +164,7 @@ func TestGetState(t *testing.T) {
 		Type:              AccessPointStatistics,
 		Address:           "2.3.4.5",
 		Port:              2346,
-		Key:               "",
+		Key:               "foo",
 		UseSecureProtocol: false,
 	})
 
@@ -207,7 +207,7 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, "2.3.4.5", point.Address)
 	require.EqualValues(t, 2346, point.Port)
 	require.False(t, point.UseSecureProtocol)
-	require.Empty(t, point.Key)
+	require.EqualValues(t, "foo", point.Key)
 
 	// Prepare credentials file.
 	restorePaths := RememberPaths()
