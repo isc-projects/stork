@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -76,14 +77,24 @@ func (tm *testManager) scheduleAndGetChange(ctx context.Context, t *testing.T) c
 	require.True(t, ok)
 
 	// The state will be inserted into the database.
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 
 	// Create the config change entry in the database.
 	scc := &dbmodel.ScheduledConfigChange{
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     userID,
-		Updates:    state.Updates,
+	}
+	for _, u := range state.Updates {
+		update := dbmodel.ConfigUpdate{
+			Target:    u.Target,
+			Operation: u.Operation,
+			DaemonIDs: u.DaemonIDs,
+		}
+		recipe, err := json.Marshal(u.Recipe)
+		require.NoError(t, err)
+		update.Recipe = (*json.RawMessage)(&recipe)
+		scc.Updates = append(scc.Updates, &update)
 	}
 	err := dbmodel.AddScheduledConfigChange(tm.db, scc)
 	require.NoError(t, err)
@@ -95,9 +106,12 @@ func (tm *testManager) scheduleAndGetChange(ctx context.Context, t *testing.T) c
 	change := changes[0]
 
 	// Override the context state.
-	state = config.TransactionState{
+	state = config.TransactionState[ConfigRecipe]{
 		Scheduled: true,
-		Updates:   change.Updates,
+	}
+	for _, u := range change.Updates {
+		update := NewConfigUpdateFromDBModel(u)
+		state.Updates = append(state.Updates, update)
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
 	return ctx
@@ -129,7 +143,7 @@ func TestBeginHostAdd(t *testing.T) {
 	require.Empty(t, manager.locks)
 
 	// Make sure that the transaction state has been created.
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.Len(t, state.Updates, 1)
 	require.Equal(t, "kea", state.Updates[0].Target)
@@ -146,7 +160,7 @@ func TestApplyHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Simulate submitting new host entry. The host is associated with
@@ -197,7 +211,7 @@ func TestApplyHostAdd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the transaction state exists and comprises expected data.
-	returnedState, ok := config.GetTransactionState(ctx)
+	returnedState, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.False(t, returnedState.Scheduled)
 
@@ -208,15 +222,13 @@ func TestApplyHostAdd(t *testing.T) {
 	require.Equal(t, "kea", update.Target)
 	require.Equal(t, "host_add", update.Operation)
 	require.NotNil(t, update.Recipe)
-	require.Contains(t, update.Recipe, "commands")
 
 	// There should be two commands ready to send.
-	commands := update.Recipe["commands"].([]interface{})
+	commands := update.Recipe.Commands
 	require.Len(t, commands, 2)
 
 	// Validate the first command and associated app.
-	command, ok := commands[0].(map[string]interface{})["command"].(*keactrl.Command)
-	require.True(t, ok)
+	command := commands[0].Command
 	marshalled := command.Marshal()
 	require.JSONEq(t,
 		`{
@@ -232,13 +244,11 @@ func TestApplyHostAdd(t *testing.T) {
          }`,
 		marshalled)
 
-	app, ok := commands[0].(map[string]interface{})["app"].(*dbmodel.App)
-	require.True(t, ok)
+	app := commands[0].App
 	require.Equal(t, app, host.LocalHosts[0].Daemon.App)
 
 	// Validate the second command and associated app.
-	command, ok = commands[1].(map[string]interface{})["command"].(*keactrl.Command)
-	require.True(t, ok)
+	command = commands[1].Command
 	marshalled = command.Marshal()
 	require.JSONEq(t,
 		`{
@@ -254,8 +264,7 @@ func TestApplyHostAdd(t *testing.T) {
          }`,
 		marshalled)
 
-	app, ok = commands[1].(map[string]interface{})["app"].(*dbmodel.App)
-	require.True(t, ok)
+	app = commands[1].App
 	require.Equal(t, app, host.LocalHosts[1].Daemon.App)
 }
 
@@ -274,7 +283,7 @@ func TestCommitHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Create new host reservation and store it in the context.
@@ -377,7 +386,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Create new host reservation and store it in the context.
@@ -463,7 +472,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Set user id in the context.
@@ -572,12 +581,12 @@ func TestBeginHostUpdate(t *testing.T) {
 	require.Contains(t, manager.locks, apps[1].Daemons[0].ID)
 
 	// Make sure that the host information has been stored in the context.
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.Len(t, state.Updates, 1)
 	require.Equal(t, "kea", state.Updates[0].Target)
 	require.Equal(t, "host_update", state.Updates[0].Operation)
-	require.Contains(t, state.Updates[0].Recipe, "host_before_update")
+	require.NotNil(t, state.Updates[0].Recipe.HostBeforeUpdate)
 }
 
 // Test second stage of a host update.
@@ -636,8 +645,11 @@ func TestApplyHostUpdate(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	err := state.SetValueForUpdate(0, "host_before_update", *host)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		HostBeforeUpdate: host,
+	}
+	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
@@ -688,7 +700,7 @@ func TestApplyHostUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the transaction state exists and comprises expected data.
-	stateReturned, ok := config.GetTransactionState(ctx)
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.False(t, stateReturned.Scheduled)
 
@@ -699,18 +711,16 @@ func TestApplyHostUpdate(t *testing.T) {
 	require.Equal(t, "kea", update.Target)
 	require.Equal(t, "host_update", update.Operation)
 	require.NotNil(t, update.Recipe)
-	require.Contains(t, update.Recipe, "commands")
-	require.Contains(t, update.Recipe, "host_before_update")
+	require.NotNil(t, update.Recipe.HostBeforeUpdate)
 
 	// There should be four commands ready to send. Two reservation-del and two
 	// reservation-add.
-	commands := update.Recipe["commands"].([]interface{})
+	commands := update.Recipe.Commands
 	require.Len(t, commands, 4)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
-		command, ok := commands[i].(map[string]interface{})["command"].(*keactrl.Command)
-		require.True(t, ok)
+		command := commands[i].Command
 		marshalled := command.Marshal()
 
 		// First are the reservation-del commands sent to respective servers.
@@ -744,8 +754,7 @@ func TestApplyHostUpdate(t *testing.T) {
 				marshalled)
 		}
 		// Verify they are associated with appropriate apps.
-		app, ok := commands[i].(map[string]interface{})["app"].(*dbmodel.App)
-		require.True(t, ok)
+		app := commands[i].App
 		require.Equal(t, app, host.LocalHosts[i%2].Daemon.App)
 	}
 }
@@ -810,8 +819,11 @@ func TestCommitHostUpdate(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	err := state.SetValueForUpdate(0, "host_before_update", *host)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		HostBeforeUpdate: host,
+	}
+	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
@@ -923,8 +935,11 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	err := state.SetValueForUpdate(0, "host_before_update", *host)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		HostBeforeUpdate: host,
+	}
+	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
@@ -1006,8 +1021,11 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
 
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	err = state.SetValueForUpdate(0, "host_before_update", *host)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		HostBeforeUpdate: host,
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
@@ -1131,7 +1149,7 @@ func TestApplyHostDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the transaction state exists and comprises expected data.
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.False(t, state.Scheduled)
 
@@ -1142,15 +1160,13 @@ func TestApplyHostDelete(t *testing.T) {
 	require.Equal(t, "kea", update.Target)
 	require.Equal(t, "host_delete", update.Operation)
 	require.NotNil(t, update.Recipe)
-	require.Contains(t, update.Recipe, "commands")
 
 	// There should be two commands ready to send.
-	commands := update.Recipe["commands"].([]interface{})
+	commands := update.Recipe.Commands
 	require.Len(t, commands, 2)
 
 	// Validate the first command and associated app.
-	command, ok := commands[0].(map[string]interface{})["command"].(*keactrl.Command)
-	require.True(t, ok)
+	command := commands[0].Command
 	marshalled := command.Marshal()
 	require.JSONEq(t,
 		`{
@@ -1164,13 +1180,11 @@ func TestApplyHostDelete(t *testing.T) {
          }`,
 		marshalled)
 
-	app, ok := commands[0].(map[string]interface{})["app"].(*dbmodel.App)
-	require.True(t, ok)
+	app := commands[0].App
 	require.Equal(t, app, host.LocalHosts[0].Daemon.App)
 
 	// Validate the second command and associated app.
-	command, ok = commands[1].(map[string]interface{})["command"].(*keactrl.Command)
-	require.True(t, ok)
+	command = commands[1].Command
 	marshalled = command.Marshal()
 	require.JSONEq(t,
 		`{
@@ -1184,8 +1198,7 @@ func TestApplyHostDelete(t *testing.T) {
          }`,
 		marshalled)
 
-	app, ok = commands[1].(map[string]interface{})["app"].(*dbmodel.App)
-	require.True(t, ok)
+	app = commands[1].App
 	require.Equal(t, app, host.LocalHosts[1].Daemon.App)
 }
 

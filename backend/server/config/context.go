@@ -35,24 +35,30 @@ func GetValueAsInt64(ctx context.Context, key ContextKey) (value int64, ok bool)
 // Convenience function retrieving a transaction state from the context. If
 // the context doesn't contain the transaction state, the second returned
 // parameter is false.
-func GetTransactionState(ctx context.Context) (state TransactionState, ok bool) {
-	state, ok = ctx.Value(StateContextKey).(TransactionState)
+func GetTransactionState[T any](ctx context.Context) (state TransactionState[T], ok bool) {
+	state, ok = ctx.Value(StateContextKey).(TransactionState[T])
+	return
+}
+
+// Convenience function retrieving an interface to the transaction state
+// from the context. The interface provides the GetUpdates() function
+// returning the config updates using the generic interface. It should
+// be used in cases when the type of the config update recipe doesn't
+// matter.
+func GetAnyTransactionState(ctx context.Context) (state TransactionStateAccessor, ok bool) {
+	state, ok = ctx.Value(StateContextKey).(TransactionStateAccessor)
 	return
 }
 
 // Gets a value from the transaction state for a given update index, under the
 // specified name in the recipe. It returns an error if the specified index
 // is out of bounds or when the value doesn't exist.
-func GetValueForUpdate(ctx context.Context, updateIndex int, valueName string) (any, error) {
-	state, ok := GetTransactionState(ctx)
+func GetRecipeForUpdate[T any](ctx context.Context, updateIndex int) (*T, error) {
+	state, ok := GetTransactionState[T](ctx)
 	if !ok {
 		return nil, pkgerrors.New("transaction state does not exist in the context")
 	}
-	value, err := state.GetValueForUpdate(updateIndex, valueName)
-	if err != nil {
-		return nil, err
-	}
-	return value, nil
+	return state.GetRecipeForUpdate(updateIndex)
 }
 
 // Sets a value in the transaction state for a given update index, under the
@@ -60,12 +66,12 @@ func GetValueForUpdate(ctx context.Context, updateIndex int, valueName string) (
 // contain a transaction state or the specified index is out of bounds. It
 // always returns a context with an updated value if the value has been
 // successfully set.
-func SetValueForUpdate(ctx context.Context, updateIndex int, valueName string, value any) (context.Context, error) {
-	state, ok := GetTransactionState(ctx)
+func SetRecipeForUpdate[T any](ctx context.Context, updateIndex int, recipe *T) (context.Context, error) {
+	state, ok := GetTransactionState[T](ctx)
 	if !ok {
 		return ctx, pkgerrors.New("transaction state does not exist in the context")
 	}
-	if err := state.SetValueForUpdate(updateIndex, valueName, value); err != nil {
+	if err := state.SetRecipeForUpdate(updateIndex, recipe); err != nil {
 		return ctx, err
 	}
 	return context.WithValue(ctx, StateContextKey, state), nil

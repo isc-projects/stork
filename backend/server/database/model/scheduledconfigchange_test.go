@@ -22,16 +22,6 @@ func TestNewConfigUpdate(t *testing.T) {
 	require.Contains(t, cu.DaemonIDs, int64(3))
 }
 
-// Test that extracting an int64 value from config update recipe works.
-func TestGetRecipeValueAsInt64(t *testing.T) {
-	cu := NewConfigUpdate("kea", "host_cmds")
-	cu.Recipe["foo"] = int64(45)
-	require.NotNil(t, cu)
-	value, err := cu.GetRecipeValueAsInt64("foo")
-	require.NoError(t, err)
-	require.Equal(t, int64(45), value)
-}
-
 // Test adding and getting scheduled config changes with ordering by deadline.
 func TestAddScheduledConfigChange(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -394,4 +384,27 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 	returned, err = GetScheduledConfigChanges(db)
 	require.NoError(t, err)
 	require.Empty(t, returned)
+}
+
+// Test that it is possible to determine that any of the updates pertain
+// to Kea.
+func TestHasKeaUpdates(t *testing.T) {
+	change := ScheduledConfigChange{
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("bind9", "dns", 1),
+			NewConfigUpdate("kea", "host", 2),
+		},
+	}
+	require.True(t, change.HasKeaUpdates())
+}
+
+// Test that false is returned for a scheduled configuration change when
+// no Kea update is found.
+func TestHasKeaUpdatesNoKeaUpdate(t *testing.T) {
+	change := ScheduledConfigChange{
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("bind9", "dns", 1),
+		},
+	}
+	require.False(t, change.HasKeaUpdates())
 }

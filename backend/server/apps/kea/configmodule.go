@@ -2,19 +2,62 @@ package kea
 
 import (
 	"context"
+	"encoding/json"
 
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
-	agentcomm "isc.org/stork/server/agentcomm"
 	config "isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// A configuration manager module responsible for Kea configuration.
+var _ config.TransactionStateAccessor = (*config.TransactionState[ConfigRecipe])(nil)
+
+// Contains a Kea command along with an app instance to which the
+// command should be sent to apply configuration changes. Multiple
+// such commands can occur in a config recipe.
+type ConfigCommand struct {
+	Command *keactrl.Command
+	App     *dbmodel.App
+}
+
+// Represents a Kea config change recipe. A recipe is associated with
+// each config update and may comprise several commands sent to different
+// Kea servers. Other data stored in the recipe structure are used in the
+// Kea config module to pass the information between various configuration
+// stages (begin, apply, commit/schedule).
+type ConfigRecipe struct {
+	// A list of commands and the corresponding targets to be sent to
+	// apply a configuration update.
+	Commands []ConfigCommand
+	// An instance of the host (reservation) before an update. It is
+	// typically fetched at the beginning of the host update (e.g., when a
+	// user clicks the host edit button).
+	HostBeforeUpdate *dbmodel.Host
+	// Edited or deleted host ID.
+	HostID int64
+}
+
+// A configuration manager module responsible for the Kea configuration.
 type ConfigModule struct {
 	// A configuration manager owning the module.
 	manager config.ModuleManager
+}
+
+// Creates an instance of the Kea config update from the config update
+// represented in the database.
+func NewConfigUpdateFromDBModel(dbupdate *dbmodel.ConfigUpdate) *config.Update[ConfigRecipe] {
+	update := &config.Update[ConfigRecipe]{
+		Target:    dbupdate.Target,
+		Operation: dbupdate.Operation,
+		DaemonIDs: dbupdate.DaemonIDs,
+	}
+	if dbupdate.Recipe != nil {
+		if err := json.Unmarshal(*dbupdate.Recipe, &update.Recipe); err != nil {
+			return nil
+		}
+	}
+	return update
 }
 
 // Creates new instance of the Kea configuration module.
@@ -27,7 +70,7 @@ func NewConfigModule(manager config.ModuleManager) *ConfigModule {
 // Commits the Kea configuration changes.
 func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 	var err error
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
@@ -52,7 +95,7 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 // Begins adding a new host reservation. It initializes transaction state.
 func (module *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, error) {
 	// Create transaction state.
-	state := config.NewTransactionStateWithUpdate("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 	return ctx, nil
 }
@@ -63,7 +106,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
-	var commands []interface{}
+	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
 			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
@@ -81,13 +124,17 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 		arguments := make(map[string]interface{})
 		arguments["reservation"] = reservation
 		// Associate the command with an app receiving this command.
-		appCommand := make(map[string]interface{})
-		appCommand["command"] = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, arguments)
-		appCommand["app"] = lh.Daemon.App
+		appCommand := ConfigCommand{
+			Command: keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, arguments),
+			App:     lh.Daemon.App,
+		}
 		commands = append(commands, appCommand)
 	}
 	var err error
-	if ctx, err = config.SetValueForUpdate(ctx, 0, "commands", commands); err != nil {
+	recipe := &ConfigRecipe{
+		Commands: commands,
+	}
+	if ctx, err = config.SetRecipeForUpdate(ctx, 0, recipe); err != nil {
 		return ctx, err
 	}
 	return ctx, nil
@@ -124,8 +171,11 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 		return ctx, pkgerrors.WithStack(config.NewLockError())
 	}
 	// Create transaction state.
-	state := config.NewTransactionStateWithUpdate("kea", "host_update", daemonIDs...)
-	if err := state.SetValueForUpdate(0, "host_before_update", *host); err != nil {
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	recipe := &ConfigRecipe{
+		HostBeforeUpdate: host,
+	}
+	if err := state.SetRecipeForUpdate(0, recipe); err != nil {
 		return ctx, err
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
@@ -142,13 +192,13 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	}
 	// Retrieve existing host from the context. We will need it for sending
 	// the reservation-del commands, in case the DHCP identifier changes.
-	existingHostIface, err := config.GetValueForUpdate(ctx, 0, "host_before_update")
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
 	if err != nil {
 		return ctx, err
 	}
-	existingHost := existingHostIface.(dbmodel.Host)
+	existingHost := recipe.HostBeforeUpdate
 
-	var commands []any
+	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
 		if lh.Daemon == nil {
@@ -163,9 +213,9 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 			return ctx, err
 		}
 		// Associate the command with an app receiving this command.
-		appCommand := make(map[string]any)
-		appCommand["command"] = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, deleteArguments)
-		appCommand["app"] = lh.Daemon.App
+		appCommand := ConfigCommand{}
+		appCommand.Command = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, deleteArguments)
+		appCommand.App = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
 	// Re-create the host reservations.
@@ -185,12 +235,13 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		// Create command arguments.
 		addArguments := make(map[string]any)
 		addArguments["reservation"] = reservation
-		appCommand := make(map[string]any)
-		appCommand["command"] = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, addArguments)
-		appCommand["app"] = lh.Daemon.App
+		appCommand := ConfigCommand{}
+		appCommand.Command = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, addArguments)
+		appCommand.App = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
-	return config.SetValueForUpdate(ctx, 0, "commands", commands)
+	recipe.Commands = commands
+	return config.SetRecipeForUpdate(ctx, 0, recipe)
 }
 
 // Create the updated host reservation in the Kea servers.
@@ -210,7 +261,7 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("deleted host %d is not associated with any daemon", host.ID)
 	}
-	var commands []interface{}
+	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
 			return ctx, pkgerrors.Errorf("deleted host %d is associated with nil daemon", host.ID)
@@ -226,18 +277,19 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 		// Create command arguments.
 		arguments := reservation
 		// Associate the command with an app receiving this command.
-		appCommand := make(map[string]interface{})
-		appCommand["command"] = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, arguments)
-		appCommand["app"] = lh.Daemon.App
+		appCommand := ConfigCommand{}
+		appCommand.Command = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, arguments)
+		appCommand.App = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
 	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
 	// Create transaction state.
-	state := config.NewTransactionStateWithUpdate("kea", "host_delete", daemonIDs...)
-	if err := state.SetValueForUpdate(0, "commands", commands); err != nil {
-		return ctx, err
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_delete", daemonIDs...)
+	recipe := ConfigRecipe{
+		Commands: commands,
+		HostID:   host.ID,
 	}
-	if err := state.SetValueForUpdate(0, "id", host.ID); err != nil {
+	if err := state.SetRecipeForUpdate(0, &recipe); err != nil {
 		return ctx, err
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
@@ -246,7 +298,7 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 
 // Delete host reservation from the Kea servers.
 func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Context, error) {
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
 	}
@@ -256,11 +308,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		return ctx, err
 	}
 	for _, update := range state.Updates {
-		hostID, err := update.GetRecipeValueAsInt64("id")
-		if err != nil {
-			return ctx, err
-		}
-		err = dbmodel.DeleteHost(module.manager.GetDB(), hostID)
+		err = dbmodel.DeleteHost(module.manager.GetDB(), update.Recipe.HostID)
 		if err != nil {
 			return ctx, err
 		}
@@ -271,52 +319,17 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 // Generic function used to commit host changes (i.e., delete,  add or update host reservation)
 // using the data stored in the context.
 func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Context, error) {
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
 	}
 	for _, update := range state.Updates {
 		// Retrieve associations between the commands and apps.
-		appCommands, ok := update.Recipe["commands"]
-		if !ok {
-			return ctx, pkgerrors.New("Kea commands not found in the context")
-		}
 		// Iterate over the associations.
-		for _, acs := range appCommands.([]interface{}) {
-			// Split the commands and apps.
-			var (
-				command keactrl.Command
-				app     agentcomm.ControlledApp
-			)
-			if state.Scheduled {
-				// If the context has been re-created after scheduling the config
-				// change in the database we use a simplified structure holding the
-				// App information.
-				var commandApp struct {
-					Command keactrl.Command
-					App     config.App
-				}
-				if err := config.DecodeContextData(acs, &commandApp); err != nil {
-					return ctx, err
-				}
-				app = commandApp.App
-				command = commandApp.Command
-			} else {
-				// We didn't schedule the change so we have an original context
-				// with an app represented using dbmodel.App structure.
-				var commandApp struct {
-					Command keactrl.Command
-					App     dbmodel.App
-				}
-				if err := config.DecodeContextData(acs, &commandApp); err != nil {
-					return ctx, err
-				}
-				app = commandApp.App
-				command = commandApp.Command
-			}
+		for _, acs := range update.Recipe.Commands {
 			// Send the command to Kea.
 			var response keactrl.ResponseList
-			result, err := module.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
+			result, err := module.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), acs.App, []keactrl.SerializableCommand{acs.Command}, &response)
 			// There was no error in communication between the server and the agent but
 			// the agent could have issues with the Kea response.
 			if err == nil {
@@ -334,7 +347,7 @@ func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Cont
 				}
 			}
 			if err != nil {
-				err = pkgerrors.WithMessagef(err, "%s command to %s failed", command.GetCommand(), app.GetName())
+				err = pkgerrors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
 				return ctx, err
 			}
 		}

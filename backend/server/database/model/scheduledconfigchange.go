@@ -2,13 +2,13 @@ package dbmodel
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
-	storkutil "isc.org/stork/util"
 )
 
 // Representation of the config changes scheduled by the config
@@ -45,7 +45,17 @@ type ConfigUpdate struct {
 	// commands to be sent to the configured server, information to be
 	// inserted into the database etc. The contents of this field are
 	// specific to the performed operation.
-	Recipe map[string]interface{}
+	Recipe *json.RawMessage
+}
+
+// Checks if any of the updates pertain to Kea.
+func (c ScheduledConfigChange) HasKeaUpdates() bool {
+	for _, update := range c.Updates {
+		if update.Target == "kea" {
+			return true
+		}
+	}
+	return false
 }
 
 // Creates new config update instance.
@@ -54,15 +64,7 @@ func NewConfigUpdate(target, operation string, daemonIDs ...int64) *ConfigUpdate
 		Target:    target,
 		Operation: operation,
 		DaemonIDs: daemonIDs,
-		Recipe:    make(map[string]interface{}),
 	}
-}
-
-// Extracts a value under the specified key from the ConfigUpdate and attempts
-// to convert it to int64. The value must already have int64 type or should
-// be json.Number convertible to int64.
-func (update ConfigUpdate) GetRecipeValueAsInt64(key string) (value int64, err error) {
-	return storkutil.ExtractJSONInt64(update.Recipe, key)
 }
 
 // Inserts scheduled config change into the database in the transaction.

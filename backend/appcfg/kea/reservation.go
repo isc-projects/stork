@@ -22,10 +22,6 @@ type HostAccessor interface {
 	GetDHCPOptions(int64) []dhcpmodel.DHCPOptionAccessor
 }
 
-type Host interface {
-	GetIdentifiers() []HostIdentifier
-}
-
 // Represents host reservation within Kea configuration.
 type Reservation struct {
 	HWAddress      string             `json:"hw-address,omitempty"`
@@ -56,11 +52,6 @@ type HostCmdsDeletedReservation struct {
 	IdentifierType string `json:"identifier-type,omitempty"`
 	Identifier     string `json:"identifier,omitempty"`
 	SubnetID       int64  `json:"subnet-id"`
-}
-
-type HostIdentifier struct {
-	Type  string
-	Value []byte
 }
 
 // A structure comprising host reservation modes at the particular

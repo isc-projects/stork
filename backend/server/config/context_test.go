@@ -7,6 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test configuration recipe used in the tests.
+type testRecipe struct {
+	param string
+}
+
 // Test convenience function returning an int64 value from the context.
 func TestGetValueAsInt64(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ContextIDKey, int64(1234))
@@ -28,11 +33,11 @@ func TestGetValueAsInt64(t *testing.T) {
 
 // Test convenience function returning transaction state.
 func TestGetTransactionState(t *testing.T) {
-	state := TransactionState{
+	state := TransactionState[testRecipe]{
 		Scheduled: true,
 	}
 	ctx := context.WithValue(context.Background(), StateContextKey, state)
-	returned, ok := GetTransactionState(ctx)
+	returned, ok := GetTransactionState[testRecipe](ctx)
 	require.True(t, ok)
 	require.True(t, returned.Scheduled)
 }
@@ -40,7 +45,7 @@ func TestGetTransactionState(t *testing.T) {
 // Test convenience function returning transaction state when the
 // state doesn't exist.
 func TestGetTransactionStateNoState(t *testing.T) {
-	_, ok := GetTransactionState(context.Background())
+	_, ok := GetTransactionState[testRecipe](context.Background())
 	require.False(t, ok)
 }
 
@@ -48,72 +53,118 @@ func TestGetTransactionStateNoState(t *testing.T) {
 // state has invalid type.
 func TestGetTransactionStateNoCast(t *testing.T) {
 	ctx := context.WithValue(context.Background(), StateContextKey, "a string")
-	_, ok := GetTransactionState(ctx)
+	_, ok := GetTransactionState[testRecipe](ctx)
 	require.False(t, ok)
 }
 
-// Test setting and getting value for an update in the transaction state.
-func TestSetValueForUpdateInContext(t *testing.T) {
-	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
-	ctx := context.WithValue(context.Background(), StateContextKey, *state)
-
-	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
-	require.NoError(t, err)
-
-	returnedState, ok := GetTransactionState(ctx)
+// Test convenience function returning transaction state.
+func TestGetAnyTransactionState(t *testing.T) {
+	state := TransactionState[testRecipe]{
+		Scheduled: true,
+		Updates: []*Update[testRecipe]{
+			{
+				Recipe: testRecipe{
+					param: "foo",
+				},
+			},
+		},
+	}
+	ctx := context.WithValue(context.Background(), StateContextKey, state)
+	returned, ok := GetAnyTransactionState(ctx)
 	require.True(t, ok)
-	v, err := returnedState.GetValueForUpdate(0, "foo")
-	require.NoError(t, err)
-	require.NotNil(t, v)
-	require.Equal(t, "bar", v)
+	require.Len(t, returned.GetUpdates(), 1)
 }
 
-// Test that an error is returned when trying to set a value for update in the
+// Test convenience function returning transaction state when the
+// state doesn't exist.
+func TestGetAnyTransactionStateNoState(t *testing.T) {
+	_, ok := GetAnyTransactionState(context.Background())
+	require.False(t, ok)
+}
+
+// Test convenience function returning transaction state when the
+// state has invalid type.
+func TestGetAnyTransactionStateNoCast(t *testing.T) {
+	ctx := context.WithValue(context.Background(), StateContextKey, "a string")
+	_, ok := GetAnyTransactionState(ctx)
+	require.False(t, ok)
+}
+
+// Test setting and getting recipe for an update in the transaction state.
+func TestSetRecipeForUpdateInContext(t *testing.T) {
+	state := NewTransactionStateWithUpdate[testRecipe]("kea", "host_update", 1)
+	ctx := context.WithValue(context.Background(), StateContextKey, *state)
+
+	recipe := testRecipe{
+		param: "foo",
+	}
+	ctx, err := SetRecipeForUpdate(ctx, 0, &recipe)
+	require.NoError(t, err)
+
+	returnedState, ok := GetTransactionState[testRecipe](ctx)
+	require.True(t, ok)
+	returnedRecipe, err := returnedState.GetRecipeForUpdate(0)
+	require.NoError(t, err)
+	require.NotNil(t, returnedRecipe)
+	require.Equal(t, "foo", returnedRecipe.param)
+}
+
+// Test that an error is returned when trying to set a recipe for update in the
 // state when the state does not exist.
 func TestSetValueForUpdateInContextNoState(t *testing.T) {
 	ctx := context.Background()
-	_, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+	recipe := testRecipe{}
+	_, err := SetRecipeForUpdate(ctx, 0, &recipe)
 	require.Error(t, err)
 }
 
-// Test that an error is returned when trying to set a value for update in the
+// Test that an error is returned when trying to set a recipe for update in the
 // state when update index is out of bounds.
 func TestSetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
-	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	recipe := testRecipe{}
+	state := NewTransactionStateWithUpdate[testRecipe]("kea", "host_update", 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
-	_, err := SetValueForUpdate(ctx, 1, "foo", "bar")
+	_, err := SetRecipeForUpdate(ctx, 1, &recipe)
 	require.Error(t, err)
 }
 
-// Test getting a value for update from the context.
+// Test getting a recipe for update from the context.
 func TestGetValueForUpdateInContext(t *testing.T) {
-	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe]("kea", "host_update", 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
-	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+
+	recipe := testRecipe{
+		param: "foo",
+	}
+	ctx, err := SetRecipeForUpdate(ctx, 0, &recipe)
 	require.NoError(t, err)
 
-	value, err := GetValueForUpdate(ctx, 0, "foo")
+	returnedRecipe, err := GetRecipeForUpdate[testRecipe](ctx, 0)
 	require.NoError(t, err)
-	require.Equal(t, value, "bar")
+	require.Equal(t, "foo", returnedRecipe.param)
 }
 
-// Test that an error is returned when trying to get a value for update from the
+// Test that an error is returned when trying to get a recipe for update from the
 // context when the state does not exist.
 func TestGetValueForUpdateInContextNoState(t *testing.T) {
-	value, err := GetValueForUpdate(context.Background(), 0, "foo")
+	value, err := GetRecipeForUpdate[any](context.Background(), 0)
 	require.Error(t, err)
 	require.Nil(t, value)
 }
 
-// Test that an error is returned when trying to get a value for update from the
+// Test that an error is returned when trying to get a recipe for update from the
 // context when update index is out of bounds.
 func TestGetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
-	state := NewTransactionStateWithUpdate("kea", "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe]("kea", "host_update", 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
-	ctx, err := SetValueForUpdate(ctx, 0, "foo", "bar")
+
+	recipe := testRecipe{
+		param: "foo",
+	}
+	ctx, err := SetRecipeForUpdate(ctx, 0, &recipe)
 	require.NoError(t, err)
 
-	value, err := GetValueForUpdate(ctx, 1, "foo")
+	returnedRecipe, err := GetRecipeForUpdate[testRecipe](ctx, 1)
 	require.Error(t, err)
-	require.Nil(t, value)
+	require.Nil(t, returnedRecipe)
 }

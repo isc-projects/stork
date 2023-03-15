@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"math"
 	"math/big"
 	"sync"
@@ -332,12 +333,12 @@ func (manager *configManagerImpl) Done(ctx context.Context) {
 // Sends the configuration updates queued in the context to one or multiple daemons
 // right away.
 func (manager *configManagerImpl) Commit(ctx context.Context) (context.Context, error) {
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetAnyTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
 	var err error
-	for _, pu := range state.Updates {
+	for _, pu := range state.GetUpdates() {
 		switch pu.Target {
 		case "kea":
 			// Kea configuration update. Route the call to Kea module.
@@ -365,12 +366,24 @@ func (manager *configManagerImpl) CommitDue() error {
 		return nil
 	}
 	// Iterate over the changes.
+	var state any
 	for _, change := range changes {
 		// Re-create the transaction state from the serialized data stored in
 		// the database.
-		state := config.TransactionState{
-			Scheduled: true,
-			Updates:   change.Updates,
+		switch {
+		case change.HasKeaUpdates():
+			keaState := config.TransactionState[kea.ConfigRecipe]{
+				Scheduled: true,
+			}
+			for _, u := range change.Updates {
+				update := kea.NewConfigUpdateFromDBModel(u)
+				if update == nil {
+					continue
+				}
+				keaState.Updates = append(keaState.Updates, update)
+			}
+			state = keaState
+		default:
 		}
 		var (
 			ctx context.Context
@@ -398,7 +411,7 @@ func (manager *configManagerImpl) CommitDue() error {
 // Schedules sending the changes queued in the context to one or multiple daemons.
 // The deadline parameter specifies the time when the changes should be committed.
 func (manager *configManagerImpl) Schedule(ctx context.Context, deadline time.Time) (context.Context, error) {
-	state, ok := config.GetTransactionState(ctx)
+	state, ok := config.GetAnyTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
@@ -410,7 +423,19 @@ func (manager *configManagerImpl) Schedule(ctx context.Context, deadline time.Ti
 	scc := &dbmodel.ScheduledConfigChange{
 		DeadlineAt: deadline,
 		UserID:     userID,
-		Updates:    state.Updates,
+	}
+	for _, u := range state.GetUpdates() {
+		update := &dbmodel.ConfigUpdate{
+			Target:    u.Target,
+			Operation: u.Operation,
+			DaemonIDs: u.DaemonIDs,
+		}
+		recipe, err := json.Marshal(u.Recipe)
+		if err != nil {
+			return ctx, pkgerrors.Wrapf(err, "problem converting config update recipe to the raw format")
+		}
+		update.Recipe = (*json.RawMessage)(&recipe)
+		scc.Updates = append(scc.Updates, update)
 	}
 	if err := dbmodel.AddScheduledConfigChange(manager.db, scc); err != nil {
 		return ctx, err

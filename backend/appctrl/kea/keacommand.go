@@ -39,7 +39,7 @@ type SerializableCommand interface {
 // (service list in Kea terms) and arguments.
 type Command struct {
 	Command   string      `json:"command"`
-	Daemons   []string    `json:"service,omitempty" mapstructure:"service"`
+	Daemons   []string    `json:"service,omitempty"`
 	Arguments interface{} `json:"arguments,omitempty"`
 }
 

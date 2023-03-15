@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
@@ -509,8 +510,8 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 			return rsp
 		}
 	}
-	state, _ := config.GetTransactionState(cctx)
-	host := state.Updates[0].Recipe["host_before_update"].(dbmodel.Host)
+	state, _ := config.GetTransactionState[kea.ConfigRecipe](cctx)
+	host := state.Updates[0].Recipe.HostBeforeUpdate
 
 	// Retrieve the generated context ID.
 	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
@@ -528,7 +529,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.UpdateHostBeginResponse{
 		ID:            cctxID,
-		Host:          r.convertFromHost(&host),
+		Host:          r.convertFromHost(host),
 		Daemons:       respDaemons,
 		Subnets:       respSubnets,
 		ClientClasses: respClientClasses,

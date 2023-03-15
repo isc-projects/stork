@@ -5,25 +5,51 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/mitchellh/mapstructure"
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+var _ TransactionStateAccessor = (*TransactionState[any])(nil)
+
+// An interface implemented by the TransactionState[T any]. It is used
+// to convert the config updates having the specific Recipe type (T) to
+// the config updates having the Recipe type any. It is used in the
+// config manager's functions that don't need to operate on any specific
+// Recipe type.
+type TransactionStateAccessor interface {
+	// Returns config updates with the Recipe type any.
+	GetUpdates() []*Update[any]
+}
+
 // A structure describing a single configuration update that may be applied
-// to multiple daemons.
-type Update = dbmodel.ConfigUpdate
+// to multiple daemons. The T type is the Recipe type. Having this type
+// generic allows for using the Update structure for configuring different
+// app types.
+type Update[T any] struct {
+	// Type of the configured daemon, e.g. "kea".
+	Target string
+	// Type of the operation to perform, e.g. "host_add".
+	Operation string
+	// Identifiers of the daemons affected by the update. For example,
+	// a host reservation can be shared by two daemons.
+	DaemonIDs []int64
+	// Holds information required to apply the config update, e.g.
+	// commands to be sent to the configured server, information to be
+	// inserted into the database etc. The contents of this field are
+	// specific to the performed operation.
+	Recipe T
+}
 
 // A structure describing a single configuration change. It includes one or more
 // configuration updates.
-type TransactionState struct {
+type TransactionState[T any] struct {
 	// A flag indicating if the state has been re-created from the information
 	// stored in the database (scheduled configuration change).
 	Scheduled bool
 	// Configuration updates belonging to the transaction.
-	Updates []*Update
+	Updates []*Update[T]
 }
 
 // A type representing a configuration lock key.
@@ -93,50 +119,55 @@ type ManagerLocker interface {
 	Unlock(context.Context)
 }
 
+// Returns config updates with the Recipe type any. This function belongs
+// to the TransactionStateAccessor interface.
+func (state TransactionState[T]) GetUpdates() (updates []*Update[any]) {
+	for _, u := range state.Updates {
+		update := Update[any]{
+			Target:    u.Target,
+			Operation: u.Operation,
+			DaemonIDs: u.DaemonIDs,
+			Recipe:    u.Recipe,
+		}
+		updates = append(updates, &update)
+	}
+	return
+}
+
 // Creates new config update instance.
-func NewUpdate(target, operation string, daemonIDs ...int64) *Update {
-	return dbmodel.NewConfigUpdate(target, operation, daemonIDs...)
+func NewUpdate[T any](target, operation string, daemonIDs ...int64) *Update[T] {
+	return &Update[T]{
+		Target:    target,
+		Operation: operation,
+		DaemonIDs: daemonIDs,
+		//		Recipe:    T{},
+	}
 }
 
 // Creates new transaction state with one config update instance. It is
 // the most typical use case.
-func NewTransactionStateWithUpdate(target, operation string, daemonIDs ...int64) *TransactionState {
-	update := NewUpdate(target, operation, daemonIDs...)
-	state := &TransactionState{
-		Updates: []*Update{
-			update,
-		},
-	}
+func NewTransactionStateWithUpdate[T any](target, operation string, daemonIDs ...int64) *TransactionState[T] {
+	update := NewUpdate[T](target, operation, daemonIDs...)
+	state := &TransactionState[T]{}
+	state.Updates = append(state.Updates, update)
 	return state
 }
 
-// Sets a value in the transaction state for a given update index, under the
-// specified name in the recipe. It returns an error if the specified index
-// is out of bounds.
-func (state *TransactionState) SetValueForUpdate(updateIndex int, valueName string, value any) error {
+// Sets a recipe in the transaction state for a given update index. It returns
+// an error if the specified index is out of bounds.
+func (state *TransactionState[T]) SetRecipeForUpdate(updateIndex int, recipe *T) error {
 	if len(state.Updates) <= updateIndex {
 		return pkgerrors.Errorf("transaction state update index %d is out of bounds", updateIndex)
 	}
-	state.Updates[updateIndex].Recipe[valueName] = value
+	state.Updates[updateIndex].Recipe = *recipe
 	return nil
 }
 
-// Gets a value from the transaction state for a given update index, under the
-// specified name in the recipe. It returns an error if the specified index
-// is out of bounds or when the value doesn't exist.
-func (state *TransactionState) GetValueForUpdate(updateIndex int, valueName string) (any, error) {
+// Returns an update recipe for a specified update index. It returns an error
+// if the index is out of bounds.
+func (state *TransactionState[T]) GetRecipeForUpdate(updateIndex int) (*T, error) {
 	if len(state.Updates) <= updateIndex {
 		return nil, pkgerrors.Errorf("transaction state update index %d is out of bounds", updateIndex)
 	}
-	value, ok := state.Updates[updateIndex].Recipe[valueName]
-	if !ok {
-		return nil, pkgerrors.Errorf("value %s does not exist for update with index %d", valueName, updateIndex)
-	}
-	return value, nil
-}
-
-// Decodes data stored as a map in the context/transaction into a custom structure.
-func DecodeContextData(input interface{}, output interface{}) error {
-	err := mapstructure.Decode(input, output)
-	return pkgerrors.WithStack(err)
+	return &state.Updates[updateIndex].Recipe, nil
 }

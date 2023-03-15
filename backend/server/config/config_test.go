@@ -8,7 +8,7 @@ import (
 
 // Test creating new config update instance.
 func TestNewUpdate(t *testing.T) {
-	cu := NewUpdate("kea", "host_add", 1, 2, 3)
+	cu := NewUpdate[any]("kea", "host_add", 1, 2, 3)
 	require.NotNil(t, cu)
 	require.Equal(t, "kea", cu.Target)
 	require.Equal(t, "host_add", cu.Operation)
@@ -20,7 +20,7 @@ func TestNewUpdate(t *testing.T) {
 
 // Test creating new transaction state instance with one update instance.
 func TestNewTransactionStateWithUpdate(t *testing.T) {
-	state := NewTransactionStateWithUpdate("keax", "host_update", 2, 3)
+	state := NewTransactionStateWithUpdate[any]("keax", "host_update", 2, 3)
 	require.NotNil(t, state)
 	require.Len(t, state.Updates, 1)
 	cu := state.Updates[0]
@@ -31,53 +31,65 @@ func TestNewTransactionStateWithUpdate(t *testing.T) {
 	require.Contains(t, cu.DaemonIDs, int64(3))
 }
 
-// Test setting and getting value for an update in the transaction state.
-func TestSetValueForUpdate(t *testing.T) {
-	state := TransactionState{
-		Updates: []*Update{},
+// Test setting and getting a recipe for an update in the transaction state.
+func TestSetRecipeForUpdate(t *testing.T) {
+	state := TransactionState[testRecipe]{
+		Updates: []*Update[testRecipe]{},
 	}
 	for i := 0; i < 5; i++ {
-		update := NewUpdate("kea", "host_update", int64(i))
+		update := NewUpdate[testRecipe]("kea", "host_update", int64(i))
 		state.Updates = append(state.Updates, update)
 	}
-	err := state.SetValueForUpdate(2, "foo", "bar")
-	require.NoError(t, err)
-	err = state.SetValueForUpdate(4, "foobar", "baz")
+	recipe := testRecipe{
+		param: "foo",
+	}
+	err := state.SetRecipeForUpdate(2, &recipe)
 	require.NoError(t, err)
 
-	v, err := state.GetValueForUpdate(2, "foo")
+	recipe = testRecipe{
+		param: "bar",
+	}
+	err = state.SetRecipeForUpdate(4, &recipe)
 	require.NoError(t, err)
-	require.NotNil(t, v)
-	require.Equal(t, "bar", v)
 
-	v, err = state.GetValueForUpdate(4, "foobar")
+	returnedRecipe, err := state.GetRecipeForUpdate(2)
 	require.NoError(t, err)
-	require.NotNil(t, v)
-	require.Equal(t, "baz", v)
+	require.NotNil(t, returnedRecipe)
+	require.Equal(t, "foo", returnedRecipe.param)
+
+	returnedRecipe, err = state.GetRecipeForUpdate(4)
+	require.NoError(t, err)
+	require.NotNil(t, returnedRecipe)
+	require.Equal(t, "bar", returnedRecipe.param)
 
 	// Test error cases.
-	v, err = state.GetValueForUpdate(4, "foo")
+	returnedRecipe, err = state.GetRecipeForUpdate(8)
 	require.Error(t, err)
-	require.Nil(t, v)
-
-	v, err = state.GetValueForUpdate(0, "bba")
-	require.Error(t, err)
-	require.Nil(t, v)
-
-	v, err = state.GetValueForUpdate(7, "foo")
-	require.Error(t, err)
-	require.Nil(t, v)
+	require.Nil(t, returnedRecipe)
 }
 
-// Test that the DecodeContextData decodes a map into structure.
-func TestDecodeContextData(t *testing.T) {
-	input := map[string]interface{}{
-		"foo": "bar",
+// Test getting config updates from state with the recipe of any type.
+func TestGetUpdates(t *testing.T) {
+	state := TransactionState[testRecipe]{
+		Updates: []*Update[testRecipe]{},
 	}
-	output := struct {
-		Foo string
-	}{}
-	err := DecodeContextData(input, &output)
-	require.NoError(t, err)
-	require.Equal(t, "bar", output.Foo)
+	for i := 0; i < 5; i++ {
+		update := NewUpdate[testRecipe]("kea", "host_update", int64(i))
+		update.Recipe = testRecipe{
+			param: "foo",
+		}
+		state.Updates = append(state.Updates, update)
+	}
+	anyUpdates := state.GetUpdates()
+	require.Len(t, anyUpdates, 5)
+	for i, u := range anyUpdates {
+		require.Equal(t, "kea", u.Target)
+		require.Equal(t, "host_update", u.Operation)
+		require.Len(t, u.DaemonIDs, 1)
+		require.EqualValues(t, i, u.DaemonIDs[0])
+		require.IsType(t, testRecipe{}, u.Recipe)
+		recipe := u.Recipe.(testRecipe)
+		require.NotNil(t, recipe)
+		require.Equal(t, "foo", recipe.param)
+	}
 }
