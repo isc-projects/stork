@@ -400,7 +400,10 @@ func TestGetRndcKeyEmptyData(t *testing.T) {
 // no 'key' clause.
 func TestGetRndcKeyInvalidData(t *testing.T) {
 	// Arrange
-	content := "algorithm  bar\nsecret     baz"
+	content := `
+		algorithm  "bar";
+		secret  "baz"
+	`
 
 	// Act & Assert
 	require.Empty(t, getRndcKey(content, "key"))
@@ -411,8 +414,8 @@ func TestGetRndcKeyInvalidData(t *testing.T) {
 func TestGetRndcKeyUnknownKey(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
-		algorithm  bar
-		secret baz
+		algorithm  "bar";
+		secret  "baz";
 	};`
 
 	// Act & Assert
@@ -423,8 +426,8 @@ func TestGetRndcKeyUnknownKey(t *testing.T) {
 func TestGetRndcKeyBlankName(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
-		algorithm  bar
-		secret baz
+		algorithm  "bar";
+		secret  "baz";
 	};`
 
 	// Act & Assert
@@ -435,7 +438,7 @@ func TestGetRndcKeyBlankName(t *testing.T) {
 func TestGetRndcKeyMissingAlgorithm(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
-		secret baz
+		secret  "baz";
 	};`
 
 	// Act & Assert
@@ -446,7 +449,7 @@ func TestGetRndcKeyMissingAlgorithm(t *testing.T) {
 func TestGetRndcKeyMissingSecret(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
-		algorithm  bar
+		algorithm  "bar";
 	};`
 
 	// Act & Assert
@@ -458,8 +461,8 @@ func TestGetRndcKeyMissingSecret(t *testing.T) {
 func TestGetRndcKeyValidData(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
-		algorithm  bar
-		secret baz
+		algorithm  "bar";
+		secret  "baz";
 	};`
 
 	// Act
@@ -474,13 +477,13 @@ func TestGetRndcKeyValidData(t *testing.T) {
 func TestGetRndcKeyValidDataMultipleKeys(t *testing.T) {
 	// Arrange
 	content := `key "oof" {
-		algorithm  bar
-		secret baz
+		algorithm  "bar";
+		secret  "baz";
 	};
 	
 	key "foo" {
-		algorithm  bar
-		secret baz
+		algorithm  "bar";
+		secret  "baz";
 	};`
 
 	// Act
