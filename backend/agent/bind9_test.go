@@ -67,7 +67,7 @@ func TestGetConfiguredDaemons(t *testing.T) {
 	require.Contains(t, daemons, "named")
 }
 
-func TestParseNamedDefaultPaths(t *testing.T) {
+func TestParseNamedDefaultPath(t *testing.T) {
 	// Define input data
 	input := `default paths:
                 named configuration:  /some/path/named.conf
@@ -76,18 +76,17 @@ func TestParseNamedDefaultPaths(t *testing.T) {
 	// Convert input data to []byte
 	output := []byte(input)
 
-	// Call parseNamedDefaultPaths with the output
-	NamedConf, RndcConf := parseNamedDefaultPaths(output)
+	// Call parseNamedDefaultPath with the output
+	NamedConf := parseNamedDefaultPath(output)
 
 	// Assert that the parsed strings are correct
 	require.Equal(t, "/some/path/named.conf", NamedConf)
-	require.Equal(t, "/other/path/rndc.conf", RndcConf)
 }
 
 // Old BIND 9 versions don't print the default paths.
 // This test uses actual BIND 9.11.5 output. Makes sure
 // that the function doesn't panic.
-func TestParseNamedDefaultPathsForOldBind9Versions(t *testing.T) {
+func TestParseNamedDefaultPathForOldBind9Versions(t *testing.T) {
 	// Define input data (actual output from BIND 9.11.5)
 	input := `BIND 9.11.5-P4-5.1+deb10u8-Debian (Extended Support Version) <id:998753c>
 running on Linux x86_64 4.19.0-22-amd64 #1 SMP Debian 4.19.260-1 (2022-09-29)
@@ -118,12 +117,11 @@ threads support is enabled`
 	// Convert input data to []byte
 	output := []byte(input)
 
-	// Call parseNamedDefaultPaths with the output
-	namedConf, RdncConf := parseNamedDefaultPaths(output)
+	// Call parseNamedDefaultPath with the output
+	namedConf := parseNamedDefaultPath(output)
 
 	// Assert that the returned values are empty
 	require.Equal(t, "", namedConf)
-	require.Equal(t, "", RdncConf)
 }
 
 // Tests if getCtrlAddressFromBind9Config() can handle the right

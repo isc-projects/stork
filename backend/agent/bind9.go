@@ -367,9 +367,8 @@ func getPotentialNamedConfLocations() []string {
 }
 
 // Parses output of the named -V, which contains default paths for named, rndc
-// configurations among many other things. Returns two strings:
-// default path for named configuration, default path for rndc configuration.
-// strings may be nil if parsing fails.
+// configurations among many other things. Returns one string:
+// default path for named configuration (may be empty if parsing fails).
 
 // The output of named -V contains the following info we're looking for:
 //
@@ -382,30 +381,22 @@ func getPotentialNamedConfLocations() []string {
 //	named PID file:       //run/named/named.pid
 //	named lock file:      //run/named/named.lock
 //	geoip-directory:      /usr/share/GeoIP
-func parseNamedDefaultPaths(output []byte) (string, string) {
+func parseNamedDefaultPath(output []byte) string {
 	// Using []byte is inconvenient to use, let's convert to plain string first.
 	text := string(output)
 
-	// Let's use 2 regexps to find interesting string.
+	// Let's use regexp to find interesting string.
 	namedConfPattern := regexp.MustCompile(`named configuration: *(\/.*)`)
-	rndcConfPattern := regexp.MustCompile(`rndc configuration: *(\/.*)`)
 	namedConfMatch := namedConfPattern.FindStringSubmatch(text)
-	rndcConfMatch := rndcConfPattern.FindStringSubmatch(text)
 
 	// If found, Match is an array of strings. match[0] is always full string,
 	// match[1] is the first (and only in this case) group.
 	if len(namedConfMatch) < 2 {
 		log.Warnf("Unable to find 'named configuration:' line in 'named -V' output.")
-		return "", ""
+		return ""
 	}
 
-	if len(rndcConfMatch) < 2 {
-		log.Warnf("Unable to find 'rndc configuration:' in 'named -V', using just named.conf path: %s",
-			namedConfMatch[1])
-		return namedConfMatch[1], ""
-	}
-
-	return namedConfMatch[1], rndcConfMatch[1]
+	return namedConfMatch[1]
 }
 
 // Detects the running Bind 9 application.
@@ -485,7 +476,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			log.Warnf("Attempt to run '%s -V' failed. I give up. Error: %s", namedPath, err)
 			return nil
 		}
-		bind9ConfPath, _ = parseNamedDefaultPaths(out)
+		bind9ConfPath = parseNamedDefaultPath(out)
 		if len(bind9ConfPath) > 0 {
 			log.Infof("Found BIND 9 config file in %s based on output of `named -V`.", bind9ConfPath)
 		}
