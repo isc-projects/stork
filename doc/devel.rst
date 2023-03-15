@@ -172,7 +172,7 @@ They can be run using Rake:
 
           $ rake unittest:backend
 
-This requires running a PostgreSQL server.
+This requires preparing a database in PostgreSQL.
 
 One way to avoid doing this manually is by using a Docker container with PostgreSQL,
 which is automatically created when running the following Rake task:
@@ -184,6 +184,13 @@ which is automatically created when running the following Rake task:
 This task spawns a container with PostgreSQL in the background, which
 then runs unit tests. When the tests are completed, the database is
 shut down and removed.
+
+A subset of tests can be run using ``TEST`` variable. This is a wildcard pattern
+that must match (case-sensitive) with test names. For example, to run many BIND
+related tests, one can run: ``rake unittest:backend TEST=Bind``. Another way to
+run a subset of tests is to use ``SCOPE`` variable, which specified which
+package to use. This is a directory related to ``backend/``. For example, to run
+all agent tests, one can run: ``rake unittest:backend SCOPE=./agent``.
 
 Unit Tests Database
 -------------------
@@ -476,7 +483,7 @@ contain at least major and minor components.
 Similarly, to run test cases with a specific BIND9 version, provide it in the BIND9_VERSION variable:
 
 .. code-block:: console
-    
+
     $ rake systemtest BIND9_VERSION=9.16
 
 Expected version format is: ``MAJOR.MINOR``.
@@ -991,11 +998,11 @@ It specifies a title and the main component of the story.
 The declaration of the ``moduleMetadata`` decorator is the key part of the file.
 It contains all related modules, components, and services. It should have similar
 content to the dictionary passed to the ``TestBed.configureTestingModule`` in a
-``.spec.ts`` file.  
+``.spec.ts`` file.
 The ``imports`` list should contain all used PrimeNG modules (including these
 from the sub-components) and Angular modules. Unlike in unit tests, you can
 use the standard Angular modules instead of the testing modules. Especially:
-    
+
     - ``HttpClientModule`` instead of ``HttpClientTestingModule`` to work with the HTTP mocks.
     - ``BrowserAnimationsModule`` instead of ``NoopAnimationsModule`` to enable animations.
 
@@ -1057,7 +1064,7 @@ Toast messages
 The Stork components often use ``MessageService`` to present temporary messages
 to the user. The messages are passed into a dedicated, top-level component
 responsible for displaying them as temporary rectangles (so-called toasts) in
-the upper right corner.  
+the upper right corner.
 Due to this, the top-level component is associated with no particular component
 and does not exist in the isolated Storybook environment.
 As a result, the toasts are not presented.
@@ -1069,7 +1076,7 @@ component to handle toasts and ensures they are correctly displayed.
 First, you need to import the decorator:
 
 .. code-block:: typescript
-    
+
     import { toastDecorator } from '../utils.stories'
 
 and append it to the ``decorators`` property of the metadata object:
