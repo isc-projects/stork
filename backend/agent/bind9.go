@@ -136,7 +136,7 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 //		secret "OmItW1lOyLVUEuvv+Fme+Q==";
 //	};
 func getRndcKey(contents, name string) (controlKey string) {
-	pattern := regexp.MustCompile(`(?s)keys\s+\"(\S+)\"\s+\{(.*)\}\s*;`)
+	pattern := regexp.MustCompile(`(?s)key\s+\"(\S+)\"\s+\{(.*?)\}\s*;`)
 	keys := pattern.FindAllStringSubmatch(contents, -1)
 	if len(keys) == 0 {
 		return ""
