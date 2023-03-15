@@ -1,8 +1,8 @@
 # coding: utf-8
 
-# Build 
+# Build
 # This file is responsible for building (compiling)
-# the binaries and other artifacts (docs, bundles). 
+# the binaries and other artifacts (docs, bundles).
 
 #####################
 ### Documentation ###
@@ -29,6 +29,14 @@ file SERVER_MAN_FILE => [TOOL_MAN_FILE]
 
 man_files = FileList[SERVER_MAN_FILE, AGENT_MAN_FILE, TOOL_MAN_FILE]
 CLEAN.append *man_files
+
+DEV_GUIDE_DIRECTORY = "doc/_build-dev"
+file DEV_GUIDE_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
+    sh SPHINX_BUILD, "-M", "html", "doc/dev", "doc/_build-dev", "-v", "-E", "-a", "-W", "-j", "2"
+    sh "touch", "-c", DEV_GUIDE_DIRECTORY
+end
+CLEAN.append DEV_GUIDE_DIRECTORY
+
 
 ################
 ### Frontend ###
@@ -155,6 +163,9 @@ namespace :build do
     desc "Build Stork documentation from sources"
     task :doc => man_files + [ARM_DIRECTORY]
 
+    desc "Build Stork Developer's guide from sources"
+    task :devguide => [DEV_GUIDE_DIRECTORY]
+
     desc "Build Stork Server from sources"
     task :server => [SERVER_BINARY_FILE]
 
@@ -185,7 +196,7 @@ namespace :rebuild do
         sh "touch", "-c", "doc"
         Rake::Task["build:doc"].invoke()
     end
-  
+
     desc "Rebuild Stork Server from sources"
     task :server do
         sh "touch", "-c", "backend/cmd/stork-server"
@@ -244,7 +255,7 @@ namespace :prepare do
     desc 'Install the external dependencies related to the build'
     task :build do
         find_and_prepare_deps(__FILE__)
-    end 
+    end
 end
 
 namespace :check do
