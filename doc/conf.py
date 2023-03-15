@@ -70,7 +70,7 @@ language = "en"
 pygments_style = None
 
 # The Developer's guide is built separately in its own dir.
-exclude_patterns = [ 'devel/*' ]
+exclude_patterns = [ 'dev/*' ]
 
 
 # -- Options for HTML output -------------------------------------------------
