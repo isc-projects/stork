@@ -24,3 +24,4 @@ for Stork, can be found on ISC's `Stork project homepage
    :maxdepth: 5
 
    devel
+   editor-vscode
