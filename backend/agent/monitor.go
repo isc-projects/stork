@@ -161,6 +161,9 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 				if acPtNew.UseSecureProtocol != acPtOld.UseSecureProtocol {
 					continue
 				}
+				if acPtNew.Key != acPtOld.Key {
+					continue
+				}
 			}
 			found = true
 		}
@@ -175,10 +178,11 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
 				url := storkutil.HostWithPortURL(acPt.Address, acPt.Port, acPt.UseSecureProtocol)
-				s := fmt.Sprintf("%s: %s", acPt.Type, url)
+				s := fmt.Sprintf("%s: %s (key: %t)", acPt.Type, url, acPt.Key != "")
 				acPts = append(acPts, s)
 			}
-			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
+			log.
+				Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
 		}
 	} else if len(oldApps) == 0 {
 		// Agent is starting up but no app to monitor has been detected.
