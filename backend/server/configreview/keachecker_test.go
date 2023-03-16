@@ -2022,10 +2022,10 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 5, overlaps[0].parent.GetID())
-	require.EqualValues(t, 6, overlaps[0].child.GetID())
-	require.EqualValues(t, 10, overlaps[1].parent.GetID())
-	require.EqualValues(t, 9, overlaps[1].child.GetID())
+	require.EqualValues(t, 10, overlaps[0].parent.GetID())
+	require.EqualValues(t, 9, overlaps[0].child.GetID())
+	require.EqualValues(t, 8, overlaps[1].parent.GetID())
+	require.EqualValues(t, 7, overlaps[1].child.GetID())
 }
 
 // Test that the searching for overlaps is stopped if the limit of overlapping
@@ -2088,10 +2088,10 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 5, overlaps[0].parent.GetID())
-	require.EqualValues(t, 6, overlaps[0].child.GetID())
-	require.EqualValues(t, 7, overlaps[1].parent.GetID())
-	require.EqualValues(t, 8, overlaps[1].child.GetID())
+	require.EqualValues(t, 7, overlaps[0].parent.GetID())
+	require.EqualValues(t, 8, overlaps[0].child.GetID())
+	require.EqualValues(t, 5, overlaps[1].parent.GetID())
+	require.EqualValues(t, 6, overlaps[1].child.GetID())
 }
 
 // Test that error is generated for non-DHCP daemon.

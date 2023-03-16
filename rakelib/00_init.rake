@@ -401,7 +401,7 @@ openbsd_system = OS == "OpenBSD"
 any_system = true
 
 ### Define package versions
-go_ver='1.18.8'
+go_ver='1.19.7'
 openapi_generator_ver='5.2.0'
 goswagger_ver='v0.23.0'
 protoc_ver='3.20.3'
