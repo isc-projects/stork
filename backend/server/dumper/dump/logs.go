@@ -7,6 +7,7 @@ import (
 
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
+	storkutil "isc.org/stork/util"
 )
 
 // The dump of all fetchable logs of the monitored apps.
@@ -66,10 +67,10 @@ func (d *LogsDump) Execute() error {
 						Address:  d.machine.Address,
 						Hostname: d.machine.State.Hostname,
 					},
-					AppID:           app.ID,
-					AppName:         app.Name,
-					AppType:         app.Type.String(),
-					LogTargetOutput: logTarget.Output,
+					AppID:           storkutil.Ptr(app.ID),
+					AppName:         storkutil.Ptr(app.Name),
+					AppType:         storkutil.Ptr(app.Type.String()),
+					LogTargetOutput: storkutil.Ptr(logTarget.Output),
 					Contents:        contents,
 					Error:           errStr,
 				}

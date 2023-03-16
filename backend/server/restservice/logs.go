@@ -12,6 +12,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
+	storkutil "isc.org/stork/util"
 )
 
 // Get tail of the specified log file.
@@ -71,10 +72,10 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 			Address:  dbLogTarget.Daemon.App.Machine.Address,
 			Hostname: dbLogTarget.Daemon.App.Machine.State.Hostname,
 		},
-		AppID:           dbLogTarget.Daemon.App.ID,
-		AppName:         dbLogTarget.Daemon.App.Name,
-		AppType:         dbLogTarget.Daemon.App.Type.String(),
-		LogTargetOutput: dbLogTarget.Output,
+		AppID:           storkutil.Ptr(dbLogTarget.Daemon.App.ID),
+		AppName:         storkutil.Ptr(dbLogTarget.Daemon.App.Name),
+		AppType:         storkutil.Ptr(dbLogTarget.Daemon.App.Type.String()),
+		LogTargetOutput: storkutil.Ptr(dbLogTarget.Output),
 		Contents:        contents,
 		Error:           errStr,
 	}

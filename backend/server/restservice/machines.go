@@ -71,7 +71,7 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 		VirtualizationSystem:     dbMachine.State.VirtualizationSystem,
 		VirtualizationRole:       dbMachine.State.VirtualizationRole,
 		HostID:                   dbMachine.State.HostID,
-		AgentUsesHTTPCredentials: &dbMachine.State.AgentUsesHTTPCredentials,
+		AgentUsesHTTPCredentials: dbMachine.State.AgentUsesHTTPCredentials,
 		LastVisitedAt:            strfmt.DateTime(dbMachine.LastVisitedAt),
 		Error:                    dbMachine.Error,
 		Apps:                     apps,

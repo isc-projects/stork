@@ -13,6 +13,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
+	storkutil "isc.org/stork/util"
 )
 
 // Get daemon config. Only Kea daemon supported.
@@ -220,11 +221,11 @@ func convertConfigCheckerMetadataToRestAPI(metadata []*configreview.CheckerMetad
 		}
 
 		checkers[i] = &models.ConfigChecker{
-			Name:            m.Name,
+			Name:            storkutil.Ptr(m.Name),
 			Selectors:       selectors,
 			State:           m.State,
 			Triggers:        triggers,
-			GloballyEnabled: m.GloballyEnabled,
+			GloballyEnabled: storkutil.Ptr(m.GloballyEnabled),
 		}
 	}
 

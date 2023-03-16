@@ -950,13 +950,13 @@ func TestConvertConfigCheckerMetadataToRestAPI(t *testing.T) {
 	require.Len(t, payload.Items, 1)
 	require.EqualValues(t, 1, payload.Total)
 	apiMetadata := payload.Items[0]
-	require.EqualValues(t, "foo", apiMetadata.Name)
+	require.EqualValues(t, "foo", *apiMetadata.Name)
 	require.Contains(t, apiMetadata.Triggers, "manual")
 	require.Contains(t, apiMetadata.Triggers, "config change")
 	require.Contains(t, apiMetadata.Selectors, "bind9-daemon")
 	require.Contains(t, apiMetadata.Selectors, "kea-dhcp-daemon")
 	require.EqualValues(t, "enabled", apiMetadata.State)
-	require.True(t, apiMetadata.GloballyEnabled)
+	require.True(t, *apiMetadata.GloballyEnabled)
 }
 
 // Test that the config checker state is properly converted from the REST API enum.
@@ -1102,7 +1102,7 @@ func TestPutNewGlobalConfigCheckerPreferences(t *testing.T) {
 	okRsp := rsp.(*services.GetDaemonConfigCheckersOK)
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.EqualValues(t, "bar", okRsp.Payload.Items[0].Name)
+	require.EqualValues(t, "bar", *okRsp.Payload.Items[0].Name)
 	preferences, _ := dbmodel.GetCheckerPreferences(db, 0)
 	require.Len(t, preferences, 1)
 	require.EqualValues(t, "bar", preferences[0].CheckerName)
@@ -1206,7 +1206,7 @@ func TestPutDaemonConfigCheckerPreferencesAPIResponse(t *testing.T) {
 	okRsp := rsp.(*services.PutDaemonConfigCheckerPreferencesOK)
 	require.NotNil(t, okRsp)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.EqualValues(t, "foo", okRsp.Payload.Items[0].Name)
+	require.EqualValues(t, "foo", *okRsp.Payload.Items[0].Name)
 	require.EqualValues(t, "enabled", okRsp.Payload.Items[0].State)
 }
 
@@ -1336,9 +1336,9 @@ func TestPutDaemonConfigCheckerPreferencesUpdate(t *testing.T) {
 	require.IsType(t, &services.PutDaemonConfigCheckerPreferencesOK{}, rsp2)
 	okRsp := rsp2.(*services.PutDaemonConfigCheckerPreferencesOK)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
-	require.EqualValues(t, "baz", okRsp.Payload.Items[0].Name)
+	require.EqualValues(t, "baz", *okRsp.Payload.Items[0].Name)
 	require.EqualValues(t, "enabled", okRsp.Payload.Items[0].State)
-	require.EqualValues(t, "foo", okRsp.Payload.Items[1].Name)
+	require.EqualValues(t, "foo", *okRsp.Payload.Items[1].Name)
 	require.EqualValues(t, "disabled", okRsp.Payload.Items[1].State)
 	preferences, _ := dbmodel.GetCheckerPreferences(db, daemon.ID)
 	require.Len(t, preferences, 2)

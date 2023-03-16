@@ -223,7 +223,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
+	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil || p == nil {
 		log.Warn("Failed to create new user account: missing data")
 
 		msg := "Failed to create new user account: missing data"
@@ -238,7 +238,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Email:    *u.Email,
 		Lastname: *u.Lastname,
 		Name:     *u.Name,
-		Password: string(p),
+		Password: string(*p),
 	}
 
 	for _, gid := range u.Groups {
@@ -286,7 +286,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
+	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil || p == nil {
 		log.Warn("Failed to update user account: missing data")
 
 		msg := "Failed to update user account: missing data"
@@ -302,7 +302,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Email:    *u.Email,
 		Lastname: *u.Lastname,
 		Name:     *u.Name,
-		Password: string(p),
+		Password: string(*p),
 	}
 
 	for _, gid := range u.Groups {
@@ -419,7 +419,7 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
 	id := int(params.ID)
 	passwords := params.Passwords
-	if passwords == nil {
+	if passwords == nil || passwords.Newpassword == nil || passwords.Oldpassword == nil {
 		log.Warnf("Failed to update password for user ID %d: missing data", id)
 
 		msg := "Failed to update password for user: missing data"
@@ -433,8 +433,8 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	// Try to change the password for the given user id. Including old password
 	// for verification and the new password which will only be set if this
 	// verification is successful.
-	auth, err := dbmodel.ChangePassword(r.DB, id, string(passwords.Oldpassword),
-		string(passwords.Newpassword))
+	auth, err := dbmodel.ChangePassword(r.DB, id, string(*passwords.Oldpassword),
+		string(*passwords.Newpassword))
 
 	// Error is returned when something went wrong with the database communication
 	// or something similar. The error is not returned when the current password

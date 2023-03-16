@@ -11,6 +11,7 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
 	"isc.org/stork/server/hookmanager"
+	storkutil "isc.org/stork/util"
 )
 
 // Tests that create user account without necessary fields is rejected via REST API.
@@ -31,7 +32,7 @@ func TestCreateUserConflict(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: models.Password("pass"),
+			Password: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 
@@ -118,7 +119,7 @@ func TestCreateUser(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: models.Password("pass"),
+			Password: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 
@@ -536,13 +537,13 @@ func TestUpdateUserInvalidUserID(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// An attempt to update non-existing user (non macthing ID) should
+	// An attempt to update non-existing user (non matching ID) should
 	// result in an error 409.
 	su.ID = 123
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: models.Password("pass"),
+			Password: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 	rsp := rapi.UpdateUser(ctx, params)
@@ -577,7 +578,7 @@ func TestUpdateUser(t *testing.T) {
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: models.Password("pass"),
+			Password: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 	rsp := rapi.UpdateUser(ctx, params)
@@ -594,7 +595,7 @@ func TestUpdateUser(t *testing.T) {
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: models.Password("pass"),
+			Password: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 	rsp = rapi.UpdateUser(ctx, params)
@@ -658,8 +659,8 @@ func TestUpdateUserPassword(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: models.Password("updated"),
-			Oldpassword: models.Password("pass"),
+			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 	rsp := rapi.UpdateUserPassword(ctx, params)
@@ -671,8 +672,8 @@ func TestUpdateUserPassword(t *testing.T) {
 	params = users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: models.Password("updated"),
-			Oldpassword: models.Password("pass"),
+			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
 	rsp = rapi.UpdateUserPassword(ctx, params)

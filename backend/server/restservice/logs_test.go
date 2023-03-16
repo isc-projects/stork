@@ -70,10 +70,10 @@ func TestGetLogTail(t *testing.T) {
 	// Make sure that all values have been set correctly.
 	require.Equal(t, "localhost", okRsp.Machine.Address)
 	require.EqualValues(t, m.ID, okRsp.Machine.ID)
-	require.EqualValues(t, a.ID, okRsp.AppID)
-	require.Equal(t, a.Type.String(), okRsp.AppType)
-	require.Equal(t, a.Name, okRsp.AppName)
-	require.Equal(t, "/tmp/filename.log", okRsp.LogTargetOutput)
+	require.EqualValues(t, a.ID, *okRsp.AppID)
+	require.Equal(t, a.Type.String(), *okRsp.AppType)
+	require.Equal(t, a.Name, *okRsp.AppName)
+	require.Equal(t, "/tmp/filename.log", *okRsp.LogTargetOutput)
 	require.Len(t, okRsp.Contents, 1)
 	require.Equal(t, "lorem ipsum", okRsp.Contents[0])
 }
