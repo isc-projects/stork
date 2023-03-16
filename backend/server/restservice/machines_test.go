@@ -232,11 +232,11 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	fa.MachineState = &agentcomm.State{
 		Apps: []*agentcomm.App{
 			{
-				Type:         dbmodel.AppTypeKea,
+				Type:         dbmodel.AppTypeKea.String(),
 				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 123),
 			},
 			{
-				Type:         dbmodel.AppTypeBind9,
+				Type:         dbmodel.AppTypeBind9.String(),
 				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
 			},
 		},
@@ -250,8 +250,8 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
 	require.Len(t, okRsp.Payload.Apps, 2)
-	require.Equal(t, dbmodel.AppTypeKea, okRsp.Payload.Apps[0].Type)
-	require.Equal(t, dbmodel.AppTypeBind9, okRsp.Payload.Apps[1].Type)
+	require.Equal(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Apps[0].Type)
+	require.Equal(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Apps[1].Type)
 }
 
 func TestCreateMachine(t *testing.T) {
@@ -1097,7 +1097,7 @@ func TestRestGetApps(t *testing.T) {
 	// to see where those counters are set.
 	require.Len(t, okRsp.Payload.Items, 2)
 	for _, app := range okRsp.Payload.Items {
-		if app.Type == dbmodel.AppTypeKea {
+		if app.Type == dbmodel.AppTypeKea.String() {
 			require.Equal(t, "fancy-app", app.Name)
 			appKea := app.Details.AppKea
 			require.Len(t, appKea.Daemons, 1)
@@ -1109,7 +1109,7 @@ func TestRestGetApps(t *testing.T) {
 			require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
 			require.Equal(t, "debug", daemon.LogTargets[0].Severity)
 			require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
-		} else if app.Type == dbmodel.AppTypeBind9 {
+		} else if app.Type == dbmodel.AppTypeBind9.String() {
 			require.Equal(t, "another-fancy-app", app.Name)
 			appBind9 := app.Details.AppBind9
 			daemon := appBind9.Daemon

@@ -8,6 +8,7 @@ import (
 
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/apps/kea"
 	appstest "isc.org/stork/server/apps/test"
@@ -367,7 +368,7 @@ func TestLockUnlock(t *testing.T) {
 }
 
 // Test that the commit call is routed to the Kea module when the
-// transaction target is "kea".
+// transaction target is dbmodel.AppTypeKea.
 func TestCommitKeaModule(t *testing.T) {
 	manager := NewManager(&appstest.ManagerAccessorsWrapper{})
 	require.NotNil(t, manager)
@@ -385,7 +386,7 @@ func TestCommitKeaModule(t *testing.T) {
 	// Create a new transaction with Kea.
 	state := config.TransactionState[kea.ConfigRecipe]{
 		Updates: []*config.Update[kea.ConfigRecipe]{
-			config.NewUpdate[kea.ConfigRecipe]("kea", "host_add"),
+			config.NewUpdate[kea.ConfigRecipe](datamodel.AppTypeKea, "host_add"),
 		},
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
@@ -455,21 +456,21 @@ func TestCommitDue(t *testing.T) {
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "host_add"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "host_add"),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "config_edit"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "config_edit"),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "host_edit"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "host_edit"),
 			},
 		},
 	}
@@ -544,14 +545,14 @@ func TestCommitDueErrors(t *testing.T) {
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "host_add"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "host_add"),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "config_edit"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "config_edit"),
 			},
 		},
 	}
@@ -611,7 +612,7 @@ func TestDeleteUserDropDueChanges(t *testing.T) {
 			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
 			UserID:     int64(user.ID),
 			Updates: []*dbmodel.ConfigUpdate{
-				dbmodel.NewConfigUpdate("kea", "config_edit"),
+				dbmodel.NewConfigUpdate(dbmodel.AppTypeKea, "config_edit"),
 			},
 		},
 	}
@@ -710,7 +711,7 @@ func TestSchedule(t *testing.T) {
 	// Create the state.
 	state := config.TransactionState[kea.ConfigRecipe]{
 		Updates: []*config.Update[kea.ConfigRecipe]{
-			config.NewUpdate[kea.ConfigRecipe]("kea", "host_add"),
+			config.NewUpdate[kea.ConfigRecipe](dbmodel.AppTypeKea, "host_add"),
 		},
 	}
 	// Store the app in the state/context.
@@ -731,7 +732,7 @@ func TestSchedule(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, changes, 1)
 	require.Len(t, changes[0].Updates, 1)
-	require.Equal(t, "kea", changes[0].Updates[0].Target)
+	require.Equal(t, dbmodel.AppTypeKea, changes[0].Updates[0].Target)
 	require.Equal(t, "host_add", changes[0].Updates[0].Operation)
 	require.NotNil(t, changes[0].Updates[0].Recipe)
 

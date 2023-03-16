@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	kea "isc.org/stork/server/apps/kea"
@@ -49,12 +50,12 @@ func TestStatePullerPullData(t *testing.T) {
 	fa.MachineState = &agentcomm.State{
 		Apps: []*agentcomm.App{
 			{
-				Type: dbmodel.AppTypeKea,
+				Type: datamodel.AppTypeKea.String(),
 				// access point is changing from 1.1.1.1 to 1.2.3.4
 				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 1234),
 			},
 			{
-				Type:         dbmodel.AppTypeBind9,
+				Type:         datamodel.AppTypeBind9.String(),
 				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
 			},
 		},

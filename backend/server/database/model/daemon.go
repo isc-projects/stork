@@ -221,7 +221,7 @@ type DaemonTag interface {
 	GetID() int64
 	GetName() string
 	GetAppID() int64
-	GetAppType() string
+	GetAppType() AppType
 	GetMachineID() *int64
 }
 
@@ -596,7 +596,7 @@ func (d Daemon) GetAppID() int64 {
 }
 
 // Returns type of an app owning the daemon.
-func (d Daemon) GetAppType() (apptype string) {
+func (d Daemon) GetAppType() (apptype AppType) {
 	switch {
 	case d.App != nil:
 		apptype = d.App.Type

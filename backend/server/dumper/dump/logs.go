@@ -68,7 +68,7 @@ func (d *LogsDump) Execute() error {
 					},
 					AppID:           app.ID,
 					AppName:         app.Name,
-					AppType:         app.Type,
+					AppType:         app.Type.String(),
 					LogTargetOutput: logTarget.Output,
 					Contents:        contents,
 					Error:           errStr,

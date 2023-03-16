@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel"
 )
 
 // Test creating new config update instance.
 func TestNewUpdate(t *testing.T) {
-	cu := NewUpdate[any]("kea", "host_add", 1, 2, 3)
+	cu := NewUpdate[any](datamodel.AppTypeKea, "host_add", 1, 2, 3)
 	require.NotNil(t, cu)
-	require.Equal(t, "kea", cu.Target)
+	require.Equal(t, datamodel.AppTypeKea, cu.Target)
 	require.Equal(t, "host_add", cu.Operation)
 	require.Len(t, cu.DaemonIDs, 3)
 	require.Contains(t, cu.DaemonIDs, int64(1))
@@ -20,11 +21,11 @@ func TestNewUpdate(t *testing.T) {
 
 // Test creating new transaction state instance with one update instance.
 func TestNewTransactionStateWithUpdate(t *testing.T) {
-	state := NewTransactionStateWithUpdate[any]("keax", "host_update", 2, 3)
+	state := NewTransactionStateWithUpdate[any](datamodel.AppTypeKea, "host_update", 2, 3)
 	require.NotNil(t, state)
 	require.Len(t, state.Updates, 1)
 	cu := state.Updates[0]
-	require.Equal(t, "keax", cu.Target)
+	require.Equal(t, datamodel.AppTypeKea, cu.Target)
 	require.Equal(t, "host_update", cu.Operation)
 	require.Len(t, cu.DaemonIDs, 2)
 	require.Contains(t, cu.DaemonIDs, int64(2))
@@ -37,7 +38,7 @@ func TestSetRecipeForUpdate(t *testing.T) {
 		Updates: []*Update[testRecipe]{},
 	}
 	for i := 0; i < 5; i++ {
-		update := NewUpdate[testRecipe]("kea", "host_update", int64(i))
+		update := NewUpdate[testRecipe](datamodel.AppTypeKea, "host_update", int64(i))
 		state.Updates = append(state.Updates, update)
 	}
 	recipe := testRecipe{
@@ -74,7 +75,7 @@ func TestGetUpdates(t *testing.T) {
 		Updates: []*Update[testRecipe]{},
 	}
 	for i := 0; i < 5; i++ {
-		update := NewUpdate[testRecipe]("kea", "host_update", int64(i))
+		update := NewUpdate[testRecipe](datamodel.AppTypeKea, "host_update", int64(i))
 		update.Recipe = testRecipe{
 			param: "foo",
 		}
@@ -83,7 +84,7 @@ func TestGetUpdates(t *testing.T) {
 	anyUpdates := state.GetUpdates()
 	require.Len(t, anyUpdates, 5)
 	for i, u := range anyUpdates {
-		require.Equal(t, "kea", u.Target)
+		require.Equal(t, datamodel.AppTypeKea, u.Target)
 		require.Equal(t, "host_update", u.Operation)
 		require.Len(t, u.DaemonIDs, 1)
 		require.EqualValues(t, i, u.DaemonIDs[0])

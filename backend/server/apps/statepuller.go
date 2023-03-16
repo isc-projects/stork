@@ -106,7 +106,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 // their type matches and if they have the same control port.  Return true if
 // equal, false otherwise.
 func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
-	if dbApp.Type != app.Type {
+	if dbApp.Type.String() != app.Type {
 		return false
 	}
 
@@ -162,9 +162,9 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 	newKeaAppsCnt := 0
 	newBind9AppsCnt := 0
 	for _, app := range discoveredApps {
-		if app.Type == dbmodel.AppTypeKea {
+		if app.Type == dbmodel.AppTypeKea.String() {
 			newKeaAppsCnt++
-		} else if app.Type == dbmodel.AppTypeBind9 {
+		} else if app.Type == dbmodel.AppTypeBind9.String() {
 			newBind9AppsCnt++
 		}
 	}
@@ -182,8 +182,8 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 			// we assume that this is the same app. If there are more apps of a given type than used to be,
 			// or there are less apps than it used to be we have to compare their access control information
 			// to identify matching ones.
-			if (app.Type == dbmodel.AppTypeKea && dbAppOld.Type == dbmodel.AppTypeKea && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) ||
-				(app.Type == dbmodel.AppTypeBind9 && dbAppOld.Type == dbmodel.AppTypeBind9 && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) ||
+			if (app.Type == dbmodel.AppTypeKea.String() && dbAppOld.Type.IsKea() && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) ||
+				(app.Type == dbmodel.AppTypeBind9.String() && dbAppOld.Type.IsBind9() && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) ||
 				appCompare(dbAppOld, app) {
 				dbApp = dbAppOld
 				matchedApps = append(matchedApps, dbApp)
@@ -196,7 +196,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 				ID:        0,
 				MachineID: dbMachine.ID,
 				Machine:   dbMachine,
-				Type:      app.Type,
+				Type:      dbmodel.AppType(app.Type),
 			}
 		} else {
 			dbApp.Machine = dbMachine

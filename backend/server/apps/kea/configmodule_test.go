@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/datamodel"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	appstest "isc.org/stork/server/apps/test"
@@ -146,7 +147,7 @@ func TestBeginHostAdd(t *testing.T) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.Len(t, state.Updates, 1)
-	require.Equal(t, "kea", state.Updates[0].Target)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
 	require.Equal(t, "host_add", state.Updates[0].Operation)
 }
 
@@ -160,7 +161,7 @@ func TestApplyHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Simulate submitting new host entry. The host is associated with
@@ -219,7 +220,7 @@ func TestApplyHostAdd(t *testing.T) {
 	update := state.Updates[0]
 
 	// Basic validation of the retrieved state.
-	require.Equal(t, "kea", update.Target)
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
 	require.Equal(t, "host_add", update.Operation)
 	require.NotNil(t, update.Recipe)
 
@@ -283,7 +284,7 @@ func TestCommitHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Create new host reservation and store it in the context.
@@ -386,7 +387,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Create new host reservation and store it in the context.
@@ -472,7 +473,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 
 	// Transaction state is required because typically it is created by the
 	// BeginHostAdd function.
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_add")
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Set user id in the context.
@@ -584,7 +585,7 @@ func TestBeginHostUpdate(t *testing.T) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.Len(t, state.Updates, 1)
-	require.Equal(t, "kea", state.Updates[0].Target)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
 	require.Equal(t, "host_update", state.Updates[0].Operation)
 	require.NotNil(t, state.Updates[0].Recipe.HostBeforeUpdate)
 }
@@ -645,7 +646,7 @@ func TestApplyHostUpdate(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
 		HostBeforeUpdate: host,
 	}
@@ -708,7 +709,7 @@ func TestApplyHostUpdate(t *testing.T) {
 	update := stateReturned.Updates[0]
 
 	// Basic validation of the retrieved state.
-	require.Equal(t, "kea", update.Target)
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
 	require.Equal(t, "host_update", update.Operation)
 	require.NotNil(t, update.Recipe)
 	require.NotNil(t, update.Recipe.HostBeforeUpdate)
@@ -819,7 +820,7 @@ func TestCommitHostUpdate(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
 		HostBeforeUpdate: host,
 	}
@@ -935,7 +936,7 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
 		HostBeforeUpdate: host,
 	}
@@ -1021,7 +1022,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
 
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
 		HostBeforeUpdate: host,
 	}
@@ -1157,7 +1158,7 @@ func TestApplyHostDelete(t *testing.T) {
 	update := state.Updates[0]
 
 	// Basic validation of the retrieved state.
-	require.Equal(t, "kea", update.Target)
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
 	require.Equal(t, "host_delete", update.Operation)
 	require.NotNil(t, update.Recipe)
 

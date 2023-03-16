@@ -12,6 +12,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
+	"isc.org/stork/datamodel"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
@@ -340,7 +341,7 @@ func (manager *configManagerImpl) Commit(ctx context.Context) (context.Context, 
 	var err error
 	for _, pu := range state.GetUpdates() {
 		switch pu.Target {
-		case "kea":
+		case datamodel.AppTypeKea:
 			// Kea configuration update. Route the call to Kea module.
 			ctx, err = manager.keaCommit.Commit(ctx)
 		default:

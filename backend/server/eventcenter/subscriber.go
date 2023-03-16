@@ -134,7 +134,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 		// Find an app matching the type.
 		var app *dbmodel.App
 		for i := range machineApps {
-			if machineApps[i].Type == appType[0] {
+			if machineApps[i].Type.String() == appType[0] {
 				f.AppID = machineApps[i].ID
 				app = machineApps[i]
 				break

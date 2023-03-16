@@ -8,13 +8,17 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/datamodel"
 	dbops "isc.org/stork/server/database"
 )
 
+// A short for datamodel.AppType.
+type AppType = datamodel.AppType
+
 // Currently supported types are: "kea" and "bind9".
 const (
-	AppTypeKea   = "kea"
-	AppTypeBind9 = "bind9"
+	AppTypeKea   = datamodel.AppTypeKea
+	AppTypeBind9 = datamodel.AppTypeBind9
 )
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.
@@ -29,7 +33,7 @@ type App struct {
 	CreatedAt time.Time
 	MachineID int64
 	Machine   *Machine `pg:"rel:has-one"`
-	Type      string   // currently supported types are: "kea" and "bind9"
+	Type      AppType  // currently supported types are: "kea" and "bind9"
 	Active    bool
 	Meta      AppMeta
 	Name      string
@@ -44,7 +48,7 @@ type App struct {
 type AppTag interface {
 	GetID() int64
 	GetName() string
-	GetType() string
+	GetType() AppType
 	GetVersion() string
 	GetMachineID() int64
 }
@@ -356,7 +360,7 @@ func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 }
 
 // Fetches all apps by type including the corresponding services.
-func GetAppsByType(dbi dbops.DBI, appType string) ([]App, error) {
+func GetAppsByType(dbi dbops.DBI, appType AppType) ([]App, error) {
 	var apps []App
 
 	q := dbi.Model(&apps)
@@ -388,7 +392,7 @@ func GetAppsByType(dbi dbops.DBI, appType string) ([]App, error) {
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
+func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string, appType AppType, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
@@ -520,7 +524,7 @@ func (app App) GetName() string {
 }
 
 // Returns app type.
-func (app App) GetType() string {
+func (app App) GetType() AppType {
 	return app.Type
 }
 

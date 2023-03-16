@@ -7,6 +7,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
+	"isc.org/stork/datamodel"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -29,7 +30,7 @@ type TransactionStateAccessor interface {
 // app types.
 type Update[T any] struct {
 	// Type of the configured daemon, e.g. "kea".
-	Target string
+	Target datamodel.AppType
 	// Type of the operation to perform, e.g. "host_add".
 	Operation string
 	// Identifiers of the daemons affected by the update. For example,
@@ -135,18 +136,17 @@ func (state TransactionState[T]) GetUpdates() (updates []*Update[any]) {
 }
 
 // Creates new config update instance.
-func NewUpdate[T any](target, operation string, daemonIDs ...int64) *Update[T] {
+func NewUpdate[T any](target datamodel.AppType, operation string, daemonIDs ...int64) *Update[T] {
 	return &Update[T]{
 		Target:    target,
 		Operation: operation,
 		DaemonIDs: daemonIDs,
-		//		Recipe:    T{},
 	}
 }
 
 // Creates new transaction state with one config update instance. It is
 // the most typical use case.
-func NewTransactionStateWithUpdate[T any](target, operation string, daemonIDs ...int64) *TransactionState[T] {
+func NewTransactionStateWithUpdate[T any](target datamodel.AppType, operation string, daemonIDs ...int64) *TransactionState[T] {
 	update := NewUpdate[T](target, operation, daemonIDs...)
 	state := &TransactionState[T]{}
 	state.Updates = append(state.Updates, update)

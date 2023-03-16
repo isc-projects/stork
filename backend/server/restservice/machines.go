@@ -810,7 +810,7 @@ func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := &models.App{
 		ID:      dbApp.ID,
 		Name:    dbApp.Name,
-		Type:    dbApp.Type,
+		Type:    dbApp.Type.String(),
 		Version: dbApp.Meta.Version,
 		Machine: &models.AppMachine{
 			ID: dbApp.MachineID,
@@ -986,7 +986,7 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 }
 
 func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Apps, error) {
-	dbApps, total, err := dbmodel.GetAppsByPage(r.DB, offset, limit, filterText, appType, sortField, sortDir)
+	dbApps, total, err := dbmodel.GetAppsByPage(r.DB, offset, limit, filterText, dbmodel.AppType(appType), sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

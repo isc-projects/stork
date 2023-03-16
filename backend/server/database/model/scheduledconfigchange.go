@@ -35,7 +35,7 @@ type ScheduledConfigChange struct {
 // Represents a single config update belonging to a config change.
 type ConfigUpdate struct {
 	// Type of the configured daemon, e.g. "kea".
-	Target string
+	Target AppType
 	// Type of the operation to perform, e.g. "host_add".
 	Operation string
 	// Identifiers of the daemons affected by the update. For example,
@@ -59,7 +59,7 @@ func (c ScheduledConfigChange) HasKeaUpdates() bool {
 }
 
 // Creates new config update instance.
-func NewConfigUpdate(target, operation string, daemonIDs ...int64) *ConfigUpdate {
+func NewConfigUpdate(target AppType, operation string, daemonIDs ...int64) *ConfigUpdate {
 	return &ConfigUpdate{
 		Target:    target,
 		Operation: operation,

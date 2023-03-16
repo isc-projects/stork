@@ -73,7 +73,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 		},
 		AppID:           dbLogTarget.Daemon.App.ID,
 		AppName:         dbLogTarget.Daemon.App.Name,
-		AppType:         dbLogTarget.Daemon.App.Type,
+		AppType:         dbLogTarget.Daemon.App.Type.String(),
 		LogTargetOutput: dbLogTarget.Output,
 		Contents:        contents,
 		Error:           errStr,
