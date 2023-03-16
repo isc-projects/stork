@@ -1,3 +1,8 @@
+* 295 [bug] slawek
+
+    Fixed fetching the authorization keys from Bind 9 configuration.
+    (Gitlab #997)
+
 * 294 [build] slawek
 
     Changed the executable paths configured in the default SystemD service
