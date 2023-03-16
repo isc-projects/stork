@@ -612,14 +612,21 @@ end
 
 namespace :update do
     desc 'Update Angular
-    VERSION - target Angular version - required'
+    VERSION - target Angular version - required
+    FORCE - ignore warnings - optional, default: false'
     task :angular => [NPX] do
         version=ENV["VERSION"]
         if version.nil?
             fail "Provide VERSION variable"
         end
+
+        opts = []
+        if ENV["FORCE"] == "true"
+            opts.append "--force"
+        end
+
         Dir.chdir("webui") do
-            sh NPX, "ng", "update",
+            sh NPX, "ng", "update", *opts,
                 "@angular/core@#{version}",
                 "@angular/cli@#{version}"
         end
