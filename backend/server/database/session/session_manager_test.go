@@ -81,6 +81,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))
 	middlewareFunc.ServeHTTP(w, req)
 	resp := w.Result()
+	defer resp.Body.Close()
 	require.Equal(t, resp.StatusCode, 200)
 
 	// Check that the session cookie was set in the response.

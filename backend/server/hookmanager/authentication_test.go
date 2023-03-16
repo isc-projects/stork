@@ -12,7 +12,7 @@ import (
 )
 
 // Carrier mock interface for mockgen.
-type authenticationCalloutCarrier interface { //nolint:unused,deadcode
+type authenticationCalloutCarrier interface { //nolint:unused
 	authenticationcallouts.AuthenticationCallouts
 	hooks.CalloutCarrier
 }

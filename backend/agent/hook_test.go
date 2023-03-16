@@ -12,7 +12,7 @@ import (
 )
 
 // Carrier mock interface for mockgen.
-type beforeForwardToKeaOverHTTPCalloutCarrier interface { //nolint:unused,deadcode
+type beforeForwardToKeaOverHTTPCalloutCarrier interface { //nolint:unused
 	forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts
 	hooks.CalloutCarrier
 }

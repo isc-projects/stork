@@ -36,7 +36,7 @@ type KeaDHCPDaemonStats struct {
 // reflects the kea_dhcp_daemon table which extends the daemon and
 // kea_daemon tables with the Kea DHCPv4 or DHCPv6 specific information.
 type KeaDHCPDaemon struct {
-	tableName   struct{} `pg:"kea_dhcp_daemon"` //nolint:unused //,structcheck // ToDo: restore nolint declaration. Structcheck temporary doesn't support Go 1.18.
+	tableName   struct{} `pg:"kea_dhcp_daemon"` //nolint:unused
 	ID          int64
 	KeaDaemonID int64
 	Stats       KeaDHCPDaemonStats
