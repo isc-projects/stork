@@ -307,16 +307,18 @@ namespace :run do
         DB_TRACE - trace SQL queries - default: false"
     task :server_debug => [DLV, "db:setup_envvars", :pre_run_server] + GO_SERVER_CODEBASE do
         opts = []
+        debug_opts = []
         if ENV["HEADLESS"] == "true"
             opts = ["--headless", "-l", "0.0.0.0:45678"]
+            debug_opts.append "--continue"
         end
 
         Dir.chdir("backend/cmd/stork-server") do
             sh DLV, *opts, "debug",
-                "--continue",
                 "--accept-multiclient",
                 "--log",
-                "--api-version", "2"
+                "--api-version", "2",
+                *debug_opts
         end
     end
 
