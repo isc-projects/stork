@@ -412,11 +412,15 @@ end
 
 namespace :audit do
     desc 'Check the UI security issues.
-        FIX - fix the detected vulnerabilities - default: false'
+        FIX - fix the detected vulnerabilities - default: false
+        FORCE - allow for breaking changes - default: false'
     task :ui => [NPM] do
         opts = []
         if ENV["FIX"] == "true"
             opts.append "fix"
+            if ENV["FORCE"] == "true"
+                opts.append "--force"
+            end
         end
 
         Dir.chdir("webui") do
