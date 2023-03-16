@@ -1,3 +1,10 @@
+* 286 [func] marcin
+
+    Refactored the code pertaining to processing the Kea configuration in the
+    Stork server. It introduces no new user-visible functionality, but the
+    number of code changes is significant and thus noted in the ChangeLog.
+    (Gitlab #942)
+
 * 285 [bug] tomek
 
     BIND 9 detection code has been expanded and is now more robust. It now can
