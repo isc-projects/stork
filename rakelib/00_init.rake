@@ -414,9 +414,10 @@ dlv_ver='v1.20.1'
 gdlv_ver='v1.9.0'
 openapi_generator_ver='6.4.0'
 node_ver='18.15.0'
+npm_ver='9.6.2'
+storybook_ver='6.5.16'
 yamlinc_ver='0.1.10'
 bundler_ver='2.3.8'
-storybook_ver='6.5.15'
 shellcheck_ver='0.9.0'
 
 # System-dependent variables
@@ -690,19 +691,37 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
     sh DANGER, "--version"
 end
 
-npm = File.join(node_bin_dir, "npm")
-file npm => [TAR, WGET, node_dir] do
+node = File.join(node_bin_dir, "node")
+file node => [TAR, WGET, node_dir] do
     Dir.chdir(node_dir) do
         FileUtils.rm_rf(FileList["*"])
         fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "node.tar.xz"
         sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
         sh "rm", "node.tar.xz"
     end
+    sh "touch", "-c", node
+    sh node, "--version"
+end
+node = require_manual_install_on(node, libc_musl_system, freebsd_system, openbsd_system)
+add_version_guard(node, node_ver)
+
+npm = File.join(node_bin_dir, "npm")
+file npm => [node] do
+    ci_opts = []
+    if ENV["CI"] == "true"
+        ci_opts += ["--no-audit", "--no-progress"]
+    end
+
+    # NPM is inially installed with the NodeJS.
+    sh npm, "install",
+            "-g",
+            *ci_opts,
+            "npm@#{npm_ver}"
     sh "touch", "-c", npm
     sh npm, "--version"
 end
 NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
-add_version_guard(NPM, node_ver)
+add_version_guard(NPM, npm_ver)
 
 npx = File.join(node_bin_dir, "npx")
 file npx => [NPM] do

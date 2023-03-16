@@ -32,6 +32,7 @@ import { DHCPService } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ChipsModule } from 'primeng/chips'
 import { TableModule } from 'primeng/table'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -148,6 +149,7 @@ describe('HostFormComponent', () => {
                 SplitButtonModule,
                 TableModule,
                 ToggleButtonModule,
+                ProgressSpinnerModule,
             ],
             declarations: [
                 DhcpClientClassSetFormComponent,
@@ -288,8 +290,8 @@ describe('HostFormComponent', () => {
         expect(component.formGroup.get('selectedSubnet').valid).toBeTrue()
 
         component.formGroup.get('selectedSubnet').markAsTouched()
+        component.formGroup.get('selectedSubnet').markAsDirty()
         component.formGroup.get('selectedSubnet').setValue(null)
-        fixture.detectChanges()
         expect(component.formGroup.get('selectedSubnet').valid).toBeFalse()
 
         component.formGroup.get('selectedSubnet').markAsTouched()

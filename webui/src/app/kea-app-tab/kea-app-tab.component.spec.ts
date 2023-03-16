@@ -33,6 +33,7 @@ import { AppOverviewComponent } from '../app-overview/app-overview.component'
 import { ButtonModule } from 'primeng/button'
 import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 class Details {
     daemons: any = [
@@ -124,6 +125,7 @@ describe('KeaAppTabComponent', () => {
                 FormsModule,
                 ToggleButtonModule,
                 DataViewModule,
+                ProgressSpinnerModule
             ],
             declarations: [
                 KeaAppTabComponent,
