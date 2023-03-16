@@ -222,12 +222,21 @@ namespace :run do
     end
 
     desc "Run Stork Agent (release mode)
-    PORT - agent port to use - default: 8888"
+    PORT - agent port to use - default: 8888
+    REGISTER - register in the localhost server - default: false"
     task :agent => [AGENT_BINARY_FILE] do
         if ENV["PORT"].nil?
             ENV["PORT"] = "8888"
         end
-        sh AGENT_BINARY_FILE, "--port", ENV["PORT"]
+
+        opts = ["--port", ENV["PORT"]]
+
+        if ENV["REGISTER"] == "true"
+            opts.append "--host", "localhost"
+            opts.append "--server-url", "http://localhost:8080"
+        end
+
+        sh AGENT_BINARY_FILE, *opts
     end
 end
 
