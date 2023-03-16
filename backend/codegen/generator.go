@@ -2,7 +2,7 @@ package codegen
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"text/template"
@@ -22,7 +22,7 @@ func prepare(inputFilename, templateFilename string, parsedJSON any) (*template.
 	defer inputFile.Close()
 
 	// Read the input file.
-	bytes, err := ioutil.ReadAll(inputFile)
+	bytes, err := io.ReadAll(inputFile)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -189,7 +188,7 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 	if strings.Contains(command, "named-checkconf") {
 		// Pretending to run named-checkconf -p <config-file>. The contents of
 		// the file are returned as-is.
-		text, err := ioutil.ReadFile(args[1])
+		text, err := os.ReadFile(args[1])
 		if err != nil {
 			// Reading failed.
 			return nil, err

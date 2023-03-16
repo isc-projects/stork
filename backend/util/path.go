@@ -1,7 +1,7 @@
 package storkutil
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -11,7 +11,7 @@ import (
 // List all file paths in a given directory. It looks only at the top level.
 // Returned paths may be sorted lexicographically.
 func ListFilePaths(directory string, sortByPath bool) ([]string, error) {
-	entries, err := ioutil.ReadDir(directory)
+	entries, err := os.ReadDir(directory)
 	if err != nil {
 		err = errors.Wrapf(err, "cannot list hook directory: %s", directory)
 		return nil, err
