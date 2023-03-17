@@ -1,3 +1,10 @@
+* 297 [build] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot and
+    updated dependencies including the Angular, PrimeNG, GoSwagger and
+    OpenAPI Generator.
+    (Gitlab #981)
+
 * 296 [bug] slawek
 
     Fixed the path traversal vulnerability that allowed everyone to check the
