@@ -21,21 +21,32 @@ type ConfigCommand struct {
 	App     *dbmodel.App
 }
 
-// Represents a Kea config change recipe. A recipe is associated with
-// each config update and may comprise several commands sent to different
-// Kea servers. Other data stored in the recipe structure are used in the
-// Kea config module to pass the information between various configuration
-// stages (begin, apply, commit/schedule).
-type ConfigRecipe struct {
-	// A list of commands and the corresponding targets to be sent to
-	// apply a configuration update.
-	Commands []ConfigCommand
+// A structure embedded in the ConfigRecipe grouping parameters used
+// in transactions adding, updating and deleting host reservations.
+type HostConfigRecipeParams struct {
 	// An instance of the host (reservation) before an update. It is
 	// typically fetched at the beginning of the host update (e.g., when a
 	// user clicks the host edit button).
 	HostBeforeUpdate *dbmodel.Host
 	// Edited or deleted host ID.
-	HostID int64
+	HostID *int64
+}
+
+// Represents a Kea config change recipe. A recipe is associated with
+// each config update and may comprise several commands sent to different
+// Kea servers. Other data stored in the recipe structure are used in the
+// Kea config module to pass the information between various configuration
+// stages (begin, apply, commit/schedule). This structure is meant to be
+// generic for different configuration use cases in Kea. Should we need to
+// support a subnet configuration we will extend it with a new embedded
+// structure holding parameters appropriate for this new use case.
+type ConfigRecipe struct {
+	// A list of commands and the corresponding targets to be sent to
+	// apply a configuration update.
+	Commands []ConfigCommand
+	// Embedded structure holding the parameters appropriate for the
+	// host management.
+	HostConfigRecipeParams
 }
 
 // A configuration manager module responsible for the Kea configuration.
@@ -173,7 +184,9 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
 	recipe := &ConfigRecipe{
-		HostBeforeUpdate: host,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostBeforeUpdate: host,
+		},
 	}
 	if err := state.SetRecipeForUpdate(0, recipe); err != nil {
 		return ctx, err
@@ -197,6 +210,9 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		return ctx, err
 	}
 	existingHost := recipe.HostBeforeUpdate
+	if existingHost == nil {
+		return ctx, pkgerrors.New("internal server error: host instance cannot be nil when committing host update")
+	}
 
 	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
@@ -287,7 +303,9 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_delete", daemonIDs...)
 	recipe := ConfigRecipe{
 		Commands: commands,
-		HostID:   host.ID,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostID: &host.ID,
+		},
 	}
 	if err := state.SetRecipeForUpdate(0, &recipe); err != nil {
 		return ctx, err
@@ -308,7 +326,10 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		return ctx, err
 	}
 	for _, update := range state.Updates {
-		err = dbmodel.DeleteHost(module.manager.GetDB(), update.Recipe.HostID)
+		if update.Recipe.HostID == nil {
+			return ctx, pkgerrors.New("server logic error: the host ID cannot be nil when committing host deletion")
+		}
+		err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
 		if err != nil {
 			return ctx, err
 		}

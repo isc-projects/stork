@@ -648,7 +648,9 @@ func TestApplyHostUpdate(t *testing.T) {
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
-		HostBeforeUpdate: host,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostBeforeUpdate: host,
+		},
 	}
 	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
@@ -822,7 +824,9 @@ func TestCommitHostUpdate(t *testing.T) {
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
-		HostBeforeUpdate: host,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostBeforeUpdate: host,
+		},
 	}
 	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
@@ -938,7 +942,9 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
-		HostBeforeUpdate: host,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostBeforeUpdate: host,
+		},
 	}
 	err := state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
@@ -1024,7 +1030,9 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "host_update", daemonIDs...)
 	recipe := ConfigRecipe{
-		HostBeforeUpdate: host,
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostBeforeUpdate: host,
+		},
 	}
 	err = state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
