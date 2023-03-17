@@ -125,7 +125,7 @@ describe('KeaAppTabComponent', () => {
                 FormsModule,
                 ToggleButtonModule,
                 DataViewModule,
-                ProgressSpinnerModule
+                ProgressSpinnerModule,
             ],
             declarations: [
                 KeaAppTabComponent,
