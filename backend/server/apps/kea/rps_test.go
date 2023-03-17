@@ -283,10 +283,10 @@ func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interv
 	// results were unstable.
 	require.Condition(t, func() bool {
 		return daemon.Stats.RPS1 == interval1 || daemon.Stats.RPS1 == interval1-1
-	})
+	}, "RPS1: %d, interval1: %d", daemon.Stats.RPS1, interval1)
 	require.Condition(t, func() bool {
 		return daemon.Stats.RPS2 == interval2 || daemon.Stats.RPS2 == interval2-1
-	})
+	}, "RPS2: %d, interval2: %d", daemon.Stats.RPS2, interval2)
 }
 
 // Calculate the RPS from an array of RpsIntervals.
