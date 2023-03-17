@@ -56,7 +56,7 @@ GEM
     faraday-patron (1.0.0)
     faraday-rack (1.0.0)
     faraday-retry (1.0.3)
-    git (1.17.2)
+    git (1.13.1)
       addressable (~> 2.8)
       rchardet (~> 1.8)
     gitlab (4.18.0)
