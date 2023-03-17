@@ -62,7 +62,7 @@ file open_api_generator_python_dir => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
     sh "rm", "-rf", open_api_generator_python_dir
     sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
         "-i", SWAGGER_FILE,
-        "-g", "python",
+        "-g", "python-prior",
         "-o", "tests/system",
         "--global-property", "apiTests=false,modelTests=false",
         "--additional-properties", "generateSourceCodeOnly=true"

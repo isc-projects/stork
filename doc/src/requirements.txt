@@ -4,15 +4,15 @@
 #
 #    pip-compile --resolver=backtracking doc/src/requirements.in
 #
-alabaster==0.7.12
+alabaster==0.7.13
     # via sphinx
-babel==2.11.0
+babel==2.12.1
     # via sphinx
 certifi==2022.12.7
     # via requests
 charset-normalizer==2.0.12
     # via requests
-docutils==0.17.1
+docutils==0.18.1
     # via
     #   -r doc/src/../../rakelib/init_deps/sphinx.in
     #   sphinx
@@ -37,8 +37,6 @@ pygments==2.14.0
     # via sphinx
 pyparsing==3.0.9
     # via packaging
-pytz==2022.7
-    # via babel
 requests==2.27.1
     # via
     #   -r doc/src/../../rakelib/init_deps/sphinx.in
@@ -49,7 +47,8 @@ sphinx==5.3.0
     # via
     #   -r doc/src/../../rakelib/init_deps/sphinx.in
     #   sphinx-rtd-theme
-sphinx-rtd-theme==1.1.1
+    #   sphinxcontrib-jquery
+sphinx-rtd-theme==1.2.0
     # via -r doc/src/../../rakelib/init_deps/sphinx.in
 sphinxcontrib-applehelp==1.0.2
     # via
@@ -58,12 +57,16 @@ sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.0
-    # via sphinx
+    # via
+    #   -r doc/src/../../rakelib/init_deps/sphinx.in
+    #   sphinx
+sphinxcontrib-jquery==4.1
+    # via sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-urllib3==1.26.13
+urllib3==1.26.15
     # via requests

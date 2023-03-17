@@ -32,5 +32,5 @@ tomli==1.2.3
     # via
     #   -r rakelib/init_deps/pytest.in
     #   pytest
-urllib3==1.26.13
+urllib3==1.26.15
     # via -r rakelib/init_deps/pytest.in

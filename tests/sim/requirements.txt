@@ -30,7 +30,7 @@ markupsafe==2.0.1
     #   jinja2
 requests==2.27.1
     # via -r tests/sim/requirements.in
-urllib3==1.26.14
+urllib3==1.26.15
     # via requests
 werkzeug==2.0.3
     # via
