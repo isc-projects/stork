@@ -10,5 +10,6 @@ last 2 versions
 Firefox ESR
 not dead
 not IE 9-11 # For IE 9-11 support, remove 'not'.
+# Browsers no longer supported by Angular.
 not op_mini all
 not kaios <= 2.5

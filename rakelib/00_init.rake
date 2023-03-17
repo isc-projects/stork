@@ -713,7 +713,7 @@ file npm => [node] do
         ci_opts += ["--no-audit", "--no-progress"]
     end
 
-    # NPM is inially installed with the NodeJS.
+    # NPM is initially installed with NodeJS.
     sh npm, "install",
             "-g",
             *ci_opts,
