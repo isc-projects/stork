@@ -1,0 +1,377 @@
+{
+    "Dhcp6": {
+        "allocator": "iterative",
+        "pd-allocator": "random",
+        "client-classes": [
+            {
+                "name": "phones_server1",
+                "option-data": [],
+                "test": "member('HA_server1')",
+                "valid-lifetime": 6000,
+                "min-valid-lifetime": 4000,
+                "max-valid-lifetime": 8000,
+                "preferred-lifetime": 7000,
+                "min-preferred-lifetime": 5000,
+                "max-preferred-lifetime": 9000
+            },
+            {
+                "name": "phones_server2",
+                "option-data": [],
+                        "test": "member('HA_server2')"
+            },
+            {
+                "name": "late",
+                "only-if-required": true,
+                "test": "member('ALL')"
+            },
+            {
+                "name": "my-template-class",
+                "template-test": "substring(option[1].hex, 0, all)"
+            }
+        ],
+        "compatibility": {
+            "lenient-option-parsing": true
+        },
+        "control-socket": {
+            "socket-name": "/tmp/kea6-ctrl-socket",
+            "socket-type": "unix"
+        },
+        "ddns-generated-prefix": "myhost",
+        "ddns-override-client-update": false,
+        "ddns-override-no-update": false,
+        "ddns-qualifying-suffix": "",
+        "ddns-replace-client-name": "never",
+        "ddns-send-updates": true,
+        "ddns-update-on-renew": true,
+        "ddns-use-conflict-resolution": true,
+        "decline-probation-period": 86400,
+        "dhcp-ddns": {
+            "enable-updates": false,
+            "max-queue-size": 1024,
+            "ncr-format": "JSON",
+            "ncr-protocol": "UDP",
+            "sender-ip": "::1",
+            "sender-port": 0,
+            "server-ip": "::1",
+            "server-port": 53001,
+            "generated-prefix": "myhost",
+            "hostname-char-replacement": "x",
+            "hostname-char-set": "[^A-Za-z0-9.-]",
+            "override-client-update": false,
+            "override-no-update": false,
+            "qualifying-suffix": "",
+            "replace-client-name": "never"
+        },
+        "dhcp4o6-port": 0,
+        "expired-leases-processing": {
+            "flush-reclaimed-timer-wait-time": 25,
+            "hold-reclaimed-time": 3600,
+            "max-reclaim-leases": 100,
+            "max-reclaim-time": 250,
+            "reclaim-timer-wait-time": 10,
+            "unwarned-reclaim-cycles": 5
+        },
+        "hooks-libraries": [
+            {
+                "library": "/opt/lib/kea/hooks/libdhcp_lease_cmds.so",
+                "parameters": { }
+            }
+        ],
+        "hosts-databases": [
+            {
+                "name": "keatest",
+                "host": "localhost",
+                "password": "keatest",
+                "port": 3306,
+                "type": "mysql",
+                "user": "keatest",
+                "readonly": false,
+                "trust-anchor": "my-ca",
+                "cert-file": "my-cert",
+                "key-file": "my-key",
+                "cipher-list": "AES"
+            },
+            {
+                "name": "keatest",
+                "host": "localhost",
+                "password": "keatest",
+                "port": 5432,
+                "type": "postgresql",
+                "user": "keatest",
+                "tcp-user-timeout": 100
+            },
+            {
+                "name": "keatest",
+                "password": "keatest",
+                "port": 9042,
+                "type": "mysql",
+                "user": "keatest",
+                "reconnect-wait-time": 3000,
+                "max-reconnect-tries": 3,
+                "on-fail": "stop-retry-exit",
+                "connect-timeout": 100,
+                "read-timeout": 120,
+                "write-timeout": 180
+            }
+        ],
+        "host-reservation-identifiers": [
+            "hw-address",
+            "duid",
+            "flex-id"
+        ],
+        "interfaces-config": {
+            "interfaces": [
+                "eth0"
+            ],
+            "re-detect": true,
+            "service-sockets-require-all": true,
+            "service-sockets-max-retries": 5,
+            "service-sockets-retry-wait-time": 5000
+        },
+        "early-global-reservations-lookup": true,
+        "ip-reservations-unique": true,
+        "reservations-lookup-first": true,
+        "lease-database": {
+            "lfc-interval": 3600,
+            "max-row-errors": 100,
+            "name": "/tmp/kea-dhcp6.csv",
+            "persist": true,
+            "type": "memfile"
+        },
+        "mac-sources": [ "duid" ],
+        "option-data": [
+            {
+                "always-send": false,
+                "code": 23,
+                "csv-format": true,
+                "data": "2001:db8:2::45, 2001:db8:2::100",
+                "name": "dns-servers",
+                "space": "dhcp6"
+            }
+        ],
+        "option-def": [
+            {
+                "array": false,
+                "code": 6,
+                "encapsulate": "",
+                "name": "my-option",
+                "record-types": "uint8, uint16",
+                "space": "my-space",
+                "type": "record"
+            }
+        ],
+        "parked-packet-limit": 128,
+        "preferred-lifetime": 50,
+        "min-preferred-lifetime": 40,
+        "max-preferred-lifetime": 60,
+        "rebind-timer": 40,
+        "relay-supplied-options": [ "110", "120", "130" ],
+        "renew-timer": 30,
+        "store-extended-info": true,
+        "statistic-default-sample-count": 0,
+        "statistic-default-sample-age": 60,
+        "multi-threading": {
+            "enable-multi-threading": false,
+            "thread-pool-size": 0,
+            "packet-queue-size": 0
+        },
+        "sanity-checks": {
+            "lease-checks": "warn",
+            "extended-info-checks": "fix"
+        },
+        "server-id": {
+            "type": "EN",
+            "enterprise-id": 2495,
+            "identifier": "0123456789",
+            "persist": false
+        },
+        "shared-networks": [
+            {
+                "allocator": "random",
+                "pd-allocator": "iterative",
+                "client-class": "",
+                "ddns-generated-prefix": "myhost",
+                "ddns-override-client-update": false,
+                "ddns-override-no-update": false,
+                "ddns-qualifying-suffix": "",
+                "ddns-replace-client-name": "never",
+                "ddns-send-updates": true,
+                "ddns-update-on-renew": true,
+                "ddns-use-conflict-resolution": true,
+                "hostname-char-replacement": "x",
+                "hostname-char-set": "[^A-Za-z0-9.-]",
+                "interface": "eth0",
+                "interface-id": "",
+                "name": "my-secret-network",
+                "option-data": [],
+                "preferred-lifetime": 2000,
+                "min-preferred-lifetime": 1500,
+                "max-preferred-lifetime": 2500,
+                "rapid-commit": false,
+                "relay": {
+                    "ip-addresses": []
+                },
+                "rebind-timer": 41,
+                "renew-timer": 31,
+                "calculate-tee-times": true,
+                "t1-percent": 0.5,
+                "t2-percent": 0.75,
+                "cache-threshold": 0.25,
+                "cache-max-age": 10,
+                "reservations-global": false,
+                "reservations-in-subnet": true,
+                "reservations-out-of-pool": false,
+                "require-client-classes": [ "late" ],
+                "store-extended-info": false,
+                "subnet6": [
+                    {
+                        "allocator": "iterative",
+                        "pd-allocator": "iterative",
+                        "client-class": "",
+                        "ddns-generated-prefix": "myhost",
+                        "ddns-override-client-update": false,
+                        "ddns-override-no-update": false,
+                        "ddns-qualifying-suffix": "",
+                        "ddns-replace-client-name": "never",
+                        "ddns-send-updates": true,
+                        "ddns-update-on-renew": true,
+                        "ddns-use-conflict-resolution": true,
+                        "hostname-char-replacement": "x",
+                        "hostname-char-set": "[^A-Za-z0-9.-]",
+                        "id": 1,
+                        "interface": "eth0",
+                        "interface-id": "",
+                        "store-extended-info": true,
+                        "option-data": [
+                            {
+                                "always-send": false,
+                                "code": 7,
+                                "csv-format": false,
+                                "data": "0xf0",
+                                "name": "preference",
+                                "space": "dhcp6"
+                            }
+                        ],
+                        "pd-pools": [
+                            {
+                                "client-class": "phones_server1",
+                                "delegated-len": 64,
+                                "excluded-prefix": "2001:db8:1::",
+                                "excluded-prefix-len": 72,
+                                "option-data": [],
+                                "prefix": "2001:db8:1::",
+                                "prefix-len": 48,
+                                "require-client-classes": []
+                            }
+                        ],
+                        "pools": [
+                            {
+                                "client-class": "phones_server1",
+                                "option-data": [],
+                                "pool": "2001:db8:0:1::/64",
+                                "require-client-classes": [ "late" ]
+                            },
+                            {
+                                "client-class": "phones_server2",
+                                "option-data": [],
+                                "pool": "2001:db8:0:3::/64",
+                                "require-client-classes": []
+                            }
+                        ],
+                        "preferred-lifetime": 2000,
+                        "min-preferred-lifetime": 1500,
+                        "max-preferred-lifetime": 2500,
+                        "rapid-commit": false,
+                        "rebind-timer": 40,
+                        "relay": {
+                            "ip-addresses": [
+                                "2001:db8:0:f::1"
+                            ]
+                        },
+                        "renew-timer": 30,
+                        "reservation-mode": "all",
+                        "reservations-global": false,
+                        "reservations-in-subnet": true,
+                        "reservations-out-of-pool": false,
+                        "calculate-tee-times": true,
+                        "t1-percent": 0.5,
+                        "t2-percent": 0.75,
+                        "cache-threshold": 0.25,
+                        "cache-max-age": 10,
+                        "reservations": [
+                            {
+                                "duid": "01:02:03:04:05:06:07:08:09:0A",
+                                "ip-addresses": [ "2001:db8:1:cafe::1" ],
+                                "prefixes": [ "2001:db8:2:abcd::/64" ],
+                                "hostname": "foo.example.com",
+                                "option-data": [
+                                    {
+                                        "name": "vendor-opts",
+                                        "data": "4491"
+                                    }
+                                ]
+                            }
+                        ],
+                        "require-client-classes": [ "late" ],
+                        "subnet": "2001:db8::/32",
+                        "valid-lifetime": 6000,
+                        "min-valid-lifetime": 4000,
+                        "max-valid-lifetime": 8000
+                    }
+                ],
+                "valid-lifetime": 6001,
+                "min-valid-lifetime": 4001,
+                "max-valid-lifetime": 8001
+            }
+        ],
+        "subnet6": [],
+        "valid-lifetime": 6000,
+        "min-valid-lifetime": 4000,
+        "max-valid-lifetime": 8000,
+        "reservations": [],
+        "config-control": {
+            "config-databases": [
+                {
+                    "name": "config",
+                    "type": "mysql"
+                }
+            ],
+            "config-fetch-wait-time": 30
+        },
+        "server-tag": "my DHCPv6 server",
+        "dhcp-queue-control": {
+            "enable-queue": true,
+            "queue-type": "kea-ring6",
+            "capacity": 64
+        },
+        "reservation-mode": "all",
+        "reservations-global": false,
+        "reservations-in-subnet": true,
+        "reservations-out-of-pool": false,
+        "data-directory": "/tmp",
+        "calculate-tee-times": true,
+        "t1-percent": 0.5,
+        "t2-percent": 0.75,
+        "cache-threshold": 0.25,
+        "cache-max-age": 10,
+        "hostname-char-replacement": "x",
+        "hostname-char-set": "[^A-Za-z0-9.-]",
+        "loggers": [
+            {
+                "debuglevel": 99,
+                "name": "kea-dhcp6",
+                "output_options": [
+                    {
+                        "flush": true,
+                        "maxsize": 10240000,
+                        "maxver": 1,
+                        "output": "stdout",
+                        "pattern": "%D{%Y-%m-%d %H:%M:%S.%q} %-5p [%c/%i] %m\n"
+                    }
+                ],
+                "severity": "INFO"
+            }
+        ],
+        "user-context": { }
+    }
+}
