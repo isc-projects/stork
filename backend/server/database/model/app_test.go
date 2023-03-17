@@ -1418,9 +1418,11 @@ func TestGetMachineTag(t *testing.T) {
 	require.EqualValues(t, 10, machine.GetID())
 }
 
-// Test getting DaemonTag interfaces from an app.
-func TestGetDaemonTags(t *testing.T) {
+// Test getting DaemonTag interfaces from an app that has app
+// type at the app level.
+func TestGetDaemonTagsAppType(t *testing.T) {
 	app := App{
+		Type: AppTypeBind9,
 		Daemons: []*Daemon{
 			{
 				ID: 10,
@@ -1433,5 +1435,28 @@ func TestGetDaemonTags(t *testing.T) {
 	daemons := app.GetDaemonTags()
 	require.Len(t, daemons, 2)
 	require.EqualValues(t, 10, daemons[0].GetID())
+	require.Equal(t, AppTypeBind9, daemons[0].GetAppType())
 	require.EqualValues(t, 11, daemons[1].GetID())
+	require.Equal(t, AppTypeBind9, daemons[1].GetAppType())
+}
+
+// Test getting DaemonTag interfaces from an app.
+func TestGetDaemonTagsKea(t *testing.T) {
+	app := App{
+		Type: AppTypeBind9,
+		Daemons: []*Daemon{
+			{
+				ID: 10,
+			},
+			{
+				ID: 11,
+			},
+		},
+	}
+	daemons := app.GetDaemonTags()
+	require.Len(t, daemons, 2)
+	require.EqualValues(t, 10, daemons[0].GetID())
+	require.Equal(t, AppTypeBind9, daemons[0].GetAppType())
+	require.EqualValues(t, 11, daemons[1].GetID())
+	require.Equal(t, AppTypeBind9, daemons[1].GetAppType())
 }

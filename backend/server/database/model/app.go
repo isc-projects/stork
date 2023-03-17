@@ -562,7 +562,9 @@ func (app App) GetMachineTag() MachineTag {
 // Returns DaemonTag interfaces to the daemons owned by the app.
 func (app App) GetDaemonTags() (tags []DaemonTag) {
 	for i := range app.Daemons {
-		tags = append(tags, *app.Daemons[i])
+		daemon := *app.Daemons[i]
+		daemon.App = &app
+		tags = append(tags, daemon)
 	}
 	return
 }

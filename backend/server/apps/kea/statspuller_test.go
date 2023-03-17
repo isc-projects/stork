@@ -583,14 +583,22 @@ func getHATestConfigWithSubnets(rootName, thisServerName, mode string, peerNames
 	}
 	subnetsConfig, _ := dbmodel.NewKeaConfigFromJSON(subnetsConfigRaw)
 
-	// Appends the HA configuration
+	// We are now going to insert hook libraries from one config into another config.
+	// We insert the map of hook libraries into the Raw field of the subnetsConfig
+	// because this is the structure that holds the entire configuration. The other
+	// fields (e.g., DHCPv4Config) only hold partial configuration and are currently
+	// used only for reading (rather than setting) the configuration. In the future,
+	// we're going to add a mechanics to use the structures to update the entire
+	// configuration, and it will also be a good time to refactor these tests. We should
+	// have a cleaner way to generate various configs than merging two maps together.
+	// This code comes from the old Stork days, though.
 	haHooks := (haConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
 	subnetHooks := (subnetsConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"].([]interface{})
-
 	subnetHooks = append(subnetHooks, haHooks...)
-
 	(subnetsConfig.Raw)[rootName].(map[string]interface{})["hooks-libraries"] = subnetHooks
 
+	// Repack the new configuration, so the changes are populated to the parsed
+	// data structures and not only reside in the Raw field.
 	m, _ := json.Marshal(subnetsConfig)
 	_ = json.Unmarshal(m, subnetsConfig)
 

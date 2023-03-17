@@ -367,8 +367,8 @@ func (manager *configManagerImpl) CommitDue() error {
 		return nil
 	}
 	// Iterate over the changes.
-	var state any
 	for _, change := range changes {
+		var state any
 		// Re-create the transaction state from the serialized data stored in
 		// the database.
 		switch {

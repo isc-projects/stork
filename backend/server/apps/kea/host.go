@@ -124,7 +124,7 @@ func (puller *HostsPuller) pullFromApp(app *dbmodel.App) (successCount, skippedC
 		pulled, err := puller.pullFromDaemon(app, daemon)
 		if err != nil {
 			erredCount++
-			log.Errorf("Problem pulling Kea hosts from daemon %d: %+v", daemon.ID, err)
+			log.WithError(err).Errorf("Problem pulling Kea hosts from daemon %d", daemon.ID)
 			continue
 		}
 		if !pulled {
@@ -519,7 +519,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	for _, reservation := range reservations {
 		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation, daemon, dbmodel.HostDataSourceAPI, lookup)
 		if err != nil {
-			log.Warnf("Failed to parse the host reservation: %s", err)
+			log.WithError(err).Warnf("Failed to parse the host reservation")
 			continue
 		}
 		if subnet != nil {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"math/rand"
 	"sort"
 	"testing"
 	"time"
@@ -1225,79 +1226,64 @@ func BenchmarkAddSubnet(b *testing.B) {
 // indexed and unindexed subnets. Thus, this benchmark contains two test cases,
 // one checking performance of the function with indexing and without indexing.
 // The function execution time should be significantly longer without indexing.
-/*func BenchmarkAddDaemonToSubnet(b *testing.B) {
-	testCases := []string{"without indexing", "with indexing"}
+func BenchmarkAddDaemonToSubnet(b *testing.B) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
 
-	// Run sub tests.
-	for _, testCase := range testCases {
-		tc := testCase
-		b.Run(tc, func(b *testing.B) {
-			db, _, teardown := dbtest.SetupDatabaseTestCase(b)
-			defer teardown()
+	tx, _ := db.Begin()
 
-			tx, _ := db.Begin()
-
-			// Add many subnets to the database.
-			subnets := []Subnet{}
-			keaSubnets := []interface{}{}
-			for i := 0; i < 10000; i++ {
-				prefix := fmt.Sprintf("%d.%d.%d.", uint8(i>>16), uint8(i>>8), uint8(i))
-				subnet := Subnet{
-					Prefix: prefix + "0/24",
-				}
-				keaSubnet := map[string]interface{}{
-					"id":     i + 1,
-					"subnet": prefix + "0/24",
-				}
-				AddSubnet(tx, &subnet)
-				subnets = append(subnets, subnet)
-				keaSubnets = append(keaSubnets, keaSubnet)
-			}
-			tx.Commit()
-
-			// Also create the configuration including these subnets for the app.
-			rawConfig := &map[string]interface{}{
-				"Dhcp4": map[string]interface{}{
-					"subnet4": keaSubnets,
-				},
-			}
-			daemon := NewKeaDaemon("dhcp4", true)
-			daemon.SetConfig(NewKeaConfig(rawConfig))
-
-			// When measuring time with indexing, we need to build indexes before
-			// running the actual benchmark.
-			if tc == "with indexing" {
-				indexedSubnets := keaconfig.NewIndexedSubnets(daemon.KeaDaemon.Config)
-				daemon.KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
-			}
-
-			// Add machine/app.
-			machine := &Machine{
-				ID:        0,
-				Address:   "localhost",
-				AgentPort: 8080,
-			}
-			AddMachine(db, machine)
-			app := &App{
-				ID:        0,
-				Type:      AppTypeKea,
-				MachineID: machine.ID,
-				Daemons: []*Daemon{
-					daemon,
-				},
-			}
-			AddApp(db, app)
-
-			// Run the actual benchmark.
-			rand.Seed(time.Now().UTC().UnixNano())
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				subnetIndex := rand.Intn(len(subnets))
-				AddDaemonToSubnet(db, &subnets[subnetIndex], app.Daemons[0])
-			}
-		})
+	// Add many subnets to the database.
+	subnets := []Subnet{}
+	keaSubnets := []interface{}{}
+	for i := 0; i < 10000; i++ {
+		prefix := fmt.Sprintf("%d.%d.%d.", uint8(i>>16), uint8(i>>8), uint8(i))
+		subnet := Subnet{
+			Prefix: prefix + "0/24",
+		}
+		keaSubnet := map[string]interface{}{
+			"id":     i + 1,
+			"subnet": prefix + "0/24",
+		}
+		AddSubnet(tx, &subnet)
+		subnets = append(subnets, subnet)
+		keaSubnets = append(keaSubnets, keaSubnet)
 	}
-} */
+	tx.Commit()
+
+	// Also create the configuration including these subnets for the app.
+	rawConfig := &map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": keaSubnets,
+		},
+	}
+	daemon := NewKeaDaemon("dhcp4", true)
+	daemon.SetConfig(NewKeaConfig(rawConfig))
+
+	// Add machine/app.
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	AddMachine(db, machine)
+	app := &App{
+		ID:        0,
+		Type:      AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*Daemon{
+			daemon,
+		},
+	}
+	AddApp(db, app)
+
+	// Run the actual benchmark.
+	rand.Seed(time.Now().UTC().UnixNano())
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		subnetIndex := rand.Intn(len(subnets))
+		AddDaemonToSubnet(db, &subnets[subnetIndex], app.Daemons[0])
+	}
+}
 
 // Test that the shorthand for setting IPv4 family works properly.
 func TestSubnetsByPageFiltersSetIPv4Family(t *testing.T) {

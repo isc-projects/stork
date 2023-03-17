@@ -119,7 +119,7 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 		var network *dbmodel.SharedNetwork
 		network, err = dbmodel.NewSharedNetworkFromKea(n, family, daemon, dbmodel.HostDataSourceConfig, lookup)
 		if err != nil {
-			log.Warnf("Skipping invalid shared network: %v", err)
+			log.WithError(err).Warnf("Skipping invalid shared network")
 			continue
 		}
 		var dbNetwork *dbmodel.SharedNetwork
@@ -151,8 +151,8 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 					// override the data from the new subnet into the existing subnet.
 					err := overrideIntoDatabaseSubnet(dbi, existingSubnet, &subnet)
 					if err != nil {
-						log.Warnf("Skipping subnet %s after override failure: %v",
-							subnet.Prefix, err)
+						log.WithError(err).Warnf("Skipping subnet %s after override failure",
+							subnet.Prefix)
 						continue
 					}
 					networkForUpdate.Subnets = append(networkForUpdate.Subnets, *existingSubnet)
@@ -197,7 +197,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 		// Parse the configured subnet.
 		subnet, err := dbmodel.NewSubnetFromKea(s, daemon, dbmodel.HostDataSourceConfig, lookup)
 		if err != nil {
-			log.Warnf("Skipping invalid subnet: %v", err)
+			log.WithError(err).Warnf("Skipping invalid subnet")
 			continue
 		}
 		existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
@@ -206,8 +206,8 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 			// override the data from the new subnet into the existing subnet.
 			err := overrideIntoDatabaseSubnet(dbi, existingSubnet, subnet)
 			if err != nil {
-				log.Warnf("Skipping subnet %s after data override failure: %v",
-					subnet.Prefix, err)
+				log.WithError(err).Warnf("Skipping subnet %s after data override failure",
+					subnet.Prefix)
 				continue
 			}
 			existingSubnet.Join(subnet)

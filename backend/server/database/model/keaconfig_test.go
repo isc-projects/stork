@@ -21,7 +21,7 @@ func TestNewKeaConfigFromNil(t *testing.T) {
 	require.Nil(t, configNil)
 }
 
-// Test that KeaConfig isn't constructed from an empty map.
+// Test that KeaConfig is constructed from an empty map.
 func TestNewKeaConfigFromEmptyMap(t *testing.T) {
 	// Act
 	configEmpty := NewKeaConfig(&map[string]interface{}{})

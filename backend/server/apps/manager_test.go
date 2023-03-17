@@ -757,14 +757,14 @@ func TestSchedule(t *testing.T) {
 
 	tags := appReturned.GetDaemonTags()
 	require.Len(t, tags, 2)
-	/*
-		require.EqualValues(t, 1, tags[0].GetID())
-		require.Equal(t, "dhcp4", tags[0].GetName())
-		require.EqualValues(t, 1, tags[0].GetAppID())
-		require.Equal(t, dbmodel.AppTypeKea, tags[0].GetAppType())
 
-		require.EqualValues(t, 2, tags[1].GetID())
-		require.Equal(t, "ca", tags[1].GetName())
-		require.EqualValues(t, 1, tags[1].GetAppID())
-		require.Equal(t, dbmodel.AppTypeKea, tags[1].GetAppType()) */
+	require.EqualValues(t, 1, tags[0].GetID())
+	require.Equal(t, "dhcp4", tags[0].GetName())
+	require.EqualValues(t, 1, tags[0].GetAppID())
+	require.Equal(t, dbmodel.AppTypeKea, tags[0].GetAppType())
+
+	require.EqualValues(t, 2, tags[1].GetID())
+	require.Equal(t, "ca", tags[1].GetName())
+	require.EqualValues(t, 1, tags[1].GetAppID())
+	require.Equal(t, dbmodel.AppTypeKea, tags[1].GetAppType())
 }

@@ -10,5 +10,5 @@ type Logger struct {
 
 // A structure representing output_options for a logger.
 type LoggerOutputOptions struct {
-	Output string
+	Output string `json:"output"`
 }
