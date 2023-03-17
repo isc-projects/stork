@@ -10,3 +10,4 @@ markupsafe <= 2.0.1
 requests==2.27.1
 sphinxcontrib-applehelp<=1.0.2
 sphinxcontrib-htmlhelp<=2.0.0
+babel<=2.11.0

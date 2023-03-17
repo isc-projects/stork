@@ -6,8 +6,10 @@
 #
 alabaster==0.7.13
     # via sphinx
-babel==2.12.1
-    # via sphinx
+babel==2.11.0
+    # via
+    #   -r rakelib/init_deps/sphinx.in
+    #   sphinx
 certifi==2022.12.7
     # via requests
 charset-normalizer==2.0.12
@@ -37,6 +39,8 @@ pygments==2.14.0
     # via sphinx
 pyparsing==3.0.9
     # via packaging
+pytz==2022.7.1
+    # via babel
 requests==2.27.1
     # via
     #   -r rakelib/init_deps/sphinx.in
