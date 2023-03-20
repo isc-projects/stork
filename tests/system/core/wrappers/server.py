@@ -246,7 +246,7 @@ class Server(ComposeServiceWrapper):
         # responses. It expects that the data will always be returned. It is
         # a workaround that adds a string to a list of accepted types. The
         # empty string is received if the status is not equal to 200.
-        settings = api_instance.get_daemon_config_reports.settings
+        settings = api_instance.get_daemon_config_reports_endpoint.settings
         settings['response_type'] = tuple(
             list(settings['response_type']) + [str, ])
 

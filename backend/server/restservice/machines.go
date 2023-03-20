@@ -761,7 +761,9 @@ func mergeKeaDatabase(keaDatabase *keaconfig.Database, dataType string, existing
 // information about database connections in use. The first structure contains
 // files used by Memfile lease database backend and Forensic Logging hooks library.
 // If neither of them is used, this structure is empty.
-func getKeaStorages(config keaconfig.DatabaseConfig) (files []*models.File, databases []*models.KeaDaemonDatabase) {
+func getKeaStorages(config keaconfig.DatabaseConfig) ([]*models.File, []*models.KeaDaemonDatabase) {
+	databases := []*models.KeaDaemonDatabase{}
+	files := []*models.File{}
 	foundDatabases := make(map[string]*models.KeaDaemonDatabase)
 	keaDatabases := config.GetAllDatabases()
 	// Leases.
@@ -807,8 +809,8 @@ func getKeaStorages(config keaconfig.DatabaseConfig) (files []*models.File, data
 
 // Converts App structure to REST API format, without the data specific to
 // an app type.
-func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
-	app := &models.App{
+func baseAppToRestAPI(dbApp *dbmodel.App) *models.AppBase {
+	app := &models.AppBase{
 		ID:      dbApp.ID,
 		Name:    dbApp.Name,
 		Type:    dbApp.Type.String(),
@@ -838,7 +840,15 @@ func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
 // Converts App structure to REST API format, with the data specific to
 // an app type (including daemons).
 func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
-	app := baseAppToRestAPI(dbApp)
+	baseApp := baseAppToRestAPI(dbApp)
+	app := &models.App{
+		AccessPoints: baseApp.AccessPoints,
+		ID:           baseApp.ID,
+		Machine:      baseApp.Machine,
+		Name:         baseApp.Name,
+		Type:         baseApp.Type,
+		Version:      baseApp.Version,
+	}
 
 	isKeaApp := dbApp.Type == dbmodel.AppTypeKea
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
@@ -862,7 +872,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 				Port:    accessPoint.Port,
 			}].(*agentcomm.AgentKeaCommStats)
 		}
-		var keaDaemons []*models.KeaDaemon
+		keaDaemons := []*models.KeaDaemon{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonToRestAPI(d)
 			dmn.AgentCommErrors = agentErrors
@@ -932,7 +942,9 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			models.AppKea
 			models.AppBind9
 		}{
-			models.AppKea{},
+			models.AppKea{
+				Daemons: []*models.KeaDaemon{},
+			},
 			models.AppBind9{
 				Daemon: bind9Daemon,
 			},
@@ -955,6 +967,9 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 		Uptime:          dbDaemon.Uptime,
 		ReloadedAt:      strfmt.DateTime(dbDaemon.ReloadedAt),
 		Hooks:           []string{},
+		Backends:        []*models.KeaDaemonDatabase{},
+		Files:           []*models.File{},
+		LogTargets:      []*models.LogTarget{},
 	}
 
 	// Daemon can include App information (depending on the database query).

@@ -198,6 +198,25 @@
        useSecureProtocol:
          type: boolean
 
+  AppBase:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      name:
+        type: string
+      type:
+        type: string
+      accessPoints:
+        type: array
+        items:
+          $ref: '#/definitions/AppAccessPoint'
+      version:
+        type: string
+      machine:
+        $ref: '#/definitions/AppMachine'
+
   App:
     type: object
     properties:
@@ -280,7 +299,7 @@
         items:
           $ref: '#/definitions/LogTarget'
       app:
-        $ref: '#/definitions/App'
+        $ref: '#/definitions/AppBase'
 
   KeaDaemonConfig:
     type: object
