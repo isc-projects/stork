@@ -445,6 +445,36 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /app/{appId}/access-points/{type}/key:
+    get:
+      summary: Get the access point key.
+      description: >-
+        It returns the authentication key assigned to a given access point.
+        This endpoint is allowed only for super-administrators.
+      operationId: getAccessPointKey
+      tags:
+        - Services
+      parameters:
+        - name: appId
+          in: path
+          type: integer
+          required: true
+          description: App ID
+        - name: type
+          in: path
+          type: string
+          required: true
+          description: Access point type
+      responses:
+        200:
+          description: List of the authentication keys.
+          schema:
+            type: string
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /logs/{id}:
     get:
       summary: Gets the tail of the given log file.

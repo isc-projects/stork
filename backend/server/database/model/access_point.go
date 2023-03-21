@@ -1,5 +1,13 @@
 package dbmodel
 
+import (
+	"errors"
+
+	"github.com/go-pg/pg/v10"
+	pkgerrors "github.com/pkg/errors"
+	dbops "isc.org/stork/server/database"
+)
+
 // A structure reflecting the access_point SQL table.
 type AccessPoint struct {
 	AppID             int64  `pg:",pk"`
@@ -28,4 +36,22 @@ func AppendAccessPoint(list []*AccessPoint, tp, address, key string, port int64,
 		UseSecureProtocol: useSecureProtocol,
 	})
 	return list
+}
+
+func GetAccessPointByID(db dbops.DBI, appID int64, accessPointType string) (*AccessPoint, error) {
+	accessPoint := &AccessPoint{AppID: appID, Type: accessPointType}
+	err := db.Model(accessPoint).WherePK().Select()
+
+	if errors.Is(err, pg.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, pkgerrors.Wrapf(
+			err,
+			"problem getting access point of app: %d and with type: %s",
+			appID,
+			accessPointType,
+		)
+	}
+	return accessPoint, nil
+
 }

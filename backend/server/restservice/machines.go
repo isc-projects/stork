@@ -1565,3 +1565,38 @@ func (r *RestAPI) RenameApp(ctx context.Context, params services.RenameAppParams
 	rsp := services.NewRenameAppOK()
 	return rsp
 }
+
+// Returns the authentication key assigned to the given access point.
+// If there is no authentication key assigned, returns an empty string.
+func (r *RestAPI) GetAccessPointKey(ctx context.Context, params services.GetAccessPointKeyParams) middleware.Responder {
+	_, dbUser := r.SessionManager.Logged(ctx)
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "User is forbidden to get access point key"
+		rsp := services.NewGetAccessPointKeyDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	accessPoint, err := dbmodel.GetAccessPointByID(r.DB, params.AppID, params.Type)
+
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot retrieve access point from database"
+		rsp := services.NewGetAccessPointKeyDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if accessPoint == nil {
+		msg := fmt.Sprintf("Cannot find access point with App ID %d and type %s", params.AppID, params.Type)
+		rsp := services.NewGetAccessPointKeyDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewGetAccessPointKeyOK().WithPayload(accessPoint.Key)
+	return rsp
+}
