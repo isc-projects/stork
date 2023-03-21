@@ -222,7 +222,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 
 	// create alternate config files for each step...
 	config1Path, _ := sb.Join("step1.conf")
-	config1 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
 	sb.Write("step1.conf", config1)
 
@@ -244,7 +244,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.1.1.1", point.Address)
 	require.EqualValues(t, 1111, point.Port)
-	require.Empty(t, point.Key)
+	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
 }
 
 // Checks detection STEP 2: if BIND9 detection takes STORK_BIND9_CONFIG env var into account.
@@ -257,11 +257,11 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 
 	// create alternate config file...
 	varPath, _ := sb.Join("testing.conf")
-	config := `keys "foo" {
+	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
    };
-controls {
+   controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
 	sb.Write("testing.conf", config)
@@ -286,7 +286,7 @@ controls {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
-	require.Empty(t, point.Key)
+	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
 }
 
 // Checks detection STEP 3: parse output of the named -V command.
@@ -296,11 +296,11 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 
 	// create alternate config file...
 	varPath, _ := sb.Join("testing.conf")
-	config := `keys "foo" {
+	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
    };
-controls {
+	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
 	sb.Write("testing.conf", config)
@@ -323,7 +323,7 @@ controls {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
-	require.Empty(t, point.Key)
+	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
 }
 
 // There is no reliable way to test step 4 (checking typical locations). The
@@ -353,17 +353,17 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 
 	// create alternate config files for each step...
 	config1Path, _ := sb.Join("step1.conf")
-	config1 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
 	sb.Write("step1.conf", config1)
 
 	config2Path, _ := sb.Join("step2.conf")
-	config2 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+	config2 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 2.2.2.2 port 2222 allow { localhost; } keys { "foo"; "bar"; }; };`
 	sb.Write("step2.conf", config2)
 
 	config3Path, _ := sb.Join("step3.conf")
-	config3 := `keys "foo" { algorithm "hmac-sha256"; secret "abcd";};
+	config3 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 3.3.3.3 port 3333 allow { localhost; } keys { "foo"; "bar"; }; };`
 	sb.Write("step3.conf", config3)
 
@@ -388,7 +388,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.1.1.1", point.Address) // we expect the STEP 1 (-c parameter) to take precedence
 	require.EqualValues(t, 1111, point.Port)
-	require.Empty(t, point.Key)
+	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
 }
 
 // Test that the empty string is returned if the configuration content is empty.

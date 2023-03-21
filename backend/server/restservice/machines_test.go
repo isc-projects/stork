@@ -687,6 +687,7 @@ func TestGetMachine(t *testing.T) {
 	require.Equal(t, m2.ID, okRsp.Payload.ID)
 	require.Len(t, okRsp.Payload.Apps, 1)
 	require.Equal(t, s.ID, okRsp.Payload.Apps[0].ID)
+	require.Len(t, okRsp.Payload.Apps[0].AccessPoints, 1)
 }
 
 func TestUpdateMachine(t *testing.T) {

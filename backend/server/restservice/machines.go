@@ -828,7 +828,6 @@ func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
 			Type:              point.Type,
 			Address:           point.Address,
 			Port:              point.Port,
-			Key:               point.Key,
 			UseSecureProtocol: point.UseSecureProtocol,
 		})
 	}
