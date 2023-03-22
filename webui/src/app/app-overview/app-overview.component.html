@@ -23,20 +23,20 @@
                 Key:
                 <!-- Control is not clicked yet. -->
                 <!-- Or control is clicked and key is loading. -->
-                <button pButton
+                <button
+                    pButton
                     class="p-button-text p-button-plain p-0"
                     icon="fas fa-eye-slash"
                     (click)="onAuthenticationKeyRequest(ap)"
                     [loading]="isKeyLoading(ap)"
-                    *ngIf="!isKeyFetched(ap)"></button>
+                    *ngIf="!isKeyFetched(ap)"
+                ></button>
                 <!-- Control is clicked and key is loaded. -->
                 <ng-container *ngIf="isKeyFetched(ap) && !isKeyEmpty(ap)">
                     {{ getKey(ap) }}
                 </ng-container>
                 <!-- Key is loaded but is has no value. -->
-                <ng-container *ngIf="isKeyFetched(ap) && isKeyEmpty(ap)">
-                    (no value)
-                </ng-container>
+                <ng-container *ngIf="isKeyFetched(ap) && isKeyEmpty(ap)"> (no value) </ng-container>
             </span>
         </td>
     </tr>

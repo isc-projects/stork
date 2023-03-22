@@ -84,13 +84,14 @@ export class AppOverviewComponent {
     onAuthenticationKeyRequest(accessPoint: AppAccessPoint) {
         // Set loading state for a given access point.
         this.keys[accessPoint.type] = null
-        this.servicesApi.getAccessPointKey(this.app.id, accessPoint.type)
+        this.servicesApi
+            .getAccessPointKey(this.app.id, accessPoint.type)
             .toPromise()
-            .then(key => {
+            .then((key) => {
                 // Set the new key.
                 this.keys[accessPoint.type] = key
             })
-            .catch(_ => {
+            .catch((_) => {
                 // Reset the loading state.
                 this.keys[accessPoint.type] = undefined
             })
