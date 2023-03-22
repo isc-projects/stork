@@ -9,10 +9,13 @@ import { ButtonModule } from 'primeng/button'
 import { AuthService } from '../auth.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
+import { App } from '../backend'
+import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
     let fixture: ComponentFixture<AppOverviewComponent>
+    let authService: AuthService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -24,9 +27,18 @@ describe('AppOverviewComponent', () => {
                 PanelModule,
                 ButtonModule,
             ],
-            providers: [AuthService, MessageService],
-            declarations: [AppOverviewComponent],
+            providers: [
+                MessageService,
+                {
+                    provide: AuthService,
+                    useValue: {
+                        superAdmin: () => true,
+                    },
+                },
+            ],
+            declarations: [AppOverviewComponent, AccessPointKeyComponent],
         }).compileComponents()
+        authService = TestBed.inject(AuthService)
     })
 
     beforeEach(() => {
@@ -40,7 +52,7 @@ describe('AppOverviewComponent', () => {
     })
 
     it('should display access points', () => {
-        const fakeApp: any = {
+        const fakeApp: App = {
             machine: {
                 id: 1,
                 address: '192.0.2.1:8080',
@@ -108,5 +120,21 @@ describe('AppOverviewComponent', () => {
         expect(component.formatAddress('')).toBe('')
         expect(component.formatAddress('[2001:db8:1::1]')).toBe('[2001:db8:1::1]')
         expect(component.formatAddress('2001:db8:1::2')).toBe('[2001:db8:1::2]')
+    })
+
+    it('should hide keys for non-super-admin users', () => {
+        component.app = { type: 'bind9' }
+        spyOn(authService, 'superAdmin').and.returnValue(false)
+        expect(component.canShowKeys).toBeFalse()
+    })
+
+    it('should hide keys for non-BIND9 application', () => {
+        component.app = { type: 'kea' }
+        expect(component.canShowKeys).toBeFalse()
+    })
+
+    it('should show keys for BIND9 application and super-admin user', () => {
+        component.app = { type: 'bind9' }
+        expect(component.canShowKeys).toBeTrue()
     })
 })

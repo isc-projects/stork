@@ -21,22 +21,7 @@
             ></span>
             <span class="ml-2" *ngIf="canShowKeys">
                 Key:
-                <!-- Control is not clicked yet. -->
-                <!-- Or control is clicked and key is loading. -->
-                <button
-                    pButton
-                    class="p-button-text p-button-plain p-0"
-                    icon="fas fa-eye-slash"
-                    (click)="onAuthenticationKeyRequest(ap)"
-                    [loading]="isKeyLoading(ap)"
-                    *ngIf="!isKeyFetched(ap)"
-                ></button>
-                <!-- Control is clicked and key is loaded. -->
-                <ng-container *ngIf="isKeyFetched(ap) && !isKeyEmpty(ap)">
-                    {{ getKey(ap) }}
-                </ng-container>
-                <!-- Key is loaded but is has no value. -->
-                <ng-container *ngIf="isKeyFetched(ap) && isKeyEmpty(ap)"> (no value) </ng-container>
+                <app-access-point-key [accessPointType]="ap.type" [appId]="app.id"></app-access-point-key>
             </span>
         </td>
     </tr>

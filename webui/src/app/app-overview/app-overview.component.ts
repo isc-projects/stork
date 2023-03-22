@@ -18,12 +18,7 @@ export class AppOverviewComponent {
      */
     @Input() app: App = null
 
-    /**
-     * The authentication keys fetched from the API.
-     */
-    keys: Record<string, string> = {}
-
-    constructor(private auth: AuthService, private servicesApi: ServicesService) {}
+    constructor(private auth: AuthService) {}
 
     /**
      * Conditionally formats an IP address for display.
@@ -46,54 +41,5 @@ export class AppOverviewComponent {
      */
     get canShowKeys() {
         return this.app.type === 'bind9' && this.auth.superAdmin()
-    }
-
-    /**
-     * Indicates if the authentication key is loading.
-     */
-    isKeyLoading(accessPoint: AppAccessPoint) {
-        return this.getKey(accessPoint) === null
-    }
-
-    /**
-     * Indicates if the authentication key related to a given access point
-     * is already fetched.
-     */
-    isKeyFetched(accessPoint: AppAccessPoint) {
-        return this.getKey(accessPoint) != null
-    }
-
-    /**
-     * Indicates if the authentication key related to a given access point
-     * is already fetched and it is empty.
-     */
-    isKeyEmpty(accessPoint: AppAccessPoint) {
-        return this.getKey(accessPoint) === ''
-    }
-
-    /**
-     * Returns the authentication key related to a given access point.
-     */
-    getKey(accessPoint: AppAccessPoint) {
-        return this.keys[accessPoint.type]
-    }
-
-    /**
-     * Callback called when the user requests for the authentication key.
-     */
-    onAuthenticationKeyRequest(accessPoint: AppAccessPoint) {
-        // Set loading state for a given access point.
-        this.keys[accessPoint.type] = null
-        this.servicesApi
-            .getAccessPointKey(this.app.id, accessPoint.type)
-            .toPromise()
-            .then((key) => {
-                // Set the new key.
-                this.keys[accessPoint.type] = key
-            })
-            .catch((_) => {
-                // Reset the loading state.
-                this.keys[accessPoint.type] = undefined
-            })
     }
 }
