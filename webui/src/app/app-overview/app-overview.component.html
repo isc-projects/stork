@@ -19,16 +19,24 @@
                 class="access-point-list__icon--unsecured pi pi-lock-open"
                 pTooltip="unsecured connection"
             ></span>
-            <span class="ml-2" *ngIf="ap.key">
+            <span class="ml-2" *ngIf="canShowKeys">
                 Key:
-                <p-inplace class="inline-block">
-                    <ng-template pTemplate="display">
-                        <i class="fas fa-eye-slash"></i>
-                    </ng-template>
-                    <ng-template pTemplate="content">
-                        {{ ap.key }}
-                    </ng-template>
-                </p-inplace>
+                <!-- Control is not clicked yet. -->
+                <!-- Or control is clicked and key is loading. -->
+                <button pButton
+                    class="p-button-text p-button-plain p-0"
+                    icon="fas fa-eye-slash"
+                    (click)="onAuthenticationKeyRequest(ap)"
+                    [loading]="isKeyLoading(ap)"
+                    *ngIf="!isKeyFetched(ap)"></button>
+                <!-- Control is clicked and key is loaded. -->
+                <ng-container *ngIf="isKeyFetched(ap) && !isKeyEmpty(ap)">
+                    {{ getKey(ap) }}
+                </ng-container>
+                <!-- Key is loaded but is has no value. -->
+                <ng-container *ngIf="isKeyFetched(ap) && isKeyEmpty(ap)">
+                    (no value)
+                </ng-container>
             </span>
         </td>
     </tr>

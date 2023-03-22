@@ -5,6 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { RouterTestingModule } from '@angular/router/testing'
 import { PanelModule } from 'primeng/panel'
 import { AppOverviewComponent } from './app-overview.component'
+import { ButtonModule } from 'primeng/button'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -12,7 +13,7 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [FormsModule, NoopAnimationsModule, RouterTestingModule, PanelModule],
+            imports: [FormsModule, NoopAnimationsModule, RouterTestingModule, PanelModule, ButtonModule],
             declarations: [AppOverviewComponent],
         }).compileComponents()
     })
