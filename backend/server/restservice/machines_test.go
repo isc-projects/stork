@@ -2273,3 +2273,129 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	require.EqualValues(t, extension, ".tar.gz")
 	require.LessOrEqual(t, time.Now().UTC().Sub(timestamp).Seconds(), float64(10))
 }
+
+// Test that only super-administrators can fetch the authentication key of the
+// access point.
+func TestGetAccessPointKeyIsRestrictedToSuperAdmins(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+
+	// Create an admin user.
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	user := &dbmodel.SystemUser{
+		Login:    "foo",
+		Password: "bar",
+		Name:     "baz",
+		Lastname: "boz",
+		Groups:   []*dbmodel.SystemGroup{{ID: dbmodel.AdminGroupID}},
+	}
+	_, _ = dbmodel.CreateUser(rapi.DB, user)
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	// Act
+	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
+		AppID: 42,
+		Type:  dbmodel.AccessPointControl,
+	})
+
+	// Assert
+	defaultRsp, ok := rsp.(*services.GetAccessPointKeyDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+}
+
+// Test that the HTTP 500 Internal Server Error status is returned if the
+// database is not available.
+func TestGetAccessPointKeyForInvalidDatabase(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	// Act
+	teardown()
+	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
+		AppID: 42,
+		Type:  dbmodel.AccessPointControl,
+	})
+
+	// Assert
+	defaultRsp, ok := rsp.(*services.GetAccessPointKeyDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+}
+
+// Test that the HTTP 404 Not Found status is returned if the access point
+// doesn't exist.
+func TestGetAccessPointKeyForMissingEntry(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	// Act
+	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
+		AppID: 42,
+		Type:  dbmodel.AccessPointControl,
+	})
+
+	// Assert
+	defaultRsp, ok := rsp.(*services.GetAccessPointKeyDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+}
+
+// Test that the authentication key of a given access point is fetched properly.
+func TestGetAccessPointKey(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
+	_ = dbmodel.AddMachine(db, machine)
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:              dbmodel.AccessPointControl,
+			Address:           "127.0.0.1",
+			Port:              8080,
+			Key:               "secret",
+			UseSecureProtocol: true,
+		}},
+	}
+	_, _ = dbmodel.AddApp(db, app)
+
+	// Act
+	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
+		AppID: app.ID,
+		Type:  dbmodel.AccessPointControl,
+	})
+
+	// Assert
+	okRsp, ok := rsp.(*services.GetAccessPointKeyOK)
+	require.True(t, ok)
+	require.EqualValues(t, "secret", okRsp.Payload)
+}
