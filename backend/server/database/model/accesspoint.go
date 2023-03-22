@@ -54,5 +54,4 @@ func GetAccessPointByID(db dbops.DBI, appID int64, accessPointType string) (*Acc
 		)
 	}
 	return accessPoint, nil
-
 }

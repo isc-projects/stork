@@ -1579,7 +1579,6 @@ func (r *RestAPI) GetAccessPointKey(ctx context.Context, params services.GetAcce
 	}
 
 	accessPoint, err := dbmodel.GetAccessPointByID(r.DB, params.AppID, params.Type)
-
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot retrieve access point from database"
