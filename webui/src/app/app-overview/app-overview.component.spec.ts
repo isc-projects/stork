@@ -6,6 +6,9 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { PanelModule } from 'primeng/panel'
 import { AppOverviewComponent } from './app-overview.component'
 import { ButtonModule } from 'primeng/button'
+import { AuthService } from '../auth.service'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { MessageService } from 'primeng/api'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -13,7 +16,15 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [FormsModule, NoopAnimationsModule, RouterTestingModule, PanelModule, ButtonModule],
+            imports: [
+                FormsModule,
+                NoopAnimationsModule,
+                RouterTestingModule,
+                HttpClientTestingModule,
+                PanelModule,
+                ButtonModule,
+            ],
+            providers: [AuthService, MessageService],
             declarations: [AppOverviewComponent],
         }).compileComponents()
     })
