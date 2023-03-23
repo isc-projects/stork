@@ -200,8 +200,8 @@ func TestRunDBCreate(t *testing.T) {
 	os.Args = []string{
 		"stork-tool", "db-create",
 		"--db-maintenance-name", settings.DBName,
-		"--db-maintenance-user", settings.Password,
-		"--db-maintenance-password", settings.User,
+		"--db-maintenance-user", settings.User,
+		"--db-maintenance-password", settings.Password,
 		"--db-name", dbName,
 		"--db-user", dbName,
 		"--db-password", settings.Password,
