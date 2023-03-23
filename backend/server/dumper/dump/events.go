@@ -13,7 +13,7 @@ type EventsDump struct {
 }
 
 // Extended event structure with additional, derived members to improve the
-// dump clarification.
+// dump clarity.
 type EventExtended struct {
 	dbmodel.Event
 	LevelText string
