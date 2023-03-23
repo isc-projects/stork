@@ -211,14 +211,14 @@ environment variable, e.g.:
 It is empty by default, meaning the default Postgres socket is used.
 
 If the database setup requires a password other than the default ``storktest``,
-the console will prompt to provide credentials. The default password can also
-be overridden by the ``DB_PASSWORD`` variable:
+the console will prompt for credentials. The default password can also
+be overridden with the ``DB_PASSWORD`` environment variable:
 
 .. code:: console
 
           $ rake unittest:backend DB_PASSWORD=secret123
 
-Note that there is no need to create the ``storktest`` database itself; it is
+Note that there is no need to create the ``storktest`` database manually; it is
 created and destroyed by the Rakefile task.
 
 Unit Tests Coverage
