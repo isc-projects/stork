@@ -1,3 +1,9 @@
+* 290 [func] slawek
+
+    Added support for connecting to the Postgres server over sockets. It allows
+    securing the connection using the "trust" and "host" authentication modes.
+    (Gitlab #858)
+
 * 289 [bug] slawek
 
     Fixed ignoring URL segments in the Grafana base address.
