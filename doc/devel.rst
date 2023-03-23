@@ -201,14 +201,32 @@ environment variables.
 
 The maintenance credentials are also used to create the test databases.
 
-To point unit tests to a specific database server, set the ``DB_HOST``
-environment variable, e.g.:
+To point unit tests to a specific database server via HTTP, set the ``DB_HOST``
+and optionally ``DB_PORT`` environment variables, e.g.:
+
+.. code:: console
+
+          $ rake unittest:backend DB_HOST=host DB_PORT=port
+
+There is a shorthand to set the host and port. The ``DB_HOST`` may include the
+port delimited by a colon.
 
 .. code:: console
 
           $ rake unittest:backend DB_HOST=host:port
 
-It is empty by default, meaning the default Postgres socket is used.
+If the ``DB_HOST`` is not provided, the default Postgres socket is used. The
+default port is 5432.
+
+You may need to manually specify the socket if your setup uses a custom socket
+location or if multiple database servers are installed.
+
+.. code:: console
+
+        $ rake unittest:backend DB_HOST=/tmp DB_PORT=5433
+
+Notice that the ``DB_HOST`` is a path to the directory containing the socket
+file, not to the socket file itself.
 
 If the database setup requires a password other than the default ``storktest``,
 the console will prompt for credentials. The default password can also
