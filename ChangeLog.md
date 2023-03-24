@@ -1,3 +1,8 @@
+* 288 [bug] razvan
+
+    The content of subnets column is now sorted.
+    (Gitlab #855)
+
 * 287 [func] slawek
 
     Added a human-readable representation of the event level in the dump
