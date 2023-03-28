@@ -38,7 +38,7 @@ func AppendAccessPoint(list []*AccessPoint, tp, address, key string, port int64,
 	return list
 }
 
-// Get an access point by its primary keys.
+// Get an access point by app id and access point type.
 func GetAccessPointByID(db dbops.DBI, appID int64, accessPointType string) (*AccessPoint, error) {
 	accessPoint := &AccessPoint{AppID: appID, Type: accessPointType}
 	err := db.Model(accessPoint).WherePK().Select()

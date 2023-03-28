@@ -51,7 +51,7 @@ export class AccessPointKeyComponent {
     }
 
     /**
-     * Callback called when the user requests for the authentication key.
+     * Callback called when the user requests getting the authentication key.
      */
     onAuthenticationKeyRequest() {
         // Set loading state for a given access point.

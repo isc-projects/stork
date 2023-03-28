@@ -228,7 +228,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 		if len(keyName) > 1 {
 			key = getRndcKey(config, keyName[1])
 			if key == "" {
-				log.WithField("key", keyName[1]).Warn("Cannot found key details")
+				log.WithField("key", keyName[1]).Warn("Cannot find key details")
 			}
 		}
 	}

@@ -30,7 +30,7 @@ describe('AccessPointKeyComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should recognize the key is loading or not', () => {
+    it('should recognize whether the key is loading or not', () => {
         // Key is not loading and not fetched.
         component.key = undefined
         expect(component.isKeyLoading).toBeFalse()
@@ -48,7 +48,7 @@ describe('AccessPointKeyComponent', () => {
         expect(component.isKeyLoading).toBeFalse()
     })
 
-    it('should recognize the key is fetched or not', () => {
+    it('should recognize whether the key is fetched or not', () => {
         // Key is not fetched.
         component.key = undefined
         expect(component.isKeyFetched).toBeFalse()
@@ -66,7 +66,7 @@ describe('AccessPointKeyComponent', () => {
         expect(component.isKeyFetched).toBeTrue()
     })
 
-    it('should recognize the key is fetched and empty', () => {
+    it('should recognize if the key is fetched and empty', () => {
         // Key is not fetched.
         component.key = undefined
         expect(component.isKeyEmpty).toBeFalse()
@@ -84,7 +84,7 @@ describe('AccessPointKeyComponent', () => {
         expect(component.isKeyEmpty).toBeTrue()
     })
 
-    it('should set loading state during the key is fetching', fakeAsync(() => {
+    it('should set loading state during the key fetching', fakeAsync(() => {
         component.appId = 42
         component.accessPointType = 'control'
         spyOn(servicesApi, 'getAccessPointKey').and.returnValue(of('foobar' as string & HttpEvent<string>))
