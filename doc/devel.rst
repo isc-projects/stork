@@ -361,7 +361,7 @@ System tests require:
 - Python >= 3.18
 - Rake (as a launcher)
 - Docker
-- docker compose (V2) or docker-compose (V1) >= 1.28
+- `docker compose (V2) <https://docs.docker.com/compose/compose-v2/>`_ or docker-compose (V1) >= 1.28
 
 Initial steps
 -------------
