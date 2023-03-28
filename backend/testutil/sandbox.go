@@ -44,52 +44,52 @@ func (sb *Sandbox) Close() {
 // this file.
 func (sb *Sandbox) Join(name string) (string, error) {
 	// build full path
-	filePath := path.Join(sb.BasePath, name)
+	fpath := path.Join(sb.BasePath, name)
 
 	// ensure directory
-	dir := path.Dir(filePath)
+	dir := path.Dir(fpath)
 	err := os.MkdirAll(dir, 0o777)
 	if err != nil {
 		return "", err
 	}
 
 	// create file in the filesystem
-	file, err := os.Create(filePath)
+	file, err := os.Create(fpath)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
-	return filePath, nil
+	return fpath, nil
 }
 
 // Create indicated directory in sandbox and all parent directories
 // and return a full path.
 func (sb *Sandbox) JoinDir(name string) (string, error) {
 	// build full path
-	filePath := path.Join(sb.BasePath, name)
+	fpath := path.Join(sb.BasePath, name)
 
 	// ensure directory
-	err := os.MkdirAll(filePath, 0o777)
+	err := os.MkdirAll(fpath, 0o777)
 	if err != nil {
 		return "", err
 	}
 
-	return filePath, nil
+	return fpath, nil
 }
 
 // Create a file and write provided content to it.
 func (sb *Sandbox) Write(name string, content string) (string, error) {
-	filePath, err := sb.Join(name)
+	fpath, err := sb.Join(name)
 	if err != nil {
 		return "", err
 	}
 
-	err = os.WriteFile(filePath, []byte(content), 0o600)
+	err = os.WriteFile(fpath, []byte(content), 0o600)
 	if err != nil {
 		log.Fatal(err)
 		return "", err
 	}
 
-	return filePath, err
+	return fpath, err
 }
