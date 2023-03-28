@@ -1,6 +1,6 @@
 * 292 [func] slawek
 
-    Added the configuration review checker to verify that the Stork agent and
+    Added the configuration review checker to verify that the Stork Agent and
     Kea Control Agent communicate over TLS if the Kea Control Agent requires
     the HTTP credentials (i.e., Basic Auth).
     (Gitlab #945)
