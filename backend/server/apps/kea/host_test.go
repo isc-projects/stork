@@ -1440,7 +1440,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	for i, call := range fd.CallLog {
 		require.Equal(t, "BeginReview", call.CallName)
 		require.Equal(t, app.Daemons[i%2].ID, call.DaemonID)
-		require.Equal(t, configreview.DBHostsModified, call.Trigger)
+		require.Equal(t, configreview.Triggers{configreview.DBHostsModified}, call.Triggers)
 	}
 }
 

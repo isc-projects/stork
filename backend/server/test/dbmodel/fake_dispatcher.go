@@ -11,7 +11,7 @@ import (
 type FakeDispatcherCall struct {
 	CallName string
 	DaemonID int64
-	Trigger  configreview.Trigger
+	Triggers configreview.Triggers
 }
 
 // Mock implementation of the configuration review dispatcher.
@@ -109,8 +109,8 @@ func (d *FakeDispatcher) Shutdown() {
 }
 
 // Registers the call and returns true.
-func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, trigger configreview.Trigger, callback configreview.CallbackFunc) bool {
-	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "BeginReview", DaemonID: daemon.ID, Trigger: trigger})
+func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, triggers configreview.Triggers, callback configreview.CallbackFunc) bool {
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "BeginReview", DaemonID: daemon.ID, Triggers: triggers})
 	return true
 }
 

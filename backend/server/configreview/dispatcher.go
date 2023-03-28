@@ -30,9 +30,6 @@ type CallbackFunc func(int64, error)
 // A type of an event triggering config review.
 type Trigger string
 
-// Collection of triggers.
-type Triggers []Trigger
-
 // Types of events triggering config review. Typically, a review is
 // triggered when daemon configuration change has been detected.
 // However, some config checkers also use other source of data that,
@@ -54,6 +51,14 @@ const (
 	// the Stork agent.
 	StorkAgentConfigModified Trigger = "Stork agent config change"
 )
+
+// Collection of triggers.
+type Triggers []Trigger
+
+// Indicates if the slice of triggers is corresponding to internal review run.
+func (ts Triggers) isInternalRun() bool {
+	return len(ts) == 1 && ts[0] == internalRun
+}
 
 // Returns default config review triggers. They are by default used by
 // all configuration checkers:
@@ -97,16 +102,16 @@ type ReviewContext struct {
 	refDaemons    []*dbmodel.Daemon
 	reports       []taggedReport
 	callback      CallbackFunc
-	trigger       Trigger
+	triggers      Triggers
 }
 
 // Creates new review context instance.
-func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) *ReviewContext {
+func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, triggers Triggers, callback CallbackFunc) *ReviewContext {
 	ctx := &ReviewContext{
 		db:            db,
 		subjectDaemon: daemon,
 		callback:      callback,
-		trigger:       trigger,
+		triggers:      triggers,
 	}
 	return ctx
 }
@@ -304,17 +309,17 @@ type Dispatcher interface {
 	GetSignature() string
 	Start()
 	Shutdown()
-	BeginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool
+	BeginReview(daemon *dbmodel.Daemon, triggers Triggers, callback CallbackFunc) bool
 	ReviewInProgress(daemonID int64) bool
 }
 
 // Creates new context instance when a review is scheduled. The daemon
 // is a pointer to a daemon instance for which the review is
-// performed. The trigger as a trigger that started the current
+// performed. The triggers are triggers that started the current
 // review. The callback is a callback function invoked after the
 // review is completed.
-func (d *dispatcherImpl) newContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) *ReviewContext {
-	ctx := newReviewContext(db, daemon, trigger, callback)
+func (d *dispatcherImpl) newContext(db *dbops.PgDB, daemon *dbmodel.Daemon, triggers Triggers, callback CallbackFunc) *ReviewContext {
+	ctx := newReviewContext(db, daemon, triggers, callback)
 	return ctx
 }
 
@@ -407,15 +412,15 @@ func (d *dispatcherImpl) awaitReports() {
 }
 
 // Goroutine performing configuration review for a daemon.
-func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, dispatchGroupSelectors DispatchGroupSelectors, callback CallbackFunc) {
+func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, triggers Triggers, dispatchGroupSelectors DispatchGroupSelectors, callback CallbackFunc) {
 	defer d.reviewWg.Done()
 
-	ctx := d.newContext(d.db, daemon, trigger, callback)
+	ctx := d.newContext(d.db, daemon, triggers, callback)
 
 	// If this is an internal run, the dispatch group selectors haven't
 	// been determined in the beginReview function.
 	var selectors DispatchGroupSelectors
-	if trigger == internalRun {
+	if triggers.isInternalRun() {
 		selectors = getDispatchGroupSelectors(daemon.Name)
 	} else {
 		selectors = dispatchGroupSelectors
@@ -473,21 +478,23 @@ func (d *dispatcherImpl) hasEnabledCheckersForTrigger(daemon *dbmodel.Daemon, tr
 // BeginReview, it also accepts "internalRun" trigger value. In that case the
 // populateReports function takes slightly different path when it inserts new
 // reports to the database.
-func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool {
+func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, triggers Triggers, callback CallbackFunc) bool {
 	var dispatchGroupSelectors DispatchGroupSelectors
 
 	// The specified trigger indicates why the review is scheduled. The internally
 	// scheduled review is unconditional. In some cases the review may be skipped
 	// when none of the current config checkers are activated for this trigger.
-	shouldRun := (trigger == internalRun)
+	shouldRun := triggers.isInternalRun()
 	if !shouldRun {
 		// Not an internal run. See if there are any checkers for this trigger.
 		dispatchGroupSelectors = getDispatchGroupSelectors(daemon.Name)
 		for _, selector := range dispatchGroupSelectors {
 			if group := d.getGroup(selector); group != nil {
-				if d.hasEnabledCheckersForTrigger(daemon, trigger, group) {
-					shouldRun = true
-					break
+				for _, trigger := range triggers {
+					if d.hasEnabledCheckersForTrigger(daemon, trigger, group) {
+						shouldRun = true
+						break
+					}
 				}
 			}
 		}
@@ -496,11 +503,11 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, ca
 		return false
 	}
 
-	if trigger != internalRun {
+	if !triggers.isInternalRun() {
 		log.WithFields(log.Fields{
 			"daemon_id": daemon.ID,
 			"name":      daemon.Name,
-			"trigger":   trigger,
+			"triggers":  triggers,
 		}).Info("scheduling a new configuration review")
 	}
 
@@ -525,7 +532,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, ca
 
 	d.reviewWg.Add(1)
 	// Run the review in the background.
-	go d.runForDaemon(daemon, trigger, dispatchGroupSelectors, callback)
+	go d.runForDaemon(daemon, triggers, dispatchGroupSelectors, callback)
 	return true
 }
 
@@ -585,7 +592,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 	}
 
-	if ctx.trigger != internalRun {
+	if !ctx.triggers.isInternalRun() {
 		// Delete configuration reports for all daemons involved in our review.
 		// It includes the reports for daemons only referenced in the review
 		// (e.g., a HA peer's configuration). For those daemons, we will have to
@@ -645,7 +652,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		return
 	}
 
-	if ctx.trigger != internalRun {
+	if !ctx.triggers.isInternalRun() {
 		// If the review was scheduled externally, and we deleted configuration
 		// reports for referenced daemons, we have to rebuild the reports for
 		// those daemons. Let's schedule internal reviews for each of them.
@@ -653,7 +660,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 			// Do not schedule the review for the subject daemon because we're
 			// now doing its review.
 			if ctx.refDaemons[i].ID != ctx.subjectDaemon.ID {
-				_ = d.beginReview(ctx.refDaemons[i], internalRun, ctx.callback)
+				_ = d.beginReview(ctx.refDaemons[i], Triggers{internalRun}, ctx.callback)
 			}
 		}
 	}
@@ -878,12 +885,12 @@ func (d *dispatcherImpl) Shutdown() {
 // returned boolean value indicates whether or not the review has
 // been scheduled. It is not scheduled when there is another review
 // for the daemon already in progress, there are no checkers activated
-// for the given trigger or the trigger is set to "internalRun".
-func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool {
-	if trigger == internalRun {
+// for the given triggers or the trigger is set to "internalRun".
+func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, triggers Triggers, callback CallbackFunc) bool {
+	if len(triggers) == 0 || triggers.isInternalRun() {
 		return false
 	}
-	return d.beginReview(daemon, trigger, callback)
+	return d.beginReview(daemon, triggers, callback)
 }
 
 // Checks if the review for the specified daemon is in progress.

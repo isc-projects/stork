@@ -216,12 +216,12 @@ func TestConditionallyBeginKeaConfigReviews(t *testing.T) {
 	require.Equal(t, "GetSignature", dispatcher.CallLog[3].CallName)
 	require.Equal(t, "BeginReview", dispatcher.CallLog[4].CallName)
 
-	// Stork agent configuration changed. The review should be performed again.
+	// Stork Agent configuration changed. The review should be performed again.
 	conditionallyBeginKeaConfigReviews(app, state, dispatcher, true)
-	require.Len(t, dispatcher.CallLog, 8)
-	require.Equal(t, "BeginReview", dispatcher.CallLog[5].CallName)
-	require.Equal(t, configreview.StorkAgentConfigModified, dispatcher.CallLog[5].Trigger)
-	require.Equal(t, "GetSignature", dispatcher.CallLog[6].CallName)
-	require.Equal(t, "BeginReview", dispatcher.CallLog[7].CallName)
-	require.Equal(t, configreview.ConfigModified, dispatcher.CallLog[7].Trigger)
+	require.Len(t, dispatcher.CallLog, 7)
+	require.Equal(t, "GetSignature", dispatcher.CallLog[5].CallName)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[6].CallName)
+	require.Len(t, dispatcher.CallLog[6].Triggers, 2)
+	require.Equal(t, configreview.StorkAgentConfigModified, dispatcher.CallLog[6].Triggers[0])
+	require.Equal(t, configreview.ConfigModified, dispatcher.CallLog[6].Triggers[1])
 }

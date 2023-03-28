@@ -234,7 +234,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 			err = errors.Wrapf(err, "problem committing transaction to add new hosts from host_cmds hooks library for daemon %d", daemon.ID)
 			return true, err
 		}
-		_ = puller.ReviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
+		_ = puller.ReviewDispatcher.BeginReview(daemon, []configreview.Trigger{configreview.DBHostsModified}, nil)
 	}
 
 	// We no longer need the hosts.

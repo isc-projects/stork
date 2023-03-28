@@ -41,7 +41,7 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 			Active: true,
 			Name:   "kea@machine",
 		},
-	}, ManualRun, nil)
+	}, []Trigger{ManualRun}, nil)
 	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, ctx.subjectDaemon)
 	require.NotNil(t, ctx)
 
@@ -2097,7 +2097,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 // Test that error is generated for non-DHCP daemon.
 func TestSubnetsOverlappingReportErrorForNonDHCPDaemon(t *testing.T) {
 	// Arrange
-	ctx := newReviewContext(nil, dbmodel.NewBind9Daemon(true), ManualRun,
+	ctx := newReviewContext(nil, dbmodel.NewBind9Daemon(true), Triggers{ManualRun},
 		func(i int64, err error) {})
 
 	// Act
@@ -2118,7 +2118,7 @@ func TestSubnetsOverlappingReportForNonOverlappingSubnets(t *testing.T) {
         }
     }`)
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2148,7 +2148,7 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
         }
     }`)
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2179,7 +2179,7 @@ func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
         }
     }`)
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2214,7 +2214,7 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	_ = daemon.SetConfigFromJSON(string(config))
 
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2238,7 +2238,7 @@ func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
         "Dhcp4": { }
     }`)
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2271,7 +2271,7 @@ func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
     }`)
 
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := subnetsOverlapping(ctx)
@@ -2385,7 +2385,7 @@ func TestCanonicalPrefixes(t *testing.T) {
     }`)
 
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := canonicalPrefixes(ctx)
@@ -2425,7 +2425,7 @@ func TestCanonicalPrefixesForValidPrefixes(t *testing.T) {
     }`)
 
 	ctx := newReviewContext(nil, daemon,
-		ManualRun, func(i int64, err error) {})
+		Triggers{ManualRun}, func(i int64, err error) {})
 
 	// Act
 	report, err := canonicalPrefixes(ctx)
@@ -3737,7 +3737,7 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}, ManualRun, nil)
+		}, Triggers{ManualRun}, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)
@@ -3862,7 +3862,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}, ManualRun, nil)
+		}, Triggers{ManualRun}, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)

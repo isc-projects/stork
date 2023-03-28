@@ -11,7 +11,7 @@ import (
 func TestCreateReport(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 567,
 	}
@@ -34,7 +34,7 @@ func TestCreateReport(t *testing.T) {
 func TestCreateBlankReport(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 	report, err := NewReport(ctx, "   ").create()
 	require.Error(t, err)
 	require.Nil(t, report)
@@ -45,7 +45,7 @@ func TestCreateBlankReport(t *testing.T) {
 func TestCreateZeroSubjectDaemonID(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 0,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 
 	report, err := NewReport(ctx, "new report").create()
 	require.Error(t, err)
@@ -57,7 +57,7 @@ func TestCreateZeroSubjectDaemonID(t *testing.T) {
 func TestCreateZeroReferencedDaemonID(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 0,
 	}
@@ -81,7 +81,7 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 			ID: 123,
 		},
 	}
-	ctx := newReviewContext(nil, daemons[1], ConfigModified, nil)
+	ctx := newReviewContext(nil, daemons[1], Triggers{ConfigModified}, nil)
 
 	report, err := NewReport(ctx, "new report").
 		referencingDaemon(daemons[0]).
@@ -97,7 +97,7 @@ func TestNewEmptyReport(t *testing.T) {
 	// Arrange
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 
 	// Act
 	report, err := newEmptyReport(ctx)
@@ -115,7 +115,7 @@ func TestCreateEmptyReportZeroSubjectDaemonID(t *testing.T) {
 	// Arrange
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 0,
-	}, ConfigModified, nil)
+	}, Triggers{ConfigModified}, nil)
 
 	// Act
 	report, err := newEmptyReport(ctx)
@@ -128,7 +128,7 @@ func TestCreateEmptyReportZeroSubjectDaemonID(t *testing.T) {
 // Test that the issue is indicated properly.
 func TestReportIsIssueFound(t *testing.T) {
 	// Arrange
-	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, ConfigModified, nil)
+	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, Triggers{ConfigModified}, nil)
 	report, _ := NewReport(ctx, "foobar").create()
 	emptyReport, _ := newEmptyReport(ctx)
 

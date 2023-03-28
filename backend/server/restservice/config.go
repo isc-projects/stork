@@ -197,7 +197,7 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 	}
 
 	// Begin the review but do not wait for the result.
-	_ = r.ReviewDispatcher.BeginReview(daemon, configreview.ManualRun, nil)
+	_ = r.ReviewDispatcher.BeginReview(daemon, configreview.Triggers{configreview.ManualRun}, nil)
 
 	// Inform the caller that the review request has been "accepted".
 	rsp := services.NewPutDaemonConfigReviewAccepted()

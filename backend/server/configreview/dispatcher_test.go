@@ -3,6 +3,7 @@ package configreview
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -85,7 +86,7 @@ func TestGracefulShutdown(t *testing.T) {
 			ID:   int64(i),
 			Name: daemonNames[i],
 		}
-		ok := dispatcher.BeginReview(daemon, ConfigModified, nil)
+		ok := dispatcher.BeginReview(daemon, Triggers{ConfigModified}, nil)
 		require.True(t, ok)
 	}
 
@@ -198,13 +199,13 @@ func TestPopulateKeaReports(t *testing.T) {
 	wg.Add(2)
 
 	// Begin the reviews for both daemons.
-	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerErrors[0] = err
 	})
 	require.True(t, ok)
 
-	ok = dispatcher.BeginReview(daemons[1], ConfigModified, func(daemonID int64, err error) {
+	ok = dispatcher.BeginReview(daemons[1], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerErrors[1] = err
 	})
@@ -301,7 +302,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	wg.Add(1)
 
 	// Begin the review.
-	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerError = err
 	})
@@ -380,7 +381,7 @@ func TestReviewInProgress(t *testing.T) {
 	wg.Add(1)
 
 	// Begin first review.
-	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -392,7 +393,7 @@ func TestReviewInProgress(t *testing.T) {
 	require.True(t, dispatcher.ReviewInProgress(daemons[0].ID))
 
 	// Try to begin another review for the same daemon.
-	ok = dispatcher.BeginReview(daemons[0], ConfigModified, nil)
+	ok = dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, nil)
 
 	// Unblock the first review.
 	continueChan <- true
@@ -499,7 +500,7 @@ func TestCascadeReview(t *testing.T) {
 	wg.Add(2)
 
 	// Begin first the review for the first daemon.
-	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -527,7 +528,7 @@ func TestCascadeReview(t *testing.T) {
 	// Now, start the review for the second daemon. It should result in the
 	// cascaded review as well.
 	wg.Add(2)
-	ok = dispatcher.BeginReview(daemons[1], ConfigModified, func(daemonID int64, err error) {
+	ok = dispatcher.BeginReview(daemons[1], Triggers{ConfigModified}, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -597,52 +598,62 @@ func TestTriggers(t *testing.T) {
 
 	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
+	dispatcher.Start()
+	defer dispatcher.Shutdown()
 
 	// Register two test checkers setting the two boolean values declared
 	// below to true.
-	var dhcp4CheckComplete, dhcp6CheckComplete bool
-	mutex := &sync.Mutex{}
+	var dhcp4CheckComplete, dhcp6CheckComplete atomic.Value
+	dhcp4CheckComplete.Store(false)
+	dhcp6CheckComplete.Store(false)
 	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
-		mutex.Lock()
-		defer mutex.Unlock()
-		dhcp4CheckComplete = true
+		dhcp4CheckComplete.Store(true)
 		return nil, nil
 	})
 	dispatcher.RegisterChecker(KeaDHCPv6Daemon, "dhcp6_test_checker", Triggers{ManualRun}, func(ctx *ReviewContext) (*Report, error) {
-		mutex.Lock()
-		defer mutex.Unlock()
-		dhcp6CheckComplete = true
+		dhcp6CheckComplete.Store(true)
 		return nil, nil
 	})
 
 	// Scheduling the review using the internalRun trigger is not allowed.
-	ok := dispatcher.BeginReview(daemons[0], internalRun, nil)
+	ok := dispatcher.BeginReview(daemons[0], Triggers{internalRun}, nil)
 	require.False(t, ok)
 
 	// Schedule a review for the first daemon using the trigger associated
 	// with the first checker. Wait until the review is completed.
-	ok = dispatcher.BeginReview(daemons[0], ConfigModified, nil)
+	dhcp4CheckComplete.Store(false)
+	ok = dispatcher.BeginReview(daemons[0], Triggers{ConfigModified}, nil)
 	require.True(t, ok)
 	require.Eventually(t, func() bool {
-		mutex.Lock()
-		defer mutex.Unlock()
-		return dhcp4CheckComplete
+		return dhcp4CheckComplete.Load().(bool) && !dispatcher.ReviewInProgress(daemons[0].ID)
 	}, 5*time.Second, 100*time.Millisecond)
 
 	// A review using the same trigger for the second daemon should not
 	// be launched because the checker has been registered for the
 	// ManualRun only.
-	ok = dispatcher.BeginReview(daemons[1], ConfigModified, nil)
+	ok = dispatcher.BeginReview(daemons[1], Triggers{ConfigModified}, nil)
 	require.False(t, ok)
 
 	// Finally, try the review for the second daemon using the ManualRun
 	// trigger. It should be launched. Wait for the review to complete.
-	ok = dispatcher.BeginReview(daemons[1], ManualRun, nil)
+	dhcp6CheckComplete.Store(false)
+	ok = dispatcher.BeginReview(daemons[1], Triggers{ManualRun}, nil)
 	require.True(t, ok)
 	require.Eventually(t, func() bool {
-		mutex.Lock()
-		defer mutex.Unlock()
-		return dhcp6CheckComplete
+		return dhcp6CheckComplete.Load().(bool) && !dispatcher.ReviewInProgress(daemons[1].ID)
+	}, 5*time.Second, 100*time.Millisecond)
+
+	// The review shouldn't start if the multiple unrelated triggers are provided.
+	ok = dispatcher.BeginReview(daemons[1], Triggers{DBHostsModified, StorkAgentConfigModified}, nil)
+	require.False(t, ok)
+
+	// The review should be launched if at least one of the provided triggers
+	// corresponds to the registered checker.
+	dhcp6CheckComplete.Store(false)
+	ok = dispatcher.BeginReview(daemons[1], Triggers{DBHostsModified, StorkAgentConfigModified, ManualRun}, nil)
+	require.True(t, ok)
+	require.Eventually(t, func() bool {
+		return dhcp6CheckComplete.Load().(bool) && !dispatcher.ReviewInProgress(daemons[1].ID)
 	}, 5*time.Second, 100*time.Millisecond)
 }
 
@@ -934,7 +945,7 @@ func TestBeginReviewForDaemonWithAllCheckersDisabled(t *testing.T) {
 	dispatcher.SetCheckerState(daemon, "bar", CheckerStateDisabled)
 
 	// Act
-	ok := dispatcher.BeginReview(daemon, ManualRun, func(i int64, err error) {
+	ok := dispatcher.BeginReview(daemon, Triggers{ManualRun}, func(i int64, err error) {
 		require.Fail(t, "callback shouldn't be called")
 	})
 
@@ -981,7 +992,7 @@ func TestBeginReviewForDaemonWithSomeCheckersDisabled(t *testing.T) {
 
 	// Act
 	wg.Add(1)
-	ok := dispatcher.BeginReview(daemon, ManualRun, func(i int64, err error) {
+	ok := dispatcher.BeginReview(daemon, Triggers{ManualRun}, func(i int64, err error) {
 		wg.Done()
 	})
 	wg.Wait()
@@ -1012,7 +1023,7 @@ func TestSetCheckerStateToInvalidValue(t *testing.T) {
 // Test that the reports count is returned properly.
 func TestReviewContextCounters(t *testing.T) {
 	// Arrange
-	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, ConfigModified, nil)
+	ctx := newReviewContext(nil, &dbmodel.Daemon{ID: 42}, Triggers{ConfigModified}, nil)
 
 	report1, _ := NewReport(ctx, "foo").create()
 	report2, _ := NewReport(ctx, "bar").create()
@@ -1046,4 +1057,23 @@ func TestReviewContextCounters(t *testing.T) {
 	// Act & Assert
 	require.EqualValues(t, 5, ctx.getReportsCount())
 	require.EqualValues(t, 3, ctx.getIssuesCount())
+}
+
+// Test that the internal run is recognized properly.
+func TestTriggersIsInternalRun(t *testing.T) {
+	t.Run("only internalRun trigger", func(t *testing.T) {
+		require.True(t, Triggers{internalRun}.isInternalRun())
+	})
+
+	t.Run("missing internalRun trigger", func(t *testing.T) {
+		require.False(t, Triggers{ManualRun, ConfigModified}.isInternalRun())
+	})
+
+	t.Run("internalRun combined with another trigger", func(t *testing.T) {
+		require.False(t, Triggers{internalRun, ConfigModified}.isInternalRun())
+	})
+
+	t.Run("empty triggers", func(t *testing.T) {
+		require.False(t, Triggers{}.isInternalRun())
+	})
 }

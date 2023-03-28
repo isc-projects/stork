@@ -313,21 +313,29 @@ func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateM
 			continue
 		}
 
+		var triggers configreview.Triggers
 		if storkAgentConfigChanged {
-			_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], configreview.StorkAgentConfigModified, nil)
+			triggers = append(triggers, configreview.StorkAgentConfigModified)
 		}
 
+		isConfigModified := true
 		if state != nil && state.SameConfigDaemons != nil {
-			if ok := state.SameConfigDaemons[daemon.Name]; ok && state.SameConfigDaemons[daemon.Name] {
+			if isSame, ok := state.SameConfigDaemons[daemon.Name]; ok && isSame {
 				if daemon.ConfigReview != nil &&
 					daemon.ConfigReview.Signature == reviewDispatcher.GetSignature() {
 					// Configuration of this daemon hasn't changed and the dispatcher has
-					// no checkers modified since the last review. Skip the review.
-					continue
+					// no checkers modified since the last review. Skip the config modified trigger.
+					isConfigModified = false
 				}
 			}
 		}
-		_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], configreview.ConfigModified, nil)
+		if isConfigModified {
+			triggers = append(triggers, configreview.ConfigModified)
+		}
+
+		if len(triggers) != 0 {
+			_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], triggers, nil)
+		}
 	}
 }
 
