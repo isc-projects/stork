@@ -3635,7 +3635,7 @@ func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the credentials over HTTPS checker founds an issue if the HTTP
+// Test that the credentials over HTTPS checker reports an issue if the HTTP
 // credentials are provided but the Stork agent and Kea Control Agent don't
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
@@ -3664,7 +3664,7 @@ func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
 		"{daemon} configuration to use the secure protocol.")
 }
 
-// Test that the credentials over HTTPS checker founds no issue if the HTTP
+// Test that the credentials over HTTPS checker reports no issue if the HTTP
 // credentials are provided and the Stork agent and Kea Control Agent
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithTLS(t *testing.T) {
