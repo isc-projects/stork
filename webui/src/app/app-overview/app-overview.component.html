@@ -6,7 +6,7 @@
         </td>
     </tr>
     <tr *ngFor="let ap of app.accessPoints">
-        <td class="access-point-list__label p-capitalize-first">{{ ap.type }} access point:</td>
+        <td class="access-point-list__label p-capitalize-first vertical-align-bottom">{{ ap.type }} access point:</td>
         <td>
             {{ formatAddress(ap.address) }}:{{ ap.port }}
             <span
@@ -19,10 +19,10 @@
                 class="access-point-list__icon--unsecured pi pi-lock-open"
                 pTooltip="unsecured connection"
             ></span>
-            <span class="ml-2" *ngIf="canShowKeys">
+            <ng-container *ngIf="canShowKeys">
                 Key:
                 <app-access-point-key [accessPointType]="ap.type" [appId]="app.id"></app-access-point-key>
-            </span>
+            </ng-container>
         </td>
     </tr>
 </table>
