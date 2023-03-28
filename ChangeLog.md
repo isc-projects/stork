@@ -1,6 +1,6 @@
 * 295 [bug] slawek
 
-    Fixed fetching the authorization keys from Bind 9 configuration. The key
+    Fixed fetching the authorization keys from BIND 9 configuration. The key
     value is visible only for super-administrators.
     (Gitlab #997)
 
