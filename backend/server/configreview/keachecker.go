@@ -1189,10 +1189,11 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 
 	// The Stork agent has HTTP credentials configured but communicates with
 	// Kea over unsecure protocol.
-	return NewReport(ctx, "Basic HTTP authentication is weak on its own as "+
-		"there are known dictionary attacks, but those attacks require a "+
-		"'man in the middle' to get access to the HTTP traffic. That can be "+
-		"eliminated by using basic HTTP authentication exclusively over TLS. "+
+	return NewReport(ctx, "The Kea Control Agent requires the Basic Auth "+
+		"credentials but it accepts connections over unsecure protocol - TLS "+
+		"is disabled. The communication between the Stork Agent and Kea Control "+
+		"Agent is vulnerable to man-in-the-middle attacks and the credentials "+
+		"may be stolen. "+
 		"Configure the 'trust-anchor', 'cert-file', and 'key-file' "+
 		"properties in the Kea Control Agent {daemon} configuration to use "+
 		"the secure protocol.").referencingDaemon(ctx.subjectDaemon).create()
