@@ -67,7 +67,7 @@ func TestAuthorize(t *testing.T) {
 	// Someone who belongs to no groups would be able to log out.
 	require.True(t, authorizeAccept(t, 0, "/sessions", "DELETE"))
 
-	// Someone who belongs to no groups would be able to its and only its profile.
+	// Someone who belongs to no groups would be able to their and only their profile.
 	require.True(t, authorizeAccept(t, 0, "/users/5", "GET"))
 	require.True(t, authorizeAccept(t, 0, "/users/5/password", "GET"))
 	require.False(t, authorizeAccept(t, 0, "/users/4", "GET"))
