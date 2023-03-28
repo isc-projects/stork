@@ -288,7 +288,7 @@ COPY docker/init/init_db.sh docker/init/init_*_db.sh docker/init/init_*_query.sq
 # Run
 WORKDIR /root
 ENV DB_TYPE=mysql
-ENV DB_HOST=172.20.0.115
+ENV DB_HOST=172.24.0.115
 ENV DB_USER=kea
 ENV DB_PASSWORD=kea
 ENV DB_NAME=kea

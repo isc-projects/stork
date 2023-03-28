@@ -102,7 +102,7 @@ namespace :demo do
             end
             host_server_address = "http://host.docker.internal:8080"
             if OS == "linux"
-                host_server_address = "http://172.20.0.1:8080"
+                host_server_address = "http://172.24.0.1:8080"
             end
             ENV["STORK_SERVER_URL"] = host_server_address
             up_opts += ["--scale", "server=0", "--scale", "webui=0"]

@@ -14,8 +14,8 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea:172.20.0.100"
-      - "agent-kea6:172.20.0.106"
+      - "agent-kea:172.24.0.100"
+      - "agent-kea6:172.24.0.106"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet
@@ -66,12 +66,12 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea:172.20.0.100"
+      - "agent-kea:172.24.0.100"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
       storknet:
-        ipv4_address: 172.20.0.100
+        ipv4_address: 172.24.0.100
       subnet-00:
         ipv4_address: 172.100.0.100
       subnet-01:
@@ -121,12 +121,12 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea6:172.20.0.106"
+      - "agent-kea6:172.24.0.106"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
     hostname: agent-kea6
     networks:
       storknet:
-        ipv4_address: 172.20.0.106
+        ipv4_address: 172.24.0.106
       subnet6-00:
         ipv6_address: 3000:db8:1::100
       subnet6-01:
@@ -168,7 +168,7 @@ services:
     hostname: agent-kea-ha1
     networks:
       storknet:
-        ipv4_address: 172.20.0.101
+        ipv4_address: 172.24.0.101
     expose:
       - "8886"
       - "9547" # kea_exporter for prometheus
@@ -198,7 +198,7 @@ services:
     hostname: agent-kea-ha2
     networks:
       storknet:
-        ipv4_address: 172.20.0.110
+        ipv4_address: 172.24.0.110
     expose:
       - "8885"
     ports:
@@ -227,7 +227,7 @@ services:
     hostname: agent-kea-many-subnets
     networks:
       storknet:
-        ipv4_address: 172.20.0.102
+        ipv4_address: 172.24.0.102
     expose:
       - "8884"
       - "9547" # kea_exporter for prometheus
@@ -261,7 +261,7 @@ services:
       - "8883:8883"
     networks:
       storknet:
-        ipv4_address: 172.20.0.53
+        ipv4_address: 172.24.0.53
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-bind9
@@ -291,7 +291,7 @@ services:
     hostname: agent-bind9-2
     networks:
       storknet:
-        ipv4_address: 172.20.0.54
+        ipv4_address: 172.24.0.54
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-bind9-2
@@ -330,13 +330,13 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea:172.20.0.100"
-      - "agent-kea6:172.20.0.106"
+      - "agent-kea:172.24.0.100"
+      - "agent-kea6:172.24.0.106"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
       storknet:
-        ipv4_address: 172.20.0.200
+        ipv4_address: 172.24.0.200
       subnet-00:
         ipv4_address: 172.100.0.200
       subnet-01:
@@ -386,7 +386,7 @@ services:
     image: postgres:11
     networks:
       storknet:
-        ipv4_address: 172.20.0.234
+        ipv4_address: 172.24.0.234
     environment:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork
@@ -410,10 +410,9 @@ services:
 networks:
   storknet:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/24
+        - subnet: 172.24.0.0/24
         - subnet: 3009:db8:1::/64
   subnet-00:
     ipam:
@@ -429,13 +428,11 @@ networks:
         - subnet: 172.102.0.0/24
   subnet6-00:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
         - subnet: 3000:db8:1::/64
   subnet6-01:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
         - subnet: 3001:db8:1::/64

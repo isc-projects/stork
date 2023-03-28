@@ -14,7 +14,7 @@ services:
     hostname: agent-kea-premium-one
     networks:
       storknet:
-        ipv4_address: 172.20.0.103
+        ipv4_address: 172.24.0.103
     expose:
       - "8881" # stork server to agent
     ports:
@@ -58,7 +58,7 @@ services:
     hostname: agent-kea-premium-two
     networks:
       storknet:
-        ipv4_address: 172.20.0.104
+        ipv4_address: 172.24.0.104
     expose:
       - "8889" # stork server to agent
     ports:
