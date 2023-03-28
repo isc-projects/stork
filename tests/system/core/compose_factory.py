@@ -46,7 +46,7 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
     helpful in Gitlab CI, where the Docker service is available under the
     "docker" hostname.
 
-    The installed docker-compose version is detect using the provided detector.
+    The installed docker-compose version is detected using the provided detector.
     The default detector searches for executables in the system and prefers V2
     over V1.
 
