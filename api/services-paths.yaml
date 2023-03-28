@@ -467,7 +467,7 @@
           description: Access point type
       responses:
         200:
-          description: List of the authentication keys.
+          description: The authentication key.
           schema:
             type: string
         default:
