@@ -1,7 +1,6 @@
 * 293 [bug] slawek
 
-    Fix a problem with the unworkable log-out of a user not assigned to any
-    group.
+    Fixed a problem whereby a user not assigned to any groups could not log out.
     (Gitlab #1004)
 
 * 292 [func] slawek
