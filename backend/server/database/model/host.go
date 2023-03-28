@@ -228,7 +228,7 @@ func updateHost(tx *pg.Tx, host *Host) error {
 	}
 
 	// Update the host information.
-	result, err := tx.Model(host).WherePK().Update()
+	result, err := tx.Model(host).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating host with ID %d", host.ID)
 	} else if result.RowsAffected() <= 0 {

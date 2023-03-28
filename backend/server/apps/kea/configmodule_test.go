@@ -271,9 +271,13 @@ func TestApplyHostAdd(t *testing.T) {
 
 // Test committing added host, i.e. actually sending control commands to Kea.
 func TestCommitHostAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
 		Agents:    agents,
 		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
 	})
@@ -360,6 +364,11 @@ func TestCommitHostAdd(t *testing.T) {
              }`,
 			marshalled)
 	}
+
+	// Make sure that the host has been added to the database too.
+	newHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, newHost)
 }
 
 // Test that error is returned when Kea response contains error status code.
@@ -548,6 +557,11 @@ func TestCommitScheduledHostAdd(t *testing.T) {
              }
          }`,
 		marshalled)
+
+	// Make sure that the host has been added to the database.
+	newHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, newHost)
 }
 
 // Test the first stage of updating a host. It checks that the host information
@@ -764,6 +778,9 @@ func TestApplyHostUpdate(t *testing.T) {
 
 // Test committing updated host, i.e. actually sending control commands to Kea.
 func TestCommitHostUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	// Create host reservation.
 	host := &dbmodel.Host{
 		ID:       1,
@@ -808,9 +825,12 @@ func TestCommitHostUpdate(t *testing.T) {
 		},
 	}
 
+	require.NoError(t, dbmodel.AddHost(db, host))
+
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
 		Agents:    agents,
 		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
 	})
@@ -832,7 +852,13 @@ func TestCommitHostUpdate(t *testing.T) {
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
-	ctx, err = module.ApplyHostUpdate(ctx, host)
+	// Copy the host and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedHost := *host
+	modifiedHost.CreatedAt = time.Time{}
+	modifiedHost.Hostname = "modified.example.org"
+
+	ctx, err = module.ApplyHostUpdate(ctx, &modifiedHost)
 	require.NoError(t, err)
 
 	// Committing the host should result in sending control commands to Kea servers.
@@ -876,13 +902,19 @@ func TestCommitHostUpdate(t *testing.T) {
                          "reservation": {
                              "subnet-id": 0,
                              "hw-address": "010203040506",
-                             "hostname": "cool.example.org"
+                             "hostname": "modified.example.org"
                          }
                      }
                  }`,
 				marshalled)
 		}
 	}
+
+	// Make sure that the host has been updated in the database.
+	updatedHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedHost)
+	require.Equal(t, "modified.example.org", updatedHost.Hostname)
 }
 
 // Test that error is returned when Kea response contains error status code.
@@ -962,6 +994,9 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 
 // Test scheduling config changes in the database, retrieving and committing it.
 func TestCommitScheduledHostUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	// Create the host.
 	host := &dbmodel.Host{
 		ID: 1,
@@ -998,9 +1033,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 			},
 		},
 	}
-
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
+	require.NoError(t, dbmodel.AddHost(db, host))
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
@@ -1038,7 +1071,12 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, config.StateContextKey, *state)
 
-	ctx, err = module.ApplyHostUpdate(ctx, host)
+	// Copy the host and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedHost := *host
+	modifiedHost.Hostname = "modified.example.org"
+
+	ctx, err = module.ApplyHostUpdate(ctx, &modifiedHost)
 	require.NoError(t, err)
 
 	// Simulate scheduling the config change and retrieving it from the database.
@@ -1082,13 +1120,18 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
                          "reservation": {
                              "subnet-id": 123,
                              "hw-address": "010203040506",
-                             "hostname": "cool.example.org"
+                             "hostname": "modified.example.org"
                          }
                      }
                  }`,
 				marshalled)
 		}
 	}
+	// Make sure that the host has been added to the database too.
+	updatedHost, err := dbmodel.GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedHost)
+	require.Equal(t, updatedHost.Hostname, "modified.example.org")
 }
 
 // Test first stage of deleting a host.

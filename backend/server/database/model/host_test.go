@@ -336,6 +336,44 @@ func TestUpdateHostShrink(t *testing.T) {
 	require.Equal(t, "host.example.org.", returned.Hostname)
 }
 
+// Test that the created_at value is excluded from the host update.
+func TestUpdateHostExcludeCreatedAt(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add the host and record its timestamp.
+	host := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+	}
+	err := AddHost(db, host)
+	require.NoError(t, err)
+	require.NotZero(t, host.ID)
+
+	// Save the timestamp and reset it.
+	savedTime := host.CreatedAt
+	host.CreatedAt = time.Time{}
+
+	// Update the host with a zero timestamp. The zero value should
+	// be excluded from the update and the original timestamp should
+	// not be affected in the database.
+	err = UpdateHost(db, host)
+	require.NoError(t, err)
+	require.NotZero(t, host.ID)
+
+	// Get the updated host.
+	returned, err := GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Make sure that the timestamp hasn't changed.
+	require.Equal(t, savedTime, returned.CreatedAt)
+}
+
 // Test that all hosts or all hosts having IP reservations of specified family
 // can be fetched.
 func TestGetAllHosts(t *testing.T) {

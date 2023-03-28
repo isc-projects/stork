@@ -28,6 +28,11 @@ type HostConfigRecipeParams struct {
 	// typically fetched at the beginning of the host update (e.g., when a
 	// user clicks the host edit button).
 	HostBeforeUpdate *dbmodel.Host
+	// An instance of the host (reservation) after it has been added or
+	// updated. This instance is held in the context until it is committed
+	// or scheduled for committing later. It is set when a new host is
+	// added or an existing host is updated.
+	HostAfterUpdate *dbmodel.Host
 	// Edited or deleted host ID.
 	HostID *int64
 }
@@ -143,6 +148,9 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 	}
 	var err error
 	recipe := &ConfigRecipe{
+		HostConfigRecipeParams: HostConfigRecipeParams{
+			HostAfterUpdate: host,
+		},
 		Commands: commands,
 	}
 	if ctx, err = config.SetRecipeForUpdate(ctx, 0, recipe); err != nil {
@@ -153,7 +161,25 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 
 // Create the host reservation in the Kea servers.
 func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
-	return module.commitHostChanges(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitHostChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.HostAfterUpdate == nil {
+			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing host creation")
+		}
+		err = dbmodel.AddHost(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		if err != nil {
+			return ctx, pkgerrors.WithMessagef(err, "host has been successfully added to Kea but adding to the Stork database failed")
+		}
+	}
+	return ctx, nil
 }
 
 // Begins a host reservation update. It fetches the specified host reservation
@@ -256,13 +282,32 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		appCommand.App = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
+	recipe.HostAfterUpdate = host
 	recipe.Commands = commands
 	return config.SetRecipeForUpdate(ctx, 0, recipe)
 }
 
 // Create the updated host reservation in the Kea servers.
 func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Context, error) {
-	return module.commitHostChanges(ctx)
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitHostChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.HostAfterUpdate == nil {
+			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
+		}
+		err = dbmodel.UpdateHost(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		if err != nil {
+			return ctx, pkgerrors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
+		}
+	}
+	return ctx, nil
 }
 
 // Begins deleting a host reservation. Currently it is no-op but may evolve
@@ -331,7 +376,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		}
 		err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
 		if err != nil {
-			return ctx, err
+			return ctx, pkgerrors.WithMessagef(err, "host has been successfully deleted in Kea but deleting in the Stork database failed")
 		}
 	}
 	return ctx, nil
