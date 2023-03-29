@@ -178,7 +178,11 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
 				url := storkutil.HostWithPortURL(acPt.Address, acPt.Port, acPt.UseSecureProtocol)
-				s := fmt.Sprintf("%s: %s (key: %t)", acPt.Type, url, acPt.Key != "")
+				authKeyFoundStr := "not found"
+				if acPt.Key != "" {
+					authKeyFoundStr = "found"
+				}
+				s := fmt.Sprintf("%s: %s (auth key: %s)", acPt.Type, url, authKeyFoundStr)
 				acPts = append(acPts, s)
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
