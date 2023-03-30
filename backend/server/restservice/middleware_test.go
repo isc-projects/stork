@@ -304,6 +304,16 @@ func TestFileServerMiddelware(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("access to the restricted directory using a relative path", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("../restricted")
+
+		// Assert
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
+		require.NoError(t, err)
+	})
+
 	t.Run("access to the restricted file using a relative path", func(t *testing.T) {
 		// Act
 		content, status, err := requestFileContent("../restricted/secret")
@@ -337,6 +347,16 @@ func TestFileServerMiddelware(t *testing.T) {
 	t.Run("access to the restricted non-existing file", func(t *testing.T) {
 		// Act
 		content, status, err := requestFileContent("/../restricted/foobar")
+
+		// Assert
+		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, 400, status)
+		require.NoError(t, err)
+	})
+
+	t.Run("access to the restricted non-existing file using a relative path", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("../restricted/foobar")
 
 		// Assert
 		require.Equal(t, "invalid URL path\n", content)
