@@ -1800,10 +1800,10 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 2, overlaps[1].parent.GetID())
-	require.EqualValues(t, 1, overlaps[1].child.GetID())
-	require.EqualValues(t, 6, overlaps[0].parent.GetID())
-	require.EqualValues(t, 5, overlaps[0].child.GetID())
+	require.EqualValues(t, 1, overlaps[1].parent.GetID())
+	require.EqualValues(t, 2, overlaps[1].child.GetID())
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
+	require.EqualValues(t, 6, overlaps[0].child.GetID())
 }
 
 // Test that duplicated prefixes are detected as overlaps even if the prefix is
@@ -1854,18 +1854,18 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 6)
-	require.EqualValues(t, 2, overlaps[5].parent.GetID())
-	require.EqualValues(t, 1, overlaps[5].child.GetID())
-	require.EqualValues(t, 3, overlaps[4].parent.GetID())
-	require.EqualValues(t, 1, overlaps[4].child.GetID())
-	require.EqualValues(t, 3, overlaps[3].parent.GetID())
-	require.EqualValues(t, 2, overlaps[3].child.GetID())
-	require.EqualValues(t, 6, overlaps[2].parent.GetID())
-	require.EqualValues(t, 5, overlaps[2].child.GetID())
-	require.EqualValues(t, 7, overlaps[1].parent.GetID())
-	require.EqualValues(t, 5, overlaps[1].child.GetID())
-	require.EqualValues(t, 7, overlaps[0].parent.GetID())
+	require.EqualValues(t, 5, overlaps[0].parent.GetID())
 	require.EqualValues(t, 6, overlaps[0].child.GetID())
+	require.EqualValues(t, 5, overlaps[1].parent.GetID())
+	require.EqualValues(t, 7, overlaps[1].child.GetID())
+	require.EqualValues(t, 6, overlaps[2].parent.GetID())
+	require.EqualValues(t, 7, overlaps[2].child.GetID())
+	require.EqualValues(t, 1, overlaps[3].parent.GetID())
+	require.EqualValues(t, 2, overlaps[3].child.GetID())
+	require.EqualValues(t, 1, overlaps[4].parent.GetID())
+	require.EqualValues(t, 3, overlaps[4].child.GetID())
+	require.EqualValues(t, 2, overlaps[5].parent.GetID())
+	require.EqualValues(t, 3, overlaps[5].child.GetID())
 }
 
 // Test that overlaps are detected for the same network but different prefix
@@ -2022,10 +2022,10 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 
 	// Assert
 	require.Len(t, overlaps, 2)
-	require.EqualValues(t, 10, overlaps[0].parent.GetID())
-	require.EqualValues(t, 9, overlaps[0].child.GetID())
-	require.EqualValues(t, 8, overlaps[1].parent.GetID())
-	require.EqualValues(t, 7, overlaps[1].child.GetID())
+	require.EqualValues(t, 7, overlaps[0].parent.GetID())
+	require.EqualValues(t, 8, overlaps[0].child.GetID())
+	require.EqualValues(t, 5, overlaps[1].parent.GetID())
+	require.EqualValues(t, 6, overlaps[1].child.GetID())
 }
 
 // Test that the searching for overlaps is stopped if the limit of overlapping

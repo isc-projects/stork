@@ -584,9 +584,18 @@ func findOverlaps(subnets []keaconfig.Subnet, maxOverlaps int) (overlaps []minim
 	}
 
 	// Sorts prefixes from the shortest (the most general masks) to the longest
-	// (the most specific masks).
+	// (the most specific masks). If the prefix lengths are equal, sort by the
+	// prefix address. If the prefixes are the same, sort by the subnet ID.
 	sort.Slice(subnetPrefixes, func(i, j int) bool {
-		return len(subnetPrefixes[i].binaryPrefix) <= len(subnetPrefixes[j].binaryPrefix)
+		if len(subnetPrefixes[i].binaryPrefix) != len(subnetPrefixes[j].binaryPrefix) {
+			return len(subnetPrefixes[i].binaryPrefix) < len(subnetPrefixes[j].binaryPrefix)
+		}
+
+		if subnetPrefixes[i].binaryPrefix != subnetPrefixes[j].binaryPrefix {
+			return subnetPrefixes[i].binaryPrefix < subnetPrefixes[j].binaryPrefix
+		}
+
+		return subnetPrefixes[i].subnet.GetID() <= subnetPrefixes[j].subnet.GetID()
 	})
 
 	for outerIdx, outer := range subnetPrefixes {
