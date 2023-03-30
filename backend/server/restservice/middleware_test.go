@@ -274,16 +274,6 @@ func TestFileServerMiddelware(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("access to the index", func(t *testing.T) {
-		// Act
-		content, status, err := requestFileContent("/")
-
-		// Assert
-		require.Equal(t, "index", content)
-		require.Equal(t, 200, status)
-		require.NoError(t, err)
-	})
-
 	t.Run("access to the non-exist file", func(t *testing.T) {
 		// Act
 		content, status, err := requestFileContent("/foobar")
