@@ -219,7 +219,7 @@ func TestLoggingMiddlewareHelpers(t *testing.T) {
 	require.Empty(t, hdr)
 }
 
-// Test that the file middleware. Includes the test to check if the middleware
+// Test the file middleware. Includes the test to check if the middleware
 // is not vulnerable to the Path Traversal attack used to check if a given path
 // exists on the filesystem.
 func TestFileServerMiddelware(t *testing.T) {
