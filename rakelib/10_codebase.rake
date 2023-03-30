@@ -89,10 +89,17 @@ file SWAGGER_FILE => swagger_api_files + [YAMLINC] do
 end
 CLEAN.append SWAGGER_FILE
 
-file swagger_server_file => [SWAGGER_FILE, SED] do
-    output_file = File.new(swagger_server_file, 'w' )
-    Open3.pipeline [SED, 's/^\s*readOnly: true\s*$//g', SWAGGER_FILE], :out => output_file
-    sh "touch", "-c", swagger_server_file
+# Swagger file without 'readonly: true' directives.
+file swagger_server_file => [SWAGGER_FILE] do
+    File.open(swagger_server_file, 'w') do |file|
+        File.readlines(SWAGGER_FILE).each do |line|
+            if line.match /^\s*readOnly: true\s*$/
+                next
+            end
+            
+            file.write line
+        end
+    end
 end
 CLEAN.append swagger_server_file
 
