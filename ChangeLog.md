@@ -1,3 +1,9 @@
+* 298 [func] marcin
+
+    New and updated host reservations are instantly visible in Stork after
+    submitting the form.
+    (Gitlab #996)
+
 * 297 [build] slawek
 
     Fixed the security vulnerabilities reported by the Github Dependabot and
