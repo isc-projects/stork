@@ -896,6 +896,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	params2 := dhcp.UpdateHostSubmitParams{
 		ID: transactionID,
 		Host: &models.Host{
+			ID:       hosts[0].ID,
 			SubnetID: 1,
 			Hostname: "updated.example.org",
 			HostIdentifiers: []*models.HostIdentifier{
