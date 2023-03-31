@@ -23,22 +23,16 @@
     properties:
       name:
         type: string
-        readOnly: true
       id:
         type: string
-        readOnly: true
       interval:
         type: integer
-        readOnly: true
       lastInvokedAt:
         type: string
         format: date-time
-        readOnly: true
       lastFinishedAt:
         type: string
         format: date-time
-        readOnly: true
-
   Pullers:
     type: object
     properties:

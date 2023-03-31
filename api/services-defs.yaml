@@ -11,7 +11,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       name:
         type: string
       severity:
@@ -29,26 +28,20 @@
       - contents
     properties:
       logTargetOutput:
-        readOnly: true
         type: string
       machine:
         $ref: '#/definitions/AppMachine'
       appId:
-        readOnly: true
         type: integer
       appType:
-        readOnly: true
         type: string
       appName:
-        readOnly: true
         type: string
       contents:
-        readOnly: true
         type: array
         items:
           type: string
       error:
-        readOnly: true
         type: string
 
   NewMachineReq:
@@ -90,11 +83,9 @@
         description: The machine ID.
       serverCACert:
         type: string
-        readOnly: true
         description: Server's CA certificate.
       agentCert:
         type: string
-        readOnly: true
         description: Signed agent's certificate.
 
   Machine:
@@ -104,7 +95,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       address:
         type: string
       agentPort:
@@ -115,62 +105,43 @@
         type: string
       agentVersion:
         type: string
-        readOnly: true
       hostname:
         type: string
-        readOnly: true
       cpus:
         type: integer
-        readOnly: true
       cpusLoad:
         type: string
-        readOnly: true
       memory:
         type: integer
-        readOnly: true
       usedMemory:
         type: integer
-        readOnly: true
       uptime:
         type: integer
-        readOnly: true
       os:
         type: string
-        readOnly: true
       platform:
         type: string
-        readOnly: true
       platformFamily:
         type: string
-        readOnly: true
       platformVersion:
         type: string
-        readOnly: true
       kernelVersion:
         type: string
-        readOnly: true
       kernelArch:
         type: string
-        readOnly: true
       virtualizationSystem:
         type: string
-        readOnly: true
       virtualizationRole:
         type: string
-        readOnly: true
       hostID:
         type: string
-        readOnly: true
       agentUsesHttpCredentials:
         type: boolean
-        readOnly: true
       lastVisitedAt:
         type: string
         format: date-time
-        readOnly: true
       error:
         type: string
-        readOnly: true
       apps:
         type: array
         items:
@@ -203,7 +174,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       name:
         type: string
       type:
@@ -222,7 +192,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       name:
         type: string
       type:
@@ -365,7 +334,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       address:
         type: string
       hostname:
@@ -475,7 +443,6 @@
     properties:
       id:
         type: integer
-        readOnly: true
       createdAt:
         type: string
         format: date-time
@@ -519,23 +486,18 @@
     properties:
       name:
         type: string
-        readOnly: true
       triggers:
         type: array
-        readOnly: true
         items:
           type: string
       selectors:
         type: array
-        readOnly: true
         items:
           type: string
       state:
         enum: *CONFIGCHECKERSTATE
       globallyEnabled:
         type: boolean
-        readOnly: true
-
   ConfigCheckers:
     type: object
     properties:

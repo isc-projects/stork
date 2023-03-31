@@ -36,7 +36,6 @@ TAGS
 
 # generated while combining whole swagger API
 /api/swagger.yaml
-/api/swagger-server.yaml
 
 # venv for dhcp traffic simulator
 /tests/sim/venv

@@ -146,10 +146,8 @@
         type: integer
       appName:
         type: string
-        readOnly: true
       dataSource:
         type: string
-        readOnly: true
       clientClasses:
         type: array
         items:
