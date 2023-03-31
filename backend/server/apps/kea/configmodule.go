@@ -174,7 +174,7 @@ func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context,
 		if update.Recipe.HostAfterUpdate == nil {
 			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing host creation")
 		}
-		err = dbmodel.AddHost(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		err = dbmodel.AddHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
 			return ctx, pkgerrors.WithMessagef(err, "host has been successfully added to Kea but adding to the Stork database failed")
 		}
@@ -302,7 +302,7 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 		if update.Recipe.HostAfterUpdate == nil {
 			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
 		}
-		err = dbmodel.UpdateHost(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
 			return ctx, pkgerrors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
 		}

@@ -247,6 +247,35 @@ func UpdateHost(dbi pg.DBI, host *Host) error {
 	return updateHost(dbi.(*pg.Tx), host)
 }
 
+// Attempts to update a host and its local hosts with in an existing transaction.
+func updateHostWithLocalHosts(tx *pg.Tx, host *Host) error {
+	err := updateHost(tx, host)
+	if err != nil {
+		return err
+	}
+	// Delete current associations of the host with the daemons.
+	_, err = tx.Model((*LocalHost)(nil)).
+		Where("host_id = ?", host.ID).
+		Delete()
+	if err != nil {
+		return pkgerrors.Wrapf(err, "problem deleting daemons from host %d", host.ID)
+	}
+	// Add new associations.
+	err = AddHostLocalHosts(tx, host)
+	return err
+}
+
+// Attempts to update a host and its local hosts within a transaction. If the dbi
+// does not point to a transaction, a new transaction is started.
+func UpdateHostWithLocalHosts(dbi dbops.DBI, host *Host) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateHostWithLocalHosts(tx, host)
+		})
+	}
+	return updateHostWithLocalHosts(dbi.(*pg.Tx), host)
+}
+
 // Fetch the host by ID.
 func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 	host := &Host{}
@@ -524,6 +553,27 @@ func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
 		}
 	}
 	return nil
+}
+
+// Attempts to add a host and its local hosts within an existing transaction.
+func addHostWithLocalHosts(tx *pg.Tx, host *Host) error {
+	err := addHost(tx, host)
+	if err != nil {
+		return err
+	}
+	err = AddHostLocalHosts(tx, host)
+	return err
+}
+
+// Attempts to add a host and its local hosts within a transaction. If the dbi
+// does not point to a transaction, a new transaction is started.
+func AddHostWithLocalHosts(dbi dbops.DBI, host *Host) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addHostWithLocalHosts(tx, host)
+		})
+	}
+	return addHostWithLocalHosts(dbi.(*pg.Tx), host)
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data

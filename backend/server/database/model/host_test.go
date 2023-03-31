@@ -374,6 +374,63 @@ func TestUpdateHostExcludeCreatedAt(t *testing.T) {
 	require.Equal(t, savedTime, returned.CreatedAt)
 }
 
+// Test that the host and its local hosts can be updated in a single
+// transaction.
+func TestUpdateHostWithLocalHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+
+	// Add the host and record its timestamp.
+	host := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   apps[0].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				NextServer: "192.0.2.1",
+			},
+		},
+	}
+	err := AddHostWithLocalHosts(db, host)
+	require.NoError(t, err)
+	require.NotZero(t, host.ID)
+
+	host2 := &Host{
+		ID: host.ID,
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   apps[1].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				NextServer: "192.0.2.2",
+			},
+		},
+	}
+	err = UpdateHostWithLocalHosts(db, host2)
+	require.NoError(t, err)
+	require.NotZero(t, host.ID)
+
+	returned, err := GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	require.Len(t, returned.LocalHosts, 1)
+	require.EqualValues(t, host2.LocalHosts[0].DaemonID, returned.LocalHosts[0].DaemonID)
+	require.Equal(t, "192.0.2.2", returned.LocalHosts[0].NextServer)
+}
+
 // Test that all hosts or all hosts having IP reservations of specified family
 // can be fetched.
 func TestGetAllHosts(t *testing.T) {
@@ -849,6 +906,43 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Code)
 	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet[0].Name)
 	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Space)
+}
+
+// Test that the host and its local host can be added within a single transaction.
+func TestAddHostWithLocalHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+
+	host := Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 1, 1, 1, 1, 1},
+			},
+		},
+		Hostname: "foo.example.org",
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   apps[0].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				NextServer: "192.0.2.1",
+			},
+		},
+	}
+	err := AddHostWithLocalHosts(db, &host)
+	require.NoError(t, err)
+
+	returned, err := GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	require.Equal(t, "foo.example.org", returned.Hostname)
+	require.Len(t, returned.LocalHosts, 1)
+	require.EqualValues(t, apps[0].Daemons[0].ID, returned.LocalHosts[0].DaemonID)
+	require.Equal(t, HostDataSourceAPI, returned.LocalHosts[0].DataSource)
+	require.Equal(t, "192.0.2.1", returned.LocalHosts[0].NextServer)
 }
 
 // Test that daemon's associations with multiple hosts can be removed.

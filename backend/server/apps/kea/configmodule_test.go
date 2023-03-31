@@ -274,6 +274,8 @@ func TestCommitHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
+
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
@@ -293,7 +295,7 @@ func TestCommitHostAdd(t *testing.T) {
 
 	// Create new host reservation and store it in the context.
 	host := &dbmodel.Host{
-		ID:       1,
+		ID:       1001,
 		Hostname: "cool.example.org",
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
@@ -303,7 +305,7 @@ func TestCommitHostAdd(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				DaemonID: 1,
+				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -316,9 +318,10 @@ func TestCommitHostAdd(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 			{
-				DaemonID: 2,
+				DaemonID: apps[1].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -331,6 +334,7 @@ func TestCommitHostAdd(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -369,6 +373,7 @@ func TestCommitHostAdd(t *testing.T) {
 	newHost, err := dbmodel.GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.NotNil(t, newHost)
+	require.Len(t, newHost.LocalHosts, 2)
 }
 
 // Test that error is returned when Kea response contains error status code.
@@ -459,6 +464,8 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
+
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
 		DB:        db,
@@ -490,7 +497,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 
 	// Create the host and store it in the context.
 	host := &dbmodel.Host{
-		ID: 1,
+		ID: 1001,
 		Subnet: &dbmodel.Subnet{
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
@@ -508,7 +515,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				DaemonID: 1,
+				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -521,6 +528,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -781,9 +789,11 @@ func TestCommitHostUpdate(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
+
 	// Create host reservation.
 	host := &dbmodel.Host{
-		ID:       1,
+		ID:       1001,
 		Hostname: "cool.example.org",
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
@@ -793,7 +803,7 @@ func TestCommitHostUpdate(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				DaemonID: 1,
+				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -806,9 +816,10 @@ func TestCommitHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 			{
-				DaemonID: 2,
+				DaemonID: apps[1].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -821,6 +832,7 @@ func TestCommitHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -857,6 +869,8 @@ func TestCommitHostUpdate(t *testing.T) {
 	modifiedHost := *host
 	modifiedHost.CreatedAt = time.Time{}
 	modifiedHost.Hostname = "modified.example.org"
+	modifiedHost.LocalHosts[0].NextServer = "192.0.2.22"
+	modifiedHost.LocalHosts[1].NextServer = "192.0.2.22"
 
 	ctx, err = module.ApplyHostUpdate(ctx, &modifiedHost)
 	require.NoError(t, err)
@@ -902,7 +916,8 @@ func TestCommitHostUpdate(t *testing.T) {
                          "reservation": {
                              "subnet-id": 0,
                              "hw-address": "010203040506",
-                             "hostname": "modified.example.org"
+                             "hostname": "modified.example.org",
+							 "next-server": "192.0.2.22"
                          }
                      }
                  }`,
@@ -915,6 +930,9 @@ func TestCommitHostUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, updatedHost)
 	require.Equal(t, "modified.example.org", updatedHost.Hostname)
+	require.Len(t, updatedHost.LocalHosts, 2)
+	require.Equal(t, "192.0.2.22", updatedHost.LocalHosts[0].NextServer)
+	require.Equal(t, "192.0.2.22", updatedHost.LocalHosts[0].NextServer)
 }
 
 // Test that error is returned when Kea response contains error status code.
@@ -997,9 +1015,11 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_, apps := storktestdbmodel.AddTestHosts(t, db)
+
 	// Create the host.
 	host := &dbmodel.Host{
-		ID: 1,
+		ID: 1001,
 		Subnet: &dbmodel.Subnet{
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
@@ -1017,7 +1037,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				DaemonID: 1,
+				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -1030,6 +1050,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -1179,6 +1200,7 @@ func TestApplyHostDelete(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 			{
 				DaemonID: 2,
@@ -1194,6 +1216,7 @@ func TestApplyHostDelete(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
