@@ -523,10 +523,6 @@ you must specify the complete sets of boot fields, client classes and options
 for each DHCP server. Leaving them blank for some servers means that these
 servers receive no boot fields, classes or DHCP options with the reservation.
 
-Submitted host reservations may appear in Stork's host reservations list with some
-delay. Please allow some time for the reservations to propagate to the Kea DHCP
-servers and refresh the list.
-
 Updating Host Reservations
 --------------------------
 
