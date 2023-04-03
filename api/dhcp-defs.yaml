@@ -265,6 +265,15 @@
       statsCollectedAt:
         type: string
         format: date-time
+      pools:
+        type: array
+        items:
+          type: string
+      prefixDelegationPools:
+        type: array
+        items:
+          $ref: '#/definitions/DelegatedPrefix'
+
 
   DelegatedPrefix:
     type: object
@@ -286,10 +295,6 @@
         type: integer
       subnet:
         type: string
-      pools:
-        type: array
-        items:
-          type: string
       sharedNetwork:
         type: string
       clientClass:
@@ -307,10 +312,6 @@
         type: array
         items:
           $ref: '#/definitions/LocalSubnet'
-      prefixDelegationPools:
-        type: array
-        items:
-          $ref: '#/definitions/DelegatedPrefix'
 
   Subnets:
     type: object

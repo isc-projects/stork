@@ -339,7 +339,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		CommonSubnetParameters: CommonSubnetParameters{},
 	}
 	// Address pools.
-	for _, pool := range subnet.GetAddressPools() {
+	for _, pool := range subnet.GetAddressPools(daemonID) {
 		keaPool := Pool{
 			Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
 		}
@@ -408,7 +408,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		},
 	}
 	// Address pools.
-	for _, pool := range subnet.GetAddressPools() {
+	for _, pool := range subnet.GetAddressPools(daemonID) {
 		keaPool := Pool{
 			Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
 		}
@@ -433,7 +433,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		subnet6.Pools = append(subnet6.Pools, keaPool)
 	}
 	// Delegated prefix pools.
-	for _, pool := range subnet.GetPrefixPools() {
+	for _, pool := range subnet.GetPrefixPools(daemonID) {
 		// Pool prefix.
 		prefix, length, err := pool.GetModel().GetPrefix()
 		if err != nil {

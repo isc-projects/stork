@@ -42,44 +42,6 @@ func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.Indexed
 	return nil
 }
 
-// Overrides the address pools into the existing pools.
-func overrideIntoAddressPools(existingPools []dbmodel.AddressPool, newPools []dbmodel.AddressPool) (pools []dbmodel.AddressPool) {
-NEW_POOLS:
-	for newPoolIdx := range newPools {
-		newPool := newPools[newPoolIdx]
-		for existingPoolIdx := range existingPools {
-			existingPool := existingPools[existingPoolIdx]
-			if newPool.HasEqualData(&existingPool) {
-				// Pool already exists in the database.
-				pools = append(pools, existingPool)
-				continue NEW_POOLS
-			}
-		}
-		// Pool doesn't exist in the database yet.
-		pools = append(pools, newPool)
-	}
-	return
-}
-
-// Overrides the delegated prefix pools into the existing pools.
-func overrideIntoPDPools(existingPools []dbmodel.PrefixPool, newPools []dbmodel.PrefixPool) (pools []dbmodel.PrefixPool) {
-NEW_POOLS:
-	for newPoolIdx := range newPools {
-		newPool := newPools[newPoolIdx]
-		for existingPoolIdx := range existingPools {
-			existingPool := existingPools[existingPoolIdx]
-			if newPool.HasEqualData(&existingPool) {
-				// Pool already exists in the database.
-				pools = append(pools, existingPool)
-				continue NEW_POOLS
-			}
-		}
-		// Pool doesn't exist in the database yet.
-		pools = append(pools, newPool)
-	}
-	return
-}
-
 // Overrides a subnet into the existing database one.
 func overrideIntoDatabaseSubnet(dbi dbops.DBI, existingSubnet *dbmodel.Subnet, changedSubnet *dbmodel.Subnet) error {
 	// Hosts and local hosts.
@@ -91,14 +53,6 @@ func overrideIntoDatabaseSubnet(dbi dbops.DBI, existingSubnet *dbmodel.Subnet, c
 
 	// Client class.
 	existingSubnet.ClientClass = changedSubnet.ClientClass
-
-	// Address pools.
-	addressPools := overrideIntoAddressPools(existingSubnet.AddressPools, changedSubnet.AddressPools)
-	existingSubnet.AddressPools = addressPools
-
-	// Prefix delegation pools.
-	pdPools := overrideIntoPDPools(existingSubnet.PrefixPools, changedSubnet.PrefixPools)
-	existingSubnet.PrefixPools = pdPools
 
 	existingSubnet.Join(changedSubnet)
 	return nil

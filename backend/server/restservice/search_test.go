@@ -87,14 +87,19 @@ func TestSearchRecords(t *testing.T) {
 	appSubnets := []dbmodel.Subnet{
 		{
 			Prefix: "192.168.0.0/24",
-			AddressPools: []dbmodel.AddressPool{
+			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					LowerBound: "192.168.0.1",
-					UpperBound: "192.168.0.100",
-				},
-				{
-					LowerBound: "192.168.0.150",
-					UpperBound: "192.168.0.200",
+					DaemonID: a4.Daemons[0].ID,
+					AddressPools: []dbmodel.AddressPool{
+						{
+							LowerBound: "192.168.0.1",
+							UpperBound: "192.168.0.100",
+						},
+						{
+							LowerBound: "192.168.0.150",
+							UpperBound: "192.168.0.200",
+						},
+					},
 				},
 			},
 		},
@@ -218,29 +223,29 @@ func TestSearchRecords(t *testing.T) {
 	appSubnets = []dbmodel.Subnet{
 		{
 			Prefix: "192.118.0.0/24",
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "192.118.0.1",
-					UpperBound: "192.118.0.200",
-				},
-			},
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					DaemonID: a46.Daemons[0].ID,
+					AddressPools: []dbmodel.AddressPool{
+						{
+							LowerBound: "192.118.0.1",
+							UpperBound: "192.118.0.200",
+						},
+					},
 				},
 			},
 		},
 		{
 			Prefix: "3001:db8:1::/64",
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "3001:db8:1::",
-					UpperBound: "3001:db8:1:0:ffff::ffff",
-				},
-			},
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					DaemonID: a46.Daemons[1].ID,
+					AddressPools: []dbmodel.AddressPool{
+						{
+							LowerBound: "3001:db8:1::",
+							UpperBound: "3001:db8:1:0:ffff::ffff",
+						},
+					},
 				},
 			},
 		},

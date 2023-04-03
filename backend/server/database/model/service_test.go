@@ -160,7 +160,8 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 			Active:       true,
 			AccessPoints: accessPoints,
 			Daemons: []*Daemon{
-				NewKeaDaemon("dhcp4", true),
+				NewKeaDaemon(DaemonNameDHCPv4, true),
+				NewKeaDaemon(DaemonNameDHCPv6, true),
 			},
 		}
 
@@ -481,7 +482,7 @@ func TestGetAppWithServices(t *testing.T) {
 
 	// Make sure that all returned apps contain references to the services.
 	for _, app := range apps {
-		require.Len(t, app.Daemons, 1)
+		require.Len(t, app.Daemons, 2)
 		require.Len(t, app.Daemons[0].Services, 2, "Failed for daemon id %d", app.Daemons[0].ID)
 	}
 }

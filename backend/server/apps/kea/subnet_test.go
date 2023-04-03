@@ -713,9 +713,10 @@ func TestDetectNetworkUpdateAddressPool(t *testing.T) {
 	require.NoError(t, err)
 	subnets, _ := dbmodel.GetAllSubnets(db, 4)
 	require.Len(t, subnets, 1)
-	require.Len(t, subnets[0].AddressPools, 1)
-	require.EqualValues(t, "192.0.2.1", subnets[0].AddressPools[0].LowerBound)
-	require.EqualValues(t, "192.0.2.42", subnets[0].AddressPools[0].UpperBound)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.Len(t, subnets[0].LocalSubnets[0].AddressPools, 1)
+	require.EqualValues(t, "192.0.2.1", subnets[0].LocalSubnets[0].AddressPools[0].LowerBound)
+	require.EqualValues(t, "192.0.2.42", subnets[0].LocalSubnets[0].AddressPools[0].UpperBound)
 }
 
 // Test that the client class is updated.
@@ -800,9 +801,10 @@ func TestDetectNetworkUpdateDelegatedPrefixPool(t *testing.T) {
 	require.NoError(t, err)
 	subnets, _ := dbmodel.GetAllSubnets(db, 6)
 	require.Len(t, subnets, 1)
-	require.Len(t, subnets[0].PrefixPools, 1)
-	require.EqualValues(t, "fe80:42::/72", subnets[0].PrefixPools[0].Prefix)
-	require.EqualValues(t, 92, subnets[0].PrefixPools[0].DelegatedLen)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.Len(t, subnets[0].LocalSubnets[0].PrefixPools, 1)
+	require.EqualValues(t, "fe80:42::/72", subnets[0].LocalSubnets[0].PrefixPools[0].Prefix)
+	require.EqualValues(t, 92, subnets[0].LocalSubnets[0].PrefixPools[0].DelegatedLen)
 }
 
 // Benchmark measuring performance of the findMatchingSubnet function. This

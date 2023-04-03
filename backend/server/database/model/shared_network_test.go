@@ -108,45 +108,57 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	network := &SharedNetwork{
 		Name:   "funny name",
 		Family: 6,
 		Subnets: []Subnet{
 			{
 				Prefix: "2001:db8:1::/64",
-				AddressPools: []AddressPool{
+				LocalSubnets: []*LocalSubnet{
 					{
-						LowerBound: "2001:db8:1::1",
-						UpperBound: "2001:db8:1::10",
-					},
-					{
-						LowerBound: "2001:db8:1::11",
-						UpperBound: "2001:db8:1::20",
-					},
-				},
-				PrefixPools: []PrefixPool{
-					{
-						Prefix:       "2001:db8:1:1::/96",
-						DelegatedLen: 120,
+						DaemonID: apps[1].Daemons[0].ID,
+						AddressPools: []AddressPool{
+							{
+								LowerBound: "2001:db8:1::1",
+								UpperBound: "2001:db8:1::10",
+							},
+							{
+								LowerBound: "2001:db8:1::11",
+								UpperBound: "2001:db8:1::20",
+							},
+						},
+						PrefixPools: []PrefixPool{
+							{
+								Prefix:       "2001:db8:1:1::/96",
+								DelegatedLen: 120,
+							},
+						},
 					},
 				},
 			},
 			{
 				Prefix: "2001:db8:2::/64",
-				AddressPools: []AddressPool{
+				LocalSubnets: []*LocalSubnet{
 					{
-						LowerBound: "2001:db8:2::1",
-						UpperBound: "2001:db8:2::10",
-					},
-				},
-				PrefixPools: []PrefixPool{
-					{
-						Prefix:       "2001:db8:2:1::/96",
-						DelegatedLen: 120,
-					},
-					{
-						Prefix:       "3000::/64",
-						DelegatedLen: 80,
+						DaemonID: apps[1].Daemons[0].ID,
+						AddressPools: []AddressPool{
+							{
+								LowerBound: "2001:db8:2::1",
+								UpperBound: "2001:db8:2::10",
+							},
+						},
+						PrefixPools: []PrefixPool{
+							{
+								Prefix:       "2001:db8:2:1::/96",
+								DelegatedLen: 120,
+							},
+							{
+								Prefix:       "3000::/64",
+								DelegatedLen: 80,
+							},
+						},
 					},
 				},
 			},
@@ -155,6 +167,9 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	err := AddSharedNetwork(db, network)
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
+
+	_, err = CommitNetworksIntoDB(db, []SharedNetwork{*network}, []Subnet{}, apps[0].Daemons[1])
+	require.NoError(t, err)
 
 	returnedNetwork, err := GetSharedNetworkWithSubnets(db, network.ID)
 	require.NoError(t, err)
@@ -167,21 +182,22 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		require.NotZero(t, s.CreatedAt)
 		require.Equal(t, network.Subnets[i].Prefix, s.Prefix)
 		require.Equal(t, returnedNetwork.ID, s.SharedNetworkID)
+		require.Len(t, s.LocalSubnets, 1)
 
-		require.Len(t, s.AddressPools, len(network.Subnets[i].AddressPools))
-		require.Len(t, s.PrefixPools, len(network.Subnets[i].PrefixPools))
+		require.Len(t, s.LocalSubnets[0].AddressPools, len(network.Subnets[i].LocalSubnets[0].AddressPools))
+		require.Len(t, s.LocalSubnets[0].PrefixPools, len(network.Subnets[i].LocalSubnets[0].PrefixPools))
 
-		for j, p := range s.AddressPools {
+		for j, p := range s.LocalSubnets[0].AddressPools {
 			require.NotZero(t, p.ID)
 			require.NotZero(t, p.CreatedAt)
-			require.Equal(t, returnedNetwork.Subnets[i].AddressPools[j].LowerBound, p.LowerBound)
-			require.Equal(t, returnedNetwork.Subnets[i].AddressPools[j].UpperBound, p.UpperBound)
+			require.Equal(t, returnedNetwork.Subnets[i].LocalSubnets[0].AddressPools[j].LowerBound, p.LowerBound)
+			require.Equal(t, returnedNetwork.Subnets[i].LocalSubnets[0].AddressPools[j].UpperBound, p.UpperBound)
 		}
 
-		for j, p := range s.PrefixPools {
+		for j, p := range s.LocalSubnets[0].PrefixPools {
 			require.NotZero(t, p.ID)
 			require.NotZero(t, p.CreatedAt)
-			require.Equal(t, returnedNetwork.Subnets[i].PrefixPools[j].Prefix, p.Prefix)
+			require.Equal(t, returnedNetwork.Subnets[i].LocalSubnets[0].PrefixPools[j].Prefix, p.Prefix)
 		}
 	}
 

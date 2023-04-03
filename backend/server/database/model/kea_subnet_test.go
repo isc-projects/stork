@@ -84,20 +84,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "192.1.0.0/24",
-					AddressPools: []AddressPool{
-						{
-							LowerBound: "192.1.0.1",
-							UpperBound: "192.1.0.100",
-						},
-						{
-							LowerBound: "192.1.0.150",
-							UpperBound: "192.1.0.200",
-						},
-					},
 					LocalSubnets: []*LocalSubnet{
 						{
 							DaemonID:      a4.Daemons[0].ID,
 							LocalSubnetID: 11,
+							AddressPools: []AddressPool{
+								{
+									LowerBound: "192.1.0.1",
+									UpperBound: "192.1.0.100",
+								},
+								{
+									LowerBound: "192.1.0.150",
+									UpperBound: "192.1.0.200",
+								},
+							},
 						},
 					},
 				},
@@ -114,20 +114,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "192.2.0.0/24",
-					AddressPools: []AddressPool{
-						{
-							LowerBound: "192.2.0.1",
-							UpperBound: "192.2.0.100",
-						},
-						{
-							LowerBound: "192.2.0.150",
-							UpperBound: "192.2.0.200",
-						},
-					},
 					LocalSubnets: []*LocalSubnet{
 						{
 							DaemonID:      a4.Daemons[0].ID,
 							LocalSubnetID: 12,
+							AddressPools: []AddressPool{
+								{
+									LowerBound: "192.2.0.1",
+									UpperBound: "192.2.0.100",
+								},
+								{
+									LowerBound: "192.2.0.150",
+									UpperBound: "192.2.0.200",
+								},
+							},
 						},
 					},
 				},
@@ -143,20 +143,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	appSubnets := []Subnet{
 		{
 			Prefix: "192.168.0.0/24",
-			AddressPools: []AddressPool{
-				{
-					LowerBound: "192.168.0.1",
-					UpperBound: "192.168.0.100",
-				},
-				{
-					LowerBound: "192.168.0.150",
-					UpperBound: "192.168.0.200",
-				},
-			},
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID:      a4.Daemons[0].ID,
 					LocalSubnetID: 1,
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.168.0.1",
+							UpperBound: "192.168.0.100",
+						},
+						{
+							LowerBound: "192.168.0.150",
+							UpperBound: "192.168.0.200",
+						},
+					},
 				},
 			},
 		},
@@ -298,42 +298,42 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	appSubnets = []Subnet{
 		{
 			Prefix: "192.118.0.0/24",
-			AddressPools: []AddressPool{
-				{
-					LowerBound: "192.168.0.1",
-					UpperBound: "192.168.0.200",
-				},
-			},
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID:      a46.Daemons[0].ID,
 					LocalSubnetID: 3,
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.168.0.1",
+							UpperBound: "192.168.0.200",
+						},
+					},
 				},
 			},
 		},
 		{
 			Prefix: "3001:db8:1::/64",
-			AddressPools: []AddressPool{
-				{
-					LowerBound: "3001:db8:1::",
-					UpperBound: "3001:db8:1:0:ffff::ffff",
-				},
-			},
-			PrefixPools: []PrefixPool{
-				{
-					Prefix:       "3001:db8:1:1::/80",
-					DelegatedLen: 96,
-				},
-				{
-					Prefix:         "3001:db8:1:2::/80",
-					DelegatedLen:   96,
-					ExcludedPrefix: "3001:db8:1:2:1::/112",
-				},
-			},
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID:      a46.Daemons[1].ID,
 					LocalSubnetID: 4,
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "3001:db8:1::",
+							UpperBound: "3001:db8:1:0:ffff::ffff",
+						},
+					},
+					PrefixPools: []PrefixPool{
+						{
+							Prefix:       "3001:db8:1:1::/80",
+							DelegatedLen: 96,
+						},
+						{
+							Prefix:         "3001:db8:1:2::/80",
+							DelegatedLen:   96,
+							ExcludedPrefix: "3001:db8:1:2:1::/112",
+						},
+					},
 				},
 			},
 		},
@@ -355,20 +355,20 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		localSubnetIDs = append(localSubnetIDs, sn.LocalSubnets[0].LocalSubnetID)
 		switch sn.LocalSubnets[0].LocalSubnetID {
 		case 1:
-			require.Len(t, sn.AddressPools, 2)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 2)
 		case 2:
-			require.Len(t, sn.AddressPools, 0)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 0)
 		case 7:
-			require.Len(t, sn.PrefixPools, 2)
-			require.Len(t, sn.AddressPools, 1)
+			require.Len(t, sn.LocalSubnets[0].PrefixPools, 2)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 1)
 		case 11:
-			require.Len(t, sn.AddressPools, 2)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 2)
 		case 12:
-			require.Len(t, sn.AddressPools, 2)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 2)
 		case 21:
-			require.Len(t, sn.AddressPools, 0)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 0)
 		default:
-			require.Len(t, sn.AddressPools, 1)
+			require.Len(t, sn.LocalSubnets[0].AddressPools, 1)
 		}
 	}
 	// Make sure that all subnets have local subnet ids set.

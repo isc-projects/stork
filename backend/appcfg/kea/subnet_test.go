@@ -560,7 +560,7 @@ func TestCreateSubnet4(t *testing.T) {
 	// Subnet prefix.
 	mock.EXPECT().GetPrefix().Return("192.0.2.0/24")
 	// Return a pool defined above.
-	mock.EXPECT().GetAddressPools().Return([]dhcpmodel.AddressPoolAccessor{poolMock})
+	mock.EXPECT().GetAddressPools(gomock.Eq(int64(1))).Return([]dhcpmodel.AddressPoolAccessor{poolMock})
 	// Return subnet-level Kea parameters.
 	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{
@@ -750,9 +750,9 @@ func TestCreateSubnet6(t *testing.T) {
 	// Subnet prefix.
 	mock.EXPECT().GetPrefix().Return("2001:db8:1::/64")
 	// Return an address pool defined above.
-	mock.EXPECT().GetAddressPools().Return([]dhcpmodel.AddressPoolAccessor{poolMock})
+	mock.EXPECT().GetAddressPools(gomock.Eq(int64(1))).Return([]dhcpmodel.AddressPoolAccessor{poolMock})
 	// Return a delegated prefix pool defined above.
-	mock.EXPECT().GetPrefixPools().Return([]dhcpmodel.PrefixPoolAccessor{pdPoolMock})
+	mock.EXPECT().GetPrefixPools(gomock.Eq(int64(1))).Return([]dhcpmodel.PrefixPoolAccessor{pdPoolMock})
 	// Return subnet-level Kea parameters.
 	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{

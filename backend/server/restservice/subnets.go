@@ -24,24 +24,6 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		StatsCollectedAt: strfmt.DateTime(sn.StatsCollectedAt),
 	}
 
-	for _, poolDetails := range sn.AddressPools {
-		pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
-		subnet.Pools = append(subnet.Pools, pool)
-	}
-
-	for _, prefixPoolDetails := range sn.PrefixPools {
-		prefix := prefixPoolDetails.Prefix
-		delegatedLength := int64(prefixPoolDetails.DelegatedLen)
-		subnet.PrefixDelegationPools = append(
-			subnet.PrefixDelegationPools,
-			&models.DelegatedPrefix{
-				Prefix:          &prefix,
-				DelegatedLength: &delegatedLength,
-				ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
-			},
-		)
-	}
-
 	if sn.SharedNetwork != nil {
 		subnet.SharedNetwork = sn.SharedNetwork.Name
 	}
@@ -56,6 +38,23 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			MachineHostname:  lsn.Daemon.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
+		}
+		for _, poolDetails := range lsn.AddressPools {
+			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
+			localSubnet.Pools = append(localSubnet.Pools, pool)
+		}
+
+		for _, prefixPoolDetails := range lsn.PrefixPools {
+			prefix := prefixPoolDetails.Prefix
+			delegatedLength := int64(prefixPoolDetails.DelegatedLen)
+			localSubnet.PrefixDelegationPools = append(
+				localSubnet.PrefixDelegationPools,
+				&models.DelegatedPrefix{
+					Prefix:          &prefix,
+					DelegatedLength: &delegatedLength,
+					ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
+				},
+			)
 		}
 		subnet.LocalSubnets = append(subnet.LocalSubnets, localSubnet)
 	}

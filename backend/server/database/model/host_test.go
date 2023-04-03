@@ -1334,21 +1334,31 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestSubnetApps(t, db)
+
 	// IPv4
 	subnetIPv4 := &Subnet{
 		Prefix: "192.0.2.0/24",
-		AddressPools: []AddressPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				LowerBound: "192.0.2.1",
-				UpperBound: "192.0.2.10",
-			},
-			{
-				LowerBound: "192.0.2.21",
-				UpperBound: "192.0.2.30",
+				DaemonID: apps[0].Daemons[0].ID,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "192.0.2.1",
+						UpperBound: "192.0.2.10",
+					},
+					{
+						LowerBound: "192.0.2.21",
+						UpperBound: "192.0.2.30",
+					},
+				},
 			},
 		},
 	}
-	_ = AddSubnet(db, subnetIPv4)
+	err := AddSubnet(db, subnetIPv4)
+	require.NoError(t, err)
+	err = AddLocalSubnets(db, subnetIPv4)
+	require.NoError(t, err)
 
 	host := &Host{
 		CreatedAt: time.Now(),
@@ -1395,28 +1405,36 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	// IPv6
 	subnetIPv6 := &Subnet{
 		Prefix: "fe80::/64",
-		AddressPools: []AddressPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				LowerBound: "fe80::1",
-				UpperBound: "fe80::10",
-			},
-			{
-				LowerBound: "fe80::21",
-				UpperBound: "fe80::30",
-			},
-		},
-		PrefixPools: []PrefixPool{
-			{
-				Prefix:       "3001:1::/48",
-				DelegatedLen: 64,
-			},
-			{
-				Prefix:       "3001:2::/64",
-				DelegatedLen: 80,
+				DaemonID: apps[0].Daemons[1].ID,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "fe80::1",
+						UpperBound: "fe80::10",
+					},
+					{
+						LowerBound: "fe80::21",
+						UpperBound: "fe80::30",
+					},
+				},
+				PrefixPools: []PrefixPool{
+					{
+						Prefix:       "3001:1::/48",
+						DelegatedLen: 64,
+					},
+					{
+						Prefix:       "3001:2::/64",
+						DelegatedLen: 80,
+					},
+				},
 			},
 		},
 	}
-	_ = AddSubnet(db, subnetIPv6)
+	err = AddSubnet(db, subnetIPv6)
+	require.NoError(t, err)
+	err = AddLocalSubnets(db, subnetIPv6)
+	require.NoError(t, err)
 
 	host = &Host{
 		CreatedAt: time.Now(),
@@ -1687,7 +1705,7 @@ func TestPopulateHostDaemonsMissingDaemons(t *testing.T) {
 				DaemonID: apps[0].Daemons[0].ID,
 			},
 			{
-				DaemonID: apps[0].Daemons[0].ID + apps[1].Daemons[0].ID,
+				DaemonID: apps[0].Daemons[0].ID + apps[1].Daemons[0].ID + 1000,
 			},
 		},
 	}

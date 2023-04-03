@@ -79,20 +79,20 @@ func TestGetSubnets(t *testing.T) {
 	appSubnets := []dbmodel.Subnet{
 		{
 			Prefix: "192.168.0.0/24",
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "192.168.0.1",
-					UpperBound: "192.168.0.100",
-				},
-				{
-					LowerBound: "192.168.0.150",
-					UpperBound: "192.168.0.200",
-				},
-			},
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					DaemonID:      a4.Daemons[0].ID,
 					LocalSubnetID: 1,
+					AddressPools: []dbmodel.AddressPool{
+						{
+							LowerBound: "192.168.0.1",
+							UpperBound: "192.168.0.100",
+						},
+						{
+							LowerBound: "192.168.0.150",
+							UpperBound: "192.168.0.200",
+						},
+					},
 				},
 			},
 		},
@@ -226,16 +226,16 @@ func TestGetSubnets(t *testing.T) {
 			"bar": 24,
 		},
 		StatsCollectedAt: time.Time{}.Add(2 * time.Hour),
-		AddressPools: []dbmodel.AddressPool{
-			{
-				LowerBound: "192.118.0.1",
-				UpperBound: "192.118.0.200",
-			},
-		},
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				DaemonID:      a46.Daemons[0].ID,
 				LocalSubnetID: 3,
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.118.0.1",
+						UpperBound: "192.118.0.200",
+					},
+				},
 			},
 		},
 		AddrUtilization: 420,
@@ -247,16 +247,16 @@ func TestGetSubnets(t *testing.T) {
 			"baz": 4224,
 		},
 		StatsCollectedAt: time.Time{}.Add(3 * time.Hour),
-		AddressPools: []dbmodel.AddressPool{
-			{
-				LowerBound: "3001:db8:1::",
-				UpperBound: "3001:db8:1:0:ffff::ffff",
-			},
-		},
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				DaemonID:      a46.Daemons[1].ID,
 				LocalSubnetID: 4,
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "3001:db8:1::",
+						UpperBound: "3001:db8:1:0:ffff::ffff",
+					},
+				},
 			},
 		},
 		AddrUtilization: 240,
@@ -277,13 +277,13 @@ func TestGetSubnets(t *testing.T) {
 	for _, sn := range okRsp.Payload.Items {
 		switch sn.LocalSubnets[0].ID {
 		case 1:
-			require.Len(t, sn.Pools, 2)
+			require.Len(t, sn.LocalSubnets[0].Pools, 2)
 		case 2:
-			require.Len(t, sn.Pools, 0)
+			require.Len(t, sn.LocalSubnets[0].Pools, 0)
 		case 21:
-			require.Len(t, sn.Pools, 0)
+			require.Len(t, sn.LocalSubnets[0].Pools, 0)
 		default:
-			require.Len(t, sn.Pools, 1)
+			require.Len(t, sn.LocalSubnets[0].Pools, 1)
 		}
 	}
 

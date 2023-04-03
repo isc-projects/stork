@@ -25,8 +25,8 @@ type AddressPool struct {
 	UpperBound        string
 	DHCPOptionSet     []DHCPOption
 	DHCPOptionSetHash string
-	SubnetID          int64
-	Subnet            *Subnet `pg:"rel:has-one"`
+	LocalSubnetID     int64
+	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
 
 	KeaParameters *keaconfig.PoolParameters
 }
@@ -70,8 +70,8 @@ type PrefixPool struct {
 	ExcludedPrefix    string
 	DHCPOptionSet     []DHCPOption
 	DHCPOptionSetHash string
-	SubnetID          int64
-	Subnet            *Subnet `pg:"rel:has-one"`
+	LocalSubnetID     int64
+	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
 
 	KeaParameters *keaconfig.PoolParameters
 }
@@ -102,12 +102,12 @@ func (pp *PrefixPool) HasEqualData(other *PrefixPool) bool {
 }
 
 // Creates a new address pool given the address range and the ID of the
-// subnet the pool belongs to.
-func NewAddressPool(lb, ub net.IP, subnetID int64) *AddressPool {
+// local subnet the pool belongs to.
+func NewAddressPool(lb, ub net.IP, localSubnetID int64) *AddressPool {
 	pool := &AddressPool{
-		LowerBound: lb.String(),
-		UpperBound: ub.String(),
-		SubnetID:   subnetID,
+		LowerBound:    lb.String(),
+		UpperBound:    ub.String(),
+		LocalSubnetID: localSubnetID,
 	}
 	return pool
 }
@@ -130,7 +130,7 @@ func NewAddressPoolFromRange(addressRange string) (*AddressPool, error) {
 // Creates new instance of the pool for prefix delegation from the prefix,
 // delegated length, and optional excluded prefix. It validates the prefix
 // provided to verify if it follows CIDR notation.
-func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, subnetID int64) (*PrefixPool, error) {
+func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, localSubnetID int64) (*PrefixPool, error) {
 	prefixIP, prefixNet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		err = errors.Errorf("unable to parse the pool prefix %s", prefix)
@@ -143,9 +143,9 @@ func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, subne
 	}
 
 	pool := &PrefixPool{
-		SubnetID:     subnetID,
-		Prefix:       prefixNet.String(),
-		DelegatedLen: delegatedLen,
+		LocalSubnetID: localSubnetID,
+		Prefix:        prefixNet.String(),
+		DelegatedLen:  delegatedLen,
 	}
 
 	if excludedPrefix != "" {
@@ -166,7 +166,7 @@ func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, subne
 
 // Adds address pool to the database.
 func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
-	if pool.SubnetID == 0 && pool.Subnet == nil {
+	if pool.LocalSubnetID == 0 && pool.LocalSubnet == nil {
 		err := errors.Errorf("subnet must be specified when adding new pool %s-%s into the database",
 			pool.LowerBound, pool.UpperBound)
 		return err
@@ -174,36 +174,36 @@ func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 
 	// In case, the caller specified pointer to the subnet rather than subnet id
 	// we have to set the subnet id on our own.
-	if pool.SubnetID == 0 && pool.Subnet != nil {
-		pool.SubnetID = pool.Subnet.ID
+	if pool.LocalSubnetID == 0 && pool.LocalSubnet != nil {
+		pool.LocalSubnetID = pool.LocalSubnet.ID
 	}
 
 	_, err := db.Model(pool).Insert()
 	if err != nil {
 		err = errors.Wrapf(err, "problem adding new address pool %s-%s into the database for subnet %d",
-			pool.LowerBound, pool.UpperBound, pool.SubnetID)
+			pool.LowerBound, pool.UpperBound, pool.LocalSubnetID)
 	}
 	return err
 }
 
 // Adds prefix pool to the database.
 func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
-	if pool.Subnet.ID == 0 && pool.Subnet == nil {
-		err := errors.Errorf("subnet must be specified when adding new prefix pool %s into the database",
+	if pool.LocalSubnet.ID == 0 && pool.LocalSubnet == nil {
+		err := errors.Errorf("local subnet must be specified when adding new prefix pool %s into the database",
 			pool.Prefix)
 		return err
 	}
 
 	// In case, the caller specified pointer to the subnet rather than subnet id
 	// we have to set the subnet id on our own.
-	if pool.SubnetID == 0 && pool.Subnet != nil {
-		pool.SubnetID = pool.Subnet.ID
+	if pool.LocalSubnetID == 0 && pool.LocalSubnet != nil {
+		pool.LocalSubnetID = pool.LocalSubnet.ID
 	}
 
 	_, err := db.Model(pool).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem adding new prefix pool %s into the database for subnet %d",
-			pool.Prefix, pool.SubnetID)
+		err = errors.Wrapf(err, "problem adding new prefix pool %s into the database for local subnet %d",
+			pool.Prefix, pool.LocalSubnetID)
 	}
 	return err
 }

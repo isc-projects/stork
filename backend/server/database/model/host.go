@@ -792,9 +792,10 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 	inAnyPoolSubquery := dbi.Model((*AddressPool)(nil)).
 		// We don't need any data from this query, we check only row existence
 		ColumnExpr("1").
+		Join("JOIN local_subnet").JoinOn("address_pool.local_subnet_id = local_subnet.id").
 		// We assume that the reservation can be only in
 		// the subnet in which it is defined
-		Where("address_pool.subnet_id = host.subnet_id").
+		Where("local_subnet.subnet_id = host.subnet_id").
 		// Is it in a pool? - from lower to upper bands inclusively
 		Where("ip_reservation.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
 		// We want only to know if the address is in at least one pool
@@ -856,9 +857,10 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	inAnyPrefixPoolSubquery := dbi.Model((*PrefixPool)(nil)).
 		// We don't need any data from this query, we check only row existence
 		ColumnExpr("1").
+		Join("JOIN local_subnet").JoinOn("prefix_pool.local_subnet_id = local_subnet.id").
 		// We assume that the reservation can be only in
 		// the subnet in which it is defined
-		Where("prefix_pool.subnet_id = host.subnet_id").
+		Where("local_subnet.subnet_id = host.subnet_id").
 		// Reserved prefix is in prefix pool if it is contained by the prefix of the pool
 		// and if the reserved prefix length is narrower than the delegation length.
 		// For example for pool 3001::/48 and delegation length equals to 64:

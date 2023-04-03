@@ -12,11 +12,11 @@ type SubnetAccessor interface {
 	// Returns a subnet prefix.
 	GetPrefix() string
 	// Returns a slice of interfaces representing address pools configured
-	// for the subnet.
-	GetAddressPools() []AddressPoolAccessor
+	// for a subnet on a DHCP server.
+	GetAddressPools(int64) []AddressPoolAccessor
 	// Returns a slice of interfaces representing delegated prefix pools
-	// configured for the subnet.
-	GetPrefixPools() []PrefixPoolAccessor
+	// configured for a subnet on a DHCP server.
+	GetPrefixPools(int64) []PrefixPoolAccessor
 	// Returns a slice of DHCP options configured for a selected daemon in
 	// the subnet.
 	GetDHCPOptions(int64) []DHCPOptionAccessor

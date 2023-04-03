@@ -94,7 +94,7 @@ func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 		subnet := s
 		subnet.SharedNetworkID = network.ID
 
-		err = addSubnetWithPools(tx, &subnet)
+		err = addSubnet(tx, &subnet)
 		if err != nil {
 			return err
 		}
@@ -218,10 +218,10 @@ func GetSharedNetworkWithSubnets(dbi dbops.DBI, networkID int64) (network *Share
 	network = &SharedNetwork{}
 	err = dbi.Model(network).
 		Relation("Subnets").
-		Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation("Subnets.LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation("Subnets.LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").
@@ -333,10 +333,10 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	q = q.Relation("Subnets", func(q *orm.Query) (*orm.Query, error) {
 		return q.Order("prefix ASC"), nil
 	}).
-		Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation("Subnets.LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation("Subnets.LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").

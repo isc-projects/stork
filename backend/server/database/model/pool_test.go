@@ -54,7 +54,7 @@ func TestNewPrefixPool(t *testing.T) {
 	require.Equal(t, "2001:db8:1::/64", pool.Prefix)
 	require.EqualValues(t, 96, pool.DelegatedLen)
 	require.Empty(t, pool.ExcludedPrefix)
-	require.EqualValues(t, 1, pool.SubnetID)
+	require.EqualValues(t, 1, pool.LocalSubnetID)
 
 	// IPv4 is not accepted.
 	_, err = NewPrefixPool("192.0.2.0/24", 24, "", 2)
@@ -64,25 +64,35 @@ func TestNewPrefixPool(t *testing.T) {
 	pool, err = NewPrefixPool("2001:db8:1::/64", 96, "2001:db8:1:42::/80", 3)
 	require.NoError(t, err)
 	require.EqualValues(t, "2001:db8:1:42::/80", pool.ExcludedPrefix)
-	require.EqualValues(t, 3, pool.SubnetID)
+	require.EqualValues(t, 3, pool.LocalSubnetID)
 }
 
 func TestAddDeleteAddressPool(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestSubnetApps(t, db)
+
 	subnet := Subnet{
 		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
 	}
 	err := AddSubnet(db, &subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
+	err = AddLocalSubnets(db, &subnet)
+	require.NoError(t, err)
+
 	pool := AddressPool{
 		LowerBound: "192.0.2.10",
 		UpperBound: "192.0.2.20",
-		Subnet: &Subnet{
-			ID: subnet.ID,
+		LocalSubnet: &LocalSubnet{
+			ID: subnet.LocalSubnets[0].ID,
 		},
 	}
 	err = AddAddressPool(db, &pool)
@@ -92,11 +102,12 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, returnedSubnets)
 	returnedSubnet := returnedSubnets[0]
-	require.Len(t, returnedSubnet.AddressPools, 1)
-	require.NotZero(t, returnedSubnet.AddressPools[0].ID)
-	require.NotZero(t, returnedSubnet.AddressPools[0].CreatedAt)
-	require.Equal(t, "192.0.2.10", returnedSubnet.AddressPools[0].LowerBound)
-	require.Equal(t, "192.0.2.20", returnedSubnet.AddressPools[0].UpperBound)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+	require.Len(t, returnedSubnet.LocalSubnets[0].AddressPools, 1)
+	require.NotZero(t, returnedSubnet.LocalSubnets[0].AddressPools[0].ID)
+	require.NotZero(t, returnedSubnet.LocalSubnets[0].AddressPools[0].CreatedAt)
+	require.Equal(t, "192.0.2.10", returnedSubnet.LocalSubnets[0].AddressPools[0].LowerBound)
+	require.Equal(t, "192.0.2.20", returnedSubnet.LocalSubnets[0].AddressPools[0].UpperBound)
 
 	err = DeleteAddressPool(db, pool.ID)
 	require.NoError(t, err)
@@ -104,25 +115,36 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, returnedSubnets)
 	returnedSubnet = returnedSubnets[0]
-	require.Empty(t, returnedSubnet.AddressPools)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+	require.Empty(t, returnedSubnet.LocalSubnets[0].AddressPools)
 }
 
 func TestAddDeletePrefixPool(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestSubnetApps(t, db)
+
 	subnet := Subnet{
 		Prefix: "2001:db8:1::/64",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
 	}
 	err := AddSubnet(db, &subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
+	err = AddLocalSubnets(db, &subnet)
+	require.NoError(t, err)
+
 	pool := PrefixPool{
 		Prefix:       "2001:db8:1:1::/80",
 		DelegatedLen: 96,
-		Subnet: &Subnet{
-			ID: subnet.ID,
+		LocalSubnet: &LocalSubnet{
+			ID: subnet.LocalSubnets[0].ID,
 		},
 	}
 	err = AddPrefixPool(db, &pool)
@@ -132,11 +154,12 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, returnedSubnets)
 	returnedSubnet := returnedSubnets[0]
-	require.Len(t, returnedSubnet.PrefixPools, 1)
-	require.NotZero(t, returnedSubnet.PrefixPools[0].ID)
-	require.NotZero(t, returnedSubnet.PrefixPools[0].CreatedAt)
-	require.Equal(t, "2001:db8:1:1::/80", returnedSubnet.PrefixPools[0].Prefix)
-	require.Equal(t, 96, returnedSubnet.PrefixPools[0].DelegatedLen)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+	require.Len(t, returnedSubnet.LocalSubnets[0].PrefixPools, 1)
+	require.NotZero(t, returnedSubnet.LocalSubnets[0].PrefixPools[0].ID)
+	require.NotZero(t, returnedSubnet.LocalSubnets[0].PrefixPools[0].CreatedAt)
+	require.Equal(t, "2001:db8:1:1::/80", returnedSubnet.LocalSubnets[0].PrefixPools[0].Prefix)
+	require.Equal(t, 96, returnedSubnet.LocalSubnets[0].PrefixPools[0].DelegatedLen)
 
 	err = DeletePrefixPool(db, pool.ID)
 	require.NoError(t, err)
@@ -144,7 +167,8 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, returnedSubnets)
 	returnedSubnet = returnedSubnets[0]
-	require.Empty(t, returnedSubnet.PrefixPools)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+	require.Empty(t, returnedSubnet.LocalSubnets[0].PrefixPools)
 }
 
 // Test the implementation of the dhcpmodel.PrefixPoolAccessor interface
@@ -247,8 +271,8 @@ func TestPrefixPoolHasEqualDataCreateTimestamp(t *testing.T) {
 // Test that two prefix pools have equal data if their subnet IDs differ.
 func TestPrefixPoolHasEqualDataSubnetID(t *testing.T) {
 	// Arrange
-	first := &PrefixPool{SubnetID: 1}
-	second := &PrefixPool{SubnetID: 2}
+	first := &PrefixPool{LocalSubnetID: 1}
+	second := &PrefixPool{LocalSubnetID: 2}
 
 	// Act
 	equality := first.HasEqualData(second)
@@ -257,11 +281,11 @@ func TestPrefixPoolHasEqualDataSubnetID(t *testing.T) {
 	require.True(t, equality)
 }
 
-// Test that two prefix pools have equal data if their subnets differ.
+// Test that two prefix pools have equal data if their local subnet IDs differ.
 func TestPrefixPoolHasEqualDataSubnet(t *testing.T) {
 	// Arrange
-	first := &PrefixPool{Subnet: &Subnet{Prefix: "fe80::/64"}}
-	second := &PrefixPool{Subnet: &Subnet{Prefix: "10.0.0.0/8"}}
+	first := &PrefixPool{LocalSubnet: &LocalSubnet{LocalSubnetID: 14}}
+	second := &PrefixPool{LocalSubnet: &LocalSubnet{LocalSubnetID: 15}}
 
 	// Act
 	equality := first.HasEqualData(second)
@@ -278,8 +302,8 @@ func TestPrefixPoolHasEqualDataTheSame(t *testing.T) {
 		CreatedAt:      time.Time{},
 		Prefix:         "fe80::/64",
 		DelegatedLen:   80,
-		SubnetID:       24,
-		Subnet:         &Subnet{},
+		LocalSubnetID:  24,
+		LocalSubnet:    &LocalSubnet{},
 		ExcludedPrefix: "fe80::/80",
 	}
 
@@ -288,8 +312,8 @@ func TestPrefixPoolHasEqualDataTheSame(t *testing.T) {
 		CreatedAt:      time.Time{},
 		Prefix:         "fe80::/64",
 		DelegatedLen:   80,
-		SubnetID:       24,
-		Subnet:         &Subnet{},
+		LocalSubnetID:  24,
+		LocalSubnet:    &LocalSubnet{},
 		ExcludedPrefix: "fe80::/80",
 	}
 
@@ -405,8 +429,8 @@ func TestAddressPoolHasEqualDataUpperBound(t *testing.T) {
 // Test that two address pools have equal data if their subnet IDs differ.
 func TestAddressPoolHasEqualDataSubnetID(t *testing.T) {
 	// Arrange
-	first := &AddressPool{SubnetID: 1}
-	second := &AddressPool{SubnetID: 2}
+	first := &AddressPool{LocalSubnetID: 1}
+	second := &AddressPool{LocalSubnetID: 2}
 
 	// Act
 	equality := first.HasEqualData(second)
@@ -415,11 +439,11 @@ func TestAddressPoolHasEqualDataSubnetID(t *testing.T) {
 	require.True(t, equality)
 }
 
-// Test that two address pools have equal data if their subnets differ.
-func TestAddressPoolHasEqualDataSubnets(t *testing.T) {
+// Test that two address pools have equal data if their IDs differ.
+func TestAddressPoolHasEqualDataSubnetIDs(t *testing.T) {
 	// Arrange
-	first := &AddressPool{Subnet: &Subnet{Prefix: "fe80::/64"}}
-	second := &AddressPool{Subnet: &Subnet{Prefix: "3001::/48"}}
+	first := &AddressPool{LocalSubnet: &LocalSubnet{ID: 14}}
+	second := &AddressPool{LocalSubnet: &LocalSubnet{ID: 15}}
 
 	// Act
 	equality := first.HasEqualData(second)
@@ -432,21 +456,21 @@ func TestAddressPoolHasEqualDataSubnets(t *testing.T) {
 func TestAddressPoolHasEqualDataTheSame(t *testing.T) {
 	// Arrange
 	first := &AddressPool{
-		ID:         42,
-		CreatedAt:  time.Time{},
-		LowerBound: "10.0.0.1",
-		UpperBound: "10.0.0.10",
-		SubnetID:   24,
-		Subnet:     &Subnet{},
+		ID:            42,
+		CreatedAt:     time.Time{},
+		LowerBound:    "10.0.0.1",
+		UpperBound:    "10.0.0.10",
+		LocalSubnetID: 24,
+		LocalSubnet:   &LocalSubnet{},
 	}
 
 	second := &AddressPool{
-		ID:         42,
-		CreatedAt:  time.Time{},
-		LowerBound: "10.0.0.1",
-		UpperBound: "10.0.0.10",
-		SubnetID:   24,
-		Subnet:     &Subnet{},
+		ID:            42,
+		CreatedAt:     time.Time{},
+		LowerBound:    "10.0.0.1",
+		UpperBound:    "10.0.0.10",
+		LocalSubnetID: 24,
+		LocalSubnet:   &LocalSubnet{},
 	}
 
 	// Act

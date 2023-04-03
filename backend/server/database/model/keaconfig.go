@@ -150,7 +150,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		LocalSubnets: []*LocalSubnet{
 			{
 				DaemonID:      daemon.ID,
-				LocalSubnetID: daemon.GetLocalSubnetID(prefix),
+				LocalSubnetID: keaSubnet.GetID(),
 				KeaParameters: keaSubnet.GetSubnetParameters(),
 			},
 		},
@@ -163,17 +163,17 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		if err != nil {
 			return nil, err
 		}
-		addressPool := NewAddressPool(lb, ub, keaSubnet.GetID())
-		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
+		addressPool := NewAddressPool(lb, ub, 0)
+		convertedSubnet.LocalSubnets[0].AddressPools = append(convertedSubnet.LocalSubnets[0].AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.GetPDPools() {
 		prefix := p.GetCanonicalPrefix()
 		excludedPrefix := p.GetCanonicalExcludedPrefix()
-		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix, keaSubnet.GetID())
+		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix, 0)
 		if err != nil {
 			return nil, err
 		}
-		convertedSubnet.PrefixPools = append(convertedSubnet.PrefixPools, *prefixPool)
+		convertedSubnet.LocalSubnets[0].PrefixPools = append(convertedSubnet.LocalSubnets[0].PrefixPools, *prefixPool)
 	}
 	for _, r := range keaSubnet.GetReservations() {
 		host, err := NewHostFromKeaConfigReservation(r, daemon, source, lookup)

@@ -51,20 +51,27 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
-		AddressPools: []AddressPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				LowerBound: "192.0.2.1",
-				UpperBound: "192.0.2.10",
-			},
-			{
-				LowerBound: "192.0.2.11",
-				UpperBound: "192.0.2.20",
-			},
-			{
-				LowerBound: "192.0.2.21",
-				UpperBound: "192.0.2.30",
+				DaemonID: apps[0].Daemons[0].ID,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "192.0.2.1",
+						UpperBound: "192.0.2.10",
+					},
+					{
+						LowerBound: "192.0.2.11",
+						UpperBound: "192.0.2.20",
+					},
+					{
+						LowerBound: "192.0.2.21",
+						UpperBound: "192.0.2.30",
+					},
+				},
 			},
 		},
 	}
@@ -79,8 +86,9 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 
 	// Make sure that the pools are returned too.
 	require.Equal(t, subnet.Prefix, returned.Prefix)
-	require.Len(t, subnet.AddressPools, 3)
-	require.Empty(t, subnet.PrefixPools)
+	require.Len(t, subnet.LocalSubnets, 1)
+	require.Len(t, subnet.LocalSubnets[0].AddressPools, 3)
+	require.Empty(t, subnet.LocalSubnets[0].PrefixPools)
 }
 
 // Test that subnet with address and prefix pools is inserted into the database.
@@ -88,40 +96,50 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	subnet := &Subnet{
 		Prefix: "2001:db8:1::/64",
-		AddressPools: []AddressPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				LowerBound: "2001:db8:1::1",
-				UpperBound: "2001:db8:1::10",
-			},
-			{
-				LowerBound: "2001:db8:1::11",
-				UpperBound: "2001:db8:1::20",
-			},
-			{
-				LowerBound: "2001:db8:1::21",
-				UpperBound: "2001:db8:1::30",
-			},
-		},
-		PrefixPools: []PrefixPool{
-			{
-				Prefix:       "3001::/64",
-				DelegatedLen: 80,
-			},
-			{
-				Prefix:       "3000::/32",
-				DelegatedLen: 120,
-			},
-			{
-				Prefix:       "2001:db8:2::/64",
-				DelegatedLen: 96,
+				DaemonID: apps[0].Daemons[0].ID,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "2001:db8:1::1",
+						UpperBound: "2001:db8:1::10",
+					},
+					{
+						LowerBound: "2001:db8:1::11",
+						UpperBound: "2001:db8:1::20",
+					},
+					{
+						LowerBound: "2001:db8:1::21",
+						UpperBound: "2001:db8:1::30",
+					},
+				},
+				PrefixPools: []PrefixPool{
+					{
+						Prefix:       "3001::/64",
+						DelegatedLen: 80,
+					},
+					{
+						Prefix:       "3000::/32",
+						DelegatedLen: 120,
+					},
+					{
+						Prefix:       "2001:db8:2::/64",
+						DelegatedLen: 96,
+					},
+				},
 			},
 		},
 	}
 	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
+
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
 
 	// Get the subnet from the database/
 	returned, err := GetSubnet(db, subnet.ID)
@@ -133,21 +151,22 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	require.Nil(t, returned.SharedNetwork)
 
 	// Make sure that the address pools and prefix pools are returned.
-	require.Len(t, returned.AddressPools, 3)
-	require.Len(t, returned.PrefixPools, 3)
+	require.Len(t, returned.LocalSubnets, 1)
+	require.Len(t, returned.LocalSubnets[0].AddressPools, 3)
+	require.Len(t, returned.LocalSubnets[0].PrefixPools, 3)
 
 	// Validate returned address pools.
-	for i, p := range returned.AddressPools {
+	for i, p := range returned.LocalSubnets[0].AddressPools {
 		require.NotZero(t, p.CreatedAt)
-		require.Equal(t, subnet.AddressPools[i].LowerBound, p.LowerBound)
-		require.Equal(t, subnet.AddressPools[i].UpperBound, p.UpperBound)
+		require.Equal(t, subnet.LocalSubnets[0].AddressPools[i].LowerBound, p.LowerBound)
+		require.Equal(t, subnet.LocalSubnets[0].AddressPools[i].UpperBound, p.UpperBound)
 	}
 
 	// Validate returned prefix pools.
-	for i, p := range returned.PrefixPools {
+	for i, p := range returned.LocalSubnets[0].PrefixPools {
 		require.NotZero(t, p.CreatedAt)
-		require.Equal(t, subnet.PrefixPools[i].Prefix, p.Prefix)
-		require.Equal(t, subnet.PrefixPools[i].DelegatedLen, p.DelegatedLen)
+		require.Equal(t, subnet.LocalSubnets[0].PrefixPools[i].Prefix, p.Prefix)
+		require.Equal(t, subnet.LocalSubnets[0].PrefixPools[i].DelegatedLen, p.DelegatedLen)
 	}
 }
 
@@ -481,35 +500,47 @@ func TestGetSubnetsByPage(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	// Add two subnets with multiple address pools.
 	subnets := []Subnet{
 		{
 			Prefix: "192.0.2.0/24",
-			AddressPools: []AddressPool{
+			LocalSubnets: []*LocalSubnet{
 				{
-					LowerBound: "192.0.2.1",
-					UpperBound: "192.0.2.10",
-				},
-				{
-					LowerBound: "192.0.2.11",
-					UpperBound: "192.0.2.20",
-				},
-				{
-					LowerBound: "192.0.2.21",
-					UpperBound: "192.0.2.30",
+					DaemonID: apps[0].Daemons[0].ID,
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.0.2.1",
+							UpperBound: "192.0.2.10",
+						},
+						{
+							LowerBound: "192.0.2.11",
+							UpperBound: "192.0.2.20",
+						},
+						{
+							LowerBound: "192.0.2.21",
+							UpperBound: "192.0.2.30",
+						},
+					},
 				},
 			},
 		},
 		{
 			Prefix: "192.0.3.0/24",
-			AddressPools: []AddressPool{
+			LocalSubnets: []*LocalSubnet{
 				{
-					LowerBound: "192.0.3.1",
-					UpperBound: "192.0.3.10",
-				},
-				{
-					LowerBound: "192.0.3.11",
-					UpperBound: "192.0.3.20",
+					DaemonID: apps[0].Daemons[0].ID,
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.0.3.1",
+							UpperBound: "192.0.3.10",
+						},
+						{
+							LowerBound: "192.0.3.11",
+							UpperBound: "192.0.3.20",
+						},
+					},
 				},
 			},
 		},
@@ -518,6 +549,9 @@ func TestGetSubnetsByPage(t *testing.T) {
 		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
+
+		err = AddLocalSubnets(db, &subnets[i])
+		require.NoError(t, err)
 	}
 
 	// This should match two subnets.
@@ -1067,6 +1101,8 @@ func TestUpdateSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	sharedNetworkFoo := &SharedNetwork{Name: "foo"}
 	sharedNetworkBar := &SharedNetwork{Name: "bar"}
 	_ = AddSharedNetwork(db, sharedNetworkFoo)
@@ -1075,13 +1111,18 @@ func TestUpdateSubnet(t *testing.T) {
 	subnet := &Subnet{
 		Prefix:      "fe80::/64",
 		ClientClass: "foo",
-		AddressPools: []AddressPool{
-			{LowerBound: "fe80::1", UpperBound: "fe80::10"},
-			{LowerBound: "fe80::100", UpperBound: "fe80::110"},
-		},
-		PrefixPools: []PrefixPool{
-			{Prefix: "fe80:1::/80", DelegatedLen: 96},
-			{Prefix: "fe80:2::/80", DelegatedLen: 96},
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+				AddressPools: []AddressPool{
+					{LowerBound: "fe80::1", UpperBound: "fe80::10"},
+					{LowerBound: "fe80::100", UpperBound: "fe80::110"},
+				},
+				PrefixPools: []PrefixPool{
+					{Prefix: "fe80:1::/80", DelegatedLen: 96},
+					{Prefix: "fe80:2::/80", DelegatedLen: 96},
+				},
+			},
 		},
 		SharedNetworkID: sharedNetworkFoo.ID,
 		Hosts:           []Host{{Hostname: "foo"}},
@@ -1094,48 +1135,53 @@ func TestUpdateSubnet(t *testing.T) {
 	createdAt := subnet.CreatedAt
 	require.NotZero(t, createdAt)
 
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
+
 	// Act
 	// Reset creation time to ensure it is not modified during the update.
 	subnet.CreatedAt = time.Time{}
 	subnet.ClientClass = "bar"
-	subnet.AddressPools = subnet.AddressPools[1:]
-	subnet.AddressPools = append(subnet.AddressPools, AddressPool{
+	subnet.LocalSubnets[0].AddressPools = subnet.LocalSubnets[0].AddressPools[1:]
+	subnet.LocalSubnets[0].AddressPools = append(subnet.LocalSubnets[0].AddressPools, AddressPool{
 		LowerBound: "fe80::1000", UpperBound: "fe80::1010",
 	})
 
-	subnet.PrefixPools = subnet.PrefixPools[1:]
-	subnet.PrefixPools = append(subnet.PrefixPools, PrefixPool{
+	subnet.LocalSubnets[0].PrefixPools = subnet.LocalSubnets[0].PrefixPools[1:]
+	subnet.LocalSubnets[0].PrefixPools = append(subnet.LocalSubnets[0].PrefixPools, PrefixPool{
 		Prefix: "fe80:2::/80", DelegatedLen: 108,
 	})
 
 	subnet.SharedNetworkID = sharedNetworkBar.ID
 	subnet.Hosts = []Host{{Hostname: "bar"}}
 
-	err = updateSubnetWithPools(db, subnet)
+	err = updateSubnet(db, subnet)
+	require.NoError(t, err)
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
 
 	// Assert
-	require.NoError(t, err)
 	subnets, _, _ := GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.Len(t, subnets, 1)
 	subnet = &subnets[0]
 
 	require.EqualValues(t, "bar", subnet.ClientClass)
 
-	require.Len(t, subnet.AddressPools, 2)
-	sort.Slice(subnet.AddressPools, func(i, j int) bool {
-		return subnet.AddressPools[i].ID < subnet.AddressPools[j].ID
+	require.Len(t, subnet.LocalSubnets[0].AddressPools, 2)
+	sort.Slice(subnet.LocalSubnets[0].AddressPools, func(i, j int) bool {
+		return subnet.LocalSubnets[0].AddressPools[i].ID < subnet.LocalSubnets[0].AddressPools[j].ID
 	})
-	require.EqualValues(t, 2, subnet.AddressPools[0].ID)
-	require.EqualValues(t, 3, subnet.AddressPools[1].ID)
-	require.EqualValues(t, "fe80::1000", subnet.AddressPools[1].LowerBound)
+	require.EqualValues(t, 2, subnet.LocalSubnets[0].AddressPools[0].ID)
+	require.EqualValues(t, 3, subnet.LocalSubnets[0].AddressPools[1].ID)
+	require.EqualValues(t, "fe80::1000", subnet.LocalSubnets[0].AddressPools[1].LowerBound)
 
-	require.Len(t, subnet.PrefixPools, 2)
-	sort.Slice(subnet.PrefixPools, func(i, j int) bool {
-		return subnet.PrefixPools[i].ID < subnet.PrefixPools[j].ID
+	require.Len(t, subnet.LocalSubnets[0].PrefixPools, 2)
+	sort.Slice(subnet.LocalSubnets[0].PrefixPools, func(i, j int) bool {
+		return subnet.LocalSubnets[0].PrefixPools[i].ID < subnet.LocalSubnets[0].PrefixPools[j].ID
 	})
-	require.EqualValues(t, 2, subnet.PrefixPools[0].ID)
-	require.EqualValues(t, 3, subnet.PrefixPools[1].ID)
-	require.EqualValues(t, 108, subnet.PrefixPools[1].DelegatedLen)
+	require.EqualValues(t, 2, subnet.LocalSubnets[0].PrefixPools[0].ID)
+	require.EqualValues(t, 3, subnet.LocalSubnets[0].PrefixPools[1].ID)
+	require.EqualValues(t, 108, subnet.LocalSubnets[0].PrefixPools[1].DelegatedLen)
 	require.Equal(t, createdAt, subnet.CreatedAt)
 }
 
@@ -1146,45 +1192,59 @@ func TestAddAndClearSubnetPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addTestApps(t, db)
+
 	subnetFoo := &Subnet{
 		Prefix: "3001::/64",
-		AddressPools: []AddressPool{
-			{LowerBound: "3001:1::1", UpperBound: "3001:1::10"},
-			{LowerBound: "3001:2::1", UpperBound: "3001:2::10"},
-			{LowerBound: "3001:3::1", UpperBound: "3001:3::10"},
-		},
-		PrefixPools: []PrefixPool{
-			{Prefix: "3001:10::/80", DelegatedLen: 96},
-			{Prefix: "3001:20::/80", DelegatedLen: 96},
-			{Prefix: "3001:30::/80", DelegatedLen: 96},
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[1].ID,
+				AddressPools: []AddressPool{
+					{LowerBound: "3001:1::1", UpperBound: "3001:1::10"},
+					{LowerBound: "3001:2::1", UpperBound: "3001:2::10"},
+					{LowerBound: "3001:3::1", UpperBound: "3001:3::10"},
+				},
+				PrefixPools: []PrefixPool{
+					{Prefix: "3001:10::/80", DelegatedLen: 96},
+					{Prefix: "3001:20::/80", DelegatedLen: 96},
+					{Prefix: "3001:30::/80", DelegatedLen: 96},
+				},
+			},
 		},
 	}
 
 	subnetBar := &Subnet{
 		Prefix: "3002::/64",
-		AddressPools: []AddressPool{
-			{LowerBound: "3002:1::1", UpperBound: "3002:1::10"},
-			{LowerBound: "3002:2::1", UpperBound: "3002:2::10"},
-		},
-		PrefixPools: []PrefixPool{
-			{Prefix: "3002:10::/80", DelegatedLen: 96},
-			{Prefix: "3002:20::/80", DelegatedLen: 96},
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[1].ID,
+				AddressPools: []AddressPool{
+					{LowerBound: "3002:1::1", UpperBound: "3002:1::10"},
+					{LowerBound: "3002:2::1", UpperBound: "3002:2::10"},
+				},
+				PrefixPools: []PrefixPool{
+					{Prefix: "3002:10::/80", DelegatedLen: 96},
+					{Prefix: "3002:20::/80", DelegatedLen: 96},
+				},
+			},
 		},
 	}
 
 	_ = AddSubnet(db, subnetFoo)
+	_ = AddLocalSubnets(db, subnetFoo)
 	_ = AddSubnet(db, subnetBar)
+	_ = AddLocalSubnets(db, subnetBar)
 
 	// Act
-	subnetFoo.AddressPools[2].UpperBound = "3001:3::42"
-	subnetFoo.PrefixPools[2].DelegatedLen = 116
-	subnetFoo.AddressPools = subnetFoo.AddressPools[1:]
-	subnetBar.PrefixPools = subnetBar.PrefixPools[1:]
+	subnetFoo.LocalSubnets[0].AddressPools[2].UpperBound = "3001:3::42"
+	subnetFoo.LocalSubnets[0].PrefixPools[2].DelegatedLen = 116
+	subnetFoo.LocalSubnets[0].AddressPools = subnetFoo.LocalSubnets[0].AddressPools[1:]
+	subnetBar.LocalSubnets[0].PrefixPools = subnetBar.LocalSubnets[0].PrefixPools[1:]
 	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-		if err := addAndClearSubnetPools(tx, subnetFoo); err != nil {
+		if err := addAndClearSubnetPools(tx, subnetFoo.LocalSubnets[0]); err != nil {
 			return err
 		}
-		return addAndClearSubnetPools(tx, subnetBar)
+		return addAndClearSubnetPools(tx, subnetBar.LocalSubnets[0])
 	})
 
 	// Assert
@@ -1193,13 +1253,13 @@ func TestAddAndClearSubnetPools(t *testing.T) {
 	require.NoError(t, err)
 	subnetBar, err = GetSubnet(db, subnetBar.ID)
 	require.NoError(t, err)
-	require.Len(t, subnetFoo.AddressPools, 2)
-	require.Len(t, subnetBar.AddressPools, 2)
-	require.Len(t, subnetFoo.PrefixPools, 3)
-	require.Len(t, subnetBar.PrefixPools, 1)
+	require.Len(t, subnetFoo.LocalSubnets[0].AddressPools, 2)
+	require.Len(t, subnetBar.LocalSubnets[0].AddressPools, 2)
+	require.Len(t, subnetFoo.LocalSubnets[0].PrefixPools, 3)
+	require.Len(t, subnetBar.LocalSubnets[0].PrefixPools, 1)
 	// Update is not supported.
-	require.EqualValues(t, "3001:3::10", subnetFoo.AddressPools[1].UpperBound)
-	require.EqualValues(t, 96, subnetFoo.PrefixPools[1].DelegatedLen)
+	require.EqualValues(t, "3001:3::10", subnetFoo.LocalSubnets[0].AddressPools[1].UpperBound)
+	require.EqualValues(t, 96, subnetFoo.LocalSubnets[0].PrefixPools[1].DelegatedLen)
 }
 
 // Benchmark measuring a time to add a single subnet.
@@ -1215,12 +1275,6 @@ func BenchmarkAddSubnet(b *testing.B) {
 		prefix := fmt.Sprintf("%d.%d.%d.", uint8(i>>16), uint8(i>>8), uint8(i))
 		subnet := &Subnet{
 			Prefix: prefix + "0/24",
-			AddressPools: []AddressPool{
-				{
-					LowerBound: prefix + "1",
-					UpperBound: prefix + "10",
-				},
-			},
 		}
 		AddSubnet(tx, subnet)
 	}
@@ -1375,45 +1429,61 @@ func TestSubnetGetPrefix(t *testing.T) {
 // Test implementation of the dhcpmodel.SubnetAccessor interface (GetAddressPools() function).
 func TestSubnetGetAddressPools(t *testing.T) {
 	subnet := Subnet{
-		AddressPools: []AddressPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				LowerBound: "192.0.2.1",
-				UpperBound: "192.0.2.10",
-			},
-			{
-				LowerBound: "192.0.2.20",
-				UpperBound: "192.0.2.30",
+				DaemonID: 1,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "192.0.2.1",
+						UpperBound: "192.0.2.10",
+					},
+					{
+						LowerBound: "192.0.2.20",
+						UpperBound: "192.0.2.30",
+					},
+				},
 			},
 		},
 	}
-	pools := subnet.GetAddressPools()
+	pools := subnet.GetAddressPools(1)
 	require.Len(t, pools, 2)
 	require.Equal(t, "192.0.2.1", pools[0].GetLowerBound())
 	require.Equal(t, "192.0.2.10", pools[0].GetUpperBound())
 	require.Equal(t, "192.0.2.20", pools[1].GetLowerBound())
 	require.Equal(t, "192.0.2.30", pools[1].GetUpperBound())
+
+	// We should get an empty set of pools for non-matching daemon ID.
+	require.Empty(t, subnet.GetAddressPools(2))
 }
 
 // Test implementation of the dhcpmodel.SubnetAccessor interface (GetPrefixPools() function).
 func TestSubnetGetPrefixPools(t *testing.T) {
 	subnet := Subnet{
-		PrefixPools: []PrefixPool{
+		LocalSubnets: []*LocalSubnet{
 			{
-				Prefix:       "2001:db8:1:1::/64",
-				DelegatedLen: 80,
-			},
-			{
-				Prefix:       "2001:db8:1:2::/64",
-				DelegatedLen: 80,
+				DaemonID: 1,
+				PrefixPools: []PrefixPool{
+					{
+						Prefix:       "2001:db8:1:1::/64",
+						DelegatedLen: 80,
+					},
+					{
+						Prefix:       "2001:db8:1:2::/64",
+						DelegatedLen: 80,
+					},
+				},
 			},
 		},
 	}
-	pools := subnet.GetPrefixPools()
+	pools := subnet.GetPrefixPools(1)
 	require.Len(t, pools, 2)
 	require.Equal(t, "2001:db8:1:1::/64", pools[0].GetModel().Prefix)
 	require.EqualValues(t, 80, pools[0].GetModel().DelegatedLen)
 	require.Equal(t, "2001:db8:1:2::/64", pools[1].GetModel().Prefix)
 	require.EqualValues(t, 80, pools[1].GetModel().DelegatedLen)
+
+	// We should get an empty set of pools for non-matching daemon ID.
+	require.Empty(t, subnet.GetPrefixPools(2))
 }
 
 // Test implementation of the dhcpmodel.SubnetAccessor interface (GetDHCPOptions() function).
