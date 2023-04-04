@@ -1,3 +1,5 @@
+Stork 1.10.0 released on 2023-04-05.
+
 * 298 [func] marcin
 
     New and updated host reservations are instantly visible in Stork after
