@@ -1,4 +1,21 @@
-import { LocalSubnet, SharedNetwork, Subnet } from './backend'
+import { DelegatedPrefix, LocalSubnet, SharedNetwork, Subnet } from './backend'
+
+/**
+ * Represents a subnet with the lists of unique pools extracted.
+ */
+export class SubnetWithUniquePools implements Subnet {
+    id?: number
+    subnet?: string
+    sharedNetwork?: string
+    clientClass?: string
+    addrUtilization?: number
+    pdUtilization?: number
+    stats?: object
+    statsCollectedAt?: string
+    localSubnets?: Array<LocalSubnet>
+    pools?: Array<string> = []
+    prefixDelegationPools?: Array<DelegatedPrefix> = []
+}
 
 /**
  * Get total number of addresses in a subnet.
@@ -69,4 +86,63 @@ export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] 
             }
         }
     }
+}
+
+/**
+ * Converts the list of subnets into the subnets with extracted unique pools.
+ *
+ * The address and delegated prefix pools are carried in the objects associating
+ * them with the respective DHCP servers. The servers with the same subnets often
+ * have the same pools configured (e.g. in the high availability case). This function
+ * detects pools eliminating the repeated ones. The returned list of subnets contains
+ * the lists of unique pools found on both servers.
+ *
+ * @param subnets a list of subnets received from the Stork server.
+ * @returns a list of converted subnets with the list of unique pools attached.
+ */
+export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePools[] {
+    let convertedSubnets: SubnetWithUniquePools[] = []
+    for (const subnet of subnets) {
+        let pools: Array<string> = []
+        let prefixDelegationPools: Array<DelegatedPrefix> = []
+        let convertedSubnet: SubnetWithUniquePools = subnet
+        convertedSubnets.push(convertedSubnet)
+        if (!subnet.localSubnets) {
+            continue
+        }
+        for (const ls of subnet.localSubnets) {
+            if (ls.pools) {
+                for (const pool of ls.pools) {
+                    // Add the pool only if it doesn't exist yet.
+                    if (!pools.some((p) => p === pool)) {
+                        pools.push(pool)
+                    }
+                }
+            }
+            if (ls.prefixDelegationPools) {
+                for (const pdPool of ls.prefixDelegationPools) {
+                    // Add the pool only if the identical pool doesn't exist yet.
+                    if (
+                        !prefixDelegationPools.some(
+                            (p) =>
+                                p.prefix === pdPool.prefix &&
+                                p.delegatedLength === pdPool.delegatedLength &&
+                                p.excludedPrefix === pdPool.excludedPrefix
+                        )
+                    ) {
+                        prefixDelegationPools.push(pdPool)
+                    }
+                }
+            }
+        }
+        if (pools.length) {
+            convertedSubnet.pools = pools.sort()
+        }
+        if (prefixDelegationPools.length) {
+            convertedSubnet.prefixDelegationPools = prefixDelegationPools.sort((a, b) =>
+                a.prefix > b.prefix ? 1 : b.prefix > a.prefix ? -1 : 0
+            )
+        }
+    }
+    return convertedSubnets
 }

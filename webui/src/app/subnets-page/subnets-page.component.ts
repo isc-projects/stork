@@ -5,7 +5,13 @@ import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip, getErrorMessage } from '../utils'
-import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
+import {
+    getTotalAddresses,
+    getAssignedAddresses,
+    parseSubnetsStatisticValues,
+    SubnetWithUniquePools,
+    extractUniqueSubnetPools,
+} from '../subnets'
 import { SettingService } from '../setting.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -27,7 +33,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     @ViewChild('subnetsTable') subnetsTable: Table
 
     // subnets
-    subnets: Subnet[] = []
+    subnets: SubnetWithUniquePools[] = []
     totalSubnets = 0
 
     // filters
@@ -139,8 +145,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             )
             .toPromise()
             .then((data) => {
-                this.subnets = data.items
-                this.totalSubnets = data.total
+                this.subnets = data.items ? extractUniqueSubnetPools(data.items) : null
+                this.totalSubnets = data.total | 0
             })
             .catch((error) => {
                 this.messageService.add({
@@ -248,7 +254,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Returns true if the subnet list presents at least one IPv6 subnet.
      */
     get isAnyIPv6SubnetVisible(): boolean {
-        return this.subnets.some((s) => s.subnet.includes(':'))
+        return this.subnets?.some((s) => s.subnet.includes(':'))
     }
 
     /**

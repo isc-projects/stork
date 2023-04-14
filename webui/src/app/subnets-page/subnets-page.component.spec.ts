@@ -93,6 +93,7 @@ describe('SubnetsPageComponent', () => {
                                 id: 1,
                                 machineAddress: 'localhost',
                                 machineHostname: 'lv-pc',
+                                pools: ['1.0.0.4-1.0.255.254'],
                             },
                             {
                                 appId: 28,
@@ -104,6 +105,7 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
+                                pools: ['1.0.0.4-1.0.255.254'],
                             },
                         ],
                         stats: {
@@ -114,7 +116,6 @@ describe('SubnetsPageComponent', () => {
                             'declined-addresses': '-2',
                         },
                         statsCollectedAt: '2022-01-19T12:10:22.513Z',
-                        pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
                     },
                     {
@@ -126,10 +127,10 @@ describe('SubnetsPageComponent', () => {
                                 appName: 'kea@localhost',
                                 machineAddress: 'localhost',
                                 machineHostname: 'lv-pc',
+                                pools: ['1.1.0.4-1.1.255.254'],
                             },
                         ],
                         statsCollectedAt: '0001-01-01T00:00:00.000Z',
-                        pools: ['1.1.0.4-1.1.255.254'],
                         subnet: '1.1.0.0/16',
                     },
                     {
@@ -175,10 +176,10 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
+                                pools: ['1.0.0.4-1.0.255.254'],
                             },
                         ],
                         statsCollectedAt: '1970-01-01T12:00:00.0Z',
-                        pools: ['1.0.0.4-1.0.255.254'],
                         subnet: '1.0.0.0/16',
                     },
                 ],
