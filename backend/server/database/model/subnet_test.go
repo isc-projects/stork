@@ -1375,17 +1375,19 @@ func TestSubnetGetID(t *testing.T) {
 	subnet := Subnet{
 		LocalSubnets: []*LocalSubnet{
 			{
-				SubnetID: 10,
-				DaemonID: 110,
+				SubnetID:      10,
+				LocalSubnetID: 15,
+				DaemonID:      110,
 			},
 			{
-				SubnetID: 11,
-				DaemonID: 111,
+				SubnetID:      11,
+				LocalSubnetID: 16,
+				DaemonID:      111,
 			},
 		},
 	}
-	require.EqualValues(t, 10, subnet.GetID(110))
-	require.EqualValues(t, 11, subnet.GetID(111))
+	require.EqualValues(t, 15, subnet.GetID(110))
+	require.EqualValues(t, 16, subnet.GetID(111))
 	require.Zero(t, subnet.GetID(1000))
 }
 

@@ -172,7 +172,7 @@ type Subnet struct {
 func (s *Subnet) GetID(daemonID int64) int64 {
 	for _, ls := range s.LocalSubnets {
 		if ls.DaemonID == daemonID {
-			return ls.SubnetID
+			return ls.LocalSubnetID
 		}
 	}
 	return 0
@@ -356,7 +356,7 @@ func addSubnet(tx *pg.Tx, subnet *Subnet) (err error) {
 	return nil
 }
 
-// Updates a subnet into the database within a transaction.
+// Updates a subnet in the database within a transaction.
 func updateSubnet(dbi dbops.DBI, subnet *Subnet) (err error) {
 	// Update the subnet first.
 	_, err = dbi.Model(subnet).WherePK().ExcludeColumn("created_at").Update()
@@ -415,8 +415,8 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation("SharedNetwork").
 		Where("subnet.id = ?", subnetID).
 		Select()
 	if err != nil {
@@ -441,8 +441,8 @@ func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation("SharedNetwork").
 		Where("ls.daemon_id = ?", daemonID)
 
 	err := q.Select()
@@ -466,8 +466,8 @@ func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation("SharedNetwork").
 		Where("subnet.prefix = ?", prefix).
 		Select()
 	if err != nil {
@@ -491,9 +491,9 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		Relation("LocalSubnets.Daemon.App.Machine").
+		Relation("SharedNetwork").
 		OrderExpr("id ASC")
 
 	// Let's be liberal and allow other values than 0 too. The only special
