@@ -1090,7 +1090,13 @@ func TestUpdateSubnet(t *testing.T) {
 	err := AddSubnet(db, subnet)
 	require.NoError(t, err)
 
+	// Remember the creation time so it can be compared after the update.
+	createdAt := subnet.CreatedAt
+	require.NotZero(t, createdAt)
+
 	// Act
+	// Reset creation time to ensure it is not modified during the update.
+	subnet.CreatedAt = time.Time{}
 	subnet.ClientClass = "bar"
 	subnet.AddressPools = subnet.AddressPools[1:]
 	subnet.AddressPools = append(subnet.AddressPools, AddressPool{
@@ -1130,6 +1136,7 @@ func TestUpdateSubnet(t *testing.T) {
 	require.EqualValues(t, 2, subnet.PrefixPools[0].ID)
 	require.EqualValues(t, 3, subnet.PrefixPools[1].ID)
 	require.EqualValues(t, 108, subnet.PrefixPools[1].DelegatedLen)
+	require.Equal(t, createdAt, subnet.CreatedAt)
 }
 
 // Test that the new pools are added and existing ones are untouched. The

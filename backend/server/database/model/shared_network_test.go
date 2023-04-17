@@ -322,6 +322,13 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
+	// Remember the creation time so it can be compared after the update.
+	createdAt := network.CreatedAt
+	require.NotZero(t, createdAt)
+
+	// Reset creation time to ensure it is not modified during the update.
+	network.CreatedAt = time.Time{}
+
 	// update name and check if it was stored
 	network.Name = "different name"
 	err = UpdateSharedNetwork(db, &network)
@@ -349,6 +356,7 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.EqualValues(t, 100, returned.Stats["total-nas"])
 	require.EqualValues(t, 200, returned.Stats["total-pds"])
 	require.InDelta(t, time.Now().Unix(), returned.StatsCollectedAt.Unix(), 10.0)
+	require.Equal(t, createdAt, returned.CreatedAt)
 }
 
 // Tests that the shared network can be deleted.

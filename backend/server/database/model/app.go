@@ -252,7 +252,7 @@ func AddApp(dbi dbops.DBI, app *App) (addedDaemons []*Daemon, err error) {
 
 // Updates application in the database in a transaction.
 func updateApp(tx *pg.Tx, app *App) (addedDaemons []*Daemon, deletedDaemons []*Daemon, err error) {
-	result, err := tx.Model(app).WherePK().Update()
+	result, err := tx.Model(app).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		return nil, nil, pkgerrors.Wrapf(err, "problem updating app %v", app)
 	} else if result.RowsAffected() <= 0 {

@@ -270,6 +270,13 @@ func TestUpdateBaseService(t *testing.T) {
 	// Modify one of the services.
 	service := services[0]
 	service.Name = "funny name"
+
+	// Remember the creation time so it can be compared after the update.
+	createdAt := service.CreatedAt
+	require.NotZero(t, createdAt)
+
+	// Reset creation time to ensure it is not modified during the update.
+	service.CreatedAt = time.Time{}
 	err := UpdateBaseService(db, &service.BaseService)
 	require.NoError(t, err)
 
@@ -278,6 +285,7 @@ func TestUpdateBaseService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, service.Name, returned.Name)
+	require.Equal(t, createdAt, returned.CreatedAt)
 }
 
 // Test that HA specific information can be updated for a service.

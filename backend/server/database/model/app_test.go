@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	require "github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
@@ -244,6 +245,10 @@ func TestUpdateApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
+	// Remember the creation time so it can be compared after the update.
+	createdAt := a.CreatedAt
+	require.NotZero(t, createdAt)
+
 	// Make sure that the app along with the dependent information has been
 	// added to the database.
 	returned, err := GetAppByID(db, a.ID)
@@ -330,6 +335,10 @@ func TestUpdateApp(t *testing.T) {
 	a.Daemons[1].Active = false
 	a.Daemons[1].LogTargets = a.Daemons[1].LogTargets[:1]
 
+	// Reset creation time, to ensure that the creation time is not modified
+	// during update.
+	a.CreatedAt = time.Time{}
+
 	addedDaemons, deletedDaemons, err := UpdateApp(db, a)
 	require.NoError(t, err)
 	require.False(t, a.Active)
@@ -342,6 +351,8 @@ func TestUpdateApp(t *testing.T) {
 	require.NotNil(t, updated)
 	require.EqualValues(t, a.ID, updated.ID)
 	require.False(t, updated.Active)
+	require.Equal(t, createdAt, updated.CreatedAt)
+
 	// Check daemons.
 	require.Len(t, updated.Daemons, 2)
 	// Make sure there are two distinct daemons.

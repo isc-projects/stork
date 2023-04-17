@@ -65,18 +65,25 @@ func TestUpdateMachine(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
+	// Remember the creation time so it can be compared after the update.
+	createdAt := m.CreatedAt
+	require.NotNil(t, createdAt)
+
 	// change authorization
 	m1, err := GetMachineByID(db, m.ID)
 	require.NoError(t, err)
 	require.False(t, m1.Authorized)
 
 	m.Authorized = true
+	// Reset creation time to ensure it is not modified during the update.
+	m.CreatedAt = time.Time{}
 	err = UpdateMachine(db, m)
 	require.NoError(t, err)
 
 	m2, err := GetMachineByID(db, m.ID)
 	require.NoError(t, err)
 	require.True(t, m2.Authorized)
+	require.Equal(t, createdAt, m2.CreatedAt)
 }
 
 // Check if getting machine by address.

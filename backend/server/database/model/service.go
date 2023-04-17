@@ -251,7 +251,7 @@ func AddHAService(dbi dbops.DBI, serviceID int64, haService *BaseHAService) erro
 // Updates basic information about the service. It only affects the contents of the
 // service table in the database.
 func UpdateBaseService(dbi dbops.DBI, service *BaseService) error {
-	result, err := dbi.Model(service).WherePK().Update()
+	result, err := dbi.Model(service).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating base service with ID %d", service.ID)
 	} else if result.RowsAffected() <= 0 {

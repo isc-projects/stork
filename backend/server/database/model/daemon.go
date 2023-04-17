@@ -401,7 +401,7 @@ func GetKeaDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, er
 // KeaDaemon, KeaDHCPDaemon and Bind9Daemon if they are not nil.
 func updateDaemon(tx *pg.Tx, daemon *Daemon) error {
 	// Update common daemon instance.
-	result, err := tx.Model(daemon).WherePK().Update()
+	result, err := tx.Model(daemon).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem updating daemon %d", daemon.ID)
 	} else if result.RowsAffected() <= 0 {

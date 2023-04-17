@@ -80,7 +80,7 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 
 // Update a machine in database.
 func UpdateMachine(db *pg.DB, machine *Machine) error {
-	result, err := db.Model(machine).WherePK().Update()
+	result, err := db.Model(machine).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating machine %+v", machine)
 	} else if result.RowsAffected() <= 0 {

@@ -71,6 +71,12 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	daemon := app.Daemons[0]
 	require.NotZero(t, daemon.ID)
 
+	// Remember the creation time so it can be compared after the update.
+	createdAt := daemon.CreatedAt
+	require.NotZero(t, createdAt)
+
+	// Reset the creation time to ensure it is not modified during the update.
+	daemon.CreatedAt = time.Time{}
 	daemon.Pid = 123
 	daemon.Name = DaemonNameDHCPv6
 	daemon.Active = false
@@ -94,6 +100,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.Len(t, app.Daemons, 1)
 	daemon = app.Daemons[0]
 
+	require.Equal(t, createdAt, daemon.CreatedAt)
 	require.EqualValues(t, 123, daemon.Pid)
 	require.Equal(t, DaemonNameDHCPv6, daemon.Name)
 	require.False(t, daemon.Active)

@@ -137,7 +137,7 @@ func AddLocalSharedNetworks(dbi dbops.DBI, network *SharedNetwork) error {
 // Updates shared network in the database in a transaction. It neither adds
 // nor modifies associations with the subnets it contains.
 func updateSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
-	result, err := tx.Model(network).WherePK().Update()
+	result, err := tx.Model(network).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating the shared network with ID %d", network.ID)
 	} else if result.RowsAffected() <= 0 {
