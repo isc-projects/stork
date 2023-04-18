@@ -1,0 +1,25 @@
+# "-diff" is useful on files that do not offer any meaningful output when two
+# different revisions of the file in question are diffed. For those files, the
+# diff shows only "Binary files <file> and <file> differ" which saves up screen
+# space. To override the "-diff" setting, and show the output as usual, the
+# "git diff --text" command can be used.
+#
+# "merge=ours" is useful on files whose conflicts cannot be easily resolved
+# directly, but rather through some other means. In case of a conflict after a
+# rebase, the version from the base branch (determined by the "ours" value) is
+# kept.
+
+# Generated files are usually git-ignored, but the ones that are included in the
+# repository can benefit from these two attributes. Generated files are often
+# verbose and the equivalent diffs can be often found in their associated source
+# files. Regenerating them is also easier than solving conflicts directly, and
+# should also be safer. Run "rake --tasks gen:" to get file generation tasks.
+
+backend/go.sum                          -diff merge=ours
+doc/src/requirements.txt                -diff merge=ours
+rakelib/init_deps/fpm/Gemfile.lock      -diff merge=ours
+rakelib/init_deps/danger/Gemfile.lock   -diff merge=ours
+rakelib/init_deps/pytest.txt            -diff merge=ours
+rakelib/init_deps/sphinx.txt            -diff merge=ours
+tests/sim/requirements.txt              -diff merge=ours
+webui/package-lock.json                 -diff merge=ours
