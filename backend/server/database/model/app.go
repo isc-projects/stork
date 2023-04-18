@@ -200,7 +200,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 						daemon.LogTargets[i].Output, daemon.ID, daemon)
 				}
 			} else {
-				result, err := tx.Model(daemon.LogTargets[i]).WherePK().Update()
+				result, err := tx.Model(daemon.LogTargets[i]).WherePK().ExcludeColumn("created_at").Update()
 				if err != nil {
 					return nil, nil, pkgerrors.Wrapf(err, "problem updating log target %s in daemon %d: %v",
 						daemon.LogTargets[i].Output, daemon.ID, daemon)

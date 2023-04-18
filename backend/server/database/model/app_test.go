@@ -288,6 +288,10 @@ func TestUpdateApp(t *testing.T) {
 		}
 	}
 
+	// Save the log target creation time so we can later ensure it hasn't been modified.
+	logTargetCreatedAt := returned.Daemons[1].CreatedAt
+	require.NotZero(t, logTargetCreatedAt)
+
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.Equal(t, "kea-ctrl-agent", returned.Daemons[1].Name)
 	require.Equal(t, "1.7.4", returned.Daemons[1].Version)
@@ -338,6 +342,7 @@ func TestUpdateApp(t *testing.T) {
 	// Reset creation time, to ensure that the creation time is not modified
 	// during update.
 	a.CreatedAt = time.Time{}
+	a.Daemons[1].LogTargets[0].CreatedAt = time.Time{}
 
 	addedDaemons, deletedDaemons, err := UpdateApp(db, a)
 	require.NoError(t, err)
@@ -384,6 +389,7 @@ func TestUpdateApp(t *testing.T) {
 			require.NotNil(t, d.KeaDaemon.Config)
 			require.Nil(t, d.KeaDaemon.KeaDHCPDaemon)
 			require.Len(t, d.LogTargets, 1)
+			require.Equal(t, logTargetCreatedAt, d.LogTargets[0].CreatedAt)
 		}
 	}
 
