@@ -1,3 +1,10 @@
+* 299 [bug] marcin
+
+    Fixed a bug in the Stork server that could sometimes cause a modification
+    of the timestamps of various records in the database during the update.
+    This bug is unlikely to have a real impact on the users.
+    (Gitlab #1007)
+
 Stork 1.10.0 released on 2023-04-05.
 
 * 298 [func] marcin
