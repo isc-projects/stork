@@ -3,18 +3,9 @@ import { DelegatedPrefix, LocalSubnet, SharedNetwork, Subnet } from './backend'
 /**
  * Represents a subnet with the lists of unique pools extracted.
  */
-export class SubnetWithUniquePools implements Subnet {
-    id?: number
-    subnet?: string
-    sharedNetwork?: string
-    clientClass?: string
-    addrUtilization?: number
-    pdUtilization?: number
-    stats?: object
-    statsCollectedAt?: string
-    localSubnets?: Array<LocalSubnet>
-    pools?: Array<string> = []
-    prefixDelegationPools?: Array<DelegatedPrefix> = []
+export interface SubnetWithUniquePools extends Subnet {
+    pools?: Array<string>
+    prefixDelegationPools?: Array<DelegatedPrefix>
 }
 
 /**
