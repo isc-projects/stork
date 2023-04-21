@@ -146,7 +146,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             .toPromise()
             .then((data) => {
                 this.subnets = data.items ? extractUniqueSubnetPools(data.items) : null
-                this.totalSubnets = data.total | 0
+                this.totalSubnets = data.total ?? 0
             })
             .catch((error) => {
                 this.messageService.add({
@@ -254,7 +254,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Returns true if the subnet list presents at least one IPv6 subnet.
      */
     get isAnyIPv6SubnetVisible(): boolean {
-        return this.subnets?.some((s) => s.subnet.includes(':'))
+        return !!this.subnets?.some((s) => s.subnet.includes(':'))
     }
 
     /**

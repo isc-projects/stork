@@ -114,7 +114,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePoo
             if (ls.pools) {
                 for (const pool of ls.pools) {
                     // Add the pool only if it doesn't exist yet.
-                    if (!pools.some((p) => p === pool)) {
+                    if (!pools.includes(pool)) {
                         pools.push(pool)
                     }
                 }
@@ -140,7 +140,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePoo
         }
         if (prefixDelegationPools.length) {
             convertedSubnet.prefixDelegationPools = prefixDelegationPools.sort((a, b) =>
-                a.prefix > b.prefix ? 1 : b.prefix > a.prefix ? -1 : 0
+                a.prefix.localeCompare(b.prefix)
             )
         }
     }
