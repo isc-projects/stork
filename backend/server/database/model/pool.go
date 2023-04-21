@@ -101,13 +101,11 @@ func (pp *PrefixPool) HasEqualData(other *PrefixPool) bool {
 		pp.ExcludedPrefix == other.ExcludedPrefix
 }
 
-// Creates a new address pool given the address range and the ID of the
-// local subnet the pool belongs to.
-func NewAddressPool(lb, ub net.IP, localSubnetID int64) *AddressPool {
+// Creates a new address pool given the address range.
+func NewAddressPool(lb, ub net.IP) *AddressPool {
 	pool := &AddressPool{
-		LowerBound:    lb.String(),
-		UpperBound:    ub.String(),
-		LocalSubnetID: localSubnetID,
+		LowerBound: lb.String(),
+		UpperBound: ub.String(),
 	}
 	return pool
 }
@@ -130,7 +128,7 @@ func NewAddressPoolFromRange(addressRange string) (*AddressPool, error) {
 // Creates new instance of the pool for prefix delegation from the prefix,
 // delegated length, and optional excluded prefix. It validates the prefix
 // provided to verify if it follows CIDR notation.
-func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, localSubnetID int64) (*PrefixPool, error) {
+func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string) (*PrefixPool, error) {
 	prefixIP, prefixNet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		err = errors.Errorf("unable to parse the pool prefix %s", prefix)
@@ -143,9 +141,8 @@ func NewPrefixPool(prefix string, delegatedLen int, excludedPrefix string, local
 	}
 
 	pool := &PrefixPool{
-		LocalSubnetID: localSubnetID,
-		Prefix:        prefixNet.String(),
-		DelegatedLen:  delegatedLen,
+		Prefix:       prefixNet.String(),
+		DelegatedLen: delegatedLen,
 	}
 
 	if excludedPrefix != "" {

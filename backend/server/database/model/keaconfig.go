@@ -163,13 +163,13 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		if err != nil {
 			return nil, err
 		}
-		addressPool := NewAddressPool(lb, ub, 0)
+		addressPool := NewAddressPool(lb, ub)
 		convertedSubnet.LocalSubnets[0].AddressPools = append(convertedSubnet.LocalSubnets[0].AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.GetPDPools() {
 		prefix := p.GetCanonicalPrefix()
 		excludedPrefix := p.GetCanonicalExcludedPrefix()
-		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix, 0)
+		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix)
 		if err != nil {
 			return nil, err
 		}
