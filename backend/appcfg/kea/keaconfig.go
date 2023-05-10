@@ -177,12 +177,124 @@ func (c *Config) GetAllDatabases() (databases Databases) {
 	return
 }
 
+// Returns DHCP cache parameters.
+func (c *Config) GetCacheParameters() (parameters CacheParameters) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().CacheParameters
+	}
+	return
+}
+
 // Returns DHCP client classes. It returns an empty slice when there are
 // no client classes or the configuration is not associated with a DHCP
 // server.
 func (c *Config) GetClientClasses() (clientClasses []ClientClass) {
 	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
 		clientClasses = accessor.GetCommonDHCPConfig().ClientClasses
+	}
+	return
+}
+
+// Returns DHCP DDNS parameters.
+func (c *Config) GetDDNSParameters() (parameters DDNSParameters) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().DDNSParameters
+	}
+	return
+}
+
+// Returns DHCP hostname char parameters.
+func (c *Config) GetHostnameCharParameters() (parameters HostnameCharParameters) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().HostnameCharParameters
+	}
+	return
+}
+
+// Returns DHCP timer parameters.
+func (c *Config) GetTimerParameters() (parameters TimerParameters) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().TimerParameters
+	}
+	return
+}
+
+// Returns DHCPv6 preferred lifetime parameters.
+func (c *Config) GetPreferredLifetimeParameters() (parameters PreferredLifetimeParameters) {
+	if c.IsDHCPv6() {
+		parameters = c.DHCPv6Config.PreferredLifetimeParameters
+	}
+	return
+}
+
+// Returns DHCP valid lifetime parameters.
+func (c *Config) GetValidLifetimeParameters() (parameters ValidLifetimeParameters) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().ValidLifetimeParameters
+	}
+	return
+}
+
+// Returns DHCP allocator.
+func (c *Config) GetAllocator() (allocator *string) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		allocator = accessor.GetCommonDHCPConfig().Allocator
+	}
+	return
+}
+
+// Returns prefix delegation allocator.
+func (c *Config) GetPDAllocator() (allocator *string) {
+	if c.IsDHCPv6() {
+		allocator = c.DHCPv6Config.PDAllocator
+	}
+	return
+}
+
+// Returns DHCPv4 authoritative flag.
+func (c *Config) GetAuthoritative() (authoritative *bool) {
+	if c.IsDHCPv4() {
+		authoritative = c.DHCPv4Config.Authoritative
+	}
+	return
+}
+
+// Returns DHCPv4 boot file name.
+func (c *Config) GetBootFileName() (bootFileName *string) {
+	if c.IsDHCPv4() {
+		bootFileName = c.DHCPv4Config.BootFileName
+	}
+	return
+}
+
+// Returns DHCPv4 match client ID.
+func (c *Config) GetMatchClientID() (matchClientID *bool) {
+	if c.IsDHCPv4() {
+		matchClientID = c.DHCPv4Config.MatchClientID
+	}
+	return
+}
+
+// Returns DHCPv4 next server.
+func (c *Config) GetNextServer() (nextServer *string) {
+	if c.IsDHCPv4() {
+		nextServer = c.DHCPv4Config.NextServer
+	}
+	return
+}
+
+// Returns DHCPv4 server hostname.
+func (c *Config) GetServerHostname() (serverHostname *string) {
+	if c.IsDHCPv4() {
+		serverHostname = c.DHCPv4Config.ServerHostname
+	}
+	return
+}
+
+// Returns DHCPv6 rapid commit flag.
+func (c *Config) GetRapidCommit() (rapidCommit *bool) {
+	if c.IsDHCPv6() {
+		rapidCommit = c.DHCPv6Config.RapidCommit
 	}
 	return
 }
@@ -258,6 +370,14 @@ func (c *Config) GetSharedNetworks(includeRootSubnets bool) (sharedNetworks []Sh
 func (c *Config) GetSubnets() (subnets []Subnet) {
 	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
 		subnets = accessor.GetSubnets()
+	}
+	return
+}
+
+// Returns DHCP extended info flag.
+func (c *Config) GetStoreExtendedInfo() (storeExtendedInfo *bool) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		storeExtendedInfo = accessor.GetCommonDHCPConfig().StoreExtendedInfo
 	}
 	return
 }

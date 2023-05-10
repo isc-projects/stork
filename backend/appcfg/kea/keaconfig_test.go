@@ -657,6 +657,398 @@ func TestGetAllDatabases(t *testing.T) {
 	})
 }
 
+// Test that caching parameters are parsed and returned correctly.
+func TestGetCacheParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "cache-threshold": 0.5
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetCacheParameters().CacheThreshold)
+	require.EqualValues(t, 0.5, *cfg.GetCacheParameters().CacheThreshold)
+	require.Nil(t, cfg.GetCacheParameters().CacheMaxAge)
+}
+
+// Test that DDNS parameters are parsed and returned correctly.
+func TestGetDDNSParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "ddns-generated-prefix": "myhost",
+            "ddns-override-client-update": false,
+            "ddns-override-no-update": false,
+            "ddns-qualifying-suffix": "suffix",
+            "ddns-replace-client-name": "never",
+            "ddns-send-updates": true,
+            "ddns-update-on-renew": true,
+            "ddns-use-conflict-resolution": true,
+            "ddns-ttl-percent": 0.55
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetDDNSParameters())
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSGeneratedPrefix)
+	require.Equal(t, "myhost", *cfg.GetDDNSParameters().DDNSGeneratedPrefix)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSOverrideClientUpdate)
+	require.False(t, *cfg.GetDDNSParameters().DDNSOverrideClientUpdate)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSOverrideNoUpdate)
+	require.False(t, *cfg.GetDDNSParameters().DDNSOverrideNoUpdate)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSQualifyingSuffix)
+	require.Equal(t, "suffix", *cfg.GetDDNSParameters().DDNSQualifyingSuffix)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSReplaceClientName)
+	require.Equal(t, "never", *cfg.GetDDNSParameters().DDNSReplaceClientName)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSSendUpdates)
+	require.True(t, *cfg.GetDDNSParameters().DDNSSendUpdates)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSUpdateOnReview)
+	require.True(t, *cfg.GetDDNSParameters().DDNSUpdateOnReview)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSUseConflictResolution)
+	require.True(t, *cfg.GetDDNSParameters().DDNSUseConflictResolution)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSTTLPercent)
+	require.EqualValues(t, 0.55, *cfg.GetDDNSParameters().DDNSTTLPercent)
+}
+
+// Test that hostname char parameters are parsed and returned correctly.
+func TestGetHostnameCharParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "hostname-char-replacement": "a",
+            "hostname-char-set": "bcd"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetHostnameCharParameters().HostnameCharReplacement)
+	require.Equal(t, "a", *cfg.GetHostnameCharParameters().HostnameCharReplacement)
+	require.NotNil(t, cfg.GetHostnameCharParameters().HostnameCharSet)
+	require.Equal(t, "bcd", *cfg.GetHostnameCharParameters().HostnameCharSet)
+}
+
+// Test that timer parameters are parsed and returned correctly.
+func TestGetTimerParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "calculate-tee-times": true,
+            "renew-timer": 60,
+            "t2-percent": 0.5
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetTimerParameters().CalculateTeeTimes)
+	require.True(t, *cfg.GetTimerParameters().CalculateTeeTimes)
+	require.Nil(t, cfg.GetTimerParameters().RebindTimer)
+	require.NotNil(t, cfg.GetTimerParameters().RenewTimer)
+	require.EqualValues(t, 60, *cfg.GetTimerParameters().RenewTimer)
+	require.Nil(t, cfg.GetTimerParameters().T1Percent)
+	require.NotNil(t, cfg.GetTimerParameters().T2Percent)
+	require.EqualValues(t, 0.5, *cfg.GetTimerParameters().T2Percent)
+}
+
+// Test that preferred lifetime parameters are parsed and returned correctly.
+func TestGetPreferredLifetimeParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "min-preferred-lifetime": 10,
+			"preferred-lifetime": 50
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetPreferredLifetimeParameters().MaxPreferredLifetime)
+	require.NotNil(t, cfg.GetPreferredLifetimeParameters().MinPreferredLifetime)
+	require.EqualValues(t, 10, *cfg.GetPreferredLifetimeParameters().MinPreferredLifetime)
+	require.NotNil(t, cfg.GetPreferredLifetimeParameters().PreferredLifetime)
+	require.EqualValues(t, 50, *cfg.GetPreferredLifetimeParameters().PreferredLifetime)
+}
+
+// Test that preferred lifetime parameters are ignored for DHCPv4.
+func TestGetPreferredLifetimeParametersUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "min-preferred-lifetime": 10,
+			"preferred-lifetime": 50
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetPreferredLifetimeParameters().MaxPreferredLifetime)
+	require.Nil(t, cfg.GetPreferredLifetimeParameters().MinPreferredLifetime)
+	require.Nil(t, cfg.GetPreferredLifetimeParameters().PreferredLifetime)
+}
+
+// Test that valid lifetime parameters are parsed and returned correctly.
+func TestGetValidLifetimeParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "min-valid-lifetime": 10,
+            "valid-lifetime": 50
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetValidLifetimeParameters().MaxValidLifetime)
+	require.NotNil(t, cfg.GetValidLifetimeParameters().MinValidLifetime)
+	require.EqualValues(t, 10, *cfg.GetValidLifetimeParameters().MinValidLifetime)
+	require.NotNil(t, cfg.GetValidLifetimeParameters().ValidLifetime)
+	require.EqualValues(t, 50, *cfg.GetValidLifetimeParameters().ValidLifetime)
+}
+
+// Test that allocator parameter is parsed and returned correctly.
+func TestGetAllocator(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "allocator": "random"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetAllocator())
+	require.Equal(t, "random", *cfg.GetAllocator())
+}
+
+// Test that PD allocator parameter is parsed and returned correctly.
+func TestGetPDAllocator(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "pd-allocator": "flq"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetPDAllocator())
+	require.Equal(t, "flq", *cfg.GetPDAllocator())
+}
+
+// Test that PD allocator parameter is ignored for DHCPv4.
+func TestGetPDAllocatorUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "pd-allocator": "flq"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetPDAllocator())
+}
+
+// Test that the authoritative parameter is parsed and returned correctly.
+func TestGetAuthoritative(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "authoritative": true
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetAuthoritative())
+	require.True(t, *cfg.GetAuthoritative())
+}
+
+// Test that the authoritative parameter is ignored for DHCPv6.
+func TestGetAuthoritativeUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "authoritative": true
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetAuthoritative())
+}
+
+// Test that the boot-file-name parameter is parsed and returned correctly.
+func TestGetBootFileName(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "boot-file-name": "/tmp/boot"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetBootFileName())
+	require.Equal(t, "/tmp/boot", *cfg.GetBootFileName())
+}
+
+// Test that the boot-file-name parameter is ignored for DHCPv6.
+func TestGetBootFileNameUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "boot-file-name": "/tmp/boot"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetBootFileName())
+}
+
+// Test that the match-client-id parameter is parsed and returned correctly.
+func TestGetMatchClientID(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "match-client-id": false
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetMatchClientID())
+	require.False(t, *cfg.GetMatchClientID())
+}
+
+// Test that the match-client-id parameter is ignored for DHCPv6.
+func TestGetMatchClientIDUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "match-client-id": false
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetMatchClientID())
+}
+
+// Test that the next-server parameter is parsed and returned correctly.
+func TestGetNextServer(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "next-server": "10.1.1.1"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetNextServer())
+	require.Equal(t, "10.1.1.1", *cfg.GetNextServer())
+}
+
+// Test that the next-server parameter is ignored for DHCPv6.
+func TestGetNextServerUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "next-server": "10.1.1.1"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetNextServer())
+}
+
+// Test that the server-hostname parameter is parsed and returned correctly.
+func TestGetServerHostname(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "server-hostname": "myhost"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetServerHostname())
+	require.Equal(t, "myhost", *cfg.GetServerHostname())
+}
+
+// Test that the server-hostname parameter is ignored for DHCPv6.
+func TestGetServerHostnameUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "server-hostname": "myhost"
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetServerHostname())
+}
+
+// Test that the rapid-commit parameter is parsed and returned correctly.
+func TestGetRapidCommit(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "rapid-commit": true
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetRapidCommit())
+	require.True(t, *cfg.GetRapidCommit())
+}
+
+// Test that the rapid-commit parameter is ignored for DHCPv4.
+func TestGetRapidCommitUnsupported(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "rapid-commit": true
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetRapidCommit())
+}
+
 // Test parsing global reservation modes when all of them
 // are explicitly set.
 func TestGetGlobalReservationModesEnableAll(t *testing.T) {
@@ -867,6 +1259,22 @@ func TestIsInAnyReservationModes(t *testing.T) {
 	require.False(t, IsInAnyReservationModes(func(modes ReservationParameters) (bool, bool) {
 		return modes.IsOutOfPool()
 	}, modes[0], modes[0]))
+}
+
+// Test that the store-extended-info parameter is parsed and returned correctly.
+func TestStoreExtendedInfo(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "store-extended-info": false
+        }
+    }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetStoreExtendedInfo())
+	require.False(t, *cfg.GetStoreExtendedInfo())
 }
 
 // Test that the sensitive data are hidden.

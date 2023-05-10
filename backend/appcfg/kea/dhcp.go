@@ -33,6 +33,11 @@ type dhcpConfigAccessor interface {
 // Represents Kea DHCPv4 configuration.
 type DHCPv4Config struct {
 	CommonDHCPConfig
+	Authoritative   *bool              `json:"authoritative,omitempty"`
+	BootFileName    *string            `json:"boot-file-name,omitempty"`
+	MatchClientID   *bool              `json:"match-client-id,omitempty"`
+	NextServer      *string            `json:"next-server,omitempty"`
+	ServerHostname  *string            `json:"server-hostname,omitempty"`
 	SharedNetworks  []SharedNetwork4   `json:"shared-networks"`
 	Subnet4         []Subnet4          `json:"subnet4"`
 	Subnet4ByPrefix map[string]Subnet4 `json:"-"`
@@ -41,6 +46,9 @@ type DHCPv4Config struct {
 // Represents Kea DHCPv6 configuration.
 type DHCPv6Config struct {
 	CommonDHCPConfig
+	PreferredLifetimeParameters
+	PDAllocator     *string            `json:"pd-allocator,omitempty"`
+	RapidCommit     *bool              `json:"rapid-commit,omitempty"`
 	SharedNetworks  []SharedNetwork6   `json:"shared-networks"`
 	Subnet6         []Subnet6          `json:"subnet6"`
 	Subnet6ByPrefix map[string]Subnet6 `json:"-"`
@@ -48,17 +56,24 @@ type DHCPv6Config struct {
 
 // Represents common configuration parameters for the DHCPv4 and DHCPv6 servers.
 type CommonDHCPConfig struct {
+	CacheParameters
+	DDNSParameters
+	HostnameCharParameters
 	ReservationParameters
-	ClientClasses  []ClientClass   `json:"client-classes"`
-	ConfigControl  *ConfigControl  `json:"config-control"`
-	ControlSocket  *ControlSocket  `json:"control-socket"`
-	HostsDatabase  *Database       `json:"hosts-database"`
-	HostsDatabases []Database      `json:"hosts-databases"`
-	HookLibraries  []HookLibrary   `json:"hooks-libraries"`
-	LeaseDatabase  *Database       `json:"lease-database"`
-	Loggers        []Logger        `json:"loggers"`
-	MultiThreading *MultiThreading `json:"multi-threading"`
-	Reservations   []Reservation   `json:"reservations"`
+	TimerParameters
+	ValidLifetimeParameters
+	Allocator         *string         `json:"allocator"`
+	ClientClasses     []ClientClass   `json:"client-classes"`
+	ConfigControl     *ConfigControl  `json:"config-control"`
+	ControlSocket     *ControlSocket  `json:"control-socket"`
+	HostsDatabase     *Database       `json:"hosts-database"`
+	HostsDatabases    []Database      `json:"hosts-databases"`
+	HookLibraries     []HookLibrary   `json:"hooks-libraries"`
+	LeaseDatabase     *Database       `json:"lease-database"`
+	Loggers           []Logger        `json:"loggers"`
+	MultiThreading    *MultiThreading `json:"multi-threading"`
+	Reservations      []Reservation   `json:"reservations"`
+	StoreExtendedInfo *bool           `json:"store-extended-info"`
 }
 
 // Represents the global DHCP multi-threading parameters.
