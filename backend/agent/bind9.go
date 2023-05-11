@@ -106,11 +106,11 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 		cmd = append(cmd, ctrlKey)
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
-		if _, err := os.Stat(keyPath); err == nil {
+		if _, err = os.Stat(keyPath); errors.Is(err, os.ErrNotExist) {
+			return errors.Wrap(err, "cannot determine rndc key")
+		} else {
 			cmd = append(cmd, "-k")
 			cmd = append(cmd, keyPath)
-		} else {
-			return errors.New("cannot determine rndc key")
 		}
 	}
 	rc.BaseCommand = cmd
@@ -185,7 +185,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	// - allow\s*                - allow
 	// - \{(?:\s*\S+\s*;\s*)+)\} - address_match_list
 	// - (.*);                   - keys { key_list }; (pattern matched below)
-	pattern := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{(?:\s*\S+\s*;\s*)+\}(.*);`)
+	pattern := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{\s*(?:\s*\S+\s*;\s*)*\s*\}(.*);`)
 	match := pattern.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
 		log.Warnf("Cannot parse BIND 9 inet configuration: no match (%+v)", config)

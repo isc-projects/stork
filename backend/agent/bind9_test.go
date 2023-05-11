@@ -505,27 +505,38 @@ func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
 		"multi-name-no-space-around":         `keys{"rndc-key";"foo";"bar";}`,
 	}
 
-	for testCaseName, keysClause := range keysClauses {
+	allowClauses := map[string]string{
+		"localhost-hostname": "allow { localhost; }",
+		"localhost-ip":       "allow { 127.0.0.1; }",
+		"ip":                 "allow { 10.0.0.1; }",
+		"empty":              "allow { }",
+	}
+
+	for keysClauseName, keysClause := range keysClauses {
 		keysClause := keysClause
-		t.Run(testCaseName, func(t *testing.T) {
-			inetClause := fmt.Sprintf("inet 127.0.0.1 allow { localhost; } %s;", keysClause)
+		for allowClauseName, allowClause := range allowClauses {
+			allowClause := allowClause
+			testCaseName := fmt.Sprintf("%s_%s", keysClauseName, allowClauseName)
+			t.Run(testCaseName, func(t *testing.T) {
+				inetClause := fmt.Sprintf("inet 127.0.0.1 %s %s;", allowClause, keysClause)
 
-			config := fmt.Sprintf(`
-				controls {
-					%s
-				};
+				config := fmt.Sprintf(`
+					controls {
+						%s
+					};
 
-				key "rndc-key" {
-					algorithm "algorithm";
-					secret "secret";
-				};
-			`, inetClause)
+					key "rndc-key" {
+						algorithm "algorithm";
+						secret "secret";
+					};
+				`, inetClause)
 
-			// Act
-			_, _, key := parseInetSpec(config, inetClause)
+				// Act
+				_, _, key := parseInetSpec(config, inetClause)
 
-			// Assert
-			require.EqualValues(t, "algorithm:secret", key)
-		})
+				// Assert
+				require.EqualValues(t, "algorithm:secret", key)
+			})
+		}
 	}
 }

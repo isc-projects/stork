@@ -896,38 +896,43 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	}
 
 	if isBind9App {
-		var queryHitRatio float64
-		var queryHits int64
-		var queryMisses int64
-		namedStats := dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats
-		if namedStats != nil {
-			view, okView := namedStats.Views["_default"]
-			if okView {
-				queryHits = view.Resolver.CacheStats["QueryHits"]
-				queryMisses = view.Resolver.CacheStats["QueryMisses"]
-				queryTotal := float64(queryHits) + float64(queryMisses)
-				if queryTotal > 0 {
-					queryHitRatio = float64(queryHits) / queryTotal
+		var bind9Daemon *models.Bind9Daemon
+		if len(dbApp.Daemons) > 0 {
+			var queryHitRatio float64
+			var queryHits int64
+			var queryMisses int64
+
+			namedStats := dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats
+			if namedStats != nil {
+				view, okView := namedStats.Views["_default"]
+				if okView {
+					queryHits = view.Resolver.CacheStats["QueryHits"]
+					queryMisses = view.Resolver.CacheStats["QueryMisses"]
+					queryTotal := float64(queryHits) + float64(queryMisses)
+					if queryTotal > 0 {
+						queryHitRatio = float64(queryHits) / queryTotal
+					}
 				}
+			}
+
+			bind9Daemon = &models.Bind9Daemon{
+				ID:              dbApp.Daemons[0].ID,
+				Pid:             int64(dbApp.Daemons[0].Pid),
+				Name:            dbApp.Daemons[0].Name,
+				Active:          dbApp.Daemons[0].Active,
+				Monitored:       dbApp.Daemons[0].Monitored,
+				Version:         dbApp.Daemons[0].Version,
+				Uptime:          dbApp.Daemons[0].Uptime,
+				ReloadedAt:      strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
+				ZoneCount:       dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
+				AutoZoneCount:   dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
+				QueryHits:       queryHits,
+				QueryMisses:     queryMisses,
+				QueryHitRatio:   queryHitRatio,
+				AgentCommErrors: agentErrors,
 			}
 		}
 
-		bind9Daemon := &models.Bind9Daemon{
-			ID:              dbApp.Daemons[0].ID,
-			Pid:             int64(dbApp.Daemons[0].Pid),
-			Name:            dbApp.Daemons[0].Name,
-			Active:          dbApp.Daemons[0].Active,
-			Monitored:       dbApp.Daemons[0].Monitored,
-			Version:         dbApp.Daemons[0].Version,
-			Uptime:          dbApp.Daemons[0].Uptime,
-			ReloadedAt:      strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
-			ZoneCount:       dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
-			AutoZoneCount:   dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
-			QueryHits:       queryHits,
-			QueryMisses:     queryMisses,
-			QueryHitRatio:   queryHitRatio,
-			AgentCommErrors: agentErrors,
-		}
 		var bind9Stats *agentcomm.AgentBind9CommStats
 		if agentStats != nil && accessPoint != nil {
 			if bind9Stats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{

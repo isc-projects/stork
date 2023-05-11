@@ -305,6 +305,7 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.42.42.53
+      STORK_LOG_LEVEL: DEBUG
     ports:
       - "42119:9119"
     volumes:
@@ -313,6 +314,11 @@ services:
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+
+  agent-bind9-rndc:
+    extends: agent-bind9
+    volumes:
+      - $PWD/tests/system/config/bind-rndc/named.conf:/etc/bind/named.conf
 
   perfdhcp:
     extends: agent-kea-base
