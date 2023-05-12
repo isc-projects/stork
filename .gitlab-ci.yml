@@ -84,7 +84,7 @@ lint_backend:
 lint_python_pylint:
   extends: .base_build_debian
   script:
-    - python -m pip install --upgrade pip
+    - python3 -m pip install --upgrade pip
     - pip install pylint
     - if [ -f doc/src/requirements.txt ]; then pip install -r doc/src/requirements.txt; fi
     - if [ -f tests/sim/requirements.txt ]; then pip install -r tests/sim/requirements.txt; fi
@@ -93,7 +93,7 @@ lint_python_pylint:
 lint_python_flake8:
   extends: .base_build_debian
   script:
-    - python -m pip install --upgrade pip
+    - python3 -m pip install --upgrade pip
     - pip install pycodestyle flake8
     - if [ -f doc/src/requirements.txt ]; then pip install -r doc/src/requirements.txt; fi
     - if [ -f tests/sim/requirements.txt ]; then pip install -r tests/sim/requirements.txt; fi
