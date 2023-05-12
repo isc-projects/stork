@@ -896,36 +896,41 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	}
 
 	if isBind9App {
-		var bind9Daemon *models.Bind9Daemon
+		var bind9DaemonDB *dbmodel.Daemon
+		var namedStats *dbmodel.Bind9NamedStats
 		if len(dbApp.Daemons) > 0 {
-			var queryHitRatio float64
-			var queryHits int64
-			var queryMisses int64
+			bind9DaemonDB = dbApp.Daemons[0]
+			namedStats = bind9DaemonDB.Bind9Daemon.Stats.NamedStats
+		}
 
-			namedStats := dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats
-			if namedStats != nil {
-				view, okView := namedStats.Views["_default"]
-				if okView {
-					queryHits = view.Resolver.CacheStats["QueryHits"]
-					queryMisses = view.Resolver.CacheStats["QueryMisses"]
-					queryTotal := float64(queryHits) + float64(queryMisses)
-					if queryTotal > 0 {
-						queryHitRatio = float64(queryHits) / queryTotal
-					}
+		var queryHitRatio float64
+		var queryHits int64
+		var queryMisses int64
+		if namedStats != nil {
+			view, okView := namedStats.Views["_default"]
+			if okView {
+				queryHits = view.Resolver.CacheStats["QueryHits"]
+				queryMisses = view.Resolver.CacheStats["QueryMisses"]
+				queryTotal := float64(queryHits) + float64(queryMisses)
+				if queryTotal > 0 {
+					queryHitRatio = float64(queryHits) / queryTotal
 				}
 			}
+		}
 
+		var bind9Daemon *models.Bind9Daemon
+		if bind9DaemonDB != nil {
 			bind9Daemon = &models.Bind9Daemon{
-				ID:              dbApp.Daemons[0].ID,
-				Pid:             int64(dbApp.Daemons[0].Pid),
-				Name:            dbApp.Daemons[0].Name,
-				Active:          dbApp.Daemons[0].Active,
-				Monitored:       dbApp.Daemons[0].Monitored,
-				Version:         dbApp.Daemons[0].Version,
-				Uptime:          dbApp.Daemons[0].Uptime,
-				ReloadedAt:      strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
-				ZoneCount:       dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
-				AutoZoneCount:   dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
+				ID:              bind9DaemonDB.ID,
+				Pid:             int64(bind9DaemonDB.Pid),
+				Name:            bind9DaemonDB.Name,
+				Active:          bind9DaemonDB.Active,
+				Monitored:       bind9DaemonDB.Monitored,
+				Version:         bind9DaemonDB.Version,
+				Uptime:          bind9DaemonDB.Uptime,
+				ReloadedAt:      strfmt.DateTime(bind9DaemonDB.ReloadedAt),
+				ZoneCount:       bind9DaemonDB.Bind9Daemon.Stats.ZoneCount,
+				AutoZoneCount:   bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount,
 				QueryHits:       queryHits,
 				QueryMisses:     queryMisses,
 				QueryHitRatio:   queryHitRatio,

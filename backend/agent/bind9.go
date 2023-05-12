@@ -108,10 +108,9 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
 		if _, err = os.Stat(keyPath); errors.Is(err, os.ErrNotExist) {
 			return errors.Wrap(err, "cannot determine rndc key")
-		} else {
-			cmd = append(cmd, "-k")
-			cmd = append(cmd, keyPath)
 		}
+		cmd = append(cmd, "-k")
+		cmd = append(cmd, keyPath)
 	}
 	rc.BaseCommand = cmd
 	return nil
