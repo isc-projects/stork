@@ -160,11 +160,14 @@ end
 ## Build
 
 namespace :build do
+    desc "Build user and developer Stork documentation from sources"
+    task :doc => [:doc_user, :doc_dev]
+
     desc "Build Stork documentation from sources"
-    task :doc => man_files + [ARM_DIRECTORY]
+    task :doc_user => man_files + [ARM_DIRECTORY]
 
     desc "Build Stork Developer's guide from sources"
-    task :devguide => [DEV_GUIDE_DIRECTORY]
+    task :doc_dev => [DEV_GUIDE_DIRECTORY]
 
     desc "Build Stork Server from sources"
     task :server => [SERVER_BINARY_FILE]
