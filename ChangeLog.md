@@ -1,3 +1,9 @@
+* 308 [doc] tomek
+
+    The Stork Developer's Guide is now a stand-alone document. You can
+    build it using rake `build:devguide` command.
+    (Gitlab #786)
+
 * 307 [bug] marcin
 
     Fixed the simulator in Stork demo.
@@ -48,7 +54,7 @@ Stork 1.11.0 released on 2023-06-07.
     (Gitlab #1036)
 
 * 300 [bug] slawek
-  
+
     Fixed a bug in one of the config review checkers that caused a server crash
     if the Kea configuration contained a subnet prefix with a zero mask.
     (Gitlab #1024)
