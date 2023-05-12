@@ -1,0 +1,28 @@
+[flake8]
+
+# List of files and dirs to ignore
+exclude =
+    .git,
+    __pycache__,
+    venv
+
+# Print the total number of errors
+count = True
+
+# Print the source code generating the error/warning in question
+show-source = True
+
+# Count the number of occurrences of each error/warning code and print a report.
+statistics = True
+
+# Max line lenght
+max-line-length = 160
+
+# The following errors and warnings will be ignored in all files.
+extend-ignore =
+#    E4,
+#    E51,
+#    W234
+
+per-file-ignores =
+    # tests/foo.py:E402: module level import not at top of file (need to do PYTHONPATH trickery)
