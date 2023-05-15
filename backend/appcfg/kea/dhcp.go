@@ -28,6 +28,8 @@ type dhcpConfigAccessor interface {
 	// Returns a slice of interfaces to the Subnet4 or Subnet6, depending
 	// on the server type.
 	GetSubnets() []Subnet
+	// Returns a slice of the option data.
+	GetDHCPOptions() []SingleOptionData
 }
 
 // Represents Kea DHCPv4 configuration.
@@ -37,6 +39,7 @@ type DHCPv4Config struct {
 	BootFileName    *string            `json:"boot-file-name,omitempty"`
 	MatchClientID   *bool              `json:"match-client-id,omitempty"`
 	NextServer      *string            `json:"next-server,omitempty"`
+	OptionData      []SingleOptionData `json:"option-data,omitempty"`
 	ServerHostname  *string            `json:"server-hostname,omitempty"`
 	SharedNetworks  []SharedNetwork4   `json:"shared-networks"`
 	Subnet4         []Subnet4          `json:"subnet4"`
@@ -49,6 +52,7 @@ type DHCPv6Config struct {
 	PreferredLifetimeParameters
 	PDAllocator     *string            `json:"pd-allocator,omitempty"`
 	RapidCommit     *bool              `json:"rapid-commit,omitempty"`
+	OptionData      []SingleOptionData `json:"option-data,omitempty"`
 	SharedNetworks  []SharedNetwork6   `json:"shared-networks"`
 	Subnet6         []Subnet6          `json:"subnet6"`
 	Subnet6ByPrefix map[string]Subnet6 `json:"-"`
@@ -155,6 +159,11 @@ func (c *DHCPv4Config) GetSubnets() (subnets []Subnet) {
 	return
 }
 
+// Returns a slice of DHCP option data.
+func (c *DHCPv4Config) GetDHCPOptions() (options []SingleOptionData) {
+	return c.OptionData
+}
+
 // Unmarshals the DHCPv6 configuration and builds an index of the
 // subnets by prefix.
 func (c *DHCPv6Config) UnmarshalJSON(data []byte) error {
@@ -225,4 +234,9 @@ func (c *DHCPv6Config) GetSubnets() (subnets []Subnet) {
 		subnets = append(subnets, &c.Subnet6[i])
 	}
 	return
+}
+
+// Returns a slice of DHCP option data.
+func (c *DHCPv6Config) GetDHCPOptions() (options []SingleOptionData) {
+	return c.OptionData
 }

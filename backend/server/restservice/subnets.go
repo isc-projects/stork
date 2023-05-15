@@ -2,18 +2,21 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
 
-func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
+// Creates a REST API representation of a subnet from a database model.
+func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	subnet := &models.Subnet{
 		ID:               sn.ID,
 		Subnet:           sn.Prefix,
@@ -56,6 +59,229 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				},
 			)
 		}
+
+		// Subnet level Kea DHCP parameters.
+		if lsn.KeaParameters != nil {
+			keaParameters := lsn.KeaParameters
+			localSubnet.KeaConfigSubnetParameters = &models.KeaConfigSubnetParameters{}
+			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters = &models.KeaConfigSubnetDerivedParameters{
+				KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+					CacheThreshold: keaParameters.CacheThreshold,
+					CacheMaxAge:    keaParameters.CacheMaxAge,
+				},
+				KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
+					ClientClass:          keaParameters.ClientClass,
+					RequireClientClasses: keaParameters.RequireClientClasses,
+				},
+				KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+					DdnsGeneratedPrefix:       keaParameters.DDNSGeneratedPrefix,
+					DdnsOverrideClientUpdate:  keaParameters.DDNSOverrideClientUpdate,
+					DdnsOverrideNoUpdate:      keaParameters.DDNSOverrideNoUpdate,
+					DdnsQualifyingSuffix:      keaParameters.DDNSQualifyingSuffix,
+					DdnsReplaceClientName:     keaParameters.DDNSReplaceClientName,
+					DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
+					DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
+					DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
+				},
+				KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
+					FourOverSixInterface:   keaParameters.FourOverSixInterface,
+					FourOverSixInterfaceID: keaParameters.FourOverSixInterfaceID,
+					FourOverSixSubnet:      keaParameters.FourOverSixSubnet,
+				},
+				KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
+					HostnameCharReplacement: keaParameters.HostnameCharReplacement,
+					HostnameCharSet:         keaParameters.HostnameCharSet,
+				},
+				KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
+					MaxPreferredLifetime: keaParameters.MaxPreferredLifetime,
+					MinPreferredLifetime: keaParameters.MinPreferredLifetime,
+					PreferredLifetime:    keaParameters.PreferredLifetime,
+				},
+				KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+					ReservationMode:       keaParameters.ReservationMode,
+					ReservationsGlobal:    keaParameters.ReservationsGlobal,
+					ReservationsInSubnet:  keaParameters.ReservationsInSubnet,
+					ReservationsOutOfPool: keaParameters.ReservationsOutOfPool,
+				},
+				KeaConfigTimerParameters: models.KeaConfigTimerParameters{
+					CalculateTeeTimes: keaParameters.CalculateTeeTimes,
+					RebindTimer:       keaParameters.RebindTimer,
+					RenewTimer:        keaParameters.RenewTimer,
+					T1Percent:         keaParameters.T1Percent,
+					T2Percent:         keaParameters.T2Percent,
+				},
+				KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+					MaxValidLifetime: keaParameters.MaxValidLifetime,
+					MinValidLifetime: keaParameters.MinValidLifetime,
+					ValidLifetime:    keaParameters.ValidLifetime,
+				},
+				KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
+					Allocator:         keaParameters.Allocator,
+					Authoritative:     keaParameters.Authoritative,
+					BootFileName:      keaParameters.BootFileName,
+					Interface:         keaParameters.Interface,
+					InterfaceID:       keaParameters.InterfaceID,
+					MatchClientID:     keaParameters.MatchClientID,
+					NextServer:        keaParameters.NextServer,
+					PdAllocator:       keaParameters.PDAllocator,
+					RapidCommit:       keaParameters.RapidCommit,
+					ServerHostname:    keaParameters.ServerHostname,
+					StoreExtendedInfo: keaParameters.StoreExtendedInfo,
+				},
+			}
+			if keaParameters.Relay != nil {
+				localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.Relay = &models.KeaConfigAssortedSubnetParametersRelay{
+					IPAddresses: keaParameters.Relay.IPAddresses,
+				}
+			}
+			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.OptionsHash = lsn.DHCPOptionSetHash
+			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.Options = r.unflattenDHCPOptions(lsn.DHCPOptionSet, "", 0)
+		}
+		// Shared network level Kea DHCP parameters.
+		if sn.SharedNetwork != nil {
+			keaParameters := sn.SharedNetwork.GetKeaParameters(lsn.DaemonID)
+			if keaParameters != nil {
+				localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters = &models.KeaConfigSubnetDerivedParameters{
+					KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+						CacheThreshold: keaParameters.CacheThreshold,
+						CacheMaxAge:    keaParameters.CacheMaxAge,
+					},
+					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
+						ClientClass:          keaParameters.ClientClass,
+						RequireClientClasses: keaParameters.RequireClientClasses,
+					},
+					KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+						DdnsGeneratedPrefix:       keaParameters.DDNSGeneratedPrefix,
+						DdnsOverrideClientUpdate:  keaParameters.DDNSOverrideClientUpdate,
+						DdnsOverrideNoUpdate:      keaParameters.DDNSOverrideNoUpdate,
+						DdnsQualifyingSuffix:      keaParameters.DDNSQualifyingSuffix,
+						DdnsReplaceClientName:     keaParameters.DDNSReplaceClientName,
+						DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
+						DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
+						DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
+					},
+					KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
+						HostnameCharReplacement: keaParameters.HostnameCharReplacement,
+						HostnameCharSet:         keaParameters.HostnameCharSet,
+					},
+					KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
+						MaxPreferredLifetime: keaParameters.MaxPreferredLifetime,
+						MinPreferredLifetime: keaParameters.MinPreferredLifetime,
+						PreferredLifetime:    keaParameters.PreferredLifetime,
+					},
+					KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+						ReservationMode:       keaParameters.ReservationMode,
+						ReservationsGlobal:    keaParameters.ReservationsGlobal,
+						ReservationsInSubnet:  keaParameters.ReservationsInSubnet,
+						ReservationsOutOfPool: keaParameters.ReservationsOutOfPool,
+					},
+					KeaConfigTimerParameters: models.KeaConfigTimerParameters{
+						CalculateTeeTimes: keaParameters.CalculateTeeTimes,
+						RebindTimer:       keaParameters.RebindTimer,
+						RenewTimer:        keaParameters.RenewTimer,
+						T1Percent:         keaParameters.T1Percent,
+						T2Percent:         keaParameters.T2Percent,
+					},
+					KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+						MaxValidLifetime: keaParameters.MaxValidLifetime,
+						MinValidLifetime: keaParameters.MinValidLifetime,
+						ValidLifetime:    keaParameters.ValidLifetime,
+					},
+					KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
+						Allocator:         keaParameters.Allocator,
+						Authoritative:     keaParameters.Authoritative,
+						BootFileName:      keaParameters.BootFileName,
+						Interface:         keaParameters.Interface,
+						InterfaceID:       keaParameters.InterfaceID,
+						MatchClientID:     keaParameters.MatchClientID,
+						NextServer:        keaParameters.NextServer,
+						PdAllocator:       keaParameters.PDAllocator,
+						RapidCommit:       keaParameters.RapidCommit,
+						ServerHostname:    keaParameters.ServerHostname,
+						StoreExtendedInfo: keaParameters.StoreExtendedInfo,
+					},
+				}
+				if keaParameters.Relay != nil {
+					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.Relay = &models.KeaConfigAssortedSubnetParametersRelay{
+						IPAddresses: keaParameters.Relay.IPAddresses,
+					}
+				}
+				if localSharedNetwork := sn.SharedNetwork.GetLocalSharedNetwork(lsn.DaemonID); localSharedNetwork != nil {
+					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.OptionsHash = localSharedNetwork.DHCPOptionSetHash
+					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(localSharedNetwork.DHCPOptionSet, "", 0)
+				}
+			}
+		}
+
+		// Global configuration parameters.
+		if lsn.Daemon != nil && lsn.Daemon.KeaDaemon != nil && lsn.Daemon.KeaDaemon.Config != nil &&
+			(lsn.Daemon.KeaDaemon.Config.IsDHCPv4() || lsn.Daemon.KeaDaemon.Config.IsDHCPv6()) {
+			cfg := lsn.Daemon.KeaDaemon.Config
+			localSubnet.KeaConfigSubnetParameters.GlobalParameters = &models.KeaConfigSubnetDerivedParameters{
+				KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+					CacheThreshold: cfg.GetCacheParameters().CacheThreshold,
+					CacheMaxAge:    cfg.GetCacheParameters().CacheMaxAge,
+				},
+				KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+					DdnsGeneratedPrefix:       cfg.GetDDNSParameters().DDNSGeneratedPrefix,
+					DdnsOverrideClientUpdate:  cfg.GetDDNSParameters().DDNSOverrideClientUpdate,
+					DdnsOverrideNoUpdate:      cfg.GetDDNSParameters().DDNSOverrideNoUpdate,
+					DdnsQualifyingSuffix:      cfg.GetDDNSParameters().DDNSQualifyingSuffix,
+					DdnsReplaceClientName:     cfg.GetDDNSParameters().DDNSReplaceClientName,
+					DdnsSendUpdates:           cfg.GetDDNSParameters().DDNSSendUpdates,
+					DdnsUpdateOnRenew:         cfg.GetDDNSParameters().DDNSUpdateOnRenew,
+					DdnsUseConflictResolution: cfg.GetDDNSParameters().DDNSUseConflictResolution,
+				},
+				KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
+					HostnameCharReplacement: cfg.GetHostnameCharParameters().HostnameCharReplacement,
+					HostnameCharSet:         cfg.GetHostnameCharParameters().HostnameCharSet,
+				},
+				KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
+					MaxPreferredLifetime: cfg.GetPreferredLifetimeParameters().MaxPreferredLifetime,
+					MinPreferredLifetime: cfg.GetPreferredLifetimeParameters().MinPreferredLifetime,
+					PreferredLifetime:    cfg.GetPreferredLifetimeParameters().PreferredLifetime,
+				},
+				KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+					ReservationMode:       cfg.GetGlobalReservationParameters().ReservationMode,
+					ReservationsGlobal:    cfg.GetGlobalReservationParameters().ReservationsGlobal,
+					ReservationsInSubnet:  cfg.GetGlobalReservationParameters().ReservationsInSubnet,
+					ReservationsOutOfPool: cfg.GetGlobalReservationParameters().ReservationsOutOfPool,
+				},
+				KeaConfigTimerParameters: models.KeaConfigTimerParameters{
+					CalculateTeeTimes: cfg.GetTimerParameters().CalculateTeeTimes,
+					RebindTimer:       cfg.GetTimerParameters().RebindTimer,
+					RenewTimer:        cfg.GetTimerParameters().RenewTimer,
+					T1Percent:         cfg.GetTimerParameters().T1Percent,
+					T2Percent:         cfg.GetTimerParameters().T2Percent,
+				},
+				KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+					MaxValidLifetime: cfg.GetValidLifetimeParameters().MaxValidLifetime,
+					MinValidLifetime: cfg.GetValidLifetimeParameters().MinValidLifetime,
+					ValidLifetime:    cfg.GetValidLifetimeParameters().ValidLifetime,
+				},
+				KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
+					Allocator:         cfg.GetAllocator(),
+					Authoritative:     cfg.GetAuthoritative(),
+					BootFileName:      cfg.GetBootFileName(),
+					MatchClientID:     cfg.GetMatchClientID(),
+					NextServer:        cfg.GetNextServer(),
+					PdAllocator:       cfg.GetPDAllocator(),
+					RapidCommit:       cfg.GetRapidCommit(),
+					ServerHostname:    cfg.GetServerHostname(),
+					StoreExtendedInfo: cfg.GetStoreExtendedInfo(),
+				},
+			}
+			var convertedOptions []dbmodel.DHCPOption
+			for _, option := range cfg.GetDHCPOptions() {
+				convertedOption, err := dbmodel.NewDHCPOptionFromKea(option, storkutil.IPType(sn.GetFamily()), r.DHCPOptionDefinitionLookup)
+				if err != nil {
+					continue
+				}
+				convertedOptions = append(convertedOptions, *convertedOption)
+			}
+			localSubnet.KeaConfigSubnetParameters.GlobalParameters.OptionsHash = storkutil.Fnv128(fmt.Sprintf("%+v", convertedOptions))
+			localSubnet.KeaConfigSubnetParameters.GlobalParameters.Options = r.unflattenDHCPOptions(convertedOptions, "", 0)
+		}
 		subnet.LocalSubnets = append(subnet.LocalSubnets, localSubnet)
 	}
 	return subnet
@@ -76,7 +302,7 @@ func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsByPage
 	// go through subnets from db and change their format to ReST one
 	for _, snTmp := range dbSubnets {
 		sn := snTmp
-		subnet := subnetToRestAPI(&sn)
+		subnet := r.subnetToRestAPI(&sn)
 		subnets.Items = append(subnets.Items, subnet)
 	}
 
@@ -116,6 +342,36 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	return rsp
 }
 
+// Returns the detailed subnet information including the subnet, shared network and
+// global DHCP configuration parameters. The returned information is sufficient to
+// open a form for editing the subnet.
+func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) middleware.Responder {
+	dbSubnet, err := dbmodel.GetSubnet(r.DB, params.ID)
+	if err != nil {
+		// Error while communicating with the database.
+		msg := fmt.Sprintf("Problem fetching subnet with ID %d from db", params.ID)
+		log.Error(err)
+		rsp := dhcp.NewGetSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if dbSubnet == nil {
+		// Subnet not found.
+		msg := fmt.Sprintf("Cannot find subnet with ID %d", params.ID)
+		log.Error(msg)
+		rsp := dhcp.NewGetSubnetDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	subnet := r.subnetToRestAPI(dbSubnet)
+	rsp := dhcp.NewGetSubnetOK().WithPayload(subnet)
+	return rsp
+}
+
 func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.SharedNetworks, error) {
 	// get shared networks from db
 	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.DB, offset, limit, appID, family, filterText, sortField, sortDir)
@@ -138,7 +394,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 		// be the case but let's be safe.
 		for _, snTmp := range net.Subnets {
 			sn := snTmp
-			subnet := subnetToRestAPI(&sn)
+			subnet := r.subnetToRestAPI(&sn)
 			subnets = append(subnets, subnet)
 		}
 		// Create shared network.

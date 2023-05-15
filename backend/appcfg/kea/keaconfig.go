@@ -382,6 +382,14 @@ func (c *Config) GetStoreExtendedInfo() (storeExtendedInfo *bool) {
 	return
 }
 
+// Returns a slice of the global DHCP option data.
+func (c *Config) GetDHCPOptions() (options []SingleOptionData) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		options = accessor.GetDHCPOptions()
+	}
+	return
+}
+
 // Recursively hides sensitive data in the configuration. It traverses the raw
 // configuration and nullifies the values for the following keys: password,
 // secret, token. It doesn't modify the parsed configuration.

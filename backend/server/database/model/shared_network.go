@@ -59,6 +59,16 @@ func (sn *SharedNetwork) GetName() string {
 	return sn.Name
 }
 
+// Returns local shared network instance for a daemon ID.
+func (sn *SharedNetwork) GetLocalSharedNetwork(daemonID int64) *LocalSharedNetwork {
+	for _, lsn := range sn.LocalSharedNetworks {
+		if lsn.DaemonID == daemonID {
+			return lsn
+		}
+	}
+	return nil
+}
+
 // Returns the Kea DHCP parameters for the shared network configured in the
 // specified daemon.
 func (sn *SharedNetwork) GetKeaParameters(daemonID int64) *keaconfig.SharedNetworkParameters {

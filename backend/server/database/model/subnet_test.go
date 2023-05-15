@@ -79,6 +79,9 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
+
 	// Get the subnet from the database.
 	returned, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
@@ -86,9 +89,9 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 
 	// Make sure that the pools are returned too.
 	require.Equal(t, subnet.Prefix, returned.Prefix)
-	require.Len(t, subnet.LocalSubnets, 1)
-	require.Len(t, subnet.LocalSubnets[0].AddressPools, 3)
-	require.Empty(t, subnet.LocalSubnets[0].PrefixPools)
+	require.Len(t, returned.LocalSubnets, 1)
+	require.Len(t, returned.LocalSubnets[0].AddressPools, 3)
+	require.Empty(t, returned.LocalSubnets[0].PrefixPools)
 }
 
 // Test that subnet with address and prefix pools is inserted into the database.
@@ -168,6 +171,75 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 		require.Equal(t, subnet.LocalSubnets[0].PrefixPools[i].Prefix, p.Prefix)
 		require.Equal(t, subnet.LocalSubnets[0].PrefixPools[i].DelegatedLen, p.DelegatedLen)
 	}
+}
+
+// Test getting a subnet with its shared network and associations with a
+// daemon.
+func TestGetSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add a shared network.
+	sharedNetwork := &SharedNetwork{
+		Name:   "test",
+		Family: 6,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[1].ID,
+			},
+		},
+	}
+	err := AddSharedNetwork(db, sharedNetwork)
+	require.NoError(t, err)
+	require.NotZero(t, sharedNetwork.ID)
+
+	err = AddLocalSharedNetworks(db, sharedNetwork)
+	require.NoError(t, err)
+
+	// Add a subnet associated with the shared network.
+	subnet := &Subnet{
+		Prefix:          "2001:db8:1::/64",
+		SharedNetworkID: sharedNetwork.ID,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[1].ID,
+				AddressPools: []AddressPool{
+					{
+						LowerBound: "2001:db8:1::1",
+						UpperBound: "2001:db8:1::10",
+					},
+				},
+				PrefixPools: []PrefixPool{
+					{
+						Prefix:       "3001::/64",
+						DelegatedLen: 80,
+					},
+				},
+			},
+		},
+	}
+	err = AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
+
+	returned, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Make suare that the local subnet and the daemon have been fetched.
+	require.Equal(t, subnet.Prefix, returned.Prefix)
+	require.Len(t, returned.LocalSubnets, 1)
+	require.NotNil(t, returned.LocalSubnets[0].Daemon)
+	require.NotNil(t, returned.LocalSubnets[0].Daemon.KeaDaemon)
+
+	// Make sure that the shared network has been fetched.
+	require.NotNil(t, returned.SharedNetwork)
+	require.Len(t, returned.SharedNetwork.LocalSharedNetworks, 1)
 }
 
 // Test that all subnets, all IPv4 subnets or all IPv6 subnets can be fetched.

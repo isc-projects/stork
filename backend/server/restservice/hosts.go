@@ -268,7 +268,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// Convert subnets list to REST API format.
 	respSubnets := []*models.Subnet{}
 	for i := range subnets {
-		respSubnets = append(respSubnets, subnetToRestAPI(&subnets[i]))
+		respSubnets = append(respSubnets, r.subnetToRestAPI(&subnets[i]))
 	}
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)

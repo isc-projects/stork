@@ -94,6 +94,7 @@ definitions:
 
   $include: users-defs.yaml
   $include: services-defs.yaml
+  $include: kea-config-defs.yaml
   $include: dhcp-defs.yaml
   $include: settings-defs.yaml
   $include: search-defs.yaml

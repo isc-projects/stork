@@ -19,6 +19,29 @@ func TestSharedNetworkGetName(t *testing.T) {
 	require.Equal(t, "my-secret-network", network.GetName())
 }
 
+// Test retrieving a local shared network instance by daemon ID.
+func TestSharedNetworkGetLocalSharedNetwork(t *testing.T) {
+	network := SharedNetwork{
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: 110,
+			},
+			{
+				DaemonID: 111,
+			},
+		},
+	}
+	lsn := network.GetLocalSharedNetwork(110)
+	require.NotNil(t, lsn)
+	require.EqualValues(t, 110, lsn.DaemonID)
+
+	lsn = network.GetLocalSharedNetwork(111)
+	require.NotNil(t, lsn)
+	require.EqualValues(t, 111, lsn.DaemonID)
+
+	require.Nil(t, network.GetLocalSharedNetwork(112))
+}
+
 // Test implementation of the keaconfig.SharedNetwork interface (GetKeaParameters()
 // function).
 func TestSharedNetworkGetKeaParameters(t *testing.T) {

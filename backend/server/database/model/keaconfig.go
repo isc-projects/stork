@@ -183,7 +183,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
 	}
 	for _, d := range keaSubnet.GetDHCPOptions() {
-		option, err := NewDHCPOptionFromKea(d, storkutil.IPv6, lookup)
+		option, err := NewDHCPOptionFromKea(d, keaSubnet.GetUniverse(), lookup)
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +216,7 @@ func NewSharedNetworkFromKea(sharedNetwork keaconfig.SharedNetwork, family int, 
 		newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
 	}
 	for _, d := range sharedNetwork.GetDHCPOptions() {
-		option, err := NewDHCPOptionFromKea(d, storkutil.IPv4, lookup)
+		option, err := NewDHCPOptionFromKea(d, storkutil.IPType(family), lookup)
 		if err != nil {
 			return nil, err
 		}

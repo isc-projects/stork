@@ -1,0 +1,214 @@
+  KeaConfigCacheParameters:
+    type: object
+    properties:
+      cacheThreshold: 
+        type: number
+        format: float
+        x-nullable: true
+      cacheMaxAge:
+        type: integer
+        format: int64
+        x-nullable: true
+  
+  KeaConfigClientClassParameters:
+    type: object
+    properties:
+      clientClass:
+        type: string
+        x-nullable: true
+      requireClientClasses:
+        type: array
+        items:
+          type: string
+
+  KeaConfigDdnsParameters:
+    type: object
+    properties:
+      ddnsGeneratedPrefix:
+        type: string
+        x-nullable: true
+      ddnsOverrideClientUpdate:
+        type: boolean
+        x-nullable: true
+      ddnsOverrideNoUpdate:
+        type: boolean
+        x-nullable: true
+      ddnsQualifyingSuffix:
+        type: string
+        x-nullable: true
+      ddnsReplaceClientName:
+        type: string
+        x-nullable: true
+      ddnsSendUpdates:
+        type: boolean
+        x-nullable: true
+      ddnsUpdateOnRenew:
+        type: boolean
+        x-nullable: true
+      ddnsUseConflictResolution:
+        type: boolean
+        x-nullable: true
+
+  KeaConfigFourOverSixParameters:
+    type: object
+    properties:
+      fourOverSixInterface:
+        type: string
+        x-nullable: true
+      fourOverSixInterfaceID:
+        type: string
+        x-nullable: true
+      fourOverSixSubnet:
+        type: string
+        x-nullable: true
+
+  KeaConfigHostnameCharParameters:
+    type: object
+    properties:
+      hostnameCharReplacement:
+        type: string
+        x-nullable: true
+      hostnameCharSet:
+        type: string
+        x-nullable: true
+
+  KeaConfigPreferredLifetimeParameters:
+    type: object
+    properties:
+      preferredLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+      minPreferredLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+      maxPreferredLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+
+  KeaConfigReservationParameters:
+    type: object
+    properties:
+      reservationMode:
+        type: string
+        x-nullable: true
+      reservationsGlobal:
+        type: boolean
+        x-nullable: true
+      reservationsInSubnet:
+        type: boolean
+        x-nullable: true
+      reservationsOutOfPool:
+        type: boolean
+        x-nullable: true
+
+  KeaConfigTimerParameters:
+    type: object
+    properties:
+      renewTimer:
+        type: number
+        format: int64
+        x-nullable: true
+      rebindTimer:
+        type: number
+        format: int64
+        x-nullable: true
+      t1Percent:
+        type: number
+        format: float
+        x-nullable: true
+      t2Percent:
+        type: number
+        format: float
+        x-nullable: true
+      calculateTeeTimes:
+        type: boolean
+        x-nullable: true
+
+  KeaConfigValidLifetimeParameters:
+    type: object
+    properties:
+      validLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+      minValidLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+      maxValidLifetime:
+        type: number
+        format: int64
+        x-nullable: true
+
+  KeaConfigAssortedSubnetParameters:
+    type: object
+    properties:
+      allocator:
+        type: string
+        x-nullable: true
+      authoritative:
+        type: boolean
+        x-nullable: true
+      bootFileName:
+        type: string
+        x-nullable: true
+      interface:
+        type: string
+        x-nullable: true
+      interfaceID:
+        type: string
+        x-nullable: true
+      matchClientID:
+        type: boolean
+        x-nullable: true
+      nextServer:
+        type: string
+        x-nullable: true
+      pdAllocator:
+        type: string
+        x-nullable: true
+      rapidCommit:
+        type: boolean
+        x-nullable: true
+      relay:
+        type: object
+        x-nullable: true
+        properties:
+          ipAddresses:
+            type: array
+            items:
+              type: string
+      serverHostname:
+        type: string
+        x-nullable: true
+      storeExtendedInfo:
+        type: boolean
+        x-nullable: true
+
+  KeaConfigSubnetDerivedParameters:
+    type: object
+    allOf:
+      - $ref: '#/definitions/KeaConfigCacheParameters'
+      - $ref: '#/definitions/KeaConfigClientClassParameters'
+      - $ref: '#/definitions/KeaConfigDdnsParameters'
+      - $ref: '#/definitions/KeaConfigFourOverSixParameters'
+      - $ref: '#/definitions/KeaConfigHostnameCharParameters'
+      - $ref: '#/definitions/KeaConfigPreferredLifetimeParameters'
+      - $ref: '#/definitions/KeaConfigReservationParameters'
+      - $ref: '#/definitions/KeaConfigTimerParameters'
+      - $ref: '#/definitions/KeaConfigValidLifetimeParameters'
+      - $ref: '#/definitions/KeaConfigAssortedSubnetParameters'
+      - $ref: '#/definitions/DHCPOptions'
+
+  KeaConfigSubnetParameters:
+    type: object
+    properties:
+      subnetLevelParameters:
+        $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
+      sharedNetworkLevelParameters:
+        $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
+      globalParameters:
+        $ref: '#/definitions/KeaConfigSubnetDerivedParameters'

@@ -416,7 +416,9 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("SharedNetwork").
+		Relation("LocalSubnets.Daemon.App.Machine").
+		Relation("LocalSubnets.Daemon.KeaDaemon").
+		Relation("SharedNetwork.LocalSharedNetworks").
 		Where("subnet.id = ?", subnetID).
 		Select()
 	if err != nil {

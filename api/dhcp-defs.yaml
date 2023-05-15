@@ -121,6 +121,16 @@
         type: integer
         enum: *IPTYPE
 
+  DHCPOptions:
+    type: object
+    properties:
+      options:
+        type: array
+        items:
+          $ref: '#/definitions/DHCPOption'
+      optionsHash:
+        type: string
+
 # Host
 
   HostIdentifier:
@@ -273,7 +283,8 @@
         type: array
         items:
           $ref: '#/definitions/DelegatedPrefix'
-
+      keaConfigSubnetParameters:
+          $ref: '#/definitions/KeaConfigSubnetParameters'
 
   DelegatedPrefix:
     type: object

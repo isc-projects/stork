@@ -314,6 +314,33 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /subnets/{id}:
+    get:
+      summary: Get a subnet by ID.
+      description: >-
+        This endpoint returns a subnet with the detailed DHCP configuration information.
+        It contains all the necessary data to display the subnet on a dedicated page. Not
+        only does it contain the subnet-level DHCP configuration but also shared-network-level
+        and global configuration this subnet inherits from.
+      operationId: getSubnet
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Subnet ID.
+      responses:
+        200:
+          description: Subnet information with shared network and global DHCP parameters.
+          schema:
+            $ref: "#/definitions/Subnet"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /shared-networks:
     get:
       summary: Get list of DHCP shared networks.

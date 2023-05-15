@@ -208,7 +208,16 @@
                 "match-client-id": true,
                 "name": "my-secret-network",
                 "next-server": "192.0.2.123",
-                "option-data": [],
+                "option-data": [
+                    {
+                        "always-send": false,
+                        "code": 3,
+                        "csv-format": true,
+                        "data": "192.0.3.2",
+                        "name": "routers",
+                        "space": "dhcp4"
+                    }
+                ],
                 "relay": {
                     "ip-addresses": []
                 },

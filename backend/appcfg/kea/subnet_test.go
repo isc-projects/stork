@@ -228,7 +228,7 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.Equal(t, "example.org", *params.DDNSQualifyingSuffix)
 	require.Equal(t, "never", *params.DDNSReplaceClientName)
 	require.True(t, *params.DDNSSendUpdates)
-	require.True(t, *params.DDNSUpdateOnReview)
+	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
@@ -355,6 +355,18 @@ func TestGetPrefixSubnet6(t *testing.T) {
 	require.Equal(t, "2001:db8:1:0:0::/64", prefix)
 }
 
+// Test that the IPv4 universe is returned for an IPv4 subnet.
+func TestGetUniverseSubnet4(t *testing.T) {
+	subnet4 := keaconfig.Subnet4{}
+	require.Equal(t, storkutil.IPv4, subnet4.GetUniverse())
+}
+
+// Test that the IPv6 universe is returned for an IPv6 subnet.
+func TestGetUniverseSubnet6(t *testing.T) {
+	subnet6 := keaconfig.Subnet6{}
+	require.Equal(t, storkutil.IPv6, subnet6.GetUniverse())
+}
+
 // Test that the Kea IPv4 subnet configuration parameters are returned
 // in the keaconfig.SubnetParameters union.
 func TestGetParametersSubnet4(t *testing.T) {
@@ -377,7 +389,7 @@ func TestGetParametersSubnet4(t *testing.T) {
 	require.Equal(t, "example.org", *params.DDNSQualifyingSuffix)
 	require.Equal(t, "never", *params.DDNSReplaceClientName)
 	require.True(t, *params.DDNSSendUpdates)
-	require.True(t, *params.DDNSUpdateOnReview)
+	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
@@ -420,7 +432,7 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.Equal(t, "example.org", *params.DDNSQualifyingSuffix)
 	require.Equal(t, "never", *params.DDNSReplaceClientName)
 	require.True(t, *params.DDNSSendUpdates)
-	require.True(t, *params.DDNSUpdateOnReview)
+	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
@@ -499,7 +511,7 @@ func TestGetParametersSubnet6(t *testing.T) {
 	require.Equal(t, "example.org", *params.DDNSQualifyingSuffix)
 	require.Equal(t, "never", *params.DDNSReplaceClientName)
 	require.True(t, *params.DDNSSendUpdates)
-	require.True(t, *params.DDNSUpdateOnReview)
+	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)

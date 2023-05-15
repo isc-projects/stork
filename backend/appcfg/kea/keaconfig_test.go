@@ -7,13 +7,9 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
+	"isc.org/stork/testutil"
 )
-
-//go:embed keaconfig_test_dhcp4_all_keys.json
-var allKeysDHCPv4 []byte
-
-//go:embed keaconfig_test_dhcp6_all_keys.json
-var allKeysDHCPv6 []byte
 
 // Returns test Kea configuration with empty list of hooks libraries.
 func getTestConfigEmptyHooks(t *testing.T) *Config {
@@ -227,7 +223,7 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *Config {
 // Test that Kea DHCPv4 configuration is recognised and parsed.
 func TestDecodeDHCPv4(t *testing.T) {
 	var config Config
-	err := json.Unmarshal(allKeysDHCPv4, &config)
+	err := json.Unmarshal(testutil.AllKeysDHCPv4, &config)
 	require.NoError(t, err)
 
 	require.NotNil(t, config.DHCPv4Config)
@@ -235,13 +231,13 @@ func TestDecodeDHCPv4(t *testing.T) {
 	marshalled, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	require.JSONEq(t, string(allKeysDHCPv4), string(marshalled))
+	require.JSONEq(t, string(testutil.AllKeysDHCPv4), string(marshalled))
 }
 
 // Test that Kea DHCPv6 configuration is recognised and parsed.
 func TestDecodeDHCPv6(t *testing.T) {
 	var config Config
-	err := json.Unmarshal(allKeysDHCPv6, &config)
+	err := json.Unmarshal(testutil.AllKeysDHCPv6, &config)
 	require.NoError(t, err)
 
 	require.NotNil(t, config.DHCPv6Config)
@@ -249,7 +245,7 @@ func TestDecodeDHCPv6(t *testing.T) {
 	marshalled, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	require.JSONEq(t, string(allKeysDHCPv6), string(marshalled))
+	require.JSONEq(t, string(testutil.AllKeysDHCPv6), string(marshalled))
 }
 
 // Tests that the configuration can contain comments.
@@ -707,8 +703,8 @@ func TestGetDDNSParameters(t *testing.T) {
 	require.Equal(t, "never", *cfg.GetDDNSParameters().DDNSReplaceClientName)
 	require.NotNil(t, cfg.GetDDNSParameters().DDNSSendUpdates)
 	require.True(t, *cfg.GetDDNSParameters().DDNSSendUpdates)
-	require.NotNil(t, cfg.GetDDNSParameters().DDNSUpdateOnReview)
-	require.True(t, *cfg.GetDDNSParameters().DDNSUpdateOnReview)
+	require.NotNil(t, cfg.GetDDNSParameters().DDNSUpdateOnRenew)
+	require.True(t, *cfg.GetDDNSParameters().DDNSUpdateOnRenew)
 	require.NotNil(t, cfg.GetDDNSParameters().DDNSUseConflictResolution)
 	require.True(t, *cfg.GetDDNSParameters().DDNSUseConflictResolution)
 	require.NotNil(t, cfg.GetDDNSParameters().DDNSTTLPercent)
@@ -1550,4 +1546,96 @@ func TestGetReservations6(t *testing.T) {
 	require.Equal(t, "01:01:01:01", reservations[1].DUID)
 	require.Len(t, reservations[1].ClientClasses, 1)
 	require.Equal(t, "bar", reservations[1].ClientClasses[0])
+}
+
+// Test getting global DHCPv4 options.
+func TestGetDHCPOptions4(t *testing.T) {
+	configStr := `{
+		"Dhcp4": {
+			"option-data": [
+				{
+					"always-send": false,
+					"code": 3,
+					"csv-format": true,
+					"data": "10.0.0.1",
+					"name": "routers",
+					"space": "dhcp4"
+				},
+				{
+					"always-send": true,
+					"code": 6,
+					"csv-format": true,
+					"data": "192.0.3.1, 192.0.3.2",
+					"name": "domain-name-servers",
+					"space": "dhcp4"
+				}
+			]
+		}
+	}`
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	options := cfg.GetDHCPOptions()
+	require.Len(t, options, 2)
+
+	require.False(t, options[0].AlwaysSend)
+	require.EqualValues(t, 3, options[0].Code)
+	require.True(t, options[0].CSVFormat)
+	require.Equal(t, "10.0.0.1", options[0].Data)
+	require.Equal(t, "routers", options[0].Name)
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, options[0].Space)
+
+	require.True(t, options[1].AlwaysSend)
+	require.EqualValues(t, 6, options[1].Code)
+	require.True(t, options[1].CSVFormat)
+	require.Equal(t, "192.0.3.1, 192.0.3.2", options[1].Data)
+	require.Equal(t, "domain-name-servers", options[1].Name)
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, options[0].Space)
+}
+
+// Test getting global DHCPv6 options.
+func TestGetDHCPOptions6(t *testing.T) {
+	configStr := `{
+		"Dhcp6": {
+			"option-data": [
+				{
+					"always-send": false,
+					"code": 23,
+					"csv-format": true,
+					"data": "2001:db8:1::1",
+					"name": "dns-servers",
+					"space": "dhcp6"
+				},
+				{
+					"always-send": true,
+					"code": 27,
+					"csv-format": true,
+					"data": "2001:db8:1::2, 2001:db8:1::3",
+					"name": "nis-servers",
+					"space": "dhcp6"
+				}
+			]
+		}
+	}`
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	options := cfg.GetDHCPOptions()
+	require.Len(t, options, 2)
+
+	require.False(t, options[0].AlwaysSend)
+	require.EqualValues(t, 23, options[0].Code)
+	require.True(t, options[0].CSVFormat)
+	require.Equal(t, "2001:db8:1::1", options[0].Data)
+	require.Equal(t, "dns-servers", options[0].Name)
+	require.Equal(t, dhcpmodel.DHCPv6OptionSpace, options[0].Space)
+
+	require.True(t, options[1].AlwaysSend)
+	require.EqualValues(t, 27, options[1].Code)
+	require.True(t, options[1].CSVFormat)
+	require.Equal(t, "2001:db8:1::2, 2001:db8:1::3", options[1].Data)
+	require.Equal(t, "nis-servers", options[1].Name)
+	require.Equal(t, dhcpmodel.DHCPv6OptionSpace, options[0].Space)
 }

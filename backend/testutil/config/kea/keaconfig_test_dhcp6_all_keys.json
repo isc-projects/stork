@@ -203,7 +203,16 @@
                 "interface": "eth0",
                 "interface-id": "",
                 "name": "my-secret-network",
-                "option-data": [],
+                "option-data": [
+                    {
+                        "always-send": false,
+                        "code": 7,
+                        "csv-format": false,
+                        "data": "ab",
+                        "name": "preference",
+                        "space": "dhcp6"
+                    }
+                ],
                 "preferred-lifetime": 2000,
                 "min-preferred-lifetime": 1500,
                 "max-preferred-lifetime": 2500,
@@ -247,7 +256,7 @@
                                 "always-send": false,
                                 "code": 7,
                                 "csv-format": false,
-                                "data": "0xf0",
+                                "data": "f0",
                                 "name": "preference",
                                 "space": "dhcp6"
                             }

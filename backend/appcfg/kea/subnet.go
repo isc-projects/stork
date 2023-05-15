@@ -34,6 +34,7 @@ type Subnet interface {
 	GetReservations() []Reservation
 	GetSubnetParameters() *SubnetParameters
 	GetDHCPOptions() []SingleOptionData
+	GetUniverse() storkutil.IPType
 }
 
 // Represents a relay configuration for a subnet in Kea.
@@ -56,7 +57,7 @@ type DDNSParameters struct {
 	DDNSQualifyingSuffix      *string  `json:"ddns-qualifying-suffix,omitempty"`
 	DDNSReplaceClientName     *string  `json:"ddns-replace-client-name,omitempty"`
 	DDNSSendUpdates           *bool    `json:"ddns-send-updates,omitempty"`
-	DDNSUpdateOnReview        *bool    `json:"ddns-update-on-renew,omitempty"`
+	DDNSUpdateOnRenew         *bool    `json:"ddns-update-on-renew,omitempty"`
 	DDNSUseConflictResolution *bool    `json:"ddns-use-conflict-resolution,omitempty"`
 	DDNSTTLPercent            *float32 `json:"ddns-ttl-percent,omitempty"`
 }
@@ -245,6 +246,11 @@ func (s *Subnet4) GetDHCPOptions() []SingleOptionData {
 	return s.OptionData
 }
 
+// Returns IPv4 universe.
+func (s *Subnet4) GetUniverse() storkutil.IPType {
+	return storkutil.IPv4
+}
+
 // Returns Kea-specific IPv4 subnet configuration parameters.
 func (s *Subnet4) GetSubnetParameters() *SubnetParameters {
 	return &SubnetParameters{
@@ -301,6 +307,11 @@ func (s *Subnet6) GetReservations() []Reservation {
 // Returns DHCP options.
 func (s *Subnet6) GetDHCPOptions() []SingleOptionData {
 	return s.OptionData
+}
+
+// Returns IPv6 universe.
+func (s *Subnet6) GetUniverse() storkutil.IPType {
+	return storkutil.IPv6
 }
 
 // Returns Kea-specific IPv6 subnet configuration parameters.
