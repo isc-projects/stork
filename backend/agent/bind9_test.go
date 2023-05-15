@@ -175,7 +175,7 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 			a, b, c := getCtrlAddressFromBind9Config(test.config)
 			require.Equal(t, a, test.expAddr)
 			require.Equal(t, b, test.expPort)
-			require.Equal(t, c, test.expKey)
+			require.Nil(t, c, test.expKey)
 		})
 	}
 }
@@ -243,7 +243,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.1.1.1", point.Address)
 	require.EqualValues(t, 1111, point.Port)
-	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
 // Checks detection STEP 2: if BIND9 detection takes STORK_BIND9_CONFIG env var into account.
@@ -285,7 +285,7 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
 // Checks detection STEP 3: parse output of the named -V command.
@@ -322,7 +322,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
 // There is no reliable way to test step 4 (checking typical locations). The
@@ -387,12 +387,12 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.1.1.1", point.Address) // we expect the STEP 1 (-c parameter) to take precedence
 	require.EqualValues(t, 1111, point.Port)
-	require.EqualValues(t, "hmac-sha256:abcd", point.Key)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
 // Test that the empty string is returned if the configuration content is empty.
 func TestGetRndcKeyEmptyData(t *testing.T) {
-	require.Empty(t, getRndcKey("", "key"))
+	require.Nil(t, getRndcKey("", "key"))
 }
 
 // Test that the empty string is returned if the configuration content contains
@@ -405,7 +405,7 @@ func TestGetRndcKeyInvalidData(t *testing.T) {
 	`
 
 	// Act & Assert
-	require.Empty(t, getRndcKey(content, "key"))
+	require.Nil(t, getRndcKey(content, "key"))
 }
 
 // Test that the empty string is returned if the key with a given name doesn't
@@ -418,7 +418,7 @@ func TestGetRndcKeyUnknownKey(t *testing.T) {
 	};`
 
 	// Act & Assert
-	require.Empty(t, getRndcKey(content, "key"))
+	require.Nil(t, getRndcKey(content, "key"))
 }
 
 // Test that the empty string is returned if a given name is an empty string.
@@ -430,7 +430,7 @@ func TestGetRndcKeyBlankName(t *testing.T) {
 	};`
 
 	// Act & Assert
-	require.Empty(t, getRndcKey(content, ""))
+	require.Nil(t, getRndcKey(content, ""))
 }
 
 // Test that the empty string is returned if the algorithm property is missing.
@@ -441,7 +441,7 @@ func TestGetRndcKeyMissingAlgorithm(t *testing.T) {
 	};`
 
 	// Act & Assert
-	require.Empty(t, getRndcKey(content, "foo"))
+	require.Nil(t, getRndcKey(content, "foo"))
 }
 
 // Test that the empty string is returned if the secret property is missing.
@@ -452,7 +452,7 @@ func TestGetRndcKeyMissingSecret(t *testing.T) {
 	};`
 
 	// Act & Assert
-	require.Empty(t, getRndcKey(content, "foo"))
+	require.Nil(t, getRndcKey(content, "foo"))
 }
 
 // Test that the combination of algorithm and secret is returned if the key
@@ -468,7 +468,10 @@ func TestGetRndcKeyValidData(t *testing.T) {
 	key := getRndcKey(content, "foo")
 
 	// Assert
-	require.EqualValues(t, "bar:baz", key)
+	require.NotNil(t, key)
+	require.EqualValues(t, "foo", key.Name)
+	require.EqualValues(t, "bar", key.Algorithm)
+	require.EqualValues(t, "baz", key.Secret)
 }
 
 // Test that the combination of algorithm and secret is returned if the key
@@ -489,7 +492,10 @@ func TestGetRndcKeyValidDataMultipleKeys(t *testing.T) {
 	key := getRndcKey(content, "foo")
 
 	// Assert
-	require.EqualValues(t, "bar:baz", key)
+	require.NotNil(t, key)
+	require.EqualValues(t, "foo", key.Name)
+	require.EqualValues(t, "bar", key.Algorithm)
+	require.EqualValues(t, "baz", key.Secret)
 }
 
 // Test that the key name is recognized for various formatting styles of the
@@ -535,8 +541,24 @@ func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
 				_, _, key := parseInetSpec(config, inetClause)
 
 				// Assert
-				require.EqualValues(t, "algorithm:secret", key)
+				require.NotNil(t, key)
+				require.EqualValues(t, "rndc-key", key.Name)
+				require.EqualValues(t, "algorithm", key.Algorithm)
+				require.EqualValues(t, "secret", key.Secret)
 			})
 		}
 	}
+}
+
+// Test that the RNDC key is converted to string properly.
+func TestBind9RndcKeyString(t *testing.T) {
+	// Arrange
+	key := &Bind9RndcKey{
+		Name:      "foo",
+		Algorithm: "bar",
+		Secret:    "baz",
+	}
+
+	// Act & Assert
+	require.EqualValues(t, "foo:bar:baz", key.String())
 }

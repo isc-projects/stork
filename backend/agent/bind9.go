@@ -30,6 +30,18 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
+// Represents the RNDC key entry.
+type Bind9RndcKey struct {
+	Name      string
+	Algorithm string
+	Secret    string
+}
+
+// Returns the string representation of the key.
+func (k *Bind9RndcKey) String() string {
+	return fmt.Sprintf("%s:%s:%s", k.Name, k.Algorithm, k.Secret)
+}
+
 // It holds common and BIND 9 specific runtime information.
 type Bind9App struct {
 	BaseApp
@@ -93,7 +105,7 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 // Determine rndc details in the system.
 // It find rndc executable and prepare base command with all necessary
 // parameters including rndc secret key.
-func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey string, executor storkutil.CommandExecutor) error {
+func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey *Bind9RndcKey, executor storkutil.CommandExecutor) error {
 	rndcPath, err := determineBinPath(baseNamedDir, rndcExec, executor)
 	if err != nil {
 		return err
@@ -101,9 +113,9 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 
 	cmd := []string{rndcPath, "-s", ctrlAddress, "-p", fmt.Sprintf("%d", ctrlPort)}
 
-	if len(ctrlKey) > 0 {
+	if ctrlKey != nil {
 		cmd = append(cmd, "-y")
-		cmd = append(cmd, ctrlKey)
+		cmd = append(cmd, ctrlKey.Name)
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
 		if _, err = os.Stat(keyPath); errors.Is(err, os.ErrNotExist) {
@@ -134,11 +146,11 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 //		algorithm "hmac-sha256";
 //		secret "OmItW1lOyLVUEuvv+Fme+Q==";
 //	};
-func getRndcKey(contents, name string) (controlKey string) {
+func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 	pattern := regexp.MustCompile(`(?s)key\s+\"(\S+)\"\s+\{(.*?)\}\s*;`)
 	keys := pattern.FindAllStringSubmatch(contents, -1)
 	if len(keys) == 0 {
-		return ""
+		return nil
 	}
 
 	for _, key := range keys {
@@ -149,18 +161,22 @@ func getRndcKey(contents, name string) (controlKey string) {
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
 			log.Warnf("No key algorithm found for name %s", name)
-			return ""
+			return nil
 		}
 
 		pattern = regexp.MustCompile(`(?s)secret\s+\"(\S+)\";`)
 		secret := pattern.FindStringSubmatch(key[2])
 		if len(secret) < 2 {
 			log.Warnf("No key secret found for name %s", name)
-			return ""
+			return nil
 		}
 
 		// this key clause matches the name we are looking for
-		controlKey = fmt.Sprintf("%s:%s", algorithm[1], secret[1])
+		controlKey = &Bind9RndcKey{
+			Name:      name,
+			Algorithm: algorithm[1],
+			Secret:    secret[1],
+		}
 		break
 	}
 
@@ -177,7 +193,7 @@ func getRndcKey(contents, name string) (controlKey string) {
 // This function returns the ip_addr, port and the first key that is
 // referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
 // specified, this function will return 'localhost' as an address.
-func parseInetSpec(config, excerpt string) (address string, port int64, key string) {
+func parseInetSpec(config, excerpt string) (address string, port int64, key *Bind9RndcKey) {
 	// This pattern is build up like this:
 	// - inet\s+                 - inet
 	// - (\S+\s*\S*\s*\d*)\s+    - ( ip_addr | * ) [ port ip_port ]
@@ -188,7 +204,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	match := pattern.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
 		log.Warnf("Cannot parse BIND 9 inet configuration: no match (%+v)", config)
-		return "", 0, ""
+		return "", 0, nil
 	}
 
 	inetSpec := regexp.MustCompile(`\s+`).Split(match[1], 3)
@@ -199,19 +215,19 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 		address = inetSpec[0]
 		if inetSpec[1] != "port" {
 			log.Warnf("Cannot parse BIND 9 control port: bad port statement (%+v)", inetSpec)
-			return "", 0, ""
+			return "", 0, nil
 		}
 
 		iPort, err := strconv.Atoi(inetSpec[2])
 		if err != nil {
 			log.Warnf("Cannot parse BIND 9 control port: %+v (%+v)", inetSpec, err)
-			return "", 0, ""
+			return "", 0, nil
 		}
 		port = int64(iPort)
 	case 2:
 	default:
 		log.Warnf("Cannot parse BIND 9 inet_spec configuration: no match (%+v)", inetSpec)
-		return "", 0, ""
+		return "", 0, nil
 	}
 
 	if len(match) == 3 {
@@ -226,7 +242,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 		keyName := pattern.FindStringSubmatch(match[2])
 		if len(keyName) > 1 {
 			key = getRndcKey(config, keyName[1])
-			if key == "" {
+			if key == nil {
 				log.WithField("key", keyName[1]).Warn("Cannot find key details")
 			}
 		}
@@ -264,7 +280,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // Finding the key is done by looking if the control access point has a
 // keys parameter and if so, it looks in `path` for a key clause with the
 // same name.
-func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey string) {
+func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey *Bind9RndcKey) {
 	// Match the following clause:
 	//     controls {
 	//         inet inet_spec [inet_spec] ;
@@ -275,7 +291,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
 		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
-		return "127.0.0.1", 953, ""
+		return "127.0.0.1", 953, nil
 	}
 
 	// See if there's any non-whitespace characters in the controls clause.
@@ -283,7 +299,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	txt := strings.TrimSpace(controls[1])
 	if len(txt) == 0 {
 		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
-		return "", 0, ""
+		return "", 0, nil
 	}
 
 	// We only pick the first match, but the controls clause
@@ -312,11 +328,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 //	};
 //
 // In this example, "stats-clients" refers to an acl clause.
-//
-// Finding the key is done by looking if the control access point has a
-// keys parameter and if so, it looks in `path` for a key clause with the
-// same name.
-func getStatisticsChannelFromBind9Config(text string) (statsAddress string, statsPort int64, statsKey string) {
+func getStatisticsChannelFromBind9Config(text string) (statsAddress string, statsPort int64) {
 	// Match the following clause:
 	//     statistics-channels {
 	//         inet inet_spec [inet_spec] ;
@@ -324,19 +336,19 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	pattern := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
 	channels := pattern.FindStringSubmatch(text)
 	if len(channels) == 0 {
-		return "", 0, ""
+		return "", 0
 	}
 
 	// We only pick the first match, but the statistics-channels clause
 	// can list multiple control access points.
-	statsAddress, statsPort, statsKey = parseInetSpec(text, channels[1])
+	statsAddress, statsPort, _ = parseInetSpec(text, channels[1])
 	if statsAddress != "" {
 		// If no port was provided, use the default statistics channel port.
 		if statsPort == 0 {
 			statsPort = StatsChannelDefaultPort
 		}
 	}
-	return statsAddress, statsPort, statsKey
+	return statsAddress, statsPort
 }
 
 // Determine executable using base named directory or system default paths.
@@ -530,18 +542,17 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Type:    AccessPointControl,
 			Address: ctrlAddress,
 			Port:    ctrlPort,
-			Key:     ctrlKey,
+			Key:     ctrlKey.String(),
 		},
 	}
 
 	// look for statistics channel address in config
-	address, port, key := getStatisticsChannelFromBind9Config(cfgText)
+	address, port := getStatisticsChannelFromBind9Config(cfgText)
 	if port > 0 && len(address) != 0 {
 		accessPoints = append(accessPoints, AccessPoint{
 			Type:    AccessPointStatistics,
 			Address: address,
 			Port:    port,
-			Key:     key,
 		})
 	} else {
 		log.Warnf("Cannot parse BIND 9 statistics-channels clause. Unable to gather statistics.")
