@@ -1,4 +1,12 @@
-* 300 [bug] slawek
+* 305 [bug] slawek
+
+    Fixed a problem with improperly using the rndc command that prevented
+    detecting BIND 9 daemons if the RNDC key was specified outside the default
+    RNDC key file. Fixed a rare bug when the Stork server crashes if an error
+    occurs on a particular stage of BIND 9 detection.
+    (Gitlab #1031)
+
+* 304 [bug] slawek
 
     Fixed a bug in handling the empty database host that caused user login
     failures in the UI. Fixed rejecting the database usernames containing a
