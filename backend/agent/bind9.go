@@ -537,12 +537,18 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Warnf("Found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", bind9ConfPath)
 		return nil
 	}
+
+	rndcKey := ""
+	if ctrlKey != nil {
+		rndcKey = ctrlKey.String()
+	}
+
 	accessPoints := []AccessPoint{
 		{
 			Type:    AccessPointControl,
 			Address: ctrlAddress,
 			Port:    ctrlPort,
-			Key:     ctrlKey.String(),
+			Key:     rndcKey,
 		},
 	}
 
