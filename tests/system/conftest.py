@@ -78,9 +78,17 @@ def pytest_sessionstart(session):
 
 def pytest_collection_modifyitems(session, config, items):
     """
-    Filters out all tests using the disabled services.
+    The hook to add additional decorators/markers to the tests.
     """
+    # Add per-test timeout.
+    default_timeout = datetime.timedelta(minutes=20)
 
+    for item in items:
+        print(item)
+        if item.get_closest_marker('timeout') is None:
+            item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
+
+    # Skip all tests using the disabled services.
     compose = create_docker_compose()
     skip = pytest.mark.skip(reason="Skip due to not set the docker-compose profile.")
 
