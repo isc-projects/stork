@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from ast import parse
 import sys
 import json
 import copy
@@ -17,17 +16,17 @@ class ParseKwargs(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 
-#TODO add entire set of v4 options
-optiondata4 = [{"code": 2,"data": "50", "name": "time-offset", "space": "dhcp4"},
-               {"code": 3,"data": "100.100.100.10,50.50.50.5", "name": "routers", "space": "dhcp4"},
-               {"code": 4,"data": "199.199.199.1,199.199.199.2", "name": "time-servers", "space": "dhcp4"},
-               {"code": 5,"data": "199.199.199.1,100.100.100.1","name": "name-servers", "space": "dhcp4"},
+# TODO add entire set of v4 options
+optiondata4 = [{"code": 2, "data": "50", "name": "time-offset", "space": "dhcp4"},
+               {"code": 3, "data": "100.100.100.10,50.50.50.5", "name": "routers", "space": "dhcp4"},
+               {"code": 4, "data": "199.199.199.1,199.199.199.2", "name": "time-servers", "space": "dhcp4"},
+               {"code": 5, "data": "199.199.199.1,100.100.100.1", "name": "name-servers", "space": "dhcp4"},
                {"code": 6, "data": "199.199.199.1,100.100.100.1", "name": "domain-name-servers", "space": "dhcp4"},
-               {"code": 7,"data": "199.199.199.1,100.100.100.1","name": "log-servers","space": "dhcp4"},
-               {"code": 76,"data": "199.1.1.1,200.1.1.2", "name": "streettalk-directory-assistance-server", "space": "dhcp4"},
+               {"code": 7, "data": "199.199.199.1,100.100.100.1", "name": "log-servers", "space": "dhcp4"},
+               {"code": 76, "data": "199.1.1.1,200.1.1.2", "name": "streettalk-directory-assistance-server", "space": "dhcp4"},
                {"code": 19, "csv-format": True, "data": "True", "name": "ip-forwarding", "space": "dhcp4"},
-               {"code": 20,"data": "True", "name": "non-local-source-routing", "space": "dhcp4"},
-               {"code": 29,"data": "False", "name": "perform-mask-discovery", "space": "dhcp4"}]
+               {"code": 20, "data": "True", "name": "non-local-source-routing", "space": "dhcp4"},
+               {"code": 29, "data": "False", "name": "perform-mask-discovery", "space": "dhcp4"}]
 
 optiondata6 = [{"code": 7, "data": "123", "name": "preference", "space": "dhcp6"},
                {"code": 21, "data": "srv1.example.com,srv2.isc.org", "name": "sip-server-dns", "space": "dhcp6"},
@@ -59,7 +58,7 @@ optiondata6 = [{"code": 7, "data": "123", "name": "preference", "space": "dhcp6"
 KEA_BASE_CONFIG = {
     "Dhcp4": {
         "interfaces-config": {
-            "interfaces": [ "eth0" ]
+            "interfaces": ["eth0"]
         },
         "control-socket": {
             "socket-type": "unix",
@@ -162,7 +161,7 @@ KEA_BASE_CONFIG = {
             }
         ],
 
-        "subnet4": [ ],
+        "subnet4": [],
 
         "loggers": [
             {
@@ -191,7 +190,7 @@ KEA_BASE_SUBNET = {
     #            { "pool": "192.0.2.151 - 192.0.2.200" } ],
     "client-class": "class-00-00",
     "relay": {
-        "ip-addresses": [ "172.100.0.200" ]
+        "ip-addresses": ["172.100.0.200"]
     },
     "option-data": [
         {
@@ -212,10 +211,10 @@ KEA_BASE_SUBNET = {
         {
             "duid": "01:02:03:04:05",
             "ip-address": "192.0.2.103",
-            "option-data": [ {
+            "option-data": [{
                 "name": "domain-name-servers",
                 "data": "10.1.1.202, 10.1.1.203"
-            } ]
+            }]
         },
         {
             "client-id": "01:12:23:34:45:56:67",
@@ -246,8 +245,9 @@ KEA_BASE_SUBNET = {
     ]
 }
 
-
 MAC_ADDR_ITER = 0
+
+
 def my_mac_selector():
     global MAC_ADDR_ITER
     MAC_ADDR_ITER += 1
@@ -340,7 +340,7 @@ def generate_v4_subnet(range_of_outer_scope, range_of_inner_scope, mac_selector,
                       "option-data": random.choices(optiondata4, k=6),
                       "client-class": "class-00-00",
                       "relay": {
-                          "ip-addresses": [ "172.100.0.200" ]
+                          "ip-addresses": ["172.100.0.200"]
                       },
                       "id": subnetid
                       }
@@ -386,7 +386,7 @@ def cmd():
     args = parser.parse_args()
 
     n = args.n
-    
+
     if n // 256 > 0:
         inner = 255
         outer = n // 256

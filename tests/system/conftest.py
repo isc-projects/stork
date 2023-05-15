@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 import shutil
 
-import pytest as _
+import pytest as _  # noqa: F401
 
 from core.fixtures import *
 from core.compose_factory import create_docker_compose
@@ -91,4 +91,3 @@ def pytest_collection_modifyitems(session, config, items):
             if not compose.is_enabled(service_name):
                 item.add_marker(skip)
                 break
-

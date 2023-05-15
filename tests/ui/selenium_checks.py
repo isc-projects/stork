@@ -39,7 +39,7 @@ def find_element(sel, element_type, element, number_of_tests=10):
                 return el
             else:
                 print("Element %s not defined" % element_type)
-        except:
+        except Exception:
             print('!!!! Iteration no. %d: Failed to find element "%s" by type: %s' % (i, element, element_type))
             time.sleep(1)
 
@@ -104,7 +104,7 @@ def close_all_popup_notifications(sel, text_message=None, counter_limit=10):
     while counter < counter_limit:
         try:
             close_icon = sel.find_element_by_class_name('ui-toast-close-icon')
-        except:
+        except Exception:
             # if there is no notification - break loop
             break
         if text_message is not None:
@@ -219,7 +219,7 @@ def find_and_check_tooltip(sel, tooltip_text, element_text=None, xpath=None, ele
         try:
             ActionChains(sel).move_to_element(element).perform()
             break
-        except:
+        except Exception:
             pass
     display_sleep(sel)
     if not use_in_refresh:

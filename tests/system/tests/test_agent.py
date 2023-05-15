@@ -95,4 +95,3 @@ def test_communication_with_kea_using_basic_auth(server_service: Server, kea_ser
     # Check communication
     leases = server_service.list_leases('192.0.2.1')
     assert leases['total'] == 1
-

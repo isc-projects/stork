@@ -9,7 +9,7 @@ def test_is_running():
     # Act & Assert
     assert state_running.is_running()
     assert not state_starting.is_running()
-    
+
 
 def test_has_healthcheck():
     # Arrange

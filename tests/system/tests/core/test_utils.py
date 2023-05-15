@@ -97,7 +97,7 @@ def test_wait_for_success_use_sleep_time():
     # Act
     try:
         f()
-    except:
+    except Exception:
         pass
 
     # Assert

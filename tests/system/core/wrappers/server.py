@@ -387,7 +387,7 @@ class Server(ComposeServiceWrapper):
         """
         Helper function to send requests in the transaction context. If the
         transaction is not submitted, it will be canceled automatically.
-        
+
         Parameters
         ----------
         on_begin: callable
@@ -692,6 +692,7 @@ class Server(ComposeServiceWrapper):
         self._api_client.call_api = original_call
         self._api_client.configuration.discard_unknown_keys = original_discard_unknown_types
         self._api_client.configuration.disabled_client_side_validations = original_validation_rules
+
 
 @contextmanager
 def _allow_nulls():

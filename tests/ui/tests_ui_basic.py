@@ -49,7 +49,9 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     find_element(selenium, 'id', "userpassword").send_keys(login * 2)
     find_element(selenium, 'id', "userpassword2").send_keys(login * 2)
     find_element(selenium, 'id', "usergroup").click()
-    find_element(selenium, 'xpath', '/html/body/app-root/app-users-page/div/div/div/div[2]/form/p-panel/div/div[2]/div/div/div[14]/div/div[1]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[3]/li').click()  # TODO extend stork to add ids there
+    find_element(selenium, 'xpath',
+                 '''/html/body/app-root/app-users-page/div/div/div/div[2]/form/p-panel/div/div[2]/div/div/div[14]/div/div[1]/p-dropdown/div/div[4]/div/ul/'''
+                 '''p-dropdownitem[3]/li''').click()  # TODO extend stork to add ids there
     display_sleep(selenium)
     find_element(selenium, 'id', 'save-button').click()
 
@@ -230,7 +232,8 @@ def test_add_new_machine(selenium, agent, server):
     find_element(selenium, 'id', 'host-reservations').click()
 
     check_help_text(selenium, 'this-page-help-button', 'help-for-this page',
-                    "This page displays a list of host reservations in the network. Kea can store host reservations in either a configuration file or a database. Reservations stored in a configuration file are retrieved continuously. Kea must have a ")
+                    '''This page displays a list of host reservations in the network. Kea can store host reservations in either a configuration file or a'''
+                    '''database. Reservations stored in a configuration file are retrieved continuously. Kea must have a ''')
 
     check_phrases(selenium, ["duid=01:02:03:04:05", "192.0.2.203", "192.0.2.0/24", "client-id=01:0a:0b:0c:0d:0e:0f",
                              "192.0.2.205", "192.0.2.0/24", "client-id=01:11:22:33:44:55:66", "192.0.2.202",
@@ -289,7 +292,7 @@ def test_add_new_machine(selenium, agent, server):
                              "flex-id=73:30:6d:45:56:61:4c:75:65", "192.0.2.206"])
 
     find_and_check_tooltip(selenium, "The server has this host specified in the configuration file.",
-                           xpath="/html/body/app-root/app-hosts-page/div/div[2]/p-table/div/div/table/tbody/tr[2]/td[6]/a/sup/span") #TODO dynamic ids!
+                           xpath="/html/body/app-root/app-hosts-page/div/div[2]/p-table/div/div/table/tbody/tr[2]/td[6]/a/sup/span")  # TODO dynamic ids!
 
     check_phrases(selenium, ["hw-address=00:01:02:03:04:05", "2001:db8:1::101", "duid=01:02:03:04:05:06:07:08:09:0a",
                              "2001:db8:2:abcd::/64", "foo.example.com",  # "2001:db8:1:0:cafe::1", "2001:db8:1:0:cafe::2" this is kea 1.8.0
@@ -297,7 +300,7 @@ def test_add_new_machine(selenium, agent, server):
                              "flex-id=73:6f:6d:65:76:61:6c:75:65", "2001:db8:1::/64"])
 
     find_and_check_tooltip(selenium, "The server has this host specified in the configuration file.",
-                           xpath="/html/body/app-root/app-hosts-page/div/div[2]/p-table/div/div/table/tbody/tr[10]/td[6]/a/sup/span") #TODO dynamic ids!
+                           xpath="/html/body/app-root/app-hosts-page/div/div[2]/p-table/div/div/table/tbody/tr[10]/td[6]/a/sup/span")  # TODO dynamic ids!
 
     # input 192 to hosts filter, v4 should be visible and v6 should not!
     hosts_field = find_element(selenium, 'id', "filter-hosts-text-field")
@@ -350,18 +353,21 @@ def test_add_new_machine(selenium, agent, server):
     # check ipv4
     protocol_drop_down_menu = find_element(selenium, 'id', "protocol-dropdown-menu")
     protocol_drop_down_menu.click()
-    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[2]/li").click() # TODO change those dropdown menus to generate ids
+    # TODO change those dropdown menus to generate ids
+    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[2]/li").click()
 
     check_phrases(selenium, ["192.0.2.0/24", "192.0.2.1-192.0.2.200"])
     check_phrases(selenium, ["2001:db8:1::/64", "2001:db8:1::-2001:db8:1::ffff:ffff:ffff"], expect=False)
     # check ipv6
     protocol_drop_down_menu.click()
-    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[3]/li").click()# TODO change those dropdown menus to generate ids
+    # TODO change those dropdown menus to generate ids
+    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[3]/li").click()
     check_phrases(selenium, ["192.0.2.0/24", "192.0.2.1-192.0.2.200"], expect=False)
     check_phrases(selenium, ["2001:db8:1::/64", "2001:db8:1::-2001:db8:1::ffff:ffff:ffff"])
     # check any
     protocol_drop_down_menu.click()
-    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[1]/li").click()# TODO change those dropdown menus to generate ids
+    # TODO change those dropdown menus to generate ids
+    find_element(selenium, 'xpath', "/html/body/app-root/app-subnets-page/div/div[1]/div[3]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[1]/li").click()
     check_phrases(selenium, ["192.0.2.0/24", "192.0.2.1-192.0.2.200",
                              "2001:db8:1::/64", "2001:db8:1::-2001:db8:1::ffff:ffff:ffff"])
 

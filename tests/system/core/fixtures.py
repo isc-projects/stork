@@ -19,7 +19,7 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False, 
 
     Parameters
     ----------
-    fixture_name : str  
+    fixture_name : str
         Name of the Pytest fixture
     service_name : str
         Name of docker-compose service

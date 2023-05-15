@@ -1,4 +1,3 @@
-from ast import parse
 import re
 import os.path
 

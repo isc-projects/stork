@@ -560,7 +560,13 @@ def test_get_service_state_with_health_dump():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, 'running<@;@>0<@;@>unhealthy<@;@>{"Status":"unhealthy","FailingStreak":0,"Log":[{"Start":"2022-11-17T11:58:42.751125837+01:00","End":"2022-11-17T11:58:42.814409318+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.076064297+01:00","End":"2022-11-17T11:58:43.137608828+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.399211966+01:00","End":"2022-11-17T11:58:43.466869471+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.719447396+01:00","End":"2022-11-17T11:58:43.779880777+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:44.032315268+01:00","End":"2022-11-17T11:58:44.102159649+01:00","ExitCode":0,"Output":""}]', "")
+    mock.return_value = (0,
+                         '''running<@;@>0<@;@>unhealthy<@;@>{"Status":"unhealthy","FailingStreak":0,"Log":[{"Start":"2022-11-17T11:58:42.751125837+01:00","E'''
+                         '''nd":"2022-11-17T11:58:42.814409318+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.076064297+01:00","End":"2022-1'''
+                         '''1-17T11:58:43.137608828+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.399211966+01:00","End":"2022-11-17T11:58:'''
+                         '''43.466869471+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.719447396+01:00","End":"2022-11-17T11:58:43.77988077'''
+                         '''7+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:44.032315268+01:00","End":"2022-11-17T11:58:44.102159649+01:00","E'''
+                         '''xitCode":0,"Output":""}]''', "")
     compose._call_command = mock
     # Act
     state = compose.get_service_state("service")

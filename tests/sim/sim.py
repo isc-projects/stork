@@ -6,7 +6,7 @@ import pprint
 import subprocess
 from xmlrpc.client import ServerProxy
 
-from flask import Flask, escape, request, send_from_directory
+from flask import Flask, request
 import requests
 
 app = None
@@ -297,7 +297,7 @@ def _get_services():
         s = ServerProxy('http://%s:9001/RPC2' % m['address'])
         try:
             services = s.supervisor.getAllProcessInfo()
-        except:
+        except Exception:
             continue
         pprint.pprint(services)
         for srv in services:
