@@ -658,6 +658,7 @@ file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
     sh GEM, "install",
             "--minimal-deps",
             "--no-document",
+            "--no-user-install",
             "--install-dir", ruby_tools_dir,
             "bundler:#{bundler_ver}"
 
