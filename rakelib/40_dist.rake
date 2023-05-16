@@ -96,9 +96,11 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
     sh "chmod", "644", agent_dist_system_service_file
     # Use the abolute path to the executable
     sh SED,
-        "-i", # Modify in place
+        "-i.tmp", # Modify in place
         sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex
         agent_dist_system_service_file # File to modify
+    # Remove the backup file created by sed.
+    sh "rm", "-f", agent_dist_system_service_file + ".tmp"
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
@@ -185,9 +187,11 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
     sh "chmod", "644", server_dist_system_service_file
     # Use the abolute path to the executable
     sh SED,
-        "-i", # Modify in place
+        "-i.tmp", # Modify in place
         sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex
         server_dist_system_service_file # File to modify
+    # Remove the backup file created by sed.
+    sh "rm", "-f", server_dist_system_service_file + ".tmp"
 end
 
 server_etc_files = FileList["etc/server.env"]
