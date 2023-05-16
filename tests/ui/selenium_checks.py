@@ -1,6 +1,5 @@
 import re
 import time
-from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.common.action_chains import ActionChains
 
 

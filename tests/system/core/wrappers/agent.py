@@ -4,7 +4,7 @@ from core.compose import DockerCompose
 from core.wrappers.base import ComposeServiceWrapper
 from core.wrappers.server import Server
 from core.utils import memoize, wait_for_success, NoSuccessException
-from core.prometheus_parser import text_fd_to_metric_families, Metric
+from core.prometheus_parser import text_fd_to_metric_families
 
 
 class Agent(ComposeServiceWrapper):

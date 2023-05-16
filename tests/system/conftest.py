@@ -4,9 +4,8 @@ import sys
 from pathlib import Path
 import shutil
 
-import pytest as _  # noqa: F401
+import pytest
 
-from core.fixtures import *
 from core.compose_factory import create_docker_compose
 
 # In case of xdist the output is hidden by default.

@@ -1,8 +1,5 @@
 import re
-from unittest.mock import patch, Mock
-
-import pytest
-
+from unittest.mock import patch
 import core.version
 
 

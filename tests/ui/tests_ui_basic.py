@@ -3,12 +3,11 @@ import random
 import string
 import time
 
-import containers
 from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from selenium_checks import check_phrases, find_and_check_tooltip, refresh_until_status_turn_green, display_sleep, stork_login, \
-    move_to_different_place, check_help_text, go_to_dashboard, add_stork_agent_machine, check_popup_notification, find_element
+    move_to_different_place, check_help_text, go_to_dashboard, check_popup_notification, find_element
 
 
 @pytest.mark.parametrize("agent, server", [('centos/7', 'centos/7')])
