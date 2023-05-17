@@ -75,4 +75,25 @@ describe('ProfilePageComponent', () => {
         expect(breadcrumbsComponent.items).toHaveSize(1)
         expect(breadcrumbsComponent.items[0].label).toEqual('User Profile')
     })
+
+    it('should display not-specified placeholder if the external ID is empty', () => {
+        const labels = fixture.debugElement.queryAll(By.css("div b"))
+        const externalIdLabels = labels.filter(l => (l.nativeElement as HTMLElement).textContent.includes("External ID"))
+        expect(externalIdLabels.length).toBe(1)
+        const externalIdLabel = externalIdLabels[0]
+        const externalIdValue = (externalIdLabel.nativeElement as HTMLElement).parentElement.nextElementSibling
+        expect(externalIdValue.textContent).toContain("(not specified)")
+    })
+
+    it('should display the value if the external ID is not empty', () => {
+        component.currentUser.externalId = "foobar"
+        fixture.detectChanges()
+
+        const labels = fixture.debugElement.queryAll(By.css("div b"))
+        const externalIdLabels = labels.filter(l => (l.nativeElement as HTMLElement).textContent.includes("External ID"))
+        expect(externalIdLabels.length).toBe(1)
+        const externalIdLabel = externalIdLabels[0]
+        const externalIdValue = (externalIdLabel.nativeElement as HTMLElement).parentElement.nextElementSibling
+        expect(externalIdValue.textContent).toContain("foobar")
+    })
 })
