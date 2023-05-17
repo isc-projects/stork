@@ -100,7 +100,7 @@ export class AuthService {
      * Convenience function checking if the current user was authenticated
      * using the credentials stored in the Stork database.
      *
-     * @returns true if the user has super-admin group.
+     * @returns true if the user was authenticated using the internal method.
      */
     isInternalUser(): boolean {
         return this.currentUserValue?.authenticationMethodId === 'internal'
