@@ -39,7 +39,7 @@ export class SettingsMenuComponent implements OnInit {
         if (this.auth.isInternalUser()) {
             // Only users authenticated using the credentials stored in the Stork
             // database can change the password using the Stork UI.
-            // ToDo: This button should always be available but the external
+            // TODO: This button should always be available but the external
             // users should be redirected to the external change password endpoint.
             this.items[0].items.push({
                 label: 'Change password',

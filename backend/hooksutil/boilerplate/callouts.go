@@ -1,6 +1,6 @@
 package main
 
-// ToDo: Import an callout specification (interface).
+// TODO: Import an callout specification (interface).
 // import (
 //	"isc.org/stork/hooks/server/[PROVIDE-ME]callouts"
 // )
@@ -10,13 +10,13 @@ type calloutCarrier struct{}
 
 // Closer interface implementation.
 func (c *calloutCarrier) Close() error {
-	// ToDo: Implement close method. You should clean all used resources here.
+	// TODO: Implement close method. You should clean all used resources here.
 	return nil
 }
 
 // Interface checks.
-// ToDo: Add an interface check below for all imported callout specifications.
+// TODO: Add an interface check below for all imported callout specifications.
 // var _ [PROVIDE-ME]callouts.[PROVIDE-ME]Callouts = (*calloutCarrier)(nil)
 
 // Interface implementations.
-// ToDo: Implement all imported interfaces.
+// TODO: Implement all imported interfaces.
