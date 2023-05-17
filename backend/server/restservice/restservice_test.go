@@ -125,7 +125,7 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	// Create directory structure.
-	_, _ = sb.Join("assets/authentications/default.png")
+	_, _ = sb.Join("assets/authentication-methods/default.png")
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -160,7 +160,7 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 2; i++ {
-		iconPath := path.Join(sb.BasePath, "assets", "authentications", fmt.Sprintf("mock-%d.png", i))
+		iconPath := path.Join(sb.BasePath, "assets", "authentication-methods", fmt.Sprintf("mock-%d.png", i))
 		require.FileExists(t, iconPath)
 		content, _ := os.ReadFile(iconPath)
 		require.EqualValues(t, fmt.Sprintf("mock-%d", i), string(content))

@@ -42,7 +42,7 @@ export default {
                 response: { date: '2023-03-03', version: '1.4.2' } as Version,
             },
             {
-                url: 'http://localhost/api/authentications',
+                url: 'http://localhost/api/authentication-methods',
                 method: 'GET',
                 status: 200,
                 delay: 2000,
@@ -109,7 +109,7 @@ const items: AuthenticationMethod[] = Array(40)
 ManyButtons.parameters = {
     mockData: [
         {
-            url: 'http://localhost/api/authentications',
+            url: 'http://localhost/api/authentication-methods',
             method: 'GET',
             status: 200,
             delay: 0,
@@ -126,7 +126,7 @@ export const SingleMethod = Template.bind({})
 SingleMethod.parameters = {
     mockData: [
         {
-            url: 'http://localhost/api/authentications',
+            url: 'http://localhost/api/authentication-methods',
             method: 'GET',
             status: 200,
             delay: 0,
@@ -151,7 +151,7 @@ export const FailedFetch = Template.bind({})
 FailedFetch.parameters = {
     mockData: [
         {
-            url: 'http://localhost/api/authentications',
+            url: 'http://localhost/api/authentication-methods',
             method: 'GET',
             status: 500,
             delay: 500,

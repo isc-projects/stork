@@ -189,7 +189,7 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /authentications:
+  /authentication-methods:
     get:
       summary: List the authentication methods.
       description: >-

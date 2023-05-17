@@ -280,7 +280,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 // Prepare a subdirectory in the static asset directory with the authentication
 // icons. The icons are retrivied from registered hooks.
 func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFilesDirectory string) error {
-	iconDirectory := path.Join(staticFilesDirectory, "assets", "authentications")
+	iconDirectory := path.Join(staticFilesDirectory, "assets", "authentication-methods")
 
 	var errs []error
 
