@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { User } from '../backend'
+import { Subscription } from 'rxjs'
 
 /**
  * This component is for displaying information about the user's account.
@@ -11,17 +12,22 @@ import { User } from '../backend'
     templateUrl: './profile-page.component.html',
     styleUrls: ['./profile-page.component.sass'],
 })
-export class ProfilePageComponent implements OnInit {
+export class ProfilePageComponent implements OnInit, OnDestroy {
     breadcrumbs = [{ label: 'User Profile' }]
 
     currentUser: User = null
     private groups: any[]
     public groupName: string
 
+    /**
+     * List of subscriptions created by the component.
+     */
+    private subscriptions = new Subscription()
+
     constructor(private auth: AuthService, private serverData: ServerDataService) {
-        this.auth.currentUser.subscribe((user) => {
+        this.subscriptions.add(this.auth.currentUser.subscribe((user) => {
             this.currentUser = user
-        })
+        }))
     }
 
     /**
@@ -37,6 +43,13 @@ export class ProfilePageComponent implements OnInit {
                 }
             }
         })
+    }
+
+    /**
+     * Unsubscribe the subscriptions.
+     */
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
     }
 
     /**

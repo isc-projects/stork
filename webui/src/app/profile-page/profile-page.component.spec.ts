@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ServicesService, UsersService } from '../backend'
+import { ServicesService, User, UsersService } from '../backend'
 import { ActivatedRoute, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
@@ -51,6 +51,15 @@ describe('ProfilePageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(ProfilePageComponent)
         component = fixture.componentInstance
+        component.currentUser = {
+            id: 1,
+            email: 'user@example.com',
+            login: 'foobar',
+            name: 'foo',
+            lastname: 'bar',
+            groups: [],
+            authenticationMethodId: 'internal',
+        } as User
         fixture.detectChanges()
     })
 
