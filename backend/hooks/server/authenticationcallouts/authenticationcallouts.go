@@ -9,7 +9,7 @@ import (
 // The metadata of the authentication method is used to display a selector on
 // the login page.
 type AuthenticationMetadata interface {
-	// Unique, fixed ID of the authentication method.
+	// Returns unique, fixed ID of the authentication method.
 	GetID() string
 	// Returns a name of the authentication method.
 	GetName() string
