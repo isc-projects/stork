@@ -106,11 +106,11 @@ class Server(ComposeServiceWrapper):
 
     # Authentication
 
-    def log_in(self, username: str, password: str, authentication_method='internal') -> User:
+    def log_in(self, username: str, password: str, authentication_method_id='internal') -> User:
         """Logs in a user. Returns the user info."""
         api_instance = UsersApi(self._api_client)
         user, _, headers = api_instance.create_session(credentials=dict(
-            identifier=username, secret=password, authentication_method=authentication_method
+            identifier=username, secret=password, authentication_method_id=authentication_method_id
         ), _return_http_data_only=False)
         session_cookie = headers["Set-Cookie"]
         self._api_client.cookie = session_cookie
@@ -270,11 +270,11 @@ class Server(ComposeServiceWrapper):
     # Create
 
     def create_user(self, login: str, email: str, name: str, lastname: str,
-                    groups: List[int], password: str, authentication_method: str) -> User:
+                    groups: List[int], password: str, authentication_method_id: str) -> User:
         """Creates the user account."""
         user = User(id=0, login=login, email=email, name=name,
                     lastname=lastname, groups=groups,
-                    authentication_method=authentication_method)
+                    authentication_method_id=authentication_method_id)
         account = UserAccount(user, password)
         api_instance = UsersApi(self._api_client)
         return api_instance.create_user(account=account)
