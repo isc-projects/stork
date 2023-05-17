@@ -62,8 +62,8 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-			-- We cannot drop the rows representing the external users
-			-- because it causes to drop the related data.
+			-- Drop the rows representing the external users.
+			DELETE FROM system_user WHERE system_user.auth_method != 'internal';
 
 			-- Drop the external ID column.
 			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_required_for_external_users;
@@ -71,14 +71,6 @@ func init() {
 			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_unique_idx;
 
 			ALTER TABLE system_user DROP COLUMN external_id;
-
-			-- Modify logins and emails of the external users to ensure they
-			-- are unique.
-			UPDATE system_user o
-			SET email = n.email || '.' || n.auth_method,
-				login = n.login || '_' || n.auth_method
-			FROM system_user n
-			WHERE o.id = n.id AND o.auth_method != 'internal';
 
 			-- Restore the original unique indexes.
 			ALTER TABLE system_user
