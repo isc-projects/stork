@@ -39,7 +39,7 @@ export class LoginScreenComponent implements OnInit, OnDestroy {
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
 
         this.loginForm = this.formBuilder.group({
-            authenticationMethod: ['', Validators.required],
+            authenticationMethodId: ['', Validators.required],
             identifier: ['', Validators.required],
             secret: ['', Validators.required],
         })

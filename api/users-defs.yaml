@@ -6,7 +6,7 @@
       - email
       - name
       - lastname
-      - authenticationMethod
+      - authenticationMethodId
     properties:
       id:
         type: integer
@@ -18,7 +18,7 @@
         type: string
       lastname:
         type: string
-      authenticationMethod:
+      authenticationMethodId:
         type: string
       externalId:
         type: string
@@ -89,11 +89,11 @@
   SessionCredentials:
     type: object
     required:
-      - authenticationMethod
+      - authenticationMethodId
       - identifier
       - secret
     properties:
-      authenticationMethod:
+      authenticationMethodId:
         description: Unique ID of the authentication method
         type: string
       identifier:

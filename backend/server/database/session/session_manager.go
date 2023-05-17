@@ -54,7 +54,7 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 	s.scsSessionMgr.Put(ctx, "userEmail", user.Email)
 	s.scsSessionMgr.Put(ctx, "userLastname", user.Lastname)
 	s.scsSessionMgr.Put(ctx, "userName", user.Name)
-	s.scsSessionMgr.Put(ctx, "authenticationMethod", user.AuthenticationMethod)
+	s.scsSessionMgr.Put(ctx, "authenticationMethodID", user.AuthenticationMethodID)
 
 	// If any user groups are associated with the user, store them
 	// as a list of comma separated values.
@@ -124,7 +124,7 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	user.Email = s.scsSessionMgr.GetString(ctx, "userEmail")
 	user.Lastname = s.scsSessionMgr.GetString(ctx, "userLastname")
 	user.Name = s.scsSessionMgr.GetString(ctx, "userName")
-	user.AuthenticationMethod = s.scsSessionMgr.GetString(ctx, "authenticationMethod")
+	user.AuthenticationMethodID = s.scsSessionMgr.GetString(ctx, "authenticationMethodID")
 
 	// Retrieve comma separated list of groups.
 	userGroups := s.scsSessionMgr.GetString(ctx, "userGroupIds")

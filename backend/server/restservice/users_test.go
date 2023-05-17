@@ -787,12 +787,12 @@ func TestGetUsers(t *testing.T) {
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
-		Email:                "jd@example.org",
-		Lastname:             "Doe",
-		Login:                "johndoe",
-		Name:                 "John",
-		AuthenticationMethod: "LDAP",
-		ExternalID:           "34ddae6b-f702-469d-8796-63c853496c49",
+		Email:                  "jd@example.org",
+		Lastname:               "Doe",
+		Login:                  "johndoe",
+		Name:                   "John",
+		AuthenticationMethodID: "LDAP",
+		ExternalID:             "34ddae6b-f702-469d-8796-63c853496c49",
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -831,7 +831,7 @@ func TestGetUsers(t *testing.T) {
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Name)
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Lastname)
 	require.Equal(t, "", *okRsp.Payload.Items[0].Email)
-	require.Equal(t, dbmodel.AuthenticationMethodInternal, *okRsp.Payload.Items[0].AuthenticationMethod)
+	require.Equal(t, dbmodel.AuthenticationMethodIDInternal, *okRsp.Payload.Items[0].AuthenticationMethodID)
 	require.Empty(t, okRsp.Payload.Items[0].ExternalID)
 
 	// Check the user we just added
@@ -839,7 +839,7 @@ func TestGetUsers(t *testing.T) {
 	require.Equal(t, "John", *okRsp.Payload.Items[1].Name)
 	require.Equal(t, "Doe", *okRsp.Payload.Items[1].Lastname)
 	require.Equal(t, "jd@example.org", *okRsp.Payload.Items[1].Email)
-	require.Equal(t, "LDAP", *okRsp.Payload.Items[1].AuthenticationMethod)
+	require.Equal(t, "LDAP", *okRsp.Payload.Items[1].AuthenticationMethodID)
 	require.Equal(t, "34ddae6b-f702-469d-8796-63c853496c49", okRsp.Payload.Items[1].ExternalID)
 
 	// Make sure the ID of the new user is different.
@@ -995,12 +995,12 @@ func TestDeleteSessionOfExternalUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	authenticationMethod := "external"
+	authenticationMethodID := "external"
 
 	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().
 		GetID().
-		Return(authenticationMethod)
+		Return(authenticationMethodID)
 
 	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
@@ -1018,8 +1018,8 @@ func TestDeleteSessionOfExternalUser(t *testing.T) {
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
 	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
-		ID:                   42,
-		AuthenticationMethod: authenticationMethod,
+		ID:                     42,
+		AuthenticationMethodID: authenticationMethodID,
 	})
 
 	// Act
@@ -1041,12 +1041,12 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 
 	identifier := "foo@example.com"
 	secret := "secret"
-	authenticationMethod := "external"
+	authenticationMethodID := "external"
 
 	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().
 		GetID().
-		Return(authenticationMethod)
+		Return(authenticationMethodID)
 
 	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
@@ -1072,9 +1072,9 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	// Act
 	params := users.CreateSessionParams{
 		Credentials: &models.SessionCredentials{
-			Identifier:           &identifier,
-			Secret:               &secret,
-			AuthenticationMethod: &authenticationMethod,
+			Identifier:             &identifier,
+			Secret:                 &secret,
+			AuthenticationMethodID: &authenticationMethodID,
 		},
 	}
 	rsp := rapi.CreateSession(ctx, params)

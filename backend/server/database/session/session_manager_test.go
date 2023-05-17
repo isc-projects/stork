@@ -37,12 +37,12 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 	// Create user to be logged to the system.
 	user := &dbmodel.SystemUser{
-		ID:                   1,
-		Login:                "johnw",
-		Email:                "johnw@example.org",
-		Lastname:             "White",
-		Name:                 "John C",
-		AuthenticationMethod: dbmodel.AuthenticationMethodInternal,
+		ID:                     1,
+		Login:                  "johnw",
+		Email:                  "johnw@example.org",
+		Lastname:               "White",
+		Name:                   "John C",
+		AuthenticationMethodID: dbmodel.AuthenticationMethodIDInternal,
 
 		Groups: []*dbmodel.SystemGroup{
 			{
@@ -73,7 +73,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 		require.Equal(t, user.Email, userSession.Email)
 		require.Equal(t, user.Lastname, userSession.Lastname)
 		require.Equal(t, user.Name, userSession.Name)
-		require.Equal(t, user.AuthenticationMethod, userSession.AuthenticationMethod)
+		require.Equal(t, user.AuthenticationMethodID, userSession.AuthenticationMethodID)
 
 		require.Len(t, userSession.Groups, 2)
 		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))

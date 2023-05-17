@@ -18,17 +18,17 @@ func init() {
 
 // The authentication method ID of the internal authentication method (email
 // and password stored in the database).
-const AuthenticationMethodInternal string = "internal"
+const AuthenticationMethodIDInternal string = "internal"
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
-	ID                   int
-	Login                string
-	Email                string
-	Lastname             string
-	Name                 string
-	AuthenticationMethod string `pg:"auth_method"`
-	ExternalID           string
+	ID                     int
+	Login                  string
+	Email                  string
+	Lastname               string
+	Name                   string
+	AuthenticationMethodID string `pg:"auth_method"`
+	ExternalID             string
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
@@ -330,12 +330,12 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 // Fetches the internal database ID of the user using the authentication method
 // and the external user ID. Returns zero and no error if the user doesn't
 // exist.
-func GetUserByExternalID(db *dbops.PgDB, authenticationMethod, externalID string) (*SystemUser, error) {
+func GetUserByExternalID(db *dbops.PgDB, authenticationMethodID, externalID string) (*SystemUser, error) {
 	user := &SystemUser{}
 	err := db.Model(user).
 		Relation("Groups").
 		Column("id").
-		Where("auth_method = ?", authenticationMethod).
+		Where("auth_method = ?", authenticationMethodID).
 		Where("external_id = ?", externalID).
 		Select()
 	if errors.Is(err, pg.ErrNoRows) {
@@ -344,7 +344,7 @@ func GetUserByExternalID(db *dbops.PgDB, authenticationMethod, externalID string
 	err = pkgerrors.Wrapf(
 		err,
 		"problem fetching profile of the user authorized by %s with %s ID",
-		authenticationMethod,
+		authenticationMethodID,
 		externalID,
 	)
 	return user, err

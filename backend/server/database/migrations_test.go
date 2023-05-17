@@ -295,12 +295,12 @@ func TestMigration53PreserveExternalAccounts(t *testing.T) {
 	_, _ = dbmodel.CreateUserWithPassword(db, internalUser, "foo")
 
 	externalUser := &dbmodel.SystemUser{
-		Login:                "foo",
-		Email:                "foo@example.com",
-		Name:                 "Foo",
-		Lastname:             "Oof",
-		AuthenticationMethod: "bar",
-		ExternalID:           "foo",
+		Login:                  "foo",
+		Email:                  "foo@example.com",
+		Name:                   "Foo",
+		Lastname:               "Oof",
+		AuthenticationMethodID: "bar",
+		ExternalID:             "foo",
 	}
 
 	_, _ = dbmodel.CreateUser(db, externalUser)

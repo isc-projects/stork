@@ -121,17 +121,17 @@ func TestUpdateUserFixedMembers(t *testing.T) {
 	defer teardown()
 
 	user := &SystemUser{
-		Email:                "foo@bar",
-		Lastname:             "Bar",
-		Name:                 "Foo",
-		AuthenticationMethod: "foo",
-		ExternalID:           "foo",
+		Email:                  "foo@bar",
+		Lastname:               "Bar",
+		Name:                   "Foo",
+		AuthenticationMethodID: "foo",
+		ExternalID:             "foo",
 	}
 
 	_, _ = CreateUser(db, user)
 
 	// Act
-	user.AuthenticationMethod = "bar"
+	user.AuthenticationMethodID = "bar"
 	user.ExternalID = "bar"
 	conflict, err := UpdateUser(db, user)
 
@@ -139,7 +139,7 @@ func TestUpdateUserFixedMembers(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, conflict)
 	user, _ = GetUserByID(db, user.ID)
-	require.EqualValues(t, "foo", user.AuthenticationMethod)
+	require.EqualValues(t, "foo", user.AuthenticationMethodID)
 	require.EqualValues(t, "foo", user.ExternalID)
 }
 
@@ -169,7 +169,7 @@ func TestCreateUser(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
-	require.EqualValues(t, "internal", dbUser.AuthenticationMethod)
+	require.EqualValues(t, "internal", dbUser.AuthenticationMethodID)
 	// Check if there is no password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -203,7 +203,7 @@ func TestCreateUserWithPassword(t *testing.T) {
 	require.EqualValues(t, "foo@bar.org", dbUser.Email)
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
-	require.EqualValues(t, "internal", dbUser.AuthenticationMethod)
+	require.EqualValues(t, "internal", dbUser.AuthenticationMethodID)
 	// Check if there is a password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -285,20 +285,20 @@ func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testin
 
 	// Act
 	_, errLogin := CreateUser(db, &SystemUser{
-		Login:                "same",
-		Email:                "unique",
-		AuthenticationMethod: "foo",
-		ExternalID:           "ex-id-1",
-		Name:                 "n-login",
-		Lastname:             "l-login",
+		Login:                  "same",
+		Email:                  "unique",
+		AuthenticationMethodID: "foo",
+		ExternalID:             "ex-id-1",
+		Name:                   "n-login",
+		Lastname:               "l-login",
 	})
 	_, errEmail := CreateUser(db, &SystemUser{
-		Login:                "unique",
-		Email:                "same",
-		AuthenticationMethod: "foo",
-		ExternalID:           "ex-id-2",
-		Name:                 "n-email",
-		Lastname:             "l-email",
+		Login:                  "unique",
+		Email:                  "same",
+		AuthenticationMethodID: "foo",
+		ExternalID:             "ex-id-2",
+		Name:                   "n-email",
+		Lastname:               "l-email",
 	})
 
 	// Assert
@@ -634,13 +634,13 @@ func TestGetUserIDByExternalID(t *testing.T) {
 	defer teardown()
 
 	user := &SystemUser{
-		Login:                "login",
-		Email:                "email@example.com",
-		Lastname:             "Last",
-		Name:                 "Name",
-		AuthenticationMethod: "method",
-		ExternalID:           "externalID",
-		Groups:               []*SystemGroup{{ID: SuperAdminGroupID}},
+		Login:                  "login",
+		Email:                  "email@example.com",
+		Lastname:               "Last",
+		Name:                   "Name",
+		AuthenticationMethodID: "method",
+		ExternalID:             "externalID",
+		Groups:                 []*SystemGroup{{ID: SuperAdminGroupID}},
 	}
 
 	_, _ = CreateUser(db, user)

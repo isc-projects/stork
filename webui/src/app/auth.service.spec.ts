@@ -32,7 +32,7 @@ describe('AuthService', () => {
     it('should indicate that the user is internal if it uses the internal authentication', () => {
         const service: AuthService = TestBed.inject(AuthService)
         spyOnProperty(service, 'currentUserValue').and.returnValue({
-            authenticationMethod: 'internal',
+            authenticationMethodId: 'internal',
         } as User)
         expect(service.isInternalUser()).toBeTrue()
     })
@@ -40,7 +40,7 @@ describe('AuthService', () => {
     it('should indicate that the user is not internal if it uses the external authentication', () => {
         const service: AuthService = TestBed.inject(AuthService)
         spyOnProperty(service, 'currentUserValue').and.returnValue({
-            authenticationMethod: 'external',
+            authenticationMethodId: 'external',
         } as User)
         expect(service.isInternalUser()).toBeFalse()
     })

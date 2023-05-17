@@ -41,12 +41,12 @@ export class AuthService {
      *
      * @param identifier Specified identifier (e.g., user name).
      * @param secret Specified secret (e.g., password).
-     * @param authenticationMethod Specified authentication method ID.
+     * @param authenticationMethodId Specified authentication method ID.
      * @param returnUrl URL to return to after successful login.
      */
-    login(authenticationMethod: string, identifier: string, secret: string, returnUrl: string) {
+    login(authenticationMethodId: string, identifier: string, secret: string, returnUrl: string) {
         let user: User
-        const credentials: SessionCredentials = { authenticationMethod, identifier, secret }
+        const credentials: SessionCredentials = { authenticationMethodId, identifier, secret }
         this.api.createSession(credentials).subscribe(
             (user) => {
                 if (user.id != null) {
@@ -103,7 +103,7 @@ export class AuthService {
      * @returns true if the user has super-admin group.
      */
     isInternalUser(): boolean {
-        return this.currentUserValue?.authenticationMethod === 'internal'
+        return this.currentUserValue?.authenticationMethodId === 'internal'
     }
 
     /**

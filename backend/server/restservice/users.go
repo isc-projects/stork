@@ -21,14 +21,14 @@ import (
 func newRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.ID)
 	r := &models.User{
-		Email:                &u.Email,
-		Name:                 &u.Name,
-		ID:                   &id,
-		Lastname:             &u.Lastname,
-		Login:                &u.Login,
-		Groups:               []int64{},
-		AuthenticationMethod: &u.AuthenticationMethod,
-		ExternalID:           u.ExternalID,
+		Email:                  &u.Email,
+		Name:                   &u.Name,
+		ID:                     &id,
+		Lastname:               &u.Lastname,
+		Login:                  &u.Login,
+		AuthenticationMethodID: &u.AuthenticationMethodID,
+		ExternalID:             u.ExternalID,
+		Groups:                 []int64{},
 	}
 
 	// Append an array of groups.
@@ -86,7 +86,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	calloutUser, err := r.HookManager.Authenticate(
 		ctx,
 		params.HTTPRequest,
-		*params.Credentials.AuthenticationMethod,
+		*params.Credentials.AuthenticationMethodID,
 		params.Credentials.Identifier,
 		params.Credentials.Secret,
 	)
@@ -103,13 +103,13 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	}
 
 	systemUser := &dbmodel.SystemUser{
-		Login:                calloutUser.Login,
-		Email:                calloutUser.Email,
-		Lastname:             calloutUser.Lastname,
-		Name:                 calloutUser.Name,
-		Groups:               groups,
-		AuthenticationMethod: *params.Credentials.AuthenticationMethod,
-		ExternalID:           calloutUser.ID,
+		Login:                  calloutUser.Login,
+		Email:                  calloutUser.Email,
+		Lastname:               calloutUser.Lastname,
+		Name:                   calloutUser.Name,
+		Groups:                 groups,
+		AuthenticationMethodID: *params.Credentials.AuthenticationMethodID,
+		ExternalID:             calloutUser.ID,
 	}
 
 	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
@@ -117,7 +117,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		var dbUser *dbmodel.SystemUser
 		dbUser, err = dbmodel.GetUserByExternalID(
 			r.DB,
-			*params.Credentials.AuthenticationMethod,
+			*params.Credentials.AuthenticationMethodID,
 			calloutUser.ID,
 		)
 		if err != nil {
@@ -148,13 +148,13 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 	// Extract the authentication method and normalize the value.
 	var authenticationMethod string
-	if params.Credentials.AuthenticationMethod == nil || *params.Credentials.AuthenticationMethod == "" {
-		authenticationMethod = dbmodel.AuthenticationMethodInternal
+	if params.Credentials.AuthenticationMethodID == nil || *params.Credentials.AuthenticationMethodID == "" {
+		authenticationMethod = dbmodel.AuthenticationMethodIDInternal
 	} else {
-		authenticationMethod = *params.Credentials.AuthenticationMethod
+		authenticationMethod = *params.Credentials.AuthenticationMethodID
 	}
 
-	if authenticationMethod == dbmodel.AuthenticationMethodInternal {
+	if authenticationMethod == dbmodel.AuthenticationMethodIDInternal {
 		systemUser, err = r.internalAuthentication(params)
 	} else {
 		systemUser, err = r.externalAuthentication(ctx, params)
@@ -195,7 +195,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 		return users.NewDeleteSessionBadRequest()
 	}
 
-	_ = r.HookManager.Unauthenticate(ctx, user.AuthenticationMethod)
+	_ = r.HookManager.Unauthenticate(ctx, user.AuthenticationMethodID)
 	return users.NewDeleteSessionOK()
 }
 

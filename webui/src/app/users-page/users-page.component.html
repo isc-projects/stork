@@ -136,7 +136,7 @@
                     <div class="grid">
                         <div class="col-2">Authentication:</div>
                         <div class="col-10">
-                            {{ userTab.user.authenticationMethod }}
+                            {{ userTab.user.authenticationMethodId }}
                         </div>
                     </div>
                 </div>
@@ -209,7 +209,7 @@
                         *ngIf="!isInternalUser"
                         severity="info"
                         text="The external authorization service '{{
-                            userTab.user.authenticationMethod
+                            userTab.user.authenticationMethodId
                         }}' manages this user 
                             profile. It can be only modified via the administrator panel of the authentication service."
                     >

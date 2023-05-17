@@ -452,7 +452,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             name: this.userForm.controls.userFirst.value,
             lastname: this.userForm.controls.userLast.value,
             groups: [this.userForm.controls.userGroup.value.id],
-            authenticationMethod: '',
+            authenticationMethodId: '',
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
@@ -491,7 +491,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             name: this.userForm.controls.userFirst.value,
             lastname: this.userForm.controls.userLast.value,
             groups: [this.userForm.controls.userGroup.value.id],
-            authenticationMethod: '',
+            authenticationMethodId: '',
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
@@ -588,9 +588,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * authentication service
      */
     get isInternalUser() {
-        const authenticationMethod = this.userTab.user?.authenticationMethod
+        const authenticationMethodId = this.userTab.user?.authenticationMethodId
         // Empty or null or internal.
-        return !authenticationMethod || authenticationMethod === 'internal'
+        return !authenticationMethodId || authenticationMethodId === 'internal'
     }
 
     /**
