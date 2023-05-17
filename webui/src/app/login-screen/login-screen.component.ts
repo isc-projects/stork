@@ -1,9 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
-import { HttpResponse } from '@angular/common/http'
-
-import { ButtonModule } from 'primeng/button'
 
 import { GeneralService } from '../backend/api/api'
 import { AuthenticationMethod } from '../backend/model/authenticationMethod'
@@ -15,12 +12,30 @@ import { Subscription } from 'rxjs'
     templateUrl: './login-screen.component.html',
     styleUrls: ['./login-screen.component.sass'],
 })
-export class LoginScreenComponent implements OnInit, OnDestroy {
-    private subscriptions = new Subscription()
+export class LoginScreenComponent implements OnInit {
+    /**
+     * Stork version.
+     */
     version = 'not available'
+
+    /**
+     * The URL address redirected from.
+     */
     returnUrl: string
+
+    /**
+     * Object representing the login form.
+     */
     loginForm: UntypedFormGroup
+
+    /**
+     * List of available authentication methods.
+     */
     authenticationMethods: AuthenticationMethod[]
+
+    /**
+     * Selected authentication method.
+     */
     authenticationMethod: AuthenticationMethod
 
     constructor(
@@ -31,69 +46,92 @@ export class LoginScreenComponent implements OnInit, OnDestroy {
         private formBuilder: UntypedFormBuilder
     ) {}
 
+    /**
+     * Fetches the version and authentication methods, and initializes the
+     * login form.
+     *
+     * If the current URL is logout, immediately performs the log out operation.
+     */
     ngOnInit() {
         if (this.router.url === '/logout') {
             this.signOut()
         }
 
+        // Set the return URL.
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
 
+        // Initialize the login form controls.
         this.loginForm = this.formBuilder.group({
             authenticationMethodId: ['', Validators.required],
             identifier: ['', Validators.required],
             secret: ['', Validators.required],
         })
 
-        this.subscriptions.add(
-            this.api.getVersion().subscribe(
-                (data) => {
-                    console.info(data)
-                    this.version = data.version
-                },
-                (error) => {
-                    console.log(error)
-                }
-            )
-        )
+        // Fetch version.
+        this.api
+            .getVersion()
+            .toPromise()
+            .then((data) => {
+                this.version = data.version
+            })
+            .catch((error) => {
+                console.log(error)
+            })
 
-        this.subscriptions.add(
-            this.auth.getAuthenticationMethods().subscribe((methods) => {
+        // Fetch authentication methods.
+        this.auth
+            .getAuthenticationMethods()
+            .toPromise()
+            .then((methods) => {
                 this.authenticationMethods = methods
                 this.authenticationMethod = methods[0]
             })
-        )
     }
 
+    /**
+     * Callback called when the authentication method icon is missing.
+     * It hides the icon to prevent displaying an ugly placeholder.
+     * The target element is the image (<img>) element.
+     *
+     * @param ev A loading event.
+     */
     onMissingIcon(ev: Event) {
         const targetElement = ev.target as HTMLElement
         targetElement.classList.add('hidden')
     }
 
-    ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
-    }
-
+    /**
+     * Shorthand to get the login form controls.
+     */
     get f() {
         return this.loginForm.controls
     }
 
+    /**
+     * Performs a login operation.
+     */
     signIn() {
-        this.performLogin()
+        this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
+        this.router.navigate([this.returnUrl])
     }
 
+    /**
+     * Performs a log out operation.
+     * It redirect a user to the login form.
+     */
     signOut() {
         this.auth.logout()
         this.router.navigate(['/login'])
     }
 
+    /**
+     * Callback called on the key pressing.
+     * It triggers the login operation if the Enter key is pressed.
+     * @param event
+     */
     keyUp(event) {
         if (event.key === 'Enter') {
-            this.performLogin()
+            this.signIn()
         }
-    }
-
-    private performLogin() {
-        this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
-        this.router.navigate([this.returnUrl])
     }
 }
