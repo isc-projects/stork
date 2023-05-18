@@ -112,14 +112,14 @@ task :systemtest => [PYTEST, DOCKER_COMPOSE, open_api_generator_python_dir, *vol
     #
     # Full warning message:
     #
-    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:40: DeprecationWarning: HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTResponse.headers.get(name, default).
+    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:40: DeprecationWarning: HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTPResponse.headers.get(name, default).
     #    return self.urllib3_response.getheader(name, default)
     #
     #  tests/test_bind9.py::test_bind9
-    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:36: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTResponse.headers directly.
+    #  /home/deep/Projects/stork/tests/system/openapi_client/rest.py:36: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
     #    return self.urllib3_response.getheaders()
-    opts.append "-W", "ignore:HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTResponse.headers directly.:DeprecationWarning:openapi_client.rest"
-    opts.append "-W", "ignore:HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTResponse.headers.get(name, default).:DeprecationWarning:openapi_client.rest"
+    opts.append "-W", "ignore:HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.:DeprecationWarning:openapi_client.rest"
+    opts.append "-W", "ignore:HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTPResponse.headers.get(name, default).:DeprecationWarning:openapi_client.rest"
 
     Dir.chdir(system_tests_dir) do
         sh PYTEST, "-s", *opts
