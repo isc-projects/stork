@@ -207,6 +207,16 @@ ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
+# Web UI container on Apache
+FROM httpd:2.4 AS webui-apache
+COPY --from=webui-builder /app/dist/server/ /
+COPY etc/httpd-stork.conf /usr/local/apache2/conf/httpd.conf
+ENV API_HOST localhost
+ENV API_PORT 8080
+ENV LISTEN_PORT 81
+EXPOSE 81
+HEALTHCHECK CMD ["curl", "--fail", "http://localhost:81"]
+
 #################################
 ### Kea / Bind9 + Stork Agent ###
 #################################

@@ -53,6 +53,24 @@ services:
     depends_on:
       - server
 
+  webui-apache:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: webui-apache
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/webui-apache:latest"
+    networks:
+      - storknet
+    ports:
+      - "8070:81"
+    environment:
+      API_HOST: server
+      API_PORT: 8080
+      LISTEN_PORT: 81
+    depends_on:
+      - server
+
   agent-kea:
     restart: always
     build:
