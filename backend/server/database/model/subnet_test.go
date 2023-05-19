@@ -173,8 +173,7 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	}
 }
 
-// Test getting a subnet with its shared network and associations with a
-// daemon.
+// Test getting a subnet with its shared network and daemon associations.
 func TestGetSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
