@@ -63,11 +63,11 @@ services:
     networks:
       - storknet
     ports:
-      - "8070:81"
+      - "8081:81"
+      - "8082:82"
     environment:
       API_HOST: server
       API_PORT: 8080
-      LISTEN_PORT: 81
     depends_on:
       - server
 

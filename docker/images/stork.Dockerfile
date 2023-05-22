@@ -213,8 +213,8 @@ COPY --from=webui-builder /app/dist/server/ /
 COPY etc/httpd-stork.conf /usr/local/apache2/conf/httpd.conf
 ENV API_HOST localhost
 ENV API_PORT 8080
-ENV LISTEN_PORT 81
 EXPOSE 81
+EXPOSE 82
 HEALTHCHECK CMD ["curl", "--fail", "http://localhost:81"]
 
 #################################
