@@ -279,7 +279,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				}
 				convertedOptions = append(convertedOptions, *convertedOption)
 			}
-			localSubnet.KeaConfigSubnetParameters.GlobalParameters.OptionsHash = storkutil.Fnv128(fmt.Sprintf("%+v", convertedOptions))
+			localSubnet.KeaConfigSubnetParameters.GlobalParameters.OptionsHash = storkutil.Fnv128AnyValue(convertedOptions)
 			localSubnet.KeaConfigSubnetParameters.GlobalParameters.Options = r.unflattenDHCPOptions(convertedOptions, "", 0)
 		}
 		subnet.LocalSubnets = append(subnet.LocalSubnets, localSubnet)
