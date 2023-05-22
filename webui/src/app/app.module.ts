@@ -54,6 +54,7 @@ import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './
 
 // Stork modules
 import { environment } from './../environments/environment'
+import { getBaseApiPath } from "./utils"
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { AuthInterceptor } from './auth-interceptor'
@@ -253,7 +254,7 @@ export function cfgFactory() {
         },
         {
             provide: BASE_PATH,
-            useValue: environment.apiUrl,
+            useValue: getBaseApiPath(environment.apiUrl),
         },
         ConfirmationService,
         MessageService,
