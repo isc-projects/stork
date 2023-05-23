@@ -208,3 +208,90 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	// Assert
 	require.ErrorContains(t, err, "cannot open the icon file to write")
 }
+
+// Test that the empty base URL leaves the existing value.
+func TestSetBaseUrlEmpty(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
+	directory := path.Dir(filepath)
+
+	// Act
+	err := setBaseUrlInIndexFile("", directory)
+
+	// Assert
+	require.NoError(t, err)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/foo/">`, string(content))
+}
+
+// Test that the base HTML tag with close slash is supported.
+func TestSetBaseUrlTagWithCloseSlash(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/"/>`)
+	directory := path.Dir(filepath)
+
+	// Act
+	err := setBaseUrlInIndexFile("/bar/", directory)
+
+	// Assert
+	require.NoError(t, err)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/bar/"/>`, string(content))
+}
+
+// Test that the base HTML tag without close slash is supported.
+func TestSetBaseUrlTagWithoutCloseSlash(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
+	directory := path.Dir(filepath)
+
+	// Act
+	err := setBaseUrlInIndexFile("/bar/", directory)
+
+	// Assert
+	require.NoError(t, err)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/bar/">`, string(content))
+}
+
+// Test that the base HTML tag with space before closing curly bracket is
+// supported.
+func TestSetBaseUrlSpaceBeforeCurlyBracket(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/" >`)
+	directory := path.Dir(filepath)
+
+	// Act
+	err := setBaseUrlInIndexFile("/bar/", directory)
+
+	// Assert
+	require.NoError(t, err)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/bar/" >`, string(content))
+}
+
+// Test that the leading slash is required.
+func TestSetBaseUrlRequiredLeadingSlash(t *testing.T) {
+	// Arrange & Act
+	err := setBaseUrlInIndexFile("bar/", "")
+
+	// Assert
+	require.ErrorContains(t, err, "must start with slash")
+}
+
+// Test that the trailing slash is required.
+func TestSetBaseUrlRequiredTrailingSlash(t *testing.T) {
+	// Arrange & Act
+	err := setBaseUrlInIndexFile("/bar", "")
+
+	// Assert
+	require.ErrorContains(t, err, "must end with slash")
+}

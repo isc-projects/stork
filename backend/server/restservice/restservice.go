@@ -5,13 +5,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime/flagext"
@@ -56,6 +59,7 @@ type RestAPISettings struct {
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
+	BaseUrl        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base url" default:"/" env:"STORK_REST_BASE_URL"`
 }
 
 // Runtime information and settings for RestAPI service.
@@ -308,6 +312,56 @@ func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFile
 	return storkutil.CombineErrors("preparing authentication icons failed", errs)
 }
 
+// Sets up the base URL in the UI files. It modifies the <base> HTML tag value
+// in the index.html file. The base URL is necessary to fetch the assets,
+// scripts, and stylesheets and make calls to API, so it must be appropriately
+// set before loading UI. It means it cannot be dynamically fetched from the
+// backend. The frontend part doesn't have its own configuration that may store
+// this value. So it must be set in the general server configuration file or
+// using server flags. Before loading the web application, there is no way to
+// pass the value from the backend to the frontend (we cannot use HTTP headers
+// because they are available in Javascript only for dynamic AJAX calls; we
+// cannot pass it as a static JSON or JS script because it requires the valid
+// resource path that is unknown without base URL; the environment variables
+// are not available due the frontend executes on user machine). This function
+// alters the HTML index file and modifies the <base> HTML tag to set the
+// proper path.
+// If the configuration does not provide the base URL, it leaves the default
+// value ('/').
+// The base URL must have leading and trailing slashes.
+func setBaseUrlInIndexFile(baseUrl, staticFilesDir string) error {
+	// Leave the existing value if the base URL is empty.
+	if baseUrl == "" {
+		return nil
+	}
+
+	// Validate base URL.
+	if !strings.HasPrefix(baseUrl, "/") {
+		return fmt.Errorf("Base URL must start with slash, got: %s", baseUrl)
+	}
+	if !strings.HasSuffix(baseUrl, "/") {
+		return fmt.Errorf("Base URL must end with slash, got: %s", baseUrl)
+	}
+
+	// Angular builder (ng) strips the closing slash and space but I'm afraid
+	// it is a version or configuration specific, so I make them optional.
+	baseHrefPattern := regexp.MustCompile(`<base href=".*"(/?\s*)>`)
+	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$1>`, baseUrl)
+
+	// Edit the index file.
+	indexFilePath := path.Join(staticFilesDir, "index.html")
+	indexFileContent, err := os.ReadFile(indexFilePath)
+	if err != nil {
+		return pkgerrors.Wrapf(err, "cannot read the '%s' file content", indexFilePath)
+	}
+	indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
+	err = os.WriteFile(indexFilePath, indexFileContent, 0)
+	if err != nil {
+		return pkgerrors.Wrapf(err, "cannot write the '%s' file content", indexFilePath)
+	}
+	return nil
+}
+
 // Serve the API.
 func (r *RestAPI) Serve() (err error) {
 	if r.Settings.StaticFilesDir == "" {
@@ -319,6 +373,11 @@ func (r *RestAPI) Serve() (err error) {
 		} else {
 			r.Settings.StaticFilesDir = devPath
 		}
+	}
+
+	// Modify the base URL in the index file.
+	if err = setBaseUrlInIndexFile(r.Settings.BaseUrl, r.Settings.StaticFilesDir); err != nil {
+		return err
 	}
 
 	err = prepareAuthenticationIcons(r.HookManager, r.Settings.StaticFilesDir)

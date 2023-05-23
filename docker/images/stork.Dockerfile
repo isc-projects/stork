@@ -215,6 +215,7 @@ ENV API_HOST localhost
 ENV API_PORT 8080
 EXPOSE 81
 EXPOSE 82
+RUN sed -i 's/<base href="\/">/<base href="\/stork\/">/g' /usr/share/stork/www/index.html
 HEALTHCHECK CMD ["curl", "--fail", "http://localhost:81"]
 
 #################################

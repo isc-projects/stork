@@ -141,6 +141,9 @@ Arguments
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
 
+``--base-url``
+   The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base url. The default is ``/``. ``[$STORK_REST_BASE_URL]``
+
 Note that there is no argument for the database password, as the command-line arguments can sometimes be seen
 by other users. It can be passed using the ``STORK_DATABASE_PASSWORD`` variable.
 
