@@ -464,22 +464,22 @@ export function formatShortExcludedPrefix(prefix: string, excludedPrefix: string
 // rebuilding the application.
 export function getBaseApiPath(apiUrl: string) {
     // Check if the API path is not relative to root.
-    if (apiUrl.includes("://")) {
+    if (apiUrl.includes('://')) {
         // Contains protocol.
         return apiUrl
     }
 
-    const baseElements = document.getElementsByTagName("base")
+    const baseElements = document.getElementsByTagName('base')
     if (baseElements.length === 0) {
         return apiUrl
     }
 
     let baseHref = baseElements[0].href
-    if (baseHref.endsWith("/")) {
+    if (baseHref.endsWith('/')) {
         baseHref = baseHref.slice(0, -1)
     }
-    if (apiUrl.startsWith("/")) {
+    if (apiUrl.startsWith('/')) {
         apiUrl = apiUrl.slice(1)
     }
-    return baseHref + "/" + apiUrl
+    return baseHref + '/' + apiUrl
 }

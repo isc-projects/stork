@@ -210,7 +210,7 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 }
 
 // Test that the empty base URL leaves the existing value.
-func TestSetBaseUrlEmpty(t *testing.T) {
+func TestSetBaseURLEmpty(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -218,7 +218,7 @@ func TestSetBaseUrlEmpty(t *testing.T) {
 	directory := path.Dir(filepath)
 
 	// Act
-	err := setBaseUrlInIndexFile("", directory)
+	err := setBaseURLInIndexFile("", directory)
 
 	// Assert
 	require.NoError(t, err)
@@ -227,7 +227,7 @@ func TestSetBaseUrlEmpty(t *testing.T) {
 }
 
 // Test that the base HTML tag with close slash is supported.
-func TestSetBaseUrlTagWithCloseSlash(t *testing.T) {
+func TestSetBaseURLTagWithCloseSlash(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -235,7 +235,7 @@ func TestSetBaseUrlTagWithCloseSlash(t *testing.T) {
 	directory := path.Dir(filepath)
 
 	// Act
-	err := setBaseUrlInIndexFile("/bar/", directory)
+	err := setBaseURLInIndexFile("/bar/", directory)
 
 	// Assert
 	require.NoError(t, err)
@@ -244,7 +244,7 @@ func TestSetBaseUrlTagWithCloseSlash(t *testing.T) {
 }
 
 // Test that the base HTML tag without close slash is supported.
-func TestSetBaseUrlTagWithoutCloseSlash(t *testing.T) {
+func TestSetBaseURLTagWithoutCloseSlash(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -252,7 +252,7 @@ func TestSetBaseUrlTagWithoutCloseSlash(t *testing.T) {
 	directory := path.Dir(filepath)
 
 	// Act
-	err := setBaseUrlInIndexFile("/bar/", directory)
+	err := setBaseURLInIndexFile("/bar/", directory)
 
 	// Assert
 	require.NoError(t, err)
@@ -262,7 +262,7 @@ func TestSetBaseUrlTagWithoutCloseSlash(t *testing.T) {
 
 // Test that the base HTML tag with space before closing curly bracket is
 // supported.
-func TestSetBaseUrlSpaceBeforeCurlyBracket(t *testing.T) {
+func TestSetBaseURLSpaceBeforeCurlyBracket(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -270,7 +270,7 @@ func TestSetBaseUrlSpaceBeforeCurlyBracket(t *testing.T) {
 	directory := path.Dir(filepath)
 
 	// Act
-	err := setBaseUrlInIndexFile("/bar/", directory)
+	err := setBaseURLInIndexFile("/bar/", directory)
 
 	// Assert
 	require.NoError(t, err)
@@ -279,18 +279,18 @@ func TestSetBaseUrlSpaceBeforeCurlyBracket(t *testing.T) {
 }
 
 // Test that the leading slash is required.
-func TestSetBaseUrlRequiredLeadingSlash(t *testing.T) {
+func TestSetBaseURLRequiredLeadingSlash(t *testing.T) {
 	// Arrange & Act
-	err := setBaseUrlInIndexFile("bar/", "")
+	err := setBaseURLInIndexFile("bar/", "")
 
 	// Assert
 	require.ErrorContains(t, err, "must start with slash")
 }
 
 // Test that the trailing slash is required.
-func TestSetBaseUrlRequiredTrailingSlash(t *testing.T) {
+func TestSetBaseURLRequiredTrailingSlash(t *testing.T) {
 	// Arrange & Act
-	err := setBaseUrlInIndexFile("/bar", "")
+	err := setBaseURLInIndexFile("/bar", "")
 
 	// Assert
 	require.ErrorContains(t, err, "must end with slash")

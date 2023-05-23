@@ -59,7 +59,7 @@ type RestAPISettings struct {
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
-	BaseUrl        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base url" default:"/" env:"STORK_REST_BASE_URL"`
+	BaseURL        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base url" default:"/" env:"STORK_REST_BASE_URL"`
 }
 
 // Runtime information and settings for RestAPI service.
@@ -329,24 +329,24 @@ func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFile
 // If the configuration does not provide the base URL, it leaves the default
 // value ('/').
 // The base URL must have leading and trailing slashes.
-func setBaseUrlInIndexFile(baseUrl, staticFilesDir string) error {
+func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 	// Leave the existing value if the base URL is empty.
-	if baseUrl == "" {
+	if baseURL == "" {
 		return nil
 	}
 
 	// Validate base URL.
-	if !strings.HasPrefix(baseUrl, "/") {
-		return fmt.Errorf("Base URL must start with slash, got: %s", baseUrl)
+	if !strings.HasPrefix(baseURL, "/") {
+		return pkgerrors.Errorf("Base URL must start with slash, got: %s", baseURL)
 	}
-	if !strings.HasSuffix(baseUrl, "/") {
-		return fmt.Errorf("Base URL must end with slash, got: %s", baseUrl)
+	if !strings.HasSuffix(baseURL, "/") {
+		return pkgerrors.Errorf("Base URL must end with slash, got: %s", baseURL)
 	}
 
 	// Angular builder (ng) strips the closing slash and space but I'm afraid
 	// it is a version or configuration specific, so I make them optional.
 	baseHrefPattern := regexp.MustCompile(`<base href=".*"(/?\s*)>`)
-	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$1>`, baseUrl)
+	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$1>`, baseURL)
 
 	// Edit the index file.
 	indexFilePath := path.Join(staticFilesDir, "index.html")
@@ -376,7 +376,7 @@ func (r *RestAPI) Serve() (err error) {
 	}
 
 	// Modify the base URL in the index file.
-	if err = setBaseUrlInIndexFile(r.Settings.BaseUrl, r.Settings.StaticFilesDir); err != nil {
+	if err = setBaseURLInIndexFile(r.Settings.BaseURL, r.Settings.StaticFilesDir); err != nil {
 		return err
 	}
 
