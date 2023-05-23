@@ -126,6 +126,9 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 		if err != nil {
 			return nil, err
 		}
+		if len(localHost.DHCPOptionSet) > 0 {
+			localHost.DHCPOptionSetHash = storkutil.Fnv128(localHost.DHCPOptionSet)
+		}
 		host.SetLocalHost(&localHost)
 	}
 	return host, nil

@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-pg/pg/v10"
 	errors "github.com/pkg/errors"
@@ -493,7 +492,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 		}
 
 		// Hash the returned hosts and remember the hash in the iterator.
-		hash := storkutil.Fnv128(fmt.Sprintf("%+v", hosts))
+		hash := storkutil.Fnv128(hosts)
 		iterator.trace.addResponse(hash, iterator.subnetIndex, hosts)
 
 		// We return one chunk of hosts for one subnet. So let's get out

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
 	appstest "isc.org/stork/server/apps/test"
@@ -425,6 +426,31 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		cm.Done(cctx)
 	}
 	require.Nil(t, cctx)
+
+	// Make sure that the host has been added in the database.
+	returnedHosts, _, err := dbmodel.GetHostsByDaemonID(db, apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
+	require.NoError(t, err)
+	require.Len(t, returnedHosts, 1)
+	returnedHost := returnedHosts[0]
+	require.NoError(t, err)
+	require.NotNil(t, returnedHost)
+
+	require.Len(t, returnedHost.HostIdentifiers, 1)
+	require.Equal(t, "hw-address", returnedHost.HostIdentifiers[0].Type)
+	require.Equal(t, "example.org", returnedHost.Hostname)
+
+	require.Len(t, returnedHost.LocalHosts, 2)
+	for _, lh := range returnedHost.LocalHosts {
+		require.Equal(t, "/tmp/boot.xyz", lh.BootFileName)
+		require.Len(t, lh.ClientClasses, 1)
+		require.Equal(t, "class1", lh.ClientClasses[0])
+		require.Equal(t, "192.2.2.2", lh.NextServer)
+		require.Equal(t, "stork.example.org", lh.ServerHostname)
+
+		// No DHCP options
+		require.Empty(t, lh.DHCPOptionSet)
+		require.Empty(t, lh.DHCPOptionSetHash)
+	}
 }
 
 // Test error case when a user attempts to begin new transaction when the
@@ -913,6 +939,19 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 					NextServer:     "192.2.2.2",
 					ServerHostname: "stork.example.org",
 					BootFileName:   "/tmp/boot.xyz",
+					Options: []*models.DHCPOption{
+						{
+							AlwaysSend: true,
+							Code:       3,
+							Fields: []*models.DHCPOptionField{
+								{
+									FieldType: "ipv4-address",
+									Values:    []string{"192.0.2.1"},
+								},
+							},
+							Universe: 4,
+						},
+					},
 				},
 				{
 					DaemonID:       apps[1].Daemons[0].ID,
@@ -921,6 +960,19 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 					NextServer:     "192.2.2.2",
 					ServerHostname: "stork.example.org",
 					BootFileName:   "/tmp/boot.xyz",
+					Options: []*models.DHCPOption{
+						{
+							AlwaysSend: true,
+							Code:       3,
+							Fields: []*models.DHCPOptionField{
+								{
+									FieldType: "ipv4-address",
+									Values:    []string{"192.0.2.1"},
+								},
+							},
+							Universe: 4,
+						},
+					},
 				},
 			},
 		},
@@ -936,31 +988,40 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 		switch {
 		case i < 2:
 			require.JSONEq(t, `{
-            "command": "reservation-del",
-            "service": ["dhcp4"],
-            "arguments": {
-                "identifier": "010203040506",
-                "identifier-type": "hw-address",
-                "subnet-id": 111
-            }
+			"command": "reservation-del",
+			"service": ["dhcp4"],
+			"arguments": {
+				"identifier": "010203040506",
+				"identifier-type": "hw-address",
+				"subnet-id": 111
+			}
         }`, c.Marshal())
 
 		default:
 			require.JSONEq(t, `{
-                "command": "reservation-add",
-                "service": ["dhcp4"],
-                "arguments": {
-                    "reservation": {
-                        "hw-address": "010203040506",
-                        "subnet-id": 111,
-                        "hostname": "updated.example.org",
+				"command": "reservation-add",
+				"service": ["dhcp4"],
+				"arguments": {
+					"reservation": {
+						"hw-address": "010203040506",
+						"subnet-id": 111,
+						"hostname": "updated.example.org",
 						"client-classes": ["class1"],
 						"next-server": "192.2.2.2",
 						"server-hostname": "stork.example.org",
-						"boot-file-name": "/tmp/boot.xyz"
-                    }
-                }
-             }`, c.Marshal())
+						"boot-file-name": "/tmp/boot.xyz",
+						"option-data": [
+							{
+								"always-send": true,
+								"code": 3,
+								"csv-format": true,
+								"data": "192.0.2.1",
+								"space": "dhcp4"
+							}
+						]
+					}
+				}
+			}`, c.Marshal())
 		}
 	}
 
@@ -974,6 +1035,35 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 		cm.Done(cctx)
 	}
 	require.Nil(t, cctx)
+
+	// Make sure that the updated host has been stored in the database.
+	returnedHost, err := dbmodel.GetHost(db, hosts[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedHost)
+
+	require.Len(t, returnedHost.HostIdentifiers, 1)
+	require.Equal(t, "hw-address", returnedHost.HostIdentifiers[0].Type)
+	require.Equal(t, "updated.example.org", returnedHost.Hostname)
+
+	require.Len(t, returnedHost.LocalHosts, 2)
+	for _, lh := range returnedHost.LocalHosts {
+		require.Equal(t, "/tmp/boot.xyz", lh.BootFileName)
+		require.Len(t, lh.ClientClasses, 1)
+		require.Equal(t, "class1", lh.ClientClasses[0])
+		require.Equal(t, "192.2.2.2", lh.NextServer)
+		require.Equal(t, "stork.example.org", lh.ServerHostname)
+
+		// DHCP options
+		require.Len(t, lh.DHCPOptionSet, 1)
+		require.True(t, lh.DHCPOptionSet[0].AlwaysSend)
+		require.EqualValues(t, 3, lh.DHCPOptionSet[0].Code)
+		require.Len(t, lh.DHCPOptionSet[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lh.DHCPOptionSet[0].Fields[0].FieldType)
+		require.Len(t, lh.DHCPOptionSet[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lh.DHCPOptionSet[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lh.DHCPOptionSet[0].Space)
+		require.NotEmpty(t, lh.DHCPOptionSetHash)
+	}
 }
 
 // Test error case when a user attempts to begin new transaction when the
