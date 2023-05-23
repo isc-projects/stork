@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -230,7 +231,12 @@ func TestRunHookInspectDirectory(*testing.T) {
 }
 
 // Test that the hook inspect command is running properly for file path.
-func TestRunHookInspectFile(*testing.T) {
+func TestRunHookInspectFile(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		// TODO: enable this test on macOS when the compiler issue is addressed.
+		// See the possibly related ticket: https://github.com/golang/go/issues/33072.
+		t.Skip(`Skipping the test consistently failing on macOS due to: "fatal error: runtime: no plugin module data"`)
+	}
 	file, _ := os.Executable()
 	os.Args = []string{
 		"stork-tool", "hook-inspect", "-p", file,
