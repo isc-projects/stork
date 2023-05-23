@@ -168,7 +168,7 @@ export class AppComponent implements OnInit {
                         label: 'Stork Manual',
                         id: 'stork-manual',
                         icon: 'fa fa-book',
-                        url: '/assets/arm/index.html',
+                        routerLink: '/assets/arm/index.html',
                         target: 'blank',
                     },
                     {
@@ -181,7 +181,7 @@ export class AppComponent implements OnInit {
                         label: 'Stork API Docs (Redoc)',
                         id: 'stork-API-docs-redoc',
                         icon: 'fa fa-code',
-                        url: '/api/docs',
+                        routerLink: '/api/docs',
                         target: 'blank',
                     },
                     {
