@@ -1,3 +1,4 @@
+import { TestBed } from '@angular/core/testing'
 import {
     clamp,
     stringToHex,
@@ -5,10 +6,21 @@ import {
     humanCount,
     formatShortExcludedPrefix,
     getGrafanaUrl,
+    getBaseApiPath,
     datetimeToLocal,
 } from './utils'
 
 describe('utils', () => {
+    beforeEach(() => TestBed.configureTestingModule({}))
+    afterEach(() => {
+        let baseElement = document.querySelector("head base") as HTMLBaseElement
+        if (baseElement == null) {
+            baseElement = document.createElement("base")
+            document.head.appendChild(baseElement)
+        }
+        baseElement.href = "/"
+    })
+
     it('clamps should return return proper number', () => {
         // Integers - in range
         expect(clamp(1, 0, 2)).toBe(1)
@@ -231,5 +243,28 @@ describe('utils', () => {
 
     it('should not parse null to datetime', () => {
         expect(datetimeToLocal(null)).toBeNull()
+    })
+
+    it('should not change the non-relative API path', () => {
+        const baseElement = document.querySelector("head base") as HTMLBaseElement
+        expect(baseElement).not.toBeNull()
+        const baseApiPath = getBaseApiPath("http://api")
+        expect(baseApiPath).toBe("http://api")
+    })
+
+    it('should not change the API path if the base tag is missing', () => {
+        const baseElement = document.querySelector("head base") as HTMLBaseElement
+        expect(baseElement).not.toBeNull()
+        baseElement.remove()
+        const baseApiPath = getBaseApiPath("/api")
+        expect(baseApiPath).toBe("/api")
+    })
+
+    it('should concat the base URL with the API path if base URL is known', () => {
+        const baseElement = document.querySelector("head base") as HTMLBaseElement
+        expect(baseElement).not.toBeNull()
+        baseElement.href = "/foo/"
+        const baseApiPath = getBaseApiPath("/bar")
+        expect(baseApiPath).toContain("/foo/bar")
     })
 })

@@ -463,6 +463,12 @@ export function formatShortExcludedPrefix(prefix: string, excludedPrefix: string
 // It allows to configure the base URL in a single place (index.html) without
 // rebuilding the application.
 export function getBaseApiPath(apiUrl: string) {
+    // Check if the API path is not relative to root.
+    if (apiUrl.includes("://")) {
+        // Contains protocol.
+        return apiUrl
+    }
+
     const baseElements = document.getElementsByTagName("base")
     if (baseElements.length === 0) {
         return apiUrl
