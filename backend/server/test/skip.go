@@ -8,7 +8,7 @@ import (
 	"isc.org/stork/testutil"
 )
 
-// Helper function to skip the current test case if it uses altering file
+// Helper function to skip the current test case if it relies on altering file
 // permissions, but the user that runs the tests is unaffected by the file
 // permissions. It may occur if the user is a super-user or a filesystem
 // doesn't support file permissions.
@@ -30,8 +30,8 @@ func SkipIfCurrentUserIgnoresFilePermissions(t *testing.T) {
 	_, err = os.ReadFile(filepath)
 	if err == nil {
 		// File permission ignored.
-		t.Skip("Skip test due to a current user ignoring file permission (it " +
-			"may be super-user or the filesystem doesn't support file " +
-			"permissions)")
+		t.Skip("Skip test due to a current user is unaffected by the file " +
+			"permissions (it may be super-user or the filesystem doesn't " +
+			"support file permissions)")
 	}
 }
