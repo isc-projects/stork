@@ -312,8 +312,11 @@ func TestSetBaseURLForMissingIndexFile(t *testing.T) {
 // Test that no error is returned if there is no read right on the index file.
 func TestSetBaseURLForInsufficientReadPermission(t *testing.T) {
 	// Arrange
+	storktest.SkipIfCurrentUserIgnoresFilePermissions(t)
+
 	sb := testutil.NewSandbox()
 	defer sb.Close()
+
 	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
 	directory := path.Dir(filepath)
 	_ = os.Chmod(filepath, 0o200)
@@ -331,6 +334,8 @@ func TestSetBaseURLForInsufficientReadPermission(t *testing.T) {
 // Test that no error is returned if there is no read right on the index file.
 func TestSetBaseURLForInsufficientWritePermission(t *testing.T) {
 	// Arrange
+	storktest.SkipIfCurrentUserIgnoresFilePermissions(t)
+
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
