@@ -1,3 +1,10 @@
+* 322 [func] slawek
+
+    Added a configuration option to handle requests directed to URL
+    subdirectory (instead of URL root). Included an example Apache configuration
+    file.
+    (Gitlab #1039)
+
 * 321 [build] slawek
 
     Refactored and formatted to the Python codebase to reach the highest
