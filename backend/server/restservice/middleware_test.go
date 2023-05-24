@@ -468,7 +468,6 @@ func TestTrimBaseURLMiddelwareNotApplicable(t *testing.T) {
 		// Assert
 		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middelware).Pointer())
 	})
-
 }
 
 // Test that the trim base URL middelware works properly.
@@ -478,9 +477,7 @@ func TestTrimBaseURLMiddelware(t *testing.T) {
 	middelware := trimBaseURLMiddleware(nextHandler, "/base/")
 
 	request := func(path string) *url.URL {
-		if strings.HasPrefix(path, "/") {
-			path = path[1:]
-		}
+		path = strings.TrimPrefix(path, "/")
 		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
 		writer := httptest.NewRecorder()
 		middelware.ServeHTTP(writer, request)

@@ -358,15 +358,15 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 	}
 
 	// Error handling.
-	if errors.Is(err, os.ErrNotExist) {
+	switch {
+	case errors.Is(err, os.ErrNotExist):
 		// The UI files may be located on another machine.
 		log.WithError(err).Warningf(
 			"cannot alter the base URL in the '%s' file due to missing file, "+
 				"if the files are located on separate machine, you need "+
 				"manually change the 'href' value of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
-		return nil
-	} else if errors.Is(err, os.ErrPermission) {
+	case errors.Is(err, os.ErrPermission):
 		// The backend doesn't have the permission to operate on index.file.
 		log.WithError(err).Warningf(
 			"cannot alter the base URL in the '%s' file due to insufficient "+
@@ -374,7 +374,7 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 				"for Stork Server user or manually change the 'href' value "+
 				"of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
-	} else {
+	default:
 		// Other errors.
 		return pkgerrors.Wrapf(err, "cannot alter the '%s' file", indexFilePath)
 	}

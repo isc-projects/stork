@@ -316,14 +316,14 @@ func TestSetBaseURLForInsufficientReadPermission(t *testing.T) {
 	defer sb.Close()
 	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
 	directory := path.Dir(filepath)
-	_ = os.Chmod(filepath, 0200)
+	_ = os.Chmod(filepath, 0o200)
 
 	// Act
 	err := setBaseURLInIndexFile("/bar/", directory)
 
 	// Assert
 	require.NoError(t, err)
-	_ = os.Chmod(filepath, 0700)
+	_ = os.Chmod(filepath, 0o700)
 	content, _ := os.ReadFile(filepath)
 	require.EqualValues(t, `<base href="/foo/">`, string(content))
 }
@@ -335,14 +335,14 @@ func TestSetBaseURLForInsufficientWritePermission(t *testing.T) {
 	defer sb.Close()
 	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
 	directory := path.Dir(filepath)
-	_ = os.Chmod(filepath, 0400)
+	_ = os.Chmod(filepath, 0o400)
 
 	// Act
 	err := setBaseURLInIndexFile("/bar/", directory)
 
 	// Assert
 	require.NoError(t, err)
-	_ = os.Chmod(filepath, 0700)
+	_ = os.Chmod(filepath, 0o700)
 	content, _ := os.ReadFile(filepath)
 	require.EqualValues(t, `<base href="/foo/">`, string(content))
 }
