@@ -351,14 +351,34 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 	// Edit the index file.
 	indexFilePath := path.Join(staticFilesDir, "index.html")
 	indexFileContent, err := os.ReadFile(indexFilePath)
-	if err != nil {
-		return pkgerrors.Wrapf(err, "cannot read the '%s' file content", indexFilePath)
+
+	if err == nil {
+		indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
+		err = os.WriteFile(indexFilePath, indexFileContent, 0)
 	}
-	indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
-	err = os.WriteFile(indexFilePath, indexFileContent, 0)
-	if err != nil {
-		return pkgerrors.Wrapf(err, "cannot write the '%s' file content", indexFilePath)
+
+	// Error handling.
+	if errors.Is(err, os.ErrNotExist) {
+		// The UI files may be located on another machine.
+		log.WithError(err).Warningf(
+			"cannot alter the base URL in the '%s' file due to missing file, "+
+				"if the files are located on separate machine, you need "+
+				"manually change the 'href' value of the <base> HTML tag to '%s'",
+			indexFilePath, baseURL)
+		return nil
+	} else if errors.Is(err, os.ErrPermission) {
+		// The backend doesn't have the permission to operate on index.file.
+		log.WithError(err).Warningf(
+			"cannot alter the base URL in the '%s' file due to insufficient "+
+				"file permissions. You need to grant access to read and write "+
+				"for Stork Server user or manually change the 'href' value "+
+				"of the <base> HTML tag to '%s'",
+			indexFilePath, baseURL)
+	} else {
+		// Other errors.
+		return pkgerrors.Wrapf(err, "cannot alter the '%s' file", indexFilePath)
 	}
+
 	return nil
 }
 
@@ -444,7 +464,7 @@ func (r *RestAPI) Serve() (err error) {
 		httpServer.IdleTimeout = s.CleanupTimeout
 	}
 
-	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, r.EventCenter)
+	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, s.BaseURL, r.EventCenter)
 
 	if r.TLS {
 		err = prepareTLS(httpServer, s)

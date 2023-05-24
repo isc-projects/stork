@@ -286,14 +286,36 @@ func metricsMiddleware(next http.Handler, collector metrics.Collector) http.Hand
 	})
 }
 
+// Middelware that trims the base URL from the request URL.
+func trimBaseURLMiddleware(next http.Handler, baseURL string) http.Handler {
+	if baseURL == "" || baseURL == "/" {
+		// Nothing to do.
+		return next
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		urlPath := r.URL.Path
+		if !strings.HasPrefix(urlPath, "/") {
+			urlPath = "/" + urlPath
+		}
+		if strings.HasPrefix(urlPath, baseURL) {
+			urlPath = "/" + urlPath[len(baseURL):]
+		}
+		r.URL.Path = urlPath
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
-func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string, eventCenter eventcenter.EventCenter) http.Handler {
+func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL string, eventCenter eventcenter.EventCenter) http.Handler {
 	// last handler is executed first for incoming request
 	handler = fileServerMiddleware(handler, staticFilesDir)
 	handler = agentInstallerMiddleware(handler, staticFilesDir)
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
+	handler = trimBaseURLMiddleware(handler, baseURL)
 	handler = loggingMiddleware(handler)
 	return handler
 }

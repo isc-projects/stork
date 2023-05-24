@@ -5,8 +5,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -441,5 +444,78 @@ func TestFileServerMiddelware(t *testing.T) {
 		require.Equal(t, "invalid URL path\n", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
+	})
+}
+
+// Test that the trim base URL middelware is not created if the base URL is
+// root or empty.
+func TestTrimBaseURLMiddelwareNotApplicable(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+	t.Run("root as base URL", func(t *testing.T) {
+		// Act
+		middelware := trimBaseURLMiddleware(nextHandler, "/")
+
+		// Assert
+		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middelware).Pointer())
+	})
+
+	t.Run("empty base URL", func(t *testing.T) {
+		// Act
+		middelware := trimBaseURLMiddleware(nextHandler, "")
+
+		// Assert
+		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middelware).Pointer())
+	})
+
+}
+
+// Test that the trim base URL middelware works properly.
+func TestTrimBaseURLMiddelware(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	middelware := trimBaseURLMiddleware(nextHandler, "/base/")
+
+	request := func(path string) *url.URL {
+		if strings.HasPrefix(path, "/") {
+			path = path[1:]
+		}
+		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
+		writer := httptest.NewRecorder()
+		middelware.ServeHTTP(writer, request)
+		return request.URL
+	}
+
+	t.Run("no base URL in the request URL", func(t *testing.T) {
+		// Act
+		url := request("/foobar")
+
+		// Assert
+		require.EqualValues(t, "/foobar", url.Path)
+	})
+
+	t.Run("root as the request URL", func(t *testing.T) {
+		// Act
+		url := request("/")
+
+		// Assert
+		require.EqualValues(t, "/", url.Path)
+	})
+
+	t.Run("trim base URL from the request URL to root", func(t *testing.T) {
+		// Act
+		url := request("/base/")
+
+		// Assert
+		require.EqualValues(t, "/", url.Path)
+	})
+
+	t.Run("trim base URL from the request URL to subdirectory", func(t *testing.T) {
+		// Act
+		url := request("/base/endpoint")
+
+		// Assert
+		require.EqualValues(t, "/endpoint", url.Path)
 	})
 }

@@ -295,3 +295,54 @@ func TestSetBaseURLRequiredTrailingSlash(t *testing.T) {
 	// Assert
 	require.ErrorContains(t, err, "must end with slash")
 }
+
+// Test that no error is returned if the index file doesn't exist.
+func TestSetBaseURLForMissingIndexFile(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Act
+	err := setBaseURLInIndexFile("/bar/", sb.BasePath)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that no error is returned if there is no read right on the index file.
+func TestSetBaseURLForInsufficientReadPermission(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
+	directory := path.Dir(filepath)
+	_ = os.Chmod(filepath, 0200)
+
+	// Act
+	err := setBaseURLInIndexFile("/bar/", directory)
+
+	// Assert
+	require.NoError(t, err)
+	_ = os.Chmod(filepath, 0700)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/foo/">`, string(content))
+}
+
+// Test that no error is returned if there is no read right on the index file.
+func TestSetBaseURLForInsufficientWritePermission(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
+	directory := path.Dir(filepath)
+	_ = os.Chmod(filepath, 0400)
+
+	// Act
+	err := setBaseURLInIndexFile("/bar/", directory)
+
+	// Assert
+	require.NoError(t, err)
+	_ = os.Chmod(filepath, 0700)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/foo/">`, string(content))
+}
