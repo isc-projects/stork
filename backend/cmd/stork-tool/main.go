@@ -373,10 +373,9 @@ func setupApp() *cli.App {
 	}
 
 	app := &cli.App{
-		Name: "Stork Tool",
-		Usage: `A tool for managing Stork Server.
-
-   The tool operates in three areas:
+		Name:  "Stork Tool",
+		Usage: "A tool for managing Stork Server.",
+		Description: `The tool operates in three areas:
 
    - Certificate Management - it allows for exporting Stork Server keys, certificates,
      and tokens that are used to secure communication between the Stork Server
