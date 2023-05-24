@@ -97,19 +97,23 @@
     max-width: 400px
     // Center the input area.
     margin: auto
+
     input, button
         // Expand to full width.
         width: 100%
 
-    input
-        font-size: 110%
-
+    & > div:first-child
+        // Make a space for floating label.
+        margin-bottom: 2rem
     & > div:not(:first-child)
         // Spacing between inputs.
         margin-top: 8px
     & > div:last-child
         // Spacing between button and above input.
         margin-top: 18px
+    ::ng-deep .p-float-label input:focus ~ label, .p-float-label input.p-filled ~ label
+        // The default color is gray. Use white to better contrast with a blue background.
+        color: var(--primary-color-text)
 
 .login-screen__authentication-loader
     // Center the loader spinner horizontally.
@@ -123,8 +127,6 @@
     align-items: center
 
 .login-screen__footer
-    // Use small font.
-    font-size: 0.7rem
     // Center horizontally and align to the bottom.
     margin: auto 0 5px 0
     // A little spacing on top.

@@ -41,24 +41,27 @@
                         </p>
                     </div>
                     <div class="login-screen__authentication-inputs">
-                        <div *ngIf="authenticationMethod.formLabelIdentifier">
+                        <div *ngIf="authenticationMethod.formLabelIdentifier" class="p-float-label">
                             <input
                                 type="text"
                                 name="identifier"
                                 id="identifier"
                                 formControlName="identifier"
-                                [placeholder]="authenticationMethod.formLabelIdentifier"
+                                pInputText
                             />
+                            <label htmlFor="identifier">{{ authenticationMethod.formLabelIdentifier }}</label>
                         </div>
-                        <div *ngIf="authenticationMethod.formLabelSecret">
+                        <div *ngIf="authenticationMethod.formLabelSecret" class="p-float-label">
                             <input
                                 type="password"
                                 name="secret"
                                 id="secret"
                                 formControlName="secret"
-                                [placeholder]="authenticationMethod.formLabelSecret"
                                 (keyup)="keyUp($event)"
+                                [feedback]="false"
+                                pPassword
                             />
+                            <label htmlFor="secret">{{ authenticationMethod.formLabelSecret }}</label>
                         </div>
                         <div>
                             <button

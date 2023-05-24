@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { Router } from '@angular/router'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, Observable, timer } from 'rxjs'
 import { map, retry, shareReplay } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
@@ -23,7 +23,9 @@ export class AuthService {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
         this.authenticationMethods = api.getAuthenticationMethods().pipe(
-            retry(),
+            // Delay to limit the number of requests sent to the backend on
+            // failure. Waits in sequence 1, 2, 4, 8, 16, and max. 32 seconds.
+            retry({ delay: (_, count) => timer(1000 * 2 ** Math.min(count, 5)) }),
             map((methods) => methods.items),
             shareReplay(1)
         )
