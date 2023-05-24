@@ -21,8 +21,8 @@ type AuthenticationMetadata interface {
 	GetIcon() (io.ReadCloser, error)
 }
 
-// The metadata of the authentication method that use the login form.
-// Currently, we expect that all methods implement this interface.
+// The metadata of the authentication method that uses the data from the login
+// form. Currently, we expect that all methods implement this interface.
 // The non-form flow (e.g.: OpenID Connect, Basic Auth, Bearer Token, JWT) are
 // not supported.
 type AuthenticationMetadataForm interface {
