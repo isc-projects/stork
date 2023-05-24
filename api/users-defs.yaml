@@ -97,10 +97,10 @@
         description: Unique ID of the authentication method
         type: string
       identifier:
-        description: E-mail of the user logging to the system
+        description: Identifier of the user logging to the system (e.g., email, login, ID number; depending on authentication method)
         type: string
       secret:
-        description: User password to log in to the system
+        description: User secret to log in to the system (e.g., password, token, one-share code; depending on authentication method)
         type: string
 
   AuthenticationMethod:
