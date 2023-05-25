@@ -17,6 +17,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MenuModule } from 'primeng/menu'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterTestingModule } from '@angular/router/testing'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
@@ -34,7 +35,13 @@ describe('ProfilePageComponent', () => {
                     useValue: {},
                 },
             ],
-            declarations: [ProfilePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
+            declarations: [
+                ProfilePageComponent,
+                BreadcrumbsComponent,
+                SettingsMenuComponent,
+                HelpTipComponent,
+                PlaceholderPipe,
+            ],
             imports: [
                 HttpClientTestingModule,
                 PanelModule,

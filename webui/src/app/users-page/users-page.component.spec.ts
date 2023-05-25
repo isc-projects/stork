@@ -19,6 +19,7 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { ReactiveFormsModule } from '@angular/forms'
 import { AuthService } from '../auth.service'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -50,7 +51,7 @@ describe('UsersPageComponent', () => {
                 SharedModule,
                 RouterTestingModule.withRoutes([{ path: 'users/1', component: UsersPageComponent }]),
             ],
-            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent],
+            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             providers: [
                 UntypedFormBuilder,
                 UsersService,
