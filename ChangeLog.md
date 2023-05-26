@@ -1,3 +1,9 @@
+* 301 [bug] slawek
+
+    Stork resolves now the include statements in the Kea configuration with any
+    file extension.
+    (Gitlab #1036)
+
 * 300 [bug] slawek
   
     Fixed a bug in one of the config review checkers that caused a server crash
