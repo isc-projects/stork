@@ -1765,6 +1765,67 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 	require.Empty(t, overlaps)
 }
 
+// Test that the checker doesn't panic if a zero subnet occurs.
+func TestFindOverlapsZeroSubnet(t *testing.T) {
+	// Arrange
+	subnets := []keaconfig.Subnet{
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "0.0.0.0/0",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "0.0.0.0/32",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "192.168.2.0/24",
+			},
+		},
+		&keaconfig.Subnet4{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     4,
+				Subnet: "192.168.2.0/24",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     5,
+				Subnet: "::/0",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     6,
+				Subnet: "::/128",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     7,
+				Subnet: "3001:2::/80",
+			},
+		},
+		&keaconfig.Subnet6{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     8,
+				Subnet: "3001:2::/80",
+			},
+		},
+	}
+
+	// Act
+	overlaps := findOverlaps(subnets, 42)
+
+	// Assert
+	require.Len(t, overlaps, 2)
+}
+
 // Test that duplicated prefixes are detected as overlaps.
 func TestFindOverlapsForDuplicates(t *testing.T) {
 	// Arrange
