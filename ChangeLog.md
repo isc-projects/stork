@@ -1,3 +1,9 @@
+* 300 [bug] slawek
+  
+    Fixed a bug in one of the config review checkers that caused a server crash
+    if the Kea configuration contained a subnet address with zero IP mask.
+    (Gitlab #1024)
+
 * 299 [bug] marcin
 
     Fixed a bug in the Stork server that could sometimes cause a modification
