@@ -22,11 +22,11 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
 
     # The response should include all generated reports, not only the ones with
     # issues.
-    assert data['total'] > 4
+    assert data['total'] > 5
     issue_reports = {report['checker']: report
                      for report in data['items']
                      if 'content' in report}
-    assert len(issue_reports) == 4
+    assert len(issue_reports) == 5
 
     assert 'stat_cmds_presence' in issue_reports
     assert 'overlapping_subnet' in issue_reports
@@ -43,11 +43,11 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
 
     # The response should include all generated reports, not only the ones with
     # issues.
-    assert data['total'] >= 1
+    assert data['total'] >= 2
     issue_reports = {report['checker']: report
                      for report in data['items']
                      if 'content' in report}
-    assert len(issue_reports) == 1
+    assert len(issue_reports) == 2
 
     assert 'pd_pools_exhausted_by_reservations' in issue_reports
 
