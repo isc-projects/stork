@@ -568,19 +568,19 @@ func findOverlaps(subnets []keaconfig.Subnet, maxOverlaps int) (overlaps []minim
 	}
 
 	// Calculates the binary prefixes for all subnets.
-	subnetPrefixes := make([]subnetWithPrefix, len(subnets))
+	var subnetPrefixes []subnetWithPrefix
 
-	for i, subnet := range subnets {
+	for _, subnet := range subnets {
 		cidr := storkutil.ParseIP(subnet.GetPrefix())
 		if cidr == nil || !cidr.Prefix {
 			continue
 		}
 		binaryPrefix := cidr.GetNetworkPrefixAsBinary()
 
-		subnetPrefixes[i] = subnetWithPrefix{
+		subnetPrefixes = append(subnetPrefixes, subnetWithPrefix{
 			subnet:       subnet,
 			binaryPrefix: binaryPrefix,
-		}
+		})
 	}
 
 	// Sorts prefixes from the shortest (the most general masks) to the longest
