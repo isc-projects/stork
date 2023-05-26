@@ -2,7 +2,6 @@ package dbops
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/go-pg/migrations/v8"
@@ -10,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork/server/database/maintenance"
 	// TODO: document why it is blank imported.
 	_ "isc.org/stork/server/database/migrations"
 )
@@ -40,9 +40,12 @@ func Toss(db *PgDB) error {
 	}
 
 	// Remove the versioning table and id sequence.
-	_, err = db.Exec(
-		`DROP TABLE IF EXISTS gopg_migrations;
-         DROP SEQUENCE IF EXISTS gopg_migrations_id_seq`)
+	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
+		if err := maintenance.DropTableSafe(tx, "gopg_migrations"); err != nil {
+			return err
+		}
+		return maintenance.DropSequenceSafe(tx, "gopg_migrations_id_seq")
+	})
 
 	return err
 }
@@ -121,22 +124,17 @@ func CurrentVersion(db *PgDB) (int64, error) {
 func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (err error) {
 	if force {
 		// Drop an existing database if it exists.
-		if _, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
-			err = errors.Wrapf(err, `problem dropping the database "%s"`, dbName)
+		if err = maintenance.DropDatabaseSafe(db, dbName); err != nil {
 			return
 		}
 	}
 	// Re-create the database. Note that the database creation cannot
 	// be done in a transaction.
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
+	isCreated, err := maintenance.CreateDatabase(db, dbName)
 	if err != nil {
-		var pgErr pg.Error
-		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
-			log.Infof("Database '%s' already exists", dbName)
-		} else {
-			err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
-			return
-		}
+		return err
+	} else if !isCreated {
+		log.Infof("Database '%s' already exists", dbName)
 	}
 
 	// Other things can be done in a transaction.
@@ -145,48 +143,36 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 
 		if force {
 			// Drop an existing user if it exists.
-			if _, err = tx.Exec(fmt.Sprintf("DROP USER IF EXISTS %s;", userName)); err != nil {
-				err = errors.Wrapf(err, `problem dropping the user "%s"`, userName)
+			if err = maintenance.DropUserSafe(tx, userName); err != nil {
 				return
 			}
 		} else {
 			// Check if the user already exists.
-			var hasUserInt int
-			if _, err = tx.Query(pg.Scan(&hasUserInt), fmt.Sprintf("SELECT 1 FROM pg_roles WHERE rolname='%s';", userName)); err != nil {
-				err = errors.Wrapf(err, `problem with checking if the user "%s" exists`, userName)
+			hasUser, err = maintenance.HasUser(tx, userName)
+			if err != nil {
 				return
 			}
-			hasUser = hasUserInt == 1
 		}
 
 		// Re-create the user.
 		if hasUser {
 			log.Infof("User '%s' already exists", userName)
-		} else if _, err = tx.Exec(fmt.Sprintf("CREATE USER %s;", userName)); err != nil {
-			err = errors.Wrapf(err, `problem creating the user "%s"`, userName)
+		} else if err = maintenance.CreateUser(tx, userName); err != nil {
 			return
 		}
+
 		// Grant the user full control over the database.
-		if _, err = tx.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s;", dbName, userName)); err != nil {
-			err = errors.Wrapf(err, `problem granting privileges on database "%s" to user "%s"`, dbName, userName)
+		if err = maintenance.GrantAllPrivilegesOnDatabaseToUser(tx, dbName, userName); err != nil {
 			return
 		}
+
 		// If the password has been generated assign it to the user.
 		if password != "" {
-			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, password)); err != nil {
-				err = errors.Wrapf(err, `problem setting generated password for user "%s"`, userName)
+			if err = maintenance.AlterUserPassword(tx, userName, password); err != nil {
 				return
 			}
 		}
 		return nil
 	})
 	return err
-}
-
-// Creates a database extension if it does not exist yet.
-func CreateExtension(db *PgDB, extension string) (err error) {
-	if _, err = db.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extension)); err != nil {
-		err = errors.Wrapf(err, `problem creating database extension "%s"`, extension)
-	}
-	return
 }
