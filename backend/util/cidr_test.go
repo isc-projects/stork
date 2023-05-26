@@ -11,82 +11,175 @@ import (
 
 // Tests function converting an address to CIDR.
 func TestMakeCIDR(t *testing.T) {
-	cidr, err := MakeCIDR("192.0.2.123")
-	require.NoError(t, err)
-	require.Equal(t, "192.0.2.123/32", cidr)
+	t.Run("IPv4 address", func(t *testing.T) {
+		cidr, err := MakeCIDR("192.0.2.123")
+		require.NoError(t, err)
+		require.Equal(t, "192.0.2.123/32", cidr)
+	})
 
-	cidr, err = MakeCIDR("192.0.2.0/24")
-	require.NoError(t, err)
-	require.Equal(t, "192.0.2.0/24", cidr)
+	t.Run("IPv4 subnet", func(t *testing.T) {
+		cidr, err := MakeCIDR("192.0.2.0/24")
+		require.NoError(t, err)
+		require.Equal(t, "192.0.2.0/24", cidr)
+	})
 
-	cidr, err = MakeCIDR("2001:db8:1::1")
-	require.NoError(t, err)
-	require.Equal(t, "2001:db8:1::1/128", cidr)
+	t.Run("IPv4 zero address", func(t *testing.T) {
+		cidr, err := MakeCIDR("0.0.0.0")
+		require.NoError(t, err)
+		require.Equal(t, "0.0.0.0/32", cidr)
+	})
 
-	cidr, err = MakeCIDR("2001:db8:1::/64")
-	require.NoError(t, err)
-	require.Equal(t, "2001:db8:1::/64", cidr)
+	t.Run("IPv4 zero subnet", func(t *testing.T) {
+		cidr, err := MakeCIDR("0.0.0.0/0")
+		require.NoError(t, err)
+		require.Equal(t, "0.0.0.0/0", cidr)
+	})
+
+	t.Run("IPv6 address", func(t *testing.T) {
+		cidr, err := MakeCIDR("2001:db8:1::1")
+		require.NoError(t, err)
+		require.Equal(t, "2001:db8:1::1/128", cidr)
+	})
+
+	t.Run("IPv6 subnet", func(t *testing.T) {
+		cidr, err := MakeCIDR("2001:db8:1::/64")
+		require.NoError(t, err)
+		require.Equal(t, "2001:db8:1::/64", cidr)
+	})
+
+	t.Run("IPv6 zero address", func(t *testing.T) {
+		cidr, err := MakeCIDR("::")
+		require.NoError(t, err)
+		require.Equal(t, "::/128", cidr)
+	})
+
+	t.Run("IPv6 zero subnet", func(t *testing.T) {
+		cidr, err := MakeCIDR("::/0")
+		require.NoError(t, err)
+		require.Equal(t, "::/0", cidr)
+	})
 }
 
 // Test that IP address or prefix can be parsed.
 func TestParseIP(t *testing.T) {
-	parsedIP := ParseIP("192.0.2.0/24")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv4, parsedIP.Protocol)
-	require.Equal(t, "192.0.2.0/24", parsedIP.NetworkAddress)
-	require.Equal(t, "192.0.2.0", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 24, parsedIP.PrefixLength)
-	require.True(t, parsedIP.Prefix)
-	require.True(t, parsedIP.CIDR)
+	t.Run("IPv4 subnet", func(t *testing.T) {
+		parsedIP := ParseIP("192.0.2.0/24")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv4, parsedIP.Protocol)
+		require.Equal(t, "192.0.2.0/24", parsedIP.NetworkAddress)
+		require.Equal(t, "192.0.2.0", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 24, parsedIP.PrefixLength)
+		require.True(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
 
-	parsedIP = ParseIP("192.0.2.1/32")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv4, parsedIP.Protocol)
-	require.Equal(t, "192.0.2.1", parsedIP.NetworkAddress)
-	require.Equal(t, "192.0.2.1", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 32, parsedIP.PrefixLength)
-	require.False(t, parsedIP.Prefix)
-	require.True(t, parsedIP.CIDR)
+	t.Run("IPv4 address with mask", func(t *testing.T) {
+		parsedIP := ParseIP("192.0.2.1/32")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv4, parsedIP.Protocol)
+		require.Equal(t, "192.0.2.1", parsedIP.NetworkAddress)
+		require.Equal(t, "192.0.2.1", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 32, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
 
-	parsedIP = ParseIP("192.0.2.1")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv4, parsedIP.Protocol)
-	require.Equal(t, "192.0.2.1", parsedIP.NetworkAddress)
-	require.Equal(t, "192.0.2.1", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 32, parsedIP.PrefixLength)
-	require.False(t, parsedIP.Prefix)
-	require.False(t, parsedIP.CIDR)
+	t.Run("IPv4 address", func(t *testing.T) {
+		parsedIP := ParseIP("192.0.2.1")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv4, parsedIP.Protocol)
+		require.Equal(t, "192.0.2.1", parsedIP.NetworkAddress)
+		require.Equal(t, "192.0.2.1", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 32, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.False(t, parsedIP.CIDR)
+	})
 
-	parsedIP = ParseIP("2001:db8:1::/48")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv6, parsedIP.Protocol)
-	require.Equal(t, "2001:db8:1::/48", parsedIP.NetworkAddress)
-	require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 48, parsedIP.PrefixLength)
-	require.True(t, parsedIP.Prefix)
-	require.True(t, parsedIP.CIDR)
+	t.Run("IPv4 zero address with mask", func(t *testing.T) {
+		parsedIP := ParseIP("0.0.0.0/0")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv4, parsedIP.Protocol)
+		require.Equal(t, "0.0.0.0/0", parsedIP.NetworkAddress)
+		require.Equal(t, "0.0.0.0", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 32, parsedIP.PrefixLength)
+		require.True(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
 
-	parsedIP = ParseIP("2001:db8:1::/128")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv6, parsedIP.Protocol)
-	require.Equal(t, "2001:db8:1::", parsedIP.NetworkAddress)
-	require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 128, parsedIP.PrefixLength)
-	require.False(t, parsedIP.Prefix)
-	require.True(t, parsedIP.CIDR)
+	t.Run("IPv4 zero address", func(t *testing.T) {
+		parsedIP := ParseIP("0.0.0.0")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv4, parsedIP.Protocol)
+		require.Equal(t, "0.0.0.0", parsedIP.NetworkAddress)
+		require.Equal(t, "0.0.0.0", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 32, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.False(t, parsedIP.CIDR)
+	})
 
-	parsedIP = ParseIP("2001:db8:1::")
-	require.NotNil(t, parsedIP)
-	require.Equal(t, IPv6, parsedIP.Protocol)
-	require.Equal(t, "2001:db8:1::", parsedIP.NetworkAddress)
-	require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
-	require.EqualValues(t, 128, parsedIP.PrefixLength)
-	require.False(t, parsedIP.Prefix)
-	require.False(t, parsedIP.CIDR)
+	t.Run("IPv6 subnet", func(t *testing.T) {
+		parsedIP := ParseIP("2001:db8:1::/48")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv6, parsedIP.Protocol)
+		require.Equal(t, "2001:db8:1::/48", parsedIP.NetworkAddress)
+		require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 48, parsedIP.PrefixLength)
+		require.True(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
 
-	require.Nil(t, ParseIP(""))
-	require.Nil(t, ParseIP("192.0.2.0/xy"))
-	require.Nil(t, ParseIP("192.0.2.0/"))
+	t.Run("IPv6 address with mask", func(t *testing.T) {
+		parsedIP := ParseIP("2001:db8:1::/128")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv6, parsedIP.Protocol)
+		require.Equal(t, "2001:db8:1::", parsedIP.NetworkAddress)
+		require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 128, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
+
+	t.Run("IPv6 address", func(t *testing.T) {
+		parsedIP := ParseIP("2001:db8:1::")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv6, parsedIP.Protocol)
+		require.Equal(t, "2001:db8:1::", parsedIP.NetworkAddress)
+		require.Equal(t, "2001:db8:1::", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 128, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.False(t, parsedIP.CIDR)
+	})
+
+	t.Run("IPv6 zero address with mask", func(t *testing.T) {
+		parsedIP := ParseIP("::/0")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv6, parsedIP.Protocol)
+		require.Equal(t, "::/0", parsedIP.NetworkAddress)
+		require.Equal(t, "::", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 128, parsedIP.PrefixLength)
+		require.True(t, parsedIP.Prefix)
+		require.True(t, parsedIP.CIDR)
+	})
+
+	t.Run("IPv6 zero address", func(t *testing.T) {
+		parsedIP := ParseIP("::")
+		require.NotNil(t, parsedIP)
+		require.Equal(t, IPv6, parsedIP.Protocol)
+		require.Equal(t, "::", parsedIP.NetworkAddress)
+		require.Equal(t, "::", parsedIP.NetworkPrefix)
+		require.EqualValues(t, 128, parsedIP.PrefixLength)
+		require.False(t, parsedIP.Prefix)
+		require.False(t, parsedIP.CIDR)
+	})
+
+	t.Run("empty string", func(t *testing.T) {
+		require.Nil(t, ParseIP(""))
+	})
+
+	t.Run("invalid IPv4 masks", func(t *testing.T) {
+		require.Nil(t, ParseIP("192.0.2.0/xy"))
+		require.Nil(t, ParseIP("192.0.2.0/"))
+	})
 }
 
 // Test that the IP range in both supported formats is parsed
