@@ -266,9 +266,8 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 	// - Path may be relative to parent file or absolute
 	// - Path must be escaped with double quotes
 	// - May to contains spacing before and after the path quotes
-	// - Path must contain ".json" extension
 	// Produce two groups: first for the whole statement and second for path.
-	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\.json)\"\s*\?>`)
+	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\..*)\"\s*\?>`)
 	matchesGroupIndices := includePattern.FindAllStringSubmatchIndex(text, -1)
 	matchesGroups := includePattern.FindAllStringSubmatch(text, -1)
 

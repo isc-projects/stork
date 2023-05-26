@@ -1,0 +1,5 @@
+{
+    "biz": "zib",
+    "buz": <?include "config-without-includes.include"?>,
+    "boz": "zob"
+}

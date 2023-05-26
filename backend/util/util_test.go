@@ -153,6 +153,34 @@ func TestReadFileWithIncludes(t *testing.T) {
 	require.EqualValues(t, baz, true)
 }
 
+// Test read a configuration with include statements without JSON extension.
+func TestReadFileWithIncludesNonJSONExtension(t *testing.T) {
+	path := "testdata/configs/config-with-non-json-includes.json"
+	raw, err := ReadFileWithIncludes(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	json.Unmarshal([]byte(raw), &content)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "biz", "buz", "boz")
+
+	// Non-imported content
+	biz := data["biz"].(string)
+	require.EqualValues(t, biz, "zib")
+	boz := data["boz"].(string)
+	require.EqualValues(t, boz, "zob")
+
+	// Imported content
+	buz := data["buz"].(map[string]interface{})
+	require.Contains(t, buz, "foo", "bar", "baz")
+	foo := int(buz["foo"].(float64))
+	require.EqualValues(t, foo, 42)
+	bar := buz["bar"].(string)
+	require.EqualValues(t, bar, "24")
+	baz := buz["baz"].(bool)
+	require.EqualValues(t, baz, true)
+}
+
 // Test read a configuration with nested import statements.
 func TestReadConfigurationWithNestedIncludes(t *testing.T) {
 	path := "testdata/configs/config-with-nested-includes.json"
