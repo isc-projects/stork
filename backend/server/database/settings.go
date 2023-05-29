@@ -103,6 +103,13 @@ func (s *DatabaseSettings) ConvertToConnectionString() string {
 		params = append(params, []string{
 			"host", escapeQuotes(s.Host),
 		})
+	} else {
+		// We decided to use connection through unix socket by default,
+		// but the default host in database/sql is a 'localhost' string,
+		// so we need to provide it explicitly.
+		params = append(params, []string{
+			"host", escapeQuotes("/var/run/postgresql"),
+		})
 	}
 
 	if s.Port != 0 {
