@@ -176,3 +176,8 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	})
 	return err
 }
+
+// Creates a PgCrypto database extension if it does not exist yet.
+func CreatePgCryptoExtension(db *pg.DB) error {
+	return maintenance.CreateExtension(db, "pgcrypto")
+}

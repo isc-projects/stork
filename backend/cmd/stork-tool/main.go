@@ -14,7 +14,6 @@ import (
 	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
-	dbmaintenance "isc.org/stork/server/database/maintenance"
 	storkutil "isc.org/stork/util"
 )
 
@@ -107,7 +106,7 @@ func runDBCreate(context *cli.Context) {
 	defer db.Close()
 
 	// Try to create the pgcrypto extension.
-	err = dbmaintenance.CreateExtension(db, "pgcrypto")
+	err = dbops.CreatePgCryptoExtension(db)
 	if err != nil {
 		log.WithError(err).Fatal("Cannot create the database extension")
 	}
