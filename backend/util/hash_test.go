@@ -13,10 +13,10 @@ func TestFnv128(t *testing.T) {
 	require.Equal(t, "cd64e1891967a18bcfaa1ff2635a5724", Fnv128("Hello world!"))
 }
 
-// Test that FNV128 can be created from a value behind an interface.
-func TestFnv128AnyValue(t *testing.T) {
-	require.Equal(t, "78896c3a8731e751b6b4257c4cb584bf", Fnv128AnyValue("Hello world"))
-	require.Equal(t, "cd64e1891967a18bcfaa1ff2635a5724", Fnv128AnyValue("Hello world!"))
+// Test that FNV128 can be created from a slice.
+func TestFnv128Slice(t *testing.T) {
+	require.Equal(t, "5fef38dc538c46f04f834f10b76bcaa4", Fnv128([]int{10, 50, 70}))
+	require.Equal(t, "741167c0758c46f04f8353d94d7fd92e", Fnv128([]int{10, 30, 70}))
 }
 
 // Test that the random hash is generated and encoded with base64.

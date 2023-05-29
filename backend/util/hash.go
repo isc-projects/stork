@@ -7,19 +7,13 @@ import (
 	"hash/fnv"
 )
 
-// Convenience function creating FNV128 hash from input string.
-func Fnv128(input string) string {
+// Convenience function creating FNV128 hash from an input value.
+func Fnv128(input any) string {
 	h := fnv.New128()
 	// Ignore errors because they are never returned in this case.
-	_, _ = h.Write([]byte(input))
+	_, _ = h.Write([]byte(fmt.Sprintf("%+v", input)))
 	bs := h.Sum(nil)
 	return fmt.Sprintf("%x", bs)
-}
-
-// Convenience function creating FNV128 hash from any value. It prints
-// the value in the default format and hashes using the Fnv128 function.
-func Fnv128AnyValue(value any) string {
-	return Fnv128(fmt.Sprintf("%+v", value))
 }
 
 // Convenience function generating random bytes of the specified

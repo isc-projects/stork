@@ -187,7 +187,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 			return nil, err
 		}
 		convertedSubnet.LocalSubnets[0].DHCPOptionSet = append(convertedSubnet.LocalSubnets[0].DHCPOptionSet, *option)
-		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = storkutil.Fnv128AnyValue(convertedSubnet.LocalSubnets[0].DHCPOptionSet)
+		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = storkutil.Fnv128(convertedSubnet.LocalSubnets[0].DHCPOptionSet)
 	}
 	return convertedSubnet, nil
 }
@@ -220,7 +220,7 @@ func NewSharedNetworkFromKea(sharedNetwork keaconfig.SharedNetwork, family int, 
 			return nil, err
 		}
 		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet = append(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet, *option)
-		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = storkutil.Fnv128AnyValue(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet)
+		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = storkutil.Fnv128(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet)
 	}
 	return newSharedNetwork, nil
 }
@@ -308,7 +308,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 			return nil, err
 		}
 		lh.DHCPOptionSet = append(lh.DHCPOptionSet, *hostOption)
-		lh.DHCPOptionSetHash = storkutil.Fnv128AnyValue(lh.DHCPOptionSet)
+		lh.DHCPOptionSetHash = storkutil.Fnv128(lh.DHCPOptionSet)
 	}
 	host.LocalHosts = append(host.LocalHosts, lh)
 	return &host, nil
