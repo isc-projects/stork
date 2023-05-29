@@ -21,8 +21,8 @@ const (
 type PgConnectionType string
 
 const (
-	PgConnectionLocal = "local"
-	PgConnectionHost  = "host"
+	PgConnectionLocal PgConnectionType = "local"
+	PgConnectionHost  PgConnectionType = "host"
 )
 
 // Representation of the single pg_hba.conf rule.

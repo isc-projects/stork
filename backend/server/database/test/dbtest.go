@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/server/database/maintenance"
 )
 
 // Helper function to perform an error assertion.
@@ -54,7 +55,8 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 			WithField("host", maintenanceSettings.Host).
 			WithField("database", maintenanceSettings.DBName).
 			WithField("user", maintenanceSettings.User).
-			Fatalf("Unable to create database instance: %+v", err)
+			WithError(err).
+			Fatalf("Unable to create database instance")
 	}
 	if nil != err {
 		return
@@ -67,21 +69,19 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	templateDBName := flags.DBName
 
 	if flags.MaintenanceDBName == templateDBName {
-		log.Warn("The maintenance database should not be the same as the template database; otherwise, the source database may report that other users are accessing it.")
+		log.Warn("The maintenance database should not be the same as the " +
+			"template database; otherwise, the source database may report " +
+			"that other users are accessing it.")
 	}
 
 	rand.Seed(time.Now().UnixNano())
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
-	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
-	_, err = db.Exec(cmd)
-	if err != nil {
+	if err = maintenance.DropDatabaseSafe(db, dbName); err != nil {
 		return
 	}
 
-	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE %s;`, dbName, templateDBName)
-	_, err = db.Exec(cmd)
-	if err != nil {
+	if _, err = maintenance.CreateDatabaseFromTemplate(db, dbName, templateDBName); err != nil {
 		return
 	}
 

@@ -243,6 +243,12 @@ func GetSecretInTerminal(prompt string) (string, error) {
 	return string(pass), nil
 }
 
+// Checks if the current process is running in a terminal.
+func IsRunningInTerminal() bool {
+	descriptor := int(os.Stdin.Fd())
+	return term.IsTerminal(descriptor)
+}
+
 // Read a file and resolve all include statements.
 func ReadFileWithIncludes(path string) (string, error) {
 	parentPaths := map[string]bool{}
