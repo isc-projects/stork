@@ -17,7 +17,7 @@ func CreateExtension(dbi pg.DBI, extensionName string) error {
 
 // Checks if an extension exists in the database.
 func HasExtension(dbi pg.DBI, extensionName string) (bool, error) {
-	_, err := dbi.ExecOne("SELECT 1 from pg_extension WHERE extname = 'pgcrypto'")
+	_, err := dbi.ExecOne("SELECT 1 from pg_extension WHERE extname = ?", extensionName)
 	switch {
 	case err == nil:
 		return true, nil
