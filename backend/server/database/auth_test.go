@@ -1,10 +1,14 @@
 package dbops_test
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os/user"
 	"testing"
 
+	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/database/maintenance"
@@ -93,6 +97,35 @@ func skipIfMissingUserEntryInPgHBAFile(t *testing.T, dbi dbops.DBI, settings *db
 		userName, expectedAuthMethod, connectionType)
 }
 
+// Tests database connection using various DB packages used in Stork.
+func checkDatabaseConnections(settings *dbops.DatabaseSettings) error {
+	// Go-PG
+	db, err := dbops.NewPgDBConn(settings)
+	if err != nil {
+		return errors.WithMessage(err, "cannot open database connection using go-pg")
+	}
+	defer db.Close()
+
+	err = db.Ping(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "cannot ping database using go-pg")
+	}
+
+	// database/sql (session manager)
+	dbDriver, err := sql.Open("postgres", settings.ConvertToConnectionString())
+	if err != nil {
+		return errors.Wrap(err, "cannot open database connection using database/sql")
+	}
+	defer dbDriver.Close()
+
+	err = dbDriver.Ping()
+	if err != nil {
+		return errors.Wrap(err, "cannot ping database using database/sql")
+	}
+
+	return nil
+}
+
 // Creates a custom database user dedicated to use with a specific
 // authentication method. The username is prepared by concat the main testing
 // database username (provided in DB configuration) and the authentication
@@ -140,11 +173,11 @@ func TestConnectUsingTrustAuth(t *testing.T) {
 	settings.Password = ""
 
 	// Act
-	db, err := dbops.NewPgDBConn(settings)
+	err := checkDatabaseConnections(settings)
 
 	// Assert
 	require.NoError(t, err)
-	db.Close()
+
 }
 
 // Test that the Stork can establish connection to the database using the
@@ -166,11 +199,10 @@ func TestConnectUsingIdentAuth(t *testing.T) {
 	settings.Password = ""
 
 	// Act
-	db, err := dbops.NewPgDBConn(settings)
+	err := checkDatabaseConnections(settings)
 
 	// Assert
 	require.NoError(t, err)
-	db.Close()
 }
 
 // Test that the Stork can establish connection to the database using the
@@ -192,9 +224,8 @@ func TestConnectUsingPeerAuth(t *testing.T) {
 	settings.Password = ""
 
 	// Act
-	db, err := dbops.NewPgDBConn(settings)
+	err := checkDatabaseConnections(settings)
 
 	// Assert
 	require.NoError(t, err)
-	db.Close()
 }
