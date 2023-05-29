@@ -10,7 +10,7 @@ import (
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
 
-	// TODO: document why it is blank imported.
+	// Imports and registers the "postgres" driver using by database/sql.
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
@@ -25,8 +25,8 @@ type SessionMgr struct {
 
 // Creates new session manager instance. The new connection is created using the
 // lib/pq driver via scs.SessionManager.
-func NewSessionMgr(conn *dbops.DatabaseSettings) (*SessionMgr, error) {
-	connParams := conn.ConvertToConnectionString()
+func NewSessionMgr(settings *dbops.DatabaseSettings) (*SessionMgr, error) {
+	connParams := settings.ConvertToConnectionString()
 	db, err := sql.Open("postgres", connParams)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to the database for session management using credentials %s", connParams)
