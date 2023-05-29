@@ -150,6 +150,14 @@ func setupCustomUser(t *testing.T, db *dbops.PgDB, authMethod maintenance.PgAuth
 		_ = maintenance.CreateUser(db, userTest)
 	}
 
+	if authMethod == maintenance.PgAuthMethodScramSHA256 {
+		_ = maintenance.AlterUserEncryptionToScramSHA256(db, userTest)
+	}
+
+	if authMethod == maintenance.PgAuthMethodMD5 || authMethod == maintenance.PgAuthMethodScramSHA256 {
+		_ = maintenance.AlterUserPassword(db, userTest, userTest)
+	}
+
 	return userTest, func() {
 		if !userInitiallyExists {
 			_ = maintenance.DropUserSafe(db, userTest)
@@ -223,6 +231,50 @@ func TestConnectUsingPeerAuth(t *testing.T) {
 
 	settings.User = userTest
 	settings.Password = ""
+
+	// Act
+	err := checkDatabaseConnections(settings)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that the Stork can establish connection to the database using the
+// MD5 authentication method.
+func TestConnectUsingMD5Auth(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+
+	userTest, teardownUser := setupCustomUser(t, db, maintenance.PgAuthMethodMD5)
+	defer teardownUser()
+
+	skipIfMissingUserEntryInPgHBAFile(t, db, settings, userTest, maintenance.PgAuthMethodMD5)
+
+	settings.User = userTest
+	settings.Password = userTest
+
+	// Act
+	err := checkDatabaseConnections(settings)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that the Stork can establish connection to the database using the
+// scram-sha256 authentication method.
+func TestConnectUsingScramSHA256Auth(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+
+	userTest, teardownUser := setupCustomUser(t, db, maintenance.PgAuthMethodScramSHA256)
+	defer teardownUser()
+
+	skipIfMissingUserEntryInPgHBAFile(t, db, settings, userTest, maintenance.PgAuthMethodScramSHA256)
+
+	settings.User = userTest
+	settings.Password = userTest
 
 	// Act
 	err := checkDatabaseConnections(settings)
