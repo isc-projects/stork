@@ -350,7 +350,7 @@ func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) mi
 	if err != nil {
 		// Error while communicating with the database.
 		msg := fmt.Sprintf("Problem fetching subnet with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
