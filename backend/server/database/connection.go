@@ -99,7 +99,8 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		err = errors.Wrapf(err, "unable to connect to the database using provided settings")
 
 		if errors.As(err, &pgError) {
-			if pgError.Field('R') == "auth_failed" {
+			if pgError.Field('R') == "auth_failed" && storkutil.IsRunningInTerminal() {
+				log.WithError(err).Error("Invalid database credentials (authentication error)")
 				pgParams.Password, err = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
 				if err != nil {
 					break
@@ -109,7 +110,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 				break
 			}
 		}
-		log.Printf("Problem connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
+		log.WithError(err).Printf("Problem connecting to db, trying again in 2 seconds, %d/10", tries+1)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {

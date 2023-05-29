@@ -19,14 +19,14 @@ import (
 // Skips the test if the connection is not performed over UNIX socket.
 func skipIfNonLocalConnection(t *testing.T, settings *dbops.DatabaseSettings) {
 	if settings.Host != "" && !storkutil.IsSocket(settings.Host) {
-		t.Skip("This test is available only if the database is local.")
+		t.Skip("This test is available only if the database is connected over UNIX socket.")
 	}
 }
 
 // Skips the test if the connection is performed over UNIX socket.
 func skipIfLocalConnection(t *testing.T, settings *dbops.DatabaseSettings) {
 	if settings.Host == "" || storkutil.IsSocket(settings.Host) {
-		t.Skip("This test is available only if the database is not local.")
+		t.Skip("This test is available only if the database is connected over TCP/IP.")
 	}
 }
 
@@ -182,6 +182,7 @@ func TestConnectUsingTrustAuth(t *testing.T) {
 
 // Test that the Stork can establish connection to the database using the
 // ident authentication method.
+
 func TestConnectUsingIdentAuth(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
