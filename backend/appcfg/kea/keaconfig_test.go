@@ -223,7 +223,7 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *Config {
 // Test that Kea DHCPv4 configuration is recognised and parsed.
 func TestDecodeDHCPv4(t *testing.T) {
 	var config Config
-	err := json.Unmarshal(testutil.AllKeysDHCPv4, &config)
+	err := json.Unmarshal(testutil.AllKeysDHCPv4JSON, &config)
 	require.NoError(t, err)
 
 	require.NotNil(t, config.DHCPv4Config)
@@ -231,13 +231,13 @@ func TestDecodeDHCPv4(t *testing.T) {
 	marshalled, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	require.JSONEq(t, string(testutil.AllKeysDHCPv4), string(marshalled))
+	require.JSONEq(t, string(testutil.AllKeysDHCPv4JSON), string(marshalled))
 }
 
 // Test that Kea DHCPv6 configuration is recognised and parsed.
 func TestDecodeDHCPv6(t *testing.T) {
 	var config Config
-	err := json.Unmarshal(testutil.AllKeysDHCPv6, &config)
+	err := json.Unmarshal(testutil.AllKeysDHCPv6JSON, &config)
 	require.NoError(t, err)
 
 	require.NotNil(t, config.DHCPv6Config)
@@ -245,7 +245,7 @@ func TestDecodeDHCPv6(t *testing.T) {
 	marshalled, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	require.JSONEq(t, string(testutil.AllKeysDHCPv6), string(marshalled))
+	require.JSONEq(t, string(testutil.AllKeysDHCPv6JSON), string(marshalled))
 }
 
 // Tests that the configuration can contain comments.

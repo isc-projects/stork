@@ -317,7 +317,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NoError(t, err)
 
 	// Apply the configuration including all configuration keys.
-	err = dhcp4.Configure(string(testutil.AllKeysDHCPv4))
+	err = dhcp4.Configure(string(testutil.AllKeysDHCPv4JSON))
 	require.NoError(t, err)
 
 	app, err := dhcp4.GetKea()
@@ -791,7 +791,7 @@ func TestGetSubnet6(t *testing.T) {
 	require.NoError(t, err)
 
 	// Apply the configuration including all configuration keys.
-	err = dhcp6.Configure(string(testutil.AllKeysDHCPv6))
+	err = dhcp6.Configure(string(testutil.AllKeysDHCPv6JSON))
 	require.NoError(t, err)
 
 	app, err := dhcp6.GetKea()
