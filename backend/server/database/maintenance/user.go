@@ -48,9 +48,15 @@ func AlterUserPassword(dbi pg.DBI, userName, password string) error {
 
 // Changes the password encryption method to scram-sha-256.
 // It must be called before altering password to have an effect.
-func AlterUserEncryptionToScramSHA256(dbi pg.DBI, userName string) error {
-	if _, err := dbi.Exec("ALTER USER ? SET password_encryption = 'scram-sha-256'", pg.Ident(userName)); err != nil {
-		return errors.Wrapf(err, `problem setting generated password for user "%s"`, userName)
+// Postgres 14 support altering encryption per user e.g.:
+//
+//	ALTER USER my_user SET password_encryption = 'scram-sha-256';
+//
+// but it is not available for the lower versions (but it doesn't cause an
+// error).
+func AlterPasswordEncryptionToScramSHA256(dbi pg.DBI) error {
+	if _, err := dbi.Exec("SET password_encryption = 'scram-sha-256'"); err != nil {
+		return errors.Wrap(err, `problem setting password encryption`)
 	}
 	return nil
 }

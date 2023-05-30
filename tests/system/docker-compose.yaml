@@ -59,6 +59,30 @@ services:
     depends_on:
       - postgres
 
+  server-db-auth-trust:
+    extends: server-base
+    environment:
+      STORK_DATABASE_USER_NAME: stork_trust
+      STORK_DATABASE_PASSWORD:
+    depends_on:
+      - postgres
+
+  server-db-auth-md5:
+    extends: server-base
+    environment:
+      STORK_DATABASE_USER_NAME: stork_md5
+      STORK_DATABASE_PASSWORD: stork_md5
+    depends_on:
+      - postgres
+
+  server-db-auth-scram-sha-256:
+    extends: server-base
+    environment:
+      STORK_DATABASE_USER_NAME: stork_scram-sha-256
+      STORK_DATABASE_PASSWORD: stork_scram-sha-256
+    depends_on:
+      - postgres
+
   agent-kea-base:
     restart: always
     build:
@@ -365,6 +389,9 @@ services:
       interval: 250ms
       timeout: 1s
       retries: 40
+    volumes:
+      - $PWD/tests/system/config/postgres/init_pg_hba.sql:/docker-entrypoint-initdb.d/init_pg_hba.sql
+      - $PWD/tests/system/config/postgres/create_pgcrypto_extension.sql:/docker-entrypoint-initdb.d/create_pgcrypto_extension.sql
     ports:
       - "42432:5432"
 

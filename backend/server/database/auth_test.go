@@ -151,7 +151,7 @@ func setupCustomUser(t *testing.T, db *dbops.PgDB, authMethod maintenance.PgAuth
 	}
 
 	if authMethod == maintenance.PgAuthMethodScramSHA256 {
-		_ = maintenance.AlterUserEncryptionToScramSHA256(db, userTest)
+		_ = maintenance.AlterPasswordEncryptionToScramSHA256(db)
 	}
 
 	if authMethod == maintenance.PgAuthMethodMD5 || authMethod == maintenance.PgAuthMethodScramSHA256 {
