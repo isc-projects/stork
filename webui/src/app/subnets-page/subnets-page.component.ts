@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { Router, ActivatedRoute } from '@angular/router'
+import { Router, ActivatedRoute, ParamMap } from '@angular/router'
 
 import { Table } from 'primeng/table'
 
@@ -13,10 +13,10 @@ import {
     extractUniqueSubnetPools,
 } from '../subnets'
 import { SettingService } from '../setting.service'
-import { Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subscription, concat, of } from 'rxjs'
+import { filter, map, take } from 'rxjs/operators'
 import { Subnet } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 
 /**
  * Component for presenting DHCP subnets.
@@ -44,6 +44,36 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         appId: null,
         localSubnetId: null,
     }
+
+    // Tab menu
+
+    /**
+     * Array of tab menu items with subnet information.
+     *
+     * The first tab is always present and displays the subnet list.
+     *
+     * Note: we cannot use the URL with no segment for the list tab. It causes
+     * the first tab to be always marked active. The Tab Menu has a built-in
+     * feature to highlight items based on the current route. It seems that it
+     * matches by a prefix instead of an exact value (the "/foo/bar" URL
+     * matches the menu item with the "/foo" URL).
+     */
+    tabs: MenuItem[] = [{ label: 'Subnets', routerLink: '/dhcp/subnets/all' }]
+
+    /**
+     * Selected tab menu index.
+     *
+     * The first tab has an index of 0.
+     */
+    activeTabIndex = 0
+
+    /**
+     * Holds the information about specific subnets presented in the tabs.
+     *
+     * The entry corresponding to subnets list is not related to any specific
+     * subnet. Its ID is 0.
+     */
+    openedSubnets: Subnet[] = [{ id: 0 }]
 
     grafanaUrl: string
 
@@ -78,23 +108,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
 
         // handle initial query params
         const ssParams = this.route.snapshot.queryParamMap
-        let text = ''
-        if (ssParams.get('text')) {
-            text += ' ' + ssParams.get('text')
-        }
-        if (ssParams.get('appId')) {
-            text += ' appId:' + ssParams.get('appId')
-        }
-        if (ssParams.get('subnetId')) {
-            text += ' subnetId:' + ssParams.get('subnetId')
-        }
-        this.filterText = text.trim()
+        this.updateFilterText(ssParams)
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
         this.subscriptions.add(
             this.route.queryParamMap.subscribe(
                 (params) => {
+                    this.updateFilterText(params)
                     this.updateOurQueryParams(params)
                     let event = { first: 0, rows: 10 }
                     if (this.subnetsTable) {
@@ -111,16 +132,64 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 }
             )
         )
+
+        // Subscribe to the subnet id changes, e.g. from /dhcp/subnets/all to
+        // /dhcp/subnets/1. These changes are triggered by switching between the
+        // tabs.
+        this.subscriptions.add(
+            this.route.paramMap.subscribe(
+                (params) => {
+                    // Get subnet id.
+                    const id = params.get('id')
+                    let numericId = parseInt(id, 10)
+                    if (Number.isNaN(numericId)) {
+                        numericId = 0
+                    }
+                    this.openTabBySubnetId(numericId)
+                },
+                (error) => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot process URL segment parameters',
+                        detail: getErrorMessage(error),
+                    })
+                }
+            )
+        )
     }
 
-    // ToDo: Silent error catching
-    updateOurQueryParams(params) {
+    /**
+     * Update different component's query parameters from the URL
+     * query parameters.
+     *
+     * @param params query parameters.
+     */
+    private updateOurQueryParams(params: ParamMap) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
             this.queryParams.dhcpVersion = params.get('dhcpVersion')
         }
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
         this.queryParams.localSubnetId = params.get('subnetId')
+    }
+
+    /**
+     * Set the filter text value using the URL query parameters.
+     *
+     * @param params query parameters.
+     */
+    private updateFilterText(params: ParamMap) {
+        let text = ''
+        if (params.get('text')) {
+            text += ' ' + params.get('text')
+        }
+        if (params.get('appId')) {
+            text += ' appId:' + params.get('appId')
+        }
+        if (params.get('subnetId')) {
+            text += ' subnetId:' + params.get('subnetId')
+        }
+        this.filterText = text.trim()
     }
 
     /**
@@ -248,6 +317,116 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     getGrafanaUrl(name, subnet, instance) {
         return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+    }
+
+    /**
+     * Open a subnet tab.
+     *
+     * If the tab already exists, switch to it without fetching the data.
+     * Otherwise, fetch the subnet information from the API and create a
+     * new tab.
+     *
+     * @param subnetId Subnet ID or a NaN for subnet list.
+     */
+    openTabBySubnetId(subnetId: number) {
+        const tabIndex = this.openedSubnets.map((t) => t.id).indexOf(subnetId)
+        if (tabIndex < 0) {
+            this.createTab(subnetId).then(() => {
+                this.switchToTab(this.openedSubnets.length - 1)
+            })
+        } else {
+            this.switchToTab(tabIndex)
+        }
+    }
+
+    /**
+     * Close a menu tab by index.
+     *
+     * @param index Tab index.
+     * @param event Event triggered upon tab closing.
+     */
+    closeTabByIndex(index: number, event?: Event) {
+        if (index == 0) {
+            return
+        }
+
+        this.openedSubnets.splice(index, 1)
+        this.tabs.splice(index, 1)
+
+        if (this.activeTabIndex === index) {
+            // Closing currently selected tab. Switch to previous tab.
+            this.switchToTab(index - 1)
+            this.router.navigate([this.tabs[index - 1].routerLink])
+        } else if (this.activeTabIndex > index) {
+            // Sitting on the later tab then the one closed. We don't need
+            // to switch, but we have to adjust the active tab index.
+            this.activeTabIndex--
+        }
+
+        if (event) {
+            event.preventDefault()
+        }
+    }
+
+    /**
+     * Create a new tab for a given subnet ID.
+     *
+     * It fetches the subnet information from the API.
+     *
+     * @param subnetId Subnet Id.
+     */
+    private createTab(subnetId: number): Promise<void> {
+        return (
+            concat(
+                // Existing entry or undefined.
+                of(this.subnets.filter((s) => s.id == subnetId)[0])
+                    // Drop an undefined value if the entry was not found.
+                    .pipe(filter((s) => !!s)),
+                // Fetch data from API.
+                this.dhcpApi.getSubnet(subnetId)
+            )
+                // Take 1 item (return existing entry if exist, otherwise fetch the API).
+                .pipe(take(1))
+                // Execute and use.
+                .toPromise()
+                .then((data) => {
+                    this.appendTab(data)
+                })
+                .catch((error) => {
+                    const msg = getErrorMessage(error)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot get subnet',
+                        detail: `Error getting subnet with ID ${subnetId}: ${msg}`,
+                        life: 10000,
+                    })
+                })
+        )
+    }
+
+    /**
+     * Append a new tab to the list of tabs.
+     *
+     * @param subnet Subnet data.
+     */
+    private appendTab(subnet: Subnet) {
+        this.openedSubnets.push(subnet)
+        this.tabs.push({
+            label: subnet.subnet,
+            routerLink: `/dhcp/subnets/${subnet.id}`,
+        })
+    }
+
+    /**
+     * Switch to tab identified by an index.
+     *
+     * @param index Tab index.
+     */
+    private switchToTab(index: number) {
+        if (this.activeTabIndex == index) {
+            return
+        }
+        this.activeTabIndex = index
     }
 
     /**

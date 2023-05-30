@@ -21,6 +21,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { TableModule } from 'primeng/table'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -48,6 +49,7 @@ describe('DashboardComponent', () => {
                 SubnetBarComponent,
                 HumanCountPipe,
                 SurroundPipe,
+                EntityLinkComponent,
             ],
             providers: [
                 ServicesService,

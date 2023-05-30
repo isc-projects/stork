@@ -21,6 +21,7 @@ import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { NumberPipe } from '../pipes/number.pipe'
 import { HttpEvent } from '@angular/common/http'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -49,6 +50,7 @@ describe('SharedNetworksPageComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                EntityLinkComponent,
             ],
             providers: [DHCPService],
         })

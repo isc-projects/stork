@@ -12,7 +12,25 @@
     </div>
 </app-breadcrumbs>
 
-<div>
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" class="mt-2">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div class="flex justify-content-space-between">
+            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+            <div class="p-menuitem-text">
+                <b>{{ item.label }}</b>
+            </div>
+            <div
+                *ngIf="i !== 0"
+                class="pi pi-times"
+                style="margin: -2px 0 0 8px"
+                (click)="closeTabByIndex(i, $event)"
+            ></div>
+        </div>
+    </ng-template>
+</p-tabMenu>
+
+<!-- Subnet list tab -->
+<div *ngIf="activeTabIndex === 0; else openedTabBlock">
     <div style="margin: 0 0 10px 5px; display: flex">
         <div>
             <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
@@ -69,6 +87,7 @@
         </div>
     </div>
 
+    <!-- Subnet list -->
     <div>
         <p-table
             #subnetsTable
@@ -219,3 +238,8 @@
         </p-table>
     </div>
 </div>
+
+<!-- Subnet tab template -->
+<ng-template #openedTabBlock>
+    <app-subnet-tab [subnet]="openedSubnets[activeTabIndex]" [grafanaUrl]="grafanaUrl"></app-subnet-tab>
+</ng-template>

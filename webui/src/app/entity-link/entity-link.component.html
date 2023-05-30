@@ -25,7 +25,10 @@
 
     <!-- subnet -->
     <ng-container *ngSwitchCase="'subnet'">
-        {{ showEntityName ? 'subnet ' : '' }}{{ attrs.localSubnets?.[0]?.id | surround: "[":"]" }} {{ attrs.prefix }}
+        {{ showEntityName ? 'subnet ' : '' }}
+        <a id="subnet-link" routerLink="/dhcp/subnets/{{ attrs.id }}">
+            {{ attrs.subnet }}
+        </a>
     </ng-container>
 
     <!-- user -->

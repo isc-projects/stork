@@ -111,6 +111,7 @@ import { LocaltimePipe } from './pipes/localtime.pipe'
 import { SurroundPipe } from './pipes/surround.pipe'
 import { AccessPointKeyComponent } from './access-point-key/access-point-key.component'
 import { PlaceholderPipe } from './pipes/placeholder.pipe'
+import { SubnetTabComponent } from './subnet-tab/subnet-tab.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -178,6 +179,7 @@ export function cfgFactory() {
         SurroundPipe,
         AccessPointKeyComponent,
         PlaceholderPipe,
+        SubnetTabComponent,
     ],
     imports: [
         BrowserModule,

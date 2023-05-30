@@ -4,6 +4,7 @@ import { SubnetBarComponent } from './subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { By } from '@angular/platform-browser'
 import { RouterTestingModule } from '@angular/router/testing'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 describe('SubnetBarComponent', () => {
     let component: SubnetBarComponent
@@ -12,7 +13,7 @@ describe('SubnetBarComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [TooltipModule, RouterTestingModule],
-            declarations: [SubnetBarComponent],
+            declarations: [SubnetBarComponent, EntityLinkComponent],
         }).compileComponents()
     }))
 

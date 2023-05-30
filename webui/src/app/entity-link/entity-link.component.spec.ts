@@ -145,23 +145,23 @@ describe('EntityLinkComponent', () => {
         expect(native.textContent).toContain('host')
     })
 
-    it('should construct subnet entity', () => {
+    it('should construct subnet link', () => {
         component.entity = 'subnet'
-        component.attrs = { id: 1, prefix: 'fe80::/64', localSubnets: [{ id: 42 }] }
-        component.showEntityName = true
-        fixture.detectChanges()
-
-        const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
-        expect(content).toBe('subnet [42] fe80::/64')
-    })
-
-    it('should construct subnet entity for missing a local subnet ID', () => {
-        component.entity = 'subnet'
-        component.attrs = { id: 1, prefix: 'fe80::/64' }
+        component.attrs = { id: 8, subnet: 'fe80::/64' }
         component.showEntityName = false
         fixture.detectChanges()
+        const link = fixture.debugElement.query(By.css('#subnet-link'))
+        expect(link.attributes.href).toEqual('/dhcp/subnets/8')
+        expect(link.nativeElement.innerText).toEqual('fe80::/64')
 
-        const content = (fixture.debugElement.nativeElement as HTMLElement).textContent.trim()
-        expect(content).toBe('fe80::/64')
+        // Test entity name is not displayed.
+        let native = fixture.nativeElement
+        expect(native.textContent).not.toContain('subnet')
+
+        // Display entity name.
+        component.showEntityName = true
+        fixture.detectChanges()
+        native = fixture.nativeElement
+        expect(native.textContent).toContain('subnet')
     })
 })

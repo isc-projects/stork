@@ -1,6 +1,11 @@
 <div class="utilization" [ngClass]="{ 'utilization--ipv6': isIPv6 }" pTooltip="{{ tooltip }}" [escape]="false">
     <!-- Subnet prefix -->
-    <span class="utilization__label">{{ subnet.subnet }}</span>
+    <app-entity-link
+        entity="subnet"
+        [attrs]="subnet"
+        [showEntityName]="false"
+        class="utilization__label"
+    ></app-entity-link>
     <div class="utilization__bars">
         <!-- Address/NA utilization bar -->
         <div class="utilization__bar-wrapper" [ngClass]="{ 'utilization__bar-wrapper--no-data': hasZeroAddressStats }">

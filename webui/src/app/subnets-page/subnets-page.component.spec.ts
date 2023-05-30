@@ -7,7 +7,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { RouterModule, ActivatedRoute, Router, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
@@ -23,6 +23,8 @@ import { NumberPipe } from '../pipes/number.pipe'
 import { RouterTestingModule } from '@angular/router/testing'
 import { MessageModule } from 'primeng/message'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
+import { TabMenuModule } from 'primeng/tabmenu'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -48,6 +50,7 @@ describe('SubnetsPageComponent', () => {
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
                         queryParamMap: of(new MockParamMap()),
+                        paramMap: of(new MockParamMap()),
                     },
                 },
                 RouterTestingModule,
@@ -57,12 +60,13 @@ describe('SubnetsPageComponent', () => {
                 DropdownModule,
                 TableModule,
                 TooltipModule,
-                RouterModule,
+                RouterTestingModule,
                 HttpClientTestingModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 MessageModule,
+                TabMenuModule,
             ],
             declarations: [
                 SubnetsPageComponent,
@@ -73,6 +77,7 @@ describe('SubnetsPageComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                EntityLinkComponent,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
