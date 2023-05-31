@@ -93,3 +93,5 @@ webui/src/app/std-dhcpv6-option-defs.ts
 
 # Plugins
 plugins/**/*.so
+
+venv/
