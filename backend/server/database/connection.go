@@ -100,7 +100,11 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 
 		if errors.As(err, &pgError) {
 			if pgError.Field('R') == "auth_failed" {
-				if storkutil.IsRunningInTerminal() {
+				// 28P01 - It is a problem with an invalid password.
+				if pgError.Field('C') == "28P01" {
+					if !storkutil.IsRunningInTerminal() {
+						break
+					}
 					log.WithError(err).Error("Invalid database credentials (authentication error)")
 					pgParams.Password, err = storkutil.GetSecretInTerminal(fmt.Sprintf("database password for user %s: ", pgParams.User))
 					if err != nil {
@@ -108,13 +112,13 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 					}
 					continue
 				}
-				// If the terminal is not available, retry. The authentication
+				// Another authentication problem. E.g.: The authentication
 				// service may be temporarily unavailable.
 			} else if pgError.Field('S') == "FATAL" {
 				break
 			}
 		}
-		log.WithError(err).Printf("Problem connecting to db, trying again in 2 seconds, %d/10", tries+1)
+		log.WithError(err).Warnf("Problem connecting to db, trying again in 2 seconds, %d/10", tries+1)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
