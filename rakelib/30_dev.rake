@@ -420,6 +420,23 @@ namespace :lint do
             sh SHELLCHECK, *files
         end
     end
+
+    desc 'Runs pylint and flake8, python linter tools'
+    task :python => [] do
+        puts "You should have python virtualenv ready and set up. If you don't, you can do it easily:"
+        puts "1. python3 -m venv venv"
+        puts "2. source venv/bin/activate"
+        puts "3. python3 -m pip install --upgrade pip"
+        puts "4. pip install pycodestyle flake8 pylint"
+        python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
+        python_files = python_files.split("\n").map{ |string| string.strip }
+        PYLINT = 'pylint'
+        FLAKE8 = 'flake8'
+        puts "Running flake8:"
+        sh FLAKE8, '--config', '.flake8', '--color=auto', *python_files
+        puts "Running pylint:"
+        sh PYLINT, '--rcfile', '.pylint', *python_files
+    end
 end
 
 
