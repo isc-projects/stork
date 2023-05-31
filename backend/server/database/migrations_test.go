@@ -160,6 +160,39 @@ func TestCreateDatabase(t *testing.T) {
 	db2.Close()
 }
 
+// Test that the pgcrypto database extension is successfully created.
+func TestCreateCryptoExtension(t *testing.T) {
+	// Connect to the database with full privileges.
+	db, originalSettings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+
+	// Create an empty database and the user with the same name.
+	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+	_, err := maintenance.CreateDatabase(db, dbName)
+	require.NoError(t, err)
+
+	// Try to connect to this database using the user name.
+	opts := *originalSettings
+	opts.DBName = dbName
+	db2, err := dbops.NewPgDBConn(&opts)
+	require.NoError(t, err)
+	require.NotNil(t, db2)
+
+	// The new database should initially lack pgcrypto extension.
+	hasExtension, err := maintenance.HasExtension(db2, "pgcrypto")
+	require.NoError(t, err)
+	require.False(t, hasExtension)
+
+	// Create the pgcrypto extension.
+	err = dbops.CreatePgCryptoExtension(db2)
+	require.NoError(t, err)
+
+	// Make sure the extension is now present.
+	hasExtension, err = maintenance.HasExtension(db2, "pgcrypto")
+	require.NoError(t, err)
+	require.True(t, hasExtension)
+}
+
 // Test that the 39 migration convert decimals to bigints as back.
 func TestMigration39DecimalToBigint(t *testing.T) {
 	// Arrange
@@ -241,37 +274,4 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	_, err = db.QueryOne(pg.Scan(&family), `SELECT inet_family FROM shared_network;`)
 	require.NoError(t, err)
 	require.EqualValues(t, 6, family)
-}
-
-// Test that the pgcrypto database extension is successfully created.
-func TestCreateCryptoExtension(t *testing.T) {
-	// Connect to the database with full privileges.
-	db, originalSettings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
-	defer teardown()
-
-	// Create an empty database and the user with the same name.
-	dbName := fmt.Sprintf("storktest%d", rand.Int63())
-	_, err := maintenance.CreateDatabase(db, dbName)
-	require.NoError(t, err)
-
-	// Try to connect to this database using the user name.
-	opts := *originalSettings
-	opts.DBName = dbName
-	db2, err := dbops.NewPgDBConn(&opts)
-	require.NoError(t, err)
-	require.NotNil(t, db2)
-
-	// The new database should initially lack pgcrypto extension.
-	hasExtension, err := maintenance.HasExtension(db2, "pgcrypto")
-	require.NoError(t, err)
-	require.False(t, hasExtension)
-
-	// Create the pgcrypto extension.
-	err = dbops.CreatePgCryptoExtension(db2)
-	require.NoError(t, err)
-
-	// Make sure the extension is now present.
-	hasExtension, err = maintenance.HasExtension(db2, "pgcrypto")
-	require.NoError(t, err)
-	require.True(t, hasExtension)
 }
