@@ -239,6 +239,42 @@ be overridden with the ``DB_PASSWORD`` environment variable:
 Note that there is no need to create the ``storktest`` database manually; it is
 created and destroyed by the Rakefile task.
 
+Unit Tests Database Authentication
+----------------------------------
+
+A few special test cases check if Stork is operational for various database
+authentication methods: ``trust``, ``peer``, ``ident``, ``md5``, and
+``scram-sha-256``. 
+These tests require certain conditions to meet to be running. If one of them is
+not satisfied, the test case is skipped.
+
+To test the ``trust`` authentication method, you need to add a rule in the
+``pg_hba.conf`` file to allow login of the ``${DB_USER}_trust`` user (where
+``${DB_USER}`` is a value of the ``DB_USER`` environment variable or
+``--db-user`` flag).
+
+To test the `peer` authentication,  you need to add a rule in the
+``pg_hba.conf`` file to allow login with a user name the same as the system
+user name of the user that runs the tests. Additionally, the database host must
+be a socket path (it must be a local connection).
+
+To test the `ident` authentication,  you need to add a rule in the
+``pg_hba.conf`` file to allow login with a user name the same as the system
+user name of the user that runs the tests. Additionally, the database host
+cannot be a socket path (it cannot be a local connection), and the ident
+service (compliant with RFC 1413) must be run on the machine that runs the
+tests.
+
+To test the ``md5`` authentication method, you need to add a rule in the
+``pg_hba.conf`` file to allow login of the ``${DB_USER}_md5`` user (where
+``${DB_USER}`` is a value of the ``DB_USER`` environment variable or
+``--db-user`` flag).
+
+To test the ``scram-sha-256`` authentication method, you need to add a rule in
+the ``pg_hba.conf`` file to allow login of the ``${DB_USER}_scram-sha-256``
+user (where ``${DB_USER}`` is a value of the ``DB_USER`` environment variable
+or ``--db-user`` flag).
+
 Unit Tests Coverage
 -------------------
 
