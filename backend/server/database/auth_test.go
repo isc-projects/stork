@@ -101,7 +101,7 @@ func skipIfMissingUserEntryInPgHBAFile(t *testing.T, dbi dbops.DBI, settings *db
 				// fails, subsequent records are not considered. If no record
 				// matches, access is denied.
 				t.Skipf("The '%s' user for the '%s' connection has the "+
-					"pg_hba.conf rule but for '%s authentication "+
+					"pg_hba.conf rule but for the '%s' authentication "+
 					"method", userName, connectionType, rule.AuthMethod)
 			}
 			// User is allowed to use a given authentication method.
