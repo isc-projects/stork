@@ -8,6 +8,7 @@ import (
 // Enum type for the authentication method in the pg_hba.conf file.
 type PgAuthMethod string
 
+// Main authentication methods supported by Postgres.
 const (
 	PgAuthMethodTrust          PgAuthMethod = "trust"
 	PgAuthMethodPeer           PgAuthMethod = "peer"
@@ -20,6 +21,7 @@ const (
 // Enum type for the connection type in the pg_hba.conf file.
 type PgConnectionType string
 
+// Possible values of the connection type.
 const (
 	PgConnectionLocal PgConnectionType = "local"
 	PgConnectionHost  PgConnectionType = "host"

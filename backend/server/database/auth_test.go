@@ -185,7 +185,6 @@ func TestConnectUsingTrustAuth(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-
 }
 
 // Test that the Stork can establish connection to the database using the

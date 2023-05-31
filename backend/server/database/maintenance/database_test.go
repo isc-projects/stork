@@ -25,8 +25,8 @@ func TestCreateDatabase(t *testing.T) {
 	require.True(t, created)
 	settings.DBName = databaseName
 	db, err = dbops.NewPgDBConn(settings)
-	defer db.Close()
 	require.NoError(t, err)
+	db.Close()
 }
 
 // Test that if the database already exists, no error is returned.
@@ -58,8 +58,8 @@ func TestCreateDatabaseFromTemplate(t *testing.T) {
 	require.True(t, created)
 	settings.DBName = databaseName
 	db, err = dbops.NewPgDBConn(settings)
-	defer db.Close()
 	require.NoError(t, err)
+	db.Close()
 }
 
 // Test that the database is deleted properly.
@@ -76,7 +76,7 @@ func TestDropDatabaseSafeExisting(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	settings.DBName = databaseName
-	db, err = dbops.NewPgDBConn(settings)
+	_, err = dbops.NewPgDBConn(settings)
 	require.ErrorContains(t, err, fmt.Sprintf("database \"%s\" does not exist", databaseName))
 }
 
@@ -93,6 +93,6 @@ func TestDropDatabaseSafeNonExisting(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	settings.DBName = databaseName
-	db, err = dbops.NewPgDBConn(settings)
+	_, err = dbops.NewPgDBConn(settings)
 	require.ErrorContains(t, err, fmt.Sprintf("database \"%s\" does not exist", databaseName))
 }

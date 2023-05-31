@@ -14,10 +14,9 @@ func CreateDatabase(db *pg.DB, dbName string) (created bool, err error) {
 		var pgErr pg.Error
 		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
 			return false, nil
-		} else {
-			err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
-			return false, err
 		}
+		err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
+		return false, err
 	}
 	return true, nil
 }
@@ -29,10 +28,9 @@ func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created
 		var pgErr pg.Error
 		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
 			return false, nil
-		} else {
-			err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
-			return false, err
 		}
+		err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
+		return false, err
 	}
 	return true, nil
 }
