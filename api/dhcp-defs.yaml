@@ -55,7 +55,7 @@
       subnetId:
         type: integer
       userContext:
-        type: string
+        type: object
       validLifetime:
         type: integer
 

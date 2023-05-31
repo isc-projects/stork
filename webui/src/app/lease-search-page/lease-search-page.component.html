@@ -195,6 +195,15 @@
                                     </table>
                                 </p-fieldset>
                             </div>
+                            <div *ngIf="lease.userContext" class="col-3">
+                                <p-fieldset legend="User Context">
+                                        <!-- JSON viewer -->
+                                        <app-json-tree-root
+                                        class="json-content"
+                                        [value]="lease.userContext"
+                                    ></app-json-tree-root>
+                                </p-fieldset>
+                            </div>
                             <div *ngIf="lease.hostname" class="col-3">
                                 <p-fieldset legend="DDNS">
                                     <table>

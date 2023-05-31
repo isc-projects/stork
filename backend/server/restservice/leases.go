@@ -112,6 +112,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			State:             &state,
 			SubnetID:          &subnetID,
 			ValidLifetime:     &validLifetime,
+			UserContext:       l.UserContext,
 		}
 		leases.Items = append(leases.Items, &lease)
 	}

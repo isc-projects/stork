@@ -20,20 +20,20 @@ const (
 
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
-	ClientID          string `json:"client-id,omitempty"`
-	CLTT              uint64 `json:"cltt,omitempty"`
-	DUID              string `json:"duid,omitempty"`
-	FqdnFwd           bool   `json:"fqdn-fwd,omitempty"`
-	FqdnRev           bool   `json:"fqdn-rev,omitempty"`
-	Hostname          string `json:"hostname,omitempty"`
-	HWAddress         string `json:"hw-address,omitempty"`
-	IAID              uint32 `json:"iaid,omitempty"`
-	IPAddress         string `json:"ip-address,omitempty"`
-	PreferredLifetime uint32 `json:"preferred-lft,omitempty"`
-	PrefixLength      uint8  `json:"prefix-len,omitempty"`
-	State             int    `json:"state,omitempty"`
-	SubnetID          uint32 `json:"subnet-id,omitempty"`
-	Type              string `json:"type,omitempty"`
-	UserContext       string `json:"user-context,omitempty"`
-	ValidLifetime     uint32 `json:"valid-lft,omitempty"`
+	ClientID          string         `json:"client-id,omitempty"`
+	CLTT              uint64         `json:"cltt,omitempty"`
+	DUID              string         `json:"duid,omitempty"`
+	FqdnFwd           bool           `json:"fqdn-fwd,omitempty"`
+	FqdnRev           bool           `json:"fqdn-rev,omitempty"`
+	Hostname          string         `json:"hostname,omitempty"`
+	HWAddress         string         `json:"hw-address,omitempty"`
+	IAID              uint32         `json:"iaid,omitempty"`
+	IPAddress         string         `json:"ip-address,omitempty"`
+	PreferredLifetime uint32         `json:"preferred-lft,omitempty"`
+	PrefixLength      uint8          `json:"prefix-len,omitempty"`
+	State             int            `json:"state,omitempty"`
+	SubnetID          uint32         `json:"subnet-id,omitempty"`
+	Type              string         `json:"type,omitempty"`
+	UserContext       map[string]any `json:"user-context,omitempty"`
+	ValidLifetime     uint32         `json:"valid-lft,omitempty"`
 }
