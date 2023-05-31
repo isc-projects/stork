@@ -74,6 +74,23 @@ func skipIfMissingUserEntryInPgHBAFile(t *testing.T, dbi dbops.DBI, settings *db
 				continue
 			}
 
+			// Basic check for address.
+			// We assume the rule can be configured to localhost or to valid
+			// remote address.
+			if connectionType == maintenance.PgConnectionHost {
+				isLocalhostDatabase := false
+				if settings.Host == "localhost" || settings.Host == "127.0.0.1" || settings.Host == "::1" {
+					isLocalhostDatabase = true
+				}
+				isLocalhostRule := false
+				if rule.Address == "127.0.0.1" || rule.Address == "::1" {
+					isLocalhostRule = true
+				}
+				if isLocalhostDatabase != isLocalhostRule {
+					continue
+				}
+			}
+
 			// Rule exists.
 			if rule.AuthMethod != expectedAuthMethod {
 				// From https://www.postgresql.org/docs/current/auth-pg-hba-conf.html .
