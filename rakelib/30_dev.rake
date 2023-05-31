@@ -197,7 +197,7 @@ namespace :unittest do
                                 'getAgentAddrAndPortFromUser',
 
                                 # this requires interacting with terminal
-                                'GetSecretInTerminal',
+                                'GetSecretInTerminal', 'IsRunningInTerminal',
 
                                 # Testing coverage should ignore testutil because we don't require writing
                                 # tests for testing code. They can still be written but we shouldn't fail

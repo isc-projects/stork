@@ -7,7 +7,7 @@ CREATE TEMPORARY TABLE hba ( line text );
 COPY hba FROM '/var/lib/postgresql/data/pg_hba.conf';
 DELETE FROM hba WHERE line ~* '^host\s+all.*$';
 INSERT INTO hba (line) VALUES
---    TYPE  DB   USER                            ADDR  METHOD
+--    TYPE  DB   USER                         ADDR METHOD
     ('host  all  stork_trust                  all  trust'),
     ('host  all  stork_md5                    all  md5'),
     ('host  all  stork_scram-sha-256          all  scram-sha-256'),

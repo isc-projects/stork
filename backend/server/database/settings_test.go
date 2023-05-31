@@ -65,7 +65,7 @@ func TestConvertToConnectionStringWithOptionalHost(t *testing.T) {
 	}
 
 	params := settings.ConvertToConnectionString()
-	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' port=123 sslmode='disable'", params)
+	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' host='/var/run/postgresql' port=123 sslmode='disable'", params)
 }
 
 // Test that when the port is 0, it is not included in the connection string.
@@ -94,7 +94,7 @@ func TestConvertToConnectionStringWithSSLMode(t *testing.T) {
 	}
 
 	params := settings.ConvertToConnectionString()
-	require.Equal(t, "dbname='stork' user='admin' password='stork' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
+	require.Equal(t, "dbname='stork' user='admin' password='stork' host='/var/run/postgresql' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
 }
 
 // Test that convertToPgOptions function returns the default (empty) unix

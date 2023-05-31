@@ -5,6 +5,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+// The password encryption used by Postgres.
+type PgPasswordEncryption string
+
+// The password encryptions supported by Postgres.
+const (
+	PgPasswordEncryptionMD5         PgPasswordEncryption = "md5"
+	PgPasswordEncryptionScramSHA256 PgPasswordEncryption = "scram-sha-256"
+)
+
 // Create user with a given name.
 func CreateUser(dbi pg.DBI, userName string) error {
 	if _, err := dbi.Exec("CREATE USER ?;", pg.Ident(userName)); err != nil {
@@ -46,7 +55,7 @@ func AlterUserPassword(dbi pg.DBI, userName, password string) error {
 	return nil
 }
 
-// Changes the password encryption method to scram-sha-256.
+// Changes the password encryption method.
 // It must be called before altering password to have an effect.
 // Postgres 14 support altering encryption per user e.g.:
 //
@@ -54,9 +63,18 @@ func AlterUserPassword(dbi pg.DBI, userName, password string) error {
 //
 // but it is not available for the lower versions (but it doesn't cause an
 // error).
-func AlterPasswordEncryptionToScramSHA256(dbi pg.DBI) error {
-	if _, err := dbi.Exec("SET password_encryption = 'scram-sha-256'"); err != nil {
+func SetPasswordEncryption(dbi pg.DBI, passwordEncryption PgPasswordEncryption) error {
+	if _, err := dbi.Exec("SET password_encryption = ?", passwordEncryption); err != nil {
 		return errors.Wrap(err, `problem setting password encryption`)
 	}
 	return nil
+}
+
+// Returns current password encryption.
+func ShowPasswordEncryption(dbi pg.DBI) (PgPasswordEncryption, error) {
+	var passwordEncryption string
+	if _, err := dbi.Query(pg.Scan(&passwordEncryption), "SHOW password_encryption;"); err != nil {
+		return "", errors.Wrap(err, `problem reading password encryption`)
+	}
+	return PgPasswordEncryption(passwordEncryption), nil
 }
