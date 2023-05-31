@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/database/maintenance"
@@ -87,6 +88,13 @@ func skipIfMissingUserEntryInPgHBAFile(t *testing.T, dbi dbops.DBI, settings *db
 					"method", userName, connectionType, rule.AuthMethod)
 			}
 			// User is allowed to use a given authentication method.
+			log.
+				WithFields(log.Fields{
+					"type":       connectionType,
+					"userName":   userName,
+					"authMethod": expectedAuthMethod,
+				}).
+				Infof("Found compatible pg_hba.conf rule: %+v", rule)
 			return
 		}
 	}
