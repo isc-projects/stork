@@ -21,6 +21,7 @@ CREATE USER stork_trust;
 CREATE USER stork_md5 WITH PASSWORD 'stork_md5';
 CREATE USER root;
 CREATE USER "stork_scram-sha-256";
--- Default encryption is md5. Altering password encryption doesn't work for Postgres 11.
+-- Default encryption is md5. Altering password encryption for a specific user
+-- doesn't work for Postgres 11.
 SET password_encryption = 'scram-sha-256';
 ALTER USER "stork_scram-sha-256" WITH PASSWORD 'stork_scram-sha-256';
