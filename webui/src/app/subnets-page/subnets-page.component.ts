@@ -11,6 +11,7 @@ import {
     parseSubnetsStatisticValues,
     SubnetWithUniquePools,
     extractUniqueSubnetPools,
+    parseSubnetStatisticValues,
 } from '../subnets'
 import { SettingService } from '../setting.service'
 import { Subscription, concat, of } from 'rxjs'
@@ -387,6 +388,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             )
                 // Take 1 item (return existing entry if exist, otherwise fetch the API).
                 .pipe(take(1))
+                .pipe(
+                    map((subnet) => {
+                        if (subnet) {
+                            parseSubnetStatisticValues(subnet)
+                        }
+                        return subnet
+                    })
+                )
                 // Execute and use.
                 .toPromise()
                 .then((data) => {

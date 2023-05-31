@@ -1,1 +1,72 @@
-<p>subnet-tab works!</p>
+<div *ngIf="subnet" class="mt-4 ml-2">
+    <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
+        <div class="fa fa-project-diagram mr-2"></div>
+        <div id="tab-title-span">
+            Subnet {{ subnet.subnet
+            }}<span *ngIf="subnet.sharedNetwork"> (shared network {{ subnet.sharedNetwork }})</span>
+        </div>
+        <div>
+            <app-help-tip title="Subnet View"> This view contains the subnet details. </app-help-tip>
+        </div>
+    </div>
+    <div class="mb-4">
+        <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Subnet">
+            <p-table [value]="subnet.localSubnets">
+                <ng-template pTemplate="body" let-l>
+                    <tr>
+                        <td class="border-none w-10rem">
+                            <app-entity-link entity="app" [attrs]="l" [showEntityName]="false"></app-entity-link>
+                            <a routerLink="/apps/kea/{{ l.appId }}">{{ l.appName }}</a>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </p-fieldset>
+    </div>
+    <div *ngFor="let localSubnet of subnet.localSubnets; let i = index" class="mb-4">
+        <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualPools()">
+            <ng-template pTemplate="header">
+                <span
+                    >Pools&nbsp;/&nbsp;
+                    <a
+                        *ngIf="!allDaemonsHaveEqualPools(); else equalPoolsBlock"
+                        routerLink="/apps/kea/{{ localSubnet.appId }}"
+                    >
+                        {{ localSubnet.appName }}
+                    </a>
+                    <ng-template #equalPoolsBlock>
+                        <span class="font-normal"> All Servers </span>
+                    </ng-template>
+                </span>
+            </ng-template>
+            <ng-container *ngFor="let pool of localSubnet.pools">
+                <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
+            </ng-container>
+            <ng-container *ngFor="let pool of localSubnet.prefixDelegationPools">
+                <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
+            </ng-container>
+        </p-fieldset>
+    </div>
+    <div *ngIf="subnet.stats" class="mb-4">
+        <p-fieldset id="stats-fieldset" legend="Statistics">
+            <div class="flex inline">
+                <div *ngIf="hasAddressPools">
+                    <app-utilization-stats-chart
+                        leaseType="{{ isIPv6 ? 'na' : 'address' }}"
+                        [network]="subnet"
+                    ></app-utilization-stats-chart>
+                </div>
+                <ng-container *ngIf="hasPrefixPools">
+                    <p-divider *ngIf="hasAddressPools" styleClass="ml-5 mr-5" layout="vertical"></p-divider>
+                    <div>
+                        <app-utilization-stats-chart leaseType="pd" [network]="subnet"></app-utilization-stats-chart>
+                    </div>
+                </ng-container>
+            </div>
+            <p-divider></p-divider>
+            <span class="font-italic text-sm"
+                >Statistics collected at {{ subnet.statsCollectedAt | date : 'short' }}</span
+            >
+        </p-fieldset>
+    </div>
+</div>

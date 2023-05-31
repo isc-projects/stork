@@ -1,0 +1,25 @@
+<div *ngIf="network?.stats; else noNetworkStatsBlock">
+    <div class="flex justify-content-center">{{ isPD ? 'Prefix' : 'Address' }} Utilization ({{ utilization }}%)</div>
+    <div class="flex justify-content-center mb-3">
+        <p-chart type="pie" [data]="data"></p-chart>
+    </div>
+    <div class="flex justify-content-center">
+        <table>
+            <tr>
+                <td class="whitespace-no-wrap">Total {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
+                <td class="pl-2"><app-human-count [value]="total"></app-human-count></td>
+            </tr>
+            <tr>
+                <td class="whitespace-no-wrap">Assigned {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
+                <td class="pl-2"><app-human-count [value]="assigned"></app-human-count></td>
+            </tr>
+            <tr *ngIf="leaseType !== 'pd'">
+                <td class="whitespace-no-wrap">Declined Addresses:</td>
+                <td class="pl-2"><app-human-count [value]="declined"></app-human-count></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<ng-template #noNetworkStatsBlock>
+    <div>No statistics data available.</div>
+</ng-template>

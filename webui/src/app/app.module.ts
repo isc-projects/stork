@@ -47,6 +47,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea'
 import { TreeModule } from 'primeng/tree'
 import { DataViewModule } from 'primeng/dataview'
 import { ChipsModule } from 'primeng/chips'
+import { ChartModule } from 'primeng/chart'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -112,6 +113,8 @@ import { SurroundPipe } from './pipes/surround.pipe'
 import { AccessPointKeyComponent } from './access-point-key/access-point-key.component'
 import { PlaceholderPipe } from './pipes/placeholder.pipe'
 import { SubnetTabComponent } from './subnet-tab/subnet-tab.component'
+import { AddressPoolBarComponent } from './address-pool-bar/address-pool-bar.component'
+import { UtilizationStatsChartComponent } from './utilization-stats-chart/utilization-stats-chart.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -180,6 +183,8 @@ export function cfgFactory() {
         AccessPointKeyComponent,
         PlaceholderPipe,
         SubnetTabComponent,
+        AddressPoolBarComponent,
+        UtilizationStatsChartComponent,
     ],
     imports: [
         BrowserModule,
@@ -231,6 +236,7 @@ export function cfgFactory() {
         ChipsModule,
         DataViewModule,
         ToggleButtonModule,
+        ChartModule,
     ],
     providers: [
         {

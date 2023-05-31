@@ -1,3 +1,4 @@
+import { Local } from 'protractor/built/driverProviders'
 import { DelegatedPrefix, LocalSubnet, SharedNetwork, Subnet } from './backend'
 
 /**
@@ -37,10 +38,47 @@ export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | b
     if (subnet.stats == null) {
         return BigInt(0)
     }
-    if ('total-addresses' in subnet.stats) {
+
+    const stats = subnet.stats as Record<string, number | bigint>
+    if ('total-addresses' in stats) {
         return subnet.stats['assigned-addresses']
     } else {
         return subnet.stats['assigned-nas']
+    }
+}
+
+export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string): bigint | null {
+    if (subnet.stats == null || !subnet.stats.hasOwnProperty(name)) {
+        return BigInt(0)
+    }
+    let value = subnet.stats[name]
+    switch (typeof value) {
+        case 'bigint':
+            return value
+        case 'number':
+            return BigInt(value)
+        default:
+            return null
+    }
+}
+
+export function parseSubnetStatisticValues(subnet: Subnet | SharedNetwork | LocalSubnet): void {
+    // Parse the own statistics.
+    if (subnet.stats == null) {
+        return
+    }
+
+    for (const statName of Object.keys(subnet.stats)) {
+        if (typeof subnet.stats[statName] !== 'string') {
+            return
+        }
+
+        try {
+            subnet.stats[statName] = BigInt(subnet.stats[statName])
+        } catch {
+            // Non-integer string
+            return
+        }
     }
 }
 
@@ -59,23 +97,7 @@ export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] 
             parseSubnetsStatisticValues(subnet.localSubnets)
         }
 
-        // Parse the own statistics.
-        if (subnet.stats == null) {
-            return
-        }
-
-        for (const statName of Object.keys(subnet.stats)) {
-            if (typeof subnet.stats[statName] !== 'string') {
-                return
-            }
-
-            try {
-                subnet.stats[statName] = BigInt(subnet.stats[statName])
-            } catch {
-                // Non-integer string
-                return
-            }
-        }
+        parseSubnetStatisticValues(subnet)
     }
 }
 
@@ -136,4 +158,109 @@ export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePoo
         }
     }
     return convertedSubnets
+}
+
+/**
+ * Convenience function checking if the subnet has any address pools.
+ *
+ * @param subnet subnet instance with local subnet instances.
+ * @returns true if the subnet includes at least one address pool.
+ */
+export function hasAddressPools(subnet: Subnet): boolean {
+    if (!subnet.localSubnets || subnet.localSubnets.length === 0) {
+        return false
+    }
+    for (const ls of subnet.localSubnets) {
+        if (ls.pools?.length > 0) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
+ * Convenience function checking if the subnet has any delegated prefix pools.
+ *
+ * @param subnet subnet instance with local subnet instances.
+ * @returns true if the subnet includes at least one delegated prefix pool.
+ */
+export function hasPrefixPools(subnet: Subnet): boolean {
+    if (!subnet.localSubnets || subnet.localSubnets.length === 0) {
+        return false
+    }
+    for (const ls of subnet.localSubnets) {
+        if (ls.prefixDelegationPools?.length > 0) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
+ * Convenience function checking if the servers using a subnet have different
+ * pools defined for it.
+ *
+ * @param subnet subnet instance with local subnet instances.
+ * @returns true if servers using the subnet have different pools defined for
+ * it, false otherwise.
+ */
+export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
+    if (!subnet.localSubnets || subnet.localSubnets.length <= 1) {
+        return false
+    }
+    for (let i = 1; i < subnet.localSubnets.length; i++) {
+        // Check for different address pools.
+        if (subnet.localSubnets[i].pools && subnet.localSubnets[0].pools) {
+            if (subnet.localSubnets[i].pools.length !== subnet.localSubnets[0].pools.length) {
+                return true
+            }
+            for (const pool of subnet.localSubnets[i].pools) {
+                if (!subnet.localSubnets[0].pools.includes(pool)) {
+                    return true
+                }
+            }
+        }
+        // Check for different prefix pools.
+        if (subnet.localSubnets[i].prefixDelegationPools && subnet.localSubnets[0].prefixDelegationPools) {
+            if (
+                subnet.localSubnets[i].prefixDelegationPools.length !==
+                subnet.localSubnets[0].prefixDelegationPools.length
+            ) {
+                return true
+            }
+            for (const pool of subnet.localSubnets[i].prefixDelegationPools) {
+                if (
+                    subnet.localSubnets[0].prefixDelegationPools.findIndex((p) => {
+                        p.prefix === pool.prefix &&
+                            p.delegatedLength === pool.delegatedLength &&
+                            p.excludedPrefix === pool.excludedPrefix
+                    }) < 0
+                ) {
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
+
+/**
+ * Utility function checking if there are differences between
+ * DHCP options in the subnet.
+ *
+ * @param host host instance.
+ * @returns true if there are differences in DHCP options, false
+ * otherwise.
+ */
+export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
+    return (
+        !!(subnet.localSubnets?.length > 0) &&
+        subnet.localSubnets
+            .slice(1)
+            .some(
+                (ls) =>
+                    ls.keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash !==
+                    subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash
+            )
+    )
 }

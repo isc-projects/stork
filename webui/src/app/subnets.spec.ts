@@ -6,6 +6,9 @@ import {
     getAssignedAddresses,
     parseSubnetsStatisticValues,
     extractUniqueSubnetPools,
+    hasDifferentLocalSubnetPools,
+    hasAddressPools,
+    hasPrefixPools,
 } from './subnets'
 
 describe('subnets', () => {
@@ -266,5 +269,144 @@ describe('subnets', () => {
         expect(convertedSubnets[0].prefixDelegationPools).toBeFalsy()
         expect(convertedSubnets[1].pools).toBeFalsy()
         expect(convertedSubnets[1].prefixDelegationPools).toBeFalsy()
+    })
+
+    it('detects different address pools for servers', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    pools: ['192.0.2.10-192.0.2.20', '192.0.2.30-192.0.2.40'],
+                },
+                {
+                    pools: ['192.0.2.10-192.0.2.20'],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeTrue()
+        expect(hasPrefixPools(subnet)).toBeFalse()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('detects different prefix pool lengths for servers', () => {
+        const subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                        },
+                    ],
+                },
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 80,
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeFalse()
+        expect(hasPrefixPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('detects different prefix pool prefixes for servers', () => {
+        const subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                        },
+                    ],
+                },
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3001::',
+                            delegatedLength: 64,
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeFalse()
+        expect(hasPrefixPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('detects different prefix pool excluded prefixes for servers', () => {
+        const subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                            excludedPrefix: '3000::/120',
+                        },
+                    ],
+                },
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                            excludedPrefix: '3000::/116',
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeFalse()
+        expect(hasPrefixPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('detects the same address and prefix pools', () => {
+        const subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    pools: ['2001:db8:1::20-2001:db8:1::40', '2001:db8:1::60-2001:db8:1::80'],
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                            excludedPrefix: '3000::/120',
+                        },
+                        {
+                            prefix: '3000:1::',
+                            delegatedLength: 64,
+                        },
+                    ],
+                },
+                {
+                    pools: ['2001:db8:1::60-2001:db8:1::80', '2001:db8:1::20-2001:db8:1::40'],
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000:1::',
+                            delegatedLength: 64,
+                        },
+                        {
+                            prefix: '3000::',
+                            delegatedLength: 64,
+                            excludedPrefix: '3000::/120',
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeTrue()
+        expect(hasPrefixPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
     })
 })
