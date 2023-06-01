@@ -62,7 +62,7 @@ export class LoginScreenComponent implements OnInit {
 
         // Initialize the login form controls.
         this.loginForm = this.formBuilder.group({
-            authenticationMethodId: ['', Validators.required],
+            authenticationMethod: ['', Validators.required],
             identifier: ['', Validators.required],
             secret: ['', Validators.required],
         })
