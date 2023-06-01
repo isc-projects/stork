@@ -1,3 +1,12 @@
+* 302 [bug] marcin
+
+    Fixed a bug in the Stork server that resulted in temporarily holding wrong
+    DHCP options for an edited host reservation. This problem occurred when
+    different options were specified for different servers owning the same
+    host reservation. In addition, fixed a similar bug in specifying different
+    client classes for different servers.
+    (Gitlab #1017)
+
 * 301 [bug] slawek
 
     Stork resolves now the include statements in the Kea configuration with any
