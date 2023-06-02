@@ -23,6 +23,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { MessagesModule } from 'primeng/messages'
 import { ToggleButtonModule } from 'primeng/togglebutton'
+import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
+import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 
 describe('LeaseSearchPageComponent', () => {
@@ -60,6 +62,8 @@ describe('LeaseSearchPageComponent', () => {
                 LocaltimePipe,
                 BreadcrumbsComponent,
                 HelpTipComponent,
+                JsonTreeComponent,
+                JsonTreeRootComponent,
                 IdentifierComponent,
             ],
         }).compileComponents()
@@ -173,6 +177,7 @@ describe('LeaseSearchPageComponent', () => {
                 subnetId: 123,
                 cltt: 1616149050,
                 validLifetime: 3600,
+                userContext: { ISC: { 'client-classes': ['ALL', 'HA_primary', 'UNKNOWN'] } },
             },
         ]
         component.lastSearchText = '192.0.2.3'
@@ -245,6 +250,22 @@ describe('LeaseSearchPageComponent', () => {
             }
             tableIndex++
         }
+
+        // Test User Context JSON tree content.
+        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
+        expect(tree).not.toBeNull()
+        expect(Object.keys(tree).length).toBe(1)
+        const treeComponent = tree[0].componentInstance as JsonTreeComponent
+        expect(treeComponent).not.toBeNull()
+        expect(treeComponent.value).not.toBeNull()
+        expect(Object.keys(treeComponent.value).length).toBe(1)
+        expect(treeComponent.value['ISC']).not.toBeNull()
+        expect(Object.keys(treeComponent.value['ISC']).length).toBe(1)
+        expect(treeComponent.value['ISC']['client-classes']).not.toBeNull()
+        expect(treeComponent.value['ISC']['client-classes'].length).toBe(3)
+        expect(treeComponent.value['ISC']['client-classes'][0]).toBe('ALL')
+        expect(treeComponent.value['ISC']['client-classes'][1]).toBe('HA_primary')
+        expect(treeComponent.value['ISC']['client-classes'][2]).toBe('UNKNOWN')
 
         // Test summary.
         const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))
@@ -322,6 +343,11 @@ describe('LeaseSearchPageComponent', () => {
             i++
         }
 
+        // Test User Context JSON tree content.
+        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
+        expect(tree).not.toBeNull()
+        expect(Object.keys(tree).length).toBe(0)
+
         // Test summary.
         const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))
         expect(leasesSearchSummary.properties.innerText).toBe('Found 1 lease matching 192.0.2.3.')
@@ -346,6 +372,7 @@ describe('LeaseSearchPageComponent', () => {
                 cltt: 1616149050,
                 preferredLifetime: 900,
                 validLifetime: 1800,
+                userContext: { ISC: { 'client-classes': ['ALL', 'HA_primary', 'UNKNOWN'] } },
             },
             {
                 id: 2,
@@ -455,6 +482,22 @@ describe('LeaseSearchPageComponent', () => {
             }
             tableIndex++
         }
+
+        // Test User Context JSON tree content.
+        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
+        expect(tree).not.toBeNull()
+        expect(Object.keys(tree).length).toBe(1)
+        const treeComponent = tree[0].componentInstance as JsonTreeComponent
+        expect(treeComponent).not.toBeNull()
+        expect(treeComponent.value).not.toBeNull()
+        expect(Object.keys(treeComponent.value).length).toBe(1)
+        expect(treeComponent.value['ISC']).not.toBeNull()
+        expect(Object.keys(treeComponent.value['ISC']).length).toBe(1)
+        expect(treeComponent.value['ISC']['client-classes']).not.toBeNull()
+        expect(treeComponent.value['ISC']['client-classes'].length).toBe(3)
+        expect(treeComponent.value['ISC']['client-classes'][0]).toBe('ALL')
+        expect(treeComponent.value['ISC']['client-classes'][1]).toBe('HA_primary')
+        expect(treeComponent.value['ISC']['client-classes'][2]).toBe('UNKNOWN')
 
         expectedLeaseData = [
             [['DUID', '01:02:03:05']],

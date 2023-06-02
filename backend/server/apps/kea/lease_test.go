@@ -30,7 +30,34 @@ func mockLease4Get(callNo int, responses []interface{}) {
                 "ip-address": "192.0.2.1",
                 "state": 0,
                 "subnet-id": 44,
-                "valid-lft": 3600
+                "valid-lft": 3600,
+                "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
+            }
+        }
+    ]`)
+	command := keactrl.NewCommand("lease4-get", []string{"dhcp4"}, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
+// Generates a success mock response to commands fetching a single
+// DHCPv4 lease with invalid user context data.
+func mockLease4GetInvalidJSON(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 0,
+            "text": "Lease found",
+            "arguments": {
+                "client-id": "42:42:42:42:42:42:42:42",
+                "cltt": 12345678,
+                "fqdn-fwd": false,
+                "fqdn-rev": true,
+                "hostname": "myhost.example.com.",
+                "hw-address": "08:08:08:08:08:08",
+                "ip-address": "192.0.2.1",
+                "state": 0,
+                "subnet-id": 44,
+                "valid-lft": 3600,
+                "user-context": "invalid"
             }
         }
     ]`)
@@ -99,7 +126,8 @@ func mockLease6GetByIPAddress(callNo int, responses []interface{}) {
                 "state": 0,
                 "subnet-id": 44,
                 "type": "IA_NA",
-                "valid-lft": 3600
+                "valid-lft": 3600,
+                "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
             }
         }
     ]`)
@@ -127,7 +155,37 @@ func mockLease6GetByPrefix(callNo int, responses []interface{}) {
                 "state": 0,
                 "subnet-id": 44,
                 "type": "IA_PD",
-                "valid-lft": 3600
+                "valid-lft": 3600,
+                "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
+            }
+        }
+    ]`)
+	command := keactrl.NewCommand("lease6-get", []string{"dhcp6"}, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
+// Generates a success mock response to commands fetching a single
+// DHCPv6 lease with invalid user context data.
+func mockLease6GetInvalidJSON(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 0,
+            "text": "Lease found",
+            "arguments": {
+                "cltt": 12345678,
+                "duid": "42:42:42:42:42:42:42:42",
+                "fqdn-fwd": false,
+                "fqdn-rev": true,
+                "hostname": "myhost.example.com.",
+                "hw-address": "08:08:08:08:08:08",
+                "iaid": 1,
+                "ip-address": "2001:db8:2::1",
+                "preferred-lft": 500,
+                "state": 0,
+                "subnet-id": 44,
+                "type": "IA_NA",
+                "valid-lft": 3600,
+                "user-context": "invalid"
             }
         }
     ]`)
@@ -430,6 +488,16 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	require.Zero(t, lease.State)
 	require.EqualValues(t, 44, lease.SubnetID)
 	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	require.NotNil(t, lease.UserContext["ISC"])
+	require.Len(t, lease.UserContext["ISC"], 1)
+	context := lease.UserContext["ISC"].(map[string]any)
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 }
 
 // Test the success scenario in sending lease6-get command to Kea to get
@@ -463,6 +531,16 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	require.EqualValues(t, 44, lease.SubnetID)
 	require.Equal(t, "IA_NA", lease.Type)
 	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	require.NotNil(t, lease.UserContext["ISC"])
+	require.Len(t, lease.UserContext["ISC"], 1)
+	context := lease.UserContext["ISC"].(map[string]any)
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 }
 
 // Test the success scenario in sending lease6-get command to Kea to get
@@ -497,6 +575,16 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	require.EqualValues(t, 44, lease.SubnetID)
 	require.Equal(t, "IA_PD", lease.Type)
 	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	require.NotNil(t, lease.UserContext["ISC"])
+	require.Len(t, lease.UserContext["ISC"], 1)
+	context := lease.UserContext["ISC"].(map[string]any)
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 }
 
 // Test the scenario in sending lease4-get command to Kea when the lease
@@ -586,6 +674,7 @@ func TestGetLeases4(t *testing.T) {
 			require.Zero(t, lease.State)
 			require.EqualValues(t, 44, lease.SubnetID)
 			require.EqualValues(t, 3600, lease.ValidLifetime)
+			require.Nil(t, lease.UserContext)
 		})
 	}
 }
@@ -643,6 +732,7 @@ func TestGetLeases6(t *testing.T) {
 			require.EqualValues(t, 44, lease.SubnetID)
 			require.Equal(t, "IA_NA", lease.Type)
 			require.EqualValues(t, 3600, lease.ValidLifetime)
+			require.Nil(t, lease.UserContext)
 
 			lease = leases[1]
 			require.EqualValues(t, app.ID, lease.AppID)
@@ -661,6 +751,7 @@ func TestGetLeases6(t *testing.T) {
 			require.EqualValues(t, 44, lease.SubnetID)
 			require.Equal(t, "IA_PD", lease.Type)
 			require.EqualValues(t, 3600, lease.ValidLifetime)
+			require.Nil(t, lease.UserContext)
 		})
 	}
 }
@@ -734,6 +825,72 @@ func TestGetLeasesByPropertiesSecondError(t *testing.T) {
 	require.Zero(t, lease.State)
 	require.EqualValues(t, 44, lease.SubnetID)
 	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.Nil(t, lease.UserContext)
+}
+
+// Test the scenario in sending lease4-get command to Kea when
+// user context is not a map.
+func TestGetLeases4InvalidJSON(t *testing.T) {
+	agents := agentcommtest.NewFakeAgents(mockLease4GetInvalidJSON, nil)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
+	app := &dbmodel.App{
+		ID:           1,
+		AccessPoints: accessPoints,
+	}
+
+	lease, err := GetLease4ByIPAddress(agents, app, "192.0.2.3")
+	require.NoError(t, err)
+	require.NotNil(t, lease)
+
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.EqualValues(t, 12345678, lease.CLTT)
+	require.False(t, lease.FqdnFwd)
+	require.True(t, lease.FqdnRev)
+	require.Equal(t, "myhost.example.com.", lease.Hostname)
+	require.Equal(t, "08:08:08:08:08:08", lease.HWAddress)
+	require.Equal(t, "192.0.2.1", lease.IPAddress)
+	require.Zero(t, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.Nil(t, lease.UserContext)
+}
+
+// Test the scenario in sending lease6-get command to Kea when
+// user context is not a map.
+func TestGetLease6InvalidJSON(t *testing.T) {
+	agents := agentcommtest.NewFakeAgents(mockLease6GetInvalidJSON, nil)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
+	app := &dbmodel.App{
+		ID:           2,
+		AccessPoints: accessPoints,
+	}
+
+	lease, err := GetLease6ByIPAddress(agents, app, "IA_NA", "2001:db8:2::1")
+	require.NoError(t, err)
+	require.NotNil(t, lease)
+
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
+	require.EqualValues(t, 12345678, lease.CLTT)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+	require.False(t, lease.FqdnFwd)
+	require.True(t, lease.FqdnRev)
+	require.Equal(t, "myhost.example.com.", lease.Hostname)
+	require.Equal(t, "08:08:08:08:08:08", lease.HWAddress)
+	require.EqualValues(t, 1, lease.IAID)
+	require.Equal(t, "2001:db8:2::1", lease.IPAddress)
+	require.EqualValues(t, 500, lease.PreferredLifetime)
+	require.Zero(t, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.Equal(t, "IA_NA", lease.Type)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.Nil(t, lease.UserContext)
 }
 
 // Test validation of the Kea servers' invalid responses or indicating errors.

@@ -29,7 +29,8 @@ func mockLease4Get(callNo int, responses []interface{}) {
                 "ip-address": "192.0.2.1",
                 "state": 0,
                 "subnet-id": 44,
-                "valid-lft": 3600
+                "valid-lft": 3600,
+                "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
             }
         }
     ]`)
@@ -83,7 +84,8 @@ func mockLeases6Get(callNo int, responses []interface{}) {
                         "state": 0,
                         "subnet-id": 44,
                         "type": "IA_NA",
-                        "valid-lft": 3600
+                        "valid-lft": 3600,
+                        "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
                     },
                     {
                         "cltt": 12345678,
@@ -98,7 +100,8 @@ func mockLeases6Get(callNo int, responses []interface{}) {
                         "state": 0,
                         "subnet-id": 44,
                         "type": "IA_PD",
-                        "valid-lft": 3600
+                        "valid-lft": 3600,
+                        "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
                     }
                 ]
             }
@@ -248,6 +251,17 @@ func TestFindLeases4(t *testing.T) {
 	require.EqualValues(t, 44, *lease.SubnetID)
 	require.NotNil(t, lease.ValidLifetime)
 	require.EqualValues(t, 3600, *lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	userContext := lease.UserContext.(map[string]interface{})
+	require.NotNil(t, userContext["ISC"])
+	require.Len(t, userContext["ISC"], 1)
+	context := userContext["ISC"].(map[string]interface{})
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 
 	// Test the case when the Kea server returns an error.
 	agents = agentcommtest.NewFakeAgents(mockLease4GetError, nil)
@@ -352,6 +366,17 @@ func TestFindLeases6(t *testing.T) {
 	require.Equal(t, "IA_NA", lease.LeaseType)
 	require.NotNil(t, lease.ValidLifetime)
 	require.EqualValues(t, 3600, *lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	userContext := lease.UserContext.(map[string]interface{})
+	require.NotNil(t, userContext["ISC"])
+	require.Len(t, userContext["ISC"], 1)
+	context := userContext["ISC"].(map[string]interface{})
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 
 	lease = okRsp.Payload.Items[1]
 	require.NotNil(t, lease.AppID)
@@ -377,6 +402,17 @@ func TestFindLeases6(t *testing.T) {
 	require.Equal(t, "IA_PD", lease.LeaseType)
 	require.NotNil(t, lease.ValidLifetime)
 	require.EqualValues(t, 3600, *lease.ValidLifetime)
+	require.NotNil(t, lease.UserContext)
+	require.Len(t, lease.UserContext, 1)
+	userContext = lease.UserContext.(map[string]interface{})
+	require.NotNil(t, userContext["ISC"])
+	require.Len(t, userContext["ISC"], 1)
+	context = userContext["ISC"].(map[string]interface{})
+	require.NotNil(t, context["client-classes"])
+	require.Len(t, context["client-classes"], 3)
+	require.Equal(t, "ALL", context["client-classes"].([]any)[0])
+	require.Equal(t, "HA_primary", context["client-classes"].([]any)[1])
+	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 }
 
 // Test that when blank search text is specified no leases are returned.
