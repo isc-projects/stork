@@ -4,35 +4,46 @@
 #
 #    pip-compile --resolver=backtracking rakelib/init_deps/pylinters.in
 #
-astroid==2.15.5
-    # via pylint
-dill==0.3.6
-    # via pylint
-flake8==6.0.0
+astroid==2.11.7
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   pylint
+dill==0.3.4
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   pylint
+flake8==5.0.4
     # via -r rakelib/init_deps/pylinters.in
-isort==5.12.0
-    # via pylint
-lazy-object-proxy==1.9.0
-    # via astroid
+isort==5.10.1
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   pylint
+lazy-object-proxy==1.7.1
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   astroid
 mccabe==0.7.0
     # via
     #   flake8
     #   pylint
-platformdirs==3.5.1
-    # via pylint
-pycodestyle==2.10.0
+platformdirs==2.4.0
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   pylint
+pycodestyle==2.9.1
     # via
     #   -r rakelib/init_deps/pylinters.in
     #   flake8
-pyflakes==3.0.1
+pyflakes==2.5.0
     # via flake8
-pylint==2.17.4
+pylint==2.13.9
     # via -r rakelib/init_deps/pylinters.in
-tomli==2.0.1
-    # via pylint
-tomlkit==0.11.8
-    # via pylint
-typing-extensions==4.6.3
-    # via astroid
+tomli==1.2.3
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   pylint
 wrapt==1.15.0
     # via astroid
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
