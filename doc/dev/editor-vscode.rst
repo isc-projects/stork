@@ -2,11 +2,17 @@
 Visual Studio Code
 ******************
 
+This section provides useful tips for developers who use VSCode as their environment. This does not imply any special
+status of VSCode. Other IDEs will be added once other developers choose to share their suggestions.
+
 Debugging System tests
 ======================
 
+Using debugger from VSCode is very convenient, in particular when setting breakpoints and editing file in the same
+environment.
+
 1. Use VSCode
-2. Add the following to .vscode/launch.json:
+2. Add the following to .vscode/launch.json. If you already have `configurations` section, simply add this to the list.
 
 .. code-block:: json
 
@@ -17,14 +23,14 @@ Debugging System tests
         "version": "0.2.0",
         "configurations": [
             {
-                "name": "Launch GO file (th)",
+                "name": "Launch GO file",
                 "type": "go",
                 "request": "launch",
                 "mode": "debug",
                 "program": "${file}"
             }
             {
-                "name": "Python: System tests th",
+                "name": "Python: System tests",
                 "type": "python",
                 "request": "launch",
                 "module": "pytest",
