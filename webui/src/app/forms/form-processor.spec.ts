@@ -35,6 +35,7 @@ describe('FormProcessor', () => {
                             validator1,
                             validator2
                         ),
+                        zab: formBuilder.control(['foo', 'bar']),
                     },
                     { validators: validator1, asyncValidators: validator2 }
                 ),
@@ -71,6 +72,11 @@ describe('FormProcessor', () => {
         expect(baz.at(0).value).toBe('ccc')
         expect(baz.at(1)).toBeInstanceOf(UntypedFormControl)
         expect(baz.at(1).value).toBe('xyz')
+
+        let zab = clonedArray.at(0).get('bar.zab') as UntypedFormControl
+        expect(zab.value).toEqual(formArray.get('0.bar.zab').value)
+        // Ensure that the array value has been deeply copied.
+        expect(zab.value).not.toBe(formArray.get('0.bar.zab').value)
 
         expect(clonedArray.at(1).value).toBe('aaa')
     })

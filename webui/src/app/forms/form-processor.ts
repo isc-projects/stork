@@ -55,7 +55,9 @@ export class FormProcessor {
 
             newControl = formArray as any
         } else if (control instanceof UntypedFormControl) {
-            newControl = new UntypedFormControl(control.value, control.validator, control.asyncValidator) as any
+            // If the value is an array we need to perform a deep copy explicitly.
+            let clonedValue = Array.isArray(control.value) ? [...control.value] : control.value
+            newControl = new UntypedFormControl(clonedValue, control.validator, control.asyncValidator) as any
         } else {
             throw new Error('Error: unexpected control value')
         }
