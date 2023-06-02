@@ -1008,6 +1008,20 @@ file PIP_COMPILE => [PIP] do
     sh PIP_COMPILE, "--version"
 end
 
+PYLINT = File.expand_path("tools/python/bin/pylint")
+python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
+file PYLINT => [PIP, python_linters_requirements_file] do
+    sh PIP, "install", "-r", python_linters_requirements_file
+    sh "touch", "-c", PYLINT
+    sh PYLINT, "--version"
+end
+
+FLAKE8 = File.expand_path("tools/python/bin/flake8")
+file FLAKE8 => [PYLINT] do
+    sh "touch", "-c", FLAKE8
+    sh FLAKE8, "--version"
+end
+
 #############
 ### Tasks ###
 #############

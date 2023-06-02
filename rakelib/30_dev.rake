@@ -19,6 +19,7 @@ python_requirement_files = [
     "doc/src/requirements.in",
     "rakelib/init_deps/pytest.in",
     "rakelib/init_deps/sphinx.in",
+    "rakelib/init_deps/pylinters.in",
     "tests/sim/requirements.in",
 ]
 
@@ -422,20 +423,24 @@ namespace :lint do
     end
 
     desc 'Runs pylint and flake8, python linter tools'
-    task :python => [] do
-        puts "You should have python virtualenv ready and set up. If you don't, you can do it easily:"
-        puts "1. python3 -m venv venv"
-        puts "2. source venv/bin/activate"
-        puts "3. python3 -m pip install --upgrade pip"
-        puts "4. pip install pycodestyle flake8 pylint"
-        python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
-        python_files = python_files.split("\n").map{ |string| string.strip }
-        PYLINT = 'pylint'
-        FLAKE8 = 'flake8'
-        puts "Running flake8:"
-        sh FLAKE8, '--config', '.flake8', '--color=auto', *python_files
-        puts "Running pylint:"
-        sh PYLINT, '--rcfile', '.pylint', *python_files
+    task :python => ['lint:python:pylint', 'lint:python:flake8']
+
+    namespace :python do
+        desc 'Runs pylint, python linter tool'
+        task :pylint => [PYLINT] do
+            python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
+            python_files = python_files.split("\n").map{ |string| string.strip }
+            puts "Running pylint:"
+            sh PYLINT, '--rcfile', '.pylint', *python_files
+        end
+
+        desc 'Runs flake8, python linter tool'
+        task :flake8 => [FLAKE8] do
+            python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
+            python_files = python_files.split("\n").map{ |string| string.strip }
+            puts "Running flake8:"
+            sh FLAKE8, '--config', '.flake8', '--color=auto', *python_files
+        end
     end
 end
 

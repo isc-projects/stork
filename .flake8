@@ -4,7 +4,6 @@
 exclude =
     .git,
     __pycache__,
-    venv
 
 # Print the total number of errors
 count = True

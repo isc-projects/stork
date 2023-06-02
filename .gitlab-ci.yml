@@ -84,24 +84,12 @@ lint_backend:
 lint_python_pylint:
   extends: .base_build_debian
   script:
-    - python3 -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install pylint
-    - if [ -f doc/src/requirements.txt ]; then pip install -r doc/src/requirements.txt; fi
-    - if [ -f tests/sim/requirements.txt ]; then pip install -r tests/sim/requirements.txt; fi
-    - pylint --rcfile .pylint $(git ls-files '*.py')
+    - rake lint:python:pylint
 
 lint_python_flake8:
   extends: .base_build_debian
   script:
-    - python3 -m venv venv
-    - source venv/bin/activate
-    - python3 -m pip install --upgrade pip
-    - pip install pycodestyle flake8
-    - if [ -f doc/src/requirements.txt ]; then pip install -r doc/src/requirements.txt; fi
-    - if [ -f tests/sim/requirements.txt ]; then pip install -r tests/sim/requirements.txt; fi
-    - flake8 --config .flake8 --color=auto $(git ls-files '*.py')
+    - rake lint:python:flake8
 
 unittest_backend:
   extends: .base_build_debian
