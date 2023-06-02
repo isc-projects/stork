@@ -1,3 +1,9 @@
+* 303 [func] razvan
+
+    The lease search page can now display the content of the lease user
+    context.
+    (Gitlab #999)
+
 * 302 [bug] marcin
 
     Fixed a bug in the Stork server that resulted in temporarily holding wrong
