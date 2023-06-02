@@ -97,6 +97,39 @@ html_static_path = ['static']
 #
 # html_sidebars = {}
 
+templates_path = ["dev/_templates"]
+
+html_context = {
+    "sidebar_external_links_caption": "Links",
+    "sidebar_external_links": [
+        (
+            '<i class="fa fa-gitlab fa-fw"></i> Source code',
+            "https://gitlab.isc.org/isc-projects/stork",
+        ),
+        (
+            '<i class="fa fa-cloud-download fa-fw"></i> Download',
+            "https://cloudsmith.io/~isc/repos/stork/packages/",
+        ),
+        (
+            '<i class="fa fa-book fa-fw"></i> Documentation for users',
+            "https://stork.readthedocs.io",
+        ),
+        (
+            '<i class="fa fa-bug fa-fw"></i> Issue tracker',
+            "https://gitlab.isc.org/isc-projects/stork/-/issues/",
+        ),
+        (
+            '<i class="fa fa-wikipedia-w fa-fw"></i> Wiki',
+            "https://gitlab.isc.org/isc-projects/stork/-/wikis/home",
+        ),
+        (
+            '<i class="fa fa-envelope fa-fw"></i> Mailing list (users)',
+            "https://lists.isc.org/mailman/listinfo/stork-users",
+        ),
+    ],
+}
+
+
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
