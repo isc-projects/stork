@@ -181,7 +181,7 @@ def setup(app):
 # External links.
 # It allows to link the dev and user docs.
 base_user_doc_url = f'https://stork.readthedocs.io/en/v{version}/%s'
-extlinks = {'ud': (base_user_doc_url, None)}  # 'ud' = 'user doc'
+extlinks = {'user': (base_user_doc_url, None)}
 # Example usage:
 # :ud:`Installation page <install.html>`
 # Note there is no underscore (_) at the end.
