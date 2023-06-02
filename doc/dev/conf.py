@@ -13,8 +13,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 
 # to avoid "sphinx.errors.SphinxParallelError: RecursionError: maximum recursion depth exceeded
 # while pickling an object"
@@ -79,7 +77,6 @@ exclude_patterns = [ 'devel/*' ]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
 html_logo = '../static/stork-square-100px.png'
 
