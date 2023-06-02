@@ -39,7 +39,10 @@ The following steps install Stork and its dependencies natively,
 i.e., on the host machine, rather than using Docker images.
 
 First, PostgreSQL must be installed. This is OS-specific, so please
-follow the instructions from the `installation` chapter in Stork ARM.
+follow the instructions from the `Installation
+<https://stork.readthedocs.io/en/latest/install.html#installation-prerequisites>`_
+chapter in Stork ARM, in particular the section about Installation Prerequisites
+and follow-up sections.
 
 Once the database environment is set up, the next step is to build all
 the tools. The first command below downloads some missing dependencies
