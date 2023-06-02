@@ -264,7 +264,7 @@ go_agent_mocks.each do |mock_file|
 end
 
 CLEAN.append *GO_MOCKS
-    
+
 #####################
 ### Documentation ###
 #####################
@@ -275,6 +275,7 @@ DOC_CODEBASE = FileList["doc", "doc/**/*"]
         .include("backend/version.go")
         .exclude("doc/_build")
         .exclude("doc/_build/**/*")
+        .exclude("doc/_build-dev")
         .exclude("doc/doctrees/**/*")
         .exclude("doc/man/*.8")
 
@@ -364,7 +365,7 @@ def remove_files(list)
     list.each do |item|
         FileUtils.rm_rf(item)
     end
-end 
+end
 
 namespace :clean do
     desc 'Clean up the project by deleting scratch files and backup files'
@@ -407,17 +408,17 @@ namespace :prepare do
     task :codebase do
         find_and_prepare_deps(__FILE__)
     end
-    
+
     desc 'Trigger the backend (GO) dependencies installation.'
     task :backend_deps => [GO] do
         Dir.chdir("backend") do
             sh GO, "mod", "download"
         end
     end
-    
+
     desc 'Trigger the frontend (UI) dependencies installation'
     task :ui_deps => [node_module_dir]
-    
+
     desc 'Trigger the frontend (UI) and backend (GO) dependencies installation'
     task :deps => [:ui_deps, :backend_deps]
 end
