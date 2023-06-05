@@ -1,3 +1,5 @@
+Stork 1.11.0 released on 2023-06-07.
+
 * 305 [bug] slawek
 
     Fixed a problem with improperly using the rndc command that prevented
