@@ -918,6 +918,10 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			}
 		}
 
+		// The BIND9 daemon is missing when the Stork Agent detects that the
+		// BIND9 daemon is running, but there are problems with fetching its
+		// configuration (e.g., cannot call the named-checkconf -v command).
+		// In this case, the application entry is created but no daemon.
 		var bind9Daemon *models.Bind9Daemon
 		if bind9DaemonDB != nil {
 			bind9Daemon = &models.Bind9Daemon{
