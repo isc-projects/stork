@@ -1,9 +1,9 @@
 * 300 [bug] slawek
 
-    Fixed a bug in handling the empty database host that disallowed login to
-    UI. Fixed rejecting the database usernames containing a dash. Fixed
-    printing of the error messages related to the database authentication
-    problems.
+    Fixed a bug in handling the empty database host that caused user login
+    failures in the UI. Fixed rejecting the database usernames containing a
+    dash. Fixed printing of the error messages related to the database
+    authentication problems.
     (Gitlab #1022)
 
 * 303 [func] razvan

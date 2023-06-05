@@ -21,7 +21,7 @@ func CreateDatabase(db *pg.DB, dbName string) (created bool, err error) {
 	return true, nil
 }
 
-// Create database with a given name.
+// Create database from template with a given name.
 func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created bool, err error) {
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s;", dbName, templateName))
 	if err != nil {
@@ -29,7 +29,12 @@ func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created
 		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
 			return false, nil
 		}
-		err = errors.Wrapf(err, `problem creating the database "%s"`, dbName)
+		err = errors.Wrapf(
+			err,
+			`problem creating the database "%s" from the template "%s"`,
+			dbName,
+			templateName,
+		)
 		return false, err
 	}
 	return true, nil

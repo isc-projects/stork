@@ -50,7 +50,7 @@ func GrantAllPrivilegesOnDatabaseToUser(dbi pg.DBI, dbName, userName string) err
 // Changes (or set) password for a given user.
 func AlterUserPassword(dbi pg.DBI, userName, password string) error {
 	if _, err := dbi.Exec("ALTER USER ? WITH PASSWORD ?", pg.Ident(userName), password); err != nil {
-		return errors.Wrapf(err, `problem setting generated password for user "%s"`, userName)
+		return errors.Wrapf(err, `problem altering password for user "%s"`, userName)
 	}
 	return nil
 }
