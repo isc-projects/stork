@@ -63,7 +63,7 @@ func TestCreateDatabaseFromTemplate(t *testing.T) {
 }
 
 // Test that the database is deleted properly.
-func TestDropDatabaseSafeExisting(t *testing.T) {
+func TestDropDatabaseIfExistsForExistingDatabase(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
@@ -71,7 +71,7 @@ func TestDropDatabaseSafeExisting(t *testing.T) {
 	_, _ = maintenance.CreateDatabase(db, databaseName)
 
 	// Act
-	err := maintenance.DropDatabaseSafe(db, databaseName)
+	err := maintenance.DropDatabaseIfExists(db, databaseName)
 
 	// Assert
 	require.NoError(t, err)
@@ -81,14 +81,14 @@ func TestDropDatabaseSafeExisting(t *testing.T) {
 }
 
 // Test that dropping non-existing database causes no error.
-func TestDropDatabaseSafeNonExisting(t *testing.T) {
+func TestDropDatabaseIfExistsForNonExistingDatabase(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
 	databaseName := fmt.Sprintf("%s_drop_safe_non_existing", settings.DBName)
 
 	// Act
-	err := maintenance.DropDatabaseSafe(db, databaseName)
+	err := maintenance.DropDatabaseIfExists(db, databaseName)
 
 	// Assert
 	require.NoError(t, err)

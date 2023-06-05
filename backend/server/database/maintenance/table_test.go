@@ -10,7 +10,7 @@ import (
 )
 
 // Test that dropping existing table works properly.
-func TestDropTableSafeForExistingTable(t *testing.T) {
+func TestDropTableIfExistsForExistingTable(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
@@ -19,7 +19,7 @@ func TestDropTableSafeForExistingTable(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	err = maintenance.DropTableSafe(db, "setting")
+	err = maintenance.DropTableIfExists(db, "setting")
 
 	// Assert
 	require.NoError(t, err)
@@ -28,26 +28,26 @@ func TestDropTableSafeForExistingTable(t *testing.T) {
 }
 
 // Test that dropping non-existing table causes no error.
-func TestDropTableSafeForNonExistingTable(t *testing.T) {
+func TestDropTableIfExistsForNonExistingTable(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
 
 	// Act
-	err := maintenance.DropTableSafe(db, "foobar")
+	err := maintenance.DropTableIfExists(db, "foobar")
 
 	// Assert
 	require.NoError(t, err)
 }
 
 // Test that dropping non-existing sequence causes no error.
-func TestDropSequenceSafe(t *testing.T) {
+func TestDropSequenceIfExists(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
 
 	// Act
-	err := maintenance.DropSequenceSafe(db, "stork_test_non_existing_sequence")
+	err := maintenance.DropSequenceIfExists(db, "stork_test_non_existing_sequence")
 
 	// Assert
 	require.NoError(t, err)

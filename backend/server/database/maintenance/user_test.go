@@ -25,13 +25,13 @@ func TestCreateUser(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
 	if ok, _ := maintenance.HasUser(db, userName); ok {
-		_ = maintenance.DropUserSafe(db, userName)
+		_ = maintenance.DropUserIfExists(db, userName)
 	}
 
 	// Act
 	err := maintenance.CreateUser(db, userName)
 	defer func() {
-		maintenance.DropUserSafe(db, userName)
+		maintenance.DropUserIfExists(db, userName)
 	}()
 
 	// Assert
@@ -74,7 +74,7 @@ func TestHasUserForNonExistingUser(t *testing.T) {
 }
 
 // Test that dropping existing user works properly.
-func TestDropUserSafeExistingUser(t *testing.T) {
+func TestDropUserIfExistsForExistingUser(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
@@ -84,24 +84,24 @@ func TestDropUserSafeExistingUser(t *testing.T) {
 	}
 
 	// Act
-	err := maintenance.DropUserSafe(db, userName)
+	err := maintenance.DropUserIfExists(db, userName)
 
 	// Assert
 	require.NoError(t, err)
 }
 
 // Test that dropping non-existing user causes no error.
-func TestDropUserSafeNonExistingUser(t *testing.T) {
+func TestDropUserIfExistsForNonExistingUser(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
 	userName := prepareUsername(t, "user_drop_safe_non_existing")
 	if ok, _ := maintenance.HasUser(db, userName); ok {
-		_ = maintenance.DropUserSafe(db, userName)
+		_ = maintenance.DropUserIfExists(db, userName)
 	}
 
 	// Act
-	err := maintenance.DropUserSafe(db, userName)
+	err := maintenance.DropUserIfExists(db, userName)
 
 	// Assert
 	require.NoError(t, err)

@@ -77,7 +77,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	rand.Seed(time.Now().UnixNano())
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
-	if err = maintenance.DropDatabaseSafe(db, dbName); err != nil {
+	if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
 		return
 	}
 

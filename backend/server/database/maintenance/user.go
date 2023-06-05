@@ -32,7 +32,7 @@ func HasUser(dbi pg.DBI, userName string) (bool, error) {
 }
 
 // Drops user with a given name. It doesn't fail if the user doesn't exist.
-func DropUserSafe(dbi pg.DBI, userName string) error {
+func DropUserIfExists(dbi pg.DBI, userName string) error {
 	if _, err := dbi.Exec("DROP USER IF EXISTS ?;", pg.Ident(userName)); err != nil {
 		return errors.Wrapf(err, `problem dropping the user "%s"`, userName)
 	}

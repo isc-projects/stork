@@ -8,7 +8,7 @@ import (
 )
 
 // Drops a given table. It doesn't fail if the table doesn't exist.
-func DropTableSafe(dbi pg.DBI, tableName string) error {
+func DropTableIfExists(dbi pg.DBI, tableName string) error {
 	if _, err := dbi.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName)); err != nil {
 		return errors.Wrapf(err, `problem dropping table "%s"`, tableName)
 	}
@@ -16,7 +16,7 @@ func DropTableSafe(dbi pg.DBI, tableName string) error {
 }
 
 // Drops a given sequence. It doesn't fail if the sequence doesn't exist.
-func DropSequenceSafe(dbi pg.DBI, tableName string) error {
+func DropSequenceIfExists(dbi pg.DBI, tableName string) error {
 	if _, err := dbi.Exec(fmt.Sprintf("DROP SEQUENCE IF EXISTS %s", tableName)); err != nil {
 		return errors.Wrapf(err, `problem dropping sequence "%s"`, tableName)
 	}

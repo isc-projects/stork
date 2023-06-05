@@ -41,7 +41,7 @@ func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created
 }
 
 // Drop database with a given name. It doesn't fail if the database doesn't exist.
-func DropDatabaseSafe(db *pg.DB, dbName string) error {
+func DropDatabaseIfExists(db *pg.DB, dbName string) error {
 	if _, err := db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
 		return errors.Wrapf(err, `problem dropping the database "%s"`, dbName)
 	}

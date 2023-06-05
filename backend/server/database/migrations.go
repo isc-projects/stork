@@ -41,10 +41,10 @@ func Toss(db *PgDB) error {
 
 	// Remove the versioning table and id sequence.
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
-		if err := maintenance.DropTableSafe(tx, "gopg_migrations"); err != nil {
+		if err := maintenance.DropTableIfExists(tx, "gopg_migrations"); err != nil {
 			return err
 		}
-		return maintenance.DropSequenceSafe(tx, "gopg_migrations_id_seq")
+		return maintenance.DropSequenceIfExists(tx, "gopg_migrations_id_seq")
 	})
 
 	return err
@@ -124,7 +124,7 @@ func CurrentVersion(db *PgDB) (int64, error) {
 func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (err error) {
 	if force {
 		// Drop an existing database if it exists.
-		if err = maintenance.DropDatabaseSafe(db, dbName); err != nil {
+		if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
 			return
 		}
 	}
@@ -143,7 +143,7 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 
 		if force {
 			// Drop an existing user if it exists.
-			if err = maintenance.DropUserSafe(tx, userName); err != nil {
+			if err = maintenance.DropUserIfExists(tx, userName); err != nil {
 				return
 			}
 		} else {

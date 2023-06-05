@@ -186,7 +186,7 @@ func setupCustomUser(t *testing.T, db *dbops.PgDB, authMethod maintenance.PgAuth
 
 	return userTest, func() {
 		if !userInitiallyExists {
-			_ = maintenance.DropUserSafe(db, userTest)
+			_ = maintenance.DropUserIfExists(db, userTest)
 		}
 	}
 }
