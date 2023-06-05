@@ -1,3 +1,8 @@
+* 309 [func] marcin
+
+    A tab with the subnet details is opened after clicking on the subnet.
+    (Gitlab #931)
+
 * 308 [doc] tomek
 
     The Stork Developer's Guide is now a stand-alone document. You can
