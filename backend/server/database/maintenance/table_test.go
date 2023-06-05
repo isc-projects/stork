@@ -24,7 +24,7 @@ func TestDropTableIfExistsForExistingTable(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	_, err = dbmodel.GetAllSettings(db)
-	require.ErrorContains(t, err, "relation \"setting\" does not exist")
+	require.ErrorContains(t, err, `relation "setting" does not exist`)
 }
 
 // Test that dropping non-existing table causes no error.
