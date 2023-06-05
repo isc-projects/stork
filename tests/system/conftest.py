@@ -81,10 +81,16 @@ def pytest_collection_modifyitems(session, config, items):
     The hook to add additional decorators/markers to the tests.
     """
     # Add per-test timeout.
+    # It is a watchdog to interrupt the test case if it is stuck (e.g. while
+    # building the containers). Otherwise, it would wait until it is
+    # interrupted by the global CI timeout, but in this case, the log and
+    # diagnostic data wouldn't be collected.
+    # We cannot set the timeout dynamically, depending if the test case needs
+    # to build the Docker containers (longer period) or not (shorter period)
+    # because there is no (built-in) way to detect if the build is necessary
+    # before starting the test and adjusting timeout after it starts.
     default_timeout = datetime.timedelta(minutes=20)
-
     for item in items:
-        print(item)
         if item.get_closest_marker('timeout') is None:
             item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
 
