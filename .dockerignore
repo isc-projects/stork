@@ -8,6 +8,6 @@ webui/src/assets/arm
 build-root/
 backend/server/gen
 doc/doctrees
-doc/_build
+doc/build
 doc/man/*.8
 dist/

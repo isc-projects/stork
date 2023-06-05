@@ -273,9 +273,9 @@ end
 
 namespace :build do
     desc 'Builds Stork documentation continuously whenever source files change'
-    task :doc_live => [ENTR] + DOC_CODEBASE do
+    task :doc_live => [ENTR] + DOC_USER_CODEBASE + DOC_DEV_CODEBASE do
         Open3.pipeline(
-            ['printf', '%s\\n', *DOC_CODEBASE],
+            ['printf', '%s\\n', *DOC_USER_CODEBASE, *DOC_DEV_CODEBASE],
             [ENTR, '-d', 'rake', 'build:doc']
         )
     end
@@ -351,14 +351,18 @@ namespace :run do
     end
 
     desc 'Open the documentation in the browser'
-    task :doc => DOC_CODEBASE do
+    task :doc => [DOC_USER_ROOT, DOC_DEV_ROOT] do
+        program = nil
         if OS == "macos"
-            system "open", DOC_INDEX
+            program = "open"
         elsif OS == "linux" || OS == "FreeBSD"
-            system "xdg-open", DOC_INDEX
+            program = "xdg-open"
         else
             fail "operating system (#{OS}) not supported"
         end
+
+        system program, "#{DOC_USER_ROOT}/index.html"
+        system program, "#{DOC_DEV_ROOT}/index.html"
     end
 end
 

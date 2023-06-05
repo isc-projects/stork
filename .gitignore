@@ -25,9 +25,7 @@
 /.vagrant
 
 # generated documentation
-/doc/_build
-/doc/_build-dev
-/doc/doctrees
+/doc/build
 
 # output from backend unit tests coverage
 /backend/coverage.out
@@ -49,7 +47,6 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 
 # generated docs
 /doc/man/stork-*.8
-/doc/_build/
 /webui/src/assets/arm/
 /webui/src/assets/pkgs/
 

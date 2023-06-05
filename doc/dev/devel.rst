@@ -29,7 +29,7 @@ Generating Documentation
 To generate documentation, simply type ``rake build:doc``.
 `Sphinx <https://www.sphinx-doc.org>`_ and `rtd-theme
 <https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
-generated documentation will be available in the ``doc/_build``
+generated documentation will be available in the ``doc/build``
 directory.
 
 Setting Up the Development Environment
@@ -1118,7 +1118,7 @@ If the agent was already registered with the provided agent token, only the assi
 machine ID is returned without new certificates.
 The agent uses the returned machine ID to verify that the registration was successful.
 
-.. figure:: ../uml/registration-agent.*
+.. figure:: ./static/registration-agent.*
 
     Agent registration
 

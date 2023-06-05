@@ -8,35 +8,52 @@
 ### Documentation ###
 #####################
 
-ARM_DIRECTORY = "doc/_build/html"
-file ARM_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
-    sh SPHINX_BUILD, "-M", "html", "doc/user", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
-    sh "touch", "-c", ARM_DIRECTORY
+DOC_USER_ROOT = "doc/build/user/html"
+file DOC_USER_ROOT => [SPHINX_BUILD] + DOC_USER_CODEBASE do
+    sh SPHINX_BUILD,
+        "-M", "html",
+        "doc/user", "doc/build/user",
+        "-v",
+        "-E",
+        "-a",
+        "-W",
+        "-j", "2"
+    sh "touch", "-c", DOC_USER_ROOT
 end
-CLEAN.append ARM_DIRECTORY
 
-TOOL_MAN_FILE = "doc/man/stork-tool.8"
-file TOOL_MAN_FILE => DOC_CODEBASE + [SPHINX_BUILD] do
-    sh SPHINX_BUILD, "-M", "man", "doc/user", "doc/", "-v", "-E", "-a", "-W", "-j", "2"
+TOOL_MAN_FILE = "doc/build/man/stork-tool.8"
+file TOOL_MAN_FILE => [SPHINX_BUILD] + DOC_USER_CODEBASE do
+    sh SPHINX_BUILD,
+        "-M", "man",
+        "doc/user", "doc/build",
+        "-v",
+        "-E",
+        "-a",
+        "-W",
+        "-j", "2"
     sh "touch", "-c", TOOL_MAN_FILE, AGENT_MAN_FILE, SERVER_MAN_FILE
 end
 
-AGENT_MAN_FILE = "doc/man/stork-agent.8"
+AGENT_MAN_FILE = "doc/build/man/stork-agent.8"
 file AGENT_MAN_FILE => [TOOL_MAN_FILE]
 
-SERVER_MAN_FILE = "doc/man/stork-server.8"
+SERVER_MAN_FILE = "doc/build/man/stork-server.8"
 file SERVER_MAN_FILE => [TOOL_MAN_FILE]
 
-man_files = FileList[SERVER_MAN_FILE, AGENT_MAN_FILE, TOOL_MAN_FILE]
-CLEAN.append *man_files
-
-DEV_GUIDE_DIRECTORY = "doc/_build-dev"
-file DEV_GUIDE_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
-    sh SPHINX_BUILD, "-M", "html", "doc/dev", "doc/_build-dev", "-v", "-E", "-a", "-W", "-j", "2"
-    sh "touch", "-c", DEV_GUIDE_DIRECTORY
+DOC_DEV_ROOT = "doc/build/dev/html"
+file DOC_DEV_ROOT => DOC_DEV_CODEBASE + [SPHINX_BUILD] do
+    sh SPHINX_BUILD,
+        "-M", "html",
+        "doc/dev", "doc/build/dev",
+        "-v",
+        "-E",
+        "-a",
+        "-W",
+        "-j", "2"
+    sh "touch", "-c", DOC_DEV_ROOT
 end
-CLEAN.append DEV_GUIDE_DIRECTORY
 
+CLEAN.append "doc/build"
 
 ################
 ### Frontend ###
@@ -50,8 +67,8 @@ file WEBUI_DIST_DIRECTORY => WEBUI_CODEBASE + [NPX] do
 end
 
 file WEBUI_DIST_ARM_DIRECTORY = "webui/dist/stork/assets/arm"
-file WEBUI_DIST_ARM_DIRECTORY => [ARM_DIRECTORY] do
-    sh "cp", "-a", ARM_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY
+file WEBUI_DIST_ARM_DIRECTORY => [DOC_USER_ROOT] do
+    sh "cp", "-a", DOC_USER_ROOT, WEBUI_DIST_ARM_DIRECTORY
     sh "touch", "-c", WEBUI_DIST_ARM_DIRECTORY
 end
 
@@ -161,13 +178,18 @@ end
 
 namespace :build do
     desc "Build user and developer Stork documentation from sources"
-    task :doc => [:doc_user, :doc_dev]
+    task :doc => ["build:doc:user", "build:doc:dev", "build:doc:man"]
 
-    desc "Build Stork documentation from sources"
-    task :doc_user => man_files + [ARM_DIRECTORY]
+    namespace :doc do
+        desc "Build Stork documentation from sources"
+        task :user => [DOC_USER_ROOT]
 
-    desc "Build Stork Developer's guide from sources"
-    task :doc_dev => [DEV_GUIDE_DIRECTORY]
+        desc "Build Stork Developer's guide from sources"
+        task :dev => [DOC_DEV_ROOT]
+
+        desc "Build Stork man documentation from sources"
+        task :man => [TOOL_MAN_FILE, AGENT_MAN_FILE, SERVER_MAN_FILE]
+    end
 
     desc "Build Stork Server from sources"
     task :server => [SERVER_BINARY_FILE]
