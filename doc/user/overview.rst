@@ -33,5 +33,5 @@ The Stork agent is installed along with Kea DHCP and
 interacts directly with those services. There may be many
 agents deployed in a network, one per machine.
 
-.. figure:: static/arch.png
+.. figure:: ../static/arch.png
    :align: center

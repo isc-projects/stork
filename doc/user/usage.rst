@@ -250,7 +250,7 @@ that specific Kea application is displayed. The following picture
 shows a simple view of the Kea DHCPv6 server running with a single
 subnet, with three pools configured in it.
 
-.. figure:: static/kea-subnets6.png
+.. figure:: ../static/kea-subnets6.png
    :alt: View of subnets assigned to a single Kea application
 
 IPv4 and IPv6 Subnets in the Whole Network
@@ -264,7 +264,7 @@ view shows all IPv4 and IPv6 subnets, with the address pools and links
 to the applications that are providing them. An example view of all
 subnets in the network is presented in the figure below.
 
-.. figure:: static/kea-subnets-list.png
+.. figure:: ../static/kea-subnets-list.png
    :alt: List of all subnets in the network
 
 Stork provides filtering capabilities; it is possible to
@@ -621,7 +621,7 @@ for details about the roles of the servers within the HA setup.
 The following picture shows a typical High Availability status view
 displayed in the Stork UI.
 
-.. figure:: static/kea-ha-status.png
+.. figure:: ../static/kea-ha-status.png
    :alt: High Availability status example
 
 The **local** server is the DHCP server (daemon) belonging to the

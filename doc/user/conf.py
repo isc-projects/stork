@@ -27,7 +27,7 @@ copyright = '2021-2023, Internet Systems Consortium'
 author = 'Internet Systems Consortium'
 
 # get current stork version
-version_file = '../backend/version.go'
+version_file = '../../backend/version.go'
 release = 'UNRELEASED'
 with open(version_file) as f:
     for line in f.readlines():
@@ -80,12 +80,12 @@ exclude_patterns = [ 'dev/*' ]
 #
 # html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-html_logo = 'static/stork-square-100px.png'
+html_logo = '../static/stork-square-100px.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['static']
+html_static_path = ['../static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
