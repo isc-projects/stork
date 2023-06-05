@@ -45,7 +45,7 @@ func getExpectedRegisterSwitches() []string {
 }
 
 // Location of the stork-agent man page.
-const AgentMan = "../../../doc/man/stork-agent.8.rst"
+const AgentMan = "../../../doc/user/man/stork-agent.8.rst"
 
 // This test checks if stork-agent -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {

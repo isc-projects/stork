@@ -40,7 +40,7 @@ func getExpectedSwitches() []string {
 }
 
 // Location of the stork-server man page.
-const Man = "../../doc/man/stork-server.8.rst"
+const Man = "../../doc/user/man/stork-server.8.rst"
 
 // This test checks if stork-server -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {

@@ -55,7 +55,7 @@ const ToolBin = "./stork-tool"
 // This test checks if all expected text fragments are documented in the man page.
 func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
-	file, err := os.Open("../../../doc/man/stork-tool.8.rst")
+	file, err := os.Open("../../../doc/user/man/stork-tool.8.rst")
 	require.NoError(t, err)
 	man, err := io.ReadAll(file)
 	require.NoError(t, err)
