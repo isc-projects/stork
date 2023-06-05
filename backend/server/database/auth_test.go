@@ -215,7 +215,6 @@ func TestConnectUsingTrustAuth(t *testing.T) {
 
 // Test that the Stork can establish connection to the database using the
 // ident authentication method.
-
 func TestConnectUsingIdentAuth(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
@@ -240,7 +239,7 @@ func TestConnectUsingIdentAuth(t *testing.T) {
 }
 
 // Test that the Stork can establish connection to the database using the
-// ident authentication method.
+// peer authentication method.
 func TestConnectUsingPeerAuth(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
