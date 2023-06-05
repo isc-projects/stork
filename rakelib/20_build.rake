@@ -10,14 +10,14 @@
 
 ARM_DIRECTORY = "doc/_build/html"
 file ARM_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
-    sh SPHINX_BUILD, "-M", "html", "doc/", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
+    sh SPHINX_BUILD, "-M", "html", "doc/user", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
     sh "touch", "-c", ARM_DIRECTORY
 end
 CLEAN.append ARM_DIRECTORY
 
 TOOL_MAN_FILE = "doc/man/stork-tool.8"
 file TOOL_MAN_FILE => DOC_CODEBASE + [SPHINX_BUILD] do
-    sh SPHINX_BUILD, "-M", "man", "doc/", "doc/", "-v", "-E", "-a", "-W", "-j", "2"
+    sh SPHINX_BUILD, "-M", "man", "doc/user", "doc/_build-man", "-v", "-E", "-a", "-W", "-j", "2"
     sh "touch", "-c", TOOL_MAN_FILE, AGENT_MAN_FILE, SERVER_MAN_FILE
 end
 

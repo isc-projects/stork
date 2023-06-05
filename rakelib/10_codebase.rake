@@ -275,7 +275,9 @@ DOC_CODEBASE = FileList["doc", "doc/**/*"]
         .include("backend/version.go")
         .exclude("doc/_build")
         .exclude("doc/_build/**/*")
-        .exclude("doc/_build-dev")
+        .exclude("doc/_build-dev/*")
+        .exclude("doc/_build-dev/**/*")
+        .exclude("doc/dev/*")
         .exclude("doc/doctrees/**/*")
         .exclude("doc/man/*.8")
 
