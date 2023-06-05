@@ -194,13 +194,22 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 // referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
 // specified, this function will return 'localhost' as an address.
 func parseInetSpec(config, excerpt string) (address string, port int64, key *Bind9RndcKey) {
-	// This pattern is build up like this:
-	// - inet\s+                 - inet
-	// - (\S+\s*\S*\s*\d*)\s+    - ( ip_addr | * ) [ port ip_port ]
-	// - allow\s*                - allow
-	// - \{(?:\s*\S+\s*;\s*)+)\} - address_match_list
-	// - (.*);                   - keys { key_list }; (pattern matched below)
-	pattern := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{\s*(?:\s*\S+\s*;\s*)*\s*\}(.*);`)
+	pattern := regexp.MustCompile(
+		`(?s)` + // Enable multiline mode (\s matches a new line).
+			`inet` + // Fixed prefix statement.
+			`\s+` + // Mandatory spacing.
+			// First matching group.
+			`(\S+\s*\S*\s*\d*)` + // ( ip_addr | * ) [ port ip_port ]
+			`\s+` + // Mandatory spacing.
+			`allow` + // Fixed statement.
+			`\s*\{\s*` + // Opening clause surrounded by optional spacing.
+			// Non-matching group repeated zero or more times.
+			`(?:\s*\S+\s*;\s*)*` + // address_match_list
+			`\s*\}` + // Closing clause prepended by an optional spacing.
+			// Second matching group.
+			`(.*)` + // keys { key_list }; (pattern matched below)
+			`;`, // Trailing semicolon.
+	)
 	match := pattern.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
 		log.Warnf("Cannot parse BIND 9 inet configuration: no match (%+v)", config)
