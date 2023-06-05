@@ -99,7 +99,8 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 		err = errors.Wrapf(err, "unable to connect to the database using provided settings")
 
 		if errors.As(err, &pgError) {
-			if pgError.Field('C') == "28P01" {
+			switch {
+			case pgError.Field('C') == "28P01":
 				// 28P01 - It is a problem with an invalid password.
 				if !storkutil.IsRunningInTerminal() {
 					break
@@ -110,10 +111,10 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 					break
 				}
 				continue
-			} else if pgError.Field('R') == "auth_failed" {
+			case pgError.Field('R') == "auth_failed":
 				// Another authentication problem. E.g.: The authentication
 				// service may be temporarily unavailable.
-			} else if pgError.Field('S') == "FATAL" {
+			case pgError.Field('S') == "FATAL":
 				break
 			}
 		}
