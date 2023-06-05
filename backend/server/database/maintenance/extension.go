@@ -24,6 +24,6 @@ func HasExtension(dbi pg.DBI, extensionName string) (bool, error) {
 	case errors.Is(err, pg.ErrNoRows):
 		return false, nil
 	default:
-		return false, errors.Wrapf(err, `problem with checking if the extension "%s" exists`, extensionName)
+		return false, errors.Wrapf(err, `problem checking if the extension "%s" exists`, extensionName)
 	}
 }

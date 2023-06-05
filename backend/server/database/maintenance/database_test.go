@@ -94,5 +94,5 @@ func TestDropDatabaseSafeNonExisting(t *testing.T) {
 	require.NoError(t, err)
 	settings.DBName = databaseName
 	_, err = dbops.NewPgDBConn(settings)
-	require.ErrorContains(t, err, fmt.Sprintf("database \"%s\" does not exist", databaseName))
+	require.ErrorContains(t, err, fmt.Sprintf(`database "%s" does not exist`, databaseName))
 }

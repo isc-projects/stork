@@ -10,7 +10,7 @@ import (
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
 
-	// Imports and registers the "postgres" driver using by database/sql.
+	// Imports and registers the "postgres" driver used by database/sql.
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"

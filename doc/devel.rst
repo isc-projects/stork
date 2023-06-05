@@ -245,7 +245,7 @@ Unit Tests Database Authentication
 A few special test cases check if Stork is operational for various database
 authentication methods: ``trust``, ``peer``, ``ident``, ``md5``, and
 ``scram-sha-256``. 
-These tests require certain conditions to meet to be running. If one of them is
+These tests require meeting certain conditions to be run. If any of them is
 not satisfied, the test case is skipped.
 
 To test the ``trust`` authentication method, you need to add a rule in the
