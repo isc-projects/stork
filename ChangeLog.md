@@ -2,8 +2,7 @@ Stork 1.11.0 released on 2023-06-07.
 
 * 306 [bug] slawek
 
-    Fixed prompting for the database password and propagating it across the
-    application.
+    Fixed propagating database password to the session manager.
     (Gitlab #1018)
 
 * 305 [bug] slawek
