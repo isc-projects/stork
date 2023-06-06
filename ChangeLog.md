@@ -1,5 +1,11 @@
 Stork 1.11.0 released on 2023-06-07.
 
+* 306 [bug] slawek
+
+    Fixed prompting for the database password and propagating it across the
+    application.
+    (Gitlab #1018)
+
 * 305 [bug] slawek
 
     Fixed a problem with improperly using the rndc command that prevented

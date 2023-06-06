@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
+	"github.com/sirupsen/logrus"
 
 	// Imports and registers the "postgres" driver used by database/sql.
 	_ "github.com/lib/pq"
@@ -33,6 +34,11 @@ func NewSessionMgr(settings *dbops.DatabaseSettings) (*SessionMgr, error) {
 	}
 
 	s := scs.New()
+	s.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+		// Use logrus instead of the standard logger.
+		logrus.WithError(err).Error("an error occurred in the session manager")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 	s.Store = postgresstore.New(db)
 
 	mgr := &SessionMgr{scsSessionMgr: s}

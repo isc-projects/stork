@@ -110,6 +110,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 				if err != nil {
 					break
 				}
+				settings.Password = pgParams.Password
 				continue
 			case pgError.Field('R') == "auth_failed":
 				// Another authentication problem. E.g.: The authentication
