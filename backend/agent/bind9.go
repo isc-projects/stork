@@ -478,8 +478,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	// STEP 3: If we still don't have anything, let's try to run named -V and
 	// parse its output.
-	// determine config directory
-	bind9ConfDir := path.Dir(bind9ConfPath)
 
 	// determine base named directory
 	baseNamedDir := ""
@@ -578,6 +576,9 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
 		return cmd.Output()
 	}
+
+	// determine config directory
+	bind9ConfDir := path.Dir(bind9ConfPath)
 
 	// determine rndc details
 	rndcClient := NewRndcClient(rndc)
