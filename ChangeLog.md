@@ -1,3 +1,9 @@
+* 317 [bug] slawek
+
+    Fixed bug with detecting RNDC key if the -c flag is not used to set the
+    config path in BIND 9.
+    (Gitlab #1057)
+
 * 316 [func] slawek
 
     Refactored the log messages produced on the Stork agent initialization to be
