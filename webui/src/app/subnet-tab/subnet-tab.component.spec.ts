@@ -70,6 +70,7 @@ describe('SubnetTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
+                    id: 12223,
                     appName: 'foo@192.0.2.1',
                     pools: ['192.0.2.1-192.0.2.100'],
                 },
@@ -84,6 +85,7 @@ describe('SubnetTabComponent', () => {
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('12223')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
@@ -108,6 +110,7 @@ describe('SubnetTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
+                    id: 12223,
                     appName: 'foo@2001:db8:1::1',
                     pools: ['2001:db8:1::2-2001:db8:1::786'],
                 },
@@ -122,6 +125,7 @@ describe('SubnetTabComponent', () => {
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('12223')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
@@ -149,6 +153,7 @@ describe('SubnetTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
+                    id: 12223,
                     appName: 'foo@2001:db8:1::1',
                     pools: ['2001:db8:1::2-2001:db8:1::768'],
                     prefixDelegationPools: [
@@ -169,6 +174,7 @@ describe('SubnetTabComponent', () => {
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('12223')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
@@ -200,6 +206,7 @@ describe('SubnetTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
+                    id: 12223,
                     appName: 'foo@2001:db8:1::1',
                     pools: ['2001:db8:1::2-2001:db8:1::768'],
                     prefixDelegationPools: [
@@ -210,6 +217,7 @@ describe('SubnetTabComponent', () => {
                     ],
                 },
                 {
+                    id: 25432,
                     appName: 'bar@2001:db8:2::5',
                     pools: ['2001:db8:1::2-2001:db8:1::768'],
                     prefixDelegationPools: [
@@ -234,6 +242,9 @@ describe('SubnetTabComponent', () => {
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('12223')
+        expect(fieldsets[0].nativeElement.innerText).toContain('bar@2001:db8:2::5')
+        expect(fieldsets[0].nativeElement.innerText).toContain('25432')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[1].nativeElement.innerText).toContain('foo@2001:db8:1::1')

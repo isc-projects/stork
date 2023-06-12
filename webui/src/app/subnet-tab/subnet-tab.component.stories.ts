@@ -66,6 +66,7 @@ Subnet4.args = {
         statsCollectedAt: '2023-06-05',
         localSubnets: [
             {
+                id: 1,
                 appName: 'foo@192.0.2.1',
                 pools: ['192.0.2.1-192.0.2.100'],
             },
@@ -107,6 +108,7 @@ Subnet6Prefix.args = {
         statsCollectedAt: '2023-06-05',
         localSubnets: [
             {
+                id: 1,
                 appName: 'foo@2001:db8:1::1',
                 prefixDelegationPools: [
                     {
@@ -136,6 +138,7 @@ Subnet6AddressPrefix.args = {
         statsCollectedAt: '2023-06-05',
         localSubnets: [
             {
+                id: 1,
                 appName: 'foo@2001:db8:1::1',
                 pools: ['2001:db8:1::2-2001:db8:1::768'],
                 prefixDelegationPools: [
@@ -166,6 +169,7 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
         statsCollectedAt: '2023-06-05',
         localSubnets: [
             {
+                id: 1,
                 appName: 'foo@2001:db8:1::1',
                 pools: ['2001:db8:1::2-2001:db8:1::768'],
                 prefixDelegationPools: [
@@ -176,6 +180,7 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
                 ],
             },
             {
+                id: 2,
                 appName: 'bar@2001:db8:2::5',
                 pools: ['2001:db8:1::2-2001:db8:1::768'],
                 prefixDelegationPools: [
