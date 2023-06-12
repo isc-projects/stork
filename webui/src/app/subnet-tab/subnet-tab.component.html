@@ -3,7 +3,9 @@
         <div class="fa fa-project-diagram mr-2"></div>
         <div id="tab-title-span">
             Subnet {{ subnet.subnet }}
-            <span *ngIf="subnet.sharedNetwork"> (shared network {{ subnet.sharedNetwork }}) </span>
+            <ng-container *ngIf="subnet.sharedNetwork">
+                in <app-entity-link entity="shared-network" [attrs]="getSharedNetworkAttrs()"></app-entity-link>
+            </ng-container>
         </div>
         <div>
             <app-help-tip title="Subnet View"> This view contains the subnet details. </app-help-tip>

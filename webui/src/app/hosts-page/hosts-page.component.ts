@@ -9,6 +9,7 @@ import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
 import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
+import { Host } from '../backend'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -40,7 +41,7 @@ export class HostTab {
      * @param tabType host tab type.
      * @param host host information displayed in the tab.
      */
-    constructor(public tabType: HostTabType, public host?: any) {
+    constructor(public tabType: HostTabType, public host?: Host) {
         this._setHostTabType(tabType)
     }
 
@@ -99,7 +100,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     /**
      * Holds all currently displayed host reservations.
      */
-    hosts: any[]
+    hosts: Host[]
 
     /**
      * Holds the counter of all hosts.

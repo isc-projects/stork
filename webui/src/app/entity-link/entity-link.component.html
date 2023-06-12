@@ -45,6 +45,13 @@
         <a id="host-link" routerLink="/dhcp/hosts/{{ attrs.id }}">{{ attrs.label }}</a>
     </ng-container>
 
+    <!-- shared network -->
+    <ng-container *ngSwitchCase="'shared-network'">
+        {{ showEntityName ? 'shared network' : '' }}
+        <!-- Shared networks don't have a dedicated page yet. -->
+        <a id="shared-network-link" routerLink="/dhcp/shared-networks" [queryParams]="attrs">{{ attrs.text }}</a>
+    </ng-container>
+
     <!-- unsupported -->
     <ng-container *ngSwitchDefault>{{ entity }}</ng-container>
 </span>

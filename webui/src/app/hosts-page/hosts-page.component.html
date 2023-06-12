@@ -169,9 +169,16 @@
                     <td>
                         {{ h.hostname ? h.hostname : '' }}
                     </td>
-                    <td>
-                        {{ h.subnetId && h.subnetId > 0 ? h.subnetPrefix : 'global' }}
+                    <td *ngIf="h.subnetId; else globalSubnetBlock">
+                        <app-entity-link
+                            entity="subnet"
+                            showEntityName="false"
+                            [attrs]="{ id: h.subnetId, subnet: h.subnetPrefix }"
+                        ></app-entity-link>
                     </td>
+                    <ng-template #globalSubnetBlock>
+                        <td>global</td>
+                    </ng-template>
                     <td>
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
                             >{{ lh.appName }}

@@ -24,6 +24,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
 import { ChipModule } from 'primeng/chip'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -53,6 +54,7 @@ describe('HostTabComponent', () => {
             declarations: [
                 DhcpClientClassSetViewComponent,
                 DhcpOptionSetViewComponent,
+                EntityLinkComponent,
                 HelpTipComponent,
                 HostTabComponent,
                 IdentifierComponent,

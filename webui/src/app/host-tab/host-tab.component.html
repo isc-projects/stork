@@ -3,7 +3,11 @@
     <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
         <div class="fa fa-laptop mr-2"></div>
         <div id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
-            [{{ host.id }}] Host in subnet {{ host.subnetPrefix }}
+            [{{ host.id }}] Host in
+            <app-entity-link
+                entity="subnet"
+                [attrs]="{ id: host.subnetId, subnet: host.subnetPrefix }"
+            ></app-entity-link>
         </div>
         <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
         <div>

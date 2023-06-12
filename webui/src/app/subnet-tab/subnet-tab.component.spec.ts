@@ -77,7 +77,7 @@ describe('SubnetTabComponent', () => {
         }
         fixture.detectChanges()
 
-        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 (shared network Fiber)')
+        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(3)
@@ -259,5 +259,27 @@ describe('SubnetTabComponent', () => {
 
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
+    })
+
+    it('should return shared network attributes for IPv6 subnet', () => {
+        component.subnet = {
+            subnet: '2001:db8:1::/64',
+            sharedNetwork: 'foo',
+        }
+        expect(component.getSharedNetworkAttrs()).toEqual({
+            text: 'foo',
+            dhcpVersion: 6,
+        })
+    })
+
+    it('should return shared network attributes for IPv4 subnet', () => {
+        component.subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetwork: 'bar',
+        }
+        expect(component.getSharedNetworkAttrs()).toEqual({
+            text: 'bar',
+            dhcpVersion: 4,
+        })
     })
 })

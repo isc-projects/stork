@@ -42,6 +42,18 @@ export class SubnetTabComponent {
     }
 
     /**
+     * Returns attributes used in constructing a link to a shared network.
+     *
+     * @returns a map of attributes including shared network name and a universe.
+     */
+    getSharedNetworkAttrs() {
+        return {
+            text: this.subnet.sharedNetwork,
+            dhcpVersion: this.isIPv6 ? 6 : 4,
+        }
+    }
+
+    /**
      * Check if all daemons using the subnet have the same configured pools.
      *
      * Usually all servers have the same set of pools configured for a subnet.
