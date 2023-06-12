@@ -2,8 +2,8 @@
     <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
         <div class="fa fa-project-diagram mr-2"></div>
         <div id="tab-title-span">
-            Subnet {{ subnet.subnet
-            }}<span *ngIf="subnet.sharedNetwork"> (shared network {{ subnet.sharedNetwork }})</span>
+            Subnet {{ subnet.subnet }}
+            <span *ngIf="subnet.sharedNetwork"> (shared network {{ subnet.sharedNetwork }}) </span>
         </div>
         <div>
             <app-help-tip title="Subnet View"> This view contains the subnet details. </app-help-tip>
