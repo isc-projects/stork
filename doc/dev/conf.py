@@ -12,7 +12,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
 
 # to avoid "sphinx.errors.SphinxParallelError: RecursionError: maximum recursion depth exceeded
 # while pickling an object"
@@ -70,7 +69,7 @@ language = "en"
 pygments_style = None
 
 # The Developer's guide is built separately in its own dir.
-exclude_patterns = [ 'devel/*' ]
+exclude_patterns = ['user/*']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -169,6 +168,7 @@ man_pages = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
 
 # custom setup hook
 def setup(app):
