@@ -92,7 +92,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	)
 
 	if calloutUser == nil || err != nil {
-		return nil, errors.Errorf("cannot authenticate a user")
+		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
 	var groups []*dbmodel.SystemGroup

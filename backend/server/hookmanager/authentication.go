@@ -24,6 +24,7 @@ func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, 
 		}
 
 		user, err := carrier.Authenticate(ctx, request, identifier, secret)
+		err = errors.Wrap(err, "error occurred in the Authenticate callout")
 		return hooksutil.CallStatusProcessed, &output{
 			user: user,
 			err:  err,
@@ -46,7 +47,7 @@ func (hm *HookManager) Unauthenticate(ctx context.Context, authenticationMethodI
 		}
 		return hooksutil.CallStatusProcessed, carrier.Unauthenticate(ctx)
 	})
-
+	err = errors.Wrap(err, "error occurred in the Unauthenticate callout")
 	return err
 }
 
