@@ -3,6 +3,7 @@ import { getStatisticValue } from '../subnets'
 import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
+import { LocalSubnet } from '../backend'
 
 /**
  * A component displaying a pie chart with address or delegated prefix utilization
@@ -20,9 +21,14 @@ import { clamp } from '../utils'
 })
 export class UtilizationStatsChartComponent implements OnInit {
     /**
+     * Optional chart title displayed at the top.
+     */
+    @Input() title: string
+
+    /**
      * An instance of a subnet or a shared network holding statistics.
      */
-    @Input() network: Subnet | SharedNetwork
+    @Input() network: LocalSubnet | Subnet | SharedNetwork
 
     /**
      * Lease type for which the statistics should be shown.
@@ -54,6 +60,12 @@ export class UtilizationStatsChartComponent implements OnInit {
      */
     utilization: number
 
+    /**
+     * A component lifecycle hook invoked on initialization.
+     *
+     * It prepares the data to be displayed in a chart using the statistics
+     * conveyed in a subnet, local subnet or a shared network.
+     */
     ngOnInit() {
         if (this.network?.stats) {
             const documentStyle = getComputedStyle(document.documentElement)
@@ -62,12 +74,15 @@ export class UtilizationStatsChartComponent implements OnInit {
             this.total = getStatisticValue(this.network, `total-${this.pluralLeaseType()}`)
             this.assigned = getStatisticValue(this.network, `assigned-${this.pluralLeaseType()}`)
             this.declined = getStatisticValue(this.network, `declined-${this.pluralLeaseType()}`)
-            // Ensure that the utilization is within the correct range.
-            this.utilization = clamp(
-                (this.isPD ? this.network.pdUtilization : this.network.addrUtilization) ?? 0,
-                0,
-                100
-            )
+
+            if (this.isPD && 'pdUtilization' in this.network) {
+                this.utilization = clamp(this.network['pdUtilization'], 0, 100)
+            } else if (!this.isPD && 'addrUtilization' in this.network) {
+                this.utilization = clamp(this.network['addrUtilization'], 0, 100)
+            } else {
+                this.utilization = 0
+            }
+
             // Start preparing the dataset for a chart. Each chart has at least two types
             // of data (i.e., free leases and assigned leases).
             let dataset = {

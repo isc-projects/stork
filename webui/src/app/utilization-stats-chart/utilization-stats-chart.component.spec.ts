@@ -190,12 +190,4 @@ describe('UtilizationStatsChartComponent', () => {
         expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
         expect(stats[1].nativeElement.innerText).toContain('0')
     })
-
-    it('should inform that no stats are available', () => {
-        component.leaseType = 'address'
-        component.network = {}
-        component.ngOnInit()
-
-        expect(fixture.debugElement.nativeElement.innerText).toContain('No statistics data available')
-    })
 })

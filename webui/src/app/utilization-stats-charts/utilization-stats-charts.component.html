@@ -1,0 +1,37 @@
+<ng-container *ngIf="subnet; else noSubnetBlock">
+    <div class="flex flex-wrap">
+        <div *ngIf="hasAddressPools">
+            <app-utilization-stats-chart
+                title="Total"
+                leaseType="{{ isIPv6 ? 'na' : 'address' }}"
+                [network]="subnet"
+            ></app-utilization-stats-chart>
+        </div>
+        <div *ngIf="hasPrefixPools">
+            <app-utilization-stats-chart title="Total" leaseType="pd" [network]="subnet"></app-utilization-stats-chart>
+        </div>
+        <ng-container class="flex flex-wrap" *ngIf="subnet.localSubnets && subnet.localSubnets.length > 1">
+            <ng-container *ngFor="let localSubnet of subnet.localSubnets">
+                <div *ngIf="localSubnet.pools?.length > 0">
+                    <app-utilization-stats-chart
+                        [title]="localSubnet.appName"
+                        leaseType="{{ isIPv6 ? 'na' : 'address' }}"
+                        [network]="localSubnet"
+                    ></app-utilization-stats-chart>
+                </div>
+                <div *ngIf="localSubnet.prefixDelegationPools?.length > 0">
+                    <app-utilization-stats-chart
+                        [title]="localSubnet.appName"
+                        leaseType="pd"
+                        [network]="localSubnet"
+                    ></app-utilization-stats-chart>
+                </div>
+            </ng-container>
+        </ng-container>
+    </div>
+    <p-divider></p-divider>
+    <span class="font-italic text-sm">Statistics collected at {{ subnet.statsCollectedAt | date : 'short' }}</span>
+</ng-container>
+<ng-template #noSubnetBlock>
+    <div>Subnet data unavailable.</div>
+</ng-template>

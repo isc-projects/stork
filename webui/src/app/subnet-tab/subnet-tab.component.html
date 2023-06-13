@@ -26,6 +26,12 @@
                     If the configured pools differ on the servers, they are displayed individually for each server.
                     Otherwise, they are combined in a single box.
                 </p>
+                <p>
+                    Finally, each server maintains its own lease utilization statistics. The first pie charts show the
+                    total address and/or prefix utilizations. The remaining pie charts show the utilizations reported by
+                    the individual servers. The individual statistics are not displayed if there is only one server
+                    serving leases in this subnet.
+                </p>
             </app-help-tip>
         </div>
     </div>
@@ -40,7 +46,7 @@
                 </ng-template>
                 <ng-template pTemplate="body" let-l>
                     <tr>
-                        <td class="w-10rem">
+                        <td class="w-15rem">
                             <app-entity-link
                                 entity="app"
                                 [showEntityName]="false"
@@ -81,24 +87,7 @@
     </div>
     <div *ngIf="subnet.stats" class="mb-4">
         <p-fieldset id="stats-fieldset" legend="Statistics">
-            <div class="flex inline">
-                <div *ngIf="hasAddressPools">
-                    <app-utilization-stats-chart
-                        leaseType="{{ isIPv6 ? 'na' : 'address' }}"
-                        [network]="subnet"
-                    ></app-utilization-stats-chart>
-                </div>
-                <ng-container *ngIf="hasPrefixPools">
-                    <p-divider *ngIf="hasAddressPools" styleClass="ml-5 mr-5" layout="vertical"></p-divider>
-                    <div>
-                        <app-utilization-stats-chart leaseType="pd" [network]="subnet"></app-utilization-stats-chart>
-                    </div>
-                </ng-container>
-            </div>
-            <p-divider></p-divider>
-            <span class="font-italic text-sm"
-                >Statistics collected at {{ subnet.statsCollectedAt | date : 'short' }}</span
-            >
+            <app-utilization-stats-charts [subnet]="subnet"></app-utilization-stats-charts>
         </p-fieldset>
     </div>
 </div>

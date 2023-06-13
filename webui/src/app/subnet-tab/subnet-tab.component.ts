@@ -24,24 +24,6 @@ export class SubnetTabComponent {
     }
 
     /**
-     * Checks if there are any address pools defined for the subnet.
-     *
-     * @return true if subnet includes configured address pools.
-     */
-    get hasAddressPools(): boolean {
-        return hasAddressPools(this.subnet)
-    }
-
-    /**
-     * Checks if there are any prefix pools defined for the subnet.
-     *
-     * @return true if subnet includes configured prefix pools.
-     */
-    get hasPrefixPools(): boolean {
-        return hasPrefixPools(this.subnet)
-    }
-
-    /**
      * Returns attributes used in constructing a link to a shared network.
      *
      * @returns a map of attributes including shared network name and a universe.

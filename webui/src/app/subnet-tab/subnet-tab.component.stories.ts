@@ -16,6 +16,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 import { RouterTestingModule } from '@angular/router/testing'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
+import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 
 export default {
     title: 'App/SubnetTab',
@@ -41,6 +42,7 @@ export default {
                 HumanCountPipe,
                 NumberPipe,
                 UtilizationStatsChartComponent,
+                UtilizationStatsChartsComponent,
             ],
             providers: [],
         }),
@@ -178,6 +180,13 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
                         delegatedLength: 80,
                     },
                 ],
+                stats: {
+                    'total-nas': 1024,
+                    'assigned-nas': 500,
+                    'declined-nas': 4,
+                    'total-pds': 300,
+                    'assigned-pds': 200,
+                },
             },
             {
                 id: 2,
@@ -193,6 +202,13 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
                         delegatedLength: 96,
                     },
                 ],
+                stats: {
+                    'total-nas': 1024,
+                    'assigned-nas': 480,
+                    'declined-nas': 6,
+                    'total-pds': 200,
+                    'assigned-pds': 158,
+                },
             },
         ],
     },

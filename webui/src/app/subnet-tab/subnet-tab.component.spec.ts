@@ -18,6 +18,7 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { By } from '@angular/platform-browser'
+import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -45,6 +46,7 @@ describe('SubnetTabComponent', () => {
                 NumberPipe,
                 SubnetTabComponent,
                 UtilizationStatsChartComponent,
+                UtilizationStatsChartsComponent,
             ],
         }).compileComponents()
 
@@ -73,6 +75,11 @@ describe('SubnetTabComponent', () => {
                     id: 12223,
                     appName: 'foo@192.0.2.1',
                     pools: ['192.0.2.1-192.0.2.100'],
+                    stats: {
+                        'total-addresses': 240,
+                        'assigned-addresses': 70,
+                        'declined-addresses': 10,
+                    },
                 },
             ],
         }
@@ -113,6 +120,11 @@ describe('SubnetTabComponent', () => {
                     id: 12223,
                     appName: 'foo@2001:db8:1::1',
                     pools: ['2001:db8:1::2-2001:db8:1::786'],
+                    stats: {
+                        'total-nas': 1000,
+                        'assigned-nas': 30,
+                        'declined-nas': 10,
+                    },
                 },
             ],
         }
@@ -162,6 +174,13 @@ describe('SubnetTabComponent', () => {
                             delegatedLength: 80,
                         },
                     ],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 980,
+                        'declined-nas': 10,
+                        'total-pds': 500,
+                        'assigned-pds': 358,
+                    },
                 },
             ],
         }
@@ -215,6 +234,13 @@ describe('SubnetTabComponent', () => {
                             delegatedLength: 80,
                         },
                     ],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 500,
+                        'declined-nas': 5,
+                        'total-pds': 500,
+                        'assigned-pds': 200,
+                    },
                 },
                 {
                     id: 25432,
@@ -230,6 +256,13 @@ describe('SubnetTabComponent', () => {
                             delegatedLength: 96,
                         },
                     ],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 480,
+                        'declined-nas': 5,
+                        'total-pds': 500,
+                        'assigned-pds': 158,
+                    },
                 },
             ],
         }
@@ -269,7 +302,7 @@ describe('SubnetTabComponent', () => {
         expect(prefixBars[1].nativeElement.innerText).toContain('3000:1::')
 
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
-        expect(charts.length).toBe(2)
+        expect(charts.length).toBe(6)
     })
 
     it('should return shared network attributes for IPv6 subnet', () => {

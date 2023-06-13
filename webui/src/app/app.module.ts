@@ -115,6 +115,7 @@ import { PlaceholderPipe } from './pipes/placeholder.pipe'
 import { SubnetTabComponent } from './subnet-tab/subnet-tab.component'
 import { AddressPoolBarComponent } from './address-pool-bar/address-pool-bar.component'
 import { UtilizationStatsChartComponent } from './utilization-stats-chart/utilization-stats-chart.component'
+import { UtilizationStatsChartsComponent } from './utilization-stats-charts/utilization-stats-charts.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -185,6 +186,7 @@ export function cfgFactory() {
         SubnetTabComponent,
         AddressPoolBarComponent,
         UtilizationStatsChartComponent,
+        UtilizationStatsChartsComponent,
     ],
     imports: [
         BrowserModule,
