@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/pkg/errors"
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
 	"isc.org/stork/hooksutil"
@@ -31,7 +32,9 @@ func NewHookManager() *HookManager {
 // Callout executed before forwarding a command to Kea over HTTP.
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) error {
 	errors := hooksutil.CallSequential(hm.GetExecutor(), func(carrier forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts) error {
-		return carrier.OnBeforeForwardToKeaOverHTTP(ctx, in)
+		err := carrier.OnBeforeForwardToKeaOverHTTP(ctx, in)
+		err = errors.Wrap(err, "error occurred in the OnBeforeForwardToKeaOverHTTP callout")
+		return err
 	})
 	return storkutil.CombineErrors("error in the onBeforeForwardToKeaOverHTTP callout", errors)
 }
