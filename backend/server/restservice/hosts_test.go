@@ -139,6 +139,29 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 }
 
+// Test that hosts can be filtered by local subnet ID.
+func TestGetHostsByLocalSubnetID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
+
+	localSubnetID := int64(111)
+	params := dhcp.GetHostsParams{
+		LocalSubnetID: &localSubnetID,
+	}
+	rsp := rapi.GetHosts(ctx, params)
+	require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostsOK)
+	require.Len(t, okRsp.Payload.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+}
+
 // Test that hosts can be filtered by text.
 func TestGetHostsWithFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

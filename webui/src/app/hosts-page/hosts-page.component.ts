@@ -118,6 +118,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         text: null,
         appId: null,
         subnetId: null,
+        keaSubnetId: null,
         global: null,
     }
 
@@ -245,6 +246,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * - text
      * - appId
      * - subnetId
+     * - keaSubnetId
      * - global (translated to is:global or not:global filtering text).
      */
     private initFilterText() {
@@ -253,11 +255,11 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         if (ssParams.get('text')) {
             text += ' ' + ssParams.get('text')
         }
-        if (ssParams.get('appId')) {
-            text += ' appId:' + ssParams.get('appId')
-        }
-        if (ssParams.get('subnetId')) {
-            text += ' subnetId:' + ssParams.get('subnetId')
+        for (const paramName of ['appId', 'subnetId', 'keaSubnetId']) {
+            const param = ssParams.get(paramName)
+            if (param) {
+                text += ` ${paramName}:${param}`
+            }
         }
         const g = ssParams.get('global')
         if (g === 'true') {
@@ -293,6 +295,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         this.queryParams.subnetId = isNaN(subnetId) ? null : subnetId
         if (params.get('subnetId') != null && this.queryParams.subnetId === null) {
             filterTextFormatError = 'Please specify subnetId as a number (e.g., subnetId:2).'
+        }
+
+        // Convert keaSubnetId to a number. It is NaN if the parameter doesn't exist
+        // or it is malformed.
+        const keaSubnetId = parseInt(params.get('keaSubnetId'), 10)
+        this.queryParams.keaSubnetId = isNaN(keaSubnetId) ? null : keaSubnetId
+        if (params.get('keaSubnetId') != null && this.queryParams.keaSubnetId === null) {
+            filterTextFormatError = 'Please specify keaSubnetId as a number (e.g., keaSubnetId:2).'
         }
 
         // Global.
@@ -486,7 +496,15 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Indicate that hosts refresh is in progress.
         this.hostsLoading = true
         this.dhcpApi
-            .getHosts(event.first, event.rows, params.appId, params.subnetId, params.text, params.global)
+            .getHosts(
+                event.first,
+                event.rows,
+                params.appId,
+                params.subnetId,
+                params.keaSubnetId,
+                params.text,
+                params.global
+            )
             .toPromise()
             .then((data) => {
                 this.hosts = data.items
@@ -543,7 +561,11 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId', 'subnetId'], ['global'])
+            const queryParams = extractKeyValsAndPrepareQueryParams(
+                this.filterText,
+                ['appId', 'subnetId', 'keaSubnetId'],
+                ['global']
+            )
             this.router.navigate(['/dhcp/hosts'], {
                 queryParams,
                 queryParamsHandling: 'merge',

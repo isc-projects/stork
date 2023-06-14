@@ -136,9 +136,9 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 
 // Fetches host reservations from the database and converts to the data formats
 // used in REST API.
-func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
+func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, localSubnetID *int64, filterText *string, global *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
 	// Get the hosts from the database.
-	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, appID, subnetID, filterText, global, sortField, sortDir)
+	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, appID, subnetID, localSubnetID, filterText, global, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 	}
 
 	// get hosts from db
-	hosts, err := r.getHosts(start, limit, appID, params.SubnetID, params.Text, params.Global, "", dbmodel.SortDirAny)
+	hosts, err := r.getHosts(start, limit, appID, params.SubnetID, params.LocalSubnetID, params.Text, params.Global, "", dbmodel.SortDirAny)
 	if err != nil {
 		msg := "Problem fetching hosts from the database"
 		log.Error(err)

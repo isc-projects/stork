@@ -1107,7 +1107,7 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null, null)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1123,7 +1123,7 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1141,7 +1141,7 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null, null)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1157,10 +1157,44 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
         expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId:2).')
+    }))
+
+    it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'keaSubnetId:101'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, 101, null, null)
+
+        expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
+    }))
+
+    it('should display error message when keaSubnetId is invalid', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'keaSubnetId:abc'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null)
+
+        const errMsg = fixture.debugElement.query(By.css('.p-error'))
+        expect(errMsg).toBeTruthy()
+        expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
     }))
 })
