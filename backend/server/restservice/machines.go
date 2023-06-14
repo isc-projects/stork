@@ -21,6 +21,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
+	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/dumper"
 	"isc.org/stork/server/gen/models"
@@ -560,7 +561,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	// if machine authorization is changed then this action requires super-admin group
 	if dbMachine.Authorized != params.Machine.Authorized {
 		_, dbUser := r.SessionManager.Logged(ctx)
-		if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
 			msg := "User is forbidden to change machine authorization"
 			rsp := services.NewUpdateMachineDefault(http.StatusForbidden).WithPayload(&models.APIError{
 				Message: &msg,
@@ -606,7 +607,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 func (r *RestAPI) GetMachinesServerToken(ctx context.Context, params services.GetMachinesServerTokenParams) middleware.Responder {
 	// only super-admin can get server token
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
 		msg := "User is forbidden to get server token"
 		rsp := services.NewGetMachinesServerTokenDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
@@ -643,7 +644,7 @@ func (r *RestAPI) GetMachinesServerToken(ctx context.Context, params services.Ge
 func (r *RestAPI) RegenerateMachinesServerToken(ctx context.Context, params services.RegenerateMachinesServerTokenParams) middleware.Responder {
 	// only super-admin can get server token
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
 		msg := "User is forbidden to generate new server token"
 		rsp := services.NewGetMachinesServerTokenDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
@@ -1599,7 +1600,7 @@ func (r *RestAPI) RenameApp(ctx context.Context, params services.RenameAppParams
 // If there is no authentication key assigned, returns an empty string.
 func (r *RestAPI) GetAccessPointKey(ctx context.Context, params services.GetAccessPointKeyParams) middleware.Responder {
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
 		msg := "User is forbidden to get access point key"
 		rsp := services.NewGetAccessPointKeyDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,

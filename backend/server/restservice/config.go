@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/configreview"
+	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
@@ -51,7 +52,7 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	}
 
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
 		dbDaemon.KeaDaemon.Config.HideSensitiveData()
 	}
 

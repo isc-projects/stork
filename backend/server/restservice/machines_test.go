@@ -20,6 +20,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
+	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -2290,7 +2291,7 @@ func TestGetAccessPointKeyIsRestrictedToSuperAdmins(t *testing.T) {
 		Login:    "foo",
 		Name:     "baz",
 		Lastname: "boz",
-		Groups:   []*dbmodel.SystemGroup{{ID: dbmodel.AdminGroupID}},
+		Groups:   []*dbmodel.SystemGroup{{ID: dbconst.AdminGroupID}},
 	}
 	_, _ = dbmodel.CreateUser(rapi.DB, user)
 	_ = rapi.SessionManager.LoginHandler(ctx, user)

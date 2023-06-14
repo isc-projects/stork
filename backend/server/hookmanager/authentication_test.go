@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallouts"
+	dbconst "isc.org/stork/server/database/constant"
 )
 
 // Carrier mock interface for mockgen.
@@ -44,7 +45,7 @@ func TestAuthenticate(t *testing.T) {
 			Email:    "foo@example.com",
 			Lastname: "oof",
 			Name:     "ofo",
-			Groups:   []int{1, 2, 3},
+			Groups:   []dbconst.UserGroupID{1, 2, 3},
 		}, nil).
 		Times(1)
 	mock.EXPECT().
