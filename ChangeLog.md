@@ -1,3 +1,8 @@
+* 310 [func] marcin
+
+    Filter host reservations by subnet ID.
+    (Gitlab #1058)
+
 * 309 [func] marcin
 
     A tab with the subnet details is opened after clicking on the subnet.
