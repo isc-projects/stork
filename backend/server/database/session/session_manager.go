@@ -15,6 +15,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
+	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -70,7 +71,7 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 			if i > 0 {
 				groups += ","
 			}
-			groups += strconv.Itoa(g.ID)
+			groups += strconv.Itoa(int(g.ID))
 		}
 		s.scsSessionMgr.Put(ctx, "userGroupIds", groups)
 	}
@@ -139,7 +140,7 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 		groups := strings.Split(userGroups, ",")
 		for _, g := range groups {
 			if id, err := strconv.Atoi(g); err == nil {
-				user.Groups = append(user.Groups, &dbmodel.SystemGroup{ID: id})
+				user.Groups = append(user.Groups, &dbmodel.SystemGroup{ID: dbconst.UserGroupID(id)})
 			}
 		}
 	}

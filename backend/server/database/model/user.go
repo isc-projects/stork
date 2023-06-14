@@ -9,6 +9,7 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
+	dbconst "isc.org/stork/server/database/constant"
 )
 
 // Registers M:N SQL relations defined in this file.
@@ -41,8 +42,8 @@ type SystemUserPassword struct {
 
 // Represents an association table between the system user and group tables.
 type SystemUserToGroup struct {
-	UserID  int `pg:",pk,notnull,on_delete:CASCADE"`
-	GroupID int `pg:",pk,notnull,on_delete:CASCADE"`
+	UserID  int                 `pg:",pk,notnull,on_delete:CASCADE"`
+	GroupID dbconst.UserGroupID `pg:",pk,notnull,on_delete:CASCADE"`
 }
 
 // Returns user's identity for logging purposes. It includes login, email or both.
@@ -75,6 +76,10 @@ func createUserGroups(dbi dbops.DBI, user *SystemUser) (err error) {
 
 	if len(user.Groups) > 0 {
 		for _, g := range user.Groups {
+			if g.ID == 0 {
+				return pkgerrors.Errorf("the zero (0) group ID is not allowed")
+			}
+
 			associations = append(associations, SystemUserToGroup{
 				UserID:  user.ID,
 				GroupID: g.ID,
