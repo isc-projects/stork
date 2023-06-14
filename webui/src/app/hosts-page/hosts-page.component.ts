@@ -117,6 +117,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     queryParams = {
         text: null,
         appId: null,
+        subnetId: null,
         global: null,
     }
 
@@ -146,6 +147,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * with the hosts list is displayed, this array is empty.
      */
     openedTabs = []
+
+    filterTextFormatError: string
 
     /**
      * Constructor.
@@ -241,6 +244,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * The following parameters are taken into account:
      * - text
      * - appId
+     * - subnetId
      * - global (translated to is:global or not:global filtering text).
      */
     private initFilterText() {
@@ -251,6 +255,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         }
         if (ssParams.get('appId')) {
             text += ' appId:' + ssParams.get('appId')
+        }
+        if (ssParams.get('subnetId')) {
+            text += ' subnetId:' + ssParams.get('subnetId')
         }
         const g = ssParams.get('global')
         if (g === 'true') {
@@ -269,7 +276,26 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params) {
         this.queryParams.text = params.get('text')
-        this.queryParams.appId = params.get('appId')
+
+        let filterTextFormatError: string
+
+        // Convert appId to a number. It is NaN if the parameter doesn't exist
+        // or it is malformed.
+        const appId = parseInt(params.get('appId'), 10)
+        this.queryParams.appId = isNaN(appId) ? null : appId
+        if (params.get('appId') != null && this.queryParams.appId === null) {
+            filterTextFormatError = 'Please specify appId as a number (e.g., appId:2).'
+        }
+
+        // Convert subnetId to a number. It is NaN if the parameter doesn't exist
+        // or it is malformed.
+        const subnetId = parseInt(params.get('subnetId'), 10)
+        this.queryParams.subnetId = isNaN(subnetId) ? null : subnetId
+        if (params.get('subnetId') != null && this.queryParams.subnetId === null) {
+            filterTextFormatError = 'Please specify subnetId as a number (e.g., subnetId:2).'
+        }
+
+        // Global.
         const g = params.get('global')
         if (g === 'true') {
             this.queryParams.global = true
@@ -278,6 +304,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         } else {
             this.queryParams.global = null
         }
+
+        this.filterTextFormatError = filterTextFormatError
     }
 
     /**
@@ -458,7 +486,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Indicate that hosts refresh is in progress.
         this.hostsLoading = true
         this.dhcpApi
-            .getHosts(event.first, event.rows, params.appId, null, params.text, params.global)
+            .getHosts(event.first, event.rows, params.appId, params.subnetId, params.text, params.global)
             .toPromise()
             .then((data) => {
                 this.hosts = data.items
@@ -515,7 +543,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'], ['global'])
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId', 'subnetId'], ['global'])
             this.router.navigate(['/dhcp/hosts'], {
                 queryParams,
                 queryParamsHandling: 'merge',

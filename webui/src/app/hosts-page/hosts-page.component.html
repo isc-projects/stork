@@ -37,10 +37,10 @@
 
 <div *ngIf="activeTabIndex === 0; else openedTabBlock" style="margin: 10px">
     <div class="mb-3" style="display: flex; justify-content: space-between">
-        <div>
-            <span>
-                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
-                Filter hosts:
+        <div class="flex align-items-center">
+            <div class="fa fa-search" style="margin: 4px 4px 0 0"></div>
+            <div class="ml-2">Filter hosts:</div>
+            <div class="ml-2">
                 <input
                     type="text"
                     id="filter-hosts-text-field"
@@ -49,6 +49,8 @@
                     placeholder="IP or identifier"
                     (keyup)="keyUpFilterText($event)"
                 />
+            </div>
+            <div>
                 <app-help-tip title="filtering" id="filtering-help-button">
                     <p>
                         Hosts in the table below can be filtered by entering a text in the search box; the table shows
@@ -78,14 +80,18 @@
                     </p>
                     <p>
                         In addition, hosts can be filtered by an explicitly selected field using the expression:
-                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for
-                        explicit filtering is:
+                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
+                        explicit filtering are:
                     </p>
                     <ul>
                         <li class="monospace">appId</li>
+                        <li class="monospace">subnetId</li>
                     </ul>
                 </app-help-tip>
-            </span>
+            </div>
+            <div *ngIf="filterTextFormatError">
+                <small class="p-error block">{{ filterTextFormatError }}</small>
+            </div>
         </div>
         <div>
             <div class="flex">

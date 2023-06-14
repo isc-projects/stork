@@ -1095,4 +1095,72 @@ describe('HostsPageComponent', () => {
         expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
         expect(breadcrumbsComponent.items[1].label).toEqual('Host Reservations')
     })
+
+    it('hosts list should be filtered by appId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'appId:2'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null)
+
+        expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
+    }))
+
+    it('should display error message when appId is invalid', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'appId:abc'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null)
+
+        const errMsg = fixture.debugElement.query(By.css('.p-error'))
+        expect(errMsg).toBeTruthy()
+        expect(errMsg.nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId:2).')
+    }))
+
+    it('hosts list should be filtered by subnetId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'subnetId:89'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null)
+
+        expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
+    }))
+
+    it('should display error message when subnetId is invalid', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'subnetId:abc'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null)
+
+        const errMsg = fixture.debugElement.query(By.css('.p-error'))
+        expect(errMsg).toBeTruthy()
+        expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId:2).')
+    }))
 })
