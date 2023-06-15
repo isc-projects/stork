@@ -17,8 +17,9 @@ STORK_SERVER_URL = os.environ.get('STORK_SERVER_URL', 'http://server:8080')
 def _login_session():
     s = requests.Session()
     credentials = dict(
-        useremail='admin',
-        userpassword='admin'
+        authenticationMethodId='internal',
+        identifier='admin',
+        secret='admin'
     )
     s.post('%s/api/sessions' % STORK_SERVER_URL, json=credentials)
     return s
