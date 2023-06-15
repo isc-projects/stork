@@ -1,3 +1,8 @@
+* 307 [bug] marcin
+
+    Fixed the simulator in Stork demo.
+    (Gitlab #1054)
+
 Stork 1.11.0 released on 2023-06-07.
 
 * 306 [bug] slawek
