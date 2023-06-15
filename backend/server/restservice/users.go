@@ -161,7 +161,12 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		systemUser, err = r.externalAuthentication(ctx, params)
 	}
 
-	if systemUser == nil || err != nil {
+	if systemUser == nil && err == nil {
+		log.
+			WithField("method", authenticationMethod).
+			WithField("identifier", *params.Credentials.Identifier).
+			Error("User not found, cannot authenticate")
+	} else if err != nil {
 		log.
 			WithError(err).
 			WithField("method", authenticationMethod).
