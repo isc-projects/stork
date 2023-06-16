@@ -49,14 +49,16 @@ describe('UtilizationStatsChartComponent', () => {
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (48%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(3)
+        expect(stats.length).toBe(4)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
         expect(stats[0].nativeElement.innerText).toContain('256')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
         expect(stats[1].nativeElement.innerText).toContain('128')
-        expect(stats[2].nativeElement.innerText).toContain('Declined Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('11')
+        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('117')
+        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('11')
     })
 
     it('should initialize all DHCPv6 address stats', () => {
@@ -80,14 +82,16 @@ describe('UtilizationStatsChartComponent', () => {
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (90%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(3)
+        expect(stats.length).toBe(4)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
         expect(stats[0].nativeElement.innerText).toContain('6k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
         expect(stats[1].nativeElement.innerText).toContain('2k')
-        expect(stats[2].nativeElement.innerText).toContain('Declined Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('100')
+        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('1k')
+        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('100')
     })
 
     it('should initialize all prefix stats', () => {
@@ -134,14 +138,16 @@ describe('UtilizationStatsChartComponent', () => {
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (90%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(3)
+        expect(stats.length).toBe(4)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
         expect(stats[0].nativeElement.innerText).toContain('0')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
         expect(stats[1].nativeElement.innerText).toContain('0')
-        expect(stats[2].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
         expect(stats[2].nativeElement.innerText).toContain('0')
+        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('0')
     })
 
     it('should use prefix utilization when other stats are not available', () => {

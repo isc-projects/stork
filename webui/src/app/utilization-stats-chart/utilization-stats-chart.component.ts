@@ -51,6 +51,13 @@ export class UtilizationStatsChartComponent implements OnInit {
     assigned: bigint | number
 
     /**
+     * Number of used leases.
+     *
+     * It is calculated by substracting declined from assigned addresses.
+     */
+    used: bigint | number
+
+    /**
      * Number of declined leases fetched from the statistics.
      */
     declined: bigint | number
@@ -74,6 +81,7 @@ export class UtilizationStatsChartComponent implements OnInit {
             this.total = getStatisticValue(this.network, `total-${this.pluralLeaseType()}`)
             this.assigned = getStatisticValue(this.network, `assigned-${this.pluralLeaseType()}`)
             this.declined = getStatisticValue(this.network, `declined-${this.pluralLeaseType()}`)
+            this.used = this.assigned - this.declined
 
             if (this.isPD && 'pdUtilization' in this.network) {
                 this.utilization = clamp(this.network['pdUtilization'], 0, 100)
@@ -108,7 +116,13 @@ export class UtilizationStatsChartComponent implements OnInit {
             // The total of 0 also cannot be presented on the chart, so we fallback to the percentages
             // in this case. Also, if the assigned and declined counters are too high to fit into
             // 64-bits or they don't make any sense we'd rather use the percentages.
-            if (!total64 || assigned64 === null || declined64 === null || total64 - assigned64 - declined64 < 0) {
+            if (
+                !total64 ||
+                assigned64 === null ||
+                declined64 === null ||
+                total64 - assigned64 < 0 ||
+                assigned64 - declined64 < 0
+            ) {
                 dataset.data = [100 - this.utilization, this.utilization]
                 this.data = {
                     labels: ['% free', '% used'],
