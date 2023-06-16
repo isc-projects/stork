@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { Subnet } from '../backend'
+import { LocalSubnet, Subnet } from '../backend'
 import { hasAddressPools, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
 
@@ -33,6 +33,24 @@ export class SubnetTabComponent {
             text: this.subnet.sharedNetwork,
             dhcpVersion: this.isIPv6 ? 6 : 4,
         }
+    }
+
+    /**
+     * Checks if the subnet has any address pools.
+     *
+     * @returns true if the subnet has any address pools, false otherwise.
+     */
+    subnetHasAddressPools(): boolean {
+        return hasAddressPools(this.subnet)
+    }
+
+    /**
+     * Checks if the subnet has any prefix pools.
+     *
+     * @returns true if the subnet has any prefix pools, false otherwise.
+     */
+    subnetHasPrefixPools(): boolean {
+        return hasPrefixPools(this.subnet)
     }
 
     /**

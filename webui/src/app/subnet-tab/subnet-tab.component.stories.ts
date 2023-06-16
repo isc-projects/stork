@@ -76,6 +76,57 @@ Subnet4.args = {
     },
 }
 
+export const Subnet4NoPools = Template.bind({})
+Subnet4NoPools.args = {
+    leaseType: 'address',
+    subnet: {
+        subnet: '192.0.2.0/24',
+        sharedNetwork: 'Fiber',
+        addrUtilization: 0,
+        stats: {
+            'total-addresses': 0,
+            'assigned-addresses': 0,
+            'declined-addresses': 0,
+        },
+        statsCollectedAt: '2023-06-05',
+        localSubnets: [
+            {
+                id: 1,
+                appName: 'foo@192.0.2.1',
+                pools: null,
+            },
+        ],
+    },
+}
+
+export const Subnet4NoPoolsInOneServer = Template.bind({})
+Subnet4NoPoolsInOneServer.args = {
+    leaseType: 'address',
+    subnet: {
+        subnet: '192.0.2.0/24',
+        sharedNetwork: 'Fiber',
+        addrUtilization: 30,
+        stats: {
+            'total-addresses': 240,
+            'assigned-addresses': 70,
+            'declined-addresses': 10,
+        },
+        statsCollectedAt: '2023-06-05',
+        localSubnets: [
+            {
+                id: 1,
+                appName: 'foo@192.0.2.1',
+                pools: null,
+            },
+            {
+                id: 2,
+                appName: 'bar@192.0.2.2',
+                pools: ['192.0.2.10-192.0.2.20'],
+            },
+        ],
+    },
+}
+
 export const Subnet6Address = Template.bind({})
 Subnet6Address.args = {
     leaseType: 'na',

@@ -209,11 +209,19 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
         return false
     }
     for (let i = 1; i < subnet.localSubnets.length; i++) {
+        // Check the case when pools in one server are undefined and defined
+        // in second server and if lengths are different.
+        if (subnet.localSubnets[0].pools?.length !== subnet.localSubnets[i].pools?.length) {
+            return true
+        }
+        if (
+            subnet.localSubnets[0].prefixDelegationPools?.length !==
+            subnet.localSubnets[i].prefixDelegationPools?.length
+        ) {
+            return true
+        }
         // Check for different address pools.
         if (subnet.localSubnets[i].pools && subnet.localSubnets[0].pools) {
-            if (subnet.localSubnets[i].pools.length !== subnet.localSubnets[0].pools.length) {
-                return true
-            }
             for (const pool of subnet.localSubnets[i].pools) {
                 if (!subnet.localSubnets[0].pools.includes(pool)) {
                     return true
@@ -222,12 +230,6 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
         }
         // Check for different prefix pools.
         if (subnet.localSubnets[i].prefixDelegationPools && subnet.localSubnets[0].prefixDelegationPools) {
-            if (
-                subnet.localSubnets[i].prefixDelegationPools.length !==
-                subnet.localSubnets[0].prefixDelegationPools.length
-            ) {
-                return true
-            }
             for (const pool of subnet.localSubnets[i].prefixDelegationPools) {
                 if (
                     subnet.localSubnets[0].prefixDelegationPools.findIndex((p) => {

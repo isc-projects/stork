@@ -111,16 +111,16 @@ export class UtilizationStatsChartComponent implements OnInit {
             if (!total64 || assigned64 === null || declined64 === null || total64 - assigned64 - declined64 < 0) {
                 dataset.data = [100 - this.utilization, this.utilization]
                 this.data = {
-                    labels: ['% free', '% assigned'],
+                    labels: ['% free', '% used'],
                     datasets: [dataset],
                 }
                 return
             }
 
             // The total numbers are correct, so we can present them on the chart.
-            dataset.data = [total64 - assigned64 - declined64, assigned64]
+            dataset.data = [total64 - assigned64, assigned64 - declined64]
             this.data = {
-                labels: ['free', 'assigned'],
+                labels: ['free', 'used'],
                 datasets: [dataset],
             }
             // Only addresses can be declined, so we don't include this statistic for

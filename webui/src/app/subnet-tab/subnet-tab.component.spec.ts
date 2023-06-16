@@ -105,6 +105,45 @@ describe('SubnetTabComponent', () => {
         expect(charts.length).toBe(1)
     })
 
+    it('should display an IPv4 subnet without pools', () => {
+        component.subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetwork: 'Fiber',
+            addrUtilization: 30,
+            stats: {
+                'total-addresses': 240,
+                'assigned-addresses': 70,
+                'declined-addresses': 10,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    appName: 'foo@192.0.2.1',
+                    stats: {
+                        'total-addresses': 240,
+                        'assigned-addresses': 70,
+                        'declined-addresses': 10,
+                    },
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
+
+        const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(2)
+
+        expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
+        expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('12223')
+
+        expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
+        expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
+        expect(fieldsets[1].nativeElement.innerText).toContain('No pools configured.')
+    })
+
     it('should display an IPv6 subnet', () => {
         component.subnet = {
             subnet: '2001:db8:1::/64',

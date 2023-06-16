@@ -288,6 +288,23 @@ describe('subnets', () => {
         expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
     })
 
+    it('detects different address pools for the null case', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    pools: ['192.0.2.10-192.0.2.20', '192.0.2.30-192.0.2.40'],
+                },
+                {
+                    pools: null,
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeTrue()
+        expect(hasPrefixPools(subnet)).toBeFalse()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
     it('detects different prefix pool lengths for servers', () => {
         const subnet = {
             subnet: '2001:db8:1::/64',
@@ -326,6 +343,28 @@ describe('subnets', () => {
                             delegatedLength: 64,
                         },
                     ],
+                },
+                {
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3001::',
+                            delegatedLength: 64,
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(hasAddressPools(subnet)).toBeFalse()
+        expect(hasPrefixPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('it detects different prefix pools for the null case', () => {
+        const subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    prefixDelegationPools: null,
                 },
                 {
                     prefixDelegationPools: [

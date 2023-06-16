@@ -77,15 +77,26 @@
                     </ng-template>
                 </span>
             </ng-template>
-            <ng-container *ngFor="let pool of localSubnet.pools">
-                <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
-            </ng-container>
-            <ng-container *ngFor="let pool of localSubnet.prefixDelegationPools">
-                <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
-            </ng-container>
+            <div
+                *ngIf="
+                    (!localSubnet.pools || localSubnet.pools.length === 0) &&
+                        (!localSubnet.prefixDelegationPools || localSubnet.prefixDelegationPools.length === 0);
+                    else poolsExistBlock
+                "
+            >
+                No pools configured.
+            </div>
+            <ng-template #poolsExistBlock>
+                <ng-container *ngFor="let pool of localSubnet.pools">
+                    <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
+                </ng-container>
+                <ng-container *ngFor="let pool of localSubnet.prefixDelegationPools">
+                    <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
+                </ng-container>
+            </ng-template>
         </p-fieldset>
     </div>
-    <div *ngIf="subnet.stats" class="mb-4">
+    <div *ngIf="(subnetHasAddressPools() || subnetHasPrefixPools()) && subnet.stats" class="mb-4">
         <p-fieldset id="stats-fieldset" legend="Statistics">
             <app-utilization-stats-charts [subnet]="subnet"></app-utilization-stats-charts>
         </p-fieldset>
