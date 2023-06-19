@@ -1,13 +1,13 @@
 <ng-container *ngIf="subnet; else noSubnetBlock">
     <div class="flex flex-wrap">
-        <div *ngIf="hasAddressPools">
+        <div *ngIf="subnet.addrUtilization || hasAddressPools">
             <app-utilization-stats-chart
                 title="Total"
                 leaseType="{{ isIPv6 ? 'na' : 'address' }}"
                 [network]="subnet"
             ></app-utilization-stats-chart>
         </div>
-        <div *ngIf="hasPrefixPools">
+        <div *ngIf="subnet.pdUtilization || hasPrefixPools">
             <app-utilization-stats-chart title="Total" leaseType="pd" [network]="subnet"></app-utilization-stats-chart>
         </div>
         <ng-container class="flex flex-wrap" *ngIf="subnet.localSubnets && subnet.localSubnets.length > 1">

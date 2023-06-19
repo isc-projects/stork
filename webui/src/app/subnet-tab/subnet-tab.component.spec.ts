@@ -133,7 +133,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(2)
+        expect(fieldsets.length).toBe(3)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')

@@ -126,10 +126,43 @@ describe('UtilizationStatsChartsComponent', () => {
         expect(charts[2].nativeElement.innerText).toContain('6')
     })
 
+    it('should display address statistics for no pools when utilization exists', () => {
+        component.subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetwork: 'Fiber',
+            addrUtilization: 30,
+            stats: {
+                'total-addresses': 240,
+                'assigned-addresses': 120,
+                'declined-addresses': 0,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    appName: 'foo@192.0.2.1',
+                },
+                {
+                    id: 12223,
+                    appName: 'bar@192.0.2.2',
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        const charts = fixture.debugElement.queryAll(By.css('app-utilization-stats-chart'))
+        expect(charts.length).toBe(1)
+
+        expect(charts[0].nativeElement.innerText).toContain('Total')
+        expect(charts[0].nativeElement.innerText).toContain('240')
+        expect(charts[0].nativeElement.innerText).toContain('120')
+        expect(charts[0].nativeElement.innerText).toContain('0')
+    })
+
     it('should display total prefix statistics only', () => {
         component.subnet = {
             subnet: '2001:db8:1::/64',
-            addrUtilization: 88,
+            addrUtilization: 0,
             pdUtilization: 60,
             stats: {
                 'total-pds': 500,
@@ -166,7 +199,7 @@ describe('UtilizationStatsChartsComponent', () => {
     it('should display total prefix statistics for more servers', () => {
         component.subnet = {
             subnet: '2001:db8:1::/64',
-            addrUtilization: 88,
+            addrUtilization: 0,
             pdUtilization: 60,
             stats: {
                 'total-pds': 500,
@@ -220,5 +253,36 @@ describe('UtilizationStatsChartsComponent', () => {
         expect(charts[2].nativeElement.innerText).toContain('bar@2001:db8:1::2')
         expect(charts[2].nativeElement.innerText).toContain('200')
         expect(charts[2].nativeElement.innerText).toContain('158')
+    })
+
+    it('should display prefix statistics for no pools when utilization exists', () => {
+        component.subnet = {
+            subnet: '2001:db8:1::/64',
+            addrUtilization: 0,
+            pdUtilization: 60,
+            stats: {
+                'total-pds': 500,
+                'assigned-pds': 358,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    appName: 'foo@2001:db8:1::1',
+                    stats: {
+                        'total-pds': 500,
+                        'assigned-pds': 358,
+                    },
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        const charts = fixture.debugElement.queryAll(By.css('app-utilization-stats-chart'))
+        expect(charts.length).toBe(1)
+
+        expect(charts[0].nativeElement.innerText).toContain('Total')
+        expect(charts[0].nativeElement.innerText).toContain('500')
+        expect(charts[0].nativeElement.innerText).toContain('358')
     })
 })

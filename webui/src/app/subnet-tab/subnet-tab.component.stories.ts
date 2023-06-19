@@ -82,10 +82,10 @@ Subnet4NoPools.args = {
     subnet: {
         subnet: '192.0.2.0/24',
         sharedNetwork: 'Fiber',
-        addrUtilization: 0,
+        addrUtilization: 50,
         stats: {
-            'total-addresses': 0,
-            'assigned-addresses': 0,
+            'total-addresses': 30,
+            'assigned-addresses': 15,
             'declined-addresses': 0,
         },
         statsCollectedAt: '2023-06-05',
@@ -260,6 +260,30 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
                     'total-pds': 200,
                     'assigned-pds': 158,
                 },
+            },
+        ],
+    },
+}
+
+export const Subnet6NoPools = Template.bind({})
+Subnet6NoPools.args = {
+    leaseType: 'na',
+    subnet: {
+        subnet: '2001:db8:1::/64',
+        addrUtilization: 88,
+        pdUtilization: 60,
+        stats: {
+            'total-nas': 1024,
+            'assigned-nas': 980,
+            'declined-nas': 10,
+            'total-pds': 500,
+            'assigned-pds': 358,
+        },
+        statsCollectedAt: '2023-06-05',
+        localSubnets: [
+            {
+                id: 1,
+                appName: 'foo@2001:db8:1::1',
             },
         ],
     },

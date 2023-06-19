@@ -109,7 +109,14 @@
             </ng-template>
         </p-fieldset>
     </div>
-    <div *ngIf="(subnetHasAddressPools() || subnetHasPrefixPools()) && subnet.stats" class="mb-4">
+    <div
+        *ngIf="
+            subnet.addrUtilization ||
+            subnet.pdUtilization ||
+            (subnet.stats && (subnetHasAddressPools() || subnetHasPrefixPools()))
+        "
+        class="mb-4"
+    >
         <p-fieldset id="stats-fieldset" legend="Statistics">
             <app-utilization-stats-charts [subnet]="subnet"></app-utilization-stats-charts>
         </p-fieldset>
