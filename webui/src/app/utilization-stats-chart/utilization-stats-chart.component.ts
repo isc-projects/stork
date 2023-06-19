@@ -118,8 +118,8 @@ export class UtilizationStatsChartComponent implements OnInit {
             // 64-bits or they don't make any sense we'd rather use the percentages.
             if (
                 !total64 ||
-                assigned64 === null ||
-                declined64 === null ||
+                assigned64 == null ||
+                declined64 == null ||
                 total64 - assigned64 < 0 ||
                 assigned64 - declined64 < 0
             ) {
