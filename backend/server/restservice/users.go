@@ -166,6 +166,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			WithField("method", authenticationMethod).
 			WithField("identifier", *params.Credentials.Identifier).
 			Error("User not found, cannot authenticate")
+		return users.NewCreateSessionBadRequest()
 	} else if err != nil {
 		log.
 			WithError(err).
