@@ -109,6 +109,12 @@
             </ng-template>
         </p-fieldset>
     </div>
+    <!--
+        Always show the utilization when the subnet has some dynamic lease pools.
+        Some subnets may lack the pools but have static IP reservations. These
+        cases are rare but they are valid. If the utilization is non-zero we
+        display the utilization charts too.
+    -->
     <div
         *ngIf="
             subnet.addrUtilization ||
