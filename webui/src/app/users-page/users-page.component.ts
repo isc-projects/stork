@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { UntypedFormBuilder, FormControl, UntypedFormGroup, NgForm, Validators } from '@angular/forms'
+import { UntypedFormBuilder, FormControl, UntypedFormGroup, NgForm, Validators, ValidatorFn } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'primeng/api'
 
@@ -214,16 +214,25 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         // validator which checks if the password and confirmed password
         // match. The validator allows leaving an empty password in which
         // case the password won't be modified.
+        const formConfig: Record<string, [string, ValidatorFn?]> = {
+            userLogin: ['', Validators.required],
+            userEmail: ['', Validators.email],
+            userFirst: [''],
+            userLast: [''],
+            userGroup: ['', Validators.required],
+            userPassword: ['', Validators.minLength(8)],
+            userPassword2: ['', Validators.minLength(8)],
+        }
+
+        // The authentication hooks may not support returning profile details
+        // as email, fist and last names, or groups.
+        if (this.isInternalUser) {
+            formConfig.userFirst.push(Validators.required)
+            formConfig.userLast.push(Validators.required)
+        }
+
         const userForm = this.formBuilder.group(
-            {
-                userLogin: ['', Validators.required],
-                userEmail: ['', Validators.email],
-                userFirst: ['', Validators.required],
-                userLast: ['', Validators.required],
-                userGroup: ['', Validators.required],
-                userPassword: ['', Validators.minLength(8)],
-                userPassword2: ['', Validators.minLength(8)],
-            },
+            formConfig,
             { validators: [matchPasswords('userPassword', 'userPassword2')] }
         )
 
@@ -247,6 +256,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             })
         }
 
+        userForm.statusChanges.subscribe((status) => {
+            console.log(status)
+        })
         this.userTab.userForm = userForm
     }
 

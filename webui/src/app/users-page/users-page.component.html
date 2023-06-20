@@ -94,9 +94,9 @@
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.email | placeholder }}</a>
                 </td>
-                <td align="center">{{ u.name }}</td>
-                <td align="center">{{ u.lastname }}</td>
-                <td align="center">{{ u.groups.length > 0 ? getGroupName(u.groups[0]) : 0 }}</td>
+                <td align="center">{{ u.name | placeholder }}</td>
+                <td align="center">{{ u.lastname | placeholder }}</td>
+                <td align="center">{{ getGroupName(u.groups[0]) }}</td>
                 <td align="center">{{ u.authenticationMethodId }}</td>
                 <td align="center">{{ u.externalId | placeholder }}</td>
             </tr>
@@ -134,19 +134,19 @@
                     <b>Last name:</b>
                 </div>
                 <div class="col-10">
-                    {{ userTab.user.lastname }}
+                    {{ userTab.user.lastname | placeholder }}
                 </div>
                 <div class="col-2">
                     <b>First name:</b>
                 </div>
                 <div class="col-10">
-                    {{ userTab.user.name }}
+                    {{ userTab.user.name | placeholder }}
                 </div>
                 <div class="col-2">
                     <b>Group:</b>
                 </div>
                 <div class="col-10">
-                    {{ userTab.user.groups.length > 0 ? getGroupName(userTab.user.groups[0]) : 0 }}
+                    {{ getGroupName(userTab.user.groups[0]) }}
                 </div>
                 <div class="col-2">
                     <b>Authentication:</b>
