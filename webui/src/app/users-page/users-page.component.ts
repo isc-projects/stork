@@ -231,10 +231,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             formConfig.userLast.push(Validators.required)
         }
 
-        const userForm = this.formBuilder.group(
-            formConfig,
-            { validators: [matchPasswords('userPassword', 'userPassword2')] }
-        )
+        const userForm = this.formBuilder.group(formConfig, {
+            validators: [matchPasswords('userPassword', 'userPassword2')],
+        })
 
         // Modify the current tab type to 'edit'.
         tab.tabType = UserTabType.EditedUser
