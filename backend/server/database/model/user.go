@@ -25,7 +25,7 @@ const AuthenticationMethodIDInternal string = "internal"
 type SystemUser struct {
 	ID                     int
 	Login                  string
-	Email                  string `pg:",use_zero"`
+	Email                  string
 	Lastname               string `pg:",use_zero"`
 	Name                   string `pg:",use_zero"`
 	AuthenticationMethodID string `pg:"auth_method"`

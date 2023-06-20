@@ -20,8 +20,9 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Tests that create user account without necessary fields is rejected via REST API.
-func TestCreateUserConflict(t *testing.T) {
+// Tests that create user account without necessary identifier fields is
+// rejected via REST API.
+func TestCreateUserMissingIdentifier(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -35,6 +36,154 @@ func TestCreateUserConflict(t *testing.T) {
 	}
 
 	// New user has empty email which conflicts with the default admin user empty email.
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+
+	// Attempt to create the user and verify the response is negative.
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to create new user account: missing identifier", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with already existing login is
+// rejected via REST API.
+func TestCreateUserConflictLogin(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Email is missing here.
+	su := dbmodel.SystemUser{
+		Login:    "admin",
+		Email:    "",
+		Lastname: "Doe",
+		Name:     "John",
+	}
+
+	// New user has login which conflicts with the default admin user login.
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+
+	// Attempt to create the user and verify the response is negative.
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email already exists", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with already existing email is
+// rejected via REST API.
+func TestCreateUserConflictEmail(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, _ = dbmodel.CreateUser(db, &dbmodel.SystemUser{
+		Login:    "foo",
+		Email:    "foo@example.com",
+		Name:     "foo",
+		Lastname: "bar",
+	})
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Login is missing here.
+	su := dbmodel.SystemUser{
+		Login:    "bar",
+		Email:    "foo@example.com",
+		Lastname: "Doe",
+		Name:     "John",
+	}
+
+	// New user has an email which conflicts with another user email.
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+
+	// Attempt to create the user and verify the response is negative.
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	require.Equal(t, "User account with provided login/email already exists", *defaultRsp.Payload.Message)
+}
+
+// Tests that create user account with already existing but empty email is
+// rejected via REST API.
+func TestCreateUserConflictEmailEmpty(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, _ = dbmodel.CreateUser(db, &dbmodel.SystemUser{
+		Login:    "foo",
+		Email:    "",
+		Name:     "foo",
+		Lastname: "bar",
+	})
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Login is missing here.
+	su := dbmodel.SystemUser{
+		Login:    "bar",
+		Email:    "",
+		Lastname: "Doe",
+		Name:     "John",
+	}
+
+	// New user has an email which conflicts with another user email.
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+
+	// Attempt to create the user and verify the response is negative.
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserOK{}, rsp)
+}
+
+// Tests that create user account with already existing email and empty login is
+// rejected via REST API.
+func TestCreateUserConflictEmailEmptyLogin(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, _ = dbmodel.CreateUser(db, &dbmodel.SystemUser{
+		Email:    "foo@example.com",
+		Name:     "foo",
+		Lastname: "bar",
+	})
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	// Login is missing here.
+	su := dbmodel.SystemUser{
+		Email:    "foo@example.com",
+		Lastname: "Doe",
+		Name:     "John",
+	}
+
+	// New user has an email which conflicts with another user email.
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
