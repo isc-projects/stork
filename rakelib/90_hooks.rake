@@ -111,6 +111,31 @@ namespace :hook do
         end
     end
 
+    desc "Lint hooks against the Stork core rules.
+        FIX - fix linting issues - default: false
+        HOOK_DIR - the directory containing the hooks - optional, default: #{default_hook_directory_rel}"
+    task :lint => [GOLANGCILINT] do
+        require 'pathname'
+
+        opts = []
+        if ENV["FIX"] == "true"
+            opts += ["--fix"]
+        end
+
+        # Use relative path for more human-friendly linter output.
+        hook_directory = Pathname.new(ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY)
+        main_directory = Pathname.new Dir.pwd
+        hook_directory_rel = hook_directory.relative_path_from main_directory
+        config_path = File.expand_path "backend/.golangci.yml"
+
+        forEachHook(lambda { |dir_name|
+            sh GOLANGCILINT, "run",
+                "-c",  config_path,
+                "--path-prefix", File.join(hook_directory_rel, dir_name),
+                *opts
+        })
+    end
+
     desc "Remap the dependency path to the Stork core. It specifies the source
         of the core dependency - remote repository or local directory. The
         remote repository may be fetched by tag or commit hash.
