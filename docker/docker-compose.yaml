@@ -401,8 +401,8 @@ services:
   openldap:
     image: bitnami/openldap:2
     environment:
-      - LDAP_ADMIN_USERNAME=admin
-      - LDAP_ADMIN_PASSWORD=adminpassword
+      LDAP_ADMIN_USERNAME: admin
+      LDAP_ADMIN_PASSWORD: adminpassword
     ports:
       - '1389:1389'
       - '1636:1636'
