@@ -297,12 +297,14 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	p := params.Account.Password
 
 	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil || p == nil {
-		log.Warn("Failed to create new user account: missing data")
-
 		msg := "Failed to create new user account: missing data"
-		rspErr := models.APIError{
-			Message: &msg,
-		}
+		log.Warn(msg)
+		rspErr := models.APIError{Message: &msg}
+		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	} else if *u.Login == "" && *u.Email == "" {
+		msg := "Failed to create new user account: missing identifier"
+		log.Warn(msg)
+		rspErr := models.APIError{Message: &msg}
 		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 	}
 
@@ -362,13 +364,17 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	p := params.Account.Password
 
 	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
-		log.Warn("Failed to update user account: missing data")
-
 		msg := "Failed to update user account: missing data"
+		log.Warn(msg)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		return users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	} else if *u.Login == "" && *u.Email == "" {
+		msg := "Failed to create new user account: missing identifier"
+		log.Warn(msg)
+		rspErr := models.APIError{Message: &msg}
+		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 	}
 
 	su := &dbmodel.SystemUser{
