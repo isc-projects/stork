@@ -1,0 +1,76 @@
+# Root creation
+dn: dc=example,dc=org
+objectClass: dcObject
+objectClass: organization
+dc: example
+o: example
+
+dn: ou=users,dc=example,dc=org
+objectClass: organizationalUnit
+ou: users
+
+# User user1 creation
+dn: cn=user1,ou=users,dc=example,dc=org
+cn: User1
+sn: Bar1
+mail: user1@example.com
+givenName: Foo1
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: password1
+uid: user1
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/user1
+
+# User user2 creation
+dn: cn=user2,ou=users,dc=example,dc=org
+cn: User2
+sn: Bar2
+mail: user2@example.com
+givenName: Foo2
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: password2
+uid: user2
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user2
+
+# User user3 creation - only mandatory fields
+dn: cn=user3,ou=users,dc=example,dc=org
+cn: User3
+sn: Bar3
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: password3
+uid: user3
+uidNumber: 1002
+gidNumber: 1002
+homeDirectory: /home/user3
+
+# Group creation - Readers
+dn: cn=readers,ou=users,dc=example,dc=org
+cn: readers
+objectClass: groupOfNames
+# User group membership
+member: cn=user1,ou=users,dc=example,dc=org
+member: cn=user2,ou=users,dc=example,dc=org
+member: cn=user3,ou=users,dc=example,dc=org
+
+# Group creation - Stork Admins
+dn: cn=stork-admins,ou=users,dc=example,dc=org
+cn: stork-admins
+objectClass: groupOfNames
+# User group membership
+member: cn=user1,ou=users,dc=example,dc=org
+
+# Group creation - Stork Super-Admins
+dn: cn=stork-super-admins,ou=users,dc=example,dc=org
+cn: stork-super-admins
+objectClass: groupOfNames
+# User group membership
+member: cn=user2,ou=users,dc=example,dc=org
