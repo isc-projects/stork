@@ -162,6 +162,11 @@ namespace :demo do
             docker_up_services("postgres")
         end
         
+        desc 'Build and run container with OpenLDAP'
+        task :ldap => [DOCKER_COMPOSE] do
+            docker_up_services("openldap")
+        end
+
         desc 'Build and run Docker DNS Proxy Server to resolve internal Docker hostnames'
         # Source: https://stackoverflow.com/a/45071285
         task :dns_proxy_server => [DOCKER_COMPOSE] do
