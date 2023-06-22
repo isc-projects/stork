@@ -168,12 +168,14 @@ func (w *HookWalker) CollectProtoSettings(program, directory string) (map[string
 
 	err := w.WalkCompatiblePluginLibraries(program, directory, func(path string, library *LibraryManager, err error) bool {
 		if err != nil {
+			// Never happen because the error is checked in the walk function.
 			libraryErr = errors.WithMessagef(err, "cannot open hook library: %s", path)
 			return false
 		}
 
-		proto, libraryErr := library.ProtoSettings()
-		if libraryErr != nil {
+		proto, err := library.ProtoSettings()
+		if err != nil {
+			libraryErr = err
 			return false
 		}
 
@@ -184,5 +186,9 @@ func (w *HookWalker) CollectProtoSettings(program, directory string) (map[string
 		return nil, err
 	}
 
-	return allSettings, libraryErr
+	if libraryErr != nil {
+		return nil, libraryErr
+	}
+
+	return allSettings, nil
 }

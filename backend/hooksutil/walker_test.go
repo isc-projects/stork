@@ -302,3 +302,63 @@ func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "cannot open hook library")
 }
+
+// Test that the function to collect all hook settings returns an error if the
+// symbol is invalid.
+func TestCollectProtoSettingsReturnErrorForInvalidSymbol(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupProtoSettings(invalidSignature, nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	settings, err := walker.CollectProtoSettings("baz", "boilerplate")
+
+	// Assert
+	require.Nil(t, settings)
+	require.ErrorContains(t, err, "symbol ProtoSettings has unexpected signature")
+}
+
+// Test that the function to collect all hook settings returns settings on
+// success.
+func TestCollectProtoSettingsOnSuccess(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupProtoSettings(validProtoSettings(&struct{}{}), nil),
+	), nil)
+	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupProtoSettings(validProtoSettings(nil), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	settings, err := walker.CollectProtoSettings("baz", "fake-directory")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, settings)
+	require.Len(t, settings, 2)
+	require.Contains(t, settings, "foo")
+	require.Contains(t, settings, "bar")
+	require.NotNil(t, settings["foo"])
+	require.Nil(t, settings["bar"])
+}
