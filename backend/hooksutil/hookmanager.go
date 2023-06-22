@@ -10,19 +10,33 @@ import (
 // Facade for all callouts. It defines the specific calling method for
 // each callout.
 type HookManager struct {
-	executor *HookExecutor
+	executor    *HookExecutor
+	allSettings map[string]hooks.HookSettings
 }
 
 // Constructs the hook manager.
 func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	return &HookManager{
-		executor: NewHookExecutor(supportedTypes),
+		executor:    NewHookExecutor(supportedTypes),
+		allSettings: map[string]hooks.HookSettings{},
 	}
+}
+
+// Searches for the compatible hook libraries in a given directory and extracts
+// the prototypes of their settings.
+// The hooks are not loaded.
+func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) error {
+	allSettings, err := CollectProtoSettings(program, directory)
+	if err != nil {
+		return err
+	}
+	hm.allSettings = allSettings
+	return nil
 }
 
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) error {
-	carriers, err := LoadAllHooks(program, directory)
+	carriers, err := LoadAllHooks(program, directory, hm.allSettings)
 	if err != nil {
 		return err
 	}
