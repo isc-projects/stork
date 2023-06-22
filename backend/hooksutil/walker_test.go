@@ -12,6 +12,35 @@ import (
 
 //go:generate mockgen -package=hooksutil -destination=hooklookupmock_test.go isc.org/stork/hooksutil HookLookup
 
+// Test that the function walk over the compatible hooks returns an error if
+// it finds an incompatible library.
+func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("zab", "incompatible"), nil).
+			addLookupLoad(validLoad(nil), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	err := walker.WalkCompatiblePluginLibraries("baz", "fake-directory",
+		func(path string, library *LibraryManager, err error) bool {
+			require.Fail(t, "is should never be called")
+			return false
+		},
+	)
+
+	// Assert
+	require.ErrorContains(t, err, "hook library dedicated for another program")
+}
+
 // Test that the function to load all hooks returns an error if the
 // directory doesn't exist.
 func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
