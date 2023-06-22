@@ -1,6 +1,7 @@
 package hooksutil
 
 import (
+	"fmt"
 	"plugin"
 	"testing"
 
@@ -311,6 +312,43 @@ func TestProtoSettingsReturnSettingsOnSuccess(t *testing.T) {
 	// Assert
 	require.NotNil(t, settings)
 	require.NoError(t, err)
+}
+
+// Test that the ProtoSettings library function can return nil.
+func TestProtoSettingsReturnNil(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock().
+		addLookupProtoSettings(validProtoSettings(nil), nil),
+	)
+
+	// Act
+	settings, err := library.ProtoSettings()
+
+	// Assert
+	require.Nil(t, settings)
+	require.NoError(t, err)
+}
+
+// Test that the ProtoSettings library function must return pointer to a struct.
+func TestProtoSettingsReturnNonStructPointer(t *testing.T) {
+	// Arrange
+	var integer int
+
+	values := []any{integer, &integer, true, struct{}{}}
+	for i, value := range values {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			library := newLibraryManager("", newPluginMock().
+				addLookupProtoSettings(validProtoSettings(value), nil),
+			)
+
+			// Act
+			settings, err := library.ProtoSettings()
+
+			// Assert
+			require.Nil(t, settings)
+			require.ErrorContains(t, err, "must be a pointer to struct")
+		})
+	}
 }
 
 // Test that the path is returned properly.

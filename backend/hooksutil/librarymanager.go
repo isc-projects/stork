@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"isc.org/stork/hooks"
+	storkutil "isc.org/stork/util"
 )
 
 // It is impossible to mock the `plugin.Plugin` struct directly. It's an
@@ -68,9 +69,15 @@ func (lm *LibraryManager) ProtoSettings() (any, error) {
 	}
 
 	protoSettingsInstance := protoSettingsFunction()
+	if storkutil.IsNilPtr(protoSettingsInstance) {
+		// Nil pointer is a pointer but it isn't recognized as a struct pointer
+		// by the below condition.
+		return nil, nil
+	}
 
 	// Check the type of the returned value. It must be a pointer to structure.
 	protoSettingsInstanceValue := reflect.ValueOf(protoSettingsInstance)
+
 	if protoSettingsInstanceValue.Kind() != reflect.Pointer || protoSettingsInstanceValue.Elem().Kind() != reflect.Struct {
 		return nil, errors.Errorf("returned prototype of the hook settings must be a pointer to struct")
 	}
