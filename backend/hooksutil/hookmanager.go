@@ -12,6 +12,7 @@ import (
 type HookManager struct {
 	executor    *HookExecutor
 	allSettings map[string]hooks.HookSettings
+	walker      *HookWalker
 }
 
 // Constructs the hook manager.
@@ -19,6 +20,7 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	return &HookManager{
 		executor:    NewHookExecutor(supportedTypes),
 		allSettings: map[string]hooks.HookSettings{},
+		walker:      NewHookWalker(),
 	}
 }
 
@@ -26,7 +28,7 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 // the prototypes of their settings.
 // The hooks are not loaded.
 func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) error {
-	allSettings, err := CollectProtoSettings(program, directory)
+	allSettings, err := hm.walker.CollectProtoSettings(program, directory)
 	if err != nil {
 		return err
 	}
@@ -36,7 +38,7 @@ func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory stri
 
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) error {
-	carriers, err := LoadAllHooks(program, directory, hm.allSettings)
+	carriers, err := hm.walker.LoadAllHooks(program, directory, hm.allSettings)
 	if err != nil {
 		return err
 	}
