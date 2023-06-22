@@ -1,9 +1,7 @@
 package hooksutil
 
 import (
-	"io"
 	"plugin"
-	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -49,19 +47,36 @@ func (p *pluginMock) addLookupVersion(result any) {
 	}
 }
 
+// Callout carrier mock that stores an received settings.
+type calloutCarrierMock struct {
+	settings hooks.HookSettings
+}
+
+// Implements the mandatory Close function.
+func (c *calloutCarrierMock) Close() error {
+	return nil
+}
+
 // Function with a signature not matching the Load and Version.
 func invalidSignature(int64) bool {
 	return false
 }
 
 // Creates a valid Load function that returns the given output.
-// If the string content is empty, the function will return nil instead.
-func validLoad(s string, err error) hooks.HookLoadFunction {
-	return func() (hooks.CalloutCarrier, error) {
-		if s == "" {
+// If the error is nil, the function will return callout carrier.
+func validLoad(err error) hooks.HookLoadFunction {
+	return func(settings hooks.HookSettings) (hooks.CalloutCarrier, error) {
+		if err != nil {
 			return nil, err
 		}
-		return io.NopCloser(strings.NewReader(s)), err
+		return &calloutCarrierMock{settings: settings}, nil
+	}
+}
+
+// Creates a valid ProtoSettings function that returns the given output.
+func validProtoSettings(settings hooks.HookSettings) hooks.HookProtoSettingsFunction {
+	return func() hooks.HookSettings {
+		return settings
 	}
 }
 
@@ -102,7 +117,7 @@ func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
 
 	// Act
-	calloutCarrier, err := library.Load()
+	calloutCarrier, err := library.Load(nil)
 
 	// Assert
 	require.Nil(t, calloutCarrier)
@@ -116,7 +131,7 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
 
 	// Act
-	calloutCarrier, err := library.Load()
+	calloutCarrier, err := library.Load(nil)
 
 	// Assert
 	require.Nil(t, calloutCarrier)
@@ -128,15 +143,12 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 func TestLoadReturnErrorOnFail(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(
-		validLoad(
-			"",
-			errors.New("error in load"),
-		),
+		validLoad(errors.New("error in load")),
 		nil,
 	))
 
 	// Act
-	calloutCarrier, err := library.Load()
+	calloutCarrier, err := library.Load(nil)
 
 	// Assert
 	require.Nil(t, calloutCarrier)
@@ -147,15 +159,36 @@ func TestLoadReturnErrorOnFail(t *testing.T) {
 func TestLoadReturnCalloutCarrierOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock(
-		validLoad("bar", nil), nil,
+		validLoad(nil), nil,
 	))
 
 	// Act
-	calloutCarrier, err := library.Load()
+	calloutCarrier, err := library.Load(nil)
 
 	// Assert
 	require.NotNil(t, calloutCarrier)
 	require.NoError(t, err)
+}
+
+// Test that the load library function accepts settings and returns a callout
+// carrier on success.
+func TestLoadWithSettingsReturnCalloutCarrierOnSuccess(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock(
+		validLoad(nil), nil,
+	))
+
+	type settings struct {
+		value string
+	}
+
+	// Act
+	calloutCarrier, err := library.Load(&settings{value: "foo"})
+
+	// Assert
+	require.NotNil(t, calloutCarrier)
+	require.NoError(t, err)
+	require.Equal(t, "foo", calloutCarrier.(*calloutCarrierMock).settings.(*settings).value)
 }
 
 // Test that the version library function returns an error if the plugin doesn't
@@ -203,6 +236,47 @@ func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test that the ProtoSettings library function returns nil and no error if the
+// plugin doesn't contain the related function.
+func TestProtoSettingsReturnNoErrorForMissingFunction(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
+
+	// Act
+	settings, err := library.ProtoSettings()
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, settings)
+}
+
+// Test that the ProtoSettings library function returns an error if the related
+// plugin function has unexpected signature.
+func TestProtoSettingsReturnErrorForInvalidSignature(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
+
+	// Act
+	settings, err := library.ProtoSettings()
+
+	// Assert
+	require.Nil(t, settings)
+	require.ErrorContains(t, err, "symbol ProtoSettings has unexpected signature")
+}
+
+// Test that the ProtoSettings library function returns the settings on success.
+func TestProtoSettingsReturnSettingsOnSuccess(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock(validProtoSettings(&struct{}{}), nil))
+
+	// Act
+	settings, err := library.ProtoSettings()
+
+	// Assert
+	require.NotNil(t, settings)
+	require.NoError(t, err)
+}
+
 // Test that the path is returned properly.
 func TestGetPath(t *testing.T) {
 	// Arrange
@@ -213,4 +287,29 @@ func TestGetPath(t *testing.T) {
 
 	// Assert
 	require.EqualValues(t, "foo", path)
+}
+
+// Test that the name is returned properly.
+func TestGetName(t *testing.T) {
+	paths := []string{
+		"foo",
+		"./foo",
+		"/bar/bar/foo",
+		"foo.bar",
+		"./foo.bar",
+		"/bar/foo.bar",
+		"bar/foo.bar",
+		"bar-bar/bar/foo.__bar__",
+	}
+
+	for _, path := range paths {
+		// Arrange
+		library := newLibraryManager(path, nil)
+
+		// Act
+		path := library.GetName()
+
+		// Assert
+		require.EqualValues(t, "foo", path)
+	}
 }
