@@ -3,17 +3,21 @@ package hooksutil
 import (
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork"
 	"isc.org/stork/hooks"
 )
 
+//go:generate mockgen -package=hooksutil -destination=hooklookupmock_test.go isc.org/stork/hooksutil HookLookup
+
 // Test that the function to load all hooks returns an error if the
 // directory doesn't exist.
 func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
-	calloutCarriers, err := LoadAllHooks("", "/non/exist/directory", map[string]hooks.HookSettings{})
+	walker := NewHookWalker()
+	calloutCarriers, err := walker.LoadAllHooks("", "/non/exist/directory", map[string]hooks.HookSettings{})
 
 	// Assert
 	require.Nil(t, calloutCarriers)
@@ -24,8 +28,11 @@ func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 // Test that the function to load all hooks returns an error if the directory
 // contains a non-plugin file.
 func TestLoadAllHooksReturnErrorForNonPluginFile(t *testing.T) {
-	// Arrange & Act
-	calloutCarriers, err := LoadAllHooks("", "boilerplate", map[string]hooks.HookSettings{})
+	// Arrange
+	walker := NewHookWalker()
+
+	// Act
+	calloutCarriers, err := walker.LoadAllHooks("", "boilerplate", map[string]hooks.HookSettings{})
 
 	// Assert
 	require.Nil(t, calloutCarriers)
@@ -33,11 +40,73 @@ func TestLoadAllHooksReturnErrorForNonPluginFile(t *testing.T) {
 	require.ErrorContains(t, err, "cannot open hook library")
 }
 
+// Test that the function to load all hooks returns an error if the problem
+// occurs while extracting the callout carrier.
+func TestLoadAllHooksReturnErrorForCarrierExtractingFailure(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupLoad(validLoad(errors.New("cannot load")), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	calloutCarriers, err := walker.LoadAllHooks("baz", "boilerplate", map[string]hooks.HookSettings{})
+
+	// Assert
+	require.Nil(t, calloutCarriers)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "cannot load")
+}
+
+// Test that the function to load all hooks returns callouts if all paths are
+// pointed on the valid hooks.
+func TestLoadAllHooksReturnCalloutCarriersOnSuccess(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupLoad(validLoad(nil), nil),
+	), nil)
+	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupLoad(validLoad(nil), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+	settings := map[string]hooks.HookSettings{"foo": &struct{}{}}
+
+	// Act
+	carriers, err := walker.LoadAllHooks("baz", "fake-directory", settings)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, carriers)
+	require.Len(t, carriers, 2)
+	require.NotNil(t, carriers[0].(*calloutCarrierMock).settings)
+	require.Nil(t, carriers[1].(*calloutCarrierMock).settings)
+}
+
 // Test that the verification returns an error if the Version function is missing
 // in the hook.
 func TestCheckLibraryCompatibilityMissingVersion(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
+	library := newLibraryManager("", newPluginMock().
+		addLookupVersion(nil, errors.New("symbol not found")),
+	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
@@ -51,7 +120,9 @@ func TestCheckLibraryCompatibilityMissingVersion(t *testing.T) {
 // invalid signature.
 func TestCheckLibraryCompatibilityInvalidVersion(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupVersion(invalidSignature, nil),
+	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
@@ -64,7 +135,9 @@ func TestCheckLibraryCompatibilityInvalidVersion(t *testing.T) {
 // another application.
 func TestCheckLibraryCompatibilityNonMatchingApplication(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(validVersion("bar", ""), nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupVersion(validVersion("bar", ""), nil),
+	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
@@ -77,7 +150,9 @@ func TestCheckLibraryCompatibilityNonMatchingApplication(t *testing.T) {
 // another Stork version.
 func TestCheckLibraryCompatibilityNonMatchingVersion(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(validVersion("foo", "non.matching.version"), nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupVersion(validVersion("foo", "non.matching.version"), nil),
+	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
@@ -90,8 +165,9 @@ func TestCheckLibraryCompatibilityNonMatchingVersion(t *testing.T) {
 // function is missing in the hook.
 func TestExtractCalloutCarrierMissingLoad(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(nil, errors.New("symbol not found"))
-	plugin.addLookupVersion(validVersion("foo", stork.Version))
+	plugin := newPluginMock().
+		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupLoad(nil, errors.New("symbol not found"))
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -107,8 +183,9 @@ func TestExtractCalloutCarrierMissingLoad(t *testing.T) {
 // function has an invalid signature.
 func TestExtractCalloutCarrierInvalidLoad(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(invalidSignature, nil)
-	plugin.addLookupVersion(validVersion("foo", stork.Version))
+	plugin := newPluginMock().
+		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupLoad(invalidSignature, nil)
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -123,8 +200,9 @@ func TestExtractCalloutCarrierInvalidLoad(t *testing.T) {
 // function fails.
 func TestExtractCalloutCarrierLoadFails(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(validLoad(errors.New("error in load")), nil)
-	plugin.addLookupVersion(validVersion("foo", stork.Version))
+	plugin := newPluginMock().
+		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupLoad(validLoad(errors.New("error in load")), nil)
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -138,8 +216,9 @@ func TestExtractCalloutCarrierLoadFails(t *testing.T) {
 // Test that the extract carrier function return a proper output on success.
 func TestExtractCalloutCarrier(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(validLoad(nil), nil)
-	plugin.addLookupVersion(validVersion("foo", stork.Version))
+	plugin := newPluginMock().
+		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupLoad(validLoad(nil), nil)
 	library := newLibraryManager("", plugin)
 
 	// Act
@@ -154,8 +233,9 @@ func TestExtractCalloutCarrier(t *testing.T) {
 // Test that the the provided settings are passed to the load function.
 func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(validLoad(nil), nil)
-	plugin.addLookupVersion(validVersion("foo", stork.Version))
+	plugin := newPluginMock().
+		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupLoad(validLoad(nil), nil)
 	library := newLibraryManager("", plugin)
 	settings := &struct{}{}
 
@@ -172,7 +252,8 @@ func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 // error if the  directory doesn't exist.
 func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
-	data, err := CollectProtoSettings("", "/non/exist/directory")
+	walker := NewHookWalker()
+	data, err := walker.CollectProtoSettings("", "/non/exist/directory")
 
 	// Assert
 	require.Nil(t, data)
@@ -184,7 +265,8 @@ func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 // error if the directory contains a non-plugin file.
 func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange & Act
-	data, err := CollectProtoSettings("", "boilerplate")
+	walker := NewHookWalker()
+	data, err := walker.CollectProtoSettings("", "boilerplate")
 
 	// Assert
 	require.Nil(t, data)

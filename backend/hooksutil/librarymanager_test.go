@@ -11,9 +11,6 @@ import (
 
 // Plugin mock.
 type pluginMock struct {
-	// General lookup results
-	lookupResult         any
-	lookupErr            error
 	specificLookupOutput map[string]struct {
 		result any
 		err    error
@@ -21,8 +18,8 @@ type pluginMock struct {
 }
 
 // Constructs the plugin mock instance.
-func newPluginMock(lookupResult any, lookupErr error) *pluginMock {
-	return &pluginMock{lookupResult, lookupErr, make(map[string]struct {
+func newPluginMock() *pluginMock {
+	return &pluginMock{make(map[string]struct {
 		result any
 		err    error
 	})}
@@ -33,18 +30,43 @@ func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
 	if output, ok := p.specificLookupOutput[symName]; ok {
 		return output.result, output.err
 	}
-	return p.lookupResult, p.lookupErr
+	panic("Lookup not registered")
 }
 
 // Add a dedicated lookup output for the Version symbol.
-func (p *pluginMock) addLookupVersion(result any) {
+func (p *pluginMock) addLookupVersion(result any, err error) *pluginMock {
 	p.specificLookupOutput["Version"] = struct {
 		result any
 		err    error
 	}{
 		result: result,
-		err:    nil,
+		err:    err,
 	}
+	return p
+}
+
+// Add a dedicated lookup output for the Load symbol.
+func (p *pluginMock) addLookupLoad(result any, err error) *pluginMock {
+	p.specificLookupOutput["Load"] = struct {
+		result any
+		err    error
+	}{
+		result: result,
+		err:    err,
+	}
+	return p
+}
+
+// Add a dedicated lookup output for the ProtoSettings symbol.
+func (p *pluginMock) addLookupProtoSettings(result any, err error) *pluginMock {
+	p.specificLookupOutput["ProtoSettings"] = struct {
+		result any
+		err    error
+	}{
+		result: result,
+		err:    err,
+	}
+	return p
 }
 
 // Callout carrier mock that stores an received settings.
@@ -100,7 +122,7 @@ func TestNewLibraryManagerReturnErrorForInvalidPath(t *testing.T) {
 // Test that the library manager constructor sets members properly.
 func TestNewLibraryManager(t *testing.T) {
 	// Arrange
-	plugin := newPluginMock(nil, nil)
+	plugin := newPluginMock()
 
 	// Act
 	library := newLibraryManager("foo", plugin)
@@ -114,7 +136,10 @@ func TestNewLibraryManager(t *testing.T) {
 // contain the load function.
 func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
+	library := newLibraryManager(
+		"",
+		newPluginMock().addLookupLoad(nil, errors.New("symbol not found")),
+	)
 
 	// Act
 	calloutCarrier, err := library.Load(nil)
@@ -128,7 +153,10 @@ func TestLoadReturnErrorForMissingFunction(t *testing.T) {
 // function has unexpected signature.
 func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
+	library := newLibraryManager(
+		"",
+		newPluginMock().addLookupLoad(invalidSignature, nil),
+	)
 
 	// Act
 	calloutCarrier, err := library.Load(nil)
@@ -142,10 +170,10 @@ func TestLoadReturnErrorForInvalidSignature(t *testing.T) {
 // function returns an error.
 func TestLoadReturnErrorOnFail(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(
-		validLoad(errors.New("error in load")),
-		nil,
-	))
+	library := newLibraryManager(
+		"",
+		newPluginMock().addLookupLoad(validLoad(errors.New("error in load")), nil),
+	)
 
 	// Act
 	calloutCarrier, err := library.Load(nil)
@@ -158,9 +186,9 @@ func TestLoadReturnErrorOnFail(t *testing.T) {
 // Test that the load library function returns a callout carrier on success.
 func TestLoadReturnCalloutCarrierOnSuccess(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(
-		validLoad(nil), nil,
-	))
+	library := newLibraryManager("", newPluginMock().
+		addLookupLoad(validLoad(nil), nil),
+	)
 
 	// Act
 	calloutCarrier, err := library.Load(nil)
@@ -174,9 +202,9 @@ func TestLoadReturnCalloutCarrierOnSuccess(t *testing.T) {
 // carrier on success.
 func TestLoadWithSettingsReturnCalloutCarrierOnSuccess(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(
-		validLoad(nil), nil,
-	))
+	library := newLibraryManager("", newPluginMock().
+		addLookupLoad(validLoad(nil), nil),
+	)
 
 	type settings struct {
 		value string
@@ -195,7 +223,7 @@ func TestLoadWithSettingsReturnCalloutCarrierOnSuccess(t *testing.T) {
 // contain the version function.
 func TestVersionReturnErrorForMissingFunction(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
+	library := newLibraryManager("", newPluginMock().addLookupVersion(nil, errors.New("symbol not found")))
 
 	// Act
 	program, version, err := library.Version()
@@ -210,7 +238,7 @@ func TestVersionReturnErrorForMissingFunction(t *testing.T) {
 // function has unexpected signature.
 func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
+	library := newLibraryManager("", newPluginMock().addLookupVersion(invalidSignature, nil))
 
 	// Act
 	program, version, err := library.Version()
@@ -225,7 +253,9 @@ func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 // version string on success.
 func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(validVersion("bar", "baz"), nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupVersion(validVersion("bar", "baz"), nil),
+	)
 
 	// Act
 	program, version, err := library.Version()
@@ -240,7 +270,9 @@ func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 // plugin doesn't contain the related function.
 func TestProtoSettingsReturnNoErrorForMissingFunction(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(nil, errors.New("symbol not found")))
+	library := newLibraryManager("", newPluginMock().
+		addLookupProtoSettings(nil, errors.New("symbol not found")),
+	)
 
 	// Act
 	settings, err := library.ProtoSettings()
@@ -254,7 +286,9 @@ func TestProtoSettingsReturnNoErrorForMissingFunction(t *testing.T) {
 // plugin function has unexpected signature.
 func TestProtoSettingsReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(invalidSignature, nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupProtoSettings(invalidSignature, nil),
+	)
 
 	// Act
 	settings, err := library.ProtoSettings()
@@ -267,7 +301,9 @@ func TestProtoSettingsReturnErrorForInvalidSignature(t *testing.T) {
 // Test that the ProtoSettings library function returns the settings on success.
 func TestProtoSettingsReturnSettingsOnSuccess(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock(validProtoSettings(&struct{}{}), nil))
+	library := newLibraryManager("", newPluginMock().
+		addLookupProtoSettings(validProtoSettings(&struct{}{}), nil),
+	)
 
 	// Act
 	settings, err := library.ProtoSettings()
