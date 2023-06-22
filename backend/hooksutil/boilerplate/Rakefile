@@ -1,21 +1,3 @@
-# Constructs the hook filename in format: [DIR]_[VERSION].[EXT].
-# Where: [DIR] - The directory of the hook, by default it is a module name.
-#        [VERSION] - The compatible Stork version.
-#        [EXT] - Hook extension: .so
-def construct_filename()
-    gomod_content = IO.read("go.mod")
-    # Finds the row that starts with "replace isc.org/stork",
-    # next has "=>" operator delimited by white characters,
-    # then the target dependency delimited by white characters,
-    # and the version at the end. Captures the version.
-    match = gomod_content.match(/^replace isc\.org\/stork\s+=>\s+\S+\s+(\S*)$/)
-    version = match[1]
-
-    dir_name = File.basename(Dir.getwd)
-
-    return "#{dir_name}_#{version}.so"
-end
-
 desc "Build the hook
     DEBUG - build plugins in debug mode - default: false"
 task :build do
@@ -24,10 +6,12 @@ task :build do
         flags.append "-gcflags", "all=-N -l"
     end
 
-    hook_name = construct_filename()
+    hook_name = File.basename(Dir.getwd) + ".so"
+    hook_name = hook_name.delete_prefix "stork-hook-"
     
     build_dir = "build"
     sh "mkdir", "-p", build_dir
+    sh "rm", *FileList[File.join(build_dir, "*.so")]
 
     output_path = File.join(build_dir, hook_name)
 

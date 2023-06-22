@@ -46,6 +46,10 @@ func runAgent(settings *cli.Context, reload bool) error {
 
 	// Read the hook libraries.
 	hookManager := agent.NewHookManager()
+	// ToDo: There is missing support for configuring agent hooks because the
+	// agent uses a different library to handle CLI/environment variables than
+	// the server. I think we should unify the CLI libraries to avoid
+	// duplicating the code.
 	err := hookManager.RegisterHooksFromDirectory(hooks.HookProgramAgent, settings.Path("hook-directory"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

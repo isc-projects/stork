@@ -96,19 +96,6 @@ namespace :hook do
                 sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
             end
         })
-
-        # The plugin filenames after remap lack the version.
-        # We need to append it.
-        commit, _ = Open3.capture2 "git", "rev-parse", "--short", "HEAD"
-        commit = commit.strip()
-
-        Dir[File.join(hook_directory, "*.so")].each do |path|
-            new_path = File.join(
-                File.dirname(path),
-                "#{File.basename(path, ".so")}#{STORK_VERSION}-#{commit}.so"
-            )
-            sh "mv", path, new_path
-        end
     end
 
     desc "Lint hooks against the Stork core rules.
