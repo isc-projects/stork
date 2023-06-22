@@ -92,7 +92,7 @@ func checkLibraryCompatibility(library *LibraryManager, expectedProgram string) 
 // Iterates over the plugins in a given directory but skips the libraries that
 // are not compatible with the current application (are dedicated for different
 // program or have a wrong version).
-func (w *HookWalker) WalkCompatiblePluginLibraries(directory, program string, walkCallback WalkCallback) error {
+func (w *HookWalker) WalkCompatiblePluginLibraries(program, directory string, walkCallback WalkCallback) error {
 	var libraryErr error
 	err := w.WalkPluginLibraries(directory, func(path string, library *LibraryManager, err error) bool {
 		if err != nil {
@@ -124,7 +124,7 @@ func (w *HookWalker) LoadAllHooks(program string, directory string, allSettings 
 		libraryErr error
 	)
 
-	err := w.WalkCompatiblePluginLibraries(directory, program, func(path string, library *LibraryManager, err error) bool {
+	err := w.WalkCompatiblePluginLibraries(program, directory, func(path string, library *LibraryManager, err error) bool {
 		if err != nil {
 			// Never happen because the error is checked in the walk function.
 			libraryErr = errors.WithMessagef(err, "cannot open hook library: %s", path)
@@ -166,7 +166,7 @@ func (w *HookWalker) CollectProtoSettings(program, directory string) (map[string
 	allSettings := map[string]hooks.HookSettings{}
 	var libraryErr error
 
-	err := w.WalkCompatiblePluginLibraries(directory, program, func(path string, library *LibraryManager, err error) bool {
+	err := w.WalkCompatiblePluginLibraries(program, directory, func(path string, library *LibraryManager, err error) bool {
 		if err != nil {
 			libraryErr = errors.WithMessagef(err, "cannot open hook library: %s", path)
 			return false
