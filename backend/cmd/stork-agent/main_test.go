@@ -50,6 +50,7 @@ const AgentMan = "../../../doc/user/man/stork-agent.8.rst"
 // This test checks if stork-agent -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 2)
 	os.Args[1] = "-h"
 
@@ -78,6 +79,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 // This test checks if stork-agent --version (and -v) report expected version.
 func TestCommandLineVersion(t *testing.T) {
 	// Let's repeat the test twice (for -v and then for --version)
+	defer testutil.CreateOsArgsRestorePoint()()
 	for _, opt := range []string{"-v", "--version"} {
 		arg := opt
 		t.Run(arg, func(t *testing.T) {
@@ -100,6 +102,7 @@ func TestCommandLineVersion(t *testing.T) {
 // This test checks if stork-agent -h reports all expected command-line switches.
 func TestRegisterCommandLineSwitches(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 3)
 	os.Args[1] = "register"
 	os.Args[2] = "-h"
@@ -117,6 +120,7 @@ func TestRegisterCommandLineSwitches(t *testing.T) {
 // Check if stork-agent uses --agent-host parameter.
 func TestRegistrationParams(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 4)
 	os.Args[1] = "register"
 	os.Args[2] = "--agent-host"

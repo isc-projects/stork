@@ -209,3 +209,19 @@ func TestCreateEnvironmentRestorePoint(t *testing.T) {
 	value3 := os.Getenv("STORK_TEST_KEY3")
 	require.EqualValues(t, "bar", value3)
 }
+
+// Test that the restore point clears the OS arguments.
+func Test(t *testing.T) {
+	// Arrange & Act
+	restorePoint := CreateOsArgsRestorePoint()
+
+	os.Args = []string{
+		"program-name",
+		"foobar",
+	}
+
+	restorePoint()
+
+	// Assert
+	require.NotContains(t, os.Args, "foobar")
+}

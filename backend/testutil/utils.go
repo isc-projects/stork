@@ -116,3 +116,13 @@ func CreateEnvironmentRestorePoint() func() {
 		}
 	}
 }
+
+// Allows reverting the changes in the os.Args variables to a previous
+// state. It remembers the current os.Args and returns a function
+// that must be called to restore these values.
+func CreateOsArgsRestorePoint() func() {
+	original := os.Args
+	return func() {
+		os.Args = original
+	}
+}
