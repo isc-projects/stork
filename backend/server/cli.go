@@ -106,12 +106,12 @@ func (p *CLIParser) Parse() (command Command, settings *Settings, err error) {
 		return
 	}
 
-	allHookProtoSettings, err := p.collectHookProtoSettings(hookDirectorySettings)
+	allHookCLIFlags, err := p.collectHookCLIFlags(hookDirectorySettings)
 	if err != nil {
 		return
 	}
 
-	settings, err = p.parseSettings(allHookProtoSettings)
+	settings, err = p.parseSettings(allHookCLIFlags)
 	if isHelpRequest(err) {
 		return HelpCommand, nil, nil
 	}
@@ -190,14 +190,14 @@ func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 }
 
 // Extracts the CLI flags from the hooks.
-func (p *CLIParser) collectHookProtoSettings(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
-	var allProtoSettings map[string]hooks.HookSettings
+func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
+	var allCLIFlags map[string]hooks.HookSettings
 	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
 		hookWalker := hooksutil.NewHookWalker(p.hookLookup)
-		allProtoSettings, err = hookWalker.CollectProtoSettings(
+		allCLIFlags, err = hookWalker.CollectCLIFlags(
 			hooks.HookProgramServer,
 			hookDirectorySettings.HookDirectory,
 		)
@@ -226,7 +226,7 @@ func (p *CLIParser) collectHookProtoSettings(hookDirectorySettings *HookDirector
 		return nil, err
 	}
 
-	return allProtoSettings, nil
+	return allCLIFlags, nil
 }
 
 // Prepare conventional namespaces for the CLI flags and environment
@@ -252,7 +252,7 @@ func getHookNamespaces(hookName string) (flagNamespace, envNamespace string) {
 }
 
 // Parses all CLI flags including the hooks-related ones.
-func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSettings) (*Settings, error) {
+func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings) (*Settings, error) {
 	settings := &Settings{}
 
 	parser := flags.NewParser(settings.GeneralSettings, flags.Default)
@@ -282,11 +282,11 @@ func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSet
 	}
 
 	// Append hook flags.
-	for hookName, protoSettings := range allHooksProtoSettings {
-		if protoSettings == nil {
+	for hookName, cliFlags := range allHooksCLIFlags {
+		if cliFlags == nil {
 			continue
 		}
-		group, err := parser.AddGroup(fmt.Sprintf("Hook '%s' Flags", hookName), "", protoSettings)
+		group, err := parser.AddGroup(fmt.Sprintf("Hook '%s' Flags", hookName), "", cliFlags)
 		if err != nil {
 			err = errors.Wrapf(err, "invalid settings for the '%s' hook", hookName)
 			return nil, err
@@ -307,7 +307,7 @@ func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSet
 	if err != nil {
 		return nil, err
 	}
-	settings.HooksSettings = allHooksProtoSettings
+	settings.HooksSettings = allHooksCLIFlags
 
 	return settings, nil
 }

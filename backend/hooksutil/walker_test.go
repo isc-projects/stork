@@ -279,10 +279,10 @@ func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 
 // Test that the function to extract the prototype of all hooks returns an
 // error if the  directory doesn't exist.
-func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
+func TestCollectCLIFlagsReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
 	walker := NewHookWalker(NewSystemHookLookup())
-	data, err := walker.CollectProtoSettings("", "/non/exist/directory")
+	data, err := walker.CollectCLIFlags("", "/non/exist/directory")
 
 	// Assert
 	require.Nil(t, data)
@@ -292,10 +292,10 @@ func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 
 // Test that the function to extract the prototype of all hooks returns an
 // error if the directory contains a non-plugin file.
-func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
+func TestCollectCLIFlagsReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange & Act
 	walker := NewHookWalker(NewSystemHookLookup())
-	data, err := walker.CollectProtoSettings("", "boilerplate")
+	data, err := walker.CollectCLIFlags("", "boilerplate")
 
 	// Assert
 	require.Nil(t, data)
@@ -305,7 +305,7 @@ func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
 
 // Test that the function to collect all hook settings returns an error if the
 // symbol is invalid.
-func TestCollectProtoSettingsReturnErrorForInvalidSymbol(t *testing.T) {
+func TestCollectCLIFlagsReturnErrorForInvalidSymbol(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -315,22 +315,22 @@ func TestCollectProtoSettingsReturnErrorForInvalidSymbol(t *testing.T) {
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
 			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupProtoSettings(invalidSignature, nil),
+			addLookupCLIFlags(invalidSignature, nil),
 	), nil)
 
 	walker := NewHookWalker(lookup)
 
 	// Act
-	settings, err := walker.CollectProtoSettings("baz", "boilerplate")
+	settings, err := walker.CollectCLIFlags("baz", "boilerplate")
 
 	// Assert
 	require.Nil(t, settings)
-	require.ErrorContains(t, err, "symbol ProtoSettings has unexpected signature")
+	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
 }
 
 // Test that the function to collect all hook settings returns settings on
 // success.
-func TestCollectProtoSettingsOnSuccess(t *testing.T) {
+func TestCollectCLIFlagsOnSuccess(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -340,18 +340,18 @@ func TestCollectProtoSettingsOnSuccess(t *testing.T) {
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
 			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupProtoSettings(validProtoSettings(&struct{}{}), nil),
+			addLookupCLIFlags(validCLIFlags(&struct{}{}), nil),
 	), nil)
 	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
 		newPluginMock().
 			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupProtoSettings(validProtoSettings(nil), nil),
+			addLookupCLIFlags(validCLIFlags(nil), nil),
 	), nil)
 
 	walker := NewHookWalker(lookup)
 
 	// Act
-	settings, err := walker.CollectProtoSettings("baz", "fake-directory")
+	settings, err := walker.CollectCLIFlags("baz", "fake-directory")
 
 	// Assert
 	require.NoError(t, err)

@@ -15,16 +15,16 @@ func Version() (string, string) {
 }
 
 // Optional support for providing settings.
-// Returns a prototype of the settings. The prototype includes the tags
+// Returns the CLI flags. The returned structure includes the tags
 // with definitions of the parameters. This method (if provided) is called
 // BEFORE loading the hook.
-func ProtoSettings() hooks.HookSettings {
+func CLIFlags() hooks.HookSettings {
 	return nil
 }
 
 // Type guards.
 var (
-	_ hooks.HookLoadFunction          = Load
-	_ hooks.HookVersionFunction       = Version
-	_ hooks.HookProtoSettingsFunction = ProtoSettings
+	_ hooks.HookLoadFunction     = Load
+	_ hooks.HookVersionFunction  = Version
+	_ hooks.HookCLIFlagsFunction = CLIFlags
 )
