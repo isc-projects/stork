@@ -37,7 +37,7 @@ func TestHookManagerFromDirectoryReturnErrorOnInvalidDirectory(t *testing.T) {
 	hookManager := NewHookManager()
 
 	// Arrange & Act
-	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir")
+	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir", map[string]hooks.HookSettings{})
 
 	// Assert
 	require.Error(t, err)

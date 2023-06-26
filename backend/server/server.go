@@ -1,14 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"os"
-	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/go-pg/pg/v10"
-	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -28,22 +24,6 @@ import (
 	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
 	"isc.org/stork/server/restservice"
-	storkutil "isc.org/stork/util"
-)
-
-// The passed command to the server by the CLI.
-type Command string
-
-// Valid commands supported by the Stork server.
-const (
-	// None command provided.
-	NoneCommand Command = "none"
-	// Run the server.
-	RunCommand Command = "run"
-	// Show help message.
-	HelpCommand Command = "help"
-	// Show version.
-	VersionCommand Command = "version"
 )
 
 // Global Stork Server state.
@@ -57,7 +37,7 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	GeneralSettings Settings
+	GeneralSettings GeneralSettings
 
 	Pullers *apps.Pullers
 
@@ -73,187 +53,23 @@ type StorkServer struct {
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 	shutdownOnce               sync.Once
 
-	HookManager *hookmanager.HookManager
-}
-
-// Read environment file settings. It's parsed before the main settings.
-type EnvironmentFileSettings struct {
-	EnvFile    string `long:"env-file" description:"Environment file location; applicable only if the use-env-file is provided" default:"/etc/stork/server.env"`
-	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
-}
-
-// Read the hook directory settings. It's parsed after environment file
-// settings but before the main settings.
-// It allows us to merge the hook flags with the core flags into a single output.
-type HookDirectorySettings struct {
-	HookDirectory string `long:"hook-directory" description:"The path to the hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/var/lib/stork-server/hooks"`
-}
-
-// Global server settings (called application settings in go-flags nomenclature).
-type Settings struct {
-	EnvironmentFileSettings
-	HookDirectorySettings
-	Version               bool  `short:"v" long:"version" description:"Show software version"`
-	EnableMetricsEndpoint bool  `short:"m" long:"metrics" description:"Enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
-	InitialPullerInterval int64 `long:"initial-puller-interval" description:"Initial interval used by pullers fetching data from Kea; if not provided the recommended values for each puller are used" env:"STORK_SERVER_INITIAL_PULLER_INTERVAL"`
+	HookManager   *hookmanager.HookManager
+	hooksSettings map[string]hooks.HookSettings
 }
 
 // Parse the command line arguments into GO structures.
 // Returns the expected command to run and error.
 func (ss *StorkServer) ParseArgs() (command Command, err error) {
-	shortDescription := "Stork Server"
-	longDescription := `Stork Server is a Kea and BIND 9 dashboard
-
-Stork logs on INFO level by default. Other levels can be configured using the
-STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
-
-	// Process command line flags.
-	// Process the environment file flag.
-	var envFileSettings EnvironmentFileSettings
-	parser := flags.NewParser(&envFileSettings, flags.IgnoreUnknown)
-	parser.ShortDescription = shortDescription
-	parser.LongDescription = longDescription
-
-	if _, err := parser.Parse(); err != nil {
-		err = errors.Wrap(err, "invalid CLI argument")
-		return NoneCommand, err
+	parser := NewCLIParser()
+	command, settings, err := parser.Parse()
+	if command == RunCommand {
+		ss.hooksSettings = settings.HooksSettings
+		ss.AgentsSettings = *settings.AgentsSettings
+		ss.DBSettings = *settings.DatabaseSettings
+		ss.GeneralSettings = *settings.GeneralSettings
+		ss.RestAPISettings = *settings.RestAPISettings
 	}
-
-	if envFileSettings.UseEnvFile {
-		err = storkutil.LoadEnvironmentFileToSetter(
-			envFileSettings.EnvFile,
-			storkutil.NewProcessEnvironmentVariableSetter(),
-		)
-		if err != nil {
-			err = errors.WithMessagef(err, "invalid environment file: '%s'", envFileSettings.EnvFile)
-			return NoneCommand, err
-		}
-
-		// Reconfigures logging using new environment variables.
-		storkutil.SetupLogging()
-	}
-
-	// Process the hook directory location.
-	var hookDirectorySettings HookDirectorySettings
-	parser = flags.NewParser(&hookDirectorySettings, flags.IgnoreUnknown)
-	parser.ShortDescription = shortDescription
-	parser.LongDescription = longDescription
-
-	if _, err := parser.Parse(); err != nil {
-		err = errors.Wrap(err, "invalid CLI argument")
-		return NoneCommand, err
-	}
-
-	var allProtoSettings map[string]hooks.HookSettings
-	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
-	switch {
-	case err == nil && stat.IsDir():
-		// Gather the hook flags.
-		err = ss.HookManager.CollectProtoSettingsFromDirectory(hooks.HookProgramServer, hookDirectorySettings.HookDirectory)
-		if err != nil {
-			err = errors.WithMessage(err, "cannot collect the prototypes of the hook settings")
-			return NoneCommand, err
-		}
-	case err == nil && !stat.IsDir():
-		// Hook directory is not a directory.
-		err = errors.Errorf(
-			"the provided hook directory path is not pointing to a directory: %s",
-			hookDirectorySettings.HookDirectory,
-		)
-		return NoneCommand, err
-	case errors.Is(err, os.ErrNotExist):
-		// Hook directory doesn't exist. Skip and continue.
-		log.WithField("path", hookDirectorySettings.HookDirectory).
-			WithError(err).
-			Warning("the provided hook directory doesn't exist")
-	default:
-		// Unexpected problem.
-		err = errors.Wrapf(err,
-			"cannot stat the hook directory: %s",
-			hookDirectorySettings.HookDirectory,
-		)
-		return NoneCommand, err
-	}
-
-	// Process the rest of the flags.
-	parser = flags.NewParser(&ss.GeneralSettings, flags.Default)
-	parser.ShortDescription = shortDescription
-	parser.LongDescription = longDescription
-
-	databaseFlags := &dbops.DatabaseCLIFlags{}
-	// Process Database specific args.
-	_, err = parser.AddGroup("Database ConnectionFlags", "", databaseFlags)
-	if err != nil {
-		return
-	}
-
-	// Process ReST API specific args.
-	_, err = parser.AddGroup("HTTP ReST Server Flags", "", &ss.RestAPISettings)
-	if err != nil {
-		return
-	}
-
-	// Process agent comm specific args.
-	_, err = parser.AddGroup("Agents Communication Flags", "", &ss.AgentsSettings)
-	if err != nil {
-		return
-	}
-
-	// Append hook flags.
-	envVarNameReplacePattern := regexp.MustCompile("[^a-zA-Z0-9_]")
-	flagNameReplacePattern := regexp.MustCompile("[^a-zA-Z0-9-]")
-
-	for hookName, protoSettings := range allProtoSettings {
-		if protoSettings == nil {
-			continue
-		}
-		group, err := parser.AddGroup(fmt.Sprintf("Hook '%s' Flags", hookName), "", protoSettings)
-		if err != nil {
-			err = errors.Wrapf(err, "invalid settings for the '%s' hook", hookName)
-			return NoneCommand, err
-		}
-
-		// Prepare conventional namespaces for the CLI flags and environment
-		// variables.
-		// Environment variables:
-		//     - Starts with Stork-specific prefix
-		//     - Have a component derived from the hook filename
-		//     - Contains only upper cases, digits and underscore
-		envNamespace := "STORK_SERVER_HOOK_" + envVarNameReplacePattern.ReplaceAllString(hookName, "_")
-		envNamespace = strings.ToUpper(envNamespace)
-		// CLI flags:
-		//     - Have a component derived from the hook filename
-		//     - Contains only lower cases, digits and dash
-		flagNamespace := flagNameReplacePattern.ReplaceAllString(hookName, "-")
-		flagNamespace = strings.ToLower(flagNamespace)
-
-		group.EnvNamespace = envNamespace
-		group.Namespace = flagNamespace
-	}
-
-	// Do args parsing.
-	if _, err := parser.Parse(); err != nil {
-		var flagsError *flags.Error
-		if errors.As(err, &flagsError) {
-			if flagsError.Type == flags.ErrHelp {
-				return HelpCommand, nil
-			}
-		}
-		return NoneCommand, err
-	}
-
-	dbSettings, err := databaseFlags.ConvertToDatabaseSettings()
-	if err != nil {
-		return NoneCommand, err
-	}
-	ss.DBSettings = *dbSettings
-
-	if ss.GeneralSettings.Version {
-		// If user specified --version or -v, print the version and quit.
-		return VersionCommand, nil
-	}
-
-	return RunCommand, nil
+	return command, err
 }
 
 // Init for Stork Server state from the CLI arguments and environment variables.
@@ -274,7 +90,11 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 // prepares the REST API. The reload flag indicates if the server is
 // starting up (reload=false) or it is being reloaded (reload=true).
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
-	err = ss.HookManager.RegisterHooksFromDirectory(hooks.HookProgramServer, ss.GeneralSettings.HookDirectory)
+	err = ss.HookManager.RegisterHooksFromDirectory(
+		hooks.HookProgramServer,
+		ss.GeneralSettings.HookDirectory,
+		ss.hooksSettings,
+	)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.
