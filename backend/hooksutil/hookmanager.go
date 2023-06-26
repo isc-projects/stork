@@ -11,18 +11,20 @@ import (
 // each callout.
 type HookManager struct {
 	executor *HookExecutor
+	walker   *HookWalker
 }
 
 // Constructs the hook manager.
 func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	return &HookManager{
 		executor: NewHookExecutor(supportedTypes),
+		walker:   NewHookWalker(),
 	}
 }
 
 // Registers all hooks from a given hook directory.
-func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) error {
-	carriers, err := LoadAllHooks(program, directory)
+func (hm *HookManager) RegisterHooksFromDirectory(program, directory string, allSettings map[string]hooks.HookSettings) error {
+	carriers, err := hm.walker.LoadAllHooks(program, directory, allSettings)
 	if err != nil {
 		return err
 	}
