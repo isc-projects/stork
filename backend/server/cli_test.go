@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
 )
 
@@ -54,6 +55,36 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	require.Equal(t, "baz", settings.RestAPISettings.Host)
 }
 
+// Test that the error is returned if the environment file is invalid.
+func TestEnvironmentFileIsInvalid(t *testing.T) {
+	// Arrange
+	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	defer restorePoint()
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+		wrong entry
+	`)
+
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"program-name",
+		"--use-env-file",
+		"--env-file", envPath,
+	}
+
+	parser := NewCLIParser()
+
+	// Act
+	command, settings, err := parser.Parse()
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, settings)
+	require.Equal(t, NoneCommand, command)
+}
+
 // Test that the CLI arguments take precedence over the environment file and
 // that the environment file has higher order than the environment variables.
 func TestParseArgsFromMultipleSources(t *testing.T) {
@@ -99,8 +130,7 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	// Arrange
 	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = make([]string, 0)
-	os.Args = append(os.Args, "stork-server", "--foo-bar-baz")
+	os.Args = []string{"stork-server", "--foo-bar-baz"}
 	parser := NewCLIParser()
 
 	// Act
@@ -159,4 +189,95 @@ func TestHookNamespaces(t *testing.T) {
 			require.Equal(t, expectedEnvironmentNamespaces[i], envNamespace)
 		})
 	}
+}
+
+// Test that the error is returned if the hook directory path points to a file.
+func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	path, _ := sandbox.Join("file.ext")
+	defer testutil.CreateOsArgsRestorePoint()()
+	parser := NewCLIParser()
+
+	// Act
+	os.Args = []string{"stork-server", "--hook-directory", path}
+	command, settings, err := parser.Parse()
+
+	// Assert
+	require.ErrorContains(t, err, "hook directory path is not pointing to a directory")
+	require.Nil(t, settings)
+	require.Equal(t, NoneCommand, command)
+}
+
+// Test that the no error is returned if the hook directory doesn't exist.
+func TestCollectHookCLIFlagsForMissingDirectory(t *testing.T) {
+	// Arrange
+	parser := NewCLIParser()
+	hookSettings := &HookDirectorySettings{"/non/exists/directory"}
+
+	// Act
+	flags, err := parser.collectHookCLIFlags(hookSettings)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, flags)
+	require.Empty(t, flags)
+}
+
+// Test that the hook settings are properly parsed from environment variables.
+func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+	os.Setenv("STORK_SERVER_HOOK_BAZ_FOO_BAR", "fooBar")
+
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{"program-name"}
+
+	type hookSettings struct {
+		FooBar string `long:"foo-bar" env:"FOO_BAR"`
+	}
+
+	hookFlags := map[string]hooks.HookSettings{
+		"baz": &hookSettings{},
+	}
+
+	parser := NewCLIParser()
+
+	// Act
+	settings, err := parser.parseSettings(hookFlags)
+
+	// Assert
+	require.NoError(t, err)
+	require.Contains(t, settings.HooksSettings, "baz")
+	require.Equal(t, "fooBar", settings.HooksSettings["baz"].(*hookSettings).FooBar)
+}
+
+// Test that the hook settings are properly parsed from the CLI arguments.
+func TestParseHookSettingsFromCLI(t *testing.T) {
+	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"program-name",
+		"--baz.foo-bar", "fooBar",
+	}
+
+	type hookSettings struct {
+		FooBar string `long:"foo-bar" env:"FOO_BAR"`
+	}
+
+	hookFlags := map[string]hooks.HookSettings{
+		"baz": &hookSettings{},
+	}
+
+	parser := NewCLIParser()
+
+	// Act
+	settings, err := parser.parseSettings(hookFlags)
+
+	// Assert
+	require.NoError(t, err)
+	require.Contains(t, settings.HooksSettings, "baz")
+	require.Equal(t, "fooBar", settings.HooksSettings["baz"].(*hookSettings).FooBar)
 }
