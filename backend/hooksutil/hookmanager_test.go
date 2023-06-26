@@ -51,14 +51,14 @@ func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that collect settings method returns an error if the directory doesn't
+// Test that collect CLI flags method returns an error if the directory doesn't
 // exist.
-func TestCollectProtoSettingsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
+func TestCollectCLIFlagsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	// Arrange
 	hookManager := NewHookManager(nil)
 
 	// Act
-	settings, err := hookManager.CollectProtoSettingsFromDirectory("foo", "/non/exist/dir")
+	settings, err := hookManager.CollectCLIFlagsFromDirectory("foo", "/non/exist/dir")
 
 	// Assert
 	require.Error(t, err)

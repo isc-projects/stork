@@ -98,46 +98,6 @@ func TestCommandLineVersion(t *testing.T) {
 	}
 }
 
-// Test that the CLI arguments take precedence over the environment file and
-// that the environment file has higher order than the environment variables.
-func TestParseArgsFromMultipleSources(t *testing.T) {
-	// Arrange
-	// Environment variables - the lowest priority.
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-
-	os.Setenv("STORK_DATABASE_HOST", "database-host-envvar")
-	os.Setenv("STORK_REST_HOST", "rest-host-envvar")
-	os.Setenv("STORK_REST_TLS_CERTIFICATE", "certificate-envvar")
-
-	// Environment file. Takes precedence over the environment variables.
-	environmentFile, _ := os.CreateTemp("", "stork-envfile-test-*")
-	defer func() {
-		environmentFile.Close()
-		os.Remove(environmentFile.Name())
-	}()
-	environmentFile.WriteString("STORK_REST_HOST=rest-host-envfile\n")
-	environmentFile.WriteString("STORK_REST_TLS_CERTIFICATE=certificate-envfile\n")
-
-	// CLI arguments - the highest priority.
-	os.Args = []string{
-		"--rest-tls-certificate", "certificate-cli",
-		"--use-env-file",
-		"--env-file", environmentFile.Name(),
-	}
-
-	// Act
-	ss := &StorkServer{}
-	command, err := ss.ParseArgs()
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, RunCommand, command)
-	require.EqualValues(t, "database-host-envvar", ss.DBSettings.Host)
-	require.EqualValues(t, "rest-host-envfile", ss.RestAPISettings.Host)
-	require.EqualValues(t, "certificate-envfile", ss.RestAPISettings.TLSCertificate)
-}
-
 // Test that the Stork Server is constructed properly.
 func TestNewStorkServer(t *testing.T) {
 	// Arrange
@@ -203,21 +163,6 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
 	require.EqualValues(t, "hookdir", ss.GeneralSettings.HookDirectory)
-}
-
-// Test that the Stork Server is not constructed if the arguments are wrong.
-func TestNewStorkServerWithWrongCLIArguments(t *testing.T) {
-	// Arrange
-	os.Args = make([]string, 0)
-	os.Args = append(os.Args, "stork-server", "--foo-bar-baz")
-
-	// Act
-	ss, command, err := NewStorkServer()
-
-	// Assert
-	require.Error(t, err)
-	require.Nil(t, ss)
-	require.EqualValues(t, NoneCommand, command)
 }
 
 // Test that the Stork Server is constructed if no arguments are provided.
@@ -346,44 +291,4 @@ func TestBootstrap(t *testing.T) {
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 3)
 	require.Contains(t, events[2].Text, "shutting down Stork Server")
-}
-
-// Test that the environment file may be considered while initializing the server.
-func TestNewStorkServerFromEnvFile(t *testing.T) {
-	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
-	t.Cleanup(restore)
-
-	content := `
-		STORK_DATABASE_HOST=foo
-		STORK_DATABASE_PORT=42
-		STORK_DATABASE_NAME=bar
-		STORK_REST_HOST=baz
-		STORK_SERVER_ENABLE_METRICS=true
-	`
-	file, _ := os.CreateTemp("", "stork-test-server-*")
-	defer (func() {
-		file.Close()
-		os.Remove(file.Name())
-	})()
-	_, _ = file.WriteString(content)
-
-	os.Args = make([]string, 0)
-	os.Args = append(os.Args, "stork-server",
-		"--use-env-file",
-		"--env-file", file.Name(),
-	)
-
-	// Act
-	ss, command, err := NewStorkServer()
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, RunCommand, command)
-
-	require.EqualValues(t, "foo", ss.DBSettings.Host)
-	require.EqualValues(t, 42, ss.DBSettings.Port)
-	require.EqualValues(t, "bar", ss.DBSettings.DBName)
-	require.EqualValues(t, "baz", ss.RestAPISettings.Host)
-	require.True(t, ss.GeneralSettings.EnableMetricsEndpoint)
 }

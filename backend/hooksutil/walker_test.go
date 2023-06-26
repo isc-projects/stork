@@ -12,6 +12,35 @@ import (
 
 //go:generate mockgen -package=hooksutil -destination=hooklookupmock_test.go isc.org/stork/hooksutil HookLookup
 
+// Test that the function walk over the compatible hooks returns an error if
+// it finds an incompatible library.
+func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("zab", "incompatible"), nil).
+			addLookupLoad(validLoad(nil), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	err := walker.WalkCompatiblePluginLibraries("baz", "fake-directory",
+		func(path string, library *LibraryManager, err error) bool {
+			require.Fail(t, "is should never be called")
+			return false
+		},
+	)
+
+	// Assert
+	require.ErrorContains(t, err, "hook library dedicated for another program")
+}
+
 // Test that the function to load all hooks returns an error if the
 // directory doesn't exist.
 func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
@@ -250,10 +279,10 @@ func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 
 // Test that the function to extract the prototype of all hooks returns an
 // error if the  directory doesn't exist.
-func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
+func TestCollectCLIFlagsReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
 	walker := NewHookWalker()
-	data, err := walker.CollectProtoSettings("", "/non/exist/directory")
+	data, err := walker.CollectCLIFlags("", "/non/exist/directory")
 
 	// Assert
 	require.Nil(t, data)
@@ -263,13 +292,73 @@ func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 
 // Test that the function to extract the prototype of all hooks returns an
 // error if the directory contains a non-plugin file.
-func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
+func TestCollectCLIFlagsReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange & Act
 	walker := NewHookWalker()
-	data, err := walker.CollectProtoSettings("", "boilerplate")
+	data, err := walker.CollectCLIFlags("", "boilerplate")
 
 	// Assert
 	require.Nil(t, data)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "cannot open hook library")
+}
+
+// Test that the function to collect all hook settings returns an error if the
+// symbol is invalid.
+func TestCollectCLIFlagsReturnErrorForInvalidSymbol(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupCLIFlags(invalidSignature, nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	settings, err := walker.CollectCLIFlags("baz", "boilerplate")
+
+	// Assert
+	require.Nil(t, settings)
+	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
+}
+
+// Test that the function to collect all hook settings returns settings on
+// success.
+func TestCollectCLIFlagsOnSuccess(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	lookup := NewMockHookLookup(ctrl)
+
+	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
+	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupCLIFlags(validCLIFlags(&struct{}{}), nil),
+	), nil)
+	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
+		newPluginMock().
+			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupCLIFlags(validCLIFlags(nil), nil),
+	), nil)
+
+	walker := newHookWalker(lookup)
+
+	// Act
+	settings, err := walker.CollectCLIFlags("baz", "fake-directory")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, settings)
+	require.Len(t, settings, 2)
+	require.Contains(t, settings, "foo")
+	require.Contains(t, settings, "bar")
+	require.NotNil(t, settings["foo"])
+	require.Nil(t, settings["bar"])
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"isc.org/stork/hooks"
+	storkutil "isc.org/stork/util"
 )
 
 // It is impossible to mock the `plugin.Plugin` struct directly. It's an
@@ -43,12 +44,12 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 	return &LibraryManager{path, plugin}
 }
 
-// Extract and calls the ProtoSettings function of the Stork hook.
-// Returns the prototype of the settings or nil if hook doesn't require
+// Extract and calls the CLIFlags function of the Stork hook.
+// Returns the CLI flags object or nil if hook doesn't require
 // configuring. Returns error if the symbol is invalid but none if it doesn't
 // exist.
-func (lm *LibraryManager) ProtoSettings() (any, error) {
-	symbolName := hooks.HookProtoSettingsFunctionName
+func (lm *LibraryManager) CLIFlags() (any, error) {
+	symbolName := hooks.HookCLIFlagsFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		// The only possible error from the lookup function in Go 1.19 is:
@@ -57,24 +58,30 @@ func (lm *LibraryManager) ProtoSettings() (any, error) {
 		// Date: 2023-06-22
 		// Unfortunately, it doesn't have a type that can be checked.
 
-		// The ProtoSettings member is optional. Return nil settings and
+		// The CLIFlags member is optional. Return nil settings and
 		// continue if it is missing.
 		return nil, nil
 	}
 
-	protoSettingsFunction, ok := symbol.(hooks.HookProtoSettingsFunction)
+	cliFlagsFunction, ok := symbol.(hooks.HookCLIFlagsFunction)
 	if !ok {
 		return nil, errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}
 
-	protoSettingsInstance := protoSettingsFunction()
+	cliFlagsInstance := cliFlagsFunction()
+	if storkutil.IsNilPtr(cliFlagsInstance) {
+		// Nil pointer is a pointer but it isn't recognized as a struct pointer
+		// by the below condition.
+		return nil, nil
+	}
 
 	// Check the type of the returned value. It must be a pointer to structure.
-	protoSettingsInstanceValue := reflect.ValueOf(protoSettingsInstance)
-	if protoSettingsInstanceValue.Kind() != reflect.Pointer || protoSettingsInstanceValue.Elem().Kind() != reflect.Struct {
-		return nil, errors.Errorf("returned prototype of the hook settings must be a pointer to struct")
+	cliFlagsInstanceValue := reflect.ValueOf(cliFlagsInstance)
+
+	if cliFlagsInstanceValue.Kind() != reflect.Pointer || cliFlagsInstanceValue.Elem().Kind() != reflect.Struct {
+		return nil, errors.Errorf("returned cli flags object must be a pointer to struct")
 	}
-	return protoSettingsInstance, nil
+	return cliFlagsInstance, nil
 }
 
 // Extracts and calls the Load function of the Stork hook. Accepts the

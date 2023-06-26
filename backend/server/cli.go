@@ -63,6 +63,19 @@ type Settings struct {
 	DatabaseSettings *dbops.DatabaseSettings
 }
 
+// Constructs a new settings instance.
+// The members must be initialized because the go-flags library requires
+// non-empty pointers.
+func newSettings() *Settings {
+	return &Settings{
+		GeneralSettings:  &GeneralSettings{},
+		RestAPISettings:  &restservice.RestAPISettings{},
+		AgentsSettings:   &agentcomm.AgentsSettings{},
+		HooksSettings:    make(map[string]hooks.HookSettings),
+		DatabaseSettings: &dbops.DatabaseSettings{},
+	}
+}
+
 // Stork server-specific CLI arguments/flags parser.
 type CLIParser struct {
 	shortDescription string
@@ -103,14 +116,17 @@ func (p *CLIParser) Parse() (command Command, settings *Settings, err error) {
 		return
 	}
 
-	allHookProtoSettings, err := p.collectHookProtoSettings(hookDirectorySettings)
+	allHookCLIFlags, err := p.collectHookCLIFlags(hookDirectorySettings)
 	if err != nil {
 		return
 	}
 
-	settings, err = p.parseSettings(allHookProtoSettings)
-	if isHelpRequest(err) {
-		return HelpCommand, nil, nil
+	settings, err = p.parseSettings(allHookCLIFlags)
+	if err != nil {
+		if isHelpRequest(err) {
+			return HelpCommand, nil, nil
+		}
+		return NoneCommand, nil, err
 	}
 
 	if settings.GeneralSettings.Version {
@@ -136,7 +152,7 @@ func isHelpRequest(err error) bool {
 func (p *CLIParser) parseEnvironmentFileSettings() (*EnvironmentFileSettings, error) {
 	// Process command line flags.
 	// Process the environment file flag.
-	var envFileSettings *EnvironmentFileSettings
+	envFileSettings := &EnvironmentFileSettings{}
 	parser := flags.NewParser(envFileSettings, flags.IgnoreUnknown)
 	parser.ShortDescription = p.shortDescription
 	parser.LongDescription = p.longDescription
@@ -174,8 +190,8 @@ func (p *CLIParser) loadEnvironmentFile(envFileSettings *EnvironmentFileSettings
 // Parses the CLI flags related to the location of the hook directory.
 func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 	// Process the hook directory location.
-	var hookDirectorySettings HookDirectorySettings
-	parser := flags.NewParser(&hookDirectorySettings, flags.IgnoreUnknown)
+	hookDirectorySettings := &HookDirectorySettings{}
+	parser := flags.NewParser(hookDirectorySettings, flags.IgnoreUnknown)
 	parser.ShortDescription = p.shortDescription
 	parser.LongDescription = p.longDescription
 
@@ -183,18 +199,19 @@ func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 		err = errors.Wrap(err, "invalid CLI argument")
 		return nil, err
 	}
-	return &hookDirectorySettings, nil
+	return hookDirectorySettings, nil
 }
 
 // Extracts the CLI flags from the hooks.
-func (p *CLIParser) collectHookProtoSettings(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
-	var allProtoSettings map[string]hooks.HookSettings
+func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
+	allCLIFlags := map[string]hooks.HookSettings{}
 	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
+	err = errors.Wrapf(err, "cannot stat the '%s' directory", hookDirectorySettings.HookDirectory)
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
 		hookWalker := hooksutil.NewHookWalker()
-		allProtoSettings, err = hookWalker.CollectProtoSettings(
+		allCLIFlags, err = hookWalker.CollectCLIFlags(
 			hooks.HookProgramServer,
 			hookDirectorySettings.HookDirectory,
 		)
@@ -223,7 +240,7 @@ func (p *CLIParser) collectHookProtoSettings(hookDirectorySettings *HookDirector
 		return nil, err
 	}
 
-	return allProtoSettings, nil
+	return allCLIFlags, nil
 }
 
 // Prepare conventional namespaces for the CLI flags and environment
@@ -249,8 +266,8 @@ func getHookNamespaces(hookName string) (flagNamespace, envNamespace string) {
 }
 
 // Parses all CLI flags including the hooks-related ones.
-func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSettings) (*Settings, error) {
-	settings := &Settings{}
+func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings) (*Settings, error) {
+	settings := newSettings()
 
 	parser := flags.NewParser(settings.GeneralSettings, flags.Default)
 	parser.ShortDescription = p.shortDescription
@@ -279,11 +296,11 @@ func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSet
 	}
 
 	// Append hook flags.
-	for hookName, protoSettings := range allHooksProtoSettings {
-		if protoSettings == nil {
+	for hookName, cliFlags := range allHooksCLIFlags {
+		if cliFlags == nil {
 			continue
 		}
-		group, err := parser.AddGroup(fmt.Sprintf("Hook '%s' Flags", hookName), "", protoSettings)
+		group, err := parser.AddGroup(fmt.Sprintf("Hook '%s' Flags", hookName), "", cliFlags)
 		if err != nil {
 			err = errors.Wrapf(err, "invalid settings for the '%s' hook", hookName)
 			return nil, err
@@ -304,7 +321,7 @@ func (p *CLIParser) parseSettings(allHooksProtoSettings map[string]hooks.HookSet
 	if err != nil {
 		return nil, err
 	}
-	settings.HooksSettings = allHooksProtoSettings
+	settings.HooksSettings = allHooksCLIFlags
 
 	return settings, nil
 }

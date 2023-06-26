@@ -1,6 +1,7 @@
 package hooksutil
 
 import (
+	"fmt"
 	"plugin"
 	"testing"
 
@@ -57,9 +58,9 @@ func (p *pluginMock) addLookupLoad(result any, err error) *pluginMock {
 	return p
 }
 
-// Add a dedicated lookup output for the ProtoSettings symbol.
-func (p *pluginMock) addLookupProtoSettings(result any, err error) *pluginMock {
-	p.specificLookupOutput["ProtoSettings"] = struct {
+// Add a dedicated lookup output for the CLIFlags symbol.
+func (p *pluginMock) addLookupCLIFlags(result any, err error) *pluginMock {
+	p.specificLookupOutput["CLIFlags"] = struct {
 		result any
 		err    error
 	}{
@@ -95,8 +96,8 @@ func validLoad(err error) hooks.HookLoadFunction {
 	}
 }
 
-// Creates a valid ProtoSettings function that returns the given output.
-func validProtoSettings(settings hooks.HookSettings) hooks.HookProtoSettingsFunction {
+// Creates a valid CLIFlags function that returns the given output.
+func validCLIFlags(settings hooks.HookSettings) hooks.HookCLIFlagsFunction {
 	return func() hooks.HookSettings {
 		return settings
 	}
@@ -266,51 +267,88 @@ func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the ProtoSettings library function returns nil and no error if the
+// Test that the CLIFlags library function returns nil and no error if the
 // plugin doesn't contain the related function.
-func TestProtoSettingsReturnNoErrorForMissingFunction(t *testing.T) {
+func TestCLIFlagsReturnNoErrorForMissingFunction(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupProtoSettings(nil, errors.New("symbol not found")),
+		addLookupCLIFlags(nil, errors.New("symbol not found")),
 	)
 
 	// Act
-	settings, err := library.ProtoSettings()
+	settings, err := library.CLIFlags()
 
 	// Assert
 	require.NoError(t, err)
 	require.Nil(t, settings)
 }
 
-// Test that the ProtoSettings library function returns an error if the related
+// Test that the CLIFlags library function returns an error if the related
 // plugin function has unexpected signature.
-func TestProtoSettingsReturnErrorForInvalidSignature(t *testing.T) {
+func TestCLIFlagsReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupProtoSettings(invalidSignature, nil),
+		addLookupCLIFlags(invalidSignature, nil),
 	)
 
 	// Act
-	settings, err := library.ProtoSettings()
+	settings, err := library.CLIFlags()
 
 	// Assert
 	require.Nil(t, settings)
-	require.ErrorContains(t, err, "symbol ProtoSettings has unexpected signature")
+	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
 }
 
-// Test that the ProtoSettings library function returns the settings on success.
-func TestProtoSettingsReturnSettingsOnSuccess(t *testing.T) {
+// Test that the CLIFlags library function returns the settings on success.
+func TestCLIFlagsReturnSettingsOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupProtoSettings(validProtoSettings(&struct{}{}), nil),
+		addLookupCLIFlags(validCLIFlags(&struct{}{}), nil),
 	)
 
 	// Act
-	settings, err := library.ProtoSettings()
+	settings, err := library.CLIFlags()
 
 	// Assert
 	require.NotNil(t, settings)
 	require.NoError(t, err)
+}
+
+// Test that the CLIFlags library function can return nil.
+func TestCLIFlagsReturnNil(t *testing.T) {
+	// Arrange
+	library := newLibraryManager("", newPluginMock().
+		addLookupCLIFlags(validCLIFlags(nil), nil),
+	)
+
+	// Act
+	settings, err := library.CLIFlags()
+
+	// Assert
+	require.Nil(t, settings)
+	require.NoError(t, err)
+}
+
+// Test that the CLIFlags library function must return pointer to a struct.
+func TestCLIFlagsReturnNonStructPointer(t *testing.T) {
+	// Arrange
+	var integer int
+
+	values := []any{integer, &integer, true, struct{}{}}
+	for i, value := range values {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			library := newLibraryManager("", newPluginMock().
+				addLookupCLIFlags(validCLIFlags(value), nil),
+			)
+
+			// Act
+			settings, err := library.CLIFlags()
+
+			// Assert
+			require.Nil(t, settings)
+			require.ErrorContains(t, err, "must be a pointer to struct")
+		})
+	}
 }
 
 // Test that the path is returned properly.

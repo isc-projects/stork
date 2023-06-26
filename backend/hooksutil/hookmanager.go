@@ -23,10 +23,9 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 }
 
 // Searches for the compatible hook libraries in a given directory and extracts
-// the prototypes of their settings.
-// The hooks are not loaded.
-func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) (map[string]hooks.HookSettings, error) {
-	allSettings, err := hm.walker.CollectProtoSettings(program, directory)
+// the their CLI flags. The hooks are not loaded.
+func (hm *HookManager) CollectCLIFlagsFromDirectory(program, directory string) (map[string]hooks.HookSettings, error) {
+	allSettings, err := hm.walker.CollectCLIFlags(program, directory)
 	if err != nil {
 		return nil, err
 	}
