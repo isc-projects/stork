@@ -10,35 +10,32 @@ import (
 // Facade for all callouts. It defines the specific calling method for
 // each callout.
 type HookManager struct {
-	executor    *HookExecutor
-	allSettings map[string]hooks.HookSettings
-	walker      *HookWalker
+	executor *HookExecutor
+	walker   *HookWalker
 }
 
 // Constructs the hook manager.
 func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	return &HookManager{
-		executor:    NewHookExecutor(supportedTypes),
-		allSettings: map[string]hooks.HookSettings{},
-		walker:      NewHookWalker(),
+		executor: NewHookExecutor(supportedTypes),
+		walker:   NewHookWalker(),
 	}
 }
 
 // Searches for the compatible hook libraries in a given directory and extracts
 // the prototypes of their settings.
 // The hooks are not loaded.
-func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) error {
+func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) (map[string]hooks.HookSettings, error) {
 	allSettings, err := hm.walker.CollectProtoSettings(program, directory)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	hm.allSettings = allSettings
-	return nil
+	return allSettings, nil
 }
 
 // Registers all hooks from a given hook directory.
-func (hm *HookManager) RegisterHooksFromDirectory(program, directory string) error {
-	carriers, err := hm.walker.LoadAllHooks(program, directory, hm.allSettings)
+func (hm *HookManager) RegisterHooksFromDirectory(program, directory string, allSettings map[string]hooks.HookSettings) error {
+	carriers, err := hm.walker.LoadAllHooks(program, directory, allSettings)
 	if err != nil {
 		return err
 	}
