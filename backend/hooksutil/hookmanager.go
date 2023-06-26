@@ -22,17 +22,6 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	}
 }
 
-// Searches for the compatible hook libraries in a given directory and extracts
-// the prototypes of their settings.
-// The hooks are not loaded.
-func (hm *HookManager) CollectProtoSettingsFromDirectory(program, directory string) (map[string]hooks.HookSettings, error) {
-	allSettings, err := hm.walker.CollectProtoSettings(program, directory)
-	if err != nil {
-		return nil, err
-	}
-	return allSettings, nil
-}
-
 // Registers all hooks from a given hook directory.
 func (hm *HookManager) RegisterHooksFromDirectory(program, directory string, allSettings map[string]hooks.HookSettings) error {
 	carriers, err := hm.walker.LoadAllHooks(program, directory, allSettings)
