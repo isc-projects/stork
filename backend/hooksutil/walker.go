@@ -21,11 +21,6 @@ type HookLookup interface {
 // An lookup that search for the data in system.
 type systemLookup struct{}
 
-// Constructs a new hook lookup that uses the system call to search for hooks.
-func NewSystemHookLookup() HookLookup {
-	return &systemLookup{}
-}
-
 // List all files in a given directory. Returns a sorted list of absolute paths.
 func (*systemLookup) ListFilePaths(directory string) ([]string, error) {
 	return storkutil.ListFilePaths(directory, true)
@@ -41,8 +36,13 @@ type HookWalker struct {
 	lookup HookLookup
 }
 
+// Constructs the hook walker with the system lookup.
+func NewHookWalker() *HookWalker {
+	return newHookWalker(&systemLookup{})
+}
+
 // Constructs the hook walker with a custom lookup.
-func NewHookWalker(lookup HookLookup) *HookWalker {
+func newHookWalker(lookup HookLookup) *HookWalker {
 	return &HookWalker{lookup: lookup}
 }
 

@@ -80,8 +80,6 @@ func newSettings() *Settings {
 type CLIParser struct {
 	shortDescription string
 	longDescription  string
-	// The hook lookup can be override for testing purposes.
-	hookLookup hooksutil.HookLookup
 }
 
 // Constructs CLI parser.
@@ -92,7 +90,6 @@ func NewCLIParser() *CLIParser {
 
 Stork logs on INFO level by default. Other levels can be configured using the
 STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`,
-		hookLookup: hooksutil.NewSystemHookLookup(),
 	}
 }
 
@@ -212,7 +209,7 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
-		hookWalker := hooksutil.NewHookWalker(p.hookLookup)
+		hookWalker := hooksutil.NewHookWalker()
 		allCLIFlags, err = hookWalker.CollectCLIFlags(
 			hooks.HookProgramServer,
 			hookDirectorySettings.HookDirectory,
