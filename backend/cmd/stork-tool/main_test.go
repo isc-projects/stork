@@ -131,7 +131,6 @@ func TestRunDBMigrate(t *testing.T) {
 	_, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "db-up",
 		"--db-name", settings.DBName,
@@ -151,7 +150,6 @@ func TestRunCertExport(t *testing.T) {
 	_, err := certs.GenerateServerToken(db)
 	require.NoError(t, err)
 
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "cert-export",
 		"--db-name", settings.DBName,
@@ -180,7 +178,6 @@ func TestRunCertImport(t *testing.T) {
 	srvTknFile, err := sb.Write("srv.tkn", serverToken)
 	require.NoError(t, err)
 
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "cert-import",
 		"--db-name", settings.DBName,
@@ -201,7 +198,6 @@ func TestRunDBCreate(t *testing.T) {
 
 	// Generate unique database name and use the same name for the user.
 	dbName := fmt.Sprintf("storktest%d", rand.Int63())
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "db-create",
 		"--db-maintenance-name", settings.DBName,
@@ -218,7 +214,6 @@ func TestRunDBCreate(t *testing.T) {
 
 // Check if db-password-gen command can be invoked.
 func TestRunDBGenPassword(*testing.T) {
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "db-password-gen",
 	}
@@ -228,7 +223,6 @@ func TestRunDBGenPassword(*testing.T) {
 // Test that the hook inspect command is running properly for directory path.
 func TestRunHookInspectDirectory(*testing.T) {
 	directory, _ := os.Getwd()
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "hook-inspect", "-p", directory,
 	}
@@ -244,7 +238,6 @@ func TestRunHookInspectFile(t *testing.T) {
 		t.Skip(`Skipping the test consistently failing on macOS due to: "fatal error: runtime: no plugin module data"`)
 	}
 	file, _ := os.Executable()
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"stork-tool", "hook-inspect", "-p", file,
 	}
