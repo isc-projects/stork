@@ -10,7 +10,6 @@ import (
 
 // Test that help for the stork-code-gen app returns valid switches.
 func TestMainHelp(t *testing.T) {
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 2)
 	os.Args[1] = "-h"
 
@@ -25,7 +24,6 @@ func TestMainHelp(t *testing.T) {
 // Test that help for the stork-code-gen std-option-defs returns valid
 // switches.
 func TestStdOptionDefsHelp(t *testing.T) {
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 3)
 	os.Args[1] = "help"
 	os.Args[2] = "std-option-defs"
@@ -52,7 +50,6 @@ func TestGenerateStdOptionDefs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Prepare command line arguments.
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 8)
 	os.Args[1] = "std-option-defs"
 	os.Args[2] = "--input"

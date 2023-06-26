@@ -228,12 +228,10 @@ func runHookInspect(settings *cli.Context) error {
 		return errors.Wrapf(err, "cannot stat the hook path: '%s'", hookPath)
 	}
 
-	walker := hooksutil.NewHookWalker()
-
 	mode := fileInfo.Mode()
 	switch {
 	case mode.IsDir():
-		return walker.WalkPluginLibraries(hookPath, func(path string, library *hooksutil.LibraryManager, err error) bool {
+		return hooksutil.WalkPluginLibraries(hookPath, func(path string, library *hooksutil.LibraryManager, err error) bool {
 			inspectHookFile(path, library, err)
 			return true
 		})
