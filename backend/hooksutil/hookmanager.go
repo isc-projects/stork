@@ -18,7 +18,7 @@ type HookManager struct {
 func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	return &HookManager{
 		executor: NewHookExecutor(supportedTypes),
-		walker:   NewHookWalker(),
+		walker:   NewHookWalker(NewSystemHookLookup()),
 	}
 }
 

@@ -27,7 +27,7 @@ func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testi
 			addLookupLoad(validLoad(nil), nil),
 	), nil)
 
-	walker := newHookWalker(lookup)
+	walker := NewHookWalker(lookup)
 
 	// Act
 	err := walker.WalkCompatiblePluginLibraries("baz", "fake-directory",
@@ -45,7 +45,7 @@ func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testi
 // directory doesn't exist.
 func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
-	walker := NewHookWalker()
+	walker := NewHookWalker(NewSystemHookLookup())
 	calloutCarriers, err := walker.LoadAllHooks("", "/non/exist/directory", map[string]hooks.HookSettings{})
 
 	// Assert
@@ -58,7 +58,7 @@ func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 // contains a non-plugin file.
 func TestLoadAllHooksReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange
-	walker := NewHookWalker()
+	walker := NewHookWalker(NewSystemHookLookup())
 
 	// Act
 	calloutCarriers, err := walker.LoadAllHooks("", "boilerplate", map[string]hooks.HookSettings{})
@@ -84,7 +84,7 @@ func TestLoadAllHooksReturnErrorForCarrierExtractingFailure(t *testing.T) {
 			addLookupLoad(validLoad(errors.New("cannot load")), nil),
 	), nil)
 
-	walker := newHookWalker(lookup)
+	walker := NewHookWalker(lookup)
 
 	// Act
 	calloutCarriers, err := walker.LoadAllHooks("baz", "boilerplate", map[string]hooks.HookSettings{})
@@ -115,7 +115,7 @@ func TestLoadAllHooksReturnCalloutCarriersOnSuccess(t *testing.T) {
 			addLookupLoad(validLoad(nil), nil),
 	), nil)
 
-	walker := newHookWalker(lookup)
+	walker := NewHookWalker(lookup)
 	settings := map[string]hooks.HookSettings{"foo": &struct{}{}}
 
 	// Act
@@ -281,7 +281,7 @@ func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 // error if the  directory doesn't exist.
 func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
-	walker := NewHookWalker()
+	walker := NewHookWalker(NewSystemHookLookup())
 	data, err := walker.CollectProtoSettings("", "/non/exist/directory")
 
 	// Assert
@@ -294,7 +294,7 @@ func TestCollectProtoSettingsReturnErrorForInvalidDirectory(t *testing.T) {
 // error if the directory contains a non-plugin file.
 func TestCollectProtoSettingsReturnErrorForNonPluginFile(t *testing.T) {
 	// Arrange & Act
-	walker := NewHookWalker()
+	walker := NewHookWalker(NewSystemHookLookup())
 	data, err := walker.CollectProtoSettings("", "boilerplate")
 
 	// Assert
@@ -318,7 +318,7 @@ func TestCollectProtoSettingsReturnErrorForInvalidSymbol(t *testing.T) {
 			addLookupProtoSettings(invalidSignature, nil),
 	), nil)
 
-	walker := newHookWalker(lookup)
+	walker := NewHookWalker(lookup)
 
 	// Act
 	settings, err := walker.CollectProtoSettings("baz", "boilerplate")
@@ -348,7 +348,7 @@ func TestCollectProtoSettingsOnSuccess(t *testing.T) {
 			addLookupProtoSettings(validProtoSettings(nil), nil),
 	), nil)
 
-	walker := newHookWalker(lookup)
+	walker := NewHookWalker(lookup)
 
 	// Act
 	settings, err := walker.CollectProtoSettings("baz", "fake-directory")
