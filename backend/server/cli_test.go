@@ -111,3 +111,52 @@ func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	require.Nil(t, settings)
 	require.EqualValues(t, NoneCommand, command)
 }
+
+// Test that the namespaces are correct.
+func TestHookNamespaces(t *testing.T) {
+	// Arrange
+	hookNames := []string{
+		"foo",
+		"foo-bar",
+		"foo_bar",
+		"foo-42",
+		"foo-!@#",
+		"foo bar",
+		"FOO",
+		"fOo",
+		"FoO",
+	}
+	expectedFlagNamespaces := []string{
+		"foo",
+		"foo-bar",
+		"foo-bar",
+		"foo-42",
+		"foo----",
+		"foo-bar",
+		"foo",
+		"foo",
+		"foo",
+	}
+	expectedEnvironmentNamespaces := []string{
+		"STORK_SERVER_HOOK_FOO",
+		"STORK_SERVER_HOOK_FOO_BAR",
+		"STORK_SERVER_HOOK_FOO_BAR",
+		"STORK_SERVER_HOOK_FOO_42",
+		"STORK_SERVER_HOOK_FOO____",
+		"STORK_SERVER_HOOK_FOO_BAR",
+		"STORK_SERVER_HOOK_FOO",
+		"STORK_SERVER_HOOK_FOO",
+		"STORK_SERVER_HOOK_FOO",
+	}
+
+	for i := 0; i < len(hookNames); i++ {
+		hookName := hookNames[i]
+		t.Run(hookName, func(t *testing.T) {
+			// Act
+			flagNamespace, envNamespace := getHookNamespaces(hookName)
+			// Assert
+			require.Equal(t, expectedFlagNamespaces[i], flagNamespace)
+			require.Equal(t, expectedEnvironmentNamespaces[i], envNamespace)
+		})
+	}
+}
