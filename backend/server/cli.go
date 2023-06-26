@@ -206,6 +206,7 @@ func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
 	var allCLIFlags map[string]hooks.HookSettings
 	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
+	err = errors.Wrapf(err, "cannot stat the '%s' directory", hookDirectorySettings.HookDirectory)
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.

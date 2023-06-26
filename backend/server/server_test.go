@@ -45,6 +45,7 @@ const Man = "../../doc/user/man/stork-server.8.rst"
 // This test checks if stork-server -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 2)
 	os.Args[1] = "-h"
 
@@ -77,6 +78,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 
 // This test checks if stork-server --version (and -v) report expected version.
 func TestCommandLineVersion(t *testing.T) {
+	defer testutil.CreateOsArgsRestorePoint()()
 	// Let's repeat the test twice (for -v and then for --version)
 	for _, opt := range []string{"-v", "--version"} {
 		arg := opt
@@ -99,6 +101,7 @@ func TestCommandLineVersion(t *testing.T) {
 // Test that the Stork Server is constructed properly.
 func TestNewStorkServer(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 0)
 	os.Args = append(os.Args, "stork-server",
 		"-m",
@@ -165,6 +168,7 @@ func TestNewStorkServer(t *testing.T) {
 // Test that the Stork Server is constructed if no arguments are provided.
 func TestNewStorkServerNoArguments(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{"stork-server"}
 
 	// Act
@@ -201,6 +205,7 @@ func TestBootstrap(t *testing.T) {
 	}, nil)
 
 	// Initializes CMD.
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{"stork-server"}
 
 	server, _, _ := NewStorkServer()

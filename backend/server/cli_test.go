@@ -21,7 +21,8 @@ func TestNewCLIParser(t *testing.T) {
 // and parsed by the CLI parser.
 func TestEnvironmentFileIsLoaded(t *testing.T) {
 	// Arrange
-	defer testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
 
@@ -31,6 +32,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 		STORK_REST_HOST=baz
 	`)
 
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"program-name",
 		"--use-env-file",
@@ -74,6 +76,7 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 	environmentFile.WriteString("STORK_REST_TLS_CERTIFICATE=certificate-envfile\n")
 
 	// CLI arguments - the highest priority.
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"--rest-tls-certificate", "certificate-cli",
 		"--use-env-file",
@@ -95,6 +98,7 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 // Test that the parser throws an error if the arguments are wrong.
 func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 0)
 	os.Args = append(os.Args, "stork-server", "--foo-bar-baz")
 	parser := NewCLIParser()
