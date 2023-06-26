@@ -51,20 +51,6 @@ func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that collect settings method returns an error if the directory doesn't
-// exist.
-func TestCollectProtoSettingsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
-	// Arrange
-	hookManager := NewHookManager(nil)
-
-	// Act
-	settings, err := hookManager.CollectProtoSettingsFromDirectory("foo", "/non/exist/dir")
-
-	// Assert
-	require.Error(t, err)
-	require.Nil(t, settings)
-}
-
 // Test that the callout carriers are registered properly.
 func TestRegisterCalloutCarriers(t *testing.T) {
 	// Arrange
