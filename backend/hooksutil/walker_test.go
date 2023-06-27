@@ -321,10 +321,10 @@ func TestCollectCLIFlagsReturnErrorForInvalidSymbol(t *testing.T) {
 	walker := newHookWalker(lookup)
 
 	// Act
-	settings, err := walker.CollectCLIFlags("baz", "boilerplate")
+	flags, err := walker.CollectCLIFlags("baz", "boilerplate")
 
 	// Assert
-	require.Nil(t, settings)
+	require.Nil(t, flags)
 	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
 }
 
@@ -351,14 +351,14 @@ func TestCollectCLIFlagsOnSuccess(t *testing.T) {
 	walker := newHookWalker(lookup)
 
 	// Act
-	settings, err := walker.CollectCLIFlags("baz", "fake-directory")
+	flags, err := walker.CollectCLIFlags("baz", "fake-directory")
 
 	// Assert
 	require.NoError(t, err)
-	require.NotNil(t, settings)
-	require.Len(t, settings, 2)
-	require.Contains(t, settings, "foo")
-	require.Contains(t, settings, "bar")
-	require.NotNil(t, settings["foo"])
-	require.Nil(t, settings["bar"])
+	require.NotNil(t, flags)
+	require.Len(t, flags, 2)
+	require.Contains(t, flags, "foo")
+	require.Contains(t, flags, "bar")
+	require.NotNil(t, flags["foo"])
+	require.Nil(t, flags["bar"])
 }
