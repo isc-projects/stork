@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	flags "github.com/jessevdk/go-flags"
@@ -243,21 +242,23 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 // variables.
 // CLI flags:
 //   - Have a component derived from the hook filename
-//   - Contains only lower cases, digits and dash
+//   - Contains none upper cases, dots or spaces
+//   - Underscores are replaced with dashes
 //
 // Environment variables:
 //   - Starts with Stork-specific prefix
 //   - Have a component derived from the hook filename
-//   - Contains only upper cases, digits and underscore
+//   - Contains none lower cases, dots or spaces
+//   - Dashes are replaced with underscored
 func getHookNamespaces(hookName string) (flagNamespace, envNamespace string) {
-	envVarNameReplacePattern := regexp.MustCompile("[^a-zA-Z0-9_]")
-	flagNameReplacePattern := regexp.MustCompile("[^a-zA-Z0-9-]")
+	hookName = strings.ReplaceAll(hookName, " ", "-")
+	hookName = strings.ReplaceAll(hookName, ".", "-")
 
-	envNamespace = "STORK_SERVER_HOOK_" + envVarNameReplacePattern.ReplaceAllString(hookName, "_")
-	envNamespace = strings.ToUpper(envNamespace)
-
-	flagNamespace = flagNameReplacePattern.ReplaceAllString(hookName, "-")
+	flagNamespace = strings.ReplaceAll(hookName, "_", "-")
 	flagNamespace = strings.ToLower(flagNamespace)
+
+	envNamespace = "STORK_SERVER_HOOK_" + strings.ReplaceAll(hookName, "-", "_")
+	envNamespace = strings.ToUpper(envNamespace)
 	return
 }
 
