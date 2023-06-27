@@ -8,7 +8,6 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/agentcomm"
@@ -206,7 +205,6 @@ func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
 	allCLIFlags := map[string]hooks.HookSettings{}
 	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
-	err = errors.Wrapf(err, "cannot stat the '%s' directory", hookDirectorySettings.HookDirectory)
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
@@ -228,9 +226,7 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 		return nil, err
 	case errors.Is(err, os.ErrNotExist):
 		// Hook directory doesn't exist. Skip and continue.
-		logrus.WithField("path", hookDirectorySettings.HookDirectory).
-			WithError(err).
-			Warning("the provided hook directory doesn't exist")
+		break
 	default:
 		// Unexpected problem.
 		err = errors.Wrapf(err,
