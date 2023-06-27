@@ -1,3 +1,8 @@
+* 324 [func] slawek
+
+    Added support for configuring the Stork server hooks.
+    (Gitlab #638)
+
 * 323 [build] razvan
 
     Updated Kea version to 2.4.0 in demo and system tests.
