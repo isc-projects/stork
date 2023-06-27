@@ -16,6 +16,17 @@ CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
 ### Functions ###
 #################
 
+# Iterates over the hook directories and executes the given block for each
+# of them.
+# The block may accept three arguments:
+#
+# 1. Hook directory name
+# 2. Absolute path to the hook directory
+# 3. Absolute path the the subdirectory in the hook directory containing the
+#    go.mod file (source subdirectory).
+#
+# The current working directory during the block execution is the subdirectory
+# containing the go.mod file.
 def forEachHook(&block)
     require 'find'
 
@@ -27,6 +38,7 @@ def forEachHook(&block)
 
         Dir.chdir(path) do
             project_path = File.expand_path path
+
             # Search for the go.mod
             src_path = nil
 
@@ -40,6 +52,8 @@ def forEachHook(&block)
             if src_path.nil?
                 fail 'Cannot find the go.mod file'
             end
+
+            src_path = File.expand_path src_path
 
             Dir.chdir(src_path) do
                 block.call(dir_name, project_path, src_path)
