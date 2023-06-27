@@ -1,3 +1,8 @@
+* 310 [func] slawek
+
+    Added support for configuring the Stork server hooks.
+    (Gitlab #638)
+
 * 309 [func] marcin
 
     A tab with the subnet details is opened after clicking on the subnet.
