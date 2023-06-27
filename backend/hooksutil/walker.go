@@ -161,9 +161,9 @@ func extractCarrier(library *LibraryManager, settings hooks.HookSettings) (hooks
 }
 
 // Iterates over the compatible plugins in a given directory and extracts
-// their settings.
+// their CLI flags.
 func (w *HookWalker) CollectCLIFlags(program, directory string) (map[string]hooks.HookSettings, error) {
-	allSettings := map[string]hooks.HookSettings{}
+	allFlags := map[string]hooks.HookSettings{}
 	var libraryErr error
 
 	err := w.WalkCompatiblePluginLibraries(program, directory, func(path string, library *LibraryManager, err error) bool {
@@ -173,13 +173,13 @@ func (w *HookWalker) CollectCLIFlags(program, directory string) (map[string]hook
 			return false
 		}
 
-		proto, err := library.CLIFlags()
+		flags, err := library.CLIFlags()
 		if err != nil {
 			libraryErr = err
 			return false
 		}
 
-		allSettings[library.GetName()] = proto
+		allFlags[library.GetName()] = flags
 		return true
 	})
 	if err != nil {
@@ -190,5 +190,5 @@ func (w *HookWalker) CollectCLIFlags(program, directory string) (map[string]hook
 		return nil, libraryErr
 	}
 
-	return allSettings, nil
+	return allFlags, nil
 }
