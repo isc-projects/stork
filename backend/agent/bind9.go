@@ -577,12 +577,16 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		return cmd.Output()
 	}
 
-	// determine config directory
-	bind9ConfDir := path.Dir(bind9ConfPath)
-
 	// determine rndc details
 	rndcClient := NewRndcClient(rndc)
-	err = rndcClient.DetermineDetails(baseNamedDir, bind9ConfDir, ctrlAddress, ctrlPort, ctrlKey, executor)
+	err = rndcClient.DetermineDetails(
+		baseNamedDir,
+		path.Dir(bind9ConfPath),
+		ctrlAddress,
+		ctrlPort,
+		ctrlKey,
+		executor,
+	)
 	if err != nil {
 		log.Warnf("Cannot determine BIND 9 rndc details: %s", err)
 		return nil
