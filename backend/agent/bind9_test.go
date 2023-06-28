@@ -192,7 +192,7 @@ func newCatCommandExecutor() *catCommandExecutor {
 	}
 }
 
-func (e *catCommandExecutor) clearConfigurations() *catCommandExecutor {
+func (e *catCommandExecutor) clear() *catCommandExecutor {
 	e.outputs = map[string]string{}
 	e.defaultConfigurationPath = nil
 	return e
@@ -360,7 +360,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		executor.
-			clearConfigurations().
+			clear().
 			addOutput(expectedPath, config).
 			setDefaultPath(expectedPath)
 
