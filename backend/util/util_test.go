@@ -388,6 +388,7 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 	path, err := executor.LookPath("ls")
 	require.NotNil(t, path)
 	require.Nil(t, err)
+	require.True(t, executor.IsFileExist(path))
 }
 
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set

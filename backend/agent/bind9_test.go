@@ -214,6 +214,11 @@ func (e *catCommandExecutor) LookPath(command string) (string, error) {
 	return e.file + "/" + command, nil
 }
 
+// Looks if the provided path points to the internal mock file.
+func (e *catCommandExecutor) IsFileExist(path string) bool {
+	return e.file == path
+}
+
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	sb := testutil.NewSandbox()
@@ -263,13 +268,13 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
    controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
-	sb.Write("testing.conf", config)
+	confPath, _ := sb.Write("testing.conf", config)
 
 	// ... and point STORK_BIND9_CONFIG to it
 	os.Setenv("STORK_BIND9_CONFIG", varPath)
 
 	// check BIND 9 app detection
-	executor := &catCommandExecutor{}
+	executor := &catCommandExecutor{confPath}
 
 	namedDir, err := sb.JoinDir("usr/sbin")
 	require.NoError(t, err)

@@ -118,7 +118,7 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 		cmd = append(cmd, ctrlKey.Name)
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
-		if _, err = os.Stat(keyPath); errors.Is(err, os.ErrNotExist) {
+		if !executor.IsFileExist(keyPath) {
 			return errors.Wrap(err, "cannot determine rndc key")
 		}
 		cmd = append(cmd, "-k")
@@ -366,7 +366,7 @@ func determineBinPath(baseNamedDir, executable string, executor storkutil.Comman
 	if baseNamedDir != "" {
 		for _, binDir := range []string{"sbin", "bin"} {
 			fullPath := path.Join(baseNamedDir, binDir, executable)
-			if _, err := os.Stat(fullPath); err == nil {
+			if executor.IsFileExist(fullPath) {
 				return fullPath, nil
 			}
 		}
@@ -467,7 +467,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	if bind9ConfPath == "" {
 		if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
 			log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
-			if _, err := os.Stat(f); err == nil {
+			if executor.IsFileExist(f) {
 				bind9ConfPath = f
 				log.Infof("Found BIND 9 config file in %s, based on STORK_BIND9_CONFIG variable", f)
 			} else {
@@ -510,7 +510,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
 			log.Debugf("Looking for BIND 9 config file in %s", f)
-			if _, err := os.Stat(f); err == nil {
+			if executor.IsFileExist(f) {
 				bind9ConfPath = f
 				log.Infof("Found BIND 9 config file in %s based on typical locations.", bind9ConfPath)
 				break

@@ -216,6 +216,11 @@ func (e *testCommandExecutor) LookPath(command string) (string, error) {
 	return "/some/path/" + command, nil
 }
 
+// Returns fake data.
+func (e *testCommandExecutor) IsFileExist(string) bool {
+	return true
+}
+
 // Check BIND 9 app detection when its conf file is absolute path.
 func TestDetectBind9AppAbsPath(t *testing.T) {
 	sb := testutil.NewSandbox()

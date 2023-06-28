@@ -185,6 +185,7 @@ func SetupLogging() {
 type CommandExecutor interface {
 	Output(string, ...string) ([]byte, error)
 	LookPath(string) (string, error)
+	IsFileExist(string) bool
 }
 
 // Executes the given command in the operating system.
@@ -204,6 +205,15 @@ func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, 
 // Looks for a given command in the system PATH and returns absolute path if found.
 func (e *systemCommandExecutor) LookPath(command string) (string, error) {
 	return exec.LookPath(command)
+}
+
+// Looks for a given file. Returns true is the path exist, is accessible, and
+// points to a file.
+func (e *systemCommandExecutor) IsFileExist(path string) bool {
+	if stat, err := os.Stat(path); err == nil {
+		return stat.Mode().IsRegular()
+	}
+	return false
 }
 
 // Convert bytes to hex string.
