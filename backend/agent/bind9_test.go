@@ -182,8 +182,9 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 }
 
 type catCommandExecutor struct {
-	defaultConfigurationPath *string
-	outputs                  map[string]string
+	configPathInNamedOutput *string
+	lookupPathPrefix        *string
+	outputs                 map[string]string
 }
 
 func newCatCommandExecutor() *catCommandExecutor {
@@ -194,7 +195,8 @@ func newCatCommandExecutor() *catCommandExecutor {
 
 func (e *catCommandExecutor) clear() *catCommandExecutor {
 	e.outputs = map[string]string{}
-	e.defaultConfigurationPath = nil
+	e.configPathInNamedOutput = nil
+	e.lookupPathPrefix = nil
 	return e
 }
 
@@ -203,8 +205,13 @@ func (e *catCommandExecutor) addOutput(path, content string) *catCommandExecutor
 	return e
 }
 
-func (e *catCommandExecutor) setDefaultPath(path string) *catCommandExecutor {
-	e.defaultConfigurationPath = &path
+func (e *catCommandExecutor) setConfigPathInNamedOutput(path string) *catCommandExecutor {
+	e.configPathInNamedOutput = &path
+	return e
+}
+
+func (e *catCommandExecutor) setLookupPathPrefix(path string) *catCommandExecutor {
+	e.lookupPathPrefix = &path
 	return e
 }
 
@@ -226,8 +233,8 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 	if strings.HasSuffix(command, "named") && len(args) > 0 && args[0] == "-V" {
 		// Pretending to run named -V
 		namedPathEntry := ""
-		if e.defaultConfigurationPath != nil {
-			namedPathEntry = fmt.Sprintf("named configuration:  %s", *e.defaultConfigurationPath)
+		if e.configPathInNamedOutput != nil {
+			namedPathEntry = fmt.Sprintf("named configuration:  %s", *e.configPathInNamedOutput)
 		}
 
 		text := fmt.Sprintf(`default paths:
@@ -243,10 +250,10 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 // Looks for a given command in the system PATH and returns absolute path if found.
 // (This is the standard behavior that we don't override in tests here.)
 func (e *catCommandExecutor) LookPath(command string) (string, error) {
-	if e.defaultConfigurationPath == nil {
+	if e.lookupPathPrefix == nil {
 		return "", errors.New("missing default configuration path")
 	}
-	return *e.defaultConfigurationPath + "/" + command, nil
+	return *e.lookupPathPrefix + "/" + command, nil
 }
 
 // Check if there is a configuration for a given path.
@@ -303,7 +310,9 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 	os.Setenv("STORK_BIND9_CONFIG", confPath)
 
 	// check BIND 9 app detection
-	executor := newCatCommandExecutor().addOutput(confPath, config).setDefaultPath(confPath)
+	executor := newCatCommandExecutor().
+		addOutput(confPath, config).
+		setLookupPathPrefix("/usr/sbin")
 
 	namedDir := "/dir/usr/sbin"
 	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
@@ -330,7 +339,9 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
     };`
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := newCatCommandExecutor().addOutput(varPath, config).setDefaultPath(varPath)
+	executor := newCatCommandExecutor().
+		addOutput(varPath, config).
+		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual
 	namedDir := "/dir/usr/sbin"
@@ -362,7 +373,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		executor.
 			clear().
 			addOutput(expectedPath, config).
-			setDefaultPath(expectedPath)
+			setLookupPathPrefix("/usr/sbin")
 
 		t.Run(expectedPath, func(t *testing.T) {
 			// Act
@@ -420,7 +431,8 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 		addOutput(config1Path, config1).
 		addOutput(config2Path, config2).
 		addOutput(config3Path, config3).
-		setDefaultPath(config3Path)
+		setConfigPathInNamedOutput(config3Path).
+		setLookupPathPrefix("/usr/sbin")
 
 	// ... and point STORK_BIND9_CONFIG to it
 	os.Setenv("STORK_BIND9_CONFIG", config2Path)
