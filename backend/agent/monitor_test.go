@@ -190,53 +190,30 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
 
-type testCommandExecutor struct{}
-
 // Returns a fixed output and no error for any data. The output contains the
 // Bind 9 response with statistic channel details.
-func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, error) {
-	text := `key "foo" {
-				algorithm "hmac-sha256";
-				secret "abcd";
-        	 };
-	         controls {
-				inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
-				inet * port 5454 allow { localhost; 1.2.3.4; };
-            };
-        	statistics-channels {
-				inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
-				inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
-			};`
-
-	return []byte(text), nil
-}
-
-// Returns fake data. Normal operation would call os.LookPath.
-func (e *testCommandExecutor) LookPath(command string) (string, error) {
-	return "/some/path/" + command, nil
-}
-
-// Returns fake data.
-func (e *testCommandExecutor) IsFileExist(string) bool {
-	return true
+func newTestCommandExecutorDefault() *testCommandExecutor {
+	return newTestCommandExecutor().
+		addCheckConfOutput("/etc/named.conf", `key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		 };
+		 controls {
+			inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
+			inet * port 5454 allow { localhost; 1.2.3.4; };
+		};
+		statistics-channels {
+			inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
+			inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
+		};`).
+		setConfigPathInNamedOutput("/etc/named.conf")
 }
 
 // Check BIND 9 app detection when its conf file is absolute path.
 func TestDetectBind9AppAbsPath(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
 	// check BIND 9 app detection
-	executor := &testCommandExecutor{}
-	cfgPath, err := sb.Join("etc/path.cfg")
-	require.NoError(t, err)
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/rndc")
-	require.NoError(t, err)
-	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", cfgPath)}, "", executor)
+	executor := newTestCommandExecutorDefault()
+	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -254,20 +231,8 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 
 // Check BIND 9 app detection when its conf file is relative to CWD of its process.
 func TestDetectBind9AppRelativePath(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	cmdr := &testCommandExecutor{}
-	sb.Join("etc/path.cfg")
-	cfgDir, err := sb.JoinDir("etc")
-	require.NoError(t, err)
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/rndc")
-	require.NoError(t, err)
-	app := detectBind9App([]string{"", namedDir, "-c path.cfg"}, cfgDir, cmdr)
+	executor := newTestCommandExecutorDefault()
+	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }

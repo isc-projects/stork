@@ -181,43 +181,44 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 	}
 }
 
-type catCommandExecutor struct {
+// The command executor implementation for the testing purposes.
+// It implements the builder pattern for the configuration methods.
+type testCommandExecutor struct {
 	configPathInNamedOutput *string
-	lookupPathPrefix        *string
 	outputs                 map[string]string
 }
 
-func newCatCommandExecutor() *catCommandExecutor {
-	return &catCommandExecutor{
+// Constructs a new instance of the test command executor.
+func newTestCommandExecutor() *testCommandExecutor {
+	return &testCommandExecutor{
 		outputs: map[string]string{},
 	}
 }
 
-func (e *catCommandExecutor) clear() *catCommandExecutor {
+// Clears all added outputs and the config path used in the named -V output.
+func (e *testCommandExecutor) clear() *testCommandExecutor {
 	e.outputs = map[string]string{}
 	e.configPathInNamedOutput = nil
-	e.lookupPathPrefix = nil
 	return e
 }
 
-func (e *catCommandExecutor) addOutput(path, content string) *catCommandExecutor {
+// Add a output mock of the named-checkconf call. It accepts the configuration
+// path program and expected output text.
+func (e *testCommandExecutor) addCheckConfOutput(path, content string) *testCommandExecutor {
 	e.outputs[path] = content
 	return e
 }
 
-func (e *catCommandExecutor) setConfigPathInNamedOutput(path string) *catCommandExecutor {
+// Set the named configuration path used in the output of the named -V call.
+// If the path is not set, the output doesn't contain the configuration path.
+func (e *testCommandExecutor) setConfigPathInNamedOutput(path string) *testCommandExecutor {
 	e.configPathInNamedOutput = &path
-	return e
-}
-
-func (e *catCommandExecutor) setLookupPathPrefix(path string) *catCommandExecutor {
-	e.lookupPathPrefix = &path
 	return e
 }
 
 // Pretends to run named-checkconf, but instead does a simple read of the
 // specified files contents, similar to "cat" command.
-func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, error) {
+func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	if strings.Contains(command, "named-checkconf") {
 		// Pretending to run named-checkconf -p <config-file>.
 		path := args[1]
@@ -249,15 +250,18 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 
 // Looks for a given command in the system PATH and returns absolute path if found.
 // (This is the standard behavior that we don't override in tests here.)
-func (e *catCommandExecutor) LookPath(command string) (string, error) {
-	if e.lookupPathPrefix == nil {
-		return "", errors.New("missing default configuration path")
+func (e *testCommandExecutor) LookPath(command string) (string, error) {
+	allowedCommands := []string{"named-checkconf", "named", "rndc"}
+	for _, allowedCommand := range allowedCommands {
+		if command == allowedCommand {
+			return "/usr/sbin/" + command, nil
+		}
 	}
-	return *e.lookupPathPrefix + "/" + command, nil
+	return "", errors.New("command not found")
 }
 
-// Check if there is a configuration for a given path.
-func (e *catCommandExecutor) IsFileExist(path string) bool {
+// Check if there is an output for a given configuration path.
+func (e *testCommandExecutor) IsFileExist(path string) bool {
 	for configuredPath := range e.outputs {
 		if configuredPath == path {
 			return true
@@ -274,10 +278,8 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
 
 	// check BIND 9 app detection
-	executor := newCatCommandExecutor().
-		addOutput(config1Path, config1).
-		addOutput("/sbin/named-checkconf", "").
-		addOutput("/sbin/rndc", "")
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1)
 
 	// Now run the detection as usual
 	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
@@ -310,9 +312,8 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 	os.Setenv("STORK_BIND9_CONFIG", confPath)
 
 	// check BIND 9 app detection
-	executor := newCatCommandExecutor().
-		addOutput(confPath, config).
-		setLookupPathPrefix("/usr/sbin")
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(confPath, config)
 
 	namedDir := "/dir/usr/sbin"
 	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
@@ -339,8 +340,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
     };`
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := newCatCommandExecutor().
-		addOutput(varPath, config).
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(varPath, config).
 		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual
@@ -367,13 +368,12 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
 
-	executor := newCatCommandExecutor()
+	executor := newTestCommandExecutor()
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		executor.
 			clear().
-			addOutput(expectedPath, config).
-			setLookupPathPrefix("/usr/sbin")
+			addCheckConfOutput(expectedPath, config)
 
 		t.Run(expectedPath, func(t *testing.T) {
 			// Act
@@ -390,7 +390,6 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 		})
 	}
-
 }
 
 // There is no reliable way to test step 4 (checking typical locations). The
@@ -427,12 +426,11 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	config3Path := "/dir/step3.conf"
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := newCatCommandExecutor().
-		addOutput(config1Path, config1).
-		addOutput(config2Path, config2).
-		addOutput(config3Path, config3).
-		setConfigPathInNamedOutput(config3Path).
-		setLookupPathPrefix("/usr/sbin")
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1).
+		addCheckConfOutput(config2Path, config2).
+		addCheckConfOutput(config3Path, config3).
+		setConfigPathInNamedOutput(config3Path)
 
 	// ... and point STORK_BIND9_CONFIG to it
 	os.Setenv("STORK_BIND9_CONFIG", config2Path)
