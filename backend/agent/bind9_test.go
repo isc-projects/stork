@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -180,27 +181,58 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 	}
 }
 
-type catCommandExecutor struct{ file string }
+type catCommandExecutor struct {
+	defaultConfigurationPath *string
+	outputs                  map[string]string
+}
+
+func newCatCommandExecutor() *catCommandExecutor {
+	return &catCommandExecutor{
+		outputs: map[string]string{},
+	}
+}
+
+func (e *catCommandExecutor) clearConfigurations() *catCommandExecutor {
+	e.outputs = map[string]string{}
+	e.defaultConfigurationPath = nil
+	return e
+}
+
+func (e *catCommandExecutor) addOutput(path, content string) *catCommandExecutor {
+	e.outputs[path] = content
+	return e
+}
+
+func (e *catCommandExecutor) setDefaultPath(path string) *catCommandExecutor {
+	e.defaultConfigurationPath = &path
+	return e
+}
 
 // Pretends to run named-checkconf, but instead does a simple read of the
 // specified files contents, similar to "cat" command.
 func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	if strings.Contains(command, "named-checkconf") {
-		// Pretending to run named-checkconf -p <config-file>. The contents of
-		// the file are returned as-is.
-		text, err := os.ReadFile(args[1])
-		if err != nil {
+		// Pretending to run named-checkconf -p <config-file>.
+		path := args[1]
+		content, ok := e.outputs[path]
+
+		if !ok {
 			// Reading failed.
-			return nil, err
+			return nil, errors.New("missing configuration")
 		}
-		return text, nil
+		return []byte(content), nil
 	}
 
 	if strings.HasSuffix(command, "named") && len(args) > 0 && args[0] == "-V" {
 		// Pretending to run named -V
+		namedPathEntry := ""
+		if e.defaultConfigurationPath != nil {
+			namedPathEntry = fmt.Sprintf("named configuration:  %s", *e.defaultConfigurationPath)
+		}
+
 		text := fmt.Sprintf(`default paths:
-		named configuration:  %s
-		rndc configuration:   /other/path/rndc.conf`, e.file)
+		%s
+		rndc configuration:   /other/path/rndc.conf`, namedPathEntry)
 
 		return []byte(text), nil
 	}
@@ -211,36 +243,37 @@ func (e *catCommandExecutor) Output(command string, args ...string) ([]byte, err
 // Looks for a given command in the system PATH and returns absolute path if found.
 // (This is the standard behavior that we don't override in tests here.)
 func (e *catCommandExecutor) LookPath(command string) (string, error) {
-	return e.file + "/" + command, nil
+	if e.defaultConfigurationPath == nil {
+		return "", errors.New("missing default configuration path")
+	}
+	return *e.defaultConfigurationPath + "/" + command, nil
 }
 
-// Looks if the provided path points to the internal mock file.
+// Check if there is a configuration for a given path.
 func (e *catCommandExecutor) IsFileExist(path string) bool {
-	return e.file == path
+	for configuredPath := range e.outputs {
+		if configuredPath == path {
+			return true
+		}
+	}
+	return false
 }
 
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
 	// create alternate config files for each step...
-	config1Path, _ := sb.Join("step1.conf")
+	config1Path := "/dir/step1.conf"
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
-	sb.Write("step1.conf", config1)
 
 	// check BIND 9 app detection
-	executor := &catCommandExecutor{}
+	executor := newCatCommandExecutor().
+		addOutput(config1Path, config1).
+		addOutput("/sbin/named-checkconf", "").
+		addOutput("/sbin/rndc", "")
 
 	// Now run the detection as usual
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/rndc")
-	require.NoError(t, err)
-	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -253,14 +286,11 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 
 // Checks detection STEP 2: if BIND9 detection takes STORK_BIND9_CONFIG env var into account.
 func TestDetectBind9Step2EnvVar(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
 	restore := testutil.CreateEnvironmentRestorePoint()
 	defer restore()
 
 	// create alternate config file...
-	varPath, _ := sb.Join("testing.conf")
+	confPath := "/dir/testing.conf"
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -268,20 +298,14 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
    controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
-	confPath, _ := sb.Write("testing.conf", config)
 
 	// ... and point STORK_BIND9_CONFIG to it
-	os.Setenv("STORK_BIND9_CONFIG", varPath)
+	os.Setenv("STORK_BIND9_CONFIG", confPath)
 
 	// check BIND 9 app detection
-	executor := &catCommandExecutor{confPath}
+	executor := newCatCommandExecutor().addOutput(confPath, config).setDefaultPath(confPath)
 
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/rndc")
-	require.NoError(t, err)
+	namedDir := "/dir/usr/sbin"
 	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
@@ -295,30 +319,21 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 
 // Checks detection STEP 3: parse output of the named -V command.
 func TestDetectBind9Step3BindVOutput(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
 	// create alternate config file...
-	varPath, _ := sb.Join("testing.conf")
+	varPath := "/dir/testing.conf"
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
-   };
+    };
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
-   };`
-	sb.Write("testing.conf", config)
+    };`
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := &catCommandExecutor{file: varPath}
+	executor := newCatCommandExecutor().addOutput(varPath, config).setDefaultPath(varPath)
 
 	// Now run the detection as usual
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/rndc")
-	require.NoError(t, err)
+	namedDir := "/dir/usr/sbin"
 	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
@@ -328,6 +343,43 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	require.Equal(t, "192.0.2.1", point.Address)
 	require.EqualValues(t, 1234, point.Port)
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+}
+
+// Checks detection STEP 4: look at the typical locations.
+func TestDetectBind9Step4TypicalLocations(t *testing.T) {
+	// Arrange
+	config := `key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+    };
+	controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+    };`
+
+	executor := newCatCommandExecutor()
+
+	for _, expectedPath := range getPotentialNamedConfLocations() {
+		executor.
+			clearConfigurations().
+			addOutput(expectedPath, config).
+			setDefaultPath(expectedPath)
+
+		t.Run(expectedPath, func(t *testing.T) {
+			// Act
+			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor)
+
+			// Assert
+			require.NotNil(t, app)
+			require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+			require.Len(t, app.GetBaseApp().AccessPoints, 1)
+			point := app.GetBaseApp().AccessPoints[0]
+			require.Equal(t, AccessPointControl, point.Type)
+			require.Equal(t, "192.0.2.1", point.Address)
+			require.EqualValues(t, 1234, point.Port)
+			require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+		})
+	}
+
 }
 
 // There is no reliable way to test step 4 (checking typical locations). The
@@ -349,42 +401,32 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 // - step2.conf (which is passed in STORK_BIND9_CONFIG)
 // - step3.conf (which is returned by named -V).
 func TestDetectBind9DetectOrder(t *testing.T) {
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
 	restore := testutil.CreateEnvironmentRestorePoint()
 	defer restore()
 
 	// create alternate config files for each step...
-	config1Path, _ := sb.Join("step1.conf")
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
-	sb.Write("step1.conf", config1)
-
-	config2Path, _ := sb.Join("step2.conf")
+	config1Path := "/dir/step1.conf"
 	config2 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 2.2.2.2 port 2222 allow { localhost; } keys { "foo"; "bar"; }; };`
-	sb.Write("step2.conf", config2)
-
-	config3Path, _ := sb.Join("step3.conf")
+	config2Path := "/dir/step2.conf"
 	config3 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 3.3.3.3 port 3333 allow { localhost; } keys { "foo"; "bar"; }; };`
-	sb.Write("step3.conf", config3)
+	config3Path := "/dir/step3.conf"
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := &catCommandExecutor{file: config3Path}
+	executor := newCatCommandExecutor().
+		addOutput(config1Path, config1).
+		addOutput(config2Path, config2).
+		addOutput(config3Path, config3).
+		setDefaultPath(config3Path)
 
 	// ... and point STORK_BIND9_CONFIG to it
 	os.Setenv("STORK_BIND9_CONFIG", config2Path)
 
 	// Now run the detection as usual
-	namedDir, err := sb.JoinDir("usr/sbin")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/bin/named-checkconf")
-	require.NoError(t, err)
-	_, err = sb.Join("usr/sbin/rndc")
-	require.NoError(t, err)
-	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
