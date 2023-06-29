@@ -156,7 +156,8 @@ class Server(ComposeServiceWrapper):
             params["dhcp_version"] = family
 
         api_instance = DHCPApi(self._api_client)
-        return api_instance.get_subnets(**params)
+        with _allow_nulls():
+            return api_instance.get_subnets(**params)
 
     def list_events(self, daemon_type=None, app_type=None, machine_id=None,
                     user_id=None, limit=10, start=0) -> Events:
