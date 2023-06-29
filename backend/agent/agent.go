@@ -375,7 +375,6 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		// allow the log viewer to access them.
 		go sa.keaInterceptor.asyncHandle(sa, req, body)
 
-		// Everything looks good, so include the gzipped body in the response.
 		rsp.Response = body
 		rsp.Status.Code = agentapi.Status_OK
 		response.KeaResponses = append(response.KeaResponses, rsp)
