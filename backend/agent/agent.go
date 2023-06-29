@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/host"
@@ -135,7 +136,8 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		return nil, errors.Wrapf(err, "cannot create server credentials for TLS")
 	}
 
-	srv := grpc.NewServer(grpc.Creds(creds))
+	timeoutOption := grpc.ConnectionTimeout(30 * time.Second)
+	srv := grpc.NewServer(grpc.Creds(creds), timeoutOption)
 	return srv, nil
 }
 

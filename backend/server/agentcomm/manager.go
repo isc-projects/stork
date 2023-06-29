@@ -2,6 +2,7 @@ package agentcomm
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -56,6 +57,8 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 	var response interface{}
 	var err error
 	compressOption := grpc.UseCompressor(gzip.Name)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	switch inData := in.(type) {
 	case *agentapi.PingReq:
