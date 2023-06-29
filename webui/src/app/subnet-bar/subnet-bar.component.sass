@@ -3,10 +3,8 @@
   // This causes the subnet prefix (label) to be aligned relatively to the main
   // utilization container.
   position: relative
-  // Fixed width for the utilization container.
-  width: 10em
-  // Fixed height for the utilization container.
-  height: 1.5rem
+  // A little spacing on top and bottom.
+  padding: 0.2em 0
 
 .utilization__bars
   // Enable flex to order the bars.
@@ -20,6 +18,13 @@
   background-color: #eee
   // Rounded border.
   border-radius: 4px
+  // Overlap the subnet label from the bottom.
+  position: absolute
+  top: 0
+  bottom: 0
+  left: 0
+  right: 0
+  z-index: 0
 
 // Wrapper for the utilization bar.
 .utilization__bar-wrapper
@@ -42,13 +47,8 @@
 
 // Subnet prefix label.
 .utilization__label
-  // Overlaps the main utilization container.
-  position: absolute
-  // Full size of the main utilization container (text is still left-aligned).
-  left: 0
-  top: 0
-  right: 0
-  bottom: 0
+  // The position cannot be static if the z-index is used.
+  position: relative
   // Offsets the text from the edge.
   padding-left: 4px
   padding-right: 4px
@@ -92,6 +92,9 @@
     display: inline-flex
     // Center the text vertically using flex.
     align-items: center
+  .utilization__label
+    // Space for the NA/PD label
+    margin-right: 2em
 
 .utilization__bar-wrapper--delegated-prefix
   // Use a little different color for the delegated prefix bar for
