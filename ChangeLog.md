@@ -1,3 +1,9 @@
+* 314 [bug] slawek
+
+    Fixed a UI problem that caused the IPv6 subnet bars to be unreadable for
+    long addresses.
+    (Gitlab #1060)
+
 * 313 [bug] slawek
 
     Fixed a rare crash occurring when the state puller schedules the config
