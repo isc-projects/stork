@@ -1,8 +1,6 @@
 package agentcomm
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"testing"
 
@@ -93,40 +91,25 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, AppTypeKea, state.Apps[0].Type)
 }
 
-// Helper function for gzipping json text to bytes array.
-func doGzip(jsonTxt string) []byte {
-	var gzippedBuf bytes.Buffer
-	zw := gzip.NewWriter(&gzippedBuf)
-	_, err := zw.Write([]byte(jsonTxt))
-	if err != nil {
-		panic("problem with gzip: Write")
-	}
-	err = zw.Close()
-	if err != nil {
-		panic("problem with gzip: Close")
-	}
-	return gzippedBuf.Bytes()
-}
-
 // Test that a command can be successfully forwarded to Kea and the response
 // can be parsed.
 func TestForwardToKeaOverHTTP(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	jsonGzip := doGzip(`[
-            {
-                "result": 1,
-                "text": "operation failed"
-            },
-            {
-                "result": 0,
-                "text": "operation succeeded",
-                "arguments": {
-                    "success": true
-                }
-            }
-        ]`)
+	data := []byte(`[
+		{
+			"result": 1,
+			"text": "operation failed"
+		},
+		{
+			"result": 0,
+			"text": "operation succeeded",
+			"arguments": {
+				"success": true
+			}
+		}
+	]`)
 
 	rsp := agentapi.ForwardToKeaOverHTTPRsp{
 		Status: &agentapi.Status{
@@ -136,7 +119,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: jsonGzip,
+			Response: data,
 		}},
 	}
 
@@ -208,7 +191,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: doGzip(`[
+			Response: []byte(`[
             {
                 "result": 1,
                 "text": "operation failed"
@@ -225,7 +208,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: doGzip(`[
+			Response: []byte(`[
             {
                 "result": 1,
                 "text": "operation failed"
@@ -314,7 +297,7 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: doGzip(`[
+			Response: []byte(`[
             {
                 "result": "a string"
             }

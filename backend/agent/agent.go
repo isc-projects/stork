@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -370,37 +369,8 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		// allow the log viewer to access them.
 		go sa.keaInterceptor.asyncHandle(sa, req, body)
 
-		// gzip json response received from Kea
-		var gzippedBuf bytes.Buffer
-		zw := gzip.NewWriter(&gzippedBuf)
-		_, err = zw.Write(body)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"URL": reqURL,
-			}).Errorf("Failed to compress the Kea response: %+v", err)
-			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = fmt.Sprintf("Failed to compress the Kea response: %s", err.Error())
-			response.KeaResponses = append(response.KeaResponses, rsp)
-			if err2 := zw.Close(); err2 != nil {
-				log.Errorf("Error while closing gzip writer: %s", err2)
-			}
-			continue
-		}
-		if err := zw.Close(); err != nil {
-			log.WithFields(log.Fields{
-				"URL": reqURL,
-			}).Errorf("Failed to finish compressing the Kea response: %+v", err)
-			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = fmt.Sprintf("Failed to finish compressing the Kea response: %s", err.Error())
-			response.KeaResponses = append(response.KeaResponses, rsp)
-			continue
-		}
-		if len(body) > 0 {
-			log.Debugf("Compressing response from %d B to %d B, ratio %d%%", len(body), gzippedBuf.Len(), 100*gzippedBuf.Len()/len(body))
-		}
-
 		// Everything looks good, so include the gzipped body in the response.
-		rsp.Response = gzippedBuf.Bytes()
+		rsp.Response = body
 		rsp.Status.Code = agentapi.Status_OK
 		response.KeaResponses = append(response.KeaResponses, rsp)
 	}

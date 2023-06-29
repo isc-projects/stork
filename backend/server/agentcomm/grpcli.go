@@ -1,11 +1,8 @@
 package agentcomm
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"reflect"
 	"strconv"
@@ -512,39 +509,8 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			continue
 		}
 
-		// First unpack response
-		zr, err := gzip.NewReader(bytes.NewReader(rsp.Response))
-		if err != nil {
-			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
-			result.CmdsErrors = append(result.CmdsErrors, err)
-			// Issues with parsing the response count as issues with communication.
-			caErrorsCount++
-			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
-			continue
-		}
-		unpackedResp, err := io.ReadAll(zr)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
-			result.CmdsErrors = append(result.CmdsErrors, err)
-			// Issues with parsing the response count as issues with communication.
-			caErrorsCount++
-			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
-			if err2 := zr.Close(); err2 != nil {
-				log.Errorf("Error while closing gzip reader: %s", err2)
-			}
-			continue
-		}
-		if err := zr.Close(); err != nil {
-			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
-			result.CmdsErrors = append(result.CmdsErrors, err)
-			// Issues with parsing the response count as issues with communication.
-			caErrorsCount++
-			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
-			continue
-		}
-
 		// Try to parse the json response from the on-wire format.
-		err = keactrl.UnmarshalResponseList(commands[idx], unpackedResp, cmdResp)
+		err = keactrl.UnmarshalResponseList(commands[idx], rsp.Response, cmdResp)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
 			result.CmdsErrors = append(result.CmdsErrors, err)
