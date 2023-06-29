@@ -23,6 +23,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/security/advancedtls"
 
+	// Registers the gzip compression in the internal init() call.
+	// The server chooses the compression algorithm based on the client's request.
+	_ "google.golang.org/grpc/encoding/gzip"
+
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 )

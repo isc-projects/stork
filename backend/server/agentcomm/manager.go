@@ -5,6 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/encoding/gzip"
 
 	agentapi "isc.org/stork/api"
 )
@@ -53,19 +55,21 @@ func (agents *connectedAgentsData) sendAndRecvViaQueue(agentAddr string, in inte
 func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, error) {
 	var response interface{}
 	var err error
+	compressOption := grpc.UseCompressor(gzip.Name)
+
 	switch inData := in.(type) {
 	case *agentapi.PingReq:
 		response, err = agent.Client.Ping(ctx, inData)
 	case *agentapi.GetStateReq:
-		response, err = agent.Client.GetState(ctx, inData)
+		response, err = agent.Client.GetState(ctx, inData, compressOption)
 	case *agentapi.ForwardRndcCommandReq:
-		response, err = agent.Client.ForwardRndcCommand(ctx, inData)
+		response, err = agent.Client.ForwardRndcCommand(ctx, inData, compressOption)
 	case *agentapi.ForwardToNamedStatsReq:
-		response, err = agent.Client.ForwardToNamedStats(ctx, inData)
+		response, err = agent.Client.ForwardToNamedStats(ctx, inData, compressOption)
 	case *agentapi.ForwardToKeaOverHTTPReq:
-		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData)
+		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData, compressOption)
 	case *agentapi.TailTextFileReq:
-		response, err = agent.Client.TailTextFile(ctx, inData)
+		response, err = agent.Client.TailTextFile(ctx, inData, compressOption)
 	default:
 		err = errors.New("doCall: unsupported request type")
 	}

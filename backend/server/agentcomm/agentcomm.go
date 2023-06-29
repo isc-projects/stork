@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
 	"google.golang.org/grpc/security/advancedtls"
 
 	agentapi "isc.org/stork/api"
@@ -117,7 +118,10 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 	}
 
 	// Setup new connection
-	grpcConn, err := grpc.Dial(agent.Address, grpc.WithTransportCredentials(creds))
+	grpcConn, err := grpc.Dial(
+		agent.Address,
+		grpc.WithTransportCredentials(creds),
+	)
 	if err != nil {
 		return errors.Wrapf(err, "problem with dial to agent %s", agent.Address)
 	}
