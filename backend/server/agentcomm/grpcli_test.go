@@ -80,7 +80,7 @@ func TestGetState(t *testing.T) {
 			},
 		},
 	}
-	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	// call get state
@@ -123,7 +123,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 		}},
 	}
 
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -217,7 +217,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 		}},
 	}
 
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -304,7 +304,7 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
         ]`),
 		}},
 	}
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -371,7 +371,7 @@ func TestForwardToNamedStats(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -411,7 +411,7 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
             }`,
 		},
 	}
-	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -447,7 +447,7 @@ func TestForwardRndcCommand(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -495,7 +495,7 @@ func TestTailTextFile(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().TailTextFile(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().TailTextFile(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
