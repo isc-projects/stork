@@ -148,13 +148,13 @@ export const ipv6StatsLongPrefix = Template.bind({})
 ipv6StatsLongPrefix.args = {
     subnet: {
         id: 42,
-        subnet: '3001:1234:5678:90ab:cdef:1f2e:3d4c:5b6a/64',
+        subnet: '3001:1234:5678:90ab:cdef:1f2e:3d4c:5b68/125',
         stats: {
-            'total-nas': 501234567890,
-            'assigned-nas': 201234567890,
-            'declined-nas': 51234567890,
-            'total-pds': 701234567890,
-            'assigned-pds': 301234567890,
+            'total-nas': 4,
+            'assigned-nas': 3,
+            'declined-nas': 1,
+            'total-pds': 0,
+            'assigned-pds': 0,
         },
         statsCollectedAt: '2022-12-28T14:59:00',
     } as Subnet,
