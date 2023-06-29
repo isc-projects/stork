@@ -56,7 +56,14 @@ func (agents *connectedAgentsData) sendAndRecvViaQueue(agentAddr string, in inte
 func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, error) {
 	var response interface{}
 	var err error
+	// The options passed to the commands that can receive a big response (>4MiB).
 	compressOption := grpc.UseCompressor(gzip.Name)
+	// The biggest reported response had 5.4MB. Default limit is 4MiB.
+	// The message limit applies to the decompressed message.
+	// Set limit to 40MiB.
+	increaseLimitOption := grpc.MaxCallRecvMsgSize(4 * 10 * 1024 * 1024)
+	bigMessageOptions := []grpc.CallOption{compressOption, increaseLimitOption}
+
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -64,15 +71,15 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 	case *agentapi.PingReq:
 		response, err = agent.Client.Ping(ctx, inData)
 	case *agentapi.GetStateReq:
-		response, err = agent.Client.GetState(ctx, inData, compressOption)
+		response, err = agent.Client.GetState(ctx, inData, bigMessageOptions...)
 	case *agentapi.ForwardRndcCommandReq:
-		response, err = agent.Client.ForwardRndcCommand(ctx, inData, compressOption)
+		response, err = agent.Client.ForwardRndcCommand(ctx, inData, bigMessageOptions...)
 	case *agentapi.ForwardToNamedStatsReq:
-		response, err = agent.Client.ForwardToNamedStats(ctx, inData, compressOption)
+		response, err = agent.Client.ForwardToNamedStats(ctx, inData, bigMessageOptions...)
 	case *agentapi.ForwardToKeaOverHTTPReq:
-		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData, compressOption)
+		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData, bigMessageOptions...)
 	case *agentapi.TailTextFileReq:
-		response, err = agent.Client.TailTextFile(ctx, inData, compressOption)
+		response, err = agent.Client.TailTextFile(ctx, inData, bigMessageOptions...)
 	default:
 		err = errors.New("doCall: unsupported request type")
 	}
