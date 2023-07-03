@@ -21,17 +21,6 @@ python_requirement_files = [
     "tests/sim/requirements.in",
 ]
 
-#############
-### Mocks ###
-#############
-
-task :go_mocks => go_codebase + [GO, MOCKERY, MOCKGEN] do
-    Dir.chdir("backend") do
-        sh GO, "generate", "./..."
-    end
-end
-go_dev_codebase = go_codebase + [:go_mocks]
-
 #################
 ### Simulator ###
 #################
@@ -121,7 +110,7 @@ namespace :unittest do
         VERBOSE - Print results for successful cases - default: false
         See "db:migrate" task for the database-related parameters
     '
-    task :backend => [RICHGO, "db:remove_remaining", "db:migrate"] + go_dev_codebase do
+    task :backend => [RICHGO, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
         scope = ENV["SCOPE"] || "./..."
         benchmark = ENV["BENCHMARK"] || "false"
         short = ENV["SHORT"] || "false"
@@ -244,7 +233,7 @@ namespace :unittest do
         SCOPE - Scope of the tests - required
         HEADLESS - Run in headless mode - default: false
         See "db:migrate" task for the database-related parameters'
-    task :backend_debug => [DLV, "db:remove_remaining", "db:migrate"] + go_dev_codebase do
+    task :backend_debug => [DLV, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
         if ENV["SCOPE"].nil?
             fail "Scope argument is required"
         end
@@ -394,7 +383,7 @@ namespace :lint do
 
     desc 'Check backend source code
         FIX - fix linting issues - default: false'
-    task :backend => [GOLANGCILINT] + go_dev_codebase do
+    task :backend => [GOLANGCILINT, "gen:backend:mocks"] + go_codebase do
         opts = []
         if ENV["FIX"] == "true"
             opts += ["--fix"]
@@ -483,7 +472,7 @@ namespace :audit do
     end
 
     desc 'Check the backend security issues (including testing codebase)'
-    task :backend_tests => [GOVULNCHECK] + go_dev_codebase do
+    task :backend_tests => [GOVULNCHECK, "gen:backend:mocks"] + go_codebase do
         Dir.chdir("backend") do
             sh GOVULNCHECK, "-v", "-test", "./..."
         end
@@ -663,7 +652,11 @@ namespace :gen do
         end
 
         desc 'Generate all Go mocks'
-        task :mocks => :go_mocks
+        task :mocks => [GO, MOCKGEN, MOCKERY] + go_codebase do
+            Dir.chdir("backend") do
+                sh GO, "generate", "./..."
+            end
+        end
     end
 
     desc 'Regenerate Python requirements file'
