@@ -997,12 +997,12 @@ func TestDeleteSessionOfExternalUser(t *testing.T) {
 
 	authenticationMethodID := "external"
 
-	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().
 		GetID().
 		Return(authenticationMethodID)
 
-	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
 		Unauthenticate(gomock.Any()).
 		Return(nil).
@@ -1043,12 +1043,12 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	secret := "secret"
 	authenticationMethodID := "external"
 
-	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().
 		GetID().
 		Return(authenticationMethodID)
 
-	mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
 		Return(&authenticationcallouts.User{
@@ -1111,7 +1111,7 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	defer ctrl.Finish()
 	var mocks []hooks.CalloutCarrier
 	for i := 0; i < 3; i++ {
-		metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+		metadataMock := NewMockAuthenticationMetadata(ctrl)
 		metadataMock.EXPECT().
 			GetID().
 			Return(fmt.Sprintf("mock-%d", i))
@@ -1122,7 +1122,7 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 			GetName().
 			Return(fmt.Sprintf("name-%d", i))
 
-		mock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+		mock := NewMockAuthenticationCalloutCarrier(ctrl)
 		mock.EXPECT().
 			GetMetadata().
 			Return(metadataMock).

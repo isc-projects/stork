@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
+	authenticationcallouts "isc.org/stork/hooks/server/authenticationcallouts"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
 	appstest "isc.org/stork/server/apps/test"
@@ -20,6 +21,15 @@ import (
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 	"isc.org/stork/testutil"
 )
+
+// Carrier mock interface for mockgen.
+type authenticationCalloutCarrier interface { //nolint:unused
+	authenticationcallouts.AuthenticationCallouts
+	hooks.CalloutCarrier
+}
+
+//go:generate mockgen -package=restservice -destination=authenticationcalloutsmock_test.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
+//go:generate mockgen -package=restservice -destination=authenticationcalloutcarriermock_test.go -source=restservice_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
 
 // Tests instantiating RestAPI.
 func TestNewRestAPI(t *testing.T) {
@@ -133,7 +143,7 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 	carrierMocks := []hooks.CalloutCarrier{}
 
 	for i := 0; i < 2; i++ {
-		metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+		metadataMock := NewMockAuthenticationMetadata(ctrl)
 		metadataMock.EXPECT().GetID().Return(fmt.Sprintf("mock-%d", i))
 		metadataMock.EXPECT().
 			GetIcon().
@@ -145,7 +155,7 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 				), nil,
 			)
 
-		carrierMock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+		carrierMock := NewMockAuthenticationCalloutCarrier(ctrl)
 		carrierMock.EXPECT().GetMetadata().Return(metadataMock)
 		carrierMocks = append(carrierMocks, carrierMock)
 	}
@@ -173,7 +183,7 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	metadataMock := hookmanager.NewMockAuthenticationMetadata(ctrl)
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().GetID().Return("mock")
 	metadataMock.EXPECT().
 		GetIcon().
@@ -185,7 +195,7 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 			), nil,
 		)
 
-	carrierMock := hookmanager.NewMockAuthenticationCalloutCarrier(ctrl)
+	carrierMock := NewMockAuthenticationCalloutCarrier(ctrl)
 	carrierMock.EXPECT().GetMetadata().Return(metadataMock)
 	carrierMocks := []hooks.CalloutCarrier{carrierMock}
 
