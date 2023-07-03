@@ -405,30 +405,39 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 	return hosts, int64(total), err
 }
 
+// Container for values filtering hosts fetched by page.
+//
+// The AppID, if different than 0, is used to fetch hosts whose local hosts belong to
+// the indicated app.
+//
+// The optional SubnetID is used to fetch hosts belonging to the particular IPv4 or
+// IPv6 subnet. If this value is set to nil all subnets are returned. The value of 0
+// indicates that only global hosts are to be returned.
+//
+// The LocalSubnetID filters hosts by the subnet ID specified in the Kea configuration.
+//
+// Filtering text allows for searching hosts by reserved IP addresses, host identifiers
+// (using hexadecimal digits or a textual format) and hostnames. It is allowed to specify
+// colons while searching for hosts by host identifiers. If Global flag is true then only
+// hosts from the global scope are returned (i.e. not assigned to any subnet), if false
+// then only hosts from subnets are returned.
+type HostsByPageFilters struct {
+	AppID         *int64
+	SubnetID      *int64
+	LocalSubnetID *int64
+	FilterText    *string
+	Global        *bool
+}
+
 // Fetches a collection of hosts from the database.
 //
 // The offset and limit specify the beginning of the page and the maximum size of the
 // page.
 //
-// The appID, if different than 0, is used to fetch hosts whose local hosts belong to
-// the indicated app.
-//
-// The optional subnetID is used to fetch hosts belonging to the particular IPv4 or
-// IPv6 subnet. If this value is set to nil all subnets are returned. The value of 0
-// indicates that only global hosts are to be returned.
-//
-// The localSubnetID filters hosts by the subnet ID specified in the Kea configuration.
-//
-// Filtering text allows for searching hosts by reserved IP addresses, host identifiers
-// (using hexadecimal digits or a textual format) and hostnames. It is allowed to specify
-// colons while searching for hosts by host identifiers. If global flag is true then only
-// hosts from the global scope are returned (i.e. not assigned to any subnet), if false
-// then only hosts from subnets are returned.
-//
 // sortField allows indicating sort column in database and sortDir allows selection the
 // order of sorting. If sortField is empty then id is used for sorting. If SortDirAny is
 // used then ASC order is used.
-func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *int64, localSubnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
+func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilters, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := dbi.Model(&hosts)
 
@@ -441,46 +450,46 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 
 	// When filtering by appID we also need the local_host table as it holds the
 	// application identifier.
-	if appID != 0 {
+	if filters.AppID != nil && *filters.AppID != 0 {
 		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 		q = q.Join("JOIN daemon").JoinOn("local_host.daemon_id = daemon.id")
-		q = q.Where("daemon.app_id = ?", appID)
+		q = q.Where("daemon.app_id = ?", *filters.AppID)
 	}
 
 	// filter by subnet id
-	if subnetID != nil && *subnetID != 0 {
+	if filters.SubnetID != nil && *filters.SubnetID != 0 {
 		// Get hosts for matching subnet id.
-		q = q.Where("subnet_id = ?", *subnetID)
+		q = q.Where("subnet_id = ?", *filters.SubnetID)
 	}
 
 	// filter by local subnet id
-	if localSubnetID != nil {
+	if filters.LocalSubnetID != nil {
 		q = q.Join("JOIN local_subnet").JoinOn("local_subnet.subnet_id = host.subnet_id")
-		q = q.Where("local_subnet.local_subnet_id = ?", *localSubnetID)
+		q = q.Where("local_subnet.local_subnet_id = ?", *filters.LocalSubnetID)
 	}
 
 	// filter global or non-global hosts
-	if (global != nil && *global) || (subnetID != nil && *subnetID == 0) {
+	if (filters.Global != nil && *filters.Global) || (filters.SubnetID != nil && *filters.SubnetID == 0) {
 		q = q.WhereOr("host.subnet_id IS NULL")
 	}
-	if global != nil && !*global {
+	if filters.Global != nil && !*filters.Global {
 		q = q.WhereOr("host.subnet_id IS NOT NULL")
 	}
 
 	// filter by text
-	if filterText != nil && len(*filterText) > 0 {
+	if filters.FilterText != nil && len(*filters.FilterText) > 0 {
 		// It is possible that the user is typing a search text with colons
 		// for host identifiers. We need to remove them because they are
 		// not present in the database.
-		colonlessFilterText := strings.ReplaceAll(*filterText, ":", "")
+		colonlessFilterText := strings.ReplaceAll(*filters.FilterText, ":", "")
 		q = q.Join("JOIN ip_reservation AS r").JoinOn("r.host_id = host.id")
 		q = q.Join("JOIN host_identifier AS i").JoinOn("i.host_id = host.id")
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
-			q = q.WhereOr("text(r.address) ILIKE ?", "%"+*filterText+"%").
-				WhereOr("i.type::text ILIKE ?", "%"+*filterText+"%").
+			q = q.WhereOr("text(r.address) ILIKE ?", "%"+*filters.FilterText+"%").
+				WhereOr("i.type::text ILIKE ?", "%"+*filters.FilterText+"%").
 				WhereOr("encode(i.value, 'hex') ILIKE ?", "%"+colonlessFilterText+"%").
-				WhereOr("encode(i.value, 'escape') ILIKE ?", "%"+*filterText+"%").
-				WhereOr("host.hostname ILIKE ?", "%"+*filterText+"%")
+				WhereOr("encode(i.value, 'escape') ILIKE ?", "%"+*filters.FilterText+"%").
+				WhereOr("host.hostname ILIKE ?", "%"+*filters.FilterText+"%")
 			return q, nil
 		})
 	}
@@ -499,7 +508,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 
 	// Only join the subnet if querying all hosts or hosts belonging to a
 	// given subnet.
-	if subnetID == nil || *subnetID > 0 {
+	if filters.SubnetID == nil || *filters.SubnetID > 0 {
 		q = q.Relation("Subnet")
 	}
 

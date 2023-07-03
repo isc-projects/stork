@@ -138,7 +138,14 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 // used in REST API.
 func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, localSubnetID *int64, filterText *string, global *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
 	// Get the hosts from the database.
-	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, appID, subnetID, localSubnetID, filterText, global, sortField, sortDir)
+	filters := dbmodel.HostsByPageFilters{
+		AppID:         &appID,
+		SubnetID:      subnetID,
+		LocalSubnetID: localSubnetID,
+		FilterText:    filterText,
+		Global:        global,
+	}
+	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, filters, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

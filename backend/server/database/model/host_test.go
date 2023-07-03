@@ -495,7 +495,8 @@ func TestGetHostsByPageNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	_ = addTestHosts(t, db)
 
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, nil, nil, "", SortDirAny)
+	filters := HostsByPageFilters{}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -511,7 +512,10 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 
 	// Get global hosts only.
 	subnetID := int64(0)
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, &subnetID, nil, nil, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		SubnetID: &subnetID,
+	}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -520,7 +524,10 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 
 	// Get hosts associated with subnet id 1.
 	subnetID = int64(1)
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, &subnetID, nil, nil, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		SubnetID: &subnetID,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -533,7 +540,10 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 
 	// Get hosts associated with subnet id 2.
 	subnetID = int64(2)
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, &subnetID, nil, nil, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		SubnetID: &subnetID,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -564,14 +574,20 @@ func TestGetHostsByPageLocalSubnetID(t *testing.T) {
 	// The subnet has local id of 123 and there is a host associated
 	// with this subnet.
 	localSubnetID := int64(123)
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, &localSubnetID, nil, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		LocalSubnetID: &localSubnetID,
+	}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 
 	// Use the subnet id that no host is associated with.
 	localSubnetID = int64(124)
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &localSubnetID, nil, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		LocalSubnetID: &localSubnetID,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, returned)
@@ -597,7 +613,10 @@ func TestGetHostsByPageApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get global hosts only.
-	returned, total, err := GetHostsByPage(db, 0, 10, apps[0].ID, nil, nil, nil, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		AppID: &apps[0].ID,
+	}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -616,7 +635,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	filterText := "0.2.4"
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -625,7 +647,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	hostsContain(t, returned, hosts[0])
 
 	filterText = "192.0.2"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -636,7 +661,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	hostsContain(t, returned, hosts[1])
 
 	filterText = "0"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -649,7 +677,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Case insensitive address matching.
 	filterText = "2001:Db8:1"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -658,7 +689,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Filter by identifier value.
 	filterText = "01:02:03"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, returned, 3)
@@ -668,7 +702,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Case insensitive identifier matching.
 	filterText = "F1:f2:F3"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -676,7 +713,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Case insensitive identifier type matching.
 	filterText = "DuI"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -684,7 +724,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Case insensitive hostname matching.
 	filterText = "ExamplE"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -693,7 +736,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Filter by partial flex-id using textual format (case insensitive).
 	filterText = "qRs"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -701,7 +747,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// The same host should be returned for the filter text in hex format.
 	filterText = "51:52:53"
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
@@ -718,7 +767,10 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 
 	// find only global hosts
 	global := true
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, nil, &global, "", SortDirAny)
+	filters := HostsByPageFilters{
+		Global: &global,
+	}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -727,7 +779,10 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 
 	// find only non-global hosts
 	global = false
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, nil, &global, "", SortDirAny)
+	filters = HostsByPageFilters{
+		Global: &global,
+	}
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -744,7 +799,8 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	addTestHosts(t, db)
 
 	// check sorting by id asc
-	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, nil, nil, "id", SortDirAsc)
+	filters := HostsByPageFilters{}
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "id", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -752,7 +808,7 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.EqualValues(t, 4, returned[3].ID)
 
 	// check sorting by id desc
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, nil, nil, "id", SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "id", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -760,7 +816,7 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.EqualValues(t, 1, returned[3].ID)
 
 	// check sorting by subnet_id asc
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, nil, nil, "subnet_id", SortDirAsc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "subnet_id", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -768,7 +824,7 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.EqualValues(t, 3, returned[3].ID)
 
 	// check sorting by subnet_id desc
-	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, nil, nil, "subnet_id", SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "subnet_id", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -910,7 +966,10 @@ func TestAddHostLocalHosts(t *testing.T) {
 
 	// Get the first host by reserved IP address.
 	filterText := "192.0.2.4"
-	returnedList, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, &filterText, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		FilterText: &filterText,
+	}
+	returnedList, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returnedList, 1)
@@ -1009,13 +1068,19 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	require.EqualValues(t, 2, count)
 
 	// Ensure that the associations were removed for the first app.
-	returned, count, err := GetHostsByPage(db, 0, 1000, apps[0].ID, nil, nil, nil, nil, "", SortDirAny)
+	filters := HostsByPageFilters{
+		AppID: &apps[0].ID,
+	}
+	returned, count, err := GetHostsByPage(db, 0, 1000, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, count)
 	require.Empty(t, returned)
 
 	// The association should still exist for the second app.
-	returned, count, err = GetHostsByPage(db, 0, 1000, apps[1].ID, nil, nil, nil, nil, "", SortDirAny)
+	filters = HostsByPageFilters{
+		AppID: &apps[1].ID,
+	}
+	returned, count, err = GetHostsByPage(db, 0, 1000, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, count)
 	require.Len(t, returned, 1)
