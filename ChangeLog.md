@@ -1,3 +1,9 @@
+* 315 [bug] slawek
+
+    Enabled gzip compression for all communication between the Stork server and
+    agent. It fixes handling a big response of named statistics endpoint.
+    (Gitlab #1059)
+
 * 314 [bug] slawek
 
     Fixed a UI problem that caused the IPv6 subnet bars to be unreadable for
