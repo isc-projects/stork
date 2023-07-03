@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -46,7 +47,36 @@ func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func(
 	}
 }
 
-//go:generate mockgen -package=agentcomm -destination=apimock_test.go isc.org/stork/api AgentClient
+// Checks if the provided argument contain the GRPC call option to compress
+// the content.
+type gzipMatcher struct{}
+
+var _ gomock.Matcher = (*gzipMatcher)(nil)
+
+func newGZIPMatcher() gomock.Matcher {
+	return &gzipMatcher{}
+}
+
+func (*gzipMatcher) Matches(data any) bool {
+	options, ok := data.([]grpc.CallOption)
+	if !ok {
+		return false
+	}
+	for _, option := range options {
+		compressorOption, ok := option.(grpc.CompressorCallOption)
+		if !ok {
+			continue
+		}
+		return compressorOption.CompressorType == "gzip"
+	}
+	return false
+}
+
+func (*gzipMatcher) String() string {
+	return "gzip matcher"
+}
+
+//go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
 
 // Check if Ping works.
 func TestPing(t *testing.T) {
@@ -80,7 +110,8 @@ func TestGetState(t *testing.T) {
 			},
 		},
 	}
-	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	// call get state
@@ -123,7 +154,8 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 		}},
 	}
 
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -217,7 +249,8 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 		}},
 	}
 
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -304,7 +337,8 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
         ]`),
 		}},
 	}
-	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -371,7 +405,8 @@ func TestForwardToNamedStats(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		ForwardToNamedStats(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -411,7 +446,8 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
             }`,
 		},
 	}
-	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		ForwardToNamedStats(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -447,8 +483,9 @@ func TestForwardRndcCommand(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&rsp, nil)
+	mockAgentClient.EXPECT().ForwardRndcCommand(
+		gomock.Any(), gomock.Any(), newGZIPMatcher(),
+	).Return(&rsp, nil)
 
 	ctx := context.Background()
 	dbApp := &dbmodel.App{
@@ -495,7 +532,8 @@ func TestTailTextFile(t *testing.T) {
 		},
 	}
 
-	mockAgentClient.EXPECT().TailTextFile(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().
+		TailTextFile(gomock.Any(), gomock.Any(), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
