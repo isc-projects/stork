@@ -1,3 +1,9 @@
+* 312 [build] slawek
+
+    Refactored mock file suffixes. The mocks no longer need to be manually
+    registered in the Rake file.
+    (Gitlab #1006)
+
 * 311 [func] marcin
 
     Subnet view contains DHCP parameters and options.
