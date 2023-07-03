@@ -18,8 +18,8 @@ type authenticationCalloutCarrier interface { //nolint:unused
 	hooks.CalloutCarrier
 }
 
-//go:generate mockgen -package=hookmanager -destination=hookmanager_mock.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier AuthenticationMetadata
-//go:generate mockgen -package=hookmanager -destination=authenticationcallouts_mock.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
+//go:generate mockgen -package=hookmanager -destination=hookmanagermock_test.go -source=authentication_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier AuthenticationMetadata
+//go:generate mockgen -package=hookmanager -destination=authenticationcalloutsmock_test.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
 
 // Test that the authentication callout is called.
 func TestAuthenticate(t *testing.T) {

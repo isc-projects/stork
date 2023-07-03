@@ -17,7 +17,7 @@ type beforeForwardToKeaOverHTTPCalloutCarrier interface { //nolint:unused
 	hooks.CalloutCarrier
 }
 
-//go:generate mockgen -source hook_test.go -package=agent -destination=hook_mock.go -mock_names=beforeForwardToKeaOverHTTPCalloutCarrier=MockBeforeForwardToKeaOverHTTPCalloutCarrier isc.org/agent beforeForwardToKeaOverHTTPCalloutCarrier
+//go:generate mockgen -source hook_test.go -package=agent -destination=hookmock_test.go -mock_names=beforeForwardToKeaOverHTTPCalloutCarrier=MockBeforeForwardToKeaOverHTTPCalloutCarrier isc.org/agent beforeForwardToKeaOverHTTPCalloutCarrier
 
 // Test that the hook manager is constructed properly.
 func TestNewHookManager(t *testing.T) {
