@@ -209,61 +209,22 @@ go_common_codebase = FileList["backend/**/*"]
     .include(std_option_defs4_go_file)
     .include(std_option_defs6_go_file)
 
-go_server_mocks = FileList[
-    "backend/server/agentcomm/api_mock.go",
-    "backend/appcfg/kea/addresspoolmock_test.go",
-    "backend/appcfg/kea/optiondefmock_test.go",
-    "backend/appcfg/kea/optionmock_test.go",
-    "backend/appcfg/kea/prefixpoolmock_test.go",
-    "backend/appcfg/kea/subnetmock_test.go",
-    "backend/appcfg/kea/sharednetworkmock_test.go",
-    "backend/server/hookmanager/hookmanager_mock.go",
-    "backend/server/hookmanager/authenticationcallouts_mock.go",
-]
-
-go_agent_mocks = FileList[
-    "backend/agent/hook_mock.go",
-]
-
-GO_MOCKS = go_server_mocks + go_agent_mocks
-
 GO_SERVER_CODEBASE = go_server_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-server/stork-server")
-        .exclude(go_server_mocks)
+        .exclude("backend/**/*mock_test.go")
 
 GO_AGENT_CODEBASE = go_agent_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-agent/stork-agent")
-        .exclude(go_agent_mocks)
+        .exclude("backend/**/*mock_test.go")
 
 GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
         .exclude("backend/cmd/stork-tool/stork-tool")
+        .exclude("backend/**/*mock_test.go")
 
-def gen_mocks()
-    Dir.chdir("backend") do
-        sh GO, "generate", "./..."
-    end
-
-    GO_MOCKS.each do |mock_file|
-        sh "touch", "-c", mock_file
-    end
-end
-
-go_server_mocks.each do |mock_file|
-    file mock_file => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
-        gen_mocks()
-    end
-end
-
-go_agent_mocks.each do |mock_file|
-    file mock_file => [GO, MOCKERY, MOCKGEN] + GO_AGENT_CODEBASE do
-        gen_mocks()
-    end
-end
-
-CLEAN.append *GO_MOCKS
+CLEAN.append *FileList["backend/**/*mock_test.go"]
 
 #####################
 ### Documentation ###
@@ -380,9 +341,6 @@ namespace :gen do
 
         desc 'Generate standard DHCP option definitions for the backend'
         task :std_option_defs => [std_option_defs4_go_file, std_option_defs6_go_file]
-
-        desc 'Generate all Go mocks'
-        task :mocks => GO_MOCKS
     end
 
     namespace :ui do
