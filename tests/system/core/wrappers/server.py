@@ -562,64 +562,34 @@ class Server(ComposeServiceWrapper):
 
     @wait_for_success(wait_msg="Waiting to fetch next machine state...")
     def wait_for_next_machine_state(self, machine_id: int,
-                                    start: datetime = None, wait_for_apps=True,
-                                    wait_for_daemon=None) -> Machine:
+                                    start: datetime = None, wait_for_apps=True) -> Machine:
         """
         Waits for a next fetch of the machine state after a given date.
         If the date is None then the current moment is used.
         By default, this function waits until some application is fetched.
         It may be suppressed by specifying a flag.
-        If the non-none daemon name is provided, the function waits for its
-        appearance of a daemon with a given name. It is helpful if the daemon
-        has a big config and its initialization takes a lot of time. In this
-        case, the Stork agent starts earlier and reports an application without
-        daemons in the first fetches.
         """
         self._wait_for_states_pulling(start)
         state = self.read_machine_state(machine_id)
-        if (wait_for_apps or wait_for_daemon is not None) and len(state["apps"]) == 0:
+        if wait_for_apps and len(state["apps"]) == 0:
             raise NoSuccessException("the apps are missing")
-        if wait_for_daemon is not None:
-            found = False
-            for app in state["apps"]:
-                for daemon in app["details"]["daemons"]:
-                    if daemon["name"] == wait_for_daemon:
-                        found = True
-                        break
-            if not found:
-                raise NoSuccessException(f"the '{wait_for_daemon}' daemon is missing")
         return state
 
     @wait_for_success(wait_msg="Waiting to fetch next machine states...")
-    def wait_for_next_machine_states(self, start: datetime = None,
-                                     wait_for_apps=True, wait_for_daemon=None) -> List[Machine]:
+    def wait_for_next_machine_states(self, start: datetime = None, wait_for_apps=True) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
-        By default, this function waits until some application is fetched. It
-        may be suppressed by specifying a flag.
-        If the non-none daemon name is provided, the function waits for its
-        appearance of a daemon with a given name. It is helpful if the daemon
-        has a big config and its initialization takes a lot of time. In this
-        case, the Stork agent starts earlier and reports an application without
-        daemons in the first fetches.
+        By default, this function waits until some application is fetched.
+        It may be suppressed by specifying a flag.
         """
         self._wait_for_states_pulling(start)
         machines = self.list_machines(authorized=True)
         states = []
         for machine in machines["items"]:
             state = self.read_machine_state(machine["id"])
-            if (wait_for_apps or wait_for_daemon is not None) and len(state["apps"]) == 0:
+            if wait_for_apps and len(state["apps"]) == 0:
                 raise NoSuccessException("the apps are missing")
-            if wait_for_daemon is not None:
-                found = False
-                for app in state["apps"]:
-                    for daemon in app["details"]["daemons"]:
-                        if daemon["name"] == wait_for_daemon:
-                            found = True
-                            break
-                if not found:
-                    raise NoSuccessException(f"the '{wait_for_daemon}' daemon is missing")
             states.append(state)
         return states
 
