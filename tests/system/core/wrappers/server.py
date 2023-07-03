@@ -569,6 +569,11 @@ class Server(ComposeServiceWrapper):
         If the date is None then the current moment is used.
         By default, this function waits until some application is fetched.
         It may be suppressed by specifying a flag.
+        If the non-none daemon name is provided, the function waits for its
+        appearance of a daemon with a given name. It is helpful if the daemon
+        has a big config and its initialization takes a lot of time. In this
+        case, the Stork agent starts earlier and reports an application without
+        daemons in the first fetches.
         """
         self._wait_for_states_pulling(start)
         state = self.read_machine_state(machine_id)
@@ -594,10 +599,10 @@ class Server(ComposeServiceWrapper):
         By default, this function waits until some application is fetched. It
         may be suppressed by specifying a flag.
         If the non-none daemon name is provided, the function waits for its
-        appearance in any app. It is helpful if the daemon has a big config and
-        its initialization takes a lot of time. In this case, the Stork agent
-        starts earlier and reports an application without daemons in the first
-        fetches.
+        appearance of a daemon with a given name. It is helpful if the daemon
+        has a big config and its initialization takes a lot of time. In this
+        case, the Stork agent starts earlier and reports an application without
+        daemons in the first fetches.
         """
         self._wait_for_states_pulling(start)
         machines = self.list_machines(authorized=True)
