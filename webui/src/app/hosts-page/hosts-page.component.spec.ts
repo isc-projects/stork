@@ -1197,4 +1197,21 @@ describe('HostsPageComponent', () => {
         expect(errMsg).toBeTruthy()
         expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
     }))
+
+    it('should display multiple error message for each invalid value', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'appId:foo subnetId:bar keaSubnetId:abc'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null)
+
+        const errMsgs = fixture.debugElement.queryAll(By.css('.p-error'))
+        expect(errMsgs.length).toBe(3)
+    }))
 })

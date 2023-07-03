@@ -149,7 +149,12 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     openedTabs = []
 
-    filterTextFormatError: string
+    /**
+     * An array of errors in specifying filter text.
+     *
+     * This array holds errors displayed next to the host filtering input box.
+     */
+    filterTextFormatErrors: string[] = []
 
     /**
      * Constructor.
@@ -279,14 +284,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     private updateQueryParams(params) {
         this.queryParams.text = params.get('text')
 
-        let filterTextFormatError: string
+        let filterTextFormatErrors: string[] = []
 
         // Convert appId to a number. It is NaN if the parameter doesn't exist
         // or it is malformed.
         const appId = parseInt(params.get('appId'), 10)
         this.queryParams.appId = isNaN(appId) ? null : appId
         if (params.get('appId') != null && this.queryParams.appId === null) {
-            filterTextFormatError = 'Please specify appId as a number (e.g., appId:2).'
+            filterTextFormatErrors.push('Please specify appId as a number (e.g., appId:2).')
         }
 
         // Convert subnetId to a number. It is NaN if the parameter doesn't exist
@@ -294,7 +299,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         const subnetId = parseInt(params.get('subnetId'), 10)
         this.queryParams.subnetId = isNaN(subnetId) ? null : subnetId
         if (params.get('subnetId') != null && this.queryParams.subnetId === null) {
-            filterTextFormatError = 'Please specify subnetId as a number (e.g., subnetId:2).'
+            filterTextFormatErrors.push('Please specify subnetId as a number (e.g., subnetId:2).')
         }
 
         // Convert keaSubnetId to a number. It is NaN if the parameter doesn't exist
@@ -302,7 +307,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         const keaSubnetId = parseInt(params.get('keaSubnetId'), 10)
         this.queryParams.keaSubnetId = isNaN(keaSubnetId) ? null : keaSubnetId
         if (params.get('keaSubnetId') != null && this.queryParams.keaSubnetId === null) {
-            filterTextFormatError = 'Please specify keaSubnetId as a number (e.g., keaSubnetId:2).'
+            filterTextFormatErrors.push('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
         }
 
         // Global.
@@ -315,7 +320,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             this.queryParams.global = null
         }
 
-        this.filterTextFormatError = filterTextFormatError
+        this.filterTextFormatErrors = filterTextFormatErrors
     }
 
     /**

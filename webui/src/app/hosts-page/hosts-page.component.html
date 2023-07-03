@@ -91,10 +91,14 @@
                             configuration.
                         </li>
                     </ul>
+                    <p>
+                        To filter the hosts by multiple fields, separate them with a space character (e.g.,
+                        <b>appId:2 subnetId:3</b>).
+                    </p>
                 </app-help-tip>
             </div>
-            <div *ngIf="filterTextFormatError">
-                <small class="p-error block">{{ filterTextFormatError }}</small>
+            <div *ngIf="filterTextFormatErrors?.length > 0">
+                <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
             </div>
         </div>
         <div>
