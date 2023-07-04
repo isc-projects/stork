@@ -23,7 +23,7 @@ type HTTPClient struct {
 // Create a client to contact with Kea Control Agent or named statistics-channel.
 // If @skipTLSVerification is true then it doesn't verify the server credentials
 // over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func NewHTTPClient(fileManager *AgentFileManager, skipTLSVerification bool) *HTTPClient {
+func NewHTTPClient(paths AgentPaths, skipTLSVerification bool) *HTTPClient {
 	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
 	// The instance of the client which is created here disables HTTP/2 and should
 	// be used whenever the communication with the Kea servers is required.
@@ -32,7 +32,7 @@ func NewHTTPClient(fileManager *AgentFileManager, skipTLSVerification bool) *HTT
 		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
 	}
 
-	certStore := NewCertStore(fileManager)
+	certStore := NewCertStore(paths)
 
 	certPool, err1 := certStore.GetRootCA()
 	certificate, err2 := certStore.GetTLSCert()
@@ -56,20 +56,20 @@ func NewHTTPClient(fileManager *AgentFileManager, skipTLSVerification bool) *HTT
 
 	credentialsStore := NewCredentialsStore()
 	// Check if the credential file exist
-	if _, err := os.Stat(fileManager.CredentialsPath); err == nil {
-		file, err := os.Open(fileManager.CredentialsPath)
+	if _, err := os.Stat(paths.CredentialsPath); err == nil {
+		file, err := os.Open(paths.CredentialsPath)
 		if err == nil {
 			defer file.Close()
 			err = credentialsStore.Read(file)
-			err = errors.WithMessagef(err, "cannot read the credentials file (%s)", fileManager.CredentialsPath)
+			err = errors.WithMessagef(err, "cannot read the credentials file (%s)", paths.CredentialsPath)
 		}
 		if err == nil {
-			log.Infof("Configured to use the Basic Auth credentials from file (%s)", fileManager.CredentialsPath)
+			log.Infof("Configured to use the Basic Auth credentials from file (%s)", paths.CredentialsPath)
 		} else {
-			log.Warnf("Cannot read the Basic Auth credentials from file (%s), %+v", fileManager.CredentialsPath, err)
+			log.Warnf("Cannot read the Basic Auth credentials from file (%s), %+v", paths.CredentialsPath, err)
 		}
 	} else {
-		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", fileManager.CredentialsPath)
+		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", paths.CredentialsPath)
 	}
 
 	client := &HTTPClient{

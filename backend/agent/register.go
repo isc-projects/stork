@@ -367,7 +367,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 // server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added
 // to server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentAddr, agentPort string, fileManager *AgentFileManager, regenCerts bool, retry bool) bool {
+func Register(serverURL, serverToken, agentAddr, agentPort string, paths AgentPaths, regenCerts bool, retry bool) bool {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil || baseSrvURL.String() == "" {
@@ -391,7 +391,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, fileManager *
 		return false
 	}
 
-	certStore := NewCertStore(fileManager)
+	certStore := NewCertStore(paths)
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCerts(certStore, agentAddr, regenCerts)
 	if err != nil {

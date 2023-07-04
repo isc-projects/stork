@@ -63,14 +63,14 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient *HTT
 }
 
 // Prepare gRPC server with configured TLS.
-func newGRPCServerWithTLS(fileManager *AgentFileManager) (*grpc.Server, error) {
+func newGRPCServerWithTLS(paths AgentPaths) (*grpc.Server, error) {
 	// Prepare structure for advanced TLS. It defines hook functions
 	// that dynamically load key and cert from files just before establishing
 	// connection. Thanks to this if these files changed in meantime then
 	// always latest version for new connections is used.
 	// Beside that there is enabled client authentication and forced
 	// cert and host verification.
-	certStore := NewCertStore(fileManager)
+	certStore := NewCertStore(paths)
 	options := &advancedtls.ServerOptions{
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{
@@ -116,8 +116,8 @@ func newGRPCServerWithTLS(fileManager *AgentFileManager) (*grpc.Server, error) {
 }
 
 // Setup the agent as gRPC server endpoint.
-func (sa *StorkAgent) Setup(fileManager *AgentFileManager) error {
-	server, err := newGRPCServerWithTLS(fileManager)
+func (sa *StorkAgent) Setup(paths AgentPaths) error {
+	server, err := newGRPCServerWithTLS(paths)
 	if err != nil {
 		return err
 	}

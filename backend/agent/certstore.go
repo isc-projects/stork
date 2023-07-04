@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"isc.org/stork/pki"
@@ -11,11 +13,11 @@ import (
 )
 
 type CertStore struct {
-	fileManager *AgentFileManager
+	paths AgentPaths
 }
 
-func NewCertStore(fileManager *AgentFileManager) *CertStore {
-	return &CertStore{fileManager: fileManager}
+func NewCertStore(paths AgentPaths) *CertStore {
+	return &CertStore{paths: paths}
 }
 
 func (*CertStore) validCertValidator(content []byte) error {
@@ -35,6 +37,73 @@ func (*CertStore) tokenValidator(content []byte) error {
 	return nil
 }
 
+func (*CertStore) read(path string) ([]byte, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot read the file: %s", path)
+	}
+	return content, nil
+}
+
+func (s *CertStore) write(path string, content []byte) error {
+	if err := s.removeIfExist(path); err != nil {
+		return err
+	}
+
+	if err := s.createDirectoryTree(path); err != nil {
+		return err
+	}
+
+	err := os.WriteFile(path, content, 0o600)
+	if err != nil {
+		return errors.Wrapf(err, "cannot write the file: %s", path)
+	}
+	return nil
+}
+
+func (*CertStore) isExist(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else {
+		return false, errors.Wrapf(err, "cannot stat the file: %s", path)
+	}
+}
+
+func (s *CertStore) removeIfExist(path string) error {
+	ok, err := s.isExist(path)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	if err = os.Remove(path); err != nil {
+		return errors.Wrapf(err, "cannot remove the file: %s", path)
+	}
+
+	return nil
+}
+
+func (s *CertStore) createDirectoryTree(path string) error {
+	directory := filepath.Dir(path)
+	ok, err := s.isExist(directory)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return errors.Wrapf(err, "cannot create a directory tree: %s", directory)
+	}
+	return nil
+}
+
 // Parse provided address and return either an IP address as a one
 // element list or a DNS name as one element list. The arrays are
 // returned as then it is easy to pass these returned elements to the
@@ -48,7 +117,7 @@ func (*CertStore) resolveAddress(address string) ([]net.IP, []string) {
 }
 
 func (s *CertStore) ReadToken() ([]byte, error) {
-	content, err := s.fileManager.Read(s.fileManager.TokenPath)
+	content, err := s.read(s.paths.TokenPath)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +129,7 @@ func (s *CertStore) ReadToken() ([]byte, error) {
 
 func (s *CertStore) GetRootCA() (*x509.CertPool, error) {
 	certPool := x509.NewCertPool()
-	ca, err := s.fileManager.Read(s.fileManager.RootCAPAth)
+	ca, err := s.read(s.paths.RootCAPAth)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +143,11 @@ func (s *CertStore) GetRootCA() (*x509.CertPool, error) {
 }
 
 func (s *CertStore) GetTLSCert() (*tls.Certificate, error) {
-	keyPEM, err := s.fileManager.Read(s.fileManager.KeyPEMPath)
+	keyPEM, err := s.read(s.paths.KeyPEMPath)
 	if err != nil {
 		return nil, err
 	}
-	certPEM, err := s.fileManager.Read(s.fileManager.CertPEMPath)
+	certPEM, err := s.read(s.paths.CertPEMPath)
 	if err != nil {
 		return nil, err
 	}
@@ -95,19 +164,19 @@ func (s *CertStore) CreateKey() error {
 	if err != nil {
 		return err
 	}
-	err = s.fileManager.Write(s.fileManager.KeyPEMPath, keyPEM)
+	err = s.write(s.paths.KeyPEMPath, keyPEM)
 	if err != nil {
 		return errors.Wrapf(err, "cannot write key file: %s", keyPEM)
 	}
 
 	// Invalidate cert, root CA and token.
-	if err = s.fileManager.RemoveIfExist(s.fileManager.CertPEMPath); err != nil {
+	if err = s.removeIfExist(s.paths.CertPEMPath); err != nil {
 		return err
 	}
-	if err = s.fileManager.RemoveIfExist(s.fileManager.RootCAPAth); err != nil {
+	if err = s.removeIfExist(s.paths.RootCAPAth); err != nil {
 		return err
 	}
-	if err = s.fileManager.RemoveIfExist(s.fileManager.TokenPath); err != nil {
+	if err = s.removeIfExist(s.paths.TokenPath); err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +184,7 @@ func (s *CertStore) CreateKey() error {
 
 func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint [32]byte, err error) {
 	agentIPs, agentNames := s.resolveAddress(agentAddress)
-	keyPEM, err := s.fileManager.Read(s.fileManager.KeyPEMPath)
+	keyPEM, err := s.read(s.paths.KeyPEMPath)
 	if err != nil {
 		return
 	}
@@ -134,47 +203,47 @@ func (s *CertStore) WriteFingerprintAsToken(fingerprint [32]byte) error {
 		return err
 	}
 	fingerprintStr := storkutil.BytesToHex(fingerprint[:])
-	return s.fileManager.Write(s.fileManager.TokenPath, []byte(fingerprintStr))
+	return s.write(s.paths.TokenPath, []byte(fingerprintStr))
 }
 
 func (s *CertStore) WriteRootCAPEM(rootCAPEM []byte) error {
 	if err := s.validCertValidator(rootCAPEM); err != nil {
 		return err
 	}
-	return s.fileManager.Write(s.fileManager.RootCAPAth, rootCAPEM)
+	return s.write(s.paths.RootCAPAth, rootCAPEM)
 }
 
 func (s *CertStore) WriteCertPEM(certPEM []byte) error {
 	if err := s.validCertValidator(certPEM); err != nil {
 		return err
 	}
-	return s.fileManager.Write(s.fileManager.CertPEMPath, certPEM)
+	return s.write(s.paths.CertPEMPath, certPEM)
 }
 
 func (s *CertStore) IsValid() error {
 	var validationErrors []error
-	content, err := s.fileManager.Read(s.fileManager.CertPEMPath)
+	content, err := s.read(s.paths.CertPEMPath)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.validCertValidator(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.fileManager.Read(s.fileManager.RootCAPAth)
+	content, err = s.read(s.paths.RootCAPAth)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.validCertValidator(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.fileManager.Read(s.fileManager.KeyPEMPath)
+	content, err = s.read(s.paths.KeyPEMPath)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.validPrivateKeyValidator(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.fileManager.Read(s.fileManager.TokenPath)
+	content, err = s.read(s.paths.TokenPath)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.tokenValidator(content); err != nil {
@@ -185,16 +254,16 @@ func (s *CertStore) IsValid() error {
 }
 
 func (s *CertStore) IsEmpty() (bool, error) {
-	if ok, err := s.fileManager.IsExist(s.fileManager.KeyPEMPath); ok || err != nil {
+	if ok, err := s.isExist(s.paths.KeyPEMPath); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.fileManager.IsExist(s.fileManager.CertPEMPath); ok || err != nil {
+	if ok, err := s.isExist(s.paths.CertPEMPath); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.fileManager.IsExist(s.fileManager.RootCAPAth); ok || err != nil {
+	if ok, err := s.isExist(s.paths.RootCAPAth); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.fileManager.IsExist(s.fileManager.TokenPath); ok || err != nil {
+	if ok, err := s.isExist(s.paths.TokenPath); ok || err != nil {
 		return false, err
 	}
 	return true, nil
