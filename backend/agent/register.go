@@ -381,7 +381,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil || baseSrvURL.String() == "" {
-		log.WithError(err).Error("Cannot parse server URL: %s", serverURL)
+		log.WithError(err).Errorf("Cannot parse server URL: %s", serverURL)
 		return false
 	}
 

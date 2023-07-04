@@ -260,7 +260,7 @@ func ParsePrivateKey(privKeyPEM []byte) (*ecdsa.PrivateKey, error) {
 // serial number, a CA key and a CA cert.  It returns PEM of signed
 // CSR, fingerprint of signed CSR, parameters error and inner
 // execution error. This is public function that will be used by the
-// server in restservices module by CreateMachine function to sign a
+// server in restservice module by CreateMachine function to sign a
 // CSR received from an agent.
 func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte) ([]byte, [sha256.Size]byte, error, error) {
 	var fingerprint [sha256.Size]byte

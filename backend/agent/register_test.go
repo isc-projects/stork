@@ -328,18 +328,23 @@ func TestGenerateCerts(t *testing.T) {
 	// 1) just generate
 	agentAddr := "addr"
 	regenCerts := false
-	csrPEM1, agentToken1, err := generateCerts(agentAddr, regenCerts)
+	certStore := NewCertStore()
+	csrPEM1, err := generateCerts(certStore, agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM1)
+	agentToken1, err := certStore.ReadToken()
+	require.NoError(t, err)
 	require.NotEmpty(t, agentToken1)
 	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM1)
 
 	// 2) generate again, no changes to args, result key should be the same
-	csrPEM2, agentToken2, err := generateCerts(agentAddr, regenCerts)
+	csrPEM2, err := generateCerts(certStore, agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM2)
+	agentToken2, err := certStore.ReadToken()
+	require.NoError(t, err)
 	require.NotEmpty(t, agentToken2)
 	// CSR is regenerated but no agent token
 	require.NotEqualValues(t, csrPEM1, csrPEM2)
@@ -352,9 +357,11 @@ func TestGenerateCerts(t *testing.T) {
 
 	// 3) generate again but now regenCerts is true, result should be be different
 	regenCerts = true
-	csrPEM3, agentToken3, err := generateCerts(agentAddr, regenCerts)
+	csrPEM3, err := generateCerts(certStore, agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM3)
+	agentToken3, err := certStore.ReadToken()
+	require.NoError(t, err)
 	require.NotEmpty(t, agentToken3)
 	// CSR is regenerated and its agent token too
 	require.NotEqualValues(t, csrPEM2, csrPEM3)

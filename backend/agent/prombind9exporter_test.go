@@ -51,7 +51,8 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	pbe := NewPromBind9Exporter(settings, fam)
+	httpClient := NewHTTPClient(false)
+	pbe := NewPromBind9Exporter(settings, fam, httpClient)
 	defer pbe.Shutdown()
 
 	require.NotNil(t, pbe.HTTPClient)
@@ -186,7 +187,8 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	settings := cli.NewContext(nil, flags, nil)
 	settings.Set("prometheus-bind9-exporter-port", "1234")
 	settings.Set("prometheus-bind9-exporter-interval", "1")
-	pbe := NewPromBind9Exporter(settings, fam)
+	httpClient := NewHTTPClient(false)
+	pbe := NewPromBind9Exporter(settings, fam, httpClient)
 	defer pbe.Shutdown()
 
 	gock.InterceptClient(pbe.HTTPClient.client)

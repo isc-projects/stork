@@ -19,7 +19,8 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am, hm)
+	httpClient := NewHTTPClient(false)
+	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -157,13 +158,15 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am, hm)
+	httpClient := NewHTTPClient(false)
+	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.detectApps(sa)
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
+	httpClient := NewHTTPClient(false)
 	am.apps = append(am.apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type: AppTypeKea,
@@ -175,13 +178,13 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 				},
 			},
 		},
-		HTTPClient: NewHTTPClient(false),
+		HTTPClient: httpClient,
 	})
 
 	hm := NewHookManager()
 
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am, hm)
+	sa := NewStorkAgent(settings, am, httpClient, hm)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
