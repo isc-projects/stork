@@ -121,7 +121,8 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, fam, NewHookManager())
+	httpClient := NewHTTPClient(false)
+	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
 }
@@ -626,7 +627,7 @@ func TestTailTextFile(t *testing.T) {
 func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	params := &advancedtls.GetRootCAsParams{}
 
-	// prepare temp dir for cert files
+	// Prepare temp dir for cert files.
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
@@ -635,7 +636,9 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	defer restoreCerts()
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 
-	// missing cert file error
+	// Missing cert file error.
+	certStore := NewCertStore()
+	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	_, err = getRootCertificates(params)
 	require.EqualError(t, err,
 		fmt.Sprintf("could not read CA certificate: %s/certs/ca.pem: open %s/certs/ca.pem: no such file or directory",
@@ -654,7 +657,9 @@ func TestGetRootCertificates(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	// all should be ok
+	// All should be ok.
+	certStore := NewCertStore()
+	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	params := &advancedtls.GetRootCAsParams{}
 	result, err := getRootCertificates(params)
 	require.NoError(t, err)
@@ -668,7 +673,7 @@ func TestGetRootCertificates(t *testing.T) {
 func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	info := &tls.ClientHelloInfo{}
 
-	// prepare temp dir for cert files
+	// Prepare temp dir for cert files.
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
@@ -679,12 +684,14 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 
-	// missing key files
+	// Missing key files.
+	certStore := NewCertStore()
+	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	_, err = getIdentityCertificatesForServer(info)
 	require.EqualError(t, err,
 		fmt.Sprintf("could not load key PEM file: %s/certs/key.pem: open %s/certs/key.pem: no such file or directory", tmpDir, tmpDir))
 
-	// store bad content to files
+	// Store bad content to files.
 	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0o600)
 	require.NoError(t, err)
 	err = os.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0o600)
@@ -700,7 +707,9 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	// now it should work
+	// Now it should work.
+	certStore := NewCertStore()
+	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	info := &tls.ClientHelloInfo{}
 	certs, err := getIdentityCertificatesForServer(info)
 	require.NoError(t, err)

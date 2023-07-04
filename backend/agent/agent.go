@@ -62,6 +62,32 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient *HTT
 	return sa
 }
 
+func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
+	return func(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
+		certPool, err := certStore.GetRootCA()
+		if err != nil {
+			log.WithError(err).Error("Cannot extract root CA")
+			return nil, err
+		}
+		log.Info("Loaded CA cert")
+		return &advancedtls.GetRootCAsResults{
+			TrustCerts: certPool,
+		}, nil
+	}
+}
+
+func createGetIdentityCertificatesForServerHandler(certStore *CertStore) func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
+	return func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
+		certificate, err := certStore.GetTLSCert()
+		if err != nil {
+			log.WithError(err).Error("Could not setup TLS key pair")
+			return nil, err
+		}
+		log.Info("Loaded server cert")
+		return []*tls.Certificate{certificate}, nil
+	}
+}
+
 // Prepare gRPC server with configured TLS.
 func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// Prepare structure for advanced TLS. It defines hook functions
@@ -75,30 +101,12 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{
 			// Read the latest root CA cert from file for Stork Server's cert verification.
-			GetRootCertificates: func(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
-				certPool, err := certStore.GetRootCA()
-				if err != nil {
-					log.WithError(err).Error("Cannot extract root CA")
-					return nil, err
-				}
-				log.Info("Loaded CA cert")
-				return &advancedtls.GetRootCAsResults{
-					TrustCerts: certPool,
-				}, nil
-			},
+			GetRootCertificates: createGetRootCertificatesHandler(certStore),
 		},
 		// Pull latest stork agent cert for presenting its identity to stork server.
 		IdentityOptions: advancedtls.IdentityCertificateOptions{
 			// Read the latest Stork Agent's cert from file for presenting its identity to the Stork server.
-			GetIdentityCertificatesForServer: func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
-				certificate, err := certStore.GetTLSCert()
-				if err != nil {
-					log.WithError(err).Error("Could not setup TLS key pair")
-					return nil, err
-				}
-				log.Info("Loaded server cert")
-				return []*tls.Certificate{certificate}, nil
-			},
+			GetIdentityCertificatesForServer: createGetIdentityCertificatesForServerHandler(certStore),
 		},
 		// Force stork server cert verification.
 		RequireClientCert: true,
