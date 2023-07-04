@@ -343,11 +343,11 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaExporter {
+func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
 	pke := &PromKeaExporter{
 		Settings:       settings,
 		AppMonitor:     appMonitor,
-		HTTPClient:     NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
+		HTTPClient:     httpClient,
 		DoneCollector:  make(chan bool),
 		Wg:             &sync.WaitGroup{},
 		Registry:       prometheus.NewRegistry(),

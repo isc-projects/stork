@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	storkutil "isc.org/stork/util"
 )
 
 // CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
@@ -27,7 +27,7 @@ type HTTPClient struct {
 // Create a client to contact with Kea Control Agent or named statistics-channel.
 // If @skipTLSVerification is true then it doesn't verify the server credentials
 // over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
+func NewHTTPClient(certStore *CertStore, skipTLSVerification bool) *HTTPClient {
 	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
 	// The instance of the client which is created here disables HTTP/2 and should
 	// be used whenever the communication with the Kea servers is required.
@@ -36,12 +36,14 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
 	}
 
-	certPool, certificates, err := readTLSCredentials()
-	if err == nil {
+	certPool, err1 := certStore.GetRootCA()
+	certificate, err2 := certStore.GetTLSCert()
+	if err1 == nil && err2 == nil {
 		tlsConfig.RootCAs = certPool
-		tlsConfig.Certificates = certificates
+		tlsConfig.Certificates = []tls.Certificate{*certificate}
 	} else {
-		log.Warnf("Cannot read TLS credentials, use HTTP protocol, %+v", err)
+		err := storkutil.CombineErrors("cannot read certificates", []error{err1, err2})
+		log.WithError(err).Warnf("Cannot read TLS credentials, use HTTP protocol")
 	}
 
 	httpTransport := &http.Transport{
@@ -111,31 +113,4 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 // the requests.
 func (c *HTTPClient) HasAuthenticationCredentials() bool {
 	return !c.credentials.IsEmpty()
-}
-
-// TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
-func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
-	// Certificates
-	certPool := x509.NewCertPool()
-	ca, err := os.ReadFile(RootCAFile)
-	if err != nil {
-		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		err = errors.New("failed to append client certs")
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	certificate, err := tls.LoadX509KeyPair(CertPEMFile, KeyPEMFile)
-	if err != nil {
-		err = errors.Wrapf(err, "could not setup TLS key pair")
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	return certPool, []tls.Certificate{certificate}, nil
 }

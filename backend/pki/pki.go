@@ -217,31 +217,10 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 	return csrPEM, fingerprint, nil
 }
 
-// Generate an ECDSA key and a CSR for it. Return them in PEM format
-// with a fingerprint. DNS names and IP addresses are assigned to an
-// agent. They are put to CSR and later passed to agent certificate by
-// server. This certificate is used during TLS connection setup to
-// validate if an agent is using defined here names or addresses. It
-// is enough to provide at least one DNS name or one IP address. This
-// function is public and will be used by an agent in register module
-// by generateCerts function for generating both agent key and CSR
-// that is sent to server for signing.
-func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte, []byte, [sha256.Size]byte, error) {
-	var fingerprint [sha256.Size]byte
-
-	// generate a key pair
+// Generate a private key and return it in PEM format. This function is public.
+func GenKey() ([]byte, error) {
 	_, privKeyPEM, err := genECDSAKey()
-	if err != nil {
-		return nil, nil, fingerprint, err
-	}
-
-	// create CSR using priv key
-	csrPEM, fingerprint, err := GenCSRUsingKey(name, dnsNames, ipAddresses, privKeyPEM)
-	if err != nil {
-		return nil, nil, fingerprint, err
-	}
-
-	return privKeyPEM, csrPEM, fingerprint, nil
+	return privKeyPEM, err
 }
 
 // Parse a certificate in PEM format. Return it in *x509.Certificate

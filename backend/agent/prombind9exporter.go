@@ -79,11 +79,11 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBind9Exporter {
+func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
 		Settings:   settings,
 		AppMonitor: appMonitor,
-		HTTPClient: NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
+		HTTPClient: httpClient,
 		Registry:   prometheus.NewRegistry(),
 	}
 
