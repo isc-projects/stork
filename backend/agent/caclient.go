@@ -14,10 +14,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
-// It is being modified by tests so needs to be writable.
-var CredentialsFile = "/etc/stork/agent-credentials.json" //nolint:gochecknoglobals,gosec
-
 // HTTPClient is a normal http client.
 type HTTPClient struct {
 	client      *http.Client
@@ -27,7 +23,7 @@ type HTTPClient struct {
 // Create a client to contact with Kea Control Agent or named statistics-channel.
 // If @skipTLSVerification is true then it doesn't verify the server credentials
 // over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func NewHTTPClient(certStore *CertStore, skipTLSVerification bool) *HTTPClient {
+func NewHTTPClient(fileManager *AgentFileManager, skipTLSVerification bool) *HTTPClient {
 	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
 	// The instance of the client which is created here disables HTTP/2 and should
 	// be used whenever the communication with the Kea servers is required.
@@ -35,6 +31,8 @@ func NewHTTPClient(certStore *CertStore, skipTLSVerification bool) *HTTPClient {
 	tlsConfig := tls.Config{
 		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
 	}
+
+	certStore := NewCertStore(fileManager)
 
 	certPool, err1 := certStore.GetRootCA()
 	certificate, err2 := certStore.GetTLSCert()
@@ -58,20 +56,20 @@ func NewHTTPClient(certStore *CertStore, skipTLSVerification bool) *HTTPClient {
 
 	credentialsStore := NewCredentialsStore()
 	// Check if the credential file exist
-	if _, err := os.Stat(CredentialsFile); err == nil {
-		file, err := os.Open(CredentialsFile)
+	if _, err := os.Stat(fileManager.CredentialsPath); err == nil {
+		file, err := os.Open(fileManager.CredentialsPath)
 		if err == nil {
 			defer file.Close()
 			err = credentialsStore.Read(file)
-			err = errors.WithMessagef(err, "cannot read the credentials file (%s)", CredentialsFile)
+			err = errors.WithMessagef(err, "cannot read the credentials file (%s)", fileManager.CredentialsPath)
 		}
 		if err == nil {
-			log.Infof("Configured to use the Basic Auth credentials from file (%s)", CredentialsFile)
+			log.Infof("Configured to use the Basic Auth credentials from file (%s)", fileManager.CredentialsPath)
 		} else {
-			log.Warnf("Cannot read the Basic Auth credentials from file (%s), %+v", CredentialsFile, err)
+			log.Warnf("Cannot read the Basic Auth credentials from file (%s), %+v", fileManager.CredentialsPath, err)
 		}
 	} else {
-		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
+		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", fileManager.CredentialsPath)
 	}
 
 	client := &HTTPClient{

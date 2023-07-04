@@ -59,12 +59,12 @@ func runAgent(settings *cli.Context, reload bool) error {
 		}
 	}
 
-	certStore := agent.NewCertStore()
+	fileManager := agent.NewAgentFileManager()
 
 	// Try registering the agent in the server using the agent token
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, certStore, false, true) {
+		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, fileManager, false, true) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
@@ -73,14 +73,14 @@ func runAgent(settings *cli.Context, reload bool) error {
 	appMonitor := agent.NewAppMonitor()
 
 	// Prepare agent gRPC handler
-	httpClient := agent.NewHTTPClient(certStore, settings.Bool("skip-tls-cert-verification"))
+	httpClient := agent.NewHTTPClient(fileManager, settings.Bool("skip-tls-cert-verification"))
 	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, hookManager)
 
 	// Prepare Prometheus exporters
 	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor, httpClient)
 	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor, httpClient)
 
-	err = storkAgent.Setup(certStore)
+	err = storkAgent.Setup(fileManager)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
@@ -127,7 +127,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 
 // Helper function that checks command line options and runs registration.
 func runRegister(cfg *cli.Context) {
-	certStore := agent.NewCertStore()
+	fileManager := agent.NewAgentFileManager()
 	agentAddr := ""
 	agentPort := ""
 	var err error
@@ -148,7 +148,7 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, certStore, true, false) {
+	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, fileManager, true, false) {
 		log.Println("Registration completed successfully")
 	} else {
 		log.Fatalf("Registration failed")

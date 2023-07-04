@@ -113,7 +113,8 @@ func resolveAddr(addr string) ([]net.IP, []string) {
 // regenerated only if regenCerts is true. If they exist and
 // regenCerts is false then they are used.
 func generateCerts(certStore *CertStore, agentAddr string, regenCerts bool) ([]byte, error) {
-	if certStore.IsEmpty() {
+	empty, err := certStore.IsEmpty()
+	if empty {
 		log.Info("There are no agent certificates - they will be generated.")
 		regenCerts = true
 	} else if regenCerts {
@@ -366,7 +367,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 // server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added
 // to server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentAddr, agentPort string, certStore *CertStore, regenCerts bool, retry bool) bool {
+func Register(serverURL, serverToken, agentAddr, agentPort string, fileManager *AgentFileManager, regenCerts bool, retry bool) bool {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil || baseSrvURL.String() == "" {
@@ -390,6 +391,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, certStore *Ce
 		return false
 	}
 
+	certStore := NewCertStore(fileManager)
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCerts(certStore, agentAddr, regenCerts)
 	if err != nil {
