@@ -1,18 +1,59 @@
-import { Component, Input } from '@angular/core'
-import { LocalSubnet, Subnet } from '../backend'
+import { Component, Input, OnInit } from '@angular/core'
+import { KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { hasAddressPools, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
+import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 
+/**
+ * A component displaying a tab for a selected subnet.
+ */
 @Component({
     selector: 'app-subnet-tab',
     templateUrl: './subnet-tab.component.html',
     styleUrls: ['./subnet-tab.component.sass'],
 })
-export class SubnetTabComponent {
+export class SubnetTabComponent implements OnInit {
     /**
      * Subnet data.
      */
     @Input() subnet: Subnet
+
+    /**
+     * DHCP parameters structured for display by the @link CascadedParametersBoard
+     *
+     * The parameters are structured as an array of subnet-level, shared network-level
+     * and global parameters.
+     */
+    dhcpParameters: Array<NamedCascadedParameters<KeaConfigSubnetDerivedParameters>> = new Array()
+
+    /**
+     * A component lifecycle hook invoked upon the component initialization.
+     *
+     * It initializes the @link dhcpParameters arrray by combining the subnet-level,
+     * shared network-level and global parameters into an array. If the subnet does
+     * not belong to a shared network, the array only contains subnet-level and
+     * global parameters.
+     */
+    ngOnInit(): void {
+        if (this.subnet?.localSubnets) {
+            for (let ls of this.subnet.localSubnets) {
+                this.dhcpParameters.push({
+                    name: ls.appName,
+                    parameters:
+                        this.subnet.sharedNetwork?.length > 0
+                            ? [
+                                  ls.keaConfigSubnetParameters?.subnetLevelParameters,
+                                  ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters,
+                                  ls.keaConfigSubnetParameters?.globalParameters,
+                              ]
+                            : [
+                                  ls.keaConfigSubnetParameters?.subnetLevelParameters,
+                                  ls.keaConfigSubnetParameters?.globalParameters,
+                              ],
+                })
+            }
+        }
+    }
 
     /**
      * Checks if the subnet has IPv6 type.

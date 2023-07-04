@@ -45,12 +45,20 @@
                     <li><span class="monospace">declined</span> - the number of declined leases.</li>
                     <li><span class="monospace">declined</span> - the number of leases available for allocation.</li>
                 </ul>
+                <p>
+                    The DHCP parameters can be specified at different configuration levels and the subnet configuration
+                    can inherit them from the gloal and/or shared network level. The list below contains all parameters
+                    configured for all servers sharing the subnet, and at all configuration levels. An effective value
+                    is displayed next to a parameter name. You can expand a parameter by clicking the button to the left
+                    of the parameter name to view the values specified at the different levels for each server . The
+                    subnet-level value takes precedence over the shared network-level and the global values.
+                </p>
             </app-help-tip>
         </div>
     </div>
     <div class="mb-4">
         <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Subnet">
-            <p-table [value]="subnet.localSubnets">
+            <p-table [value]="subnet.localSubnets" styleClass="subnet-servers-table">
                 <ng-template pTemplate="header">
                     <tr>
                         <th>Server</th>
@@ -125,6 +133,16 @@
     >
         <p-fieldset id="stats-fieldset" legend="Statistics">
             <app-utilization-stats-charts [subnet]="subnet"></app-utilization-stats-charts>
+        </p-fieldset>
+    </div>
+    <div>
+        <p-fieldset legend="DHCP Parameters">
+            <app-cascaded-parameters-board
+                [levels]="
+                    subnet.sharedNetwork?.length > 0 ? ['Subnet', 'Shared Network', 'Global'] : ['Subnet', 'Global']
+                "
+                [data]="dhcpParameters"
+            ></app-cascaded-parameters-board>
         </p-fieldset>
     </div>
 </div>

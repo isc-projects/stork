@@ -19,6 +19,8 @@ import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-p
 import { SubnetTabComponent } from './subnet-tab.component'
 import { By } from '@angular/platform-browser'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
+import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import { ButtonModule } from 'primeng/button'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -27,6 +29,7 @@ describe('SubnetTabComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
+                ButtonModule,
                 ChartModule,
                 DividerModule,
                 FieldsetModule,
@@ -38,6 +41,7 @@ describe('SubnetTabComponent', () => {
             ],
             declarations: [
                 AddressPoolBarComponent,
+                CascadedParametersBoardComponent,
                 DelegatedPrefixBarComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
@@ -80,15 +84,30 @@ describe('SubnetTabComponent', () => {
                         'assigned-addresses': 70,
                         'declined-addresses': 10,
                     },
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            cacheThreshold: 0.25,
+                            cacheMaxAge: 1000,
+                        },
+                        sharedNetworkLevelParameters: {
+                            cacheThreshold: 0.3,
+                            cacheMaxAge: 900,
+                        },
+                        globalParameters: {
+                            cacheThreshold: 0.29,
+                            cacheMaxAge: 800,
+                        },
+                    },
                 },
             ],
         }
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
+        expect(fieldsets.length).toBe(4)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -103,6 +122,10 @@ describe('SubnetTabComponent', () => {
 
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(1)
+
+        expect(fieldsets[3].nativeElement.innerText).toContain('Cache Threshold')
+        expect(fieldsets[3].nativeElement.innerText).toContain('0.25')
+        expect(fieldsets[3].nativeElement.innerText).toContain('1000')
     })
 
     it('should display an IPv4 subnet without pools', () => {
@@ -133,7 +156,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
+        expect(fieldsets.length).toBe(4)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -142,6 +165,8 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
         expect(fieldsets[1].nativeElement.innerText).toContain('No pools configured.')
+
+        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
     })
 
     it('should display an IPv6 subnet', () => {
@@ -172,7 +197,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
+        expect(fieldsets.length).toBe(4)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -187,6 +212,8 @@ describe('SubnetTabComponent', () => {
 
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(1)
+
+        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
     })
 
     it('should display an IPv6 subnet with address pools and prefixes', () => {
@@ -228,7 +255,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(3)
+        expect(fieldsets.length).toBe(4)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -247,6 +274,8 @@ describe('SubnetTabComponent', () => {
 
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
+
+        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
     })
 
     it('should display an IPv6 subnet with different pools for different servers', () => {
@@ -310,7 +339,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -342,6 +371,8 @@ describe('SubnetTabComponent', () => {
 
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(6)
+
+        expect(fieldsets[4].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
     })
 
     it('should return shared network attributes for IPv6 subnet', () => {
