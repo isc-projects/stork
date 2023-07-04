@@ -289,7 +289,9 @@ func TestCreateMachine(t *testing.T) {
 	port := int64(8080)
 	serverToken := "serverToken" // it will be corrected later when server cert is generated
 	agentToken := "agentToken"
-	_, csrPEM, _, err := pki.GenKeyAndCSR("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")})
+	privKeyPEM, err := pki.GenKey()
+	require.NoError(t, err)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
 	require.NoError(t, err)
 	agentCSR := string(csrPEM)
 

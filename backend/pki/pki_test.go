@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Check if GetnCACert function works properly, i.e. returns non-empty
+// Check if GenCACert function works properly, i.e. returns non-empty
 // cert that has its fields set up to reasonable values.
 func TestGenCAKeyCert(t *testing.T) {
 	now := time.Now()
@@ -139,36 +139,14 @@ func TestGenCSRUsingKey(t *testing.T) {
 	require.True(t, ipAddresses[0].Equal(csr.IPAddresses[0]))
 }
 
-// Test if GenKeyAndCSR checks arguments passed to it and if returned
-// key and CSR looks reasonably.
-func TestGenKeyAndCSR(t *testing.T) {
-	// prepare arguments
-	name := "name"
-	dnsNames := []string{"name"}
-	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
+func TestGenKey(t *testing.T) {
+	// Arrange & Act
+	privKeyPEM, err := GenKey()
 
-	// empty DNS names and IP addresses
-	privKeyPEM, csrPEM, _, err := GenKeyAndCSR(name, nil, nil)
-	require.Nil(t, privKeyPEM)
-	require.Nil(t, csrPEM)
-	require.EqualError(t, err, "both DNS names and IP addresses cannot be empty")
-
-	// it should be ok
-	privKeyPEM, csrPEM, fingerprint, err := GenKeyAndCSR(name, dnsNames, ipAddresses)
+	// Assert
 	require.NoError(t, err)
-	require.NotEmpty(t, privKeyPEM)
-	require.NotEmpty(t, csrPEM)
-	require.NotEmpty(t, fingerprint)
-
-	// check csr PEM
-	pemBlock, _ := pem.Decode(csrPEM)
-	csr, err := x509.ParseCertificateRequest(pemBlock.Bytes)
-	require.NoError(t, err)
-	require.EqualValues(t, dnsNames[0], csr.DNSNames[0])
-	require.True(t, ipAddresses[0].Equal(csr.IPAddresses[0]))
-
-	// check private key PEM
-	pemBlock, _ = pem.Decode(privKeyPEM)
+	require.NotNil(t, privKeyPEM)
+	pemBlock, _ := pem.Decode(privKeyPEM)
 	privKeyIf, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
 	require.NoError(t, err)
 	privKey := privKeyIf.(*ecdsa.PrivateKey)
@@ -241,7 +219,9 @@ func TestSignCert(t *testing.T) {
 	name := "name"
 	dnsNames := []string{"name"}
 	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
-	_, csrPEM, _, err := GenKeyAndCSR(name, dnsNames, ipAddresses)
+	privKeyPEM, err := GenKey()
+	require.NoError(t, err)
+	csrPEM, _, err := GenCSRUsingKey(name, dnsNames, ipAddresses, privKeyPEM)
 	require.NoError(t, err)
 
 	// empty CSR
