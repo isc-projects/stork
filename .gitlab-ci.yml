@@ -48,8 +48,9 @@ stages:
       - webui/node_modules/
       - /root/.cache/go-build
       - /var/lib/dpkg/info
-    fallback_keys:
-      - debian-$CI_DEFAULT_BRANCH
+    # ToDo: Enable after update to Gitlab 16.0
+    # fallback_keys:
+    #   - debian-$CI_DEFAULT_BRANCH
   before_script:
     - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
