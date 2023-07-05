@@ -212,15 +212,15 @@ func (*CertStore) resolveAddress(address string) ([]net.IP, []string) {
 
 // Reads the content of the agent token file.
 // Returns an error if the file is not available or the content is invalid.
-func (s *CertStore) ReadToken() ([]byte, error) {
+func (s *CertStore) ReadToken() (string, error) {
 	content, err := s.readAgentTokenFile()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if err = s.isValidToken(content); err != nil {
-		return nil, err
+		return "", err
 	}
-	return content, nil
+	return string(content), nil
 }
 
 // Reads and parses the root CA file.
