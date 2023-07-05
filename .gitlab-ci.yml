@@ -45,7 +45,7 @@ stages:
     # Branch-level cache
     - key: debian-tools-$CI_COMMIT_REF_SLUG
       paths:
-        - tools/
+        - ./tools/
         - webui/node_modules/
         - /root/.cache/go-build
         # - /root/.cache/pip
@@ -61,7 +61,7 @@ stages:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
     - apt-get install -y python3-dev ruby-dev make python3-venv tree
-    - tree -d tools
+    - tree -d .
     - rake prepare --trace
     - rake prepare:deps
     - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}/tools" 2>/dev/null
