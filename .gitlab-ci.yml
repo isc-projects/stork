@@ -42,7 +42,7 @@ stages:
     - amd64
     - ssd
   cache:
-    key: debian-$CI_COMMIT_REF_SLUG
+    key: $CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
     paths:
       - tools/
       - webui/node_modules/
@@ -50,7 +50,7 @@ stages:
       - /var/lib/dpkg/info
     # ToDo: Enable after update to Gitlab 16.0
     # fallback_keys:
-    #   - debian-$CI_DEFAULT_BRANCH
+    #   - $CI_PROJECT_NAME-debian-$CI_DEFAULT_BRANCH
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -64,22 +64,24 @@ stages:
   rules:
     - when: always
   cache:
-    key: one-shared-key-rpm-2
+    key: $CI_PROJECT_NAME-ubi-$CI_COMMIT_REF_SLUG
     paths:
-    - webui/node_modules/
-    - tools/
+      - tools/
+      - webui/node_modules/
+      - /root/.cache/go-build
+    # ToDo: Enable after update to Gitlab 16.0
+    # fallback_keys:
+    #   - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:latest
   tags:
     - linux
     - amd64
     - ssd
   before_script:
-    - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare
     - rake prepare:deps
-    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
 
 lint_backend:
   extends: .base_build_debian
@@ -210,24 +212,25 @@ build_apks:
   rules:
     - when: always
   cache:
-    key: one-shared-key-apk-1
+    key: $CI_PROJECT_NAME-alpine-$CI_COMMIT_REF_SLUG
     paths:
-    - webui/node_modules/
-    - tools/
+      - webui/node_modules/
+      - tools/
+    # ToDo: Enable after update to Gitlab 16.0
+    # fallback_keys:
+    #   - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
   image: golang:1.18-alpine3.15
   tags:
     - linux
     - amd64
     - ssd
   before_script:
-    # - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     # The initially installed TAR causes FPM to fail. It must be reinstalled: https://github.com/jordansissel/fpm/issues/1375#issuecomment-317571946
     - apk add --no-cache ruby-rake ruby-dev openjdk11-jre-headless python3 nodejs npm protoc~3.18.1 make gcc musl-dev tar
     - rake prepare:dist
     - rake prepare:deps
-    # - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -353,16 +356,17 @@ system_testing:
     - when: on_success
   image: docker/compose:1.29.2
   cache:
-    key: system-tests-key-2
+    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
     paths:
-    - tools/
+      - tools/
+    # ToDo: Enable after update to Gitlab 16.0
+    # fallback_keys:
+    #   - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
-    # - my_now=$(date --rfc-3339=seconds)
     - ip -6 route del default
     - apk update
     - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
     - rake prepare:systemtest
-    # - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
   variables:
     # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
     # binary fetched by the Rake script. Additionally, the binaries for alpine
