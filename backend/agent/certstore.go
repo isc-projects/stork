@@ -23,12 +23,32 @@ var (
 )
 
 // An utility structure to perform actions on the GRPC/TLS certificate files.
-type CertStore struct{}
+type CertStore struct {
+	keyPEMPath     string
+	certPEMPath    string
+	rootCAPEMPath  string
+	agentTokenPath string
+}
 
 // Constructs a new cert store instance. It has a short lifetime, may
 // be constructed on demand.
 func NewCertStore() *CertStore {
-	return &CertStore{}
+	return &CertStore{
+		keyPEMPath:     KeyPEMFile,
+		certPEMPath:    CertPEMFile,
+		rootCAPEMPath:  RootCAFile,
+		agentTokenPath: AgentTokenFile,
+	}
+}
+
+// Constructs a new cert store instance with custom file paths.
+func NewCustomCertStore(key, cert, ca, token string) *CertStore {
+	return &CertStore{
+		keyPEMPath:     key,
+		certPEMPath:    cert,
+		rootCAPEMPath:  ca,
+		agentTokenPath: token,
+	}
 }
 
 // Checks if the file content is a valid certificate in a PEM format.
@@ -62,54 +82,30 @@ func (*CertStore) read(path string) ([]byte, error) {
 
 // Reads the agent token.
 func (s *CertStore) readAgentTokenFile() ([]byte, error) {
-	content, err := s.read(AgentTokenFile)
+	content, err := s.read(s.agentTokenPath)
 	err = errors.WithMessage(err, "could not read the agent token")
 	return content, err
 }
 
 // Reads the cert file.
 func (s *CertStore) readCert() ([]byte, error) {
-	content, err := s.read(CertPEMFile)
+	content, err := s.read(s.certPEMPath)
 	err = errors.WithMessage(err, "could not read the cert")
 	return content, err
 }
 
 // Reads the root CA file.
 func (s *CertStore) readRootCA() ([]byte, error) {
-	content, err := s.read(RootCAFile)
+	content, err := s.read(s.rootCAPEMPath)
 	err = errors.WithMessage(err, "could not read the root CA")
 	return content, err
 }
 
 // Reads the private key file.
 func (s *CertStore) readPrivateKey() ([]byte, error) {
-	content, err := s.read(KeyPEMFile)
+	content, err := s.read(s.keyPEMPath)
 	err = errors.WithMessage(err, "could not read the private key")
 	return content, err
-}
-
-// Writes the agent token.
-func (s *CertStore) writeAgentToken(content []byte) error {
-	err := s.write(AgentTokenFile, content)
-	return errors.WithMessage(err, "could not write the agent token")
-}
-
-// Writes the cert file.
-func (s *CertStore) writeCert(content []byte) error {
-	err := s.write(CertPEMFile, content)
-	return errors.WithMessage(err, "could not write the cert")
-}
-
-// Writes the root CA.
-func (s *CertStore) writeRootCA(content []byte) error {
-	err := s.write(RootCAFile, content)
-	return errors.WithMessage(err, "could not write the root CA")
-}
-
-// Writes the private key.
-func (s *CertStore) writePrivateKey(content []byte) error {
-	err := s.write(KeyPEMFile, content)
-	return errors.WithMessage(err, "could not write the private key")
 }
 
 // Writes the content to a file. If the file exists, it is overwritten.
@@ -128,6 +124,30 @@ func (s *CertStore) write(path string, content []byte) error {
 		return errors.Wrapf(err, "could not write the file: %s", path)
 	}
 	return nil
+}
+
+// Writes the agent token.
+func (s *CertStore) writeAgentToken(content []byte) error {
+	err := s.write(s.agentTokenPath, content)
+	return errors.WithMessage(err, "could not write the agent token")
+}
+
+// Writes the cert file.
+func (s *CertStore) writeCert(content []byte) error {
+	err := s.write(s.certPEMPath, content)
+	return errors.WithMessage(err, "could not write the cert")
+}
+
+// Writes the root CA.
+func (s *CertStore) writeRootCA(content []byte) error {
+	err := s.write(s.rootCAPEMPath, content)
+	return errors.WithMessage(err, "could not write the root CA")
+}
+
+// Writes the private key.
+func (s *CertStore) writePrivateKey(content []byte) error {
+	err := s.write(s.keyPEMPath, content)
+	return errors.WithMessage(err, "could not write the private key")
 }
 
 // Checks if a given path exists on a filesystem.
@@ -252,7 +272,7 @@ func (s *CertStore) CreateKey() error {
 	}
 
 	// Invalidate cert, root CA and token.
-	for _, path := range []string{CertPEMFile, RootCAFile, AgentTokenFile} {
+	for _, path := range []string{s.certPEMPath, s.rootCAPEMPath, s.agentTokenPath} {
 		if err = s.removeIfExist(path); err != nil {
 			return err
 		}
@@ -265,7 +285,7 @@ func (s *CertStore) CreateKey() error {
 // error.
 func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint [32]byte, err error) {
 	agentIPs, agentNames := s.resolveAddress(agentAddress)
-	keyPEM, err := s.read(KeyPEMFile)
+	keyPEM, err := s.readPrivateKey()
 	if err != nil {
 		return
 	}
@@ -345,16 +365,16 @@ func (s *CertStore) IsValid() error {
 
 // Check if all files managed by the cert store are missing.
 func (s *CertStore) IsEmpty() (bool, error) {
-	if ok, err := s.isExist(KeyPEMFile); ok || err != nil {
+	if ok, err := s.isExist(s.keyPEMPath); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.isExist(CertPEMFile); ok || err != nil {
+	if ok, err := s.isExist(s.certPEMPath); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.isExist(RootCAFile); ok || err != nil {
+	if ok, err := s.isExist(s.rootCAPEMPath); ok || err != nil {
 		return false, err
 	}
-	if ok, err := s.isExist(AgentTokenFile); ok || err != nil {
+	if ok, err := s.isExist(s.agentTokenPath); ok || err != nil {
 		return false, err
 	}
 	return true, nil

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
@@ -36,6 +37,31 @@ func (e *ctrlcError) Error() string {
 	return "received Ctrl-C signal"
 }
 
+func createHTTPClient(settings *cli.Context) *agent.HTTPClient {
+	// Configure TLS used to connect to connect over HTTP with Stork server,
+	// Kea Control Agent, and named statistics endpoint.
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"),
+	}
+	tlsCertPath := settings.Path("tls-certificate")
+	tlsKeyPath := settings.Path("tls-key")
+	tlsRootCAPath := settings.Path("tls-ca")
+	tlsCertStore := agent.NewCustomCertStore(tlsCertPath, tlsKeyPath, tlsRootCAPath, "")
+
+	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
+	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
+	err := storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
+	if err == nil {
+		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
+		tlsConfig.RootCAs = tlsRootCA
+		log.Info("Configured TLS for HTTP connections.")
+	} else {
+		log.WithError(err).Warning("TLS for HTTP connections is not configured")
+	}
+
+	return agent.NewHTTPClient(tlsConfig)
+}
+
 // Helper function that starts agent, apps monitor and prometheus exports
 // if they are enabled.
 func runAgent(settings *cli.Context, reload bool) error {
@@ -59,22 +85,25 @@ func runAgent(settings *cli.Context, reload bool) error {
 		}
 	}
 
-	// Try registering the agent in the server using the agent token
+	// Try registering the agent in the server using the agent token.
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
+		httpClient := createHTTPClient(settings)
+		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true, httpClient) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
 
-	// Start app monitor
+	// Start app monitor.
 	appMonitor := agent.NewAppMonitor()
 
+	// Prepare HTTP client. It may use the certificates obtained during the registration.
+	httpClient := createHTTPClient(settings)
+
 	// Prepare agent gRPC handler
-	httpClient := agent.NewHTTPClient(settings.Bool("skip-tls-cert-verification"))
 	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, hookManager)
 
-	// Prepare Prometheus exporters
+	// Prepare Prometheus exporters.
 	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor, httpClient)
 	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor, httpClient)
 
@@ -145,7 +174,8 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false) {
+	httpClient := createHTTPClient(cfg)
+	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false, httpClient) {
 		log.Println("Registration completed successfully")
 	} else {
 		log.Fatalf("Registration failed")
@@ -170,12 +200,32 @@ func setupApp(reload bool) *cli.App {
 		Usage:   "Print the version",
 	}
 
+	tlsFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name:    "tls-certificate",
+			Usage:   "The certificate to use for secure HTTP connections, in the PEM format",
+			Value:   agent.CertPEMFile,
+			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CERTIFICATE"},
+		},
+		&cli.StringFlag{
+			Name:    "tls-key",
+			Usage:   "The private key to use for secure HTTP connections, in the PEM format",
+			Value:   agent.KeyPEMFile,
+			EnvVars: []string{"STORK_AGENT_HTTP_TLS_PRIVATE_KEY"},
+		},
+		&cli.StringFlag{
+			Name:    "tls-ca",
+			Usage:   "The certificate authority file to be used with mutual tls auth, in the PEM format",
+			Value:   agent.RootCAFile,
+			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CA_CERTIFICATE"},
+		},
+	}
 	app := &cli.App{
 		Name:     "Stork Agent",
 		Usage:    "This component is required on each machine to be monitored by the Stork Server",
 		Version:  stork.Version,
 		HelpName: "stork-agent",
-		Flags: []cli.Flag{
+		Flags: append([]cli.Flag{
 			&cli.StringFlag{
 				Name:    "host",
 				Value:   "0.0.0.0",
@@ -284,7 +334,7 @@ func setupApp(reload bool) *cli.App {
 				Value:   "INFO",
 				EnvVars: []string{"STORK_LOG_LEVEL"},
 			},
-		},
+		}, tlsFlags...),
 		Before: func(c *cli.Context) error {
 			if c.Bool("use-env-file") {
 				err := storkutil.LoadEnvironmentFileToSetter(
@@ -323,7 +373,7 @@ func setupApp(reload bool) *cli.App {
 If server access token is provided using --server-token, then the agent is automatically
 authorized (server-token-based registration). Otherwise, the agent requires explicit
 authorization in the server using either the UI or the ReST API (agent-token-based registration).`,
-				Flags: []cli.Flag{
+				Flags: append([]cli.Flag{
 					&cli.StringFlag{
 						Name:    "server-url",
 						Usage:   "URL of Stork Server",
@@ -342,7 +392,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 						Aliases: []string{"a"},
 						EnvVars: []string{"STORK_AGENT_HOST"},
 					},
-				},
+				}, tlsFlags...),
 				Action: func(c *cli.Context) error {
 					runRegister(c)
 					return nil

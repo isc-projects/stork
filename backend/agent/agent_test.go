@@ -63,7 +63,7 @@ func setupAgentTest() (*StorkAgent, context.Context) {
 // Initializes StorkAgent instance and context used by the tests. Loads the
 // given list of callout carriers (hooks' contents).
 func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context) {
-	httpClient := NewHTTPClient(true)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: true})
 	gock.InterceptClient(httpClient.client)
 
 	fam := FakeAppMonitor{}
@@ -121,7 +121,7 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient(false)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)

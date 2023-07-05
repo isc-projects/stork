@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -130,20 +129,16 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 // is established. This case is used when agent automatically tries to register
 // during startup.
 // If the agent is already registered then only ID is returned, the certificates are empty.
-func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (int64, string, string, error) {
+func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (int64, string, string, error) {
 	url, _ := baseSrvURL.Parse("api/machines")
 	var err error
 	var resp *http.Response
 	for {
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url.String(), reqPayload)
-		if err != nil {
-			return 0, "", "", errors.Wrapf(err, "problem preparing registering request")
-		}
-		req.Header.Add("Content-Type", "application/json")
-		resp, err = client.Do(req)
+		resp, err = client.Call(url.String(), reqPayload)
 		if err == nil {
 			break
 		}
+		resp.Body.Close()
 
 		// If connection is refused and retries are enabled than wait for 10 seconds
 		// and try again. This method is used in case of agent token based registration
@@ -254,7 +249,7 @@ func checkAndStoreCerts(certStore *CertStore, serverCACert, agentCert []byte) er
 
 // Ping Stork Agent service via Stork Server. It is used during manual registration
 // to confirm that TLS connection between agent and server can be established.
-func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int64, serverToken, agentToken string) error {
+func pingAgentViaServer(client *HTTPClient, baseSrvURL *url.URL, machineID int64, serverToken, agentToken string) error {
 	urlSuffix := fmt.Sprintf("api/machines/%d/ping", machineID)
 	url, err := baseSrvURL.Parse(urlSuffix)
 	if err != nil {
@@ -265,12 +260,8 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 		"agentToken":  agentToken,
 	}
 	jsonReq, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url.String(), bytes.NewBuffer(jsonReq))
-	if err != nil {
-		return errors.Wrapf(err, "problem preparing http request")
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(httpReq)
+
+	resp, err := client.Call(url.String(), bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return errors.Wrapf(err, "problem pinging machine")
 	}
@@ -281,8 +272,8 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 	}
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
-	// normally the response is empty so unmarshalling is failing, if it didn't fail it means
-	// that there could be some error information
+	// Normally the response is empty so unmarshalling is failing, if it didn't
+	// fail it means that there could be some error information.
 	if err == nil {
 		errTxt := result["error"]
 		if errTxt != nil {
@@ -328,7 +319,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 // server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added
 // to server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bool, retry bool) bool {
+func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bool, retry bool, httpClient *HTTPClient) bool {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil || baseSrvURL.String() == "" {
@@ -382,9 +373,6 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		log.Println("It will be sent to the server but it is not directly used in this type of machine registration")
 	}
 
-	// prepare http client to connect to Stork Server
-	client := &http.Client{}
-
 	// register new machine i.e. current agent
 	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken2, agentToken, agentAddr, agentPortInt)
 	if err != nil {
@@ -392,7 +380,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		return false
 	}
 	log.Println("Try to register agent in Stork Server")
-	machineID, serverCACert, agentCert, err := registerAgentInServer(client, baseSrvURL, reqPayload, retry)
+	machineID, serverCACert, agentCert, err := registerAgentInServer(httpClient, baseSrvURL, reqPayload, retry)
 	if err != nil {
 		log.Errorln(err.Error())
 		return false
@@ -411,7 +399,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	if serverToken2 != "" {
 		// invoke getting machine state via server
 		for i := 1; i < 4; i++ {
-			err = pingAgentViaServer(client, baseSrvURL, machineID, serverToken2, agentToken)
+			err = pingAgentViaServer(httpClient, baseSrvURL, machineID, serverToken2, agentToken)
 			if err == nil {
 				break
 			}

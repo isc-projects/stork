@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -21,7 +22,7 @@ func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	require.NotNil(t, client)
 
 	transport := client.client.Transport.(*http.Transport)
@@ -48,7 +49,7 @@ func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
 	RootCAFile = "/not/exists/path"
 	AgentTokenFile = "/not/exists/path"
 
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	require.NotNil(t, client)
 
 	transport := client.client.Transport.(*http.Transport)
@@ -65,7 +66,7 @@ func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
 // Check that HTTP client may be set to skip a server
 // credentials validation.
 func TestCreateHTTPClientSkipVerification(t *testing.T) {
-	client := NewHTTPClient(true)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: true})
 	require.NotNil(t, client)
 
 	transport := client.client.Transport.(*http.Transport)
@@ -124,7 +125,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create HTTP Client
-	client := NewHTTPClient(true)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: true})
 	require.NotNil(t, client.credentials)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
@@ -145,7 +146,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewHTTPClient(true)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: true})
 	require.NotNil(t, client.credentials)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
@@ -163,7 +164,7 @@ func TestCallWithMissingBody(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	res, err := client.Call(ts.URL, nil)
 	require.NoError(t, err)
 	defer res.Body.Close()
@@ -194,7 +195,7 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 
 	// Act
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 
 	// Assert
 	require.True(t, client.HasAuthenticationCredentials())
@@ -217,7 +218,7 @@ func TestHasAuthenticationCredentialsEmptyFile(t *testing.T) {
 	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 
 	// Act
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 
 	// Assert
 	require.False(t, client.HasAuthenticationCredentials())
@@ -233,7 +234,7 @@ func TestHasAuthenticationCredentialsMissingFile(t *testing.T) {
 	CredentialsFile = "/not/exist/file.json"
 
 	// Act
-	client := NewHTTPClient(false)
+	client := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 
 	// Assert
 	require.False(t, client.HasAuthenticationCredentials())

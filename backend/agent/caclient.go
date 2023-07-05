@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	storkutil "isc.org/stork/util"
 )
 
 // CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
@@ -25,33 +24,11 @@ type HTTPClient struct {
 }
 
 // Create a client to contact with Kea Control Agent or named statistics-channel.
-// If @skipTLSVerification is true then it doesn't verify the server credentials
-// over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
-	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
-	// The instance of the client which is created here disables HTTP/2 and should
-	// be used whenever the communication with the Kea servers is required.
-	// append the client certificates from the CA
-	tlsConfig := tls.Config{
-		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
-	}
-
-	certStore := NewCertStore()
-
-	certPool, err1 := certStore.ReadRootCA()
-	certificate, err2 := certStore.ReadTLSCert()
-	if err1 == nil && err2 == nil {
-		tlsConfig.RootCAs = certPool
-		tlsConfig.Certificates = []tls.Certificate{*certificate}
-	} else {
-		err := storkutil.CombineErrors("cannot read certificates", []error{err1, err2})
-		log.WithError(err).Warnf("Cannot read TLS credentials, use HTTP protocol")
-	}
-
+func NewHTTPClient(tlsConfig *tls.Config) *HTTPClient {
 	httpTransport := &http.Transport{
 		// Creating empty, non-nil map here disables the HTTP/2.
 		TLSNextProto:    make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
-		TLSClientConfig: &tlsConfig,
+		TLSClientConfig: tlsConfig,
 	}
 
 	httpClient := &http.Client{

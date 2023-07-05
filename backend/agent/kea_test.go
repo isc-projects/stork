@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 
 // Test the case that the command is successfully sent to Kea.
 func TestSendCommand(t *testing.T) {
-	httpClient := NewHTTPClient(false)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	gock.InterceptClient(httpClient.client)
 
 	// Expect appropriate content type and the body. If they are not matched
@@ -42,7 +43,7 @@ func TestSendCommand(t *testing.T) {
 
 // Test the case when Kea returns invalid response to the command.
 func TestSendCommandInvalidResponse(t *testing.T) {
-	httpClient := NewHTTPClient(false)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	gock.InterceptClient(httpClient.client)
 
 	// Return invalid response. Arguments must be a map not an integer.
@@ -76,7 +77,7 @@ func TestSendCommandNoKea(t *testing.T) {
 			Type:         AppTypeKea,
 			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
 		},
-		HTTPClient: NewHTTPClient(false),
+		HTTPClient: NewHTTPClient(&tls.Config{InsecureSkipVerify: false}),
 	}
 	responses := keactrl.ResponseList{}
 	err := ka.sendCommand(command, &responses)
@@ -87,7 +88,7 @@ func TestSendCommandNoKea(t *testing.T) {
 // application by sending the request to the Kea Control Agent and the
 // daemons behind it.
 func TestKeaAllowedLogs(t *testing.T) {
-	httpClient := NewHTTPClient(false)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	gock.InterceptClient(httpClient.client)
 
 	// The first config-get command should go to the Kea Control Agent.
@@ -195,7 +196,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 // from the Kea daemons is lower than the number of services specified in the
 // command.
 func TestKeaAllowedLogsFewerResponses(t *testing.T) {
-	httpClient := NewHTTPClient(false)
+	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
 	gock.InterceptClient(httpClient.client)
 
 	defer gock.Off()
