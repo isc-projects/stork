@@ -451,12 +451,7 @@ end
 ### Define dependencies
 
 # Directories
-# Allows to override the default tools location.
-tools_dir = ENV["STORK_TOOLS_ROOT"]
-if tools_dir.nil?
-    tools_dir = "tools"
-end
-tools_dir = File.expand_path(tools_dir)
+tools_dir = File.expand_path("tools")
 directory tools_dir
 
 node_dir = File.join(tools_dir, "nodejs")
