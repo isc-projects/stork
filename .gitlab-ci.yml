@@ -79,10 +79,12 @@ stages:
     - amd64
     - ssd
   before_script:
+    - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare
     - rake prepare:deps
+    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" 2>/dev/null
 
 lint_backend:
   extends: .base_build_debian
