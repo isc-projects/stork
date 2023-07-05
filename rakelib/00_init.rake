@@ -473,7 +473,7 @@ end
 ### Define dependencies
 
 # Directories
-tools_dir = File.expand_path("tools")
+tools_dir = File.expand_path('tools')
 directory tools_dir
 
 node_dir = File.join(tools_dir, "nodejs")
