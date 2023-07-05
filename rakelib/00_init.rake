@@ -451,7 +451,12 @@ end
 ### Define dependencies
 
 # Directories
-tools_dir = File.expand_path('tools')
+# Allows to override the default tools location.
+tools_dir = ENV["STORK_TOOLS_ROOT"]
+if tools_dir.nil?
+    tools_dir = "tools"
+end
+tools_dir = File.expand_path(tools_dir)
 directory tools_dir
 
 node_dir = File.join(tools_dir, "nodejs")
@@ -987,7 +992,7 @@ file PIP => [PYTHON] do
     sh PIP, "--version"
 end
 
-SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
+SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
 file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
     sh PIP, "install", "-r", sphinx_requirements_file
@@ -995,7 +1000,7 @@ file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
     sh SPHINX_BUILD, "--version"
 end
 
-PYTEST = File.expand_path("tools/python/bin/pytest")
+PYTEST = File.join(python_tools_dir, "bin", "pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
 file PYTEST => [PIP, pytests_requirements_file] do
     sh PIP, "install", "-r", pytests_requirements_file
@@ -1003,14 +1008,14 @@ file PYTEST => [PIP, pytests_requirements_file] do
     sh PYTEST, "--version"
 end
 
-PIP_COMPILE = File.expand_path("tools/python/bin/pip-compile")
+PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
     sh PIP, "install", "pip-tools"
     sh "touch", "-c", PIP_COMPILE
     sh PIP_COMPILE, "--version"
 end
 
-PYLINT = File.expand_path("tools/python/bin/pylint")
+PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
 file PYLINT => [PIP, python_linters_requirements_file] do
     sh PIP, "install", "-r", python_linters_requirements_file
@@ -1018,10 +1023,18 @@ file PYLINT => [PIP, python_linters_requirements_file] do
     sh PYLINT, "--version"
 end
 
-FLAKE8 = File.expand_path("tools/python/bin/flake8")
+FLAKE8 = File.join(python_tools_dir, "bin", "flake8")
 file FLAKE8 => [PYLINT] do
     sh "touch", "-c", FLAKE8
     sh FLAKE8, "--version"
+end
+
+FLASK = File.join(python_tools_dir, "bin", "flask")
+flask_requirements_file = "tests/sim/requirements.txt"
+file FLASK => [PIP, flask_requirements_file] do
+    sh PIP, "install", "-r", flask_requirements_file
+    sh "touch", "-c", FLASK
+    sh FLASK, "--version"
 end
 
 #############
