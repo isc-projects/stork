@@ -42,19 +42,14 @@ stages:
     - amd64
     - ssd
   cache:
-    # Branch-level cache
-    - key: debian-tools-$CI_COMMIT_REF_SLUG
-      paths:
-        - ./tools/
-        - webui/node_modules/
-        - /root/.cache/go-build
-        # - /root/.cache/pip
-        # - /root/.bundle/cache
-    # Runner-level cache
-    - key: debian-system
-      paths:
-        - /var/lib/dpkg/info
-
+    key: debian-$CI_COMMIT_REF_SLUG
+    paths:
+      - ./tools/
+      - webui/node_modules/
+      - /root/.cache/go-build
+      - /var/lib/dpkg/info
+    fallback_keys:
+      - debian-$CI_DEFAULT_BRANCH
   before_script:
     - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
@@ -64,7 +59,7 @@ stages:
     - tree -d tools
     - rake prepare --trace
     - rake prepare:deps
-    # - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
+    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}/*" 2>/dev/null
 
 .base_build_ubi:
   stage: checks
@@ -81,7 +76,7 @@ stages:
     - amd64
     - ssd
   before_script:
-    - my_now=$(date --rfc-3339=seconds)
+    # - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare
@@ -227,7 +222,7 @@ build_apks:
     - amd64
     - ssd
   before_script:
-    - my_now=$(date --rfc-3339=seconds)
+    # - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     # The initially installed TAR causes FPM to fail. It must be reinstalled: https://github.com/jordansissel/fpm/issues/1375#issuecomment-317571946
@@ -364,7 +359,7 @@ system_testing:
     paths:
     - tools/
   before_script:
-    - my_now=$(date --rfc-3339=seconds)
+    # - my_now=$(date --rfc-3339=seconds)
     - ip -6 route del default
     - apk update
     - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
