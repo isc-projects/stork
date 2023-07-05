@@ -64,7 +64,7 @@ stages:
     - tree -d .
     - rake prepare --trace
     - rake prepare:deps
-    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
+    # - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" -not -path "${PWD}" 2>/dev/null
 
 .base_build_ubi:
   stage: checks
