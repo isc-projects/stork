@@ -23,6 +23,16 @@ python_requirement_files = [
     "tests/sim/requirements.in",
 ]
 
+#################
+### Simulator ###
+#################
+
+flask_requirements_file = "tests/sim/requirements.txt"
+flask = File.expand_path("tools/python/bin/flask")
+file flask => [PIP, flask_requirements_file] do
+    sh PIP, "install", "-r", flask_requirements_file
+end
+
 #############
 ### Tasks ###
 #############
@@ -293,7 +303,7 @@ end
 
 namespace :run do
     desc 'Run simulator'
-    task :sim => [FLASK] do
+    task :sim => [flask] do
         ENV["STORK_SERVER_URL"] = "http://localhost:8080"
         ENV["FLASK_ENV"] = "development"
         ENV["FLASK_APP"] = "sim.py"
@@ -301,7 +311,7 @@ namespace :run do
         ENV["LANG"] = "C.UTF-8"
 
         Dir.chdir('tests/sim') do
-            sh FLASK, "run", "--host", "0.0.0.0", "--port", "5005"
+            sh flask, "run", "--host", "0.0.0.0", "--port", "5005"
         end
     end
 

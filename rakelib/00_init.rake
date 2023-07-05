@@ -1049,15 +1049,6 @@ file FLAKE8 => [PYLINT] do
     sh FLAKE8, "--version"
 end
 
-FLASK = File.join(python_tools_dir, "bin", "flask")
-flask_requirements_file = "tests/sim/requirements.txt"
-file FLASK => [PIP] do
-    sh PIP, "install", "-r", flask_requirements_file
-    sh "touch", "-c", FLASK
-    sh FLASK, "--version"
-end
-add_hash_guard(FLASK, flask_requirements_file)
-
 #############
 ### Tasks ###
 #############
