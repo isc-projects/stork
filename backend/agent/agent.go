@@ -64,7 +64,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient *HTT
 
 func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
 	return func(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
-		certPool, err := certStore.GetRootCA()
+		certPool, err := certStore.ReadRootCA()
 		if err != nil {
 			log.WithError(err).Error("Cannot extract root CA")
 			return nil, err
@@ -78,7 +78,7 @@ func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.Ge
 
 func createGetIdentityCertificatesForServerHandler(certStore *CertStore) func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
 	return func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
-		certificate, err := certStore.GetTLSCert()
+		certificate, err := certStore.ReadTLSCert()
 		if err != nil {
 			log.WithError(err).Error("Could not setup TLS key pair")
 			return nil, err

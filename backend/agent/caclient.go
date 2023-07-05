@@ -38,8 +38,8 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 
 	certStore := NewCertStore()
 
-	certPool, err1 := certStore.GetRootCA()
-	certificate, err2 := certStore.GetTLSCert()
+	certPool, err1 := certStore.ReadRootCA()
+	certificate, err2 := certStore.ReadTLSCert()
 	if err1 == nil && err2 == nil {
 		tlsConfig.RootCAs = certPool
 		tlsConfig.Certificates = []tls.Certificate{*certificate}
