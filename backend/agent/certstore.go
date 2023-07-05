@@ -32,7 +32,7 @@ type CertStore struct {
 
 // Constructs a new cert store instance. It has a short lifetime, may
 // be constructed on demand.
-func NewCertStore() *CertStore {
+func NewCertStoreTLSForGRPC() *CertStore {
 	return &CertStore{
 		keyPEMPath:     KeyPEMFile,
 		certPEMPath:    CertPEMFile,
@@ -42,7 +42,7 @@ func NewCertStore() *CertStore {
 }
 
 // Constructs a new cert store instance with custom file paths.
-func NewCustomCertStore(key, cert, ca, token string) *CertStore {
+func NewCertStoreCustom(key, cert, ca, token string) *CertStore {
 	return &CertStore{
 		keyPEMPath:     key,
 		certPEMPath:    cert,

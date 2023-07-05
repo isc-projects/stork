@@ -343,7 +343,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		return false
 	}
 
-	certStore := NewCertStore()
+	certStore := NewCertStoreTLSForGRPC()
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCSR(certStore, agentAddr, regenCerts)
 	if err != nil {

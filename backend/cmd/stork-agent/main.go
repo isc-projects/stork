@@ -58,7 +58,7 @@ func createHTTPClient(settings *cli.Context) (*agent.HTTPClient, error) {
 		tlsRootCAPath = agent.RootCAFile
 	}
 
-	tlsCertStore := agent.NewCustomCertStore(tlsCertPath, tlsKeyPath, tlsRootCAPath, "")
+	tlsCertStore := agent.NewCertStoreCustom(tlsKeyPath, tlsCertPath, tlsRootCAPath, "")
 
 	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
 	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
