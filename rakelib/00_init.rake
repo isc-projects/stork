@@ -6,6 +6,7 @@
 # It means that they don't change very often
 # and can be cached for later use.
 
+require 'digest'
 require 'open3'
 
 # Cross-platform way of finding an executable in the $PATH.
@@ -187,37 +188,58 @@ def check_deps(file)
         .each { |args| print_status(*args) }
 end
 
-# Defines the version guard for a file task. The version guard allows file
-# tasks to depend on the version from the Rake variable. Using it for the tasks
-# that have frozen versions using external files is not necessary.
-# It accepts a task to be guarded and the version.
-def add_version_guard(task_name, version)
+# General-purpose guard for file tasks. It generates an empty file with the
+# name composed of task name, arbitrary identifier, and suffix. The file is
+# appended to the task prerequisites list.
+# The guarded file task will be re-executed if the identifier is updated.
+# It allows file tasks to depend on non-standard conditions.
+def add_guard(task_name, identifier, suffix)
     task = Rake::Task[task_name]
     if task.class != Rake::FileTask
         fail "file task required"
     end
 
-    # We don't use the version guard for the prerequisities that must be
+    # We don't use the guard for the prerequisities that must be
     # installed manually on current operating system
     if task.instance_variable_get(:@manuall_install)
         return
     end
 
-    # The version stamp file is a prerequisite, but it is created after the
+    # The stamp file is a prerequisite, but it is created after the
     # guarded task. It allows for cleaning the target directory in the task
     # body.
-    version_stamp = "#{task_name}-#{version}.version"
-    file version_stamp
-    task.enhance [version_stamp] do
-        # Removes old version stamps
-        FileList["#{task_name}-*.version"].each do |f|
+    stamp = "#{task_name}-#{identifier}.#{suffix}"
+    file stamp
+    task.enhance [stamp] do
+        # Removes old stamps
+        FileList["#{task_name}-*.#{suffix}"].each do |f|
             FileUtils.rm f
         end
-        # Creates a new version stamp with a timestamp before the guarded task
+        # Creates a new stamp with a timestamp before the guarded task
         # execution.
-        FileUtils.touch [version_stamp], mtime: task.timestamp
+        FileUtils.touch [stamp], mtime: task.timestamp
     end
 end
+
+# Defines the version guard for a file task. The version guard allows file
+# tasks to depend on the version from the Rake variable. Using it for the tasks
+# that have frozen versions using external files is not necessary.
+# It accepts a task to be guarded and the version.
+def add_version_guard(task_name, version)
+    add_guard(task_name, version, "version")
+end
+
+# Defines the hash guard for a file task. The hash guard allows file tasks to
+# depend on the hash file instead of its timestamp. It prevents re-executing
+# tasks that depend on the external files while their dependencies are
+# refreshed but not changed (e.g., the repository is re-cloned). 
+# It accepts a task to be guarded and the dependency file.
+# The dependency file should not included in the prerequite list of the task.
+def add_hash_guard(task_name, prerequisite_file)
+    hash = Digest::SHA256.file(prerequisite_file).hexdigest
+    add_guard(task_name, hash, "hash")
+end
+
 
 # Defines a file task with no logic and always has the "not needed" status.
 # The file task is rebuilt if the task target is updated (the modification date
@@ -989,19 +1011,21 @@ end
 
 SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
-file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
+file SPHINX_BUILD => [PIP] do
     sh PIP, "install", "-r", sphinx_requirements_file
     sh "touch", "-c", SPHINX_BUILD
     sh SPHINX_BUILD, "--version"
 end
+add_hash_guard(SPHINX_BUILD, sphinx_requirements_file)
 
 PYTEST = File.join(python_tools_dir, "bin", "pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
-file PYTEST => [PIP, pytests_requirements_file] do
+file PYTEST => [PIP] do
     sh PIP, "install", "-r", pytests_requirements_file
     sh "touch", "-c", PYTEST
     sh PYTEST, "--version"
 end
+add_hash_guard(PYTEST, pytests_requirements_file)
 
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
@@ -1012,11 +1036,12 @@ end
 
 PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
-file PYLINT => [PIP, python_linters_requirements_file] do
+file PYLINT => [PIP] do
     sh PIP, "install", "-r", python_linters_requirements_file
     sh "touch", "-c", PYLINT
     sh PYLINT, "--version"
 end
+add_hash_guard(PYLINT, python_linters_requirements_file)
 
 FLAKE8 = File.join(python_tools_dir, "bin", "flake8")
 file FLAKE8 => [PYLINT] do
@@ -1026,11 +1051,12 @@ end
 
 FLASK = File.join(python_tools_dir, "bin", "flask")
 flask_requirements_file = "tests/sim/requirements.txt"
-file FLASK => [PIP, flask_requirements_file] do
+file FLASK => [PIP] do
     sh PIP, "install", "-r", flask_requirements_file
     sh "touch", "-c", FLASK
     sh FLASK, "--version"
 end
+add_hash_guard(FLASK, flask_requirements_file)
 
 #############
 ### Tasks ###
