@@ -30,13 +30,6 @@ stages:
   - build
   - deploy
 
-# cache
-cache:
-  key: one-shared-key-2
-  paths:
-  - webui/node_modules/
-  - tools/
-
 ### build jobs ###
 
 # common parts used in build jobs
@@ -48,6 +41,19 @@ cache:
     - linux
     - amd64
     - ssd
+  cache:
+    # Branch-level cache
+    - key: debian-tools-$CI_COMMIT_REF_SLUG
+      paths:
+        - tools/
+        - webui/node_modules/
+        - /root/.cache/go-build
+        - /root/.cache/pip
+    # Runner-level cache
+    - key: debian-system
+      paths:
+        - /var/lib/dpkg/info
+
   before_script:
     - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
