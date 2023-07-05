@@ -48,7 +48,8 @@ stages:
         - tools/
         - webui/node_modules/
         - /root/.cache/go-build
-        - /root/.cache/pip
+        # - /root/.cache/pip
+        # - /root/.bundle/cache
     # Runner-level cache
     - key: debian-system
       paths:
