@@ -351,12 +351,11 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		return false
 	}
 
-	agentTokenRaw, err := certStore.ReadToken()
+	agentToken, err := certStore.ReadToken()
 	if err != nil {
 		log.WithError(err).Error("cannot load the agent token")
 		return false
 	}
-	agentToken := string(agentTokenRaw)
 
 	// Use cert fingerprint as agent token.
 	// Agent token is another mode for checking identity of an agent.

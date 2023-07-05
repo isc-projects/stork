@@ -37,11 +37,13 @@ func (e *ctrlcError) Error() string {
 	return "received Ctrl-C signal"
 }
 
-func createHTTPClient(settings *cli.Context) *agent.HTTPClient {
+// Creates the HTTP client with TLS. If the TLS-related flags are not provided,
+// uses the GRPC TLS files instead.
+func createHTTPClient(settings *cli.Context) (*agent.HTTPClient, error) {
 	// Configure TLS used to connect to connect over HTTP with Stork server,
 	// Kea Control Agent, and named statistics endpoint.
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"),
+		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"), //nolint:gosec
 	}
 	tlsCertPath := settings.String("tls-certificate")
 	tlsKeyPath := settings.String("tls-key")
@@ -61,17 +63,22 @@ func createHTTPClient(settings *cli.Context) *agent.HTTPClient {
 	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
 	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
 	err := storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
-	if err == nil {
+	switch {
+	case err == nil:
 		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
 		tlsConfig.RootCAs = tlsRootCA
 		log.Info("Configured TLS for HTTP connections.")
-	} else if useGRPCCerts {
+		// TLS configured properly. Continue.
+	case useGRPCCerts:
 		log.WithError(err).Info("GRPC certificates are not obtained yet. Skip configuring TLS.")
-	} else {
+		// TLS was not requested. Continue.
+	default:
 		log.WithError(err).Warning("TLS for HTTP connections is not configured")
+		// TLS was requested but the configuration is invalid. Break.
+		return nil, err
 	}
 
-	return agent.NewHTTPClient(tlsConfig)
+	return agent.NewHTTPClient(tlsConfig), nil
 }
 
 // Helper function that starts agent, apps monitor and prometheus exports
@@ -100,7 +107,11 @@ func runAgent(settings *cli.Context, reload bool) error {
 	// Try registering the agent in the server using the agent token.
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		httpClient := createHTTPClient(settings)
+		httpClient, err := createHTTPClient(settings)
+		if err != nil {
+			log.WithError(err).Fatal("Could not initialize the HTTP client")
+		}
+
 		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true, httpClient) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
@@ -110,7 +121,10 @@ func runAgent(settings *cli.Context, reload bool) error {
 	appMonitor := agent.NewAppMonitor()
 
 	// Prepare HTTP client. It may use the certificates obtained during the registration.
-	httpClient := createHTTPClient(settings)
+	httpClient, err := createHTTPClient(settings)
+	if err != nil {
+		log.WithError(err).Fatal("Could not initialize the HTTP client")
+	}
 
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, hookManager)
@@ -186,7 +200,11 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	httpClient := createHTTPClient(cfg)
+	httpClient, err := createHTTPClient(cfg)
+	if err != nil {
+		log.WithError(err).Fatal("Could not initialize the HTTP client")
+	}
+
 	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false, httpClient) {
 		log.Println("Registration completed successfully")
 	} else {
