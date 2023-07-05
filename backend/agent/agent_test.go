@@ -640,15 +640,14 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	certStore := NewCertStore()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	_, err = getRootCertificates(params)
-	require.EqualError(t, err,
-		fmt.Sprintf("could not read CA certificate: %s/certs/ca.pem: open %s/certs/ca.pem: no such file or directory",
-			tmpDir, tmpDir))
+	require.ErrorContains(t, err, "could not read the root CA")
+	require.ErrorContains(t, err, fmt.Sprintf("open %s/certs/ca.pem: no such file or directory", tmpDir))
 
 	// store bad cert
 	err = os.WriteFile(RootCAFile, []byte("CACertPEM"), 0o600)
 	require.NoError(t, err)
 	_, err = getRootCertificates(params)
-	require.EqualError(t, err, "failed to append client certs")
+	require.EqualError(t, err, "failed to append root CA")
 }
 
 // Checks if getRootCertificates reads and returns correct certificate successfully.
@@ -688,8 +687,8 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	certStore := NewCertStore()
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	_, err = getIdentityCertificatesForServer(info)
-	require.EqualError(t, err,
-		fmt.Sprintf("could not load key PEM file: %s/certs/key.pem: open %s/certs/key.pem: no such file or directory", tmpDir, tmpDir))
+	require.ErrorContains(t, err, "could not read the private key")
+	require.ErrorContains(t, err, fmt.Sprintf("open %s/certs/key.pem: no such file or directory", tmpDir))
 
 	// Store bad content to files.
 	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0o600)

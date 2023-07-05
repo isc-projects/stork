@@ -6,11 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -79,63 +76,27 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 	return agentAddr, agentPortInt, nil
 }
 
-// Write agent file. Used to save key or certs.
-// They are sensitive so permissions are set to 0600.
-func writeAgentFile(path string, content []byte) error {
-	_, err := os.Stat(path)
-	if os.IsExist(err) {
-		err = os.Remove(path)
-		if err != nil {
-			return errors.Wrapf(err, "cannot remove old agent file: %s", path)
-		}
-	}
-
-	directory := filepath.Dir(path)
-	_, err = os.Stat(directory)
-	if !os.IsExist(err) {
-		err = os.MkdirAll(directory, 0o700)
-		if err != nil {
-			return errors.Wrapf(err, "cannot create a directory for Stork files: %s", directory)
-		}
-	}
-
-	err = os.WriteFile(path, content, 0o600)
-	if err != nil {
-		return errors.Wrapf(err, "cannot write file: %s", path)
-	}
-	return nil
-}
-
-// Parse provided address and return either an IP address as a one
-// element list or a DNS name as one element list. The arrays are
-// returned as then it is easy to pass these returned elements to the
-// functions that generates CSR (Certificate Signing Request).
-func resolveAddr(addr string) ([]net.IP, []string) {
-	ipAddr := net.ParseIP(addr)
-	if ipAddr != nil {
-		return []net.IP{ipAddr}, []string{}
-	}
-	return []net.IP{}, []string{addr}
-}
-
 // Generate or regenerate agent key and CSR (Certificate Signing
 // Request). They are generated when they do not exist. They are
 // regenerated only if regenCerts is true. If they exist and
 // regenCerts is false then they are used.
-func generateCerts(certStore *CertStore, agentAddr string, regenCerts bool) ([]byte, error) {
+func generateCSR(certStore *CertStore, agentAddr string, regenKey bool) ([]byte, error) {
 	empty, err := certStore.IsEmpty()
+	if err != nil {
+		// Problem with access to the files.
+		return nil, err
+	}
 	if empty {
 		log.Info("There are no agent certificates - they will be generated.")
-		regenCerts = true
-	} else if regenCerts {
+		regenKey = true
+	} else if regenKey {
 		log.Info("Forced agent certificates regeneration.")
 	} else if err := certStore.IsValid(); err != nil {
 		log.WithError(err).Warn("The agent certificates are invalid - they will be regenerated.")
-		regenCerts = true
+		regenKey = true
 	}
 
-	if regenCerts {
-		// Generate private key and CSR.
+	if regenKey {
 		err := certStore.CreateKey()
 		if err != nil {
 			return nil, errors.WithMessage(err, "cannot generate private key")
@@ -147,7 +108,7 @@ func generateCerts(certStore *CertStore, agentAddr string, regenCerts bool) ([]b
 		return nil, errors.WithMessage(err, "cannot generate CSR")
 	}
 
-	if regenCerts {
+	if regenKey {
 		// Generate new agent token.
 		err := certStore.WriteFingerprintAsToken(fingerprint)
 		if err != nil {
@@ -403,7 +364,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 
 	certStore := NewCertStore()
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
-	csrPEM, err := generateCerts(certStore, agentAddr, regenCerts)
+	csrPEM, err := generateCSR(certStore, agentAddr, regenCerts)
 	if err != nil {
 		log.WithError(err).Error("Problem generating certs")
 		return false

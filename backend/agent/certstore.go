@@ -35,8 +35,8 @@ func (*CertStore) isValidPrivateKey(content []byte) error {
 
 // Checks if the file content is a valid agent token.
 func (*CertStore) isValidToken(content []byte) error {
-	if len(content) != 0 {
-		return errors.New("file cannot be empty")
+	if len(content) == 0 {
+		return errors.New("file could not be empty")
 	}
 	return nil
 }
@@ -45,9 +45,61 @@ func (*CertStore) isValidToken(content []byte) error {
 func (*CertStore) read(path string) ([]byte, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot read the file: %s", path)
+		return nil, errors.Wrapf(err, "could not read the file: %s", path)
 	}
 	return content, nil
+}
+
+// Reads the agent token.
+func (s *CertStore) readAgentTokenFile() ([]byte, error) {
+	content, err := s.read(AgentTokenFile)
+	err = errors.WithMessage(err, "could not read the agent token")
+	return content, err
+}
+
+// Reads the cert file.
+func (s *CertStore) readCert() ([]byte, error) {
+	content, err := s.read(CertPEMFile)
+	err = errors.WithMessage(err, "could not read the cert")
+	return content, err
+}
+
+// Reads the root CA file.
+func (s *CertStore) readRootCA() ([]byte, error) {
+	content, err := s.read(RootCAFile)
+	err = errors.WithMessage(err, "could not read the root CA")
+	return content, err
+}
+
+// Reads the private key file.
+func (s *CertStore) readPrivateKey() ([]byte, error) {
+	content, err := s.read(KeyPEMFile)
+	err = errors.WithMessage(err, "could not read the private key")
+	return content, err
+}
+
+// Writes the agent token.
+func (s *CertStore) writeAgentToken(content []byte) error {
+	err := s.write(AgentTokenFile, content)
+	return errors.WithMessage(err, "could not write the agent token")
+}
+
+// Writes the cert file.
+func (s *CertStore) writeCert(content []byte) error {
+	err := s.write(CertPEMFile, content)
+	return errors.WithMessage(err, "could not write the cert")
+}
+
+// Writes the root CA.
+func (s *CertStore) writeRootCA(content []byte) error {
+	err := s.write(RootCAFile, content)
+	return errors.WithMessage(err, "could not write the root CA")
+}
+
+// Writes the private key.
+func (s *CertStore) writePrivateKey(content []byte) error {
+	err := s.write(KeyPEMFile, content)
+	return errors.WithMessage(err, "could not write the private key")
 }
 
 // Writes the content to a file. If the file exists, it is overwritten.
@@ -63,7 +115,7 @@ func (s *CertStore) write(path string, content []byte) error {
 
 	err := os.WriteFile(path, content, 0o600)
 	if err != nil {
-		return errors.Wrapf(err, "cannot write the file: %s", path)
+		return errors.Wrapf(err, "could not write the file: %s", path)
 	}
 	return nil
 }
@@ -72,12 +124,13 @@ func (s *CertStore) write(path string, content []byte) error {
 // Returns an error if there is a problem with access to the path.
 func (*CertStore) isExist(path string) (bool, error) {
 	_, err := os.Stat(path)
-	if err == nil {
+	switch {
+	case err == nil:
 		return true, nil
-	} else if errors.Is(err, os.ErrNotExist) {
+	case errors.Is(err, os.ErrNotExist):
 		return false, nil
-	} else {
-		return false, errors.Wrapf(err, "cannot stat the file: %s", path)
+	default:
+		return false, errors.Wrapf(err, "could not stat the file: %s", path)
 	}
 }
 
@@ -92,7 +145,7 @@ func (s *CertStore) removeIfExist(path string) error {
 	}
 
 	if err = os.Remove(path); err != nil {
-		return errors.Wrapf(err, "cannot remove the file: %s", path)
+		return errors.Wrapf(err, "could not remove the file: %s", path)
 	}
 
 	return nil
@@ -110,7 +163,7 @@ func (s *CertStore) createDirectoryTree(path string) error {
 	}
 
 	if err := os.MkdirAll(directory, 0o700); err != nil {
-		return errors.Wrapf(err, "cannot create a directory tree: %s", directory)
+		return errors.Wrapf(err, "could not create a directory tree: %s", directory)
 	}
 	return nil
 }
@@ -130,7 +183,7 @@ func (*CertStore) resolveAddress(address string) ([]net.IP, []string) {
 // Reads the content of the agent token file.
 // Returns an error if the file is not available or the content is invalid.
 func (s *CertStore) ReadToken() ([]byte, error) {
-	content, err := s.read(AgentTokenFile)
+	content, err := s.readAgentTokenFile()
 	if err != nil {
 		return nil, err
 	}
@@ -143,14 +196,14 @@ func (s *CertStore) ReadToken() ([]byte, error) {
 // Reads and parses the root CA file.
 func (s *CertStore) ReadRootCA() (*x509.CertPool, error) {
 	certPool := x509.NewCertPool()
-	ca, err := s.read(RootCAFile)
+	ca, err := s.readRootCA()
 	if err != nil {
 		return nil, err
 	}
 
 	// Append the client certificates from the CA.
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		err = errors.New("failed to append client root CA certificate")
+		err = errors.New("failed to append root CA")
 		return nil, err
 	}
 	return certPool, nil
@@ -159,11 +212,11 @@ func (s *CertStore) ReadRootCA() (*x509.CertPool, error) {
 // Reads and parses the certificate and private key files. Combines them into
 // a single TLS certificate.
 func (s *CertStore) ReadTLSCert() (*tls.Certificate, error) {
-	keyPEM, err := s.read(KeyPEMFile)
+	keyPEM, err := s.readPrivateKey()
 	if err != nil {
 		return nil, err
 	}
-	certPEM, err := s.read(CertPEMFile)
+	certPEM, err := s.readCert()
 	if err != nil {
 		return nil, err
 	}
@@ -183,9 +236,9 @@ func (s *CertStore) CreateKey() error {
 	if err != nil {
 		return err
 	}
-	err = s.write(KeyPEMFile, keyPEM)
+	err = s.writePrivateKey(keyPEM)
 	if err != nil {
-		return errors.Wrapf(err, "cannot write key file: %s", keyPEM)
+		return err
 	}
 
 	// Invalidate cert, root CA and token.
@@ -209,7 +262,7 @@ func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint
 
 	csrPEM, fingerprint, err = pki.GenCSRUsingKey("agent", agentNames, agentIPs, keyPEM)
 	if err != nil {
-		err = errors.WithMessagef(err, "cannot generate CSR and private key for '%s' address", agentAddress)
+		err = errors.WithMessagef(err, "could not generate CSR and private key for '%s' address", agentAddress)
 		return
 	}
 
@@ -219,11 +272,11 @@ func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint
 // Writes the provided fingerprint to the agent token file.
 // The fingerprint is saved as hex bytes.
 func (s *CertStore) WriteFingerprintAsToken(fingerprint [32]byte) error {
-	if err := s.isValidToken(fingerprint[:]); err != nil {
+	fingerprintHex := []byte(storkutil.BytesToHex(fingerprint[:]))
+	if err := s.isValidToken(fingerprintHex); err != nil {
 		return err
 	}
-	fingerprintStr := storkutil.BytesToHex(fingerprint[:])
-	return s.write(AgentTokenFile, []byte(fingerprintStr))
+	return s.writeAgentToken(fingerprintHex)
 }
 
 // Writes the given root CA in the PEM format to a file.
@@ -232,7 +285,7 @@ func (s *CertStore) WriteRootCAPEM(rootCAPEM []byte) error {
 	if err := s.isValidCert(rootCAPEM); err != nil {
 		return err
 	}
-	return s.write(RootCAFile, rootCAPEM)
+	return s.writeRootCA(rootCAPEM)
 }
 
 // Writes the given cert in the PEM format to a file.
@@ -241,7 +294,7 @@ func (s *CertStore) WriteCertPEM(certPEM []byte) error {
 	if err := s.isValidCert(certPEM); err != nil {
 		return err
 	}
-	return s.write(CertPEMFile, certPEM)
+	return s.writeCert(certPEM)
 }
 
 // Checks if all files managed by the cert store are valid (they exist and
@@ -249,28 +302,28 @@ func (s *CertStore) WriteCertPEM(certPEM []byte) error {
 // problems. Returns nil if all is OK.
 func (s *CertStore) IsValid() error {
 	var validationErrors []error
-	content, err := s.read(CertPEMFile)
+	content, err := s.readCert()
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.isValidCert(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.read(RootCAFile)
+	content, err = s.readRootCA()
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.isValidCert(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.read(KeyPEMFile)
+	content, err = s.readPrivateKey()
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.isValidPrivateKey(content); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
-	content, err = s.read(AgentTokenFile)
+	content, err = s.readAgentTokenFile()
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	} else if err = s.isValidToken(content); err != nil {
