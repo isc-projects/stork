@@ -324,7 +324,7 @@ func TestGenerateCSR(t *testing.T) {
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 
-	certStore := NewCertStore()
+	certStore := NewCertStoreForGRPC()
 	// By-pass evaluating CSR.
 	evaluateCSR := func(csr []byte) {
 		_, parentPrivateKeyPEM, _, rootCAPEM, err := pki.GenCAKeyCert(42)

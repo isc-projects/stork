@@ -30,9 +30,8 @@ type CertStore struct {
 	agentTokenPath string
 }
 
-// Constructs a new cert store instance. It has a short lifetime, may
-// be constructed on demand.
-func NewCertStoreTLSForGRPC() *CertStore {
+// Constructs a new cert store instance.
+func NewCertStoreForGRPC() *CertStore {
 	return &CertStore{
 		keyPEMPath:     KeyPEMFile,
 		certPEMPath:    CertPEMFile,

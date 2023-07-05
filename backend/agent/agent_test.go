@@ -637,7 +637,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 
 	// Missing cert file error.
-	certStore := NewCertStore()
+	certStore := NewCertStoreForGRPC()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	_, err = getRootCertificates(params)
 	require.ErrorContains(t, err, "could not read the root CA")
@@ -657,7 +657,7 @@ func TestGetRootCertificates(t *testing.T) {
 	defer cleanup()
 
 	// All should be ok.
-	certStore := NewCertStore()
+	certStore := NewCertStoreForGRPC()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	params := &advancedtls.GetRootCAsParams{}
 	result, err := getRootCertificates(params)
@@ -684,7 +684,7 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 
 	// Missing key files.
-	certStore := NewCertStore()
+	certStore := NewCertStoreForGRPC()
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	_, err = getIdentityCertificatesForServer(info)
 	require.ErrorContains(t, err, "could not read the private key")
@@ -707,7 +707,7 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 	defer cleanup()
 
 	// Now it should work.
-	certStore := NewCertStore()
+	certStore := NewCertStoreForGRPC()
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	info := &tls.ClientHelloInfo{}
 	certs, err := getIdentityCertificatesForServer(info)

@@ -50,15 +50,14 @@ func createHTTPClient(settings *cli.Context) (*agent.HTTPClient, error) {
 	tlsRootCAPath := settings.String("tls-ca")
 	useGRPCCerts := false
 
+	var tlsCertStore *agent.CertStore
 	if tlsCertPath == "" && tlsKeyPath == "" && tlsRootCAPath == "" {
 		useGRPCCerts = true
 		log.Info("HTTP TLS certificate files are not provided. Fallback to use GRPC TLS (self-generated) certificate.")
-		tlsCertPath = agent.CertPEMFile
-		tlsKeyPath = agent.KeyPEMFile
-		tlsRootCAPath = agent.RootCAFile
+		tlsCertStore = agent.NewCertStoreForGRPC()
+	} else {
+		tlsCertStore = agent.NewCertStoreCustom(tlsKeyPath, tlsCertPath, tlsRootCAPath, "")
 	}
-
-	tlsCertStore := agent.NewCertStoreCustom(tlsKeyPath, tlsCertPath, tlsRootCAPath, "")
 
 	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
 	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()

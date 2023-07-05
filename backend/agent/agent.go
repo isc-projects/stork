@@ -96,7 +96,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// always latest version for new connections is used.
 	// Beside that there is enabled client authentication and forced
 	// cert and host verification.
-	certStore := NewCertStoreTLSForGRPC()
+	certStore := NewCertStoreForGRPC()
 	options := &advancedtls.ServerOptions{
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{
