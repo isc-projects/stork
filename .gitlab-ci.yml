@@ -49,12 +49,14 @@ cache:
     - amd64
     - ssd
   before_script:
+    - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
     - apt-get install -y python3-dev ruby-dev make python3-venv
     - rake prepare --trace
     - rake prepare:deps
+    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" 2>/dev/null
 
 .base_build_ubi:
   stage: checks
