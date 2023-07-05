@@ -982,6 +982,7 @@ PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
     sh PYTHON, "-m", "ensurepip", "-U", "--default-pip"
     sh "touch", "-c", PIP
+    sh PIP, "install", "wheel"
     sh PIP, "--version"
 end
 
