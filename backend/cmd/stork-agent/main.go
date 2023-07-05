@@ -43,9 +43,19 @@ func createHTTPClient(settings *cli.Context) *agent.HTTPClient {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"),
 	}
-	tlsCertPath := settings.Path("tls-certificate")
-	tlsKeyPath := settings.Path("tls-key")
-	tlsRootCAPath := settings.Path("tls-ca")
+	tlsCertPath := settings.String("tls-certificate")
+	tlsKeyPath := settings.String("tls-key")
+	tlsRootCAPath := settings.String("tls-ca")
+	useGRPCCerts := false
+
+	if tlsCertPath == "" && tlsKeyPath == "" && tlsRootCAPath == "" {
+		useGRPCCerts = true
+		log.Info("HTTP TLS certificate files are not provided. Fallback to use GRPC TLS (self-generated) certificate.")
+		tlsCertPath = agent.CertPEMFile
+		tlsKeyPath = agent.KeyPEMFile
+		tlsRootCAPath = agent.RootCAFile
+	}
+
 	tlsCertStore := agent.NewCustomCertStore(tlsCertPath, tlsKeyPath, tlsRootCAPath, "")
 
 	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
@@ -55,6 +65,8 @@ func createHTTPClient(settings *cli.Context) *agent.HTTPClient {
 		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
 		tlsConfig.RootCAs = tlsRootCA
 		log.Info("Configured TLS for HTTP connections.")
+	} else if useGRPCCerts {
+		log.WithError(err).Info("GRPC certificates are not obtained yet. Skip configuring TLS.")
 	} else {
 		log.WithError(err).Warning("TLS for HTTP connections is not configured")
 	}
@@ -204,19 +216,16 @@ func setupApp(reload bool) *cli.App {
 		&cli.StringFlag{
 			Name:    "tls-certificate",
 			Usage:   "The certificate to use for secure HTTP connections, in the PEM format",
-			Value:   agent.CertPEMFile,
 			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CERTIFICATE"},
 		},
 		&cli.StringFlag{
 			Name:    "tls-key",
 			Usage:   "The private key to use for secure HTTP connections, in the PEM format",
-			Value:   agent.KeyPEMFile,
 			EnvVars: []string{"STORK_AGENT_HTTP_TLS_PRIVATE_KEY"},
 		},
 		&cli.StringFlag{
 			Name:    "tls-ca",
 			Usage:   "The certificate authority file to be used with mutual tls auth, in the PEM format",
-			Value:   agent.RootCAFile,
 			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CA_CERTIFICATE"},
 		},
 	}
