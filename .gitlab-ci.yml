@@ -225,12 +225,14 @@ build_apks:
     - amd64
     - ssd
   before_script:
+    - my_now=$(date --rfc-3339=seconds)
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     # The initially installed TAR causes FPM to fail. It must be reinstalled: https://github.com/jordansissel/fpm/issues/1375#issuecomment-317571946
     - apk add --no-cache ruby-rake ruby-dev openjdk11-jre-headless python3 nodejs npm protoc~3.18.1 make gcc musl-dev tar
     - rake prepare:dist
     - rake prepare:deps
+    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" 2>/dev/null
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -360,9 +362,12 @@ system_testing:
     paths:
     - tools/
   before_script:
+    - my_now=$(date --rfc-3339=seconds)
     - ip -6 route del default
     - apk update
     - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
+    - rake prepare:systemtest
+    - find / -type f -newermt "${my_now}" -not -path "/proc/*" -not -path "/sys/*" 2>/dev/null
   variables:
     # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
     # binary fetched by the Rake script. Additionally, the binaries for alpine
