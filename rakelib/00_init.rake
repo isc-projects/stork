@@ -991,7 +991,6 @@ SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
 file SPHINX_BUILD => [PIP, sphinx_requirements_file] do
     sh PIP, "install", "-r", sphinx_requirements_file
-    sh "touch", "-c", sphinx_requirements_file
     sh "touch", "-c", SPHINX_BUILD
     sh SPHINX_BUILD, "--version"
 end
@@ -1000,7 +999,6 @@ PYTEST = File.join(python_tools_dir, "bin", "pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
 file PYTEST => [PIP, pytests_requirements_file] do
     sh PIP, "install", "-r", pytests_requirements_file
-    sh "touch", "-c", pytests_requirements_file
     sh "touch", "-c", PYTEST
     sh PYTEST, "--version"
 end
@@ -1016,7 +1014,6 @@ PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
 file PYLINT => [PIP, python_linters_requirements_file] do
     sh PIP, "install", "-r", python_linters_requirements_file
-    sh "touch", "-c", python_linters_requirements_file
     sh "touch", "-c", PYLINT
     sh PYLINT, "--version"
 end
@@ -1031,7 +1028,6 @@ FLASK = File.join(python_tools_dir, "bin", "flask")
 flask_requirements_file = "tests/sim/requirements.txt"
 file FLASK => [PIP, flask_requirements_file] do
     sh PIP, "install", "-r", flask_requirements_file
-    sh "touch", "-c", flask_requirements_file
     sh "touch", "-c", FLASK
     sh FLASK, "--version"
 end
