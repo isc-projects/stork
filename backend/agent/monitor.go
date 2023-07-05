@@ -216,12 +216,12 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		if procName == keaProcName || procName == namedProcName {
 			cmdline, err = p.Cmdline()
 			if err != nil {
-				log.Warnf("Cannot get process command line: %+v", err)
+				log.WithError(err).Warnf("Cannot get process command line")
 				continue
 			}
 			cwd, err = p.Cwd()
 			if err != nil {
-				log.Warnf("Cannot get process current working directory: %+v", err)
+				log.WithError(err).Warn("Cannot get process current working directory")
 				cwd = ""
 			}
 		}
