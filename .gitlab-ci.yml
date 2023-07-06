@@ -176,6 +176,7 @@ python_requirements:
     paths:
       - requirements.zip
     expire_in: 1 hour
+    when: always
 
 tarball:
   stage: build
