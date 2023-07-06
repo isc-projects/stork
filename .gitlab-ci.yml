@@ -165,6 +165,18 @@ lint_shell:
   script:
     - rake lint:shell
 
+python_requirements:
+  extends: .base_build_debian
+  script:
+    - rake update:python_requirements DRY_RUN=true
+    - git archive -o requirements.zip HEAD $(git diff --name-status | cut -f2)
+    # Return 1 if any file is changed.
+    - git diff --name-status | ( ! grep --silent . )
+  artifacts:
+    paths:
+      - requirements.zip
+    expire_in: 1 hour
+
 tarball:
   stage: build
   rules:
