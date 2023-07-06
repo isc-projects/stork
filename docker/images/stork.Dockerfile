@@ -51,6 +51,8 @@ RUN apt-get update \
         ruby-dev=1:2.5.* \
         python3.7=3.7.* \
         python3-venv=3.7.* \
+        python3-wheel=0.32.* \
+        python3-dev=3.7.* \
         make=4.2.* \
         gcc=4:8.3.* \
         xz-utils=5.2.* \
