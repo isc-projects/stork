@@ -696,13 +696,14 @@ add_version_guard(BUNDLE, bundler_ver)
 
 fpm_gemfile = File.expand_path("init_deps/fpm/Gemfile", __dir__)
 FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
-file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir, fpm_gemfile] do
+file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir] do
     sh BUNDLE, "install",
         "--gemfile", fpm_gemfile,
         "--path", ruby_tools_dir,
         "--binstubs", ruby_tools_bin_bundle_dir
     sh FPM, "--version"
 end
+add_hash_guard(FPM, fpm_gemfile)
 
 danger_gemfile = File.expand_path("init_deps/danger/Gemfile", __dir__)
 DANGER = File.join(ruby_tools_bin_bundle_dir, "danger")
@@ -714,6 +715,7 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDL
     sh "touch", "-c", DANGER
     sh DANGER, "--version"
 end
+add_hash_guard(DANGER, danger_gemfile)
 
 node = File.join(node_bin_dir, "node")
 file node => [TAR, WGET, node_dir] do
