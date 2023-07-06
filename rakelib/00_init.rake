@@ -707,7 +707,7 @@ add_hash_guard(FPM, fpm_gemfile)
 
 danger_gemfile = File.expand_path("init_deps/danger/Gemfile", __dir__)
 DANGER = File.join(ruby_tools_bin_bundle_dir, "danger")
-file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, danger_gemfile, BUNDLE] do
+file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, BUNDLE] do
     sh BUNDLE, "install",
         "--gemfile", danger_gemfile,
         "--path", ruby_tools_dir,
