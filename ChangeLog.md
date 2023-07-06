@@ -1,3 +1,9 @@
+* 316 [func] slawek
+
+    Refactor the log messages produced on the Stork agent initialization to be
+    more straightforward and user-friendly.
+    (Gitlab #1056)
+
 * 315 [bug] slawek
 
     Enabled gzip compression for all communication between the Stork server and
