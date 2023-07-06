@@ -170,7 +170,7 @@ python_requirements:
   script:
     - rake update:python_requirements DRY_RUN=true
     - git archive -o requirements.zip HEAD $(git diff --name-status | cut -f2)
-    # Return 1 if any file is changed.
+    # Return non-zero status if any file is changed.
     - git diff --name-status | ( ! grep --silent . )
   artifacts:
     paths:
