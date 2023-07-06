@@ -732,9 +732,36 @@ namespace :update do
 
     desc 'Update all Python dependencies'
     task :python_requirements => [PIP_COMPILE] do
-        python_requirement_files.each do |r|
-            sh PIP_COMPILE, "--resolver", "backtracking", "--upgrade", r
+        require 'pathname'
+        # Use the modern resolver (it is recommended by maintainers).
+        opts = ["--resolver", "backtracking"]
+
+        # Generate a layered requirements file that composes all requirement
+        # files.
+        all_requirements_dir = "rakelib/init_deps"
+        all_requirements_dir_path = Pathname.new all_requirements_dir
+        all_requirements_file = File.join(all_requirements_dir, "all.in")
+
+        File.open(all_requirements_file, 'w') do |file|
+            python_requirement_files.each do |r|
+                r_path = Pathname.new r
+                r_rel_path = r_path.relative_path_from all_requirements_dir_path
+                file.write("-c #{r_rel_path}\n")
+            end
         end
+
+        # Update all requirements at once to ensure there are no conflicts.
+        sh PIP_COMPILE, *opts, "--upgrade", all_requirements_file
+
+        # Generate the separate requirements.txt files. It uses the previously
+        # upgraded versions.
+        python_requirement_files.each do |r|
+            sh PIP_COMPILE, *opts, r
+        end
+
+        # Clean-up
+        FileUtils.rm all_requirements_file
+        FileUtils.rm File.join(all_requirements_dir, "all.txt")
     end
 
     desc 'Update all Ruby dependencies'
