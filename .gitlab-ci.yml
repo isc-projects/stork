@@ -167,9 +167,10 @@ lint_shell:
 
 python_requirements:
   extends: .base_build_debian
+  when: manual
   script:
     - rake update:python_requirements DRY_RUN=true
-    - git archive -o requirements.zip HEAD $(git diff --name-status | cut -f2)
+    - zip -o requirements.zip $(git diff --name-status | cut -f2)
     # Return non-zero status if any file is changed.
     - git diff --name-status | ( ! grep --silent . )
   artifacts:
