@@ -170,12 +170,12 @@ python_requirements:
   when: manual
   script:
     - rake update:python_requirements DRY_RUN=true
-    - zip -o requirements.zip $(git diff --name-status | cut -f2)
+    - tar -czvf requirements.tar.gz $(git diff --name-status | cut -f2) /dev/null
     # Return non-zero status if any file is changed.
     - git diff --name-status | ( ! grep --silent . )
   artifacts:
     paths:
-      - requirements.zip
+      - requirements.tar.gz
     expire_in: 1 hour
     when: always
 
