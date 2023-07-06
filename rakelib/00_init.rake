@@ -997,7 +997,6 @@ end
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
     sh PYTHON3_SYSTEM, "-m", "venv", python_tools_dir
-    sh "touch", "-c", PYTHON
     sh PYTHON, "--version"
 end
 
