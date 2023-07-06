@@ -730,7 +730,8 @@ namespace :update do
         end
     end
 
-    desc 'Update all Python dependencies'
+    desc 'Update all Python dependencies
+        DRY_RUN - do not update the packages, just re-generate using the local versions - default: false'
     task :python_requirements => [PIP_COMPILE] do
         require 'pathname'
         # Use the modern resolver (it is recommended by maintainers).
@@ -751,7 +752,12 @@ namespace :update do
         end
 
         # Update all requirements at once to ensure there are no conflicts.
-        sh PIP_COMPILE, *opts, "--upgrade", all_requirements_file
+        update_opts = []
+        if ENV["DRY_RUN"] != "true"
+            update_opts.append "--upgrade"
+        end
+
+        sh PIP_COMPILE, *opts, *update_opts, all_requirements_file
 
         # Generate the separate requirements.txt files. It uses the previously
         # upgraded versions.
