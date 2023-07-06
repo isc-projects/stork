@@ -735,7 +735,13 @@ namespace :update do
     task :python_requirements => [PIP_COMPILE] do
         require 'pathname'
         # Use the modern resolver (it is recommended by maintainers).
-        opts = ["--resolver", "backtracking"]
+        # Unfortunatelly, CI uses only an old pip-compile version that
+        # doesn't support the --resolver flag.
+        opts = []
+        stdout, _ = Open3.capture2 PIP_COMPILE, "--help"
+        if stdout.include? "--resolver"
+            opts.append "--resolver", "backtracking"
+        end
 
         # Generate a layered requirements file that composes all requirement
         # files.
