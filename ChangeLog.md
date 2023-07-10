@@ -1,6 +1,6 @@
 * 316 [func] slawek
 
-    Refactor the log messages produced on the Stork agent initialization to be
+    Refactored the log messages produced on the Stork agent initialization to be
     more straightforward and user-friendly.
     (Gitlab #1056)
 

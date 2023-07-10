@@ -200,7 +200,7 @@ func setupApp(reload bool) *cli.App {
 		Usage:    "This component is required on each machine to be monitored by the Stork Server",
 		Version:  stork.Version,
 		HelpName: "stork-agent",
-		Flags: append([]cli.Flag{
+		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "host",
 				Value:   "0.0.0.0",
@@ -309,7 +309,7 @@ func setupApp(reload bool) *cli.App {
 				Value:   "INFO",
 				EnvVars: []string{"STORK_LOG_LEVEL"},
 			},
-		}),
+		},
 		Before: func(c *cli.Context) error {
 			if c.Bool("use-env-file") {
 				err := storkutil.LoadEnvironmentFileToSetter(
@@ -350,7 +350,7 @@ func setupApp(reload bool) *cli.App {
 If server access token is provided using --server-token, then the agent is automatically
 authorized (server-token-based registration). Otherwise, the agent requires explicit
 authorization in the server using either the UI or the ReST API (agent-token-based registration).`,
-				Flags: append([]cli.Flag{
+				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "server-url",
 						Usage:   "URL of Stork Server",
@@ -369,7 +369,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 						Aliases: []string{"a"},
 						EnvVars: []string{"STORK_AGENT_HOST"},
 					},
-				}),
+				},
 				Action: func(c *cli.Context) error {
 					runRegister(c)
 					return nil
