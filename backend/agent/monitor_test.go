@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"path"
@@ -20,7 +19,8 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, err := NewHTTPClient(false)
+	require.NoError(t, err)
 	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.Start(sa)
 	apps := am.GetApps()
@@ -159,7 +159,7 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.detectApps(sa)
 }
@@ -167,7 +167,7 @@ func TestDetectApps(t *testing.T) {
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	am.apps = append(am.apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type: AppTypeKea,
@@ -315,7 +315,7 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Empty(t, ctrlPoint.Key)
 	}
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
@@ -484,7 +484,7 @@ func TestDetectConfiguredDaemons(t *testing.T) {
 	configPath, clean := makeKeaConfFile()
 	defer clean()
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
@@ -511,7 +511,7 @@ func TestDetectConfiguredSingleDaemon(t *testing.T) {
 		}
 	} }`)
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
@@ -35,41 +34,6 @@ type ctrlcError struct{}
 // Returns ctrlcError error text.
 func (e *ctrlcError) Error() string {
 	return "received Ctrl-C signal"
-}
-
-// Creates the HTTP client with TLS (if available).
-func createHTTPClient(settings *cli.Context) (*agent.HTTPClient, error) {
-	// Configure TLS used to connect to connect over HTTP with Stork server,
-	// Kea Control Agent, and named statistics endpoint.
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"), //nolint:gosec
-	}
-
-	tlsCertStore := agent.NewCertStoreForGRPC()
-	isEmpty, err := tlsCertStore.IsEmpty()
-	if err != nil {
-		log.WithError(err).Fatal("Cannot stat the TLS files")
-	}
-
-	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
-	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
-	err = storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
-	switch {
-	case err == nil:
-		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
-		tlsConfig.RootCAs = tlsRootCA
-		log.Info("Configured TLS for HTTP connections.")
-		// TLS configured properly. Continue.
-	case isEmpty:
-		log.WithError(err).Info("GRPC certificates are not obtained yet. Skip configuring TLS.")
-		// TLS was not requested. Continue.
-	default:
-		log.WithError(err).Warning("TLS for HTTP connections is not configured")
-		// TLS was requested but the configuration is invalid. Break.
-		return nil, err
-	}
-
-	return agent.NewHTTPClient(tlsConfig), nil
 }
 
 // Helper function that starts agent, apps monitor and prometheus exports
@@ -108,7 +72,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 	// Try registering the agent in the server using the agent token.
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		httpClient, err := createHTTPClient(settings)
+		httpClient, err := agent.NewHTTPClient(settings.Bool("skip-tls-cert-verification"))
 		if err != nil {
 			log.WithError(err).Fatal("Could not initialize the HTTP client")
 		}
@@ -122,7 +86,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 	appMonitor := agent.NewAppMonitor()
 
 	// Prepare HTTP client. It may use the certificates obtained during the registration.
-	httpClient, err := createHTTPClient(settings)
+	httpClient, err := agent.NewHTTPClient(settings.Bool("skip-tls-cert-verification"))
 	if err != nil {
 		log.WithError(err).Fatal("Could not initialize the HTTP client")
 	}
@@ -201,7 +165,7 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	httpClient, err := createHTTPClient(cfg)
+	httpClient, err := agent.NewHTTPClient(cfg.Bool("skip-tls-cert-verification"))
 	if err != nil {
 		log.WithError(err).Fatal("Could not initialize the HTTP client")
 	}

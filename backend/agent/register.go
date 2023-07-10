@@ -138,7 +138,6 @@ func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *
 		if err == nil {
 			break
 		}
-		resp.Body.Close()
 
 		// If connection is refused and retries are enabled than wait for 10 seconds
 		// and try again. This method is used in case of agent token based registration
@@ -343,7 +342,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		return false
 	}
 
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCSR(certStore, agentAddr, regenCerts)
 	if err != nil {

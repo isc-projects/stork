@@ -62,7 +62,10 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient *HTT
 	return sa
 }
 
+// Creates the GRPC server callback using the provided cert store. The callback
+// returns the root CA on demand.
 func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
+	// Read the latest root CA cert from file for Stork Server's cert verification.
 	return func(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
 		certPool, err := certStore.ReadRootCA()
 		if err != nil {
@@ -76,7 +79,10 @@ func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.Ge
 	}
 }
 
+// Creates the GRPC server callback using the provided cert store. The callback
+// returns the TLS certificate.
 func createGetIdentityCertificatesForServerHandler(certStore *CertStore) func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
+	// Read the latest Stork Agent's cert from file for presenting its identity to the Stork server.
 	return func(chi *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
 		certificate, err := certStore.ReadTLSCert()
 		if err != nil {
@@ -96,7 +102,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// always latest version for new connections is used.
 	// Beside that there is enabled client authentication and forced
 	// cert and host verification.
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	options := &advancedtls.ServerOptions{
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{

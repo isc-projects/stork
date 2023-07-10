@@ -1,10 +1,8 @@
 package agent
 
 import (
-	"os"
-	"path"
-
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Helper function to store and defer restore
@@ -27,52 +25,30 @@ func RememberPaths() func() {
 
 // Helper function that creates the temporary,
 // self-signed certificates. Return the cleanup function
-// and generation error. This function always creates
-// the files with the same content.
+// and generation error.
 func GenerateSelfSignedCerts() (func(), error) {
 	restoreCerts := RememberPaths()
-	tmpDir, err := os.MkdirTemp("", "reg")
-	if err != nil {
-		return nil, err
-	}
+	sb := testutil.NewSandbox()
 
 	cleanup := func() {
-		os.RemoveAll(tmpDir)
+		sb.Close()
 		restoreCerts()
 	}
 
-	err = os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	if err != nil {
-		cleanup()
-		return nil, err
-	}
-	err = os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
+	cert, key, ca, err := testutil.CreateTestCerts(sb)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	KeyPEMFile = key
+	CertPEMFile = cert
+	RootCAFile = ca
 
-	// store proper content
-	err = os.WriteFile(KeyPEMFile, testutil.GetKeyPEMContent(), 0o600)
+	var fingerprint [32]byte
+	token := storkutil.BytesToHex(fingerprint[:])
+	AgentTokenFile, err = sb.Write("token.txt", token)
 	if err != nil {
-		cleanup()
-		return nil, err
-	}
-
-	err = os.WriteFile(CertPEMFile, testutil.GetCertPEMContent(), 0o600)
-	if err != nil {
-		cleanup()
-		return nil, err
-	}
-
-	err = os.WriteFile(RootCAFile, testutil.GetCACertPEMContent(), 0o600)
-	if err != nil {
-		cleanup()
 		return nil, err
 	}
 

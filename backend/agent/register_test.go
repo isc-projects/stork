@@ -11,9 +11,19 @@ import (
 	"strings"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/pki"
 )
+
+// Returns an http errors and panics on any error.
+func newHTTPClientHelper() *HTTPClient {
+	httpClient, err := NewHTTPClient(false)
+	if err != nil {
+		log.WithError(err).Fatal("cannot initialize the HTTP client")
+	}
+	return httpClient
+}
 
 // Check if registration works in basic situation.
 func TestRegisterBasic(t *testing.T) {
@@ -99,12 +109,12 @@ func TestRegisterBasic(t *testing.T) {
 	serverURL := ts.URL
 
 	// register with server token
-	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 
 	// register with agent token
 	serverToken = ""
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 }
 
@@ -220,37 +230,37 @@ func TestRegisterBadServer(t *testing.T) {
 
 	// missing ID in response
 	withID = false
-	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	withID = true
 
 	// bad ID in response
 	idValue = "bad-value"
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	idValue = 10 // restore proper value
 
 	// missing serverCACert in response
 	withServerCert = false
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	withServerCert = true // restore proper value
 
 	// bad serverCACert in response
 	serverCertValue = 5
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	serverCertValue = nil // restore proper value
 
 	// missing agentCert in response
 	withAgentCert = false
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	withAgentCert = true // restore proper value
 
 	// bad serverCACert in response
 	agentCertValue = 5
-	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.False(t, res)
 	agentCertValue = nil // restore proper value
 }
@@ -272,42 +282,44 @@ func TestRegisterNegative(t *testing.T) {
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 
 	// bad server URL
-	res := Register("12:3", "serverToken", "1.2.3.4", "8080", false, false, NewHTTPClient(nil))
+	res := Register("12:3", "serverToken", "1.2.3.4", "8080", false, false, newHTTPClientHelper())
 	require.False(t, res)
 
 	// empty server URL
-	res = Register("", "serverToken", "1.2.3.4", "8080", false, false, NewHTTPClient(nil))
+	res = Register("", "serverToken", "1.2.3.4", "8080", false, false, newHTTPClientHelper())
 	require.False(t, res)
 
 	// cannot prompt for server token (regenKey is true)
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", true, false, NewHTTPClient(nil))
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", true, false, newHTTPClientHelper())
 	require.False(t, res)
 
 	// bad agent port
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "port", false, false, NewHTTPClient(nil))
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "port", false, false, newHTTPClientHelper())
 	require.False(t, res)
 
 	// bad folder for certs
 	KeyPEMFile = "/root/key.pem"
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient(nil))
-	require.False(t, res)
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem") // restore proper value
+	httpClient, err := NewHTTPClient(false)
+	require.ErrorContains(t, err, "permission denied")
+	require.Nil(t, httpClient)
+	KeyPEMFile = path.Join(tmpDir, "certs/key.pem") // Restore proper value.
 
 	// bad folder for agent token
 	AgentTokenFile = "/root/agent-token.txt"
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient(nil))
-	require.False(t, res)
+	httpClient, err = NewHTTPClient(false)
+	require.ErrorContains(t, err, "permission denied")
+	require.Nil(t, httpClient)
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt") // restore proper value
 
 	// not running agent on 54444 port
-	res = Register("http://localhost:54333", "serverToken", "localhost", "54444", false, false, NewHTTPClient(nil))
+	res = Register("http://localhost:54333", "serverToken", "localhost", "54444", false, false, newHTTPClientHelper())
 	require.False(t, res)
 }
 
 // Check if generating and regenerating of key and cert by
 // generateCerts works depending on existence/non-existence of files
 // and value of regenKey flag.
-func TestGenerateCSR(t *testing.T) {
+func TestGenerateCSRHelper(t *testing.T) {
 	// prepare temp dir for cert files
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
@@ -324,7 +336,7 @@ func TestGenerateCSR(t *testing.T) {
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	// By-pass evaluating CSR.
 	evaluateCSR := func(csr []byte) {
 		_, parentPrivateKeyPEM, _, rootCAPEM, err := pki.GenCAKeyCert(42)
@@ -468,7 +480,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 
 	serverURL := ts.URL
 
-	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient(nil))
+	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 	require.NotEmpty(t, lastRegisterAgentToken)
 	require.NotEmpty(t, lastPingAgentToken)
@@ -581,7 +593,7 @@ func TestRepeatRegister(t *testing.T) {
 	agentPortStr := fmt.Sprintf("%d", agentPort)
 
 	// register with server token
-	res := Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient(nil))
+	res := Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 
 	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
@@ -595,7 +607,7 @@ func TestRepeatRegister(t *testing.T) {
 
 	// re-register with the same agent token
 	serverToken = ""
-	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 
 	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
@@ -615,7 +627,7 @@ func TestRepeatRegister(t *testing.T) {
 	// Regenerate certs
 	regenKey = true
 	serverToken = "serverToken"
-	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient(nil))
+	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, newHTTPClientHelper())
 	require.True(t, res)
 
 	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
@@ -637,7 +649,7 @@ func TestRepeatRegister(t *testing.T) {
 	invalidHeaderValues := []string{"", "/machines/", "/machines", "/machines/abc", "/machines/1a", "/machines/2a2"}
 	for _, value := range invalidHeaderValues {
 		locationHeaderValue = value
-		res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient(nil))
+		res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, newHTTPClientHelper())
 		require.False(t, res)
 	}
 }

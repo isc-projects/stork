@@ -30,23 +30,13 @@ type CertStore struct {
 	agentTokenPath string
 }
 
-// Constructs a new cert store instance.
-func NewCertStoreForGRPC() *CertStore {
+// Constructs a new cert store instance. Uses the default paths.
+func NewCertStoreDefault() *CertStore {
 	return &CertStore{
 		keyPEMPath:     KeyPEMFile,
 		certPEMPath:    CertPEMFile,
 		rootCAPEMPath:  RootCAFile,
 		agentTokenPath: AgentTokenFile,
-	}
-}
-
-// Constructs a new cert store instance with custom file paths.
-func NewCertStoreCustom(key, cert, ca, token string) *CertStore {
-	return &CertStore{
-		keyPEMPath:     key,
-		certPEMPath:    cert,
-		rootCAPEMPath:  ca,
-		agentTokenPath: token,
 	}
 }
 
@@ -286,6 +276,7 @@ func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint
 	agentIPs, agentNames := s.resolveAddress(agentAddress)
 	keyPEM, err := s.readPrivateKey()
 	if err != nil {
+		err = errors.WithMessage(err, "could not read the private key")
 		return
 	}
 
@@ -312,6 +303,7 @@ func (s *CertStore) WriteFingerprintAsToken(fingerprint [32]byte) error {
 // It fails if the provided content is not a valid certificate file.
 func (s *CertStore) WriteRootCAPEM(rootCAPEM []byte) error {
 	if err := s.isValidCert(rootCAPEM); err != nil {
+		err = errors.WithMessage(err, "the provided root CA PEM content is invalid")
 		return err
 	}
 	return s.writeRootCA(rootCAPEM)
@@ -321,6 +313,7 @@ func (s *CertStore) WriteRootCAPEM(rootCAPEM []byte) error {
 // It fails if the provided content is not a valid certificate file.
 func (s *CertStore) WriteCertPEM(certPEM []byte) error {
 	if err := s.isValidCert(certPEM); err != nil {
+		err = errors.WithMessage(err, "the provided TLS cert content is invalid")
 		return err
 	}
 	return s.writeCert(certPEM)
@@ -359,7 +352,7 @@ func (s *CertStore) IsValid() error {
 		validationErrors = append(validationErrors, err)
 	}
 
-	return storkutil.CombineErrors("cert manager is not valid", validationErrors)
+	return storkutil.CombineErrors("cert store is not valid", validationErrors)
 }
 
 // Check if all files managed by the cert store are missing.

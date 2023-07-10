@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"io"
@@ -37,7 +36,7 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 
@@ -78,7 +77,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	settings := cli.NewContext(nil, flags, nil)
 	settings.Set("prometheus-kea-exporter-port", "1234")
 	settings.Set("prometheus-kea-exporter-interval", "1")
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 
@@ -281,7 +280,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	settings.Set("prometheus-kea-exporter-port", "1234")
 	settings.Set("prometheus-kea-exporter-interval", "1")
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 
@@ -466,7 +465,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	// Act
 	settings.Set("prometheus-kea-exporter-per-subnet-stats", "false")
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -519,7 +518,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	settings.Set("prometheus-kea-exporter-port", "1234")
 	settings.Set("prometheus-kea-exporter-interval", "1")
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 
@@ -585,7 +584,7 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 	settings.Set("prometheus-kea-exporter-port", "1234")
 	settings.Set("prometheus-kea-exporter-interval", "1")
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 
@@ -631,7 +630,7 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	settings.Set("prometheus-kea-exporter-port", "1234")
 	settings.Set("prometheus-kea-exporter-interval", "1")
 
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	pke := NewPromKeaExporter(settings, fam, httpClient)
 	defer pke.Shutdown()
 

@@ -63,7 +63,7 @@ func setupAgentTest() (*StorkAgent, context.Context) {
 // Initializes StorkAgent instance and context used by the tests. Loads the
 // given list of callout carriers (hooks' contents).
 func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context) {
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: true})
+	httpClient, _ := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
 
 	fam := FakeAppMonitor{}
@@ -121,7 +121,7 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient(&tls.Config{InsecureSkipVerify: false})
+	httpClient, _ := NewHTTPClient(false)
 	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
@@ -637,7 +637,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 
 	// Missing cert file error.
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	_, err = getRootCertificates(params)
 	require.ErrorContains(t, err, "could not read the root CA")
@@ -657,7 +657,7 @@ func TestGetRootCertificates(t *testing.T) {
 	defer cleanup()
 
 	// All should be ok.
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	params := &advancedtls.GetRootCAsParams{}
 	result, err := getRootCertificates(params)
@@ -684,7 +684,7 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 
 	// Missing key files.
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	_, err = getIdentityCertificatesForServer(info)
 	require.ErrorContains(t, err, "could not read the private key")
@@ -707,7 +707,7 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 	defer cleanup()
 
 	// Now it should work.
-	certStore := NewCertStoreForGRPC()
+	certStore := NewCertStoreDefault()
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	info := &tls.ClientHelloInfo{}
 	certs, err := getIdentityCertificatesForServer(info)
