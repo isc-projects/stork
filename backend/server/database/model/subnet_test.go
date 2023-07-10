@@ -573,10 +573,28 @@ func TestGetSubnetsByPage(t *testing.T) {
 
 	apps := addTestApps(t, db)
 
+	// Add a shared network.
+	sharedNetwork := &SharedNetwork{
+		Name:   "test",
+		Family: 4,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSharedNetwork(db, sharedNetwork)
+	require.NoError(t, err)
+	require.NotZero(t, sharedNetwork.ID)
+
+	err = AddLocalSharedNetworks(db, sharedNetwork)
+	require.NoError(t, err)
+
 	// Add two subnets with multiple address pools.
 	subnets := []Subnet{
 		{
-			Prefix: "192.0.2.0/24",
+			Prefix:          "192.0.2.0/24",
+			SharedNetworkID: sharedNetwork.ID,
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID: apps[0].Daemons[0].ID,
@@ -639,6 +657,17 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
 	require.Equal(t, "192.0.2.0/24", returned[1].Prefix)
 
+	for _, s := range returned {
+		for _, ls := range s.LocalSubnets {
+			require.NotNil(t, ls.Daemon)
+			require.NotNil(t, ls.Daemon.KeaDaemon)
+		}
+	}
+
+	require.Nil(t, returned[0].SharedNetwork)
+	require.NotNil(t, returned[1].SharedNetwork)
+	require.Len(t, returned[1].SharedNetwork.LocalSharedNetworks, 1)
+
 	// This should match multiple pools in the first subnet. However,
 	// only one record should be returned.
 	filters.Text = newPtr("192.0.2.1")
@@ -647,6 +676,13 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.EqualValues(t, 1, count)
 	require.Len(t, returned, 1)
 	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
+
+	require.NotNil(t, returned[0].SharedNetwork)
+	require.NotNil(t, returned[0].SharedNetwork.LocalSharedNetworks, 1)
+
+	require.Len(t, returned[0].LocalSubnets, 1)
+	require.NotNil(t, returned[0].LocalSubnets[0].Daemon)
+	require.NotNil(t, returned[0].LocalSubnets[0].Daemon.KeaDaemon)
 
 	// This should have no match.
 	filters.Text = newPtr("192.0.5.0")
