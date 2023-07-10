@@ -37,38 +37,30 @@ func (e *ctrlcError) Error() string {
 	return "received Ctrl-C signal"
 }
 
-// Creates the HTTP client with TLS. If the TLS-related flags are not provided,
-// uses the GRPC TLS files instead.
+// Creates the HTTP client with TLS (if available).
 func createHTTPClient(settings *cli.Context) (*agent.HTTPClient, error) {
 	// Configure TLS used to connect to connect over HTTP with Stork server,
 	// Kea Control Agent, and named statistics endpoint.
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: settings.Bool("skip-tls-cert-verification"), //nolint:gosec
 	}
-	tlsCertPath := settings.String("tls-certificate")
-	tlsKeyPath := settings.String("tls-key")
-	tlsRootCAPath := settings.String("tls-ca")
-	useGRPCCerts := false
 
-	var tlsCertStore *agent.CertStore
-	if tlsCertPath == "" && tlsKeyPath == "" && tlsRootCAPath == "" {
-		useGRPCCerts = true
-		log.Info("HTTP TLS certificate files are not provided. Fallback to use GRPC TLS (self-generated) certificate.")
-		tlsCertStore = agent.NewCertStoreForGRPC()
-	} else {
-		tlsCertStore = agent.NewCertStoreCustom(tlsKeyPath, tlsCertPath, tlsRootCAPath, "")
+	tlsCertStore := agent.NewCertStoreForGRPC()
+	isEmpty, err := tlsCertStore.IsEmpty()
+	if err != nil {
+		log.WithError(err).Fatal("Cannot stat the TLS files")
 	}
 
 	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
 	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
-	err := storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
+	err = storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
 	switch {
 	case err == nil:
 		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
 		tlsConfig.RootCAs = tlsRootCA
 		log.Info("Configured TLS for HTTP connections.")
 		// TLS configured properly. Continue.
-	case useGRPCCerts:
+	case isEmpty:
 		log.WithError(err).Info("GRPC certificates are not obtained yet. Skip configuring TLS.")
 		// TLS was not requested. Continue.
 	default:
@@ -239,23 +231,6 @@ func setupApp(reload bool) *cli.App {
 		Usage:   "Print the version",
 	}
 
-	tlsFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:    "tls-certificate",
-			Usage:   "The certificate to use for secure HTTP connections, in the PEM format",
-			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CERTIFICATE"},
-		},
-		&cli.StringFlag{
-			Name:    "tls-key",
-			Usage:   "The private key to use for secure HTTP connections, in the PEM format",
-			EnvVars: []string{"STORK_AGENT_HTTP_TLS_PRIVATE_KEY"},
-		},
-		&cli.StringFlag{
-			Name:    "tls-ca",
-			Usage:   "The certificate authority file to be used with mutual tls auth, in the PEM format",
-			EnvVars: []string{"STORK_AGENT_HTTP_TLS_CA_CERTIFICATE"},
-		},
-	}
 	app := &cli.App{
 		Name:     "Stork Agent",
 		Usage:    "This component is required on each machine to be monitored by the Stork Server",
@@ -370,7 +345,7 @@ func setupApp(reload bool) *cli.App {
 				Value:   "INFO",
 				EnvVars: []string{"STORK_LOG_LEVEL"},
 			},
-		}, tlsFlags...),
+		}),
 		Before: func(c *cli.Context) error {
 			if c.Bool("use-env-file") {
 				err := storkutil.LoadEnvironmentFileToSetter(
@@ -430,7 +405,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 						Aliases: []string{"a"},
 						EnvVars: []string{"STORK_AGENT_HOST"},
 					},
-				}, tlsFlags...),
+				}),
 				Action: func(c *cli.Context) error {
 					runRegister(c)
 					return nil
