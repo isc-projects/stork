@@ -16,7 +16,7 @@ import (
 	"isc.org/stork/pki"
 )
 
-// Returns an http errors and panics on any error.
+// Returns an http client or panics if any error.
 func newHTTPClientHelper() *HTTPClient {
 	httpClient, err := NewHTTPClient(false)
 	if err != nil {
