@@ -6,14 +6,25 @@ import { IPType } from '../iptype'
 
 /**
  * A node of the displayed option holding its basic description.
- *
- * It currently holds the option code and whether or not the option
- * is always returned by the DHCP server.
  */
 export interface OptionNode {
+    /**
+     * Indicates if the option is always sent to a DHCP client, regardless
+     * if the client has requested the option.
+     */
     alwaysSend?: boolean
+    /**
+     * Option code.
+     */
     code: number
+    /**
+     * Option universe (IPv4 or IPv6).
+     */
     universe: IPType
+    /**
+     * Name of the configuration level at which the option has been configured.
+     */
+    level: string
 }
 
 /**
@@ -37,14 +48,57 @@ export class DhcpOptionSetViewComponent implements OnInit {
     /**
      * An input parameter holding an array of DHCP options associated with
      * a particular daemon and a host, subnet etc.
+     *
+     * The first array length must be equal to the length of the @link levels
+     * array. It holds option sets at each configuration level. The second array
+     * holds options defined at the particular level.
      */
-    @Input() options: Array<DHCPOption>
+    @Input() options: Array<Array<DHCPOption>>
+
+    /**
+     * An input parameter holding an array of the configuration levels at
+     * which the options have been configured.
+     *
+     * The typical sets are:
+     * - subnet, shared network, global
+     * - subnet, global
+     * - host
+     *
+     * The number of levels must be equal to the length of the @link options array.
+     */
+    @Input() levels: string[]
 
     /**
      * Collection of the converted options into the nodes that can be
      * displayed as a tree.
+     *
+     * The array holds the options specified at each configuration level.
      */
-    optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
+    optionNodes: Array<Array<TreeNode<OptionNode | OptionFieldNode>>> = new Array()
+
+    /**
+     * A flat collection of the converted options into the nodes that can be
+     * displayed as a tree.
+     *
+     * This collection holds options from all inheritance levels combined into a single
+     * tree. The options from the lower configuration levels take precedence over the
+     * same options specified at the higher configuration levels.
+     */
+    combinedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = new Array()
+
+    /**
+     * A collection of currently displayed options.
+     *
+     * This collection points to one of the @link combinedOptionNodes or @link optionNodes,
+     * depending on the @link currentLevelOnlyMode state.
+     */
+    displayedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = new Array()
+
+    /**
+     * A flag indicating whether all (combined) options should be displayed or the ones
+     * from the lowest inheritance level.
+     */
+    currentLevelOnlyMode: boolean = false
 
     /**
      * Constructor.
@@ -57,7 +111,24 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * It converts input DHCP options into the nodes tree that can be displayed.
      */
     ngOnInit(): void {
-        this.optionNodes = this._convertOptionsToNodes(this.options)
+        for (let i = 0; i < this.options?.length; i++) {
+            this.optionNodes.push(this.convertOptionsToNodes(this.options[i], this.levels[i]))
+        }
+
+        for (let optionNodes of this.optionNodes) {
+            for (let optionNode of optionNodes)
+                if (optionNode.type === 'option') {
+                    if (
+                        this.combinedOptionNodes.some(
+                            (n) => (n.data as OptionNode).code === (optionNode.data as OptionNode).code
+                        )
+                    ) {
+                        continue
+                    }
+                    this.combinedOptionNodes.push(optionNode)
+                }
+        }
+        this.displayedOptionNodes = this.combinedOptionNodes
     }
 
     /**
@@ -71,12 +142,14 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * It processes specified options recursively. It stops at recursion level of 3.
      *
      * @param options input options to be processed.
+     * @param level option configuration level.
      * @param recursionLevel specifies current recursion level. It protects against
      *                       infinite recursion.
      * @returns parsed options as a displayable tree.
      */
-    private _convertOptionsToNodes(
+    private convertOptionsToNodes(
         options: DHCPOption[],
+        level: string,
         recursionLevel: number = 0
     ): TreeNode<OptionNode | OptionFieldNode>[] {
         let optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
@@ -92,6 +165,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     alwaysSend: option.alwaysSend,
                     code: option.code,
                     universe: option.universe,
+                    level: level,
                 },
                 children: [],
             }
@@ -112,7 +186,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
             }
             // Parse suboptions recursively.
             optionNode.children = optionNode.children.concat(
-                this._convertOptionsToNodes(option.options, recursionLevel + 1)
+                this.convertOptionsToNodes(option.options, level, recursionLevel + 1)
             )
             optionNodes.push(optionNode)
         }
@@ -152,5 +226,38 @@ export class DhcpOptionSetViewComponent implements OnInit {
             return `${option.label}`
         }
         return `Option ${node.data.code}`
+    }
+
+    /**
+     * Returns severity of the tag displaying a configuration level for an option.
+     * @param node a node containing an option descriptor.
+     * @returns 'success' for the first configuration level, 'warning' for the second
+     * configuration level, 'danger' for the third configuration level, and 'info' for
+     * any other configuration level or when expected configuration levels do not exist.
+     */
+    getLevelTagSeverity(node: TreeNode<OptionNode>): string {
+        if (this.levels?.length >= 1 && node.data?.level === this.levels[0]) {
+            return 'success'
+        }
+        if (this.levels?.length >= 2 && node.data?.level === this.levels[1]) {
+            return 'warning'
+        }
+        if (this.levels?.length >= 3 && node.data?.level === this.levels[2]) {
+            return 'danger'
+        }
+        return 'info'
+    }
+
+    /**
+     * An event handler invoked when clicking on a checkbox that toggles options
+     * display mode.
+     *
+     * When the checkbox is on, only the first-level options are displayed. Otherwise,
+     * all options are displayed including inheritance from all levels.
+     *
+     * @param event an event emitted when the checkbox is clicked.
+     */
+    onCombinedChange(event) {
+        this.displayedOptionNodes = this.currentLevelOnlyMode ? this.optionNodes[0] : this.combinedOptionNodes
     }
 }

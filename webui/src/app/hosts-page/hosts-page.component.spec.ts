@@ -36,6 +36,7 @@ import { TreeModule } from 'primeng/tree'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { ChipsModule } from 'primeng/chips'
+import { DividerModule } from 'primeng/divider'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -60,6 +61,7 @@ describe('HostsPageComponent', () => {
             imports: [
                 ButtonModule,
                 ChipsModule,
+                DividerModule,
                 FormsModule,
                 TableModule,
                 HttpClientTestingModule,

@@ -9,6 +9,7 @@ import {
     hasDifferentLocalSubnetPools,
     hasAddressPools,
     hasPrefixPools,
+    hasDifferentLocalSubnetOptions,
 } from './subnets'
 
 describe('subnets', () => {
@@ -447,5 +448,209 @@ describe('subnets', () => {
         expect(hasAddressPools(subnet)).toBeTrue()
         expect(hasPrefixPools(subnet)).toBeTrue()
         expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+    })
+
+    it('detects different options for servers', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '345',
+                        },
+                        globalParameters: {
+                            optionsHash: '234',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+    })
+
+    it('detects different options for servers for the null hash', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: null,
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+    })
+
+    it('detects different options for servers for the null parameters', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: null,
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+    })
+    it('detects different options for servers for non-existing parameters', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+    })
+
+    it('detects the same options for servers', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeFalse()
+    })
+
+    it('detects the same options for servers for null hashes', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: null,
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: null,
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeFalse()
     })
 })

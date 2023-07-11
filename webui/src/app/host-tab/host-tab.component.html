@@ -247,7 +247,8 @@
                                 </ng-template>
                             </span>
                         </ng-template>
-                        <app-dhcp-option-set-view [options]="localHost.options"> </app-dhcp-option-set-view>
+                        <app-dhcp-option-set-view [options]="[localHost.options]" [levels]="['host']">
+                        </app-dhcp-option-set-view>
                     </p-fieldset>
                 </div>
             </ng-container>

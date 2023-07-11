@@ -9,6 +9,10 @@ import { TreeModule } from 'primeng/tree'
 import { DhcpOptionSetViewComponent, OptionFieldNode, OptionNode } from './dhcp-option-set-view.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DHCPOption } from '../backend/model/dHCPOption'
+import { DividerModule } from 'primeng/divider'
+import { CheckboxModule } from 'primeng/checkbox'
+import { FormsModule } from '@angular/forms'
+import { IPType } from '../iptype'
 
 describe('DhcpOptionSetViewComponent', () => {
     let component: DhcpOptionSetViewComponent
@@ -16,7 +20,16 @@ describe('DhcpOptionSetViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [OverlayPanelModule, TagModule, TooltipModule, TreeModule],
+            imports: [
+                CheckboxModule,
+                DividerModule,
+                FormsModule,
+                NoopAnimationsModule,
+                OverlayPanelModule,
+                TagModule,
+                TooltipModule,
+                TreeModule,
+            ],
             declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
         }).compileComponents()
     })
@@ -32,137 +45,142 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should convert DHCP options to a tree', () => {
-        let options: Array<DHCPOption> = [
-            {
-                alwaysSend: true,
-                code: 1024,
-                fields: [
-                    {
-                        fieldType: 'uint32',
-                        values: ['111'],
-                    },
-                    {
-                        fieldType: 'ipv6-prefix',
-                        values: ['3000::', '64'],
-                    },
-                ],
-                universe: 6,
-                options: [
-                    {
-                        code: 1025,
-                        universe: 6,
-                    },
-                    {
-                        code: 1026,
-                        fields: [
-                            {
-                                fieldType: 'ipv6-address',
-                                values: ['2001:db8:1::1'],
-                            },
-                            {
-                                fieldType: 'ipv6-address',
-                                values: ['2001:db8:2::1'],
-                            },
-                        ],
-                        universe: 6,
-                    },
-                ],
-            },
-            {
-                code: 1027,
-                fields: [
-                    {
-                        fieldType: 'bool',
-                        values: ['true'],
-                    },
-                ],
-                universe: 6,
-            },
-            {
-                code: 1028,
-                options: [
-                    {
-                        code: 1029,
-                        fields: [
-                            {
-                                fieldType: 'string',
-                                values: ['foo'],
-                            },
-                        ],
-                        options: [
-                            {
-                                code: 1030,
-                                options: [
-                                    {
-                                        code: 1031,
-                                    },
-                                ],
-                            },
-                        ],
-                        universe: 6,
-                    },
-                ],
-                universe: 6,
-            },
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    alwaysSend: true,
+                    code: 1024,
+                    fields: [
+                        {
+                            fieldType: 'uint32',
+                            values: ['111'],
+                        },
+                        {
+                            fieldType: 'ipv6-prefix',
+                            values: ['3000::', '64'],
+                        },
+                    ],
+                    universe: 6,
+                    options: [
+                        {
+                            code: 1025,
+                            universe: 6,
+                        },
+                        {
+                            code: 1026,
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['2001:db8:1::1'],
+                                },
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['2001:db8:2::1'],
+                                },
+                            ],
+                            universe: 6,
+                        },
+                    ],
+                },
+                {
+                    code: 1027,
+                    fields: [
+                        {
+                            fieldType: 'bool',
+                            values: ['true'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1028,
+                    options: [
+                        {
+                            code: 1029,
+                            fields: [
+                                {
+                                    fieldType: 'string',
+                                    values: ['foo'],
+                                },
+                            ],
+                            options: [
+                                {
+                                    code: 1030,
+                                    options: [
+                                        {
+                                            code: 1031,
+                                        },
+                                    ],
+                                },
+                            ],
+                            universe: 6,
+                        },
+                    ],
+                    universe: 6,
+                },
+            ],
         ]
         component.options = options
+        component.levels = ['subnet']
         component.ngOnInit()
         fixture.detectChanges()
 
-        expect(component.optionNodes.length).toBe(3)
+        expect(component.optionNodes[0].length).toBe(3)
 
         // Option 1024.
-        expect((component.optionNodes[0] as TreeNode<OptionNode>).data.alwaysSend).toBeTrue()
-        expect((component.optionNodes[0] as TreeNode<OptionNode>).data.code).toBe(1024)
+        expect((component.optionNodes[0][0] as TreeNode<OptionNode>).data.alwaysSend).toBeTrue()
+        expect((component.optionNodes[0][0] as TreeNode<OptionNode>).data.code).toBe(1024)
 
         // Option 1024 fields.
-        expect(component.optionNodes[0].children.length).toBe(4)
-        expect(component.optionNodes[0].children[0].type).toBe('field')
-        expect(component.optionNodes[0].children[0].expanded).toBeTrue()
-        expect((component.optionNodes[0].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe('uint32')
-        expect((component.optionNodes[0].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('111')
-        expect(component.optionNodes[0].children[1].type).toBe('field')
-        expect(component.optionNodes[0].children[1].expanded).toBeTrue()
-        expect((component.optionNodes[0].children[1] as TreeNode<OptionFieldNode>).data.fieldType).toBe('ipv6-prefix')
-        expect((component.optionNodes[0].children[1] as TreeNode<OptionFieldNode>).data.value).toBe('3000::/64')
+        expect(component.optionNodes[0][0].children.length).toBe(4)
+        expect(component.optionNodes[0][0].children[0].type).toBe('field')
+        expect(component.optionNodes[0][0].children[0].expanded).toBeTrue()
+        expect((component.optionNodes[0][0].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe('uint32')
+        expect((component.optionNodes[0][0].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('111')
+        expect(component.optionNodes[0][0].children[1].type).toBe('field')
+        expect(component.optionNodes[0][0].children[1].expanded).toBeTrue()
+        expect((component.optionNodes[0][0].children[1] as TreeNode<OptionFieldNode>).data.fieldType).toBe(
+            'ipv6-prefix'
+        )
+        expect((component.optionNodes[0][0].children[1] as TreeNode<OptionFieldNode>).data.value).toBe('3000::/64')
 
         // Option 1024 suboptions.
-        expect((component.optionNodes[0].children[2] as TreeNode<OptionNode>).data.code).toBe(1025)
-        expect(component.optionNodes[0].children[2].children.length).toBe(0)
+        expect((component.optionNodes[0][0].children[2] as TreeNode<OptionNode>).data.code).toBe(1025)
+        expect(component.optionNodes[0][0].children[2].children.length).toBe(0)
 
         // Suboption 1026.
-        expect((component.optionNodes[0].children[3] as TreeNode<OptionNode>).data.code).toBe(1026)
+        expect((component.optionNodes[0][0].children[3] as TreeNode<OptionNode>).data.code).toBe(1026)
 
         // Suboption 1026 fields.
-        expect(component.optionNodes[0].children[3].children.length).toBe(2)
-        expect((component.optionNodes[0].children[3].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe(
+        expect(component.optionNodes[0][0].children[3].children.length).toBe(2)
+        expect((component.optionNodes[0][0].children[3].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe(
             'ipv6-address'
         )
-        expect((component.optionNodes[0].children[3].children[0] as TreeNode<OptionFieldNode>).data.value).toBe(
+        expect((component.optionNodes[0][0].children[3].children[0] as TreeNode<OptionFieldNode>).data.value).toBe(
             '2001:db8:1::1'
         )
-        expect((component.optionNodes[0].children[3].children[1] as TreeNode<OptionFieldNode>).data.fieldType).toBe(
+        expect((component.optionNodes[0][0].children[3].children[1] as TreeNode<OptionFieldNode>).data.fieldType).toBe(
             'ipv6-address'
         )
-        expect((component.optionNodes[0].children[3].children[1] as TreeNode<OptionFieldNode>).data.value).toBe(
+        expect((component.optionNodes[0][0].children[3].children[1] as TreeNode<OptionFieldNode>).data.value).toBe(
             '2001:db8:2::1'
         )
         // Option 1027.
-        expect((component.optionNodes[1] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
-        expect((component.optionNodes[1] as TreeNode<OptionNode>).data.code).toBe(1027)
-        expect(component.optionNodes[1].children.length).toBe(1)
-        expect(component.optionNodes[1].children[0].type).toBe('field')
-        expect(component.optionNodes[1].children[0].expanded).toBeTrue()
-        expect((component.optionNodes[1].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe('bool')
-        expect((component.optionNodes[1].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('true')
+        expect((component.optionNodes[0][1] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
+        expect((component.optionNodes[0][1] as TreeNode<OptionNode>).data.code).toBe(1027)
+        expect(component.optionNodes[0][1].children.length).toBe(1)
+        expect(component.optionNodes[0][1].children[0].type).toBe('field')
+        expect(component.optionNodes[0][1].children[0].expanded).toBeTrue()
+        expect((component.optionNodes[0][1].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe('bool')
+        expect((component.optionNodes[0][1].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('true')
 
         // Option 1028.
-        expect((component.optionNodes[2] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
-        expect((component.optionNodes[2] as TreeNode<OptionNode>).data.code).toBe(1028)
-        expect(component.optionNodes[2].children.length).toBe(1)
+        expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
+        expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.code).toBe(1028)
+        expect(component.optionNodes[0][2].children.length).toBe(1)
 
         // Suboption 1029.
-        const option1029 = component.optionNodes[2].children[0] as TreeNode<OptionNode>
+        const option1029 = component.optionNodes[0][2].children[0] as TreeNode<OptionNode>
         expect(option1029.data.code).toBe(1029)
         expect(option1029.children.length).toBe(2)
 
@@ -192,19 +210,22 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should should display DHCPv4 option name when it is known', () => {
-        let options: Array<DHCPOption> = [
-            {
-                code: 5,
-                fields: [
-                    {
-                        fieldType: 'ipv4-address',
-                        values: ['192.0.2.1'],
-                    },
-                ],
-                universe: 4,
-            },
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    code: 5,
+                    fields: [
+                        {
+                            fieldType: 'ipv4-address',
+                            values: ['192.0.2.1'],
+                        },
+                    ],
+                    universe: 4,
+                },
+            ],
         ]
         component.options = options
+        component.levels = ['subnet']
         component.ngOnInit()
         fixture.detectChanges()
 
@@ -213,24 +234,182 @@ describe('DhcpOptionSetViewComponent', () => {
         expect(optionSet.properties.innerText).toContain('(5) Name Server')
     })
     it('should should display DHCPv6 option name when it is known', () => {
-        let options: Array<DHCPOption> = [
-            {
-                code: 23,
-                fields: [
-                    {
-                        fieldType: 'ipv6-address',
-                        values: ['2001:db8:cafe::'],
-                    },
-                ],
-                universe: 6,
-            },
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    code: 23,
+                    fields: [
+                        {
+                            fieldType: 'ipv6-address',
+                            values: ['2001:db8:cafe::'],
+                        },
+                    ],
+                    universe: 6,
+                },
+            ],
         ]
         component.options = options
+        component.levels = ['subnet']
         component.ngOnInit()
         fixture.detectChanges()
 
         let optionSet = fixture.debugElement.query(By.css('p-tree'))
         expect(optionSet).toBeTruthy()
         expect(optionSet.properties.innerText).toContain('(23) OPTION_DNS_SERVERS')
+    })
+
+    it('should combine options from all levels', () => {
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    alwaysSend: true,
+                    code: 1024,
+                    fields: [
+                        {
+                            fieldType: 'uint32',
+                            values: ['111'],
+                        },
+                        {
+                            fieldType: 'ipv6-prefix',
+                            values: ['3000::', '64'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1027,
+                    fields: [
+                        {
+                            fieldType: 'bool',
+                            values: ['true'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1028,
+                    universe: 6,
+                },
+            ],
+            [
+                {
+                    code: 1027,
+                    fields: [
+                        {
+                            fieldType: 'bool',
+                            values: ['false'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1030,
+                    fields: [
+                        {
+                            fieldType: 'ipv4-address',
+                            values: ['1.1.1.1'],
+                        },
+                    ],
+                    universe: 6,
+                },
+            ],
+        ]
+        component.options = options
+        component.levels = ['subnet', 'global']
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        // Initially, all options should be visible.
+        expect(component.currentLevelOnlyMode).toBeFalse()
+        expect(component.displayedOptionNodes.length).toBe(4)
+
+        expect((component.displayedOptionNodes[0] as TreeNode<OptionNode>).data.code).toBe(1024)
+        expect((component.displayedOptionNodes[1] as TreeNode<OptionNode>).data.code).toBe(1027)
+        expect((component.displayedOptionNodes[2] as TreeNode<OptionNode>).data.code).toBe(1028)
+        expect((component.displayedOptionNodes[3] as TreeNode<OptionNode>).data.code).toBe(1030)
+
+        // Make sure that subnet-level option 1027 has been taken, rather than global.
+        expect(component.displayedOptionNodes[1].children.length).toBe(1)
+        expect(component.displayedOptionNodes[1].children[0].type).toBe('field')
+        expect((component.displayedOptionNodes[1].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('true')
+
+        // Toggle displaying all options to subnet-level options only.
+        component.currentLevelOnlyMode = true
+        component.onCombinedChange(new Event('click'))
+
+        // Now, we should have 3 options only.
+        expect(component.displayedOptionNodes.length).toBe(3)
+
+        expect((component.displayedOptionNodes[0] as TreeNode<OptionNode>).data.code).toBe(1024)
+        expect((component.displayedOptionNodes[1] as TreeNode<OptionNode>).data.code).toBe(1027)
+        expect((component.displayedOptionNodes[2] as TreeNode<OptionNode>).data.code).toBe(1028)
+
+        // Toggle again and we should be back to 4 options.
+        component.currentLevelOnlyMode = false
+        component.onCombinedChange(new Event('click'))
+
+        expect(component.displayedOptionNodes.length).toBe(4)
+    })
+
+    it('should not show the toggle button for a single inheritance level', () => {
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    code: 1028,
+                    universe: 6,
+                },
+            ],
+        ]
+        component.options = options
+        component.levels = ['host']
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        expect(fixture.debugElement.query(By.css('p-checkbox'))).toBeFalsy()
+    })
+
+    it('should show the toggle button for a single inheritance level', () => {
+        let options: Array<Array<DHCPOption>> = [
+            [
+                {
+                    code: 1028,
+                    universe: 6,
+                },
+            ],
+            [
+                {
+                    code: 1028,
+                    universe: 6,
+                },
+            ],
+        ]
+        component.options = options
+        component.levels = ['subnet', 'global']
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        expect(fixture.debugElement.query(By.css('p-checkbox'))).toBeTruthy()
+    })
+
+    it('should return correct level tag severity', () => {
+        component.levels = ['subnet', 'shared network', 'global']
+        let node: TreeNode<OptionNode> = {
+            type: 'option',
+            data: {
+                code: 1,
+                universe: IPType.IPv4,
+                level: 'subnet',
+            },
+        }
+        expect(component.getLevelTagSeverity(node)).toBe('success')
+
+        node.data.level = 'shared network'
+        expect(component.getLevelTagSeverity(node)).toBe('warning')
+
+        node.data.level = 'global'
+        expect(component.getLevelTagSeverity(node)).toBe('danger')
+
+        node.data.level = 'other'
+        expect(component.getLevelTagSeverity(node)).toBe('info')
     })
 })

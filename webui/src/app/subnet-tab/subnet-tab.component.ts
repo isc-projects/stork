@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
-import { hasAddressPools, hasPrefixPools } from '../subnets'
+import { DHCPOption, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
+import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 
@@ -19,12 +19,20 @@ export class SubnetTabComponent implements OnInit {
     @Input() subnet: Subnet
 
     /**
-     * DHCP parameters structured for display by the @link CascadedParametersBoard
+     * DHCP parameters structured for display by the @link CascadedParametersBoard.
      *
      * The parameters are structured as an array of subnet-level, shared network-level
      * and global parameters.
      */
     dhcpParameters: Array<NamedCascadedParameters<KeaConfigSubnetDerivedParameters>> = new Array()
+
+    /**
+     * DHCP options structured for display by the @link DhcpOptionSetView.
+     *
+     * The options are structured as an array of subnet-level, shared network-level
+     * and global options.
+     */
+    dhcpOptions: Array<Array<Array<DHCPOption>>> = new Array()
 
     /**
      * A component lifecycle hook invoked upon the component initialization.
@@ -51,6 +59,19 @@ export class SubnetTabComponent implements OnInit {
                                   ls.keaConfigSubnetParameters?.globalParameters,
                               ],
                 })
+
+                if (this.subnet.sharedNetwork?.length > 0) {
+                    this.dhcpOptions.push([
+                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options,
+                        ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.options,
+                        ls.keaConfigSubnetParameters?.globalParameters?.options,
+                    ])
+                } else {
+                    this.dhcpOptions.push([
+                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options,
+                        ls.keaConfigSubnetParameters?.globalParameters?.options,
+                    ])
+                }
             }
         }
     }
@@ -107,5 +128,16 @@ export class SubnetTabComponent implements OnInit {
      */
     allDaemonsHaveEqualPools(): boolean {
         return !hasDifferentLocalSubnetPools(this.subnet)
+    }
+
+    /**
+     * Checks if all DHCP servers owning the subnet have an equal set of
+     * DHCP options.
+     *
+     * @returns true, if all DHCP servers have equal option set hashes, false
+     *          otherwise.
+     */
+    allDaemonsHaveEqualDhcpOptions(): boolean {
+        return !hasDifferentLocalSubnetOptions(this.subnet)
     }
 }

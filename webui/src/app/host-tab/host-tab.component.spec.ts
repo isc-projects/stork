@@ -25,6 +25,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
 import { ChipModule } from 'primeng/chip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { DividerModule } from 'primeng/divider'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -39,6 +40,7 @@ describe('HostTabComponent', () => {
             imports: [
                 ConfirmDialogModule,
                 ChipModule,
+                DividerModule,
                 FieldsetModule,
                 FormsModule,
                 HttpClientTestingModule,

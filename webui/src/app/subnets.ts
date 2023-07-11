@@ -250,9 +250,11 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
  * Utility function checking if there are differences between
  * DHCP options in the subnet.
  *
- * @param host host instance.
- * @returns true if there are differences in DHCP options, false
- * otherwise.
+ * It checks differences between the option hashes at all configuration
+ * inheritance levels (i.e., subnet, shared network and global).
+ *
+ * @param subnet subnet instance.
+ * @returns true if there are differences in DHCP options, false otherwise.
  */
 export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
     return (
@@ -262,7 +264,11 @@ export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
             .some(
                 (ls) =>
                     ls.keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash !==
-                    subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash
+                        subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash ||
+                    ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash !==
+                        subnet.localSubnets[0].keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash ||
+                    ls.keaConfigSubnetParameters?.globalParameters?.optionsHash !==
+                        subnet.localSubnets[0].keaConfigSubnetParameters?.globalParameters?.optionsHash
             )
     )
 }

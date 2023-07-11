@@ -19,6 +19,12 @@ import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-p
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { ButtonModule } from 'primeng/button'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
+import { TagModule } from 'primeng/tag'
+import { CheckboxModule } from 'primeng/checkbox'
+import { FormsModule } from '@angular/forms'
+import { IPType } from '../iptype'
 
 export default {
     title: 'App/SubnetTab',
@@ -28,17 +34,22 @@ export default {
             imports: [
                 ButtonModule,
                 ChartModule,
+                CheckboxModule,
                 DividerModule,
                 FieldsetModule,
+                FormsModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 RouterTestingModule,
                 TableModule,
+                TagModule,
                 TooltipModule,
+                TreeModule,
             ],
             declarations: [
                 AddressPoolBarComponent,
                 CascadedParametersBoardComponent,
+                DhcpOptionSetViewComponent,
                 DelegatedPrefixBarComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
@@ -116,6 +127,19 @@ Subnet4.args = {
                         interfaceID: 'foobar',
                         matchClientID: false,
                         nextServer: '192.1.2.3',
+                        options: [
+                            {
+                                code: 3,
+                                fields: [
+                                    {
+                                        fieldType: 'ipv4-address',
+                                        values: ['192.0.2.1'],
+                                    },
+                                ],
+                                universe: IPType.IPv4,
+                            },
+                        ],
+                        optionsHash: '123',
                         pdAllocator: 'flq',
                         rapidCommit: true,
                         relay: {
@@ -164,6 +188,19 @@ Subnet4.args = {
                         interfaceID: 'foo',
                         matchClientID: true,
                         nextServer: '192.1.2.4',
+                        options: [
+                            {
+                                code: 5,
+                                fields: [
+                                    {
+                                        fieldType: 'ipv4-address',
+                                        values: ['8.8.8.8'],
+                                    },
+                                ],
+                                universe: IPType.IPv4,
+                            },
+                        ],
+                        optionsHash: '234',
                         pdAllocator: 'iterative',
                         rapidCommit: false,
                         relay: {
@@ -212,6 +249,19 @@ Subnet4.args = {
                         interfaceID: 'uffa',
                         matchClientID: false,
                         nextServer: '10.1.1.1',
+                        options: [
+                            {
+                                code: 23,
+                                fields: [
+                                    {
+                                        fieldType: 'uint8',
+                                        values: [10],
+                                    },
+                                ],
+                                universe: IPType.IPv4,
+                            },
+                        ],
+                        optionsHash: '345',
                         pdAllocator: 'random',
                         rapidCommit: true,
                         serverHostname: 'abc.example.org',
@@ -264,6 +314,18 @@ Subnet4.args = {
                         interfaceID: 'foobar',
                         matchClientID: false,
                         nextServer: '192.1.2.3',
+                        options: [
+                            {
+                                code: 3,
+                                fields: [
+                                    {
+                                        fieldType: 'ipv4-address',
+                                        values: ['192.0.2.1'],
+                                    },
+                                ],
+                            },
+                        ],
+                        optionsHash: '123',
                         pdAllocator: 'flq',
                         rapidCommit: true,
                         relay: {

@@ -295,6 +295,6 @@ describe('CascadedParametersBoardComponent', () => {
 
         const span = fixture.debugElement.query(By.css('span'))
         expect(span).toBeTruthy()
-        expect(span.nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
+        expect(span.nativeElement.innerText).toContain('No parameters configured.')
     })
 })

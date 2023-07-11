@@ -21,6 +21,11 @@ import { By } from '@angular/platform-browser'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { ButtonModule } from 'primeng/button'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
+import { TagModule } from 'primeng/tag'
+import { CheckboxModule } from 'primeng/checkbox'
+import { FormsModule } from '@angular/forms'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -31,18 +36,23 @@ describe('SubnetTabComponent', () => {
             imports: [
                 ButtonModule,
                 ChartModule,
+                CheckboxModule,
                 DividerModule,
                 FieldsetModule,
+                FormsModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 RouterTestingModule,
                 TableModule,
+                TagModule,
                 TooltipModule,
+                TreeModule,
             ],
             declarations: [
                 AddressPoolBarComponent,
                 CascadedParametersBoardComponent,
                 DelegatedPrefixBarComponent,
+                DhcpOptionSetViewComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
                 HumanCountComponent,
@@ -88,19 +98,31 @@ describe('SubnetTabComponent', () => {
                         subnetLevelParameters: {
                             cacheThreshold: 0.25,
                             cacheMaxAge: 1000,
-                            options: [],
+                            options: [
+                                {
+                                    code: 1033,
+                                },
+                            ],
                             optionsHash: 'abc',
                         },
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
                             cacheMaxAge: 900,
-                            options: [],
+                            options: [
+                                {
+                                    code: 1034,
+                                },
+                            ],
                             optionsHash: 'abc',
                         },
                         globalParameters: {
                             cacheThreshold: 0.29,
                             cacheMaxAge: 800,
-                            options: [],
+                            options: [
+                                {
+                                    code: 1035,
+                                },
+                            ],
                             optionsHash: 'abc',
                         },
                     },
@@ -113,7 +135,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -136,6 +158,10 @@ describe('SubnetTabComponent', () => {
         // Ensure that the DHCP options are excluded from this list.
         expect(fieldsets[3].nativeElement.innerText).not.toContain('Options')
         expect(fieldsets[3].nativeElement.innerText).not.toContain('Options Hash')
+
+        // DHCP options sit in their own fieldset.
+        expect(fieldsets[4].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[4].nativeElement.innerText).toContain('1033')
     })
 
     it('should display an IPv4 subnet without pools', () => {
@@ -166,7 +192,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -176,7 +202,9 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
         expect(fieldsets[1].nativeElement.innerText).toContain('No pools configured.')
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 subnet', () => {
@@ -207,7 +235,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -223,7 +251,9 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(1)
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 subnet with address pools and prefixes', () => {
@@ -265,7 +295,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
+        expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -285,10 +315,12 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
     })
 
-    it('should display an IPv6 subnet with different pools for different servers', () => {
+    it('should display an IPv6 subnet with different fieldsets for different servers', () => {
         component.subnet = {
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
@@ -319,6 +351,29 @@ describe('SubnetTabComponent', () => {
                         'total-pds': 500,
                         'assigned-pds': 200,
                     },
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            cacheThreshold: 0.25,
+                            options: [
+                                {
+                                    code: 3,
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.1'],
+                                        },
+                                    ],
+                                },
+                            ],
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            cacheThreshold: 0.3,
+                        },
+                        globalParameters: {
+                            cacheThreshold: 0.29,
+                        },
+                    },
                 },
                 {
                     id: 25432,
@@ -341,6 +396,29 @@ describe('SubnetTabComponent', () => {
                         'total-pds': 500,
                         'assigned-pds': 158,
                     },
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            cacheThreshold: 0.25,
+                            options: [
+                                {
+                                    code: 3,
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.2'],
+                                        },
+                                    ],
+                                },
+                            ],
+                            optionsHash: '234',
+                        },
+                        sharedNetworkLevelParameters: {
+                            cacheThreshold: 0.3,
+                        },
+                        globalParameters: {
+                            cacheThreshold: 0.29,
+                        },
+                    },
                 },
             ],
         }
@@ -349,7 +427,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(7)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -382,7 +460,12 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(6)
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('No DHCP parameters found for the subnet.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[5].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[6].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[6].nativeElement.innerText).toContain('bar@2001:db8:2::5')
     })
 
     it('should return shared network attributes for IPv6 subnet', () => {

@@ -1,4 +1,4 @@
-<p-tree [value]="optionNodes" emptyMessage="No options configured.">
+<p-tree [value]="displayedOptionNodes" emptyMessage="No options configured.">
     <ng-template let-node pTemplate="option">
         <div class="flex align-items-center p-1">
             <i class="tree-icon fa fa-cog"></i>
@@ -11,13 +11,18 @@
             <div *ngIf="isEmpty(node)" class="ml-2">
                 <p-tag>empty option</p-tag>
             </div>
+            <div *ngIf="!currentLevelOnlyMode && optionNodes.length >= 2 && node.data.level.length > 0" class="ml-2">
+                <p-tag [severity]="getLevelTagSeverity(node)">{{ node.data.level }}</p-tag>
+            </div>
             <div>
                 <app-help-tip title="DHCP Option View">
                     Option fields and suboptions are displayed for option {{ node.data.code }}. Move the cursor over the
                     option fields to see their types. If the "always sent" tag is shown next to the option code it means
                     that the option is configured to be always returned to the DHCP client, event when it is not
                     requested. The "empty option" and "empty suboption" tags indicate that the configured DHCP option
-                    contains no payload.
+                    contains no payload. The "{{ node.data.level }}" tag is shown when DHCP options are inherited from
+                    multiple configuration levels, and it indicates that the option has been defined at the level
+                    presented by the tag.
                 </app-help-tip>
             </div>
         </div>
@@ -40,3 +45,16 @@
         </div>
     </ng-template>
 </p-tree>
+<p-divider type="dashed"></p-divider>
+<ng-container *ngIf="optionNodes.length >= 2 && combinedOptionNodes.length > 0">
+    <div class="flex align-items-center">
+        <p-checkbox
+            [(ngModel)]="currentLevelOnlyMode"
+            [binary]="true"
+            inputId="binary"
+            styleClass="ml-2"
+            (onChange)="onCombinedChange($event)"
+        ></p-checkbox>
+        <span class="ml-2">Show only {{ levels[0] }} options .</span>
+    </div>
+</ng-container>
