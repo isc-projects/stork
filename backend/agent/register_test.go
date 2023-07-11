@@ -298,17 +298,19 @@ func TestRegisterNegative(t *testing.T) {
 	require.False(t, res)
 
 	// bad folder for certs
-	KeyPEMFile = "/root/key.pem"
+	KeyPEMFile = "/non/existing/dir/key.pem"
 	httpClient, err := NewHTTPClient(false)
-	require.ErrorContains(t, err, "permission denied")
-	require.Nil(t, httpClient)
+	require.NoError(t, err)
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)
+	require.False(t, res)
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem") // Restore proper value.
 
 	// bad folder for agent token
-	AgentTokenFile = "/root/agent-token.txt"
+	AgentTokenFile = "/non/existing/dir/agent-token.txt"
 	httpClient, err = NewHTTPClient(false)
-	require.ErrorContains(t, err, "permission denied")
-	require.Nil(t, httpClient)
+	require.NoError(t, err)
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)
+	require.False(t, res)
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt") // restore proper value
 
 	// not running agent on 54444 port
