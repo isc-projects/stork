@@ -197,11 +197,13 @@
                             </div>
                             <div *ngIf="lease.userContext" class="col">
                                 <p-fieldset legend="User Context">
+                                    <!-- Wrapper to shrink the width of the viewer to its content. -->
+                                    <div class="w-max">
                                     <!-- JSON viewer -->
-                                    <app-json-tree-root
-                                        class="json-content"
-                                        [value]="lease.userContext"
-                                    ></app-json-tree-root>
+                                        <app-json-tree-root
+                                            [value]="lease.userContext"
+                                        ></app-json-tree-root>
+                                    </div>
                                 </p-fieldset>
                             </div>
                             <div *ngIf="lease.hostname" class="col-3">
