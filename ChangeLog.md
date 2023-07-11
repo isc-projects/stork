@@ -1,3 +1,11 @@
+* 313 [bug] slawek
+
+    Fixed a rare crash occurring when the state puller schedules the config
+    review for an existing daemon. Set the focus on the login page to the first
+    input. Shrank the width of the lease user context viewer to its content.
+    Fixed a problem with the DHCP identifier button's width.
+    (Gitlab #1053)
+
 * 312 [build] slawek
 
     Refactored mock file suffixes. The mocks no longer need to be manually
