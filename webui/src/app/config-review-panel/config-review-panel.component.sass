@@ -1,8 +1,8 @@
-::ng-deep .config-review-pager .p-paginator
+:host ::ng-deep .config-review-pager .p-paginator
   border: 0px
   margin-top: 10px
 
-::ng-deep .review-buttons .p-togglebutton .p-button-label
+:host ::ng-deep .p-togglebutton .p-button-label
   // Prevent to resize button while label is changed.
   min-width: 5rem
 
@@ -45,7 +45,7 @@
   // prevent this situation.
   min-width: 20rem
 
-::ng-deep .p-dataview.p-dataview-list
+:host ::ng-deep .p-dataview.p-dataview-list
   .p-dataview-content > .p-grid > div
     border-top: none
   .p-dataview-content > .p-grid > div:not(:last-child)

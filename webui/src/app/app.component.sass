@@ -38,19 +38,19 @@
     stroke: #fff
 
 // fix position and look of stork version tooltip
-::ng-deep .stork-version-tooltip
+:host  ::ng-deep .stork-version-tooltip
   left: 44px !important
 
 // make it wider
-::ng-deep .p-tooltip.stork-version-tooltip
+:host ::ng-deep .p-tooltip.stork-version-tooltip
   max-width: 600px
 
 // hide arrow
-::ng-deep .stork-version-tooltip .p-tooltip-arrow
+:host ::ng-deep .stork-version-tooltip .p-tooltip-arrow
   display: none
 
 // set nice look of stork version tooltip
-::ng-deep body .p-tooltip.stork-version-tooltip .p-tooltip-text
+:host ::ng-deep body .p-tooltip.stork-version-tooltip .p-tooltip-text
   background-color: #c6c6c6
   color: #000
 

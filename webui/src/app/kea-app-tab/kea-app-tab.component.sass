@@ -1,8 +1,3 @@
-// format right content in paginator
-::ng-deep .p-paginator .p-paginator-right-content
-  margin-left: 20px
-  color: #848484
-
 .disabled
   color: #999
 
@@ -10,23 +5,23 @@
 .icon-not-monitored
   color: grey
 
-::ng-deep .p-tabview-selected .icon-not-monitored
+:host ::ng-deep .p-tabview-selected .icon-not-monitored
   color: #d9d9d9
 
 .icon-not-active
   color: #f11
 
-::ng-deep .p-tabview-selected .icon-not-active
+:host ::ng-deep .p-tabview-selected .icon-not-active
   color: #ffa4a4
 
 .icon-ok
   color: #00a800
 
-::ng-deep .p-tabview-selected .icon-ok
+:host ::ng-deep .p-tabview-selected .icon-ok
   color: #54ff45
 
 // remove padding from daemon tabs panels so grey bar sticks to borders
-::ng-deep body .daemon-tabs.p-tabview .p-tabview-panels
+:host ::ng-deep body .daemon-tabs.p-tabview .p-tabview-panels
   padding: 0
 
 @keyframes p-progress-spinner-color
@@ -40,13 +35,13 @@
 
 // Remove padding from PrimeNG inplace elements so they don't overlap
 // with each other.
-::ng-deep .hook-path .p-inplace .p-inplace-display
+:host ::ng-deep .hook-path .p-inplace .p-inplace-display
   padding: 0
 
 // Align the closing button of a PrimeNG inplace element in the middle, instead
 // of at the default bottom, and make height and width equal to text size so
 // that it doesn't expand the enclosing div.
-::ng-deep .hook-path .p-button.p-button-icon-only
+:host ::ng-deep .hook-path .p-button.p-button-icon-only
   height: 1rem
   vertical-align: middle
   width: 1rem
