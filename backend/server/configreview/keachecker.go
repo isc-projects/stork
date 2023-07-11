@@ -201,9 +201,6 @@ func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 // Fetch hosts for the tested daemon and index them by local subnet ID.
 func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts map[int64][]dbmodel.Host, err error) {
 	dbHosts = make(map[int64][]dbmodel.Host)
-	if ctx.db == nil {
-		return false, dbHosts, nil
-	}
 	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds"); present {
 		hosts, _, err := dbmodel.GetHostsByDaemonID(
 			ctx.db,
@@ -1182,7 +1179,13 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
-	machine := ctx.subjectDaemon.App.Machine
+	// It isn't guarantied that the subject daemon has the referenced app member
+	// so we need to retrieve the database entry.
+	dbDaemon, err := dbmodel.GetDaemonByID(ctx.db, ctx.subjectDaemon.ID)
+	if err != nil {
+		return nil, err
+	}
+	machine := dbDaemon.App.Machine
 
 	if !machine.State.AgentUsesHTTPCredentials {
 		// The HTTP credentials are not configured. Nothing to do.

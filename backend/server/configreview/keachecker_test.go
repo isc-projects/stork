@@ -35,14 +35,10 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 		KeaDaemon: &dbmodel.KeaDaemon{
 			Config: config,
 		},
-		AppID: 1,
-		App: &dbmodel.App{
-			Type:   "kea",
-			Active: true,
-			Name:   "kea@machine",
-		},
+		// The subject daemon may lack the app. The dispatcher accepts the
+		// daemon object and doesn't validate if it contains non-nil references
+		// to the app and machine.
 	}, []Trigger{ManualRun}, nil)
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, ctx.subjectDaemon)
 	require.NotNil(t, ctx)
 
 	return ctx
@@ -2682,17 +2678,6 @@ func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testin
         ]
     } }`)
 
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "foobar",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
-
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
-		ID:   42,
-		Name: dbmodel.DaemonNameCA,
-	})
-
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
 
@@ -2701,22 +2686,11 @@ func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testin
 	require.NoError(t, err)
 }
 
-// Test that the HA dedicated ports checker produces no report if the HA is not
-// configured.
-func TestHighAvailabilityDedicatedPortsCheckerNoHA(t *testing.T) {
+// Test that the HA dedicated ports checker produces no report if the global
+// multi-threading is not configured.
+func TestHighAvailabilityDedicatedPortsCheckerNoGlobalMultiThreading(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
-
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "foobar",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
-
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
-		ID:   42,
-		Name: dbmodel.DaemonNameCA,
-	})
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2838,14 +2812,6 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
 	ctx.subjectDaemon.AppID = 2
-	ctx.subjectDaemon.App.ID = 2
-
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "127.0.0.1",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
-
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
 
@@ -2898,17 +2864,6 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
             }
         ]
     } }`)
-
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "foobar",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
-
-	ctx.subjectDaemon.App.Daemons = append(ctx.subjectDaemon.App.Daemons, &dbmodel.Daemon{
-		ID:   42,
-		Name: dbmodel.DaemonNameCA,
-	})
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2987,13 +2942,6 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
 	ctx.subjectDaemon.AppID = 2
-	ctx.subjectDaemon.App.ID = 2
-
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "10.0.0.1",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -3062,13 +3010,6 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
             }
         ]
     } }`)
-
-	// The default IDs are already stored in the database.
-	ctx.subjectDaemon.App.AccessPoints = append(ctx.subjectDaemon.App.AccessPoints, &dbmodel.AccessPoint{
-		Address: "127.0.0.1",
-		Port:    8000,
-		Type:    dbmodel.AccessPointControl,
-	})
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -3679,14 +3620,27 @@ func TestCredentialsOverHTTPSForNonCADaemon(t *testing.T) {
 // HTTP credentials are not provided in the Stork agent.
 func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
-	ctx.subjectDaemon.App = &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			State: dbmodel.MachineState{
-				AgentUsesHTTPCredentials: false,
-			},
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := createReviewContext(t, db, `{ "Control-agent": { } }`)
+	ctx.subjectDaemon.ID = 0
+
+	machine := &dbmodel.Machine{
+		Address:   "10.0.0.2",
+		AgentPort: 8080,
+		State: dbmodel.MachineState{
+			AgentUsesHTTPCredentials: false,
 		},
 	}
+	_ = dbmodel.AddMachine(db, machine)
+
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
+	}
+	_, _ = dbmodel.AddApp(db, app)
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
@@ -3701,14 +3655,27 @@ func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
-	ctx.subjectDaemon.App = &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			State: dbmodel.MachineState{
-				AgentUsesHTTPCredentials: true,
-			},
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := createReviewContext(t, db, `{ "Control-agent": { } }`)
+	ctx.subjectDaemon.ID = 0
+
+	machine := &dbmodel.Machine{
+		Address:   "10.0.0.2",
+		AgentPort: 8080,
+		State: dbmodel.MachineState{
+			AgentUsesHTTPCredentials: true,
 		},
 	}
+	_ = dbmodel.AddMachine(db, machine)
+
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
+	}
+	_, _ = dbmodel.AddApp(db, app)
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
@@ -3730,18 +3697,31 @@ func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithTLS(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := createReviewContext(t, db, `{ "Control-agent": {
         "trust-anchor": "foo",
         "cert-file": "/bar",
         "key-file": "/baz"
     } }`)
-	ctx.subjectDaemon.App = &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			State: dbmodel.MachineState{
-				AgentUsesHTTPCredentials: true,
-			},
+	ctx.subjectDaemon.ID = 0
+
+	machine := &dbmodel.Machine{
+		Address:   "10.0.0.2",
+		AgentPort: 8080,
+		State: dbmodel.MachineState{
+			AgentUsesHTTPCredentials: true,
 		},
 	}
+	_ = dbmodel.AddMachine(db, machine)
+
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
+	}
+	_, _ = dbmodel.AddApp(db, app)
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
