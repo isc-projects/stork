@@ -440,3 +440,12 @@ func IsSocket(path string) bool {
 	}
 	return s.Mode().Type() == fs.ModeSocket
 }
+
+// Convenience function returning nil when an input string parameter
+// is nil or empty.
+func NullifyEmptyString(s *string) *string {
+	if s != nil && len(*s) > 0 {
+		return s
+	}
+	return nil
+}

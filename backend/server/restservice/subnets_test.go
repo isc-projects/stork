@@ -357,11 +357,9 @@ func TestGetSubnet4(t *testing.T) {
 	subnetParams := keaParams.SubnetLevelParameters
 
 	// 4o6-interface
-	require.NotNil(t, subnetParams.FourOverSixInterface)
-	require.Empty(t, *subnetParams.FourOverSixInterface)
+	require.Nil(t, subnetParams.FourOverSixInterface)
 	// 4o6-interface-id
-	require.NotNil(t, subnetParams.FourOverSixInterfaceID)
-	require.Empty(t, subnetParams.FourOverSixInterfaceID)
+	require.Nil(t, subnetParams.FourOverSixInterfaceID)
 	// 4o6-subnet
 	require.NotNil(t, subnetParams.FourOverSixSubnet)
 	require.Equal(t, "2001:db8:1:1::/64", *subnetParams.FourOverSixSubnet)
@@ -372,11 +370,9 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, subnetParams.Authoritative)
 	require.False(t, *subnetParams.Authoritative)
 	// boot-file-name
-	require.NotNil(t, subnetParams.BootFileName)
-	require.Empty(t, subnetParams.BootFileName)
+	require.Nil(t, subnetParams.BootFileName)
 	// client-class
-	require.NotNil(t, subnetParams.ClientClass)
-	require.Empty(t, subnetParams.ClientClass)
+	require.Nil(t, subnetParams.ClientClass)
 	// ddns-generated-prefix
 	require.NotNil(t, subnetParams.DdnsGeneratedPrefix)
 	require.Equal(t, "myhost", *subnetParams.DdnsGeneratedPrefix)
@@ -387,8 +383,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, subnetParams.DdnsOverrideNoUpdate)
 	require.False(t, *subnetParams.DdnsOverrideNoUpdate)
 	// ddns-qualifying-suffix
-	require.NotNil(t, subnetParams.DdnsQualifyingSuffix)
-	require.Empty(t, *subnetParams.DdnsQualifyingSuffix)
+	require.Nil(t, subnetParams.DdnsQualifyingSuffix)
 	// ddns-replace-client-name
 	require.NotNil(t, subnetParams.DdnsReplaceClientName)
 	require.Equal(t, "never", *subnetParams.DdnsReplaceClientName)
@@ -457,8 +452,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, subnetParams.RequireClientClasses, 1)
 	require.Equal(t, "late", subnetParams.RequireClientClasses[0])
 	// server-hostname
-	require.NotNil(t, subnetParams.ServerHostname)
-	require.Empty(t, subnetParams.ServerHostname)
+	require.Nil(t, subnetParams.ServerHostname)
 	// valid-lifetime
 	require.NotNil(t, subnetParams.ValidLifetime)
 	require.EqualValues(t, 6000, *subnetParams.ValidLifetime)
@@ -495,8 +489,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, networkParams.BootFileName)
 	require.Equal(t, "/dev/null", *networkParams.BootFileName)
 	// client-class
-	require.NotNil(t, networkParams.ClientClass)
-	require.Empty(t, networkParams.ClientClass)
+	require.Nil(t, networkParams.ClientClass)
 	// ddns-generated-prefix
 	require.NotNil(t, networkParams.DdnsGeneratedPrefix)
 	require.Equal(t, "myhost", *networkParams.DdnsGeneratedPrefix)
@@ -507,8 +500,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, networkParams.DdnsOverrideNoUpdate)
 	require.False(t, *networkParams.DdnsOverrideNoUpdate)
 	// ddns-qualifying-suffix
-	require.NotNil(t, networkParams.DdnsQualifyingSuffix)
-	require.Empty(t, *networkParams.DdnsQualifyingSuffix)
+	require.Nil(t, networkParams.DdnsQualifyingSuffix)
 	// ddns-replace-client-name
 	require.NotNil(t, networkParams.DdnsReplaceClientName)
 	require.Equal(t, "never", *networkParams.DdnsReplaceClientName)
@@ -576,8 +568,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, networkParams.RequireClientClasses, 1)
 	require.Equal(t, "late", networkParams.RequireClientClasses[0])
 	// server-hostname
-	require.NotNil(t, networkParams.ServerHostname)
-	require.Empty(t, networkParams.ServerHostname)
+	require.Nil(t, networkParams.ServerHostname)
 	// valid-lifetime
 	require.NotNil(t, networkParams.ValidLifetime)
 	require.EqualValues(t, 6001, *networkParams.ValidLifetime)
@@ -623,8 +614,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, globalParams.DdnsOverrideNoUpdate)
 	require.False(t, *globalParams.DdnsOverrideNoUpdate)
 	// ddns-qualifying-suffix
-	require.NotNil(t, globalParams.DdnsQualifyingSuffix)
-	require.Empty(t, *globalParams.DdnsQualifyingSuffix)
+	require.Nil(t, globalParams.DdnsQualifyingSuffix)
 	// ddns-replace-client-name
 	require.NotNil(t, globalParams.DdnsReplaceClientName)
 	require.Equal(t, "never", *globalParams.DdnsReplaceClientName)
@@ -683,8 +673,7 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, globalParams.CacheMaxAge)
 	require.EqualValues(t, 1000, *globalParams.CacheMaxAge)
 	// server-hostname
-	require.NotNil(t, globalParams.ServerHostname)
-	require.Empty(t, globalParams.ServerHostname)
+	require.Nil(t, globalParams.ServerHostname)
 	// valid-lifetime
 	require.NotNil(t, globalParams.ValidLifetime)
 	require.EqualValues(t, 6000, *globalParams.ValidLifetime)

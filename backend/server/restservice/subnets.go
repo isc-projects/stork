@@ -63,34 +63,36 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		// Subnet level Kea DHCP parameters.
 		if lsn.KeaParameters != nil {
 			keaParameters := lsn.KeaParameters
-			localSubnet.KeaConfigSubnetParameters = &models.KeaConfigSubnetParameters{}
+			if localSubnet.KeaConfigSubnetParameters == nil {
+				localSubnet.KeaConfigSubnetParameters = &models.KeaConfigSubnetParameters{}
+			}
 			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters = &models.KeaConfigSubnetDerivedParameters{
 				KeaConfigCacheParameters: models.KeaConfigCacheParameters{
 					CacheThreshold: keaParameters.CacheThreshold,
 					CacheMaxAge:    keaParameters.CacheMaxAge,
 				},
 				KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-					ClientClass:          keaParameters.ClientClass,
+					ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
 					RequireClientClasses: keaParameters.RequireClientClasses,
 				},
 				KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
-					DdnsGeneratedPrefix:       keaParameters.DDNSGeneratedPrefix,
+					DdnsGeneratedPrefix:       storkutil.NullifyEmptyString(keaParameters.DDNSGeneratedPrefix),
 					DdnsOverrideClientUpdate:  keaParameters.DDNSOverrideClientUpdate,
 					DdnsOverrideNoUpdate:      keaParameters.DDNSOverrideNoUpdate,
-					DdnsQualifyingSuffix:      keaParameters.DDNSQualifyingSuffix,
-					DdnsReplaceClientName:     keaParameters.DDNSReplaceClientName,
+					DdnsQualifyingSuffix:      storkutil.NullifyEmptyString(keaParameters.DDNSQualifyingSuffix),
+					DdnsReplaceClientName:     storkutil.NullifyEmptyString(keaParameters.DDNSReplaceClientName),
 					DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
 					DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
 					DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
 				},
 				KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
-					FourOverSixInterface:   keaParameters.FourOverSixInterface,
-					FourOverSixInterfaceID: keaParameters.FourOverSixInterfaceID,
-					FourOverSixSubnet:      keaParameters.FourOverSixSubnet,
+					FourOverSixInterface:   storkutil.NullifyEmptyString(keaParameters.FourOverSixInterface),
+					FourOverSixInterfaceID: storkutil.NullifyEmptyString(keaParameters.FourOverSixInterfaceID),
+					FourOverSixSubnet:      storkutil.NullifyEmptyString(keaParameters.FourOverSixSubnet),
 				},
 				KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
-					HostnameCharReplacement: keaParameters.HostnameCharReplacement,
-					HostnameCharSet:         keaParameters.HostnameCharSet,
+					HostnameCharReplacement: storkutil.NullifyEmptyString(keaParameters.HostnameCharReplacement),
+					HostnameCharSet:         storkutil.NullifyEmptyString(keaParameters.HostnameCharSet),
 				},
 				KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
 					MaxPreferredLifetime: keaParameters.MaxPreferredLifetime,
@@ -98,7 +100,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					PreferredLifetime:    keaParameters.PreferredLifetime,
 				},
 				KeaConfigReservationParameters: models.KeaConfigReservationParameters{
-					ReservationMode:       keaParameters.ReservationMode,
+					ReservationMode:       storkutil.NullifyEmptyString(keaParameters.ReservationMode),
 					ReservationsGlobal:    keaParameters.ReservationsGlobal,
 					ReservationsInSubnet:  keaParameters.ReservationsInSubnet,
 					ReservationsOutOfPool: keaParameters.ReservationsOutOfPool,
@@ -116,16 +118,16 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					ValidLifetime:    keaParameters.ValidLifetime,
 				},
 				KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
-					Allocator:         keaParameters.Allocator,
+					Allocator:         storkutil.NullifyEmptyString(keaParameters.Allocator),
 					Authoritative:     keaParameters.Authoritative,
-					BootFileName:      keaParameters.BootFileName,
-					Interface:         keaParameters.Interface,
-					InterfaceID:       keaParameters.InterfaceID,
+					BootFileName:      storkutil.NullifyEmptyString(keaParameters.BootFileName),
+					Interface:         storkutil.NullifyEmptyString(keaParameters.Interface),
+					InterfaceID:       storkutil.NullifyEmptyString(keaParameters.InterfaceID),
 					MatchClientID:     keaParameters.MatchClientID,
-					NextServer:        keaParameters.NextServer,
-					PdAllocator:       keaParameters.PDAllocator,
+					NextServer:        storkutil.NullifyEmptyString(keaParameters.NextServer),
+					PdAllocator:       storkutil.NullifyEmptyString(keaParameters.PDAllocator),
 					RapidCommit:       keaParameters.RapidCommit,
-					ServerHostname:    keaParameters.ServerHostname,
+					ServerHostname:    storkutil.NullifyEmptyString(keaParameters.ServerHostname),
 					StoreExtendedInfo: keaParameters.StoreExtendedInfo,
 				},
 			}
@@ -141,28 +143,31 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		if sn.SharedNetwork != nil {
 			keaParameters := sn.SharedNetwork.GetKeaParameters(lsn.DaemonID)
 			if keaParameters != nil {
+				if localSubnet.KeaConfigSubnetParameters == nil {
+					localSubnet.KeaConfigSubnetParameters = &models.KeaConfigSubnetParameters{}
+				}
 				localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters = &models.KeaConfigSubnetDerivedParameters{
 					KeaConfigCacheParameters: models.KeaConfigCacheParameters{
 						CacheThreshold: keaParameters.CacheThreshold,
 						CacheMaxAge:    keaParameters.CacheMaxAge,
 					},
 					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-						ClientClass:          keaParameters.ClientClass,
+						ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
 						RequireClientClasses: keaParameters.RequireClientClasses,
 					},
 					KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
-						DdnsGeneratedPrefix:       keaParameters.DDNSGeneratedPrefix,
+						DdnsGeneratedPrefix:       storkutil.NullifyEmptyString(keaParameters.DDNSGeneratedPrefix),
 						DdnsOverrideClientUpdate:  keaParameters.DDNSOverrideClientUpdate,
 						DdnsOverrideNoUpdate:      keaParameters.DDNSOverrideNoUpdate,
-						DdnsQualifyingSuffix:      keaParameters.DDNSQualifyingSuffix,
-						DdnsReplaceClientName:     keaParameters.DDNSReplaceClientName,
+						DdnsQualifyingSuffix:      storkutil.NullifyEmptyString(keaParameters.DDNSQualifyingSuffix),
+						DdnsReplaceClientName:     storkutil.NullifyEmptyString(keaParameters.DDNSReplaceClientName),
 						DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
 						DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
 						DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
 					},
 					KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
-						HostnameCharReplacement: keaParameters.HostnameCharReplacement,
-						HostnameCharSet:         keaParameters.HostnameCharSet,
+						HostnameCharReplacement: storkutil.NullifyEmptyString(keaParameters.HostnameCharReplacement),
+						HostnameCharSet:         storkutil.NullifyEmptyString(keaParameters.HostnameCharSet),
 					},
 					KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
 						MaxPreferredLifetime: keaParameters.MaxPreferredLifetime,
@@ -170,7 +175,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						PreferredLifetime:    keaParameters.PreferredLifetime,
 					},
 					KeaConfigReservationParameters: models.KeaConfigReservationParameters{
-						ReservationMode:       keaParameters.ReservationMode,
+						ReservationMode:       storkutil.NullifyEmptyString(keaParameters.ReservationMode),
 						ReservationsGlobal:    keaParameters.ReservationsGlobal,
 						ReservationsInSubnet:  keaParameters.ReservationsInSubnet,
 						ReservationsOutOfPool: keaParameters.ReservationsOutOfPool,
@@ -188,16 +193,16 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						ValidLifetime:    keaParameters.ValidLifetime,
 					},
 					KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
-						Allocator:         keaParameters.Allocator,
+						Allocator:         storkutil.NullifyEmptyString(keaParameters.Allocator),
 						Authoritative:     keaParameters.Authoritative,
-						BootFileName:      keaParameters.BootFileName,
-						Interface:         keaParameters.Interface,
-						InterfaceID:       keaParameters.InterfaceID,
+						BootFileName:      storkutil.NullifyEmptyString(keaParameters.BootFileName),
+						Interface:         storkutil.NullifyEmptyString(keaParameters.Interface),
+						InterfaceID:       storkutil.NullifyEmptyString(keaParameters.InterfaceID),
 						MatchClientID:     keaParameters.MatchClientID,
-						NextServer:        keaParameters.NextServer,
-						PdAllocator:       keaParameters.PDAllocator,
+						NextServer:        storkutil.NullifyEmptyString(keaParameters.NextServer),
+						PdAllocator:       storkutil.NullifyEmptyString(keaParameters.PDAllocator),
 						RapidCommit:       keaParameters.RapidCommit,
-						ServerHostname:    keaParameters.ServerHostname,
+						ServerHostname:    storkutil.NullifyEmptyString(keaParameters.ServerHostname),
 						StoreExtendedInfo: keaParameters.StoreExtendedInfo,
 					},
 				}
@@ -217,24 +222,27 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		if lsn.Daemon != nil && lsn.Daemon.KeaDaemon != nil && lsn.Daemon.KeaDaemon.Config != nil &&
 			(lsn.Daemon.KeaDaemon.Config.IsDHCPv4() || lsn.Daemon.KeaDaemon.Config.IsDHCPv6()) {
 			cfg := lsn.Daemon.KeaDaemon.Config
+			if localSubnet.KeaConfigSubnetParameters == nil {
+				localSubnet.KeaConfigSubnetParameters = &models.KeaConfigSubnetParameters{}
+			}
 			localSubnet.KeaConfigSubnetParameters.GlobalParameters = &models.KeaConfigSubnetDerivedParameters{
 				KeaConfigCacheParameters: models.KeaConfigCacheParameters{
 					CacheThreshold: cfg.GetCacheParameters().CacheThreshold,
 					CacheMaxAge:    cfg.GetCacheParameters().CacheMaxAge,
 				},
 				KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
-					DdnsGeneratedPrefix:       cfg.GetDDNSParameters().DDNSGeneratedPrefix,
+					DdnsGeneratedPrefix:       storkutil.NullifyEmptyString(cfg.GetDDNSParameters().DDNSGeneratedPrefix),
 					DdnsOverrideClientUpdate:  cfg.GetDDNSParameters().DDNSOverrideClientUpdate,
 					DdnsOverrideNoUpdate:      cfg.GetDDNSParameters().DDNSOverrideNoUpdate,
-					DdnsQualifyingSuffix:      cfg.GetDDNSParameters().DDNSQualifyingSuffix,
-					DdnsReplaceClientName:     cfg.GetDDNSParameters().DDNSReplaceClientName,
+					DdnsQualifyingSuffix:      storkutil.NullifyEmptyString(cfg.GetDDNSParameters().DDNSQualifyingSuffix),
+					DdnsReplaceClientName:     storkutil.NullifyEmptyString(cfg.GetDDNSParameters().DDNSReplaceClientName),
 					DdnsSendUpdates:           cfg.GetDDNSParameters().DDNSSendUpdates,
 					DdnsUpdateOnRenew:         cfg.GetDDNSParameters().DDNSUpdateOnRenew,
 					DdnsUseConflictResolution: cfg.GetDDNSParameters().DDNSUseConflictResolution,
 				},
 				KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
-					HostnameCharReplacement: cfg.GetHostnameCharParameters().HostnameCharReplacement,
-					HostnameCharSet:         cfg.GetHostnameCharParameters().HostnameCharSet,
+					HostnameCharReplacement: storkutil.NullifyEmptyString(cfg.GetHostnameCharParameters().HostnameCharReplacement),
+					HostnameCharSet:         storkutil.NullifyEmptyString(cfg.GetHostnameCharParameters().HostnameCharSet),
 				},
 				KeaConfigPreferredLifetimeParameters: models.KeaConfigPreferredLifetimeParameters{
 					MaxPreferredLifetime: cfg.GetPreferredLifetimeParameters().MaxPreferredLifetime,
@@ -242,7 +250,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					PreferredLifetime:    cfg.GetPreferredLifetimeParameters().PreferredLifetime,
 				},
 				KeaConfigReservationParameters: models.KeaConfigReservationParameters{
-					ReservationMode:       cfg.GetGlobalReservationParameters().ReservationMode,
+					ReservationMode:       storkutil.NullifyEmptyString(cfg.GetGlobalReservationParameters().ReservationMode),
 					ReservationsGlobal:    cfg.GetGlobalReservationParameters().ReservationsGlobal,
 					ReservationsInSubnet:  cfg.GetGlobalReservationParameters().ReservationsInSubnet,
 					ReservationsOutOfPool: cfg.GetGlobalReservationParameters().ReservationsOutOfPool,
@@ -260,14 +268,14 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					ValidLifetime:    cfg.GetValidLifetimeParameters().ValidLifetime,
 				},
 				KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
-					Allocator:         cfg.GetAllocator(),
+					Allocator:         storkutil.NullifyEmptyString(cfg.GetAllocator()),
 					Authoritative:     cfg.GetAuthoritative(),
-					BootFileName:      cfg.GetBootFileName(),
+					BootFileName:      storkutil.NullifyEmptyString(cfg.GetBootFileName()),
 					MatchClientID:     cfg.GetMatchClientID(),
-					NextServer:        cfg.GetNextServer(),
-					PdAllocator:       cfg.GetPDAllocator(),
+					NextServer:        storkutil.NullifyEmptyString(cfg.GetNextServer()),
+					PdAllocator:       storkutil.NullifyEmptyString(cfg.GetPDAllocator()),
 					RapidCommit:       cfg.GetRapidCommit(),
-					ServerHostname:    cfg.GetServerHostname(),
+					ServerHostname:    storkutil.NullifyEmptyString(cfg.GetServerHostname()),
 					StoreExtendedInfo: cfg.GetStoreExtendedInfo(),
 				},
 			}

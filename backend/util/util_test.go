@@ -501,3 +501,21 @@ func TestNonExistingFileIsNotSocket(t *testing.T) {
 	// Act & Assert
 	require.False(t, IsSocket(fileName))
 }
+
+// Test that an empty string is converted to a nil pointer.
+func TestNullifyEmptyString(t *testing.T) {
+	// Non-empty string should be returned as is.
+	in := "foo"
+	out := NullifyEmptyString(&in)
+	require.NotNil(t, out)
+	require.Equal(t, "foo", *out)
+
+	// An empty string should be converted to nil.
+	in = ""
+	out = NullifyEmptyString(&in)
+	require.Nil(t, out)
+
+	// nil is also legal as an input parameter and is returned as is.
+	out = NullifyEmptyString(nil)
+	require.Nil(t, out)
+}
