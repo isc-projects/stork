@@ -142,6 +142,7 @@
                     subnet.sharedNetwork?.length > 0 ? ['Subnet', 'Shared Network', 'Global'] : ['Subnet', 'Global']
                 "
                 [data]="dhcpParameters"
+                [excludedParameters]="['options', 'optionsHash']"
             ></app-cascaded-parameters-board>
         </p-fieldset>
     </div>

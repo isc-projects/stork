@@ -82,8 +82,6 @@ describe('CascadedParametersBoardComponent', () => {
         ]
         component.ngOnInit()
 
-        console.info(component.rows)
-
         expect(component.rows.length).toBe(6)
         expect(component.rows[0].name).toBe('Cache Max Age')
         expect(component.rows[0].parameters.length).toBe(2)
@@ -177,6 +175,36 @@ describe('CascadedParametersBoardComponent', () => {
         expect(component.rows[5].parameters[1].values[0]).toBe('[ bar ]')
         expect(component.rows[5].parameters[1].values[1]).toBe('[ abc, dec ]')
         expect(component.rows[5].parameters[1].values[2]).toBe('[ aaa ]')
+    })
+
+    it('should exclude selected parameters', () => {
+        component.levels = ['Subnet', 'Global']
+        component.data = [
+            {
+                name: 'Server1',
+                parameters: [
+                    {
+                        cacheThreshold: 0.25,
+                        cacheMaxAge: 1000,
+                        clientClass: 'baz',
+                    },
+                    {
+                        cacheThreshold: null,
+                        cacheMaxAge: 1000,
+                        clientClass: null,
+                    },
+                ],
+            },
+        ]
+        component.excludedParameters = ['clientClass', 'cacheThreshold']
+
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let rows = fixture.debugElement.queryAll(By.css('tr'))
+        expect(rows.length).toBe(2)
+
+        expect(rows[1].nativeElement.innerText).toContain('Cache Max Age')
     })
 
     it('should expand the parameters with a button', () => {

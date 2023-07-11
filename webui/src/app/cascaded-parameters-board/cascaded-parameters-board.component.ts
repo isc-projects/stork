@@ -94,6 +94,13 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
     @Input() levels: string[]
 
     /**
+     * Parameter names to be excluded.
+     *
+     * Specifies an array of parameters to not be shown in the table.
+     */
+    @Input() excludedParameters: string[]
+
+    /**
      * Parsed data representing displayed rows.
      *
      * An array of rows, each row representing data for a single parameter and multiple
@@ -119,8 +126,9 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                 }
                 // Get all parameter names.
                 for (let key of Object.keys(keySet)) {
-                    // Only add it as a new key when it doesn't exist yet.
-                    if (!keys.includes(key)) {
+                    // Only add it as a new key when it doesn't exist yet and when it
+                    // is not excluded.
+                    if (!keys.includes(key) && !this.excludedParameters?.includes(key)) {
                         keys.push(key)
                     }
                 }
@@ -147,7 +155,9 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                         let formatted: CascadedParameterType = value
                         // Depending on whether it is a primitive or a complex type the
                         // value is formatted differently.
-                        if (Array.isArray(value)) {
+                        if (value == null) {
+                            continue
+                        } else if (Array.isArray(value)) {
                             formatted = this.formatArray(value)
                         } else if (typeof value === 'object') {
                             formatted = this.formatObject(value)

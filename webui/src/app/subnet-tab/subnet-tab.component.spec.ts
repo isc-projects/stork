@@ -88,14 +88,20 @@ describe('SubnetTabComponent', () => {
                         subnetLevelParameters: {
                             cacheThreshold: 0.25,
                             cacheMaxAge: 1000,
+                            options: [],
+                            optionsHash: 'abc',
                         },
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
                             cacheMaxAge: 900,
+                            options: [],
+                            optionsHash: 'abc',
                         },
                         globalParameters: {
                             cacheThreshold: 0.29,
                             cacheMaxAge: 800,
+                            options: [],
+                            optionsHash: 'abc',
                         },
                     },
                 },
@@ -126,6 +132,10 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[3].nativeElement.innerText).toContain('Cache Threshold')
         expect(fieldsets[3].nativeElement.innerText).toContain('0.25')
         expect(fieldsets[3].nativeElement.innerText).toContain('1000')
+
+        // Ensure that the DHCP options are excluded from this list.
+        expect(fieldsets[3].nativeElement.innerText).not.toContain('Options')
+        expect(fieldsets[3].nativeElement.innerText).not.toContain('Options Hash')
     })
 
     it('should display an IPv4 subnet without pools', () => {

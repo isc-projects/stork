@@ -112,3 +112,38 @@ DistinctParameters.args = {
         },
     ],
 }
+
+export const ExcludedParameters = Template.bind({})
+ExcludedParameters.args = {
+    levels: ['Subnet', 'Shared Network', 'Global'],
+    data: [
+        {
+            name: 'Server1',
+            parameters: [
+                {
+                    cacheThreshold: 0.25,
+                    cacheMaxAge: 1000,
+                    clientClass: 'baz',
+                    requireClientClasses: ['foo', 'bar'],
+                    ddnsGeneratedPrefix: 'myhost',
+                    ddnsOverrideClientUpdate: true,
+                },
+                {
+                    cacheThreshold: 0.25,
+                    cacheMaxAge: 1000,
+                    clientClass: 'fbi',
+                    requireClientClasses: ['abc'],
+                    ddnsGeneratedPrefix: 'his',
+                    ddnsOverrideClientUpdate: false,
+                },
+                {
+                    cacheMaxAge: 1000,
+                    requireClientClasses: ['abc'],
+                    ddnsGeneratedPrefix: 'example',
+                    ddnsOverrideClientUpdate: true,
+                },
+            ],
+        },
+    ],
+    excludedParameters: ['clientClass', 'ddnsOverrideClientUpdate'],
+}
