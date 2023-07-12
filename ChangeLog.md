@@ -1,3 +1,9 @@
+* 326 [build] slawek
+
+    Added support for building Stork components on the ARM architecture. Added
+    support for an experimental cross-compilation for arbitrary platforms.
+    (Gitlab #381, #472, #893, #1113)
+
 * 325 [doc] slawek
 
     Removed the documentation section referring to the non-existing Alpine
