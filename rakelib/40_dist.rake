@@ -6,6 +6,18 @@
 ### Common ###
 ##############
 
+# Establish Stork version
+stork_version = '0.0.0'
+version_file = 'backend/version.go'
+text = File.open(version_file).read
+text.each_line do |line|
+    if line.start_with? 'const Version'
+        parts = line.split('"')
+        stork_version = parts[1]
+    end
+end
+STORK_VERSION = stork_version
+
 def get_pkg_type()
     # Read environment variable
     if !ENV["PKG_TYPE"].nil?
@@ -124,7 +136,6 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
     ENV["PKG_NAME"] = "agent"
     Rake::Task["clean:pkgs"].invoke()
 
-    version = `#{AGENT_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
 
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
@@ -135,7 +146,8 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
             "-n", "isc-stork-agent",
             "-s", "dir",
             "-t", pkg_type,
-            "-v", "#{version}.#{TIMESTAMP}",
+            "-a", ENV["STORK_GOARCH"] || ARCH,
+            "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postrm",
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.prerm",
@@ -242,7 +254,6 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
     ENV["PKG_NAME"] = "server"
     Rake::Task["clean:pkgs"].invoke()
 
-    version = `#{SERVER_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
 
     server_dist_dir_abs = File.expand_path(server_dist_dir)
@@ -253,7 +264,8 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
             "-n", "isc-stork-server",
             "-s", "dir",
             "-t", pkg_type,
-            "-v", "#{version}.#{TIMESTAMP}",
+            "-a", ENV["STORK_GOARCH"] || ARCH,
+            "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-server.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.postrm",
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.prerm",

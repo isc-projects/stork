@@ -4,6 +4,52 @@
 # This file is responsible for building (compiling)
 # the binaries and other artifacts (docs, bundles).
 
+# Defines the operating system and architecture combination guard for a file
+# task. This guard allows file tasks to depend on the os and architecture used
+# to build the Go binaries.
+# The operating system is specified by the STORK_GOOS environment variable. If
+# it is not set, the current OS type is used.
+# The architecture is specified by the STORK_GOARCH environment variable. If
+# it is not set, the current architecture is used.
+# The function accepts a task to be guarded.
+def add_go_os_arch_guard(task_name)
+    arch = ENV["STORK_GOARCH"] || ARCH
+    
+    os = ENV["STORK_GOOS"]
+    if os.nil?
+        case OS
+        when "macos"
+            os = "darwin"
+        when "linux"
+            os = "linux"
+        when "FreeBSD"
+            os = "freebsd"
+        when "OpenBSD"
+            os = "openbsd"
+        else
+            puts "ERROR: Operating system is not supported: #{OS}"
+            fail
+        end
+    end
+
+    identifier = "#{os}-#{arch}"
+    add_guard(task_name, identifier, "os-arch")
+end
+
+# Runs a given block with the GOOS and GOARCH environment variables for the
+# Golang compiler. The values of the variables are set based on the STORK_GOOS
+# and STORK_GOARCH environment variables or the current operating system and
+# architecture.
+def with_custom_go_os_and_arch(&block)
+    ENV["GOOS"] = ENV["STORK_GOOS"]
+    ENV["GOARCH"] = ENV["STORK_GOARCH"]
+
+    yield
+
+    ENV["GOOS"] = nil
+    ENV["GOARCH"] = nil
+end
+
 #####################
 ### Documentation ###
 #####################
@@ -89,28 +135,40 @@ CLEAN.append "webui/.angular"
 AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
 file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-agent") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        with_custom_go_os_and_arch do
+            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        end
     end
+    sh "touch", "-c", AGENT_BINARY_FILE
     puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
+add_go_os_arch_guard(AGENT_BINARY_FILE)
 CLEAN.append AGENT_BINARY_FILE
 
 SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-server") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        with_custom_go_os_and_arch do
+            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        end
     end
+    sh "touch", "-c", SERVER_BINARY_FILE
     puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
+add_go_os_arch_guard(SERVER_BINARY_FILE)
 CLEAN.append SERVER_BINARY_FILE
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-tool") do
-        sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        with_custom_go_os_and_arch do
+            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+        end
     end
+    sh "touch", "-c", TOOL_BINARY_FILE
     puts "Stork Tool build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
+add_go_os_arch_guard(TOOL_BINARY_FILE)
 CLEAN.append TOOL_BINARY_FILE
 
 #############

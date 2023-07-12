@@ -1,19 +1,6 @@
 # Release
 # This file contains the release-stage tasks.
 
-# Establish Stork version
-stork_version = '0.0.0'
-version_file = 'backend/version.go'
-text = File.open(version_file).read
-text.each_line do |line|
-    if line.start_with? 'const Version'
-        parts = line.split('"')
-        stork_version = parts[1]
-    end
-end
-STORK_VERSION = stork_version
-
-
 namespace :release do
     desc 'Generic task for bumping up version
         VERSION - target version after bump - required

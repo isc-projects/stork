@@ -413,12 +413,23 @@ end
 uname_arch=`uname -m`
 case uname_arch.rstrip
     when "x86_64"
-        ARCH="x64"
+        ARCH="amd64"
     when "aarch64_be", "aarch64", "armv8b", "armv8l"
         ARCH="arm64"
     else
         puts "ERROR: Unknown/unsupported architecture: #{uname_arch}"
         fail
+end
+
+if !ENV["GOOS"].nil? || !ENV["GOARCH"].nil?
+    puts "You shouldn't use the GOOS or GOARCH environment variables to build Stork."
+    puts "Some development toolkits that are needed to build Stork are written in Go."
+    puts "They run on your local environment, so they must be compiled for the current operating system and architecture."
+    puts "Using the above variables would break these toolkits."
+    puts "To build the Stork binaries for a specific operating system or architecture,"
+    puts "use the STORK_GOOS and STORK_GOARCH environment variables."
+    puts "They accept the same values as the original GOOS and GOARCH."
+    fail
 end
 
 ### Tasks support conditions
@@ -460,7 +471,7 @@ shellcheck_ver='0.9.0'
 case OS
 when "macos"
     case ARCH
-    when "x64"
+    when "amd64"
         go_suffix="darwin-amd64"
         protoc_suffix="osx-x86_64"
         node_suffix="darwin-x64"
@@ -479,7 +490,7 @@ when "macos"
     puts "WARNING: for the developers' convenience only."
 when "linux"
     case ARCH
-    when "x64"
+    when "amd64"
         go_suffix="linux-amd64"
         protoc_suffix="linux-x86_64"
         node_suffix="linux-x64"
@@ -496,7 +507,7 @@ when "linux"
     end
 when "FreeBSD"
     case ARCH
-    when "x64"
+    when "amd64"
         go_suffix="freebsd-amd64"
         golangcilint_suffix="freebsd-amd64"
     when "arm64"

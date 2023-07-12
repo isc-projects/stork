@@ -451,7 +451,7 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 		}
 	case dhcpmodel.Uint32Field:
 		if ivalue.Int() < 0 || ivalue.Int() > math.MaxUint32 {
-			return "", errors.Errorf("uint32 option field value must be between 0 and %d", math.MaxUint32)
+			return "", errors.Errorf("uint32 option field value must be between 0 and %d", uint32(math.MaxUint32))
 		}
 		if !textFormat {
 			return fmt.Sprintf("%08X", ivalue.Int()), nil
