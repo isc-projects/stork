@@ -441,9 +441,9 @@ libc_musl_system = detect_libc_musl()
 # systems.
 freebsd_system = OS == "FreeBSD"
 openbsd_system = OS == "OpenBSD"
-arm_system = ARCH == "arm64"
-freebsd_arm64_system = freebsd_system && arm_system
-macos_arm64_system = OS == "macos" && arm_system
+arm64_system = ARCH == "arm64"
+freebsd_arm64_system = freebsd_system && arm64_system
+macos_arm64_system = OS == "macos" && arm64_system
 any_system = true
 
 ### Define package versions
