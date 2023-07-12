@@ -11,9 +11,15 @@
 # it is not set, the current OS type is used.
 # The architecture is specified by the STORK_GOARCH environment variable. If
 # it is not set, the current architecture is used.
+# The ARM architecture is specified by the STORK_GOARM environment variable.
+# If it is not set, it is not used. It does not affect to `arm64`.
 # The function accepts a task to be guarded.
 def add_go_os_arch_guard(task_name)
     arch = ENV["STORK_GOARCH"] || ARCH
+
+    if !ENV["STORK_GOARM"].nil?
+        arch = "#{arch}-armv#{ENV["STORK_GOARM"]}"
+    end
     
     os = ENV["STORK_GOOS"]
     if os.nil?
