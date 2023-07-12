@@ -395,9 +395,8 @@ def fetch_file(url, target)
 end
 
 ### Recognize the operating system
-uname=`uname -s`
-
-case uname.rstrip
+uname_os=`uname -s`
+case uname_os.rstrip
     when "Darwin"
         OS="macos"
     when "Linux"
@@ -407,7 +406,18 @@ case uname.rstrip
     when "OpenBSD"
         OS="OpenBSD"
     else
-        puts "ERROR: Unknown/unsupported OS: %s" % UNAME
+        puts "ERROR: Unknown/unsupported OS: #{uname_os}"
+        fail
+end
+
+uname_arch=`uname -m`
+case uname_arch.rstrip
+    when "x86_64"
+        ARCH="x64"
+    when "aarch64_be", "aarch64", "armv8b", "armv8l"
+        ARCH="arm64"
+    else
+        puts "ERROR: Unknown/unsupported architecture: #{uname_arch}"
         fail
 end
 
@@ -420,6 +430,9 @@ libc_musl_system = detect_libc_musl()
 # systems.
 freebsd_system = OS == "FreeBSD"
 openbsd_system = OS == "OpenBSD"
+arm_system = ARCH == "arm64"
+freebsd_arm_system = freebsd_system && arm_system
+macos_arm_system = OS == "macos" && arm_system
 any_system = true
 
 ### Define package versions
@@ -446,27 +459,48 @@ shellcheck_ver='0.9.0'
 # System-dependent variables
 case OS
 when "macos"
-  go_suffix="darwin-amd64"
-  protoc_suffix="osx-x86_64"
-  node_suffix="darwin-x64"
-  golangcilint_suffix="darwin-amd64"
-  chrome_drv_suffix="mac64"
-  shellcheck_suffix="darwin.x86_64"
-  puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
-  puts "WARNING: for the developers' convenience only."
+    case ARCH
+    when "x64"
+        go_suffix="darwin-amd64"
+        protoc_suffix="osx-x86_64"
+        node_suffix="darwin-x64"
+        golangcilint_suffix="darwin-amd64"
+        shellcheck_suffix="darwin.x86_64"
+    when "arm64"
+        go_suffix="darwin-arm64"
+        protoc_suffix="osx-aarch_64"
+        node_suffix="darwin-arm64"
+        golangcilint_suffix="darwin-arm64"
+        # Shellcheck has no binaries for Darwin ARM: https://github.com/koalaman/shellcheck/issues/2714
+    end
+    puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
+    puts "WARNING: for the developers' convenience only."
 when "linux"
-  go_suffix="linux-amd64"
-  protoc_suffix="linux-x86_64"
-  node_suffix="linux-x64"
-  golangcilint_suffix="linux-amd64"
-  chrome_drv_suffix="linux64"
-  shellcheck_suffix="linux.x86_64"
+    case ARCH
+    when "x64"
+        go_suffix="linux-amd64"
+        protoc_suffix="linux-x86_64"
+        node_suffix="linux-x64"
+        golangcilint_suffix="linux-amd64"
+        shellcheck_suffix="linux.x86_64"
+    when "arm64"
+        go_suffix="linux-arm64"
+        protoc_suffix="linux-aarch_64"
+        node_suffix="linux-arm64"
+        golangcilint_suffix="linux-arm64"
+        shellcheck_suffix="linux.aarch64"
+    end
 when "FreeBSD"
-  go_suffix="freebsd-amd64"
-  golangcilint_suffix="freebsd-amd64"
+    case ARCH
+    when "x64"
+        go_suffix="freebsd-amd64"
+        golangcilint_suffix="freebsd-amd64"
+    when "arm64"
+        golangcilint_suffix="freebsd-armv7"
+    end
 when "OpenBSD"
 else
-  puts "ERROR: Unknown/unsupported OS: %s" % UNAME
+  puts "ERROR: Unknown/unsupported OS: %s" % uname_os
   fail
 end
 
@@ -790,47 +824,6 @@ file STORYBOOK => [NPM] do
 end
 add_version_guard(STORYBOOK, storybook_ver)
 
-# Chrome driver is not currently used, but it can be needed in the UI tests.
-# This file task is ready to use after uncomment.
-#
-# puts "WARNING: There are no chrome drv packages built for FreeBSD"
-#
-# CHROME_DRV = File.join(tools_dir, "chromedriver")
-# file CHROME_DRV => [WGET, UNZIP, tools_dir] do
-#     if !ENV['CHROME_BIN']
-#         puts "Missing Chrome/Chromium binary. It is required for UI unit tests and system tests."
-#         next
-#     end
-
-#     chrome_version = `"#{ENV['CHROME_BIN']}" --version | cut -d" " -f2 | tr -d -c 0-9.`
-#     chrome_drv_version = chrome_version
-
-#     if chrome_version.include? '85.'
-#         chrome_drv_version = '85.0.4183.87'
-#     elsif chrome_version.include? '86.'
-#         chrome_drv_version = '86.0.4240.22'
-#     elsif chrome_version.include? '87.'
-#         chrome_drv_version = '87.0.4280.20'
-#     elsif chrome_version.include? '90.'
-#         chrome_drv_version = '90.0.4430.72'
-#     elsif chrome_version.include? '92.'
-#         chrome_drv_version = '92.0.4515.159'
-#     elsif chrome_version.include? '93.'
-#         chrome_drv_version = '93.0.4577.63'
-#     elsif chrome_version.include? '94.'
-#         chrome_drv_version = '94.0.4606.61'
-#     end
-
-#     Dir.chdir(tools_dir) do
-#         fetch_file "https://chromedriver.storage.googleapis.com/#{chrome_drv_version}/chromedriver_#{chrome_drv_suffix}.zip", "chromedriver.zip"
-#         sh UNZIP, "-o", "chromedriver.zip"
-#         sh "rm", "chromedriver.zip"
-#     end
-
-#     sh CHROME_DRV, "--version"
-#     sh "chromedriver", "--version"  # From PATH
-# end
-
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
 file OPENAPI_GENERATOR => [WGET, tools_dir] do
     fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", OPENAPI_GENERATOR
@@ -849,7 +842,7 @@ file go => [WGET, go_tools_dir] do
     sh "touch", "-c", go
     sh go, "version"
 end
-GO = require_manual_install_on(go, libc_musl_system, openbsd_system)
+GO = require_manual_install_on(go, libc_musl_system, openbsd_system, freebsd_arm_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
@@ -943,7 +936,7 @@ file shellcheck => [WGET, TAR, tools_dir] do
     sh "touch", "-c", shellcheck
     sh shellcheck, "--version"
 end
-SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system)
+SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system, macos_arm_system)
 add_version_guard(SHELLCHECK, shellcheck_ver)
 
 RICHGO = "#{gobin}/richgo"
