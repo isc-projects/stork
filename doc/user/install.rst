@@ -1230,12 +1230,13 @@ supported platforms.
 You can use the ``rake utils:list_go_supported_platforms`` to get a list of all supported operating systems and
 architectures.
 
-To build any Stork component for a specific platform, you need to provide the ``STORK_GOOS`` (for the operating system)
-and ``STORK_GOARCH`` (for the architecture) environment variables:
+To build any Stork component for a specific platform, you need to provide the ``STORK_GOOS`` (for the operating system),
+``STORK_GOARCH`` (for the architecture) and (optionally) ``STORK_GOARM`` (for ARM version, ARM architectures only)
+environment variables:
 
 .. code-block:: console
 
-   rake build:server STORK_GOOS=darwin STORK_GOARCH=arm64
+   rake build:server STORK_GOOS=darwin STORK_GOARCH=arm64 STORK_GOARM=8
    rake build:agent STORK_GOOS=freebsd STORK_GOARCH=amd64
 
 These variables are supported for the ``build:server``, ``build:agent``, ``build:agent`` commands to compile the

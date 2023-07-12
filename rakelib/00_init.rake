@@ -421,14 +421,14 @@ case uname_arch.rstrip
         fail
 end
 
-if !ENV["GOOS"].nil? || !ENV["GOARCH"].nil?
-    puts "You shouldn't use the GOOS or GOARCH environment variables to build Stork."
+if !ENV["GOOS"].nil? || !ENV["GOARCH"].nil? || !ENV["GOARM"].nil?
+    puts "You shouldn't use the GOOS, GOARCH, or GOARM environment variables to build Stork."
     puts "Some development toolkits that are needed to build Stork are written in Go."
     puts "They run on your local environment, so they must be compiled for the current operating system and architecture."
     puts "Using the above variables would break these toolkits."
     puts "To build the Stork binaries for a specific operating system or architecture,"
-    puts "use the STORK_GOOS and STORK_GOARCH environment variables."
-    puts "They accept the same values as the original GOOS and GOARCH."
+    puts "use the STORK_GOOS, STORK_GOARCH, and (optionally) STORK_GOARM environment variables."
+    puts "They accept the same values as the original GOOS, GOARCH, and GOARM."
     fail
 end
 

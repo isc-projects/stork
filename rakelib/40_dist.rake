@@ -18,6 +18,14 @@ text.each_line do |line|
 end
 STORK_VERSION = stork_version
 
+def get_arch()
+    arch = ENV["STORK_GOARCH"] || ARCH
+    if !ENV["STORK_GOARM"].nil?
+        arch = "#{arch}-armv#{ENV["STORK_GOARM"]}"
+    end
+    arch
+end
+
 def get_pkg_type()
     # Read environment variable
     if !ENV["PKG_TYPE"].nil?
@@ -146,7 +154,7 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
             "-n", "isc-stork-agent",
             "-s", "dir",
             "-t", pkg_type,
-            "-a", ENV["STORK_GOARCH"] || ARCH,
+            "-a", get_arch(),
             "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postrm",
@@ -264,7 +272,7 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
             "-n", "isc-stork-server",
             "-s", "dir",
             "-t", pkg_type,
-            "-a", ENV["STORK_GOARCH"] || ARCH,
+            "-a", get_arch(),
             "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-server.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.postrm",

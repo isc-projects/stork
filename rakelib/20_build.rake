@@ -38,16 +38,18 @@ end
 
 # Runs a given block with the GOOS and GOARCH environment variables for the
 # Golang compiler. The values of the variables are set based on the STORK_GOOS
-# and STORK_GOARCH environment variables or the current operating system and
-# architecture.
+# and STORK_GOARCH (and optionally STORK_GOARM) environment variables or the
+# current operating system and architecture.
 def with_custom_go_os_and_arch(&block)
     ENV["GOOS"] = ENV["STORK_GOOS"]
     ENV["GOARCH"] = ENV["STORK_GOARCH"]
+    ENV["GOARM"] = ENV["STORK_GOARM"]
 
     yield
 
     ENV["GOOS"] = nil
     ENV["GOARCH"] = nil
+    ENV["GOARM"] = nil
 end
 
 #####################
