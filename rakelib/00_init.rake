@@ -431,8 +431,8 @@ libc_musl_system = detect_libc_musl()
 freebsd_system = OS == "FreeBSD"
 openbsd_system = OS == "OpenBSD"
 arm_system = ARCH == "arm64"
-freebsd_arm_system = freebsd_system && arm_system
-macos_arm_system = OS == "macos" && arm_system
+freebsd_arm64_system = freebsd_system && arm_system
+macos_arm64_system = OS == "macos" && arm_system
 any_system = true
 
 ### Define package versions
@@ -846,7 +846,7 @@ file go => [WGET, go_tools_dir] do
     sh "touch", "-c", go
     sh go, "version"
 end
-GO = require_manual_install_on(go, libc_musl_system, openbsd_system, freebsd_arm_system)
+GO = require_manual_install_on(go, libc_musl_system, openbsd_system, freebsd_arm64_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
@@ -935,7 +935,7 @@ file shellcheck => [WGET, TAR, tools_dir] do
     sh "touch", "-c", shellcheck
     sh shellcheck, "--version"
 end
-SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system, macos_arm_system)
+SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system, macos_arm64_system)
 add_version_guard(SHELLCHECK, shellcheck_ver)
 
 RICHGO = "#{gobin}/richgo"
