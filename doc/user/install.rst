@@ -1214,6 +1214,49 @@ But it is possible to build the contents of the packages (executables, UI, man, 
 
 The output files will be located in the ``dist/`` directory.
 
+Cross-compilation
+-----------------
+
+.. warning::
+
+   Our tests do not cover the cross-compilation feature; **you use it at your own risk**.
+
+The Stork build system fully supports Linux and MacOS operating systems on the AMD64 and ARM64 architectures. It is also
+prepared to handle FreeBSD and OpenBSD with some limitations but support for these systems isn't actively maintained.
+
+The Stork agent, server, and tool are written in pure Golang, which means they can be easily cross-compiled on all
+supported platforms. 
+
+You can use the ``rake utils:list_go_supported_platforms`` to get a list of all supported operating systems and
+architectures.
+
+To build any Stork component for a specific platform, you need to provide the ``STORK_GOOS`` (for the operating system)
+and ``STORK_GOARCH`` (for the architecture) environment variables:
+
+.. code-block:: console
+
+   rake build:server STORK_GOOS=darwin STORK_GOARCH=arm64
+   rake build:agent STORK_GOOS=freebsd STORK_GOARCH=amd64
+
+These variables are supported for the ``build:server``, ``build:agent``, ``build:agent`` commands to compile the
+executable binaries. They can also be used with combination of the ``build:server_pkg`` and ``build:agent_pkg`` commands
+to build the packages:
+
+.. code-block:: console
+
+   rake build:server_pkg STORK_GOOS=darwin STORK_GOARCH=arm64
+   rake build:agent_pkg STORK_GOOS=freebsd STORK_GOARCH=amd64
+
+.. warning::
+
+   Remember that the output package type always depends on the current operating system, not the executable type. It
+   means that specifying the ``darwin`` operating system in ``STORK_GOOS`` and building the package on Debian causes
+   generating a DEB package with a macOS-compatible executable, which is useless.
+
+It is not recommended to compile Stork for 32-bit architectures as it may cause problems with unexpected integer
+overflows. Also compiling Stork components for Windows is discouraged because Golang's standard library may suppress
+some errors related to the file operations on the NTFS filesystem.
+
 Integration With Prometheus and Grafana
 =======================================
 

@@ -68,6 +68,11 @@ namespace :utils do
             end
         end
     end
+
+    desc "List platforms supported by the installed Go version"
+    task :list_go_supported_platforms => [GO] do
+        sh GO, "tool", "dist", "list"
+    end
 end
 
 
