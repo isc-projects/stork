@@ -465,12 +465,14 @@ when "macos"
         protoc_suffix="osx-x86_64"
         node_suffix="darwin-x64"
         golangcilint_suffix="darwin-amd64"
+        goswagger_suffix="darwin_amd64"
         shellcheck_suffix="darwin.x86_64"
     when "arm64"
         go_suffix="darwin-arm64"
         protoc_suffix="osx-aarch_64"
         node_suffix="darwin-arm64"
         golangcilint_suffix="darwin-arm64"
+        goswagger_suffix="darwin_arm64"
         # Shellcheck has no binaries for Darwin ARM: https://github.com/koalaman/shellcheck/issues/2714
     end
     puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
@@ -482,12 +484,14 @@ when "linux"
         protoc_suffix="linux-x86_64"
         node_suffix="linux-x64"
         golangcilint_suffix="linux-amd64"
+        goswagger_suffix = "linux_amd64"
         shellcheck_suffix="linux.x86_64"
     when "arm64"
         go_suffix="linux-arm64"
         protoc_suffix="linux-aarch_64"
         node_suffix="linux-arm64"
         golangcilint_suffix="linux-arm64"
+        goswagger_suffix = "linux_arm64"
         shellcheck_suffix="linux.aarch64"
     end
 when "FreeBSD"
@@ -848,11 +852,6 @@ add_version_guard(GO, go_ver)
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
     if OS != 'FreeBSD' && OS != "OpenBSD"
-        goswagger_suffix = "linux_amd64"
-        if OS == 'macos'
-            # GoSwagger fails to build on macOS due to https://gitlab.isc.org/isc-projects/stork/-/issues/848.
-            goswagger_suffix="darwin_amd64"
-        end
         fetch_file "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", GOSWAGGER
         sh "chmod", "u+x", GOSWAGGER
     else
