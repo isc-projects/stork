@@ -100,10 +100,18 @@ This section describes the solutions for some common issues with the Stork agent
 :Issue:       A connection problem to the DHCP daemon(s).
 :Description: The agent prints the message ``problem with connecting to dhcp daemon: unable to forward command to
               the dhcp6 service: No such file or directory. The server is likely to be offline``.
-:Solution:    Try to start the Kea service: ``systemctl start kea-dhcp4 kea-dhcp6``
-:Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.service`` (depending on the service type in the message) is not running.
-              If the above commands do not resolve the problem, check the Kea Administrator Reference
-              Manual (ARM) for troubleshooting assistance.
+:Solution 1:  Try to start the Kea service: ``systemctl start kea-dhcp4 kea-dhcp6``
+:Solution 2:  Ensure that the ``control-socket`` entry is specified in the Kea DHCP configuration file (``kea-dhcp4.conf``
+              or ``kea-dhcp6.conf``)
+:Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.service`` (depending on the service type in the message) may be not running.
+              If the DHCP daemon is running and operational (it allocates the leases), but the problem is still occurring,
+              inspect the DHCP daemon configuration file (``kea-dhcp4.conf`` or ``kea-dhcp6.conf``). The file must
+              contain the top-level ``control-socket`` property with valid content. See the Kea
+              `DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_ or
+              `DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server>`_
+              ARM for details. This property is missing by default if you install Kea from the Debian/Ubuntu repository.
+              To avoid this and similar problems, we recommend to use our official packages available on
+              `CloudSmith <https://cloudsmith.io/~isc/repos>`_.
 
 --------------
 
@@ -169,6 +177,21 @@ This section describes the solutions for some common issues with the Stork agent
 :Explanation: The ``/etc/stork/agent.env`` file contains the environment variables, but ``stork-agent`` does not automatically
               load them, unless you use ``--use-env-file flag``; the file must be loaded manually. The default systemd service
               unit is configured to load this file before starting the agent.
+
+--------------
+
+:Issue:       Stork shows only Kea Control Agent tab on the application page. It doesn't detect any Kea DHCP server
+              although the DHCP daemons are running and allocate leases. 
+:Description: There are only a single tab titled "CA" on the Kea application page but no data about any DHCP daemon or
+              DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
+              agent logs comprises the ``The Kea application has no DHCP daemons configured`` message.
+:Solution:    The ``kea-ctrl-agent.conf`` file misses the ``control-sockets`` property.
+:Explanation: The detection of the Kea components bases on the control socket list from the Stork agent configuration
+              file. The list must be configured properly to allow Stork to send commands to Kea daemons. See
+              `Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>` for details.
+              This property is missing by default if you install Kea from the Debian/Ubuntu repository.
+              To avoid this and similar problems, we recommend to use our official packages available on
+              `CloudSmith <https://cloudsmith.io/~isc/repos>`_.
 
 ``stork-server``
 ================
