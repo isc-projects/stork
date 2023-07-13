@@ -334,7 +334,7 @@ namespace :systemtest do
 
         host_server_address = "http://host.docker.internal:8080"
         if OS == "linux"
-            host_server_address = "http://172.24.0.1:8080"
+            host_server_address = "http://172.42.42.1:8080"
         end
         ENV["STORK_SERVER_URL"] = host_server_address
 
