@@ -1,3 +1,8 @@
+* 311 [func] marcin
+
+    Subnet view contains DHCP parameters and options.
+    (Gitlab #953)
+
 * 310 [func] marcin
 
     Filter host reservations by subnet ID.
