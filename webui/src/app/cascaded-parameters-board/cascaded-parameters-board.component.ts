@@ -230,7 +230,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
      * with a comma and a space character.
      *
      * @param value an array value to be formatted.
-     * @returns formatted value.
+     * @returns formatted value (string) if an array; otherwise, original value.
      */
     private formatArray(value: CascadedParameterType): CascadedParameterType {
         return Array.isArray(value) ? '[ ' + value.join(', ') + ' ]' : value
