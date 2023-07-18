@@ -1179,13 +1179,12 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
-	// It isn't guarantied that the subject daemon has the referenced app member
-	// so we need to retrieve the database entry.
-	dbDaemon, err := dbmodel.GetDaemonByID(ctx.db, ctx.subjectDaemon.ID)
+	err := ctx.ensureSubjectDaemonHasReferencedEntries()
 	if err != nil {
 		return nil, err
 	}
-	machine := dbDaemon.App.Machine
+
+	machine := ctx.subjectDaemon.App.Machine
 
 	if !machine.State.AgentUsesHTTPCredentials {
 		// The HTTP credentials are not configured. Nothing to do.
