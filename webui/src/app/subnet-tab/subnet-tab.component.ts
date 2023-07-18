@@ -24,7 +24,7 @@ export class SubnetTabComponent implements OnInit {
      * The parameters are structured as an array of subnet-level, shared network-level
      * and global parameters.
      */
-    dhcpParameters: Array<NamedCascadedParameters<KeaConfigSubnetDerivedParameters>> = new Array()
+    dhcpParameters: Array<NamedCascadedParameters<KeaConfigSubnetDerivedParameters>> = []
 
     /**
      * DHCP options structured for display by the @link DhcpOptionSetView.
@@ -32,7 +32,7 @@ export class SubnetTabComponent implements OnInit {
      * The options are structured as an array of subnet-level, shared network-level
      * and global options.
      */
-    dhcpOptions: Array<Array<Array<DHCPOption>>> = new Array()
+    dhcpOptions: DHCPOption[][][] = []
 
     /**
      * A component lifecycle hook invoked upon the component initialization.

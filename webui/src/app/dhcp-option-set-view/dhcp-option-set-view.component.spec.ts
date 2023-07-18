@@ -210,7 +210,7 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should should display DHCPv4 option name when it is known', () => {
-        let options: Array<Array<DHCPOption>> = [
+        let options: DHCPOption[][] = [
             [
                 {
                     code: 5,
@@ -234,7 +234,7 @@ describe('DhcpOptionSetViewComponent', () => {
         expect(optionSet.properties.innerText).toContain('(5) Name Server')
     })
     it('should should display DHCPv6 option name when it is known', () => {
-        let options: Array<Array<DHCPOption>> = [
+        let options: DHCPOption[][] = [
             [
                 {
                     code: 23,
@@ -259,7 +259,7 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should combine options from all levels', () => {
-        let options: Array<Array<DHCPOption>> = [
+        let options: DHCPOption[][] = [
             [
                 {
                     alwaysSend: true,
@@ -352,7 +352,7 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should not show the toggle button for a single inheritance level', () => {
-        let options: Array<Array<DHCPOption>> = [
+        let options: DHCPOption[][] = [
             [
                 {
                     code: 1028,
@@ -369,7 +369,7 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should show the toggle button for a single inheritance level', () => {
-        let options: Array<Array<DHCPOption>> = [
+        let options: DHCPOption[][] = [
             [
                 {
                     code: 1028,

@@ -53,7 +53,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * array. It holds option sets at each configuration level. The second array
      * holds options defined at the particular level.
      */
-    @Input() options: Array<Array<DHCPOption>>
+    @Input() options: DHCPOption[][]
 
     /**
      * An input parameter holding an array of the configuration levels at
@@ -74,7 +74,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      *
      * The array holds the options specified at each configuration level.
      */
-    optionNodes: Array<Array<TreeNode<OptionNode | OptionFieldNode>>> = new Array()
+    optionNodes: Array<Array<TreeNode<OptionNode | OptionFieldNode>>> = []
 
     /**
      * A flat collection of the converted options into the nodes that can be
@@ -84,7 +84,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * tree. The options from the lower configuration levels take precedence over the
      * same options specified at the higher configuration levels.
      */
-    combinedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = new Array()
+    combinedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = []
 
     /**
      * A collection of currently displayed options.
@@ -92,7 +92,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * This collection points to one of the @link combinedOptionNodes or @link optionNodes,
      * depending on the @link currentLevelOnlyMode state.
      */
-    displayedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = new Array()
+    displayedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = []
 
     /**
      * A flag indicating whether all (combined) options should be displayed or the ones

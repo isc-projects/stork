@@ -116,7 +116,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
     ngOnInit() {
         // Start with gathering all parameter names. Each data set can contain
         // different set of parameters. Typically, they are similar.
-        let keys: Array<string> = new Array()
+        let keys: Array<string> = []
         // Get parameters from each server.
         for (let parameterSet of this.data) {
             // Get parameters at each inheritance level.
@@ -146,7 +146,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                 let level: string = null
                 let effective: CascadedParameterType = null
                 // Collect values at different levels.
-                let values: Array<CascadedParameterType> = new Array()
+                let values: Array<CascadedParameterType> = []
                 for (let i = 0; i < dataSet.parameters.length; i++) {
                     // Check if the given data set at the given level has the current parameter.
                     if (Object.keys(dataSet.parameters[i]).includes(key)) {
@@ -178,7 +178,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                     // It is the first time we see this parameter. Let's add it.
                     cascadedParameter = {
                         name: parameterName,
-                        parameters: new Array(),
+                        parameters: [],
                     }
                     this.rows.push(cascadedParameter)
                 }
