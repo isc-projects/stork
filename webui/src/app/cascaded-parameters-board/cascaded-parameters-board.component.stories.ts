@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
 import { ButtonModule } from 'primeng/button'
 import { LocalSubnet } from '../backend/model/localSubnet'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 export default {
     title: 'App/CascadedParametersBoard',
@@ -11,7 +12,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [ButtonModule, NoopAnimationsModule, TableModule],
-            declarations: [CascadedParametersBoardComponent],
+            declarations: [CascadedParametersBoardComponent, PlaceholderPipe],
             providers: [],
         }),
     ],

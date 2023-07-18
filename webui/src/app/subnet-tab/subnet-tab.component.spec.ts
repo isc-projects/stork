@@ -26,6 +26,7 @@ import { TreeModule } from 'primeng/tree'
 import { TagModule } from 'primeng/tag'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -58,6 +59,7 @@ describe('SubnetTabComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                PlaceholderPipe,
                 SubnetTabComponent,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,

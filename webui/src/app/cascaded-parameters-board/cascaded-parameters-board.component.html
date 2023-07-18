@@ -24,7 +24,7 @@
             </td>
             <td *ngFor="let parameter of row.parameters">
                 <span>
-                    {{ parameter.effective ?? '(unspecified)' }}
+                    {{ parameter.effective | placeholder }}
                 </span>
             </td>
         </tr>
@@ -36,7 +36,7 @@
             </td>
             <td *ngFor="let parameter of row.parameters; let j = index">
                 <span>
-                    {{ row.parameters[j].values[i] ?? '(unspecified)' }}
+                    {{ row.parameters[j].values[i] | placeholder }}
                 </span>
                 <span *ngIf="level === row.parameters[j].level" class="fa-solid fa-check"></span>
             </td>
