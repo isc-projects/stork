@@ -49,11 +49,10 @@
 
             <h1 class="section-heading">DHCPv4</h1>
             <div
-                style="display: flex; flex-wrap: wrap; justify-content: space-between"
-                class="dashboard-dhcp"
+                class="grid dashboard-dhcp"
                 id="dashboard-dhcp4"
             >
-                <div class="dashboard-dhcp__subnets dashboard-section">
+                <div class="col dashboard-dhcp__subnets dashboard-section">
                     <h2 class="section-heading dashboard-section__header">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
                         <app-help-tip title="subnets listed" id="subnets4-help-button">
@@ -112,7 +111,7 @@
                         </tr>
                     </table>
                 </div>
-                <div class="dashboard-dhcp__shared-networks dashboard-section">
+                <div class="col dashboard-dhcp__shared-networks dashboard-section">
                     <h2 class="section-heading dashboard-section__header">
                         Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
                         <app-help-tip title="networks listed" id="networks4-help-button">
@@ -139,7 +138,7 @@
                         </tr>
                     </table>
                 </div>
-                <div class="dashboard-dhcp__globals dashboard-section">
+                <div class="col dashboard-dhcp__globals dashboard-section">
                     <h2 class="section-heading dashboard-section__header">Statistics</h2>
                     <table class="dashboard-section__data">
                         <tr class="statistics-row">
@@ -172,11 +171,10 @@
 
             <h1 class="section-heading">DHCPv6</h1>
             <div
-                style="display: flex; flex-wrap: wrap; justify-content: space-between"
-                class="dashboard-dhcp"
+                class="grid dashboard-dhcp"
                 id="dashboard-dhcp6"
             >
-                <div class="dashboard-dhcp__subnets dashboard-section">
+                <div class="col dashboard-dhcp__subnets dashboard-section">
                     <h2 class="section-heading dashboard-section__header">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
                         <app-help-tip title="subnets listed" id="subnets6-help-button">
@@ -214,7 +212,7 @@
                         </tr>
                     </table>
                 </div>
-                <div class="dashboard-dhcp__shared-networks dashboard-section">
+                <div class="col dashboard-dhcp__shared-networks dashboard-section">
                     <h2 class="section-heading dashboard-section__header">
                         Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
                         <app-help-tip title="networks listed" id="networks6-help-button">
@@ -241,7 +239,7 @@
                         </tr>
                     </table>
                 </div>
-                <div class="dashboard-dhcp__globals dashboard-section">
+                <div class="col dashboard-dhcp__globals dashboard-section">
                     <h2 class="section-heading dashboard-section__header">Statistics</h2>
                     <table class="dashboard-section__data">
                         <tr class="statistics-row">
