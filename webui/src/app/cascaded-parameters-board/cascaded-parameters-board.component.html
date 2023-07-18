@@ -32,7 +32,9 @@
     <ng-template pTemplate="rowexpansion" let-row>
         <tr *ngFor="let level of levels; let i = index">
             <td>
-                {{ level }}
+                <span class="ml-6">
+                    {{ level }}
+                </span>
             </td>
             <td *ngFor="let parameter of row.parameters; let j = index">
                 <span>

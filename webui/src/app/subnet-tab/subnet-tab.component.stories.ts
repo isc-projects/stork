@@ -25,6 +25,7 @@ import { TagModule } from 'primeng/tag'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { IPType } from '../iptype'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 export default {
     title: 'App/SubnetTab',
@@ -56,6 +57,7 @@ export default {
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                PlaceholderPipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],
