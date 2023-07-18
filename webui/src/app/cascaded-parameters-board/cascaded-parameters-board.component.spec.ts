@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button'
 import { TableModule } from 'primeng/table'
 import { By } from '@angular/platform-browser'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('CascadedParametersBoardComponent', () => {
     let component: CascadedParametersBoardComponent<KeaConfigSubnetDerivedParameters>
@@ -15,7 +16,7 @@ describe('CascadedParametersBoardComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [CascadedParametersBoardComponent, PlaceholderPipe],
-            imports: [ButtonModule, NoopAnimationsModule, TableModule],
+            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
         }).compileComponents()
 
         fixture = TestBed.createComponent(CascadedParametersBoardComponent)

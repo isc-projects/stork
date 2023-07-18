@@ -5,13 +5,14 @@ import { TableModule } from 'primeng/table'
 import { ButtonModule } from 'primeng/button'
 import { LocalSubnet } from '../backend/model/localSubnet'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { TooltipModule } from 'primeng/tooltip'
 
 export default {
     title: 'App/CascadedParametersBoard',
     component: CascadedParametersBoardComponent,
     decorators: [
         moduleMetadata({
-            imports: [ButtonModule, NoopAnimationsModule, TableModule],
+            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
             declarations: [CascadedParametersBoardComponent, PlaceholderPipe],
             providers: [],
         }),

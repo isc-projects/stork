@@ -38,7 +38,11 @@
                 <span>
                     {{ row.parameters[j].values[i] | placeholder }}
                 </span>
-                <span *ngIf="level === row.parameters[j].level" class="fa-solid fa-check"></span>
+                <span
+                    *ngIf="level === row.parameters[j].level"
+                    class="fa-solid fa-check cascaded-parameter-effective-icon"
+                    pTooltip="Marks an effective value."
+                ></span>
             </td>
         </tr>
     </ng-template>
