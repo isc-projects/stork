@@ -1,6 +1,6 @@
 pytest-timeout
 
-# PyYAML >= 5.4.1 is temporary problematic: https://github.com/yaml/pyyaml/issues/601
+# PyYAML >= 5.4.1 is temporarily problematic: https://github.com/yaml/pyyaml/issues/601
 pyyaml <= 5.3.1
 # CI doesn't recognize higher versions
 pytest >= 6.2.5, <= 7.0.1
