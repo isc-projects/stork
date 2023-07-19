@@ -253,8 +253,8 @@ func NewBind9Daemon(active bool) *Daemon {
 
 // Get daemon by ID.
 func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
-	app := Daemon{}
-	q := dbi.Model(&app)
+	daemon := Daemon{}
+	q := dbi.Model(&daemon)
 	q = q.Relation("App.AccessPoints")
 	q = q.Relation("App.Machine")
 	q = q.Relation("KeaDaemon")
@@ -265,7 +265,7 @@ func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	} else if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem getting daemon %v", id)
 	}
-	return &app, nil
+	return &daemon, nil
 }
 
 // Get all Kea DHCP daemons.
