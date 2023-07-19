@@ -7,6 +7,6 @@ python:
    install:
    - requirements: doc/src/requirements.txt
 sphinx:
-   configuration: doc/conf.py
+   configuration: doc/user/conf.py
    fail_on_warning: true
 version: 2
