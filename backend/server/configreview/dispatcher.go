@@ -132,33 +132,6 @@ func (c *ReviewContext) getIssuesCount() int {
 	return issuesCount
 }
 
-// Checks if the subject daemon has references to related entries
-// (i.e. machine, app, KeaDaemon). If not, it fetches the full daemon entry from the database.
-// This function must be called if the checker relies on the subject daemon's
-// references because it isn't guarantied that the daemon passed to the config
-// review dispatcher has the all or even any references.
-func (c *ReviewContext) ensureSubjectDaemonHasReferencedEntries() error {
-	hasGeneralReferences := c.subjectDaemon.App != nil && c.subjectDaemon.App.Machine != nil
-	hasDaemonSpecificReferences := true
-	// The Bind9Daemon member is not fetch by the DB call.
-	if c.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 || c.subjectDaemon.Name == dbmodel.DaemonNameDHCPv6 {
-		hasDaemonSpecificReferences = c.subjectDaemon.KeaDaemon != nil
-	}
-
-	if hasGeneralReferences && hasDaemonSpecificReferences {
-		// Nothing to do. All data are available.
-		return nil
-	}
-
-	dbDaemon, err := dbmodel.GetDaemonByID(c.db, c.subjectDaemon.ID)
-	if err != nil {
-		return err
-	}
-
-	c.subjectDaemon = dbDaemon
-	return nil
-}
-
 // Dispatch group selector is used to segregate different configuration
 // review checkers by daemon types.
 type DispatchGroupSelector int
