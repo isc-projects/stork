@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { forkJoin, Subscription } from 'rxjs'
+import { forkJoin, Observable, Subscription } from 'rxjs'
 
 import { MessageService } from 'primeng/api'
 
@@ -15,6 +15,11 @@ import {
     daemonStatusIconTooltip,
     getErrorMessage,
 } from '../utils'
+import { App, KeaDaemon, ModelFile } from '../backend'
+
+interface AppTab {
+    app: App
+}
 
 @Component({
     selector: 'app-kea-app-tab',
@@ -23,11 +28,11 @@ import {
 })
 export class KeaAppTabComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
-    private _appTab: any
+    private _appTab: AppTab
     @Output() refreshApp = new EventEmitter<number>()
-    @Input() refreshedAppTab: any
+    @Input() refreshedAppTab: Observable<AppTab>
 
-    daemons: any[] = []
+    daemons: KeaDaemon[] = []
 
     activeTabIndex = 0
 
@@ -37,7 +42,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * The apps' names are used in rename-app-dialog component to validate
      * the user input.
      */
-    existingApps: any = []
+    existingApps = new Map<string, number>()
 
     /**
      * Holds a set of existing machines' addresses.
@@ -45,7 +50,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * The machines' addresses are used in rename-app-dialog component to
      * validate the user input.
      */
-    existingMachines: any = []
+    existingMachines = new Set<string>()
 
     /**
      * Controls whether the rename-app-dialog is visible or not.
@@ -107,7 +112,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
 
     constructor(
         private route: ActivatedRoute,
-        private router: Router,
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
         private msgService: MessageService
@@ -144,7 +148,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @param appTab pointer to the new app tab data structure.
      */
     @Input()
-    set appTab(appTab) {
+    set appTab(appTab: AppTab) {
         this._appTab = appTab
         // Refresh local information about the daemons presented by this
         // component.
@@ -168,7 +172,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @param appTabDaemons information about the daemons stored in the app tab
      *                      data structure.
      */
-    private initDaemons(appTabDaemons) {
+    private initDaemons(appTabDaemons: KeaDaemon[]) {
         const activeDaemonTabName = this.route.snapshot.queryParamMap.get('daemon')
         const daemonMap = []
         for (const d of appTabDaemons) {
@@ -214,7 +218,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @returns duration as text
      */
-    showDuration(duration) {
+    showDuration(duration: number) {
         return durationToString(duration)
     }
 
@@ -227,7 +231,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @return true if there is a communication problem with the daemon,
      *         false otherwise.
      */
-    private daemonStatusErred(daemon): boolean {
+    private daemonStatusErred(daemon: KeaDaemon): boolean {
         if (daemon.active && daemonStatusErred(daemon)) {
             return true
         }
@@ -247,7 +251,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *          should be active but the communication with it is broken and
      *          check icon if the communication with the active daemon is ok.
      */
-    daemonStatusIconName(daemon) {
+    daemonStatusIconName(daemon: KeaDaemon) {
         return daemonStatusIconName(daemon)
     }
 
@@ -260,7 +264,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *          active but there are communication issues, green if the
      *          communication with the active daemon is ok.
      */
-    daemonStatusIconColor(daemon) {
+    daemonStatusIconColor(daemon: KeaDaemon) {
         return daemonStatusIconColor(daemon)
     }
 
@@ -274,11 +278,11 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *          problems when such problems occur, e.g. it includes the
      *          hint whether the communication is with the agent or daemon.
      */
-    daemonStatusErrorText(daemon) {
+    daemonStatusErrorText(daemon: KeaDaemon) {
         return daemonStatusIconTooltip(daemon)
     }
 
-    changeMonitored(daemon) {
+    changeMonitored(daemon: KeaDaemon) {
         const dmn = { monitored: !daemon.monitored }
         this.servicesApi.updateDaemon(daemon.id, dmn).subscribe(
             (data) => {
@@ -299,7 +303,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @param target log target output location
      * @returns true if the log target can be viewed, false otherwise.
      */
-    logTargetViewable(target): boolean {
+    logTargetViewable(target: string): boolean {
         return target !== 'stdout' && target !== 'stderr' && !target.startsWith('syslog')
     }
 
@@ -316,19 +320,19 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @param event holds new app name.
      */
-    handleRenameDialogSubmitted(event) {
-        this.servicesApi.renameApp(this.appTab.app.id, { name: event }).subscribe(
+    handleRenameDialogSubmitted(name: string) {
+        this.servicesApi.renameApp(this.appTab.app.id, { name: name }).subscribe(
             (data) => {
                 // Renaming the app was successful.
                 this.msgService.add({
                     severity: 'success',
                     summary: 'App renamed',
-                    detail: 'App successfully renamed to ' + event,
+                    detail: 'App successfully renamed to ' + name,
                 })
                 // Let's update the app name in the current tab.
-                this.appTab.app.name = event
+                this.appTab.app.name = name
                 // Notify the parent component about successfully renaming the app.
-                this.renameApp.emit(event)
+                this.renameApp.emit(name)
             },
             (err) => {
                 // Renaming the app failed.
@@ -336,7 +340,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Error renaming app',
-                    detail: 'Error renaming app to ' + event + ': ' + msg,
+                    detail: 'Error renaming app to ' + name + ': ' + msg,
                     life: 10000,
                 })
             }
@@ -406,7 +410,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *                'none (lease persistence disabled) if it is a lease file,
      *                original file name if it is not blank.
      */
-    filenameFromFile(file) {
+    filenameFromFile(file: ModelFile) {
         if (!file.filename || file.filename.length === 0) {
             if (file.filetype === 'Lease file') {
                 return 'none (lease persistence disabled)'
@@ -423,7 +427,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @param databaseType database type.
      * @returns 'MySQL', 'PostgreSQL', 'Cassandra' or 'Unknown'.
      */
-    databaseNameFromType(databaseType) {
+    databaseNameFromType(databaseType: 'memfile' | 'mysql' | 'postgresql' | 'cql') {
         switch (databaseType) {
             case 'memfile':
                 return 'Memfile'
@@ -446,7 +450,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @returns base name
      */
-    basename(path) {
+    basename(path: string) {
         return path.split('/').pop()
     }
 
@@ -457,7 +461,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @returns anchor or empty string if the hook library is not recognized
      */
-    docAnchorFromHookLibrary(hook_library) {
+    docAnchorFromHookLibrary(hook_library: string): string {
         return this.anchorsByHook[hook_library]
     }
 }

@@ -122,6 +122,8 @@
                         </div>
                         <div *ngIf="daemon.statusErred" class="col-8"><!-- fill horizontally all 12 cols --></div>
 
+                        <!-- box with error message if there is communication issue with machine -->
+
                         <!-- warning about not-active and not-monitored -->
                         <div *ngIf="!daemon.active" class="col-4">
                             <p-message

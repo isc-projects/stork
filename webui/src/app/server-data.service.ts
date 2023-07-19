@@ -115,10 +115,10 @@ export class ServerDataService {
      *
      * @returns Observable holding a list of machines' addresses.
      */
-    public getMachinesAddresses() {
+    public getMachinesAddresses(): Observable<Set<string>> {
         this._machinesAddresses = this.servicesApi.getMachinesDirectory().pipe(
             map((data) => {
-                const addresses = new Set()
+                const addresses = new Set<string>()
                 for (const m of data.items) {
                     addresses.add(m.address)
                 }
@@ -137,10 +137,10 @@ export class ServerDataService {
      *
      * @returns Observable holding a list of apps' names.
      */
-    public getAppsNames() {
+    public getAppsNames(): Observable<Map<string, number>> {
         this._appsNames = this.servicesApi.getAppsDirectory().pipe(
             map((data) => {
-                const names = new Map()
+                const names = new Map<string, number>()
                 for (const a of data.items) {
                     names.set(a.name, a.id)
                 }

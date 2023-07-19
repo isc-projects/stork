@@ -32,12 +32,12 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
     /**
      * A map holding apps' names as keys and ids as values.
      */
-    @Input() existingApps: any = []
+    @Input() existingApps = new Map<string, number>()
 
     /**
      * A set holding machines' addresses.
      */
-    @Input() existingMachines: any = []
+    @Input() existingMachines = new Set<string>()
 
     /**
      * Indicates if the dialog box is visible.
@@ -168,7 +168,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
     private validateName() {
         // Setting existing apps is optional. If they are not set, skip
         // the checks.
-        if (this.existingApps.length !== 0) {
+        if (this.existingApps.size !== 0) {
             // Check if there is an app with this name already but with
             // a different app id.
             const existingAppId = this.existingApps.get(this.appName)
@@ -186,7 +186,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
             }
             // Setting existing machines is optional. if they are not set,
             // skip the checks.
-            if (this.existingMachines.length !== 0 && regexpMatch[2].length === 1 && regexpMatch[3].length > 0) {
+            if (this.existingMachines.size !== 0 && regexpMatch[2].length === 1 && regexpMatch[3].length > 0) {
                 // Check if the name references an existing machine.
                 if (!this.existingMachines.has(regexpMatch[3])) {
                     // The referenced machine does not exist. Raise an error.

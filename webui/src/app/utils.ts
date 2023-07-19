@@ -1,5 +1,6 @@
 import * as moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
+import { Bind9Daemon, KeaDaemon } from './backend'
 
 export function datetimeToLocal(d) {
     try {
@@ -47,7 +48,7 @@ export function epochToLocal(epochTime) {
  * @returns Duration in the format of "Y years M months D days H hours
  *            M minutes S seconds or "Y y M m D d H h M min S sec".
  */
-export function durationToString(duration, short = false) {
+export function durationToString(duration: number, short = false) {
     if (duration > 0) {
         const d = moment.duration(duration, 'seconds')
         let txt = ''
@@ -247,7 +248,7 @@ export function daemonStatusErred(daemon) {
  *  should be active but the communication with it is broken and
  *  check icon if the communication with the active daemon is ok.
  */
-export function daemonStatusIconName(daemon) {
+export function daemonStatusIconName(daemon: KeaDaemon) {
     if (!daemon.monitored) {
         return 'pi-ban icon-not-monitored'
     }
@@ -266,7 +267,7 @@ export function daemonStatusIconName(daemon) {
  *          active but there are communication issues, green if the
  *          communication with the active daemon is ok.
  */
-export function daemonStatusIconColor(daemon) {
+export function daemonStatusIconColor(daemon: KeaDaemon) {
     if (!daemon.monitored) {
         return 'grey'
     }
@@ -285,7 +286,7 @@ export function daemonStatusIconColor(daemon) {
  *          problems when such problems occur, e.g. it includes the
  *          hint whether the communication is with the agent or daemon.
  */
-export function daemonStatusIconTooltip(daemon) {
+export function daemonStatusIconTooltip(daemon: KeaDaemon & Bind9Daemon) {
     if (!daemon.monitored) {
         return 'Monitoring of this daemon has been disabled. It can be enabled on the daemon tab on the Kea Apps page.'
     }
@@ -351,7 +352,7 @@ export function daemonStatusIconTooltip(daemon) {
  *
  * @param textEl instance of the DOM entity the text will be copied from.
  */
-export function copyToClipboard(textEl) {
+export function copyToClipboard(textEl: HTMLInputElement) {
     textEl.select()
     document.execCommand('copy')
     textEl.setSelectionRange(0, 0)
