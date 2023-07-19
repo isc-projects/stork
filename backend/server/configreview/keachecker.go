@@ -1225,27 +1225,29 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 	controlSockets := config.GetControlSockets()
 
-	if controlSockets == nil {
+	switch {
+	case controlSockets == nil:
 		return NewReport(ctx, "The control sockets are not specified in the "+
 			"Kea Control Agent {daemon} configuration. It causes the Kea "+
 			"Control Agent to not connect to the Kea daemons, so Stork cannot "+
 			"monitor them. You need to provide the proper socket paths in the "+
 			"\"control-sockets\" top-level entry.").
 			referencingDaemon(ctx.subjectDaemon).create()
-	} else if !controlSockets.HasAnyConfiguredDaemon() {
+	case !controlSockets.HasAnyConfiguredDaemon():
 		return NewReport(ctx, "The control sockets entry in the Kea Control "+
 			"Agent {daemon} configuration is empty. It causes the Kea "+
 			"Control Agent to not connect to the Kea daemons, so Stork cannot "+
 			"monitor them. You need to provide the proper socket paths in the "+
 			"\"control-sockets\" top-level entry.").
 			referencingDaemon(ctx.subjectDaemon).create()
-	} else if controlSockets.Dhcp4 == nil && controlSockets.Dhcp6 == nil {
+	case controlSockets.Dhcp4 == nil && controlSockets.Dhcp6 == nil:
 		return NewReport(ctx, "The control sockets entry in the Kea Control "+
 			"Agent {daemon} configuration doesn't contain path to any DHCP "+
 			"daemon so Stork cannot detect them. You need to provide the "+
 			"proper socket paths in the \"dhcp4\" and/or \"dhcp6\" properties "+
 			"of the \"control-sockets\" top-level entry.").
 			referencingDaemon(ctx.subjectDaemon).create()
+	default:
+		return nil, nil
 	}
-	return nil, nil
 }
