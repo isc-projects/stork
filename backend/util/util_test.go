@@ -389,6 +389,7 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 	require.NotNil(t, path)
 	require.Nil(t, err)
 	require.True(t, executor.IsFileExist(path))
+	require.False(t, executor.IsFileExist("/file/not/exists"))
 }
 
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set
