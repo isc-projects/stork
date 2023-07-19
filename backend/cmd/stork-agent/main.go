@@ -52,7 +52,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 		if err != nil {
 			log.WithError(err).
 				WithField("path", hookDirectory).
-				Warning("could not create the default hook directory")
+				Warning("Could not create the default hook directory")
 		}
 	}
 	hookManager := agent.NewHookManager()
@@ -327,7 +327,7 @@ func setupApp(reload bool) *cli.App {
 				// Reconfigures logging using new environment variables.
 				storkutil.SetupLogging()
 			} else if c.IsSet("env-file") {
-				log.Warning("The environment file is provided but it is not used due to '--use-env-file' flag is not set")
+				log.Warning("The environment file is provided but it is not used because the '--use-env-file' flag is not set")
 			}
 			return nil
 		},

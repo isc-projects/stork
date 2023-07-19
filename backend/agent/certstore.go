@@ -187,7 +187,7 @@ func (s *CertStore) createDirectoryTree(path string) error {
 	return nil
 }
 
-// Parses provided address and return either an IP address as a one
+// Parses provided address and returns either an IP address as a one
 // element list or a DNS name as one element list. The arrays are
 // returned as then it is easy to pass these returned elements to the
 // functions that generates CSR (Certificate Signing Request).
