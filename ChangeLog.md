@@ -2,6 +2,8 @@
 
     Enabled gzip compression for all communication between the Stork server and
     agent. It fixes handling a big response of named statistics endpoint.
+    Stork accepts payloads (i.e., responses from Kea and BIND 9 endpoints) up
+    to 40MiB uncompressed size.
     (Gitlab #1059)
 
 * 314 [bug] slawek
