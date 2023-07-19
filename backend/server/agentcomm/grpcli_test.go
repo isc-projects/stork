@@ -60,7 +60,7 @@ func newGZIPMatcher() gomock.Matcher {
 	return &gzipMatcher{}
 }
 
-// Checks if the provided argument contain the GRPC call option to compress
+// Checks if the provided argument contains the GRPC call option to compress
 // the content.
 func (*gzipMatcher) Matches(data any) bool {
 	options, ok := data.([]grpc.CallOption)
