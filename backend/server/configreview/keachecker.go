@@ -1214,3 +1214,38 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		"properties in the Kea Control Agent {daemon} configuration to use "+
 		"the secure protocol.").referencingDaemon(daemon).create()
 }
+
+// The checker validates that the control sockets of Kea Control Agent are
+// configured.
+func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameCA {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	controlSockets := config.GetControlSockets()
+
+	if controlSockets == nil {
+		return NewReport(ctx, "The control sockets are not specified in the "+
+			"Kea Control Agent {daemon} configuration. It causes the Kea "+
+			"Control Agent to not connect to the Kea daemons, so Stork cannot "+
+			"monitor them. You need to provide the proper socket paths in the "+
+			"\"control-sockets\" top-level entry.").
+			referencingDaemon(ctx.subjectDaemon).create()
+	} else if !controlSockets.HasAnyConfiguredDaemon() {
+		return NewReport(ctx, "The control sockets entry in the Kea Control "+
+			"Agent {daemon} configuration is empty. It causes the Kea "+
+			"Control Agent to not connect to the Kea daemons, so Stork cannot "+
+			"monitor them. You need to provide the proper socket paths in the "+
+			"\"control-sockets\" top-level entry.").
+			referencingDaemon(ctx.subjectDaemon).create()
+	} else if controlSockets.Dhcp4 == nil && controlSockets.Dhcp6 == nil {
+		return NewReport(ctx, "The control sockets entry in the Kea Control "+
+			"Agent {daemon} configuration doesn't contain path to any DHCP "+
+			"daemon so Stork cannot detect them. You need to provide the "+
+			"proper socket paths in the \"dhcp4\" and/or \"dhcp6\" properties "+
+			"of the \"control-sockets\" top-level entry.").
+			referencingDaemon(ctx.subjectDaemon).create()
+	}
+	return nil, nil
+}

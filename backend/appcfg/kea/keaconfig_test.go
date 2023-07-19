@@ -348,7 +348,7 @@ func TestGetLoggers(t *testing.T) {
 	require.Equal(t, 99, loggers[1].DebugLevel)
 }
 
-// Verifies that a list of loggers is parsed correctly for a daemon.
+// Verifies that a list of control sockets is parsed correctly for a daemon.
 func TestGetControlSockets(t *testing.T) {
 	configStr := `{
         "Control-agent": {
@@ -375,6 +375,8 @@ func TestGetControlSockets(t *testing.T) {
 	require.NotNil(t, cfg.CtrlAgentConfig)
 
 	sockets := cfg.GetControlSockets()
+	require.NotNil(t, sockets)
+	require.True(t, sockets.HasAnyConfiguredDaemon())
 
 	require.NotNil(t, sockets.D2)
 	require.Equal(t, "unix", sockets.D2.SocketType)
@@ -389,6 +391,20 @@ func TestGetControlSockets(t *testing.T) {
 	require.Equal(t, "/path/to/the/unix/socket-v6", sockets.Dhcp6.SocketName)
 
 	require.Nil(t, sockets.NetConf)
+}
+
+// Verifies that nil is returned if the control-sockets entry is not configured.
+func TestGetControlSocketsForMissingEntry(t *testing.T) {
+	configStr := `{ "Control-agent": { } }`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.CtrlAgentConfig)
+
+	sockets := cfg.GetControlSockets()
+	require.Nil(t, sockets)
+	require.False(t, sockets.HasAnyConfiguredDaemon())
 }
 
 // Verifies that the list of daemons for which control sockets are specified
@@ -423,6 +439,8 @@ func TestConfiguredDaemonNames(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	sockets := cfg.GetControlSockets()
+	require.NotNil(t, sockets)
+	require.True(t, sockets.HasAnyConfiguredDaemon())
 
 	names := sockets.GetConfiguredDaemonNames()
 	require.Len(t, names, 4)
@@ -453,6 +471,8 @@ func TestConfiguredDaemonNames(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	sockets = cfg.GetControlSockets()
+	require.NotNil(t, sockets)
+	require.True(t, sockets.HasAnyConfiguredDaemon())
 
 	// This time only two sockets have been configured.
 	names = sockets.GetConfiguredDaemonNames()

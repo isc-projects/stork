@@ -148,6 +148,10 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	}
 
 	sockets := dmn.KeaDaemon.Config.GetControlSockets()
+	if sockets == nil {
+		return allDaemons, dhcpDaemons, nil
+	}
+
 	if sockets.Dhcp4 != nil {
 		allDaemons = append(allDaemons, dhcp4)
 		dhcpDaemons = append(dhcpDaemons, dhcp4)

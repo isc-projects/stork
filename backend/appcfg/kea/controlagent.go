@@ -9,15 +9,15 @@ var _ commonConfigAccessor = (*CtrlAgentConfig)(nil)
 
 // Represents Kea Control Agent's configuration.
 type CtrlAgentConfig struct {
-	ControlSockets ControlSockets `json:"control-sockets"`
-	HTTPHost       *string        `json:"http-host"`
-	HTTPPort       *int64         `json:"http-port"`
-	TrustAnchor    *string        `json:"trust-anchor"`
-	CertFile       *string        `json:"cert-file"`
-	KeyFile        *string        `json:"key-file"`
-	CertRequired   *bool          `json:"cert-required"`
-	HookLibraries  []HookLibrary  `json:"hooks-libraries"`
-	Loggers        []Logger       `json:"loggers"`
+	ControlSockets *ControlSockets `json:"control-sockets"`
+	HTTPHost       *string         `json:"http-host"`
+	HTTPPort       *int64          `json:"http-port"`
+	TrustAnchor    *string         `json:"trust-anchor"`
+	CertFile       *string         `json:"cert-file"`
+	KeyFile        *string         `json:"key-file"`
+	CertRequired   *bool           `json:"cert-required"`
+	HookLibraries  []HookLibrary   `json:"hooks-libraries"`
+	Loggers        []Logger        `json:"loggers"`
 }
 
 // A structure representing the configuration of multiple control sockets
@@ -37,8 +37,12 @@ type ControlSocket struct {
 }
 
 // Returns a list of daemons for which sockets have been configured.
-func (sockets ControlSockets) GetConfiguredDaemonNames() (names []string) {
-	s := reflect.ValueOf(&sockets).Elem()
+func (cs *ControlSockets) GetConfiguredDaemonNames() (names []string) {
+	if cs == nil {
+		return
+	}
+
+	s := reflect.ValueOf(cs).Elem()
 	t := s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		if !s.Field(i).IsNil() {
@@ -48,8 +52,16 @@ func (sockets ControlSockets) GetConfiguredDaemonNames() (names []string) {
 	return
 }
 
+// Returns true if any control socket is configured.
+func (cs *ControlSockets) HasAnyConfiguredDaemon() bool {
+	if cs == nil {
+		return false
+	}
+	return cs.D2 != nil || cs.Dhcp4 != nil || cs.Dhcp6 != nil || cs.NetConf != nil
+}
+
 // Returns the configured control sockets.
-func (c *CtrlAgentConfig) GetControlSockets() ControlSockets {
+func (c *CtrlAgentConfig) GetControlSockets() *ControlSockets {
 	return c.ControlSockets
 }
 
