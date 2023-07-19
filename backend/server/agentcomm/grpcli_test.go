@@ -47,31 +47,42 @@ func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func(
 	}
 }
 
-// Checks if the provided argument contain the GRPC call option to compress
-// the content.
+// Gomock-compatible matcher that asserts the GRPC call options. The assertion
+// passes if the option to compress the content with the GZIP method is
+// provided.
 type gzipMatcher struct{}
 
+// Interface check.
 var _ gomock.Matcher = (*gzipMatcher)(nil)
 
+// Constructs a new GZIP matcher instance.
 func newGZIPMatcher() gomock.Matcher {
 	return &gzipMatcher{}
 }
 
+// Checks if the provided argument contain the GRPC call option to compress
+// the content.
 func (*gzipMatcher) Matches(data any) bool {
 	options, ok := data.([]grpc.CallOption)
 	if !ok {
+		// Argument is not an option list or the options are not provided.
 		return false
 	}
+	// Search for compress option.
 	for _, option := range options {
 		compressorOption, ok := option.(grpc.CompressorCallOption)
 		if !ok {
+			// It isn't a compress option. Go to next.
 			continue
 		}
+		// The compress option is found. Assert the compression method.
 		return compressorOption.CompressorType == "gzip"
 	}
+	// The compress option is not found.
 	return false
 }
 
+// Returns a string representation of the matcher for log purposes.
 func (*gzipMatcher) String() string {
 	return "gzip matcher"
 }
