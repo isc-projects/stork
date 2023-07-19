@@ -686,6 +686,14 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "canonical_prefix")
 	require.Contains(t, checkerNames, "subnet_cmds_and_cb_mutual_exclusion")
 
+	checkerNames = []string{}
+	for _, p := range dispatcher.groups[KeaCADaemon].checkers {
+		checkerNames = append(checkerNames, p.name)
+	}
+
+	require.Contains(t, checkerNames, "agent_credentials_over_https")
+	require.Contains(t, checkerNames, "ca_control_sockets")
+
 	// Ensure that the appropriate triggers were registered for the
 	// default checkers.
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ManualRun)
@@ -696,8 +704,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.EqualValues(t, 12, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 4, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 	require.EqualValues(t, 0, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[StorkAgentConfigModified])
-	require.EqualValues(t, 1, dispatcher.groups[KeaCADaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 1, dispatcher.groups[KeaCADaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 0, dispatcher.groups[KeaCADaemon].triggerRefCounts[DBHostsModified])
 	require.EqualValues(t, 1, dispatcher.groups[KeaCADaemon].triggerRefCounts[StorkAgentConfigModified])
 }

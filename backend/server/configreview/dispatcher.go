@@ -917,7 +917,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "pd_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), delegatedPrefixPoolsExhaustedByReservations)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_cmds_and_cb_mutual_exclusion", GetDefaultTriggers(), subnetCmdsAndConfigBackendMutualExclusion)
 	dispatcher.RegisterChecker(KeaCADaemon, "agent_credentials_over_https", ExtendDefaultTriggers(StorkAgentConfigModified), credentialsOverHTTPS)
-	dispatcher.RegisterChecker(KeaCADaemon, "agent_control_sockets", ExtendDefaultTriggers(StorkAgentConfigModified), controlSocketsCA)
+	dispatcher.RegisterChecker(KeaCADaemon, "ca_control_sockets", GetDefaultTriggers(), controlSocketsCA)
 }
 
 // Fetches all checker preferences from the database and loads them into
