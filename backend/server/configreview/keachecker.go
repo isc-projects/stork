@@ -1175,24 +1175,28 @@ func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, err
 // Agent using the HTTPS protocol when the HTTP authentication credentials
 // (i.e., Basic Auth) are configured.
 func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameCA {
-		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	daemon := ctx.subjectDaemon
+	if daemon.Name != dbmodel.DaemonNameCA {
+		return nil, errors.Errorf("unsupported daemon %s", daemon.Name)
 	}
 
 	// It isn't guarantied that the subject daemon has the referenced app member
 	// so we need to retrieve the database entry.
-	dbDaemon, err := dbmodel.GetDaemonByID(ctx.db, ctx.subjectDaemon.ID)
-	if err != nil {
-		return nil, err
+	if daemon.App == nil || daemon.App.Machine == nil {
+		var err error
+		daemon, err = dbmodel.GetDaemonByID(ctx.db, ctx.subjectDaemon.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	machine := dbDaemon.App.Machine
+	machine := daemon.App.Machine
 
 	if !machine.State.AgentUsesHTTPCredentials {
 		// The HTTP credentials are not configured. Nothing to do.
 		return nil, nil
 	}
 
-	config := ctx.subjectDaemon.KeaDaemon.Config
+	config := daemon.KeaDaemon.Config
 
 	if config.UseSecureProtocol() {
 		// The TLS is configured. All is OK.
@@ -1208,5 +1212,5 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		"may be stolen. "+
 		"Configure the 'trust-anchor', 'cert-file', and 'key-file' "+
 		"properties in the Kea Control Agent {daemon} configuration to use "+
-		"the secure protocol.").referencingDaemon(ctx.subjectDaemon).create()
+		"the secure protocol.").referencingDaemon(daemon).create()
 }
