@@ -57,8 +57,8 @@ func NewHTTPClient(skipTLSVerification bool) (*HTTPClient, error) {
 		log.WithError(err).Info("GRPC certificates are not obtained. Skip configuring TLS.")
 		// TLS was not requested. Continue.
 	case certValidationErr != nil:
-		// Invalid TLS certs. Continue.
 		log.WithError(err).Error("GRPC certificates are not valid. Skip configuring TLS.")
+		// Invalid TLS certs. Continue.
 	default:
 		log.WithError(err).Warning("TLS for HTTP connections is not configured")
 		// TLS was requested but the configuration is invalid. Break.
