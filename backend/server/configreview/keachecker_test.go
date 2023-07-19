@@ -3761,6 +3761,119 @@ func TestCredentialsOverHTTPSForMissingMachine(t *testing.T) {
 	require.Nil(t, report)
 }
 
+// Test that the control sockets CA checker reports an issue if the control
+// sockets entry is missing in the Kea Control Agent configuration.
+func TestControlSocketsCAMissingEntry(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
+
+	// Act
+	report, err := controlSocketsCA(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t,
+		*report.content,
+		"The control sockets are not specified in the Kea Control Agent",
+	)
+}
+
+// Test that the control sockets CA checker reports an issue if the control
+// sockets entry is provided in the Kea Control Agent configuration but it has
+// no configured daemons.
+func TestControlSocketsCAEmptyEntry(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+		"control-sockets": { }
+	} }`)
+
+	// Act
+	report, err := controlSocketsCA(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t,
+		*report.content,
+		"The control sockets entry in the Kea Control Agent {daemon} configuration is empty.",
+	)
+}
+
+// Test that the control sockets CA checker reports an issue if the control
+// sockets entry is provided in the Kea Control Agent configuration but it lacks
+// any DHCP daemon.
+func TestControlSocketsCAMissingDHCPDaemons(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+		"control-sockets": {
+			"d2": {
+				"socket-type": "unix",
+				"socket-name": "/path/to/the/unix/socket-d2"
+			}
+		}
+	} }`)
+
+	// Act
+	report, err := controlSocketsCA(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t,
+		*report.content,
+		"The control sockets entry in the Kea Control Agent {daemon} configuration doesn't contain path to any DHCP daemon",
+	)
+}
+
+// Test that the control sockets CA checker reports no issue if the control
+// sockets entry is provided in the Kea Control Agent configuration and it has
+// at least one configured DHCP daemon.
+func TestControlSocketsCAProperConfig(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+		"control-sockets": {
+			"dhcp4": {
+				"socket-type": "unix",
+				"socket-name": "/tmp/kea4-ctrl-socket"
+			}
+		}
+	} }`)
+
+	// Act
+	report, err := controlSocketsCA(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the control sockets CA checker returns an error for the
+// not-CA daemons.
+func TestControlSocketsCAForNonCADaemon(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+
+	// Act
+	report, err := controlSocketsCA(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.ErrorContains(t, err, "unsupported daemon")
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
