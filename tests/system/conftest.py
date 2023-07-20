@@ -52,7 +52,7 @@ def pytest_runtest_logreport(report):
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, _call):
+def pytest_runtest_makereport(item, call):  # pylint: disable=unused-argument
     """
     Making test result information available in fixtures
     Source: https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
