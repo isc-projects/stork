@@ -382,6 +382,33 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /shared-networks/{id}:
+    get:
+      summary: Get a shared network by ID.
+      description: >-
+        This endpoint returns a shared network with the detailed DHCP configuration information.
+        It contains all the necessary data to display the shared network on a dedicated page. Not
+        only does it contain the shared network-level DHCP configuration but also global
+        configuration this shared network inherits from.
+      operationId: getSharedNetwork
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Shared network ID.
+      responses:
+        200:
+          description: Shared network information with global DHCP parameters.
+          schema:
+            $ref: "#/definitions/SharedNetwork"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /overview:
     get:
       summary: Get overview of whole DHCP state.

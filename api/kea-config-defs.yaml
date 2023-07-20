@@ -1,7 +1,7 @@
   KeaConfigCacheParameters:
     type: object
     properties:
-      cacheThreshold: 
+      cacheThreshold:
         type: number
         format: float
         x-nullable: true
@@ -9,7 +9,7 @@
         type: integer
         format: int64
         x-nullable: true
-  
+
   KeaConfigClientClassParameters:
     type: object
     properties:
@@ -208,6 +208,14 @@
     properties:
       subnetLevelParameters:
         $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
+      sharedNetworkLevelParameters:
+        $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
+      globalParameters:
+        $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
+
+  KeaConfigSharedNetworkParameters:
+    type: object
+    properties:
       sharedNetworkLevelParameters:
         $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
       globalParameters:

@@ -288,7 +288,7 @@
                             "ip-addresses": [
                                 "192.168.56.1"
                             ]
-                        },	
+                        },
                         "renew-timer": 30,
                         "reservation-mode": "all",
                         "reservations-global": false,

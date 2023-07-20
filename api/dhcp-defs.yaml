@@ -307,6 +307,8 @@
         type: integer
       subnet:
         type: string
+      sharedNetworkId:
+        type: integer
       sharedNetwork:
         type: string
       clientClass:
@@ -339,6 +341,18 @@
 
 # Shared Network
 
+  LocalSharedNetwork:
+    type: object
+    properties:
+      appId:
+        type: integer
+      daemonId:
+        type: integer
+      appName:
+        type: string
+      keaConfigSharedNetworkParameters:
+          $ref: '#/definitions/KeaConfigSharedNetworkParameters'
+
   SharedNetwork:
     type: object
     properties:
@@ -346,6 +360,9 @@
         type: integer
       name:
         type: string
+      universe:
+        type: integer
+        enum: *IPTYPE
       subnets:
         type: array
         items:
@@ -360,6 +377,10 @@
         type: string
         format: date-time
         x-nullable: true
+      localSharedNetworks:
+        type: array
+        items:
+          $ref: '#/definitions/LocalSharedNetwork'
 
   SharedNetworks:
     type: object
