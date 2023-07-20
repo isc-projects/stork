@@ -20,7 +20,8 @@ if os.environ.get('PYTEST_XDIST_WORKER', False):
     sys.stdout = sys.stderr
 
 
-def pytest_runtest_logstart(nodeid, _location):
+def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argument
+    '''Called at the start of running the runtest protocol for a single item.'''
     banner = '\n\n************ START   %s ' % nodeid
     banner += '*' * (140 - len(banner))
     banner += '\n'
@@ -28,7 +29,8 @@ def pytest_runtest_logstart(nodeid, _location):
     print(banner)
 
 
-def pytest_runtest_logfinish(nodeid, _location):
+def pytest_runtest_logfinish(nodeid, location):  # pylint: disable=unused-argument
+    '''Called at the end of running the runtest protocol for a single item.'''
     banner = '\n************ END   %s ' % nodeid
     banner += '*' * (140 - len(banner))
     banner = '\u001b[36;1m' + banner + '\u001b[0m'
@@ -36,6 +38,7 @@ def pytest_runtest_logfinish(nodeid, _location):
 
 
 def pytest_runtest_logreport(report):
+    '''Process the TestReport produced for each of the setup, call and teardown runtest phases of an item.'''
     if report.when == 'call':
         dt = datetime.timedelta(seconds=int(report.duration))
         banner = '\n************ RESULT %s   %s  took %s  ' % (
@@ -64,7 +67,7 @@ def pytest_runtest_makereport(item, _call):
     setattr(item, "rep_" + rep.when, rep)
 
 
-def pytest_sessionstart(_session):
+def pytestsessionstart(session):  # pylint: disable=unused-argument
     """
     Stop all the running containers. The containers are stopped by default
     on the testing end if no interruption happened
@@ -77,7 +80,7 @@ def pytest_sessionstart(_session):
         shutil.rmtree(tests_dir)
 
 
-def pytest_collection_modifyitems(_session, _config, items):
+def pytest_collection_modifyitems(session, config, items):  # pylint: disable=unused-argument
     """
     The hook to add additional decorators/markers to the tests.
     """
