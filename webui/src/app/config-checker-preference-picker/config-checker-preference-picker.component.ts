@@ -219,6 +219,8 @@ export class ConfigCheckerPreferencePickerComponent {
                     'with the Kea Control Agent using the TLS when the ' +
                     'HTTP authentication credentials (i.e., Basic Auth) are configured.'
                 )
+            case 'ca_control_sockets':
+                return 'The checker verifying if the Kea Control Agent has configured the control sockets.'
             default:
                 return ''
         }
