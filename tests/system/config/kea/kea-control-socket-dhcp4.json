@@ -1,4 +1,0 @@
-"control-socket": {
-    "socket-type": "unix",
-    "socket-name": "/tmp/kea4-ctrl-socket"
-},
