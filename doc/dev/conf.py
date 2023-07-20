@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-#
-# Configuration file for the Sphinx documentation builder.
-#
-# This file does only contain a selection of the most common options. For a
-# full list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
+
+"""
+Configuration file for the Sphinx documentation builder.
+
+This file does only contain a selection of the most common options. For a
+full list see the documentation:
+http://www.sphinx-doc.org/en/master/config
+"""
 
 # -- Path setup --------------------------------------------------------------
 
@@ -12,6 +14,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 # to avoid "sphinx.errors.SphinxParallelError: RecursionError: maximum recursion depth exceeded
 # while pickling an object"
@@ -21,13 +25,13 @@ sys.setrecursionlimit(5000)
 # -- Project information -----------------------------------------------------
 
 project = 'Stork'
-copyright = '2021-2023, Internet Systems Consortium'
+project_copyright = '2021-2023, Internet Systems Consortium'
 author = 'Internet Systems Consortium'
 
 # get current stork version
 version_file = '../../backend/version.go'
 release = 'UNRELEASED'
-with open(version_file) as f:
+with open(version_file, encoding='utf-8') as f:
     for line in f.readlines():
         if line.startswith('const Version'):
             parts = line.split('"')
@@ -170,8 +174,8 @@ man_pages = [
 todo_include_todos = True
 
 
-# custom setup hook
 def setup(app):
+    '''Custom setup hook'''
     if hasattr(app, 'add_css_file'):
         app.add_css_file('stork.css')
     else:
