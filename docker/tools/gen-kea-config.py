@@ -10,7 +10,7 @@ import random
 class ParseKwargs(argparse.Action):
     '''Parse ey-value pairs from CMD. Source: https://sumit-ghosh.com/articles/parsing-dictionary-key-value-pairs-kwargs-argparse-python/'''
     def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, dict())
+        setattr(namespace, self.dest, {})
         for value in values:
             key, value = value.split('=')
             getattr(namespace, self.dest)[key] = value
@@ -245,18 +245,20 @@ KEA_BASE_SUBNET = {
     ]
 }
 
-MAC_ADDR_ITER = 0
+
+def create_mac_selector():
+    mac_addr_iter = 0
+
+    def mac_selector():
+        nonlocal mac_addr_iter
+        mac_addr_iter += 1
+        return ':'.join(['{}{}'.format(a, b)
+                        for a, b
+                        in zip(*[iter('{:012x}'.format(mac_addr_iter))]*2)])
+    return mac_selector
 
 
-def my_mac_selector():
-    global MAC_ADDR_ITER
-    MAC_ADDR_ITER += 1
-    return ':'.join(['{}{}'.format(a, b)
-                     for a, b
-                     in zip(*[iter('{:012x}'.format(MAC_ADDR_ITER))]*2)])
-
-
-def generate_reservations(version, reservation_range, mac_selector, address_modifier=1, subnet="", add_option=False):
+def generate_reservations(version, reservation_range, mac_selector, address_modifier=1, subnet=""):
     if reservation_range == 0:
         return {}
 
@@ -401,8 +403,9 @@ def cmd():
     if args.interface is not None:
         conf["Dhcp4"]["interfaces-config"]["interfaces"] = args.interface
 
+    mac_selector = create_mac_selector()
     conf["Dhcp4"].update(generate_v4_subnet(
-        outer, inner, my_mac_selector, args.reservations,
+        outer, inner, mac_selector, args.reservations,
         args.start_id, **args.kwargs
     ))
 
