@@ -1,3 +1,6 @@
+# File adopted from an external project. Keep it in its original form.
+# pylint: skip-file
+
 """
 Prometheus metrics parser.
 
