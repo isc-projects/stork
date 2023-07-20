@@ -43,7 +43,8 @@ class Perfdhcp:
         if status == 3:
             print(stdout)
 
-    def _generate_traffic_flags(self, family: int,
+    @staticmethod
+    def _generate_traffic_flags(family: int,
                                 target: Union[str, List[str]],
                                 mac_prefix: str = None,
                                 option: Tuple[str, str] = None,
@@ -102,7 +103,7 @@ class Perfdhcp:
         option : tuple, optional
             Two strings - key and value, by default None (not used)
         """
-        flags = self._generate_traffic_flags(
+        flags = Perfdhcp._generate_traffic_flags(
             family=4,
             target=ip_address,
             mac_prefix=mac_prefix,
@@ -124,7 +125,7 @@ class Perfdhcp:
         duid_prefix : str, optional
             First 4 digits of DUID, by default None (not used)
         """
-        flags = self._generate_traffic_flags(
+        flags = Perfdhcp._generate_traffic_flags(
             family=6,
             target=["-l", interface],
             option=option,

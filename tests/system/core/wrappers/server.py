@@ -31,7 +31,7 @@ T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 
 
-class Server(ComposeServiceWrapper):
+class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     """
     A wrapper for the docker-compose service containing Stork Server.
     """
@@ -256,7 +256,7 @@ class Server(ComposeServiceWrapper):
 
         if status == 202:
             return None
-        elif status == 204:
+        if status == 204:
             return ConfigReports(total=0, items=[])
         return reports
 
@@ -270,19 +270,16 @@ class Server(ComposeServiceWrapper):
 
     # Create
 
-    def create_user(self, login: str, email: str, name: str, lastname: str,
-                    groups: List[int], password: str, authentication_method_id: str) -> User:
+    def create_user(self, user: User, password: str) -> User:
         """Creates the user account."""
-        user = User(id=0, login=login, email=email, name=name,
-                    lastname=lastname, groups=groups,
-                    authentication_method_id=authentication_method_id)
+        user.id = 0
         account = UserAccount(user, password)
         api_instance = UsersApi(self._api_client)
         return api_instance.create_user(account=account)
 
     def create_host_reservation(self, host: Host):
         """Shorthand to add a host reservation."""
-        with self.transaction_add_host_reservation() as (_, submit, _):
+        with self.transaction_create_host_reservation() as (_, submit, _):
             submit(host)
 
     # Read
@@ -349,7 +346,7 @@ class Server(ComposeServiceWrapper):
         def on_cancel(transaction_id: int):
             api_instance.create_host_delete(id=transaction_id)
 
-        return self._api_transaction(
+        return Server._api_transaction(
             on_begin, on_submit, on_cancel
         )
 
@@ -376,11 +373,12 @@ class Server(ComposeServiceWrapper):
                 host_id=host_id
             )
 
-        return self._api_transaction(on_begin, on_submit, on_cancel)
+        return Server._api_transaction(on_begin, on_submit, on_cancel)
 
     @contextmanager
+    @staticmethod
     def _api_transaction(
-            self, on_begin: Callable[[], T1],
+            on_begin: Callable[[], T1],
             on_submit: Callable[[int, T2], None],
             on_cancel: Callable[[int], None],
             transaction_id_extractor: Callable[[T1], int] = lambda ctx: ctx.id
@@ -414,7 +412,7 @@ class Server(ComposeServiceWrapper):
             nonlocal state
             if state == "canceled":
                 raise Exception("transaction already canceled")
-            elif state == "submitted":
+            if state == "submitted":
                 raise Exception("transaction already submitted")
 
             on_cancel(transaction_id)
@@ -424,7 +422,7 @@ class Server(ComposeServiceWrapper):
             nonlocal state
             if state == "canceled":
                 raise Exception("transaction already canceled")
-            elif state == "submitted":
+            if state == "submitted":
                 raise Exception("transaction already submitted")
 
             on_submit(transaction_id, data)

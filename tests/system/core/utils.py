@@ -7,12 +7,12 @@ from typing import Any, Callable, Dict, Hashable
 
 
 def setup_logger(name):
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger_instance = logging.getLogger(name)
+    logger_instance.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    return logger
+    logger_instance.addHandler(handler)
+    return logger_instance
 
 
 def memoize(func: Callable):
@@ -37,10 +37,9 @@ def memoize(func: Callable):
     def wrapper(*args):
         if args in memo:
             return memo[args]
-        else:
-            rv = func(*args)
-            memo[args] = rv
-            return rv
+        rv = func(*args)
+        memo[args] = rv
+        return rv
     return wrapper
 
 
@@ -67,7 +66,8 @@ def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
             for _ in range(max_tries):
                 try:
                     result = f(*args, **kwargs)
-                    logger.info(wait_msg + " done")
+                    done_msg = wait_msg + "done"
+                    logger.info(done_msg)
                     return result
                 except transient_exceptions as e:
                     logger.debug('container is not yet ready: %s',
