@@ -16,7 +16,7 @@ def test_get_version():
 
 
 @patch("core.version.get_version", return_value="1.2.3")
-def test_get_version_info(mock):
+def test_get_version_info(_):
     info = core.version.get_version_info()
     assert info == (1, 2, 3)
 

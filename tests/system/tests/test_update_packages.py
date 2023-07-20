@@ -1,7 +1,7 @@
 import pytest
 
 from core.wrappers import ExternalPackages
-import core.version as version
+from core import version
 
 
 @pytest.mark.skip(

@@ -17,7 +17,7 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     assert len(hosts.items) == 1
     host = hosts.items[0]
     local_hosts = host["local_hosts"]
-    len(local_hosts) == 1
+    assert len(local_hosts) == 1
     local_host = local_hosts[0]
     assert local_host["data_source"] == "api"
 
@@ -158,6 +158,6 @@ def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Ser
     assert len(hosts.items) == 1
     host = hosts.items[0]
     local_hosts = host["local_hosts"]
-    len(local_hosts) == 1
+    assert len(local_hosts) == 1
     local_host = local_hosts[0]
     assert local_host["data_source"] == "api"

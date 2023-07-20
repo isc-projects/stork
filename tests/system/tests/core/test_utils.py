@@ -8,15 +8,16 @@ from core.prometheus_parser import text_fd_to_metric_families
 def test_memoize():
     """Memoized function should be executed only one for specific arguments"""
     # Arrange
-    class Foo:
-        def __init__(self, bar):
-            self._bar = bar
-            self._call_count = 0
+    class Foo:  # pylint: disable=too-few-public-methods
+        '''Minimal class to test memoize decorator.'''
+        def __init__(self, suffix):
+            self.suffix = suffix
+            self.call_count = 0
 
         @memoize
-        def method(self, baz):
-            self._call_count += 1
-            return baz + self._bar
+        def method(self, value):
+            self.call_count += 1
+            return value + self.suffix
 
     bob = Foo(1)
     alice = Foo(2)
@@ -24,16 +25,16 @@ def test_memoize():
     # Act & Assert
     assert bob.method(3) == 4
     assert bob.method(3) == 4
-    assert bob._call_count == 1
+    assert bob.call_count == 1
     assert bob.method(4) == 5
-    assert bob._call_count == 2
+    assert bob.call_count == 2
 
     assert alice.method(3) == 5
     assert alice.method(3) == 5
-    assert alice._call_count == 1
+    assert alice.call_count == 1
     assert alice.method(4) == 6
     assert alice.method(4) == 6
-    assert bob._call_count == 2
+    assert bob.call_count == 2
 
 
 def test_wait_for_instant_success():
@@ -200,7 +201,7 @@ def test_prometheus_parser():
     # Arrange
     dataset_path = os.path.join(os.path.dirname(
         __file__), "data", "stork_agent_metrics.txt")
-    with open(dataset_path, "rt") as f:
+    with open(dataset_path, "rt", encoding='utf-8') as f:
         # Act
         metrics = list(text_fd_to_metric_families(f))
 
