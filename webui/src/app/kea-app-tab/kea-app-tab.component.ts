@@ -58,12 +58,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
     appRenameDialogVisible = false
 
     /**
-     * Controls whether the kea-daemon-config-dialog is visible or not.
-     * Indicates visible daemon ID or null if none daemon is visible.
-     */
-    keaDaemonConfigDialogVisibleId: number | null = null
-
-    /**
      * Indicates if a pencil icon was clicked.
      *
      * As a result of clicking this icon a dialog box is shown to
@@ -356,19 +350,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      */
     handleRenameDialogHidden() {
         this.appRenameDialogVisible = false
-    }
-
-    /**
-     * Reacts to hiding a dialog box for displaying a Kea daemon JSON configuration.
-     *
-     * This function is called when a dialog box is
-     * closed. It is triggered both in the case when the form is submitted
-     * or cancelled.
-     */
-    handleKeaDaemonConfigDialogHidden(daemonId: number) {
-        if (this.keaDaemonConfigDialogVisibleId === daemonId) {
-            this.keaDaemonConfigDialogVisibleId = null
-        }
     }
 
     /**
