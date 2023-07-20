@@ -84,7 +84,7 @@ describe('Bind9AppTabComponent', () => {
     it('should display rename dialog', () => {
         const fakeAppsNames = new Map()
         spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
-        const fakeMachinesAddresses = new Set()
+        const fakeMachinesAddresses = new Set<string>()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
         component.showRenameAppDialog()
@@ -111,7 +111,7 @@ describe('Bind9AppTabComponent', () => {
     it('should not display rename dialog when fetching apps fails', () => {
         // Simulate an error while getting apps names.
         spyOn(serverData, 'getAppsNames').and.returnValue(throwError({ status: 404 }))
-        const fakeMachinesAddresses = new Set()
+        const fakeMachinesAddresses = new Set<string>()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
         component.showRenameAppDialog()

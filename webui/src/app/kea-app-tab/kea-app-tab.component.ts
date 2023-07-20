@@ -288,6 +288,16 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         )
     }
 
+    // Returns true if the daemon was never running correctly.
+    isNeverFetchedDaemon(daemon: KeaDaemon) {
+        return daemon.reloadedAt === '0001-01-01T00:00:00.000Z'
+    }
+
+    // Returns true if the daemon is DHCP daemon.
+    isDhcpDaemon(daemon: KeaDaemon) {
+        return daemon.name === 'dhcp4' || daemon.name === 'dhcp6'
+    }
+
     /**
      * Checks if the specified log target can be viewed
      *

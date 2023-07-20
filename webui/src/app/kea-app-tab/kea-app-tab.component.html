@@ -71,7 +71,7 @@
                         </div>
                         <div style="margin-right: 30px">Monitoring</div>
                         <button
-                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            *ngIf="isDhcpDaemon(daemon)"
                             routerLink="/dhcp/hosts"
                             [queryParams]="{ appId: appTab.app.id }"
                             label="Host Reservations"
@@ -82,7 +82,7 @@
                             style="margin-right: 16px"
                         ></button>
                         <button
-                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            *ngIf="isDhcpDaemon(daemon)"
                             routerLink="/dhcp/subnets"
                             [queryParams]="{ appId: appTab.app.id }"
                             label="Subnets"
@@ -93,7 +93,7 @@
                             style="margin-right: 16px"
                         ></button>
                         <button
-                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            *ngIf="isDhcpDaemon(daemon)"
                             routerLink="/dhcp/shared-networks"
                             [queryParams]="{ appId: appTab.app.id }"
                             label="Shared Networks"
@@ -124,14 +124,49 @@
 
                         <!-- warning about not-active and not-monitored -->
                         <div *ngIf="!daemon.active" class="col-4">
+                            <p-messages *ngIf="!daemon.monitored && isNeverFetchedDaemon(daemon)" severity="warn">
+                                <ng-template pTemplate>
+                                    <i class="pi pi-exclamation-triangle"></i>
+                                    <div class="ml-2">
+                                        <p>
+                                            This daemon is currently not monitored by Stork. The daemon was never
+                                            running correctly (was never active) since it was added to Stork server. The
+                                            configuration for this daemon was detected in the Kea Control Agent's
+                                            configuration file. That's why it appears on the list of daemons.
+                                        </p>
+                                        <p>
+                                            If the daemon is operational (e.g., it allocates leases), make sure it has
+                                            the <code>control-socket</code> entry in its configuration file.
+                                            <!-- The daemon version is unknown. -->
+                                            <a
+                                                *ngIf="daemon.name === 'dhcp4'"
+                                                href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server"
+                                                target="_blank"
+                                                >See ARM</a
+                                            >
+                                            <a
+                                                *ngIf="daemon.name === 'dhcp6'"
+                                                href="https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server"
+                                                target="_blank"
+                                                >See ARM</a
+                                            >
+                                            <a
+                                                *ngIf="daemon.name === 'd2'"
+                                                href="https://kea.readthedocs.io/en/latest/arm/ddns.html#management-api-for-the-d2-server"
+                                                target="_blank"
+                                                >See ARM</a
+                                            >
+                                            .
+                                        </p>
+                                    </div>
+                                </ng-template>
+                            </p-messages>
+
                             <p-message
-                                *ngIf="!daemon.monitored"
+                                *ngIf="!daemon.monitored && !isNeverFetchedDaemon(daemon)"
                                 severity="warn"
                                 text="This daemon is currently not monitored by Stork.
-                                      The daemon was either manually disabled or it was never running correctly
-                                      (was never active) since it was added to Stork server. The configuration
-                                      for this daemon was detected in the Kea Control Agent's configuration
-                                      file. That's why it appears on the list of daemons."
+                                      The daemon was manually disabled."
                             >
                             </p-message>
                             <p-message
@@ -249,7 +284,7 @@
 
                             <!-- High Availability -->
                             <div
-                                *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                                *ngIf="isDhcpDaemon(daemon)"
                                 style="margin-bottom: 20px"
                                 [ngClass]="{ disabled: !daemon.active }"
                             >

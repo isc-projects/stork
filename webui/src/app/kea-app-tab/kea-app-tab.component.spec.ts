@@ -159,7 +159,7 @@ describe('KeaAppTabComponent', () => {
     it('should display rename dialog', () => {
         const fakeAppsNames = new Map()
         spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
-        const fakeMachinesAddresses = new Set()
+        const fakeMachinesAddresses = new Set<string>()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
         component.showRenameAppDialog()
@@ -186,7 +186,7 @@ describe('KeaAppTabComponent', () => {
     it('should not display rename dialog when fetching apps fails', () => {
         // Simulate an error while getting apps names.
         spyOn(serverData, 'getAppsNames').and.returnValue(throwError({ status: 404 }))
-        const fakeMachinesAddresses = new Set()
+        const fakeMachinesAddresses = new Set<string>()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
         component.showRenameAppDialog()
@@ -240,7 +240,7 @@ describe('KeaAppTabComponent', () => {
         expect(component.databaseNameFromType('mysql')).toBe('MySQL')
         expect(component.databaseNameFromType('postgresql')).toBe('PostgreSQL')
         expect(component.databaseNameFromType('cql')).toBe('Cassandra')
-        expect(component.databaseNameFromType('other')).toBe('Unknown')
+        expect(component.databaseNameFromType('other' as any)).toBe('Unknown')
     })
 
     it('should display storage information', () => {
@@ -341,5 +341,22 @@ describe('KeaAppTabComponent', () => {
             expect(childNodes[i]).toBeTruthy()
             expect((childNodes[i] as HTMLElement).tagName).not.toBe('DIV')
         }
+    })
+
+    it('should properly recognize that daemon was never monitored', () => {
+        // Go-style zero date.
+        expect(component.isNeverFetchedDaemon({ reloadedAt: '0001-01-01T00:00:00.000Z' })).toBeTrue()
+        // Any other timestamp.
+        for (const timestamp of ['1970-01-01T12:00:00Z', '0001-01-01 00:00:00.000 UTC', 'foobar']) {
+            expect(component.isNeverFetchedDaemon({ reloadedAt: timestamp })).toBeFalse()
+        }
+    })
+
+    it('should properly recognize the DHCP daemons', () => {
+        expect(component.isDhcpDaemon({ name: 'dhcp4' })).toBeTrue()
+        expect(component.isDhcpDaemon({ name: 'dhcp6' })).toBeTrue()
+        expect(component.isDhcpDaemon({ name: 'd2' })).toBeFalse()
+        expect(component.isDhcpDaemon({ name: 'netconf' })).toBeFalse()
+        expect(component.isDhcpDaemon({ name: 'foobar' })).toBeFalse()
     })
 })
