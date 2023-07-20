@@ -40,17 +40,15 @@ logger = setup_logger(__name__)
 
 
 class NoSuchPortExposed(Exception):
-    pass
+    '''The error thrown when a given port is not exposed in the compose YAML.'''
 
 
 class ContainerNotRunningException(Exception):
-    def __init__(self, state):
-        super().__init__(state)
+    '''The error thrown when a given container is not in the "running" state.'''
 
 
 class ContainerExitedException(Exception):
-    def __init__(self, state: str):
-        super().__init__(state)
+    '''The error thrown when a given container is in the "exited" state.'''
 
 
 _INSPECT_DELIMITER = "<@;@>"
@@ -101,13 +99,13 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
     formats = []
     component_delimiter = "."
     json_prefix = "json "
-    for property in properties:
+    for item in properties:
         as_json = False
-        if property.startswith(json_prefix):
+        if item.startswith(json_prefix):
             as_json = True
-            property = property[len(json_prefix):]
+            item = item[len(json_prefix):]
 
-        components = property.split(component_delimiter)
+        components = item.split(component_delimiter)
         begins = []
         path: List[str] = []
         for component in components:
@@ -131,7 +129,8 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
     return fmt
 
 
-class DockerCompose(object):
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
+class DockerCompose:
     """
     Manage docker compose environments.
 
@@ -166,7 +165,7 @@ class DockerCompose(object):
         List of profiles to use with docker-compose.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
             self,
             project_directory: str,
             compose_file_name="docker-compose.yml",
@@ -178,8 +177,8 @@ class DockerCompose(object):
             project_name: str = None,
             use_build_kit=True,
             default_mapped_hostname: str = None,
-            compose_base: List[str] = ["docker", "compose"],
-            profiles=[]):
+            compose_base: List[str] = None,
+            profiles=None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -190,8 +189,8 @@ class DockerCompose(object):
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
-        self._compose_base = compose_base
-        self._profiles = profiles
+        self._compose_base = compose_base if compose_base is not None else ["docker", "compose"]
+        self._profiles = profiles if profiles is not None else []
 
         if build_args is not None:
             build_args_pairs = [("--build-arg", "%s=%s" % pair)
@@ -387,9 +386,9 @@ class DockerCompose(object):
             raise LookupError(
                 "container of the %s service not found" % service_name)
 
-        format = _construct_inspect_format(properties)
+        inspect_format = _construct_inspect_format(properties)
 
-        cmd = ["docker", "inspect", "--format", format, container_id]
+        cmd = ["docker", "inspect", "--format", inspect_format, container_id]
         _, stdout, _ = self._call_command(cmd=cmd)
 
         # Split the values and parse none's.

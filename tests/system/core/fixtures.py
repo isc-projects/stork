@@ -5,9 +5,9 @@ import shutil
 import pytest
 
 from core.compose_factory import create_docker_compose
-import core.wrappers as wrappers
+from core import wrappers
 from core.utils import setup_logger
-import core.lease_generators as lease_generators
+from core import lease_generators
 
 
 logger = setup_logger(__name__)
@@ -270,26 +270,26 @@ def _prepare_kea_wrapper(request, service_name: str, suppress_registration: bool
     """
     # Starts server service or suppresses registration
     env_vars = None
-    server_service = None
+    server_service_instance = None
     if suppress_registration:
         env_vars = {"STORK_SERVER_URL": ""}
     else:
         # We need the Server to perform the registration
-        server_service = request.getfixturevalue("server_service")
+        server_service_instance = request.getfixturevalue("server_service")
 
     # Re-generate the lease files
     config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
-    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt") as f:
+    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt", encoding='utf-8') as f:
         lease_generators.gen_dhcp4_lease_file(f)
 
-    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt") as f:
+    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt", encoding='utf-8') as f:
         lease_generators.gen_dhcp6_lease_file(f)
 
     # Setup wrapper
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    wrapper = wrappers.Kea(compose, service_name, server_service)
+    wrapper = wrappers.Kea(compose, service_name, server_service_instance)
 
     if not suppress_registration:
         wrapper.wait_for_registration()
@@ -328,12 +328,12 @@ def bind9_service(request):
 
     # Starts server service or suppresses registration
     env_vars = None
-    server_service = None
+    server_service_instance = None
     if param['suppress_registration']:
         env_vars = {"STORK_SERVER_URL": ""}
     else:
         # We need the Server to perform the registration
-        server_service = request.getfixturevalue("server_service")
+        server_service_instance = request.getfixturevalue("server_service")
 
     build_args = {}
     if param["bind9_version"] is not None:
@@ -344,7 +344,7 @@ def bind9_service(request):
     compose = create_docker_compose(env_vars=env_vars, build_args=build_args)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    wrapper = wrappers.Bind9(compose, service_name, server_service)
+    wrapper = wrappers.Bind9(compose, service_name, server_service_instance)
 
     if not param['suppress_registration']:
         wrapper.wait_for_registration()
@@ -430,10 +430,10 @@ def finish(request):
         stdout, stderr = compose.logs()
 
         # Write logs
-        with open(test_dir / "stdout.log", 'wt') as f:
+        with open(test_dir / "stdout.log", 'wt', encoding='utf-8') as f:
             f.write(stdout)
 
-        with open(test_dir / "stderr.log", 'wt') as f:
+        with open(test_dir / "stderr.log", 'wt', encoding='utf-8') as f:
             f.write(stderr)
 
         # Collect inspect for non-operational services
@@ -444,13 +444,13 @@ def finish(request):
             has_non_operational_service = True
             inspect_stdout = compose.inspect_raw(service_name)
             filename = "inspect-%s.json" % service_name
-            with open(test_dir / filename, "wt") as f:
+            with open(test_dir / filename, "wt", encoding='utf-8') as f:
                 f.write(inspect_stdout)
 
         if has_non_operational_service:
             # Collect service statuses
             ps_stdout = compose.ps()
-            with open(test_dir / "ps.out", "wt") as f:
+            with open(test_dir / "ps.out", "wt", encoding='utf-8') as f:
                 f.write(ps_stdout)
 
     def collect_logs_and_down_all():
