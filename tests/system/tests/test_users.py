@@ -24,16 +24,18 @@ def test_users_management(server_service: Server):
     assert groups['items'][1]['name'] in ['super-admin', 'admin']
 
     server_service.create_user(User(
-        login="user", email="a@example.org", name="John", lastname="Smith",
-        groups=[], authentication_method_id="internal"), "password")
+        id=0, login="user", email="a@example.org", name="John",
+        lastname="Smith", groups=[], authentication_method_id="internal"
+    ), "password")
 
 
 def test_user_without_groups(server_service: Server):
     """Users with no assigned groups must be able to log in and out."""
     server_service.log_in_as_admin()
     server_service.create_user(User(
-        login="user", email="a@example.org", name="John", lastname="Smith",
-        groups=[], authentication_method_id="internal"), "password")
+        id=0, login="user", email="a@example.org", name="John",
+        lastname="Smith", groups=[], authentication_method_id="internal"
+    ), "password")
     server_service.log_out()
 
     server_service.log_in("user", "password")
