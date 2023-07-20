@@ -10,7 +10,8 @@ import pytest
 # Flake8 warnings are suppressed. We want to import all fixtures, so people implementing new fixtures according
 # to python docs would have their lives easier and not figure out why it's not working. The F401 warning seems
 # a bit bogus, anyway.
-from core.fixtures import *  # noqa: F401, F403
+from core.fixtures import server_service, kea_service, ha_pair_service, bind9_service, \
+                          perfdhcp_service, package_service, finish  # noqa: F401 pylint: disable=unused-import
 from core.compose_factory import create_docker_compose
 
 # In case of xdist the output is hidden by default.
@@ -19,7 +20,7 @@ if os.environ.get('PYTEST_XDIST_WORKER', False):
     sys.stdout = sys.stderr
 
 
-def pytest_runtest_logstart(nodeid, location):
+def pytest_runtest_logstart(nodeid, _location):
     banner = '\n\n************ START   %s ' % nodeid
     banner += '*' * (140 - len(banner))
     banner += '\n'
@@ -27,7 +28,7 @@ def pytest_runtest_logstart(nodeid, location):
     print(banner)
 
 
-def pytest_runtest_logfinish(nodeid, location):
+def pytest_runtest_logfinish(nodeid, _location):
     banner = '\n************ END   %s ' % nodeid
     banner += '*' * (140 - len(banner))
     banner = '\u001b[36;1m' + banner + '\u001b[0m'
@@ -48,7 +49,7 @@ def pytest_runtest_logreport(report):
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item, _call):
     """
     Making test result information available in fixtures
     Source: https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
@@ -63,7 +64,7 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
-def pytest_sessionstart(session):
+def pytest_sessionstart(_session):
     """
     Stop all the running containers. The containers are stopped by default
     on the testing end if no interruption happened
@@ -76,7 +77,7 @@ def pytest_sessionstart(session):
         shutil.rmtree(tests_dir)
 
 
-def pytest_collection_modifyitems(session, config, items):
+def pytest_collection_modifyitems(_session, _config, items):
     """
     The hook to add additional decorators/markers to the tests.
     """
