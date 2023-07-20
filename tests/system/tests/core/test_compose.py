@@ -819,20 +819,20 @@ def test_is_enabled_for_unknown_service():
 
 
 @patch("subprocess.run")
-def test_call_command_passes_command(patch: MagicMock):
+def test_call_command_passes_command(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command(["foo", "bar"])
-    patch.assert_called_once()
-    cmd = patch.call_args.args[0]
+    subprocess_run_mock.assert_called_once()
+    cmd = subprocess_run_mock.call_args.args[0]
     assert tuple(cmd[-2:]) == ("foo", "bar")
 
 
 @patch("subprocess.run")
-def test_call_command_adds_env_vars(patch: MagicMock):
+def test_call_command_adds_env_vars(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir", env_vars=dict(global_foo="1"))
     compose._call_command([], env_vars=dict(local_bar="2"))
-    patch.assert_called_once()
-    env = patch.call_args.kwargs["env"]
+    subprocess_run_mock.assert_called_once()
+    env = subprocess_run_mock.call_args.kwargs["env"]
     assert env["global_foo"] == "1"
     assert env["local_bar"] == "2"
     assert env["PWD"] == "project-dir"
@@ -841,11 +841,11 @@ def test_call_command_adds_env_vars(patch: MagicMock):
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
-def test_call_command_captures_output_by_default(patch: MagicMock):
+def test_call_command_captures_output_by_default(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     status, stdout, stderr = compose._call_command([])
-    patch.assert_called_once()
-    item = patch.call_args.kwargs["capture_output"]
+    subprocess_run_mock.assert_called_once()
+    item = subprocess_run_mock.call_args.kwargs["capture_output"]
     assert item
     assert status == 0
     assert stdout == "foo"
@@ -853,11 +853,11 @@ def test_call_command_captures_output_by_default(patch: MagicMock):
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))
-def test_call_command_suppresses_capturing_output(patch: MagicMock):
+def test_call_command_suppresses_capturing_output(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     status, stdout, stderr = compose._call_command([], capture_output=False)
-    patch.assert_called_once()
-    item = patch.call_args.kwargs["capture_output"]
+    subprocess_run_mock.assert_called_once()
+    item = subprocess_run_mock.call_args.kwargs["capture_output"]
     assert not item
     assert status == 0
     assert stdout is None
@@ -865,27 +865,27 @@ def test_call_command_suppresses_capturing_output(patch: MagicMock):
 
 
 @patch("subprocess.run")
-def test_call_command_checks_output_by_default(patch: MagicMock):
+def test_call_command_checks_output_by_default(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([])
-    patch.assert_called_once()
-    item = patch.call_args.kwargs["check"]
+    subprocess_run_mock.assert_called_once()
+    item = subprocess_run_mock.call_args.kwargs["check"]
     assert item
 
 
 @patch("subprocess.run")
-def test_call_command_suppresses_checking_output(patch: MagicMock):
+def test_call_command_suppresses_checking_output(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([], check=False)
-    patch.assert_called_once()
-    item = patch.call_args.kwargs["check"]
+    subprocess_run_mock.assert_called_once()
+    item = subprocess_run_mock.call_args.kwargs["check"]
     assert not item
 
 
 @patch("subprocess.run")
-def test_call_sets_cwd_to_project_directory(patch: MagicMock):
+def test_call_sets_cwd_to_project_directory(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([])
-    patch.assert_called_once()
-    cwd = patch.call_args.kwargs["cwd"]
+    subprocess_run_mock.assert_called_once()
+    cwd = subprocess_run_mock.call_args.kwargs["cwd"]
     assert cwd == "project-dir"

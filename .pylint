@@ -460,7 +460,9 @@ exclude-protected=_asdict,
                   _fields,
                   _replace,
                   _source,
-                  _make
+                  _make,
+                  # Docker-compose member overriden in unit tests.
+                  _call_command
 
 # List of valid names for the first argument in a class method.
 valid-classmethod-first-arg=cls
