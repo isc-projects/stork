@@ -167,11 +167,11 @@ describe('EntityLinkComponent', () => {
 
     it('should construct a shared network link', () => {
         component.entity = 'shared-network'
-        component.attrs = { text: 'frog', dhcpVersion: 4 }
+        component.attrs = { id: 9, name: 'frog' }
         component.showEntityName = false
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#shared-network-link'))
-        expect(link.attributes.href).toEqual('/dhcp/shared-networks?text=frog&dhcpVersion=4')
+        expect(link.attributes.href).toEqual('/dhcp/shared-networks/9')
         expect(link.nativeElement.innerText).toEqual('frog')
 
         // Test entity name is not displayed.

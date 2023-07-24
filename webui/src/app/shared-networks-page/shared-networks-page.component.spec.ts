@@ -7,7 +7,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { RouterModule } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { DHCPService, SharedNetwork, SharedNetworks } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
@@ -22,6 +22,15 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { NumberPipe } from '../pipes/number.pipe'
 import { HttpEvent } from '@angular/common/http'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { MessageService } from 'primeng/api'
+import { TabMenuModule } from 'primeng/tabmenu'
+import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
+
+class MockParamMap {
+    get(name: string): string | null {
+        return null
+    }
+}
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -31,28 +40,51 @@ describe('SharedNetworksPageComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                FormsModule,
-                DropdownModule,
-                TableModule,
-                TooltipModule,
-                HttpClientTestingModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                DropdownModule,
+                FormsModule,
+                HttpClientTestingModule,
                 NoopAnimationsModule,
-                RouterModule,
-                RouterTestingModule,
+                OverlayPanelModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/shared-networks',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/shared-networks/all',
+                    },
+                    {
+                        path: 'dhcp/shared-networks/:id',
+                        component: SharedNetworksPageComponent,
+                    },
+                ]),
+                TableModule,
+                TabMenuModule,
+                TooltipModule,
             ],
             declarations: [
-                SharedNetworksPageComponent,
-                SubnetBarComponent,
                 BreadcrumbsComponent,
+                EntityLinkComponent,
                 HelpTipComponent,
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
-                EntityLinkComponent,
+                SharedNetworksPageComponent,
+                SharedNetworkTabComponent,
+                SubnetBarComponent,
             ],
-            providers: [DHCPService],
+            providers: [
+                DHCPService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap()),
+                        paramMap: of(new MockParamMap()),
+                    },
+                },
+                RouterTestingModule,
+            ],
         })
 
         dhcpService = TestBed.inject(DHCPService)
@@ -63,6 +95,7 @@ describe('SharedNetworksPageComponent', () => {
             {
                 items: [
                     {
+                        id: 1,
                         name: 'frog',
                         subnets: [
                             {
@@ -103,6 +136,7 @@ describe('SharedNetworksPageComponent', () => {
             {
                 items: [
                     {
+                        id: 2,
                         name: 'frog',
                         subnets: [
                             {
@@ -129,6 +163,7 @@ describe('SharedNetworksPageComponent', () => {
             {
                 items: [
                     {
+                        id: 3,
                         name: 'cat',
                         subnets: [
                             // Subnet represented by the double utilization bar.
@@ -371,5 +406,28 @@ describe('SharedNetworksPageComponent', () => {
                     break
             }
         }
+    })
+
+    it('should open and close tabs', async () => {
+        component.openTabBySharedNetworkId(1)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.openedSharedNetworks.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        component.closeTabByIndex(1)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.openedSharedNetworks.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        component.closeTabByIndex(0)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.openedSharedNetworks.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
     })
 })

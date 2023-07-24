@@ -92,8 +92,8 @@ export class SubnetTabComponent implements OnInit {
      */
     getSharedNetworkAttrs() {
         return {
-            text: this.subnet.sharedNetwork,
-            dhcpVersion: this.isIPv6 ? 6 : 4,
+            id: this.subnet.sharedNetworkId,
+            name: this.subnet.sharedNetwork,
         }
     }
 

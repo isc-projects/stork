@@ -473,22 +473,24 @@ describe('SubnetTabComponent', () => {
     it('should return shared network attributes for IPv6 subnet', () => {
         component.subnet = {
             subnet: '2001:db8:1::/64',
+            sharedNetworkId: 123,
             sharedNetwork: 'foo',
         }
         expect(component.getSharedNetworkAttrs()).toEqual({
-            text: 'foo',
-            dhcpVersion: 6,
+            id: 123,
+            name: 'foo',
         })
     })
 
     it('should return shared network attributes for IPv4 subnet', () => {
         component.subnet = {
             subnet: '192.0.2.0/24',
+            sharedNetworkId: 234,
             sharedNetwork: 'bar',
         }
         expect(component.getSharedNetworkAttrs()).toEqual({
-            text: 'bar',
-            dhcpVersion: 4,
+            id: 234,
+            name: 'bar',
         })
     })
 })

@@ -4,7 +4,24 @@
     </div>
 </app-breadcrumbs>
 
-<div>
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" class="mt-2">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div class="flex justify-content-space-between">
+            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+            <div class="p-menuitem-text">
+                <b>{{ item.label }}</b>
+            </div>
+            <div
+                *ngIf="i !== 0"
+                class="pi pi-times"
+                style="margin: -2px 0 0 8px"
+                (click)="closeTabByIndex(i, $event)"
+            ></div>
+        </div>
+    </ng-template>
+</p-tabMenu>
+
+<div *ngIf="activeTabIndex === 0; else openedTabBlock" class="mt-2">
     <div style="margin: 0 0 10px 5px; display: flex">
         <div>
             <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
@@ -89,7 +106,11 @@
             <ng-template pTemplate="body" let-net>
                 <tr class="alternate-list">
                     <td>
-                        {{ net.name }}
+                        <app-entity-link
+                            entity="shared-network"
+                            [showEntityName]="false"
+                            [attrs]="{ id: net.id, name: net.name }"
+                        ></app-entity-link>
                     </td>
                     <td>
                         <app-human-count [value]="getTotalAddresses(net)"></app-human-count>
@@ -150,3 +171,8 @@
         </p-table>
     </div>
 </div>
+
+<!-- Shared network tab template -->
+<ng-template #openedTabBlock>
+    <app-shared-network-tab></app-shared-network-tab>
+</ng-template>

@@ -4,11 +4,17 @@ import { Router, ActivatedRoute, ParamMap } from '@angular/router'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { extractKeyValsAndPrepareQueryParams } from '../utils'
-import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
-import { Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
+import {
+    getTotalAddresses,
+    getAssignedAddresses,
+    parseSubnetsStatisticValues,
+    parseSubnetStatisticValues,
+} from '../subnets'
+import { Subscription, concat, of } from 'rxjs'
+import { filter, map, share, take } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
+import { MenuItem, MessageService } from 'primeng/api'
 
 /**
  * Component for presenting shared networks in a table.
@@ -25,7 +31,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     @ViewChild('networksTable') networksTable: Table
 
     // networks
-    networks: SharedNetwork[]
+    networks: SharedNetwork[] = []
     totalNetworks = 0
 
     // filters
@@ -37,12 +43,63 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         appId: null,
     }
 
-    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
+    // Tab menu
 
+    /**
+     * Array of tab menu items with shared network information.
+     *
+     * The first tab is always present and displays the shared networks list.
+     *
+     * Note: we cannot use the URL with no segment for the list tab. It causes
+     * the first tab to be always marked active. The Tab Menu has a built-in
+     * feature to highlight items based on the current route. It seems that it
+     * matches by a prefix instead of an exact value (the "/foo/bar" URL
+     * matches the menu item with the "/foo" URL).
+     */
+    tabs: MenuItem[] = [{ label: 'Shared Networks', routerLink: '/dhcp/shared-networks/all' }]
+
+    /**
+     * Selected tab menu index.
+     *
+     * The first tab has an index of 0.
+     */
+    activeTabIndex = 0
+
+    /**
+     * Holds the information about specific shared networks presented in the tabs.
+     *
+     * The entry corresponding to shared networks list is not related to any specific
+     * shared network. Its ID is 0.
+     */
+    openedSharedNetworks: SharedNetwork[] = [{ id: 0 }]
+
+    /**
+     * Constructor.
+     *
+     * @param route activated route.
+     * @param messageService message service.
+     * @param router router.
+     * @param dhcpApi a service for communication with the server.
+     */
+    constructor(
+        private route: ActivatedRoute,
+        private messageService: MessageService,
+        private router: Router,
+        private dhcpApi: DHCPService
+    ) {}
+
+    /**
+     * A component lifecycle hook invoked when the component instance is destroyed.
+     *
+     * It unsubscribes from all subscriptions.
+     */
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
     }
 
+    /**
+     * A component lifecycle hook invoked when the component is initialized.
+     */
     ngOnInit() {
         // prepare list of DHCP versions, this is used in networks filtering
         this.dhcpVersions = [
@@ -79,12 +136,37 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 }
             )
         )
+
+        // Subscribe to the shared network id changes, e.g. from /dhcp/shared-networks/all to
+        // /dhcp/shared-networks/1. These changes are triggered by switching between the
+        // tabs.
+        this.subscriptions.add(
+            this.route.paramMap.subscribe(
+                (params) => {
+                    // Get subnet id.
+                    const id = params.get('id')
+                    let numericId = parseInt(id, 10)
+                    if (Number.isNaN(numericId)) {
+                        numericId = 0
+                    }
+                    this.openTabBySharedNetworkId(numericId)
+                },
+                (error) => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot process URL segment parameters',
+                        detail: getErrorMessage(error),
+                    })
+                }
+            )
+        )
     }
 
     /**
-     * Updates the query parameters stored in the member of this class using
-     * query parameters from the router.
-     * @param params URL query parameters from router.
+     * Update various component's query parameters from the URL
+     * query parameters.
+     *
+     * @param params query parameters.
      */
     updateOurQueryParams(params: ParamMap) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
@@ -95,7 +177,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Loads networks from the database into the component.
+     * Loads shared networks from the database into the component.
      *
      * @param event Event object containing index of the first row, maximum number
      *              of rows to be returned, dhcp version and text for networks filtering.
@@ -122,7 +204,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Filters list of networks by DHCP versions. Filtering is realized server-side.
+     * Filters the list of shared networks by DHCP versions. Filtering is performed
+     * by the server.
      */
     filterByDhcpVersion() {
         this.router.navigate(['/dhcp/shared-networks'], {
@@ -132,9 +215,9 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Filters list of networks by text. The text may contain key=val
-     * pairs allowing filtering by various keys. Filtering is realized
-     * server-side.
+     * Filters the list of shared networks by text. The text may contain key=val
+     * pairs allowing filtering by various keys. Filtering is performed by
+     * the server.
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
@@ -204,5 +287,123 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     get isAnyIPv6SubnetVisible(): boolean {
         return this.networks.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
+    }
+
+    /**
+     * Open a shared network tab.
+     *
+     * If the tab already exists, switch to it without fetching the data.
+     * Otherwise, fetch the shared network information from the API and
+     * create a new tab.
+     *
+     * @param sharedNetworkId Shared network ID or a NaN for subnet list.
+     */
+    openTabBySharedNetworkId(sharedNetworkId: number) {
+        const tabIndex = this.openedSharedNetworks.map((t) => t.id).indexOf(sharedNetworkId)
+        if (tabIndex < 0) {
+            this.createTab(sharedNetworkId).then(() => {
+                this.switchToTab(this.openedSharedNetworks.length - 1)
+            })
+        } else {
+            this.switchToTab(tabIndex)
+        }
+    }
+
+    /**
+     * Close a menu tab by index.
+     *
+     * @param index Tab index.
+     * @param event Event triggered upon tab closing.
+     */
+    closeTabByIndex(index: number, event?: Event) {
+        if (index == 0) {
+            return
+        }
+
+        this.openedSharedNetworks.splice(index, 1)
+        this.tabs.splice(index, 1)
+
+        if (this.activeTabIndex === index) {
+            // Closing currently selected tab. Switch to previous tab.
+            this.switchToTab(index - 1)
+            this.router.navigate([this.tabs[index - 1].routerLink])
+        } else if (this.activeTabIndex > index) {
+            // Sitting on the later tab then the one closed. We don't need
+            // to switch, but we have to adjust the active tab index.
+            this.activeTabIndex--
+        }
+
+        if (event) {
+            event.preventDefault()
+        }
+    }
+
+    /**
+     * Create a new tab for a given shared network ID.
+     *
+     * It fetches the shared network information from the API.
+     *
+     * @param sharedNetworkId Shared network ID.
+     */
+    private createTab(sharedNetworkId: number): Promise<void> {
+        return (
+            concat(
+                // Existing entry or undefined.
+                of(this.networks.filter((s) => s.id == sharedNetworkId)[0])
+                    // Drop an undefined value if the entry was not found.
+                    .pipe(filter((s) => !!s)),
+                // Fetch data from API.
+                this.dhcpApi.getSharedNetwork(sharedNetworkId)
+            )
+                // Take 1 item (return existing entry if exist, otherwise fetch the API).
+                .pipe(take(1))
+                .pipe(
+                    map((sharedNetwork) => {
+                        if (sharedNetwork) {
+                            parseSubnetStatisticValues(sharedNetwork)
+                        }
+                        return sharedNetwork
+                    })
+                )
+                // Execute and use.
+                .toPromise()
+                .then((data) => {
+                    this.appendTab(data)
+                })
+                .catch((error) => {
+                    const msg = getErrorMessage(error)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot get subnet',
+                        detail: `Error getting subnet with ID ${sharedNetworkId}: ${msg}`,
+                        life: 10000,
+                    })
+                })
+        )
+    }
+
+    /**
+     * Append a new tab to the list of tabs.
+     *
+     * @param sharedNetwork Shared network data.
+     */
+    private appendTab(sharedNetwork: SharedNetwork) {
+        this.openedSharedNetworks.push(sharedNetwork)
+        this.tabs.push({
+            label: sharedNetwork.name,
+            routerLink: `/dhcp/shared-networks/${sharedNetwork.id}`,
+        })
+    }
+
+    /**
+     * Switch to tab identified by an index.
+     *
+     * @param index Tab index.
+     */
+    private switchToTab(index: number) {
+        if (this.activeTabIndex == index) {
+            return
+        }
+        this.activeTabIndex = index
     }
 }

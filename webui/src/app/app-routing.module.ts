@@ -83,7 +83,7 @@ const routes: Routes = [
     {
         path: 'dhcp/subnets',
         pathMatch: 'full',
-        redirectTo: 'dhcp/subnets/',
+        redirectTo: 'dhcp/subnets/all',
     },
     {
         path: 'dhcp/subnets/:id',
@@ -92,6 +92,11 @@ const routes: Routes = [
     },
     {
         path: 'dhcp/shared-networks',
+        pathMatch: 'full',
+        redirectTo: 'dhcp/shared-networks/all',
+    },
+    {
+        path: 'dhcp/shared-networks/:id',
         component: SharedNetworksPageComponent,
         canActivate: [AuthGuard],
     },
