@@ -8,7 +8,7 @@ from core.prometheus_parser import text_fd_to_metric_families
 def test_memoize():
     """Memoized function should be executed only one for specific arguments"""
     # Arrange
-    class Foo:  # pylint: disable=too-few-public-methods
+    class Foo:
         '''Minimal class to test memoize decorator.'''
         def __init__(self, suffix):
             self.suffix = suffix
