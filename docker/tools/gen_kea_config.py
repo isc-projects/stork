@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+'''
+Script to generate the Kea configuration with a given number of subnets and/or
+host reservations.
+It is dedicated for performance tests.
+'''
+
 import argparse
 import sys
 import json
@@ -247,18 +253,34 @@ KEA_BASE_SUBNET = {
 
 
 def create_mac_selector():
+    '''Returns a generator of sequential mac addresses.'''
     mac_addr_iter = 0
 
     def mac_selector():
         nonlocal mac_addr_iter
         mac_addr_iter += 1
-        return ':'.join(['{}{}'.format(a, b)
-                        for a, b
-                        in zip(*[iter('{:012x}'.format(mac_addr_iter))]*2)])
+        return ':'.join([f'{a}{b}' for a, b
+                        in zip(*[iter(f'{mac_addr_iter:012x}')]*2)])
     return mac_selector
 
 
 def generate_reservations(version, reservation_range, mac_selector, address_modifier=1, subnet=""):
+    '''
+    Generates the host reservations' part of configuration.
+
+    Parameters
+    ----------
+    version: int, 4 or 6
+        IP family
+    reservation_range: int
+        The number of reservations to generate. Min: 0, max: 254.
+    mac_selector: generator[str]
+        Generator of the MAC addresses.
+    address_modifier:
+        The fixed octet included in all reserved addresses. Min: 0, max 255.
+    subnet: str
+        The two first octets of the subnet IP.
+    '''
     if reservation_range == 0:
         return {}
 
@@ -271,16 +293,16 @@ def generate_reservations(version, reservation_range, mac_selector, address_modi
     reservations = []
     for i in range(1, reservation_range + 1):
         if version == 4:
-            single_reservation = {"hostname": "reserved-hostname-%s-%s" % (subnet, i),
+            single_reservation = {"hostname": f"reserved-hostname-{subnet}-{i}",
                                   # "option-data": [random.choice(optiondata4)],
                                   "hw-address": mac_selector(),
-                                  "ip-address": "%s.%d.%d" % (subnet, address_modifier, i)}
+                                  "ip-address": f"{subnet}.{address_modifier}.{i}"}
 
             reservations.append(single_reservation)
         elif version == 6:
-            single_reservation = {"hostname": "reserved-hostname-%s:%d-%s" % (subnet, address_modifier, i),
+            single_reservation = {"hostname": f"reserved-hostname-{subnet}:{address_modifier}-{i}",
                                   "hw-address": mac_selector(),
-                                  "ip-addresses": ["%s:%d::%s" % (subnet, address_modifier, hex(i)[2:])]}
+                                  "ip-addresses": [f"{subnet}:{address_modifier}::{hex(i)[2:]}"]}
 
             reservations.append(single_reservation)
         else:
@@ -289,91 +311,64 @@ def generate_reservations(version, reservation_range, mac_selector, address_modi
 
 
 def get_option(ip_version, number_of_options=1):
-    # return error if number_of_options is higher than length of optiondata4/6
+    ''' Generates a random DHCP option(s). Returns error if number_of_options
+    is higher than length of optiondata4/6.'''
     if ip_version == 4:
         return {"option-data": random.sample(optiondata4, number_of_options)}
     return {"option-data": random.sample(optiondata6, number_of_options)}
 
 
-def generate_v6_subnet(subnet_range, mac_selector, subnetid=1, subnet='2001:db8:', reservation_count=0, **kwargs):
-    config = {"subnet6": []}
-
-    for inner_scope in range(1, subnet_range + 1):
-        subnet = {"pools": [{"pool": "%s%d::1-%s%d::ffff:ffff:ffff:ffff" % (subnet, inner_scope, subnet, inner_scope)}],
-                  "subnet": "%s%d::/64" % (subnet, inner_scope), "id": subnetid}
-        subnet.update(kwargs)
-        subnet.update(generate_reservations(6, reservation_count, mac_selector, address_modifier=inner_scope,
-                                            subnet="%s:%d" % (subnet, inner_scope)))
-        config["subnet6"].append(subnet)
-        subnetid += 1
-    return config
-
-
-def generate_v6_ha_subnet(subnet_range, subnetid=1, **kwargs):
-    config = {"subnet6": []}
-
-    for inner_scope in range(1, subnet_range + 1):
-        subnet = {"pools": [{"pool": "2001:db8:%d::1-2001:db8:%d::00ff:ffff" % (inner_scope, inner_scope),
-                             "client-class": "HA_server1"},
-                            {"pool": "2001:db8:%d::01ff:ffff-2001:db8:%d::ffff:ffff" % (inner_scope, inner_scope),
-                             "client-class": "HA_server2"}],
-
-                  "subnet": "2001:db8:%d::/64" % inner_scope, "id": subnetid,
-                  "option-data": [random.choice(optiondata6)],
-                  }
-        subnet.update(kwargs)
-        # subnet.update(generate_reservations(6, 5, "2001:db8:%d" % inner_scope, inner_scope))
-        config["subnet6"].append(subnet)
-        subnetid += 1
-    return config
-
-
 def generate_v4_subnet(range_of_outer_scope, range_of_inner_scope, mac_selector,
-                       reservation_count=0, subnetid=1, **kwargs):
+                       reservation_count=0, subnet_id=1, **kwargs):
+    '''
+    Generates the DHCPv4 subnet's configuration entry.
+
+    Parameters
+    ----------
+    range_of_outer_scope: int
+        Number of generated group of addresses. The group is a first octet of
+        IP address. Min: 0, max: 254.
+    range_of_inner_scope: int
+        Number of generated addresses in each group. Min: 0, max: 254.
+    mac_selector: generator
+        Generator of MAC addresses.
+    reservation_count: int
+        Number of host reservations in each subnet.
+    subnetid: int
+        The first subnet ID. The generated IDs are sequential.
+    **kwargs: dict
+        Additional subnet properties.
+    '''
+
     # TODO move to binary generator
     config = {"subnet4": []}
     netmask = 8 if range_of_inner_scope == 0 else 16
     for outer_scope in range(1, range_of_outer_scope + 1):
         for inner_scope in range(0, range_of_inner_scope + 1):
-            subnet = {"pools": [{"pool": "%d.%d.0.4-%d.%d.255.254" % (outer_scope, inner_scope,
-                                                                      outer_scope,
-                                                                      inner_scope if netmask == 16 else 255)}],
-                      "subnet": "%d.%d.0.0/%d" % (outer_scope, inner_scope, netmask),
-                      "option-data": random.choices(optiondata4, k=6),
-                      "client-class": "class-00-00",
-                      "relay": {
-                          "ip-addresses": ["172.100.0.200"]
-                      },
-                      "id": subnetid
-                      }
+            subnet = {
+                "pools": [
+                    {
+                        "pool": f"{outer_scope}.{inner_scope}.0.4-{outer_scope}.{inner_scope if netmask == 16 else 255}.255.254"
+                    }
+                ],
+                "subnet": f"{outer_scope}.{inner_scope}.0.0/{netmask}",
+                "option-data": random.choices(optiondata4, k=6),
+                "client-class": "class-00-00",
+                "relay": {
+                    "ip-addresses": ["172.100.0.200"]
+                },
+                "id": subnet_id
+            }
             subnet.update(kwargs)
             subnet.update(generate_reservations(4, reservation_count, mac_selector, address_modifier=inner_scope,
-                                                subnet="%d.%d" % (outer_scope, inner_scope)))
+                                                subnet=f"{outer_scope}.{inner_scope}"))
             config["subnet4"].append(subnet)
-            subnetid += 1
+            subnet_id += 1
     return config
 
 
-# if __name__ == "__main__":
-#     from perf_config import KEA1
-#     # KEA1.generate_mac_list(1000)
-#     # print(json.dumps(generate_v4_subnet(10, 1, KEA1.get_mac_for_reservation, reservation_count=5),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-#     # print(json.dumps(generate_v6_subnet(10, KEA1.get_mac_for_reservation, reservation_count=5),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-#     KEA1.generate_mac_list(100000)
-#     # print(json.dumps(generate_reservations(6, 1200, KEA1.get_mac_for_reservation),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-#     # print(json.dumps(generate_reservations(4, 5, KEA1.get_mac_for_reservation),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-#     # print(json.dumps(generate_v4_subnet(100, 0, KEA1.get_mac_for_reservation),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-#     print(json.dumps(generate_v4_subnet(2, 1, KEA1.get_mac_for_reservation, reservation_count=1),
-#                      sort_keys=True, indent=2, separators=(',', ': ')))
-#     # print(json.dumps(generate_reservations(6, 1200, KEA1.get_mac_for_reservation),
-#     #                  sort_keys=True, indent=2, separators=(',', ': ')))
-
 def cmd():
+    '''Parses CLI arguments and executes the program.'''
     parser = argparse.ArgumentParser("Kea config generator")
     parser.add_argument("n", type=int, help="Number of subnets")
     parser.add_argument("-s", "--start-id", type=int, default=1, help="Start subnet index")
@@ -387,14 +382,14 @@ def cmd():
 
     args = parser.parse_args()
 
-    n = args.n
+    number_of_subnets = args.n
 
-    if n // 256 > 0:
+    if number_of_subnets // 256 > 0:
         inner = 255
-        outer = n // 256
+        outer = number_of_subnets // 256
     else:
         inner = 0
-        outer = n
+        outer = number_of_subnets
 
     conf = copy.deepcopy(KEA_BASE_CONFIG)
 
