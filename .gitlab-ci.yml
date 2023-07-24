@@ -96,6 +96,11 @@ lint_python_flake8:
   script:
     - rake lint:python:flake8
 
+lint_python_black:
+  extends: .base_build_debian
+  script:
+    - rake lint:python:black
+
 unittest_backend:
   extends: .base_build_debian
   services:
