@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=similarities
+# The 'similarities' rule disables warnings about likeness to user guide.
+# The 'invalid-name' rule disables warnings about not using upper case style
+# for global variables.
+# pylint: disable=similarities,invalid-name
 
 """
 Configuration file for the Sphinx documentation builder.
