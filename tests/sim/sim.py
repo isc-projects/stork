@@ -1,3 +1,8 @@
+'''
+The DHCP and DNS traffic simulator for the demo environment.
+It isn't actively maintained.
+'''
+
 import os
 import sys
 import json
@@ -18,17 +23,18 @@ STORK_SERVER_URL = os.environ.get('STORK_SERVER_URL', 'http://server:8080')
 
 
 def _login_session():
-    s = requests.Session()
+    session = requests.Session()
     credentials = dict(
         authenticationMethodId='internal',
         identifier='admin',
         secret='admin'
     )
-    s.post('%s/api/sessions' % STORK_SERVER_URL, json=credentials)
-    return s
+    session.post(f'{STORK_SERVER_URL}/api/sessions', json=credentials)
+    return session
 
 
 def start_perfdhcp(subnet):
+    '''Generates traffic for a given network.'''
     log.info("SUBNET %s", subnet)
     rate, clients = subnet['rate'], subnet['clients']
     client_class = subnet['clientClass']
@@ -37,55 +43,69 @@ def start_perfdhcp(subnet):
 
     if '.' in subnet['subnet']:
         # ip4
-        kea_addr = '172.1%s.0.100' % mac_prefix_bytes[0]
-        cmd = '/usr/sbin/perfdhcp -4 -r %d -R %d -b mac=%s:00:00:00:00 %s' % (rate, clients, mac_prefix, kea_addr)
+        kea_addr = f'172.1{mac_prefix_bytes[0]}.0.100'
+        cmd = [
+            '/usr/sbin/perfdhcp', '-4',
+            '-r', str(rate),
+            '-R', str(clients),
+            '-b', f'mac={mac_prefix}:00:00:00:00',
+            kea_addr
+        ]
     else:
         # ip6
-        cmd = '/usr/sbin/perfdhcp -6 -r %d -R %d -l eth1 -b duid=000000000000 -b mac=%s:00:00:00:00' % (rate, clients, mac_prefix)
-    args = shlex.split(cmd)
+        cmd = [
+            '/usr/sbin/perfdhcp', '-6',
+            '-r', str(rate),
+            '-R', str(clients),
+            '-l', 'eth1',
+            '-b', 'duid=000000000000',
+            '-b', f'mac={mac_prefix}:00:00:00:00'
+        ]
     print('exec: %s' % cmd, file=sys.stderr)
-    return subprocess.Popen(args)
+    return subprocess.Popen(cmd)
 
 
 def _refresh_subnets():
     try:
         app.subnets = dict(items=[], total=0)
 
-        s = _login_session()
+        session = _login_session()
 
-        url = '%s/api/subnets?start=0&limit=100' % STORK_SERVER_URL
-        r = s.get(url)
-        data = r.json()
+        url = f'{STORK_SERVER_URL}/api/subnets?start=0&limit=100'
+        response = session.get(url)
+        data = response.json()
         log.info('SN %s', data)
 
         if not data:
             return
 
-        for sn in data['items']:
-            sn['rate'] = 1
-            sn['clients'] = 1000
-            sn['state'] = 'stop'
-            sn['proc'] = None
-            if 'sharedNetwork' not in sn:
-                sn['sharedNetwork'] = ''
+        for subnet in data['items']:
+            subnet['rate'] = 1
+            subnet['clients'] = 1000
+            subnet['state'] = 'stop'
+            subnet['proc'] = None
+            if 'sharedNetwork' not in subnet:
+                subnet['sharedNetwork'] = ''
 
         app.subnets = data
-    except Exception as e:
-        log.info("IGNORED EXCEPTION %s", str(e))
+    except Exception as exc:
+        log.info("IGNORED EXCEPTION %s", str(exc))
 
 
 def serialize_subnets(subnets):
+    '''Serializes subnets to JSON.'''
     data = dict(total=subnets['total'], items=[])
-    for sn in subnets['items']:
-        data['items'].append(dict(subnet=sn['subnet'],
-                                  sharedNetwork=sn['sharedNetwork'],
-                                  rate=sn['rate'],
-                                  clients=sn['clients'],
-                                  state=sn['state']))
+    for subnet in subnets['items']:
+        data['items'].append(dict(subnet=subnet['subnet'],
+                                  sharedNetwork=subnet['sharedNetwork'],
+                                  rate=subnet['rate'],
+                                  clients=subnet['clients'],
+                                  state=subnet['state']))
     return json.dumps(data)
 
 
 def run_dig(server):
+    '''Generates DNS traffic to a given server using dig.'''
     clients = server['clients']
     qname = server['qname']
     qtype = server['qtype']
@@ -93,14 +113,15 @@ def run_dig(server):
     if server['transport'] == 'tcp':
         tcp = "+tcp"
     address = server['machine']['address']
-    cmd = 'dig %s +tries=1 +retry=0 @%s %s %s' % (tcp, address, qname, qtype)
-    print('exec %d times: %s' % (clients, cmd), file=sys.stderr)
+    cmd = f'dig {tcp} +tries=1 +retry=0 @{address} {qname} {qtype}'
+    print(f'exec {clients} times: {cmd}', file=sys.stderr)
     for _ in range(0, clients):
         args = shlex.split(cmd)
         subprocess.run(args, check=False)
 
 
 def start_flamethrower(server):
+    '''Generates DNS traffic to a given server using flamethrower.'''
     rate = server['rate']*1000
     clients = server['clients']
     qname = server['qname']
@@ -111,9 +132,9 @@ def start_flamethrower(server):
     address = server['machine']['address']
     # send one query (-q) per client (-c) every 'rate' millisecond (-d)
     # on transport (-P) with qname (-r) and qtype (-T)
-    cmd = 'flame -q 1 -c %d -d %d -P %s -r %s -T %s %s' % (clients, rate, transport, qname, qtype, address)
+    cmd = f'flame -q 1 -c {clients} -d {rate} -P {transport} -r {qname} -T {qtype} {address}'
     args = shlex.split(cmd)
-    print('exec: %s' % cmd, file=sys.stderr)
+    print(f'exec: {cmd}', file=sys.stderr)
     return subprocess.Popen(args)
 
 
@@ -121,11 +142,11 @@ def _refresh_servers():
     try:
         app.servers = dict(items=[], total=0)
 
-        s = _login_session()
+        session = _login_session()
 
-        url = '%s/api/apps/' % STORK_SERVER_URL
-        r = s.get(url)
-        data = r.json()
+        url = f'{STORK_SERVER_URL}/api/apps/'
+        response = session.get(url)
+        data = response.json()
 
         if not data:
             return
@@ -143,11 +164,12 @@ def _refresh_servers():
 
         print('data: %s' % app.servers, file=sys.stderr)
 
-    except Exception as e:
-        log.info("IGNORED EXCEPTION %s", str(e))
+    except Exception as exc:
+        log.info("IGNORED EXCEPTION %s", str(exc))
 
 
 def serialize_servers(servers):
+    '''Serializes servers to JSON.'''
     data = dict(total=servers['total'], items=[])
     for srv in servers['items']:
         data['items'].append(dict(state=srv['state'],
@@ -161,12 +183,14 @@ def serialize_servers(servers):
 
 
 def init():
+    '''Creates Flask application and logger.'''
     app_instance = Flask(__name__, static_url_path='', static_folder='')
     log_instance = create_logger(app)
     return app_instance, log_instance
 
 
 def main():
+    '''Runs the simulator.'''
     _refresh_subnets()
     _refresh_servers()
 
@@ -177,17 +201,20 @@ main()
 
 @app.route('/')
 def root():
+    '''The root HTTP handler.'''
     return app.send_static_file('index.html')
 
 
 @app.route('/subnets')
 def get_subnets():
+    '''Subnets list HTTP handler.'''
     _refresh_subnets()
     return serialize_subnets(app.subnets)
 
 
 @app.route('/subnets/<int:index>', methods=['PUT'])
 def put_subnet_params(index):
+    '''Start generating DHCP traffic for a subnet with a given index.'''
     data = json.loads(request.data)
     subnet = app.subnets['items'][index]
 
@@ -208,12 +235,12 @@ def put_subnet_params(index):
         # then stop it first
         elif subnet['state'] == 'stop' and data['state'] == 'start':
             if subnet['sharedNetwork'] != '':
-                for sn in app.subnets['items']:
-                    if sn['sharedNetwork'] == subnet['sharedNetwork'] and sn['state'] == 'start':
-                        sn['proc'].terminate()
-                        sn['proc'].wait()
-                        sn['proc'] = None
-                        sn['state'] = 'stop'
+                for related_subnet in app.subnets['items']:
+                    if related_subnet['sharedNetwork'] == subnet['sharedNetwork'] and related_subnet['state'] == 'start':
+                        related_subnet['proc'].terminate()
+                        related_subnet['proc'].wait()
+                        related_subnet['proc'] = None
+                        related_subnet['state'] = 'stop'
 
             subnet['proc'] = start_perfdhcp(subnet)
 
@@ -224,12 +251,14 @@ def put_subnet_params(index):
 
 @app.route('/servers')
 def get_servers():
+    '''Servers list HTTP handler.'''
     _refresh_servers()
     return serialize_servers(app.servers)
 
 
 @app.route('/query/<int:index>', methods=['PUT'])
 def put_query_params(index):
+    '''Sends DNS query to a server with the given index.'''
     data = json.loads(request.data)
     server = app.servers['items'][index]
 
@@ -255,6 +284,7 @@ def put_query_params(index):
 
 @app.route('/perf/<int:index>', methods=['PUT'])
 def put_perf_params(index):
+    '''Starts generating DNS traffic to a server with the given index.'''
     data = json.loads(request.data)
     server = app.servers['items'][index]
 
@@ -292,24 +322,25 @@ def put_perf_params(index):
 def _get_services():
     app.services = dict(items=[], total=0)
 
-    s = _login_session()
+    session = _login_session()
 
-    url = '%s/api/machines?start=0&limit=100' % STORK_SERVER_URL
-    r = s.get(url)
-    machines = r.json()['items']
+    url = f'{STORK_SERVER_URL}/api/machines?start=0&limit=100'
+    response = session.get(url)
+    machines = response.json()['items']
     if machines is None:
         machines = []
 
     data = dict(total=0, items=[])
-    for m in machines:
-        s = ServerProxy('http://%s:9001/RPC2' % m['address'])
+    for machine in machines:
+        address = machine["address"]
+        server = ServerProxy(f'http://{address}:9001/RPC2')
         try:
-            services = s.supervisor.getAllProcessInfo()  # pylint: disable=no-member
+            services = server.supervisor.getAllProcessInfo()  # pylint: disable=no-member
         except Exception:
             continue
         pprint.pprint(services)
         for srv in services:
-            srv['machine'] = m['address']
+            srv['machine'] = address
             data['items'].append(srv)
 
     data['total'] = len(data['items'])
@@ -321,21 +352,23 @@ def _get_services():
 
 @app.route('/services')
 def get_services():
+    '''The services page HTTP handler.'''
     data = _get_services()
     return json.dumps(data)
 
 
 @app.route('/services/<int:index>', methods=['PUT'])
 def put_service(index):
+    '''Toggles a service with the given index.'''
     data = json.loads(request.data)
     service = app.services['items'][index]
 
-    s = ServerProxy('http://%s:9001/RPC2' % service['machine'])
+    server = ServerProxy(f'http://{service["machine"]}:9001/RPC2')
 
     if data['operation'] == 'stop':
-        s.supervisor.stopProcess(service['name'])  # pylint: disable=no-member
+        server.supervisor.stopProcess(service['name'])  # pylint: disable=no-member
     elif data['operation'] == 'start':
-        s.supervisor.startProcess(service['name'])  # pylint: disable=no-member
+        server.supervisor.startProcess(service['name'])  # pylint: disable=no-member
 
     data = _get_services()
     return json.dumps(data)
