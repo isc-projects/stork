@@ -13,3 +13,4 @@ lazy-object-proxy <= 1.7.1
 platformdirs <= 2.4.0
 pylint <= 2.13.9
 tomli <= 1.2.3
+click <= 8.0.4
