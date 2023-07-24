@@ -1,4 +1,4 @@
-# Export main classes
+'''Exports main wrappers.'''
 from core.wrappers.server import Server
 from core.wrappers.kea import Kea
 from core.wrappers.bind9 import Bind9

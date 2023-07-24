@@ -111,16 +111,16 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
         for component in components:
             if component.endswith("?"):
                 component = component[:-1]
-                begins.append('{{ if index %s "%s" }}' % (
+                begins.append('{{ if index %s "%s" }}' % (  # pylint: disable=consider-using-f-string
                     component_delimiter.join(path), component
                 ))
             path.append(component)
 
-        format_property = "%s{{ %s%s }}%s" % (
+        format_property = "%s{{ %s%s }}%s" % (  # pylint: disable=consider-using-f-string
             "".join(begins),
             json_prefix if as_json else "",
             component_delimiter.join(path),
-            "".join(["{{ else }}%s{{ end }}" %
+            "".join(["{{ else }}%s{{ end }}" %  # pylint: disable=consider-using-f-string
                     _INSPECT_NONE_MARK, ] * len(begins))
         )
         formats.append(format_property)
@@ -193,7 +193,7 @@ class DockerCompose:
         self._profiles = profiles if profiles is not None else []
 
         if build_args is not None:
-            build_args_pairs = [("--build-arg", "%s=%s" % pair)
+            build_args_pairs = [("--build-arg", f"{pair[0]}={pair[1]}")
                                 for pair in build_args.items()]
             # Flatten list
             build_args_strings = [item
@@ -257,7 +257,7 @@ class DockerCompose:
         pull_cmd = self.docker_compose_command() + ['pull', *service_names]
         self._call_command(cmd=pull_cmd, capture_output=False)
 
-    def up(self, *service_names):
+    def up(self, *service_names):  # pylint: disable=invalid-name
         """Up the docker compose services."""
         up_cmd = self.docker_compose_command() + ['up', '-d', *service_names]
         self._call_command(cmd=up_cmd, capture_output=False)
@@ -318,7 +318,7 @@ class DockerCompose:
         _, stdout, stderr = self._call_command(cmd=logs_cmd)
         return stdout, stderr
 
-    def ps(self, *service_names: str):
+    def ps(self, *service_names: str):  # pylint: disable=invalid-name
         """
         Returns ps command output.
 
@@ -383,8 +383,7 @@ class DockerCompose:
         # Inspect isn't supported by the docker-compose.
         container_id = self.get_container_id(service_name)
         if container_id is None:
-            raise LookupError(
-                "container of the %s service not found" % service_name)
+            raise LookupError(f"container of the {service_name} service not found")
 
         inspect_format = _construct_inspect_format(properties)
 
@@ -399,8 +398,7 @@ class DockerCompose:
         """Returns the low-level information on Docker containers as JSON."""
         container_id = self.get_container_id(service_name)
         if container_id is None:
-            raise LookupError(
-                "container of the %s service not found" % service_name)
+            raise LookupError(f"container of the {service_name} service not found")
         cmd = ["docker", "inspect", container_id]
         _, stdout, _ = self._call_command(cmd=cmd)
         return stdout
@@ -426,8 +424,7 @@ class DockerCompose:
         _, stdout, _ = self._call_command(cmd=port_cmd)
         result = stdout.split(":")
         if len(result) == 1:
-            raise NoSuchPortExposed("Port {} was not exposed for service {}"
-                                    .format(port, service_name))
+            raise NoSuchPortExposed(f"Port {port} was not exposed for service {service_name}")
         mapped_host, mapped_port = result
         mapped_port = int(mapped_port)
         if self._default_mapped_hostname is not None and mapped_host == "0.0.0.0":
@@ -455,10 +452,11 @@ class DockerCompose:
             The IP address for the service in a given network
         """
         ip_property = "IPAddress" if family == 4 else "GlobalIPv6Address"
-        prefixed_network_name = "%s_%s" % (self._project_name, network_name)
-        return self.inspect(service_name,
-                            ".NetworkSettings.Networks.%s.%s"
-                            % (prefixed_network_name, ip_property))[0]
+        prefixed_network_name = f"{self._project_name}_{network_name}"
+        return self.inspect(
+            service_name,
+            f".NetworkSettings.Networks.{prefixed_network_name}.{ip_property}"
+        )[0]
 
     def get_container_id(self, service_name):
         """

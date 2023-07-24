@@ -1,3 +1,5 @@
+'''Pytest configuration file. Entry point for system tests.'''
+
 import datetime
 import os
 import sys
@@ -22,32 +24,31 @@ if os.environ.get('PYTEST_XDIST_WORKER', False):
 
 def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argument
     '''Called at the start of running the runtest protocol for a single item.'''
-    banner = '\n\n************ START   %s ' % nodeid
+    banner = f'\n\n************ START   {nodeid} '
     banner += '*' * (140 - len(banner))
     banner += '\n'
-    banner = '\u001b[36m' + banner + '\u001b[0m'
+    banner = f'\u001b[36m{banner}\u001b[0m'
     print(banner)
 
 
 def pytest_runtest_logfinish(nodeid, location):  # pylint: disable=unused-argument
     '''Called at the end of running the runtest protocol for a single item.'''
-    banner = '\n************ END   %s ' % nodeid
+    banner = f'\n************ END   {nodeid} '
     banner += '*' * (140 - len(banner))
-    banner = '\u001b[36;1m' + banner + '\u001b[0m'
+    banner = f'\u001b[36;1m{banner}\u001b[0m'
     print(banner)
 
 
 def pytest_runtest_logreport(report):
     '''Process the TestReport produced for each of the setup, call and teardown runtest phases of an item.'''
     if report.when == 'call':
-        dt = datetime.timedelta(seconds=int(report.duration))
-        banner = '\n************ RESULT %s   %s  took %s  ' % (
-            report.outcome.upper(), report.nodeid, dt)
+        duration = datetime.timedelta(seconds=int(report.duration))
+        banner = f'\n************ RESULT {report.outcome.upper()}   {report.nodeid}  took {duration}  '
         banner += '*' * (140 - len(banner))
         if report.outcome == 'passed':
-            banner = '\u001b[32;1m' + banner + '\u001b[0m'
+            banner = f'\u001b[32;1m{banner}\u001b[0m'
         else:
-            banner = '\u001b[31;1m' + banner + '\u001b[0m'
+            banner = f'\u001b[31;1m{banner}\u001b[0m'
         print(banner)
 
 

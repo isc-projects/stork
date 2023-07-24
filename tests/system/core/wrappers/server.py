@@ -53,7 +53,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         super().__init__(compose, service_name)
         internal_port = 8080
         mapped = self._compose.port(service_name, internal_port)
-        url = "http://%s:%d/api" % mapped
+        url = f"http://{mapped[0]}:{mapped[1]}/api"
         configuration = openapi_client.Configuration(host=url)
         self._api_client = openapi_client.ApiClient(configuration)
 
@@ -79,7 +79,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """
         Parses the GO timestamp if it is a string otherwise, lefts it as is.
         """
-        if type(date) == str:
+        if isinstance(date, str):
             date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
             date = date.replace(tzinfo=timezone.utc)
         return date
@@ -600,24 +600,26 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         r'name="(?P<daemon_name>.*)" '
         r'appId="(?P<app_id>\d+)"')
 
-    def wait_for_failed_CA_communication(self, check_unauthorized=True):
+    def wait_for_failed_ca_communication(self, check_unauthorized=True):
         """
         Waits for a failed communication with CA daemon event due to an
-        unauthorized server (if needed)."""
-        def condition(ev: Event):
-            text = ev["text"]
+        unauthorized server (if needed).
+        """
+        def condition(event: Event):
+            text = event["text"]
             if not text.startswith("Communication with CA daemon of"):
                 return False
             if not text.endswith("failed"):
                 return False
 
-            if check_unauthorized and "Unauthorized" not in ev["details"]:
+            if check_unauthorized and "Unauthorized" not in event["details"]:
                 return False
             return True
         self._wait_for_event(condition)
 
     @wait_for_success(wait_msg="Waiting for config reports...")
     def wait_for_config_reports(self, daemon_id: int, limit: int = 100, start: int = 0) -> ConfigReports:
+        """Waits for finishing the current config review."""
         reports = self.list_config_reports(daemon_id, limit=limit, start=start)
         if reports is None:
             raise NoSuccessException("reviews aren't ready yet")

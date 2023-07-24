@@ -1,3 +1,5 @@
+'''Functions to retrieve the Stork version.'''
+
 import re
 import os.path
 

@@ -16,6 +16,7 @@ def test_memoize():
 
         @memoize
         def method(self, value):
+            '''Counts call and returns value with appended by suffix.'''
             self.call_count += 1
             return value + self.suffix
 

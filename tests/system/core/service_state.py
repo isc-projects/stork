@@ -1,3 +1,4 @@
+'''The state of compose'''
 
 
 class ServiceState:

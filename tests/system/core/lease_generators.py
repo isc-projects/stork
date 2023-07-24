@@ -1,8 +1,11 @@
+'''Kea lease file generators.'''
+
 import csv
 import time
 
 
 def gen_dhcp4_lease_file(target):
+    '''Generates the DHCPv4 lease file.'''
     # DHCPv4 lease file header.
     fileheader = [
         'address',
@@ -32,21 +35,22 @@ def gen_dhcp4_lease_file(target):
             'subnet_id': 1,
             'fqdn_fwd': 1,
             'fqdn_rev': 1,
-            'hostname': 'host-%d.example.org' % i,
+            'hostname': f'host-{i}.example.org',
             'state': i % 2,
         }
-        lease['address'] = '192.0.2.%d' % i
-        lease['expire'] = '%d' % (time.time() + 600)
+        lease['address'] = f'192.0.2.{i}'
+        lease['expire'] = str(time.time() + 600)
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
-            lease['hwaddr'] = '00:01:02:03:04:%02d' % i
-            lease['client_id'] = '01:02:03:%02d' % i
+            lease['hwaddr'] = f'00:01:02d:03:04:{i:02d}'
+            lease['client_id'] = f'01:02d:03:{i:02d}'
 
         lease_writer.writerow(lease)
 
 
 def gen_dhcp6_lease_file(target):
+    '''Generates the DHCPv6 lease file.'''
     # DHCPv6 lease file header.
     fileheader = [
         'address',
@@ -83,14 +87,14 @@ def gen_dhcp6_lease_file(target):
             'prefix_len': 128,
             'fqdn_fwd': 1,
             'fqdn_rev': 1,
-            'hostname': 'host-%d.example.org' % i,
+            'hostname': f'host-{i}.example.org',
             'state': i % 2
         }
-        lease['address'] = '3001:db8:1:42::%d' % i
-        lease['expire'] = '%d' % (time.time() + 600)
+        lease['address'] = f'3001:db8:1:42::{i}'
+        lease['expire'] = str(time.time() + 600)
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
-            lease['duid'] = '01:02:03:%02d' % i
+            lease['duid'] = f'01:02d:03:{i:02d}'
 
         lease_writer.writerow(lease)

@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+import yaml
+
 from core.compose import ContainerExitedException, DockerCompose
 from core.service_state import ServiceState
 from tests.core.commons import subprocess_result_mock
-
-import pytest
-import yaml
 
 
 def test_command_contains_project_directory():
@@ -501,10 +501,10 @@ def test_get_service_ip_address_uses_proper_network_name():
     mock.return_value = ["123.45.67.89", ]
     compose.inspect = mock
     # Act
-    ip = compose.get_service_ip_address("service", "network", family=4)
+    ip_address = compose.get_service_ip_address("service", "network", family=4)
     # Assert
     service, fmt = mock.call_args.args
-    assert ip == "123.45.67.89"
+    assert ip_address == "123.45.67.89"
     assert service == "service"
     assert "prefix_network" in fmt
 

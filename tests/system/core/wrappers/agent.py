@@ -34,7 +34,7 @@ class Agent(ComposeServiceWrapper):
         """Returns URL of the agent metrics endpoint."""
         internal_port = 9119
         mapped = self._compose.port(self._service_name, internal_port)
-        url = "http://%s:%d/metrics" % mapped
+        url = f"http://{mapped[0]}:{mapped[1]}/metrics"
         return url
 
     @property

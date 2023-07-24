@@ -61,7 +61,7 @@ class Perfdhcp:
 
         flags = [
             # IP family
-            "-%d" % family,
+            f"-{family}",
             # Ratio
             "-r", "1",
             # Range
@@ -76,12 +76,12 @@ class Perfdhcp:
             flags.append("-b")
             flags.append("mac=" + mac_prefix + ":00:00:00:00")
         if option is not None:
-            flags.append("-o%s,%s" % option)
+            flags.append(f"-o{option[0]},{option[1]}")
         if duid_prefix is not None:
             flags.append("-b")
-            flags.append("duid=" + duid_prefix + "00000000")
+            flags.append(f"duid={duid_prefix}00000000")
 
-        if type(target) == str:
+        if isinstance(target, str):
             flags.append(target)
         else:
             flags += target

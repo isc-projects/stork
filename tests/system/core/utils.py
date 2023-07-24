@@ -1,3 +1,5 @@
+'''System tests framework utilities.'''
+
 from datetime import timedelta
 import functools
 import logging
@@ -7,6 +9,7 @@ from typing import Any, Callable, Dict, Hashable
 
 
 def setup_logger(name):
+    '''Configures the logger with a given name and returns it.'''
     logger_instance = logging.getLogger(name)
     logger_instance.setLevel(logging.INFO)
     handler = logging.StreamHandler()
@@ -37,14 +40,14 @@ def memoize(func: Callable):
     def wrapper(*args):
         if args in memo:
             return memo[args]
-        rv = func(*args)
-        memo[args] = rv
-        return rv
+        output = func(*args)
+        memo[args] = output
+        return output
     return wrapper
 
 
 class NoSuccessException(Exception):
-    pass
+    '''General-purpose exception used by the "wait_for_success" decorator.'''
 
 
 # Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
@@ -69,11 +72,11 @@ def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
                     done_msg = wait_msg + "done"
                     logger.info(done_msg)
                     return result
-                except transient_exceptions as e:
+                except transient_exceptions as ex:
                     logger.debug('container is not yet ready: %s',
                                  traceback.format_exc())
                     time.sleep(sleep_time.total_seconds())
-                    exception = e
+                    exception = ex
             raise TimeoutError(
                 f'Wait time ({max_tries * sleep_time}s) exceeded for {f.__name__}'
                 f'(args: {args}, kwargs {kwargs}). Exception: {exception}'

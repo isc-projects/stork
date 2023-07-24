@@ -55,7 +55,7 @@ def test_communication_with_kea_over_secure_protocol_non_trusted_client(server_s
     assert state['apps'][0]['access_points'][0]['use_secure_protocol']
     leases = server_service.list_leases('192.0.2.1')
     assert leases['items'] is None
-    assert kea_service.has_failed_TLS_handshake_log_entry()
+    assert kea_service.has_failed_tls_handshake_log_entry()
 
 
 @kea_parametrize("agent-kea-tls-optional-client-cert-verify")
@@ -69,7 +69,7 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(server
     assert state['apps'][0]['access_points'][0]['use_secure_protocol']
     leases = server_service.list_leases('192.0.2.1')
     assert leases['items'] is None
-    assert kea_service.has_failed_TLS_handshake_log_entry()
+    assert kea_service.has_failed_tls_handshake_log_entry()
 
 
 @kea_parametrize("agent-kea-basic-auth-no-credentials")
@@ -82,7 +82,7 @@ def test_communication_with_kea_using_basic_auth_no_credentials(server_service: 
     server_service.wait_for_next_machine_states()
     # The Stork Agent doesn't know the credentials.
     # The above request should fail.
-    server_service.wait_for_failed_CA_communication()
+    server_service.wait_for_failed_ca_communication()
 
 
 @kea_parametrize("agent-kea-basic-auth")

@@ -66,7 +66,8 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=W0511, # Warnings about TODO comments.
+disable=fixme, # Warnings about TODO comments.
+        missing-module-docstring  
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -348,6 +349,7 @@ function-naming-style=snake_case
 good-names=i,
            j,
            k,
+           f,
            ex,
            Run,
            _
@@ -386,7 +388,7 @@ name-group=
 
 # Regular expression which should only match function or class names that do
 # not require a docstring.
-no-docstring-rgx=^_
+no-docstring-rgx=^_|^test_
 
 # List of decorators that produce properties, such as abc.abstractproperty. Add
 # to this list to register other decorators that produce valid properties.

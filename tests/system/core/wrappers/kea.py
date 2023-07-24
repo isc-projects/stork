@@ -22,11 +22,11 @@ class Kea(Agent):
         csv.DictReader
             The CSV reader ready to read the content.
         """
-        path = '/var/lib/kea/kea-leases%d.csv' % family
+        path = f'/var/lib/kea/kea-leases{family}.csv'
         stdout = self._read_file(path)
         return csv.DictReader(io.StringIO(stdout))
 
-    def has_failed_TLS_handshake_log_entry(self):
+    def has_failed_tls_handshake_log_entry(self):
         """Checks if any TLS handshake fail occurs."""
         stdout, _ = self._compose.logs(self._service_name)
         return "HTTP_CONNECTION_HANDSHAKE_FAILED" in stdout

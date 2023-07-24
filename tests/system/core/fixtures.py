@@ -1,3 +1,5 @@
+'''System test-specific pytest fixtures.'''
+
 import os.path
 from pathlib import Path
 import shutil
@@ -443,7 +445,7 @@ def finish(request):
                 continue
             has_non_operational_service = True
             inspect_stdout = compose.inspect_raw(service_name)
-            filename = "inspect-%s.json" % service_name
+            filename = f"inspect-{service_name}.json"
             with open(test_dir / filename, "wt", encoding='utf-8') as f:
                 f.write(inspect_stdout)
 
