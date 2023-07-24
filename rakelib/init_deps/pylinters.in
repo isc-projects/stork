@@ -5,6 +5,7 @@ black
 
 # CI doesn't recognize higher versions
 astroid <= 2.11.7
+black <= 22.8.0
 dill <= 0.3.4
 flake8 <= 5.0.4
 isort <= 5.10.1

@@ -8,7 +8,7 @@ astroid==2.11.7
     # via
     #   -r rakelib/init_deps/pylinters.in
     #   pylint
-black==23.7.0
+black==22.8.0
     # via -r rakelib/init_deps/pylinters.in
 click==8.1.6
     # via black
@@ -31,8 +31,6 @@ mccabe==0.7.0
     #   flake8
     #   pylint
 mypy-extensions==1.0.0
-    # via black
-packaging==23.1
     # via black
 pathspec==0.11.1
     # via black
