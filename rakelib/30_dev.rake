@@ -59,6 +59,14 @@ namespace :fmt do
             sh GO, "fmt", scope
         end
     end
+
+    desc 'Format Python source code'
+    task :python => [BLACK] do
+        python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
+        python_files = python_files.split("\n").map{ |string| string.strip }
+
+        sh BLACK, *python_files
+    end
 end
 
 
@@ -424,7 +432,7 @@ namespace :lint do
     end
 
     desc 'Runs pylint and flake8, python linter tools'
-    task :python => ['lint:python:pylint', 'lint:python:flake8']
+    task :python => ['lint:python:pylint', 'lint:python:flake8', 'lint:python:black']
 
     namespace :python do
         desc 'Runs pylint, python linter tool'
@@ -441,6 +449,14 @@ namespace :lint do
             python_files = python_files.split("\n").map{ |string| string.strip }
             puts "Running flake8:"
             sh FLAKE8, '--config', '.flake8', '--color=auto', *python_files
+        end
+
+        desc 'Runs black, python linter tool'
+        task :black => [BLACK] do
+            python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
+            python_files = python_files.split("\n").map{ |string| string.strip }
+            puts "Running black:"
+            sh BLACK, "--check", *python_files
         end
     end
 end

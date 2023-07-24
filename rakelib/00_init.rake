@@ -1050,6 +1050,12 @@ file FLAKE8 => [PYLINT] do
     sh FLAKE8, "--version"
 end
 
+BLACK = File.join(python_tools_dir, "bin", "black")
+file BLACK => [PYLINT] do
+    sh "touch", "-c", BLACK
+    sh BLACK, "--version"
+end
+
 #############
 ### Tasks ###
 #############
