@@ -7,7 +7,7 @@ import (
 )
 
 // Generate Kea configuration with specific number of subnets.
-// It is a port of the "main" function from "gen-kea-config.py" file.
+// It is a port of the "main" function from "gen_kea_config.py" file.
 func GenerateKeaV4Config(n int) map[string]interface{} {
 	inner := 0
 	outer := 0

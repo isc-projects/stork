@@ -215,8 +215,8 @@ HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/ver
 FROM base AS kea-config-generator
 RUN mkdir -p /etc/kea && touch /etc/kea/kea-dhcp4.conf
 WORKDIR /app/docker/tools
-COPY docker/tools/gen-kea-config.py .
-ENTRYPOINT [ "python3", "/app/docker/tools/gen-kea-config.py", "-o", "/etc/kea/kea-dhcp4.conf" ]
+COPY docker/tools/gen_kea_config.py .
+ENTRYPOINT [ "python3", "/app/docker/tools/gen_kea_config.py", "-o", "/etc/kea/kea-dhcp4.conf" ]
 CMD [ "7000" ]
 
 # Kea with Stork Agent container
