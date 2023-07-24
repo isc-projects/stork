@@ -1,6 +1,3 @@
-'''The state of compose'''
-
-
 class ServiceState:
     """
     Container for the current service state details.

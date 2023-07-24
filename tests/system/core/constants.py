@@ -1,5 +1,3 @@
-'''Constants and paths to the system test artifacts.'''
-
 import os
 
 

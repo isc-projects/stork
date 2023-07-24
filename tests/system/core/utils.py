@@ -1,5 +1,3 @@
-'''System tests framework utilities.'''
-
 from datetime import timedelta
 import functools
 import logging

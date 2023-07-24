@@ -1,5 +1,3 @@
-'''System test-specific pytest fixtures.'''
-
 import os.path
 from pathlib import Path
 import shutil

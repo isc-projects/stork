@@ -1,5 +1,3 @@
-'''Functions to create the compose instance for system testing.'''
-
 import os
 from typing import Dict
 import subprocess

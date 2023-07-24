@@ -1,5 +1,3 @@
-'''Pytest configuration file. Entry point for system tests.'''
-
 import datetime
 import os
 import sys

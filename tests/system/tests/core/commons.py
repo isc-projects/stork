@@ -1,5 +1,3 @@
-'''Common function for unit testing.'''
-
 from unittest.mock import MagicMock
 
 

@@ -1,5 +1,3 @@
-'''Kea lease file generators.'''
-
 import csv
 import time
 
