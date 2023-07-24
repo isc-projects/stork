@@ -226,6 +226,27 @@ GO_TOOL_CODEBASE = go_tool_codebase
 
 CLEAN.append *FileList["backend/**/*mock_test.go"]
 
+##############
+### Python ###
+##############
+
+OPEN_API_GENERATOR_PYTHON_DIR = "tests/system/openapi_client"
+file OPEN_API_GENERATOR_PYTHON_DIR => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
+    sh "rm", "-rf", OPEN_API_GENERATOR_PYTHON_DIR
+    sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
+        "-i", SWAGGER_FILE,
+        "-g", "python-prior",
+        "-o", "tests/system",
+        "--global-property", "apiTests=false,modelTests=false",
+        "--additional-properties", "generateSourceCodeOnly=true"
+    sh "touch", OPEN_API_GENERATOR_PYTHON_DIR
+end
+
+CLEAN.append OPEN_API_GENERATOR_PYTHON_DIR, "tests/system/.openapi-generator",
+    "tests/system/.openapi-generator", "tests/system/openapi_client_README.md",
+    "tests/system/.openapi-generator-ignore",  *FileList["tests/system/**/__pycache__"],
+    *FileList["tests/system/**/.pytest_cache"]
+
 #####################
 ### Documentation ###
 #####################
