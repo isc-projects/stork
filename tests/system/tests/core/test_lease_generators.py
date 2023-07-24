@@ -5,7 +5,7 @@ from core.lease_generators import gen_dhcp4_lease_file, gen_dhcp6_lease_file
 
 
 def test_gen_dhcp4_lease_file():
-    expected = '''address,hwaddr,client_id,valid_lifetime,expire,subnet_id,fqdn_fwd,fqdn_rev,hostname,state,user_context
+    expected = """address,hwaddr,client_id,valid_lifetime,expire,subnet_id,fqdn_fwd,fqdn_rev,hostname,state,user_context
 192.0.2.1,,,600,642,1,1,1,host-1.example.org,1,
 192.0.2.2,00:01:02:03:04:02,01:02:03:02,600,642,1,1,1,host-2.example.org,0,
 192.0.2.3,,,600,642,1,1,1,host-3.example.org,1,
@@ -25,7 +25,7 @@ def test_gen_dhcp4_lease_file():
 192.0.2.17,,,600,642,1,1,1,host-17.example.org,1,
 192.0.2.18,00:01:02:03:04:18,01:02:03:18,600,642,1,1,1,host-18.example.org,0,
 192.0.2.19,,,600,642,1,1,1,host-19.example.org,1,
-'''
+"""
 
     with tempfile.TemporaryFile("r+t") as f:
         gen_dhcp4_lease_file(f, start=datetime.fromtimestamp(42))
@@ -36,7 +36,7 @@ def test_gen_dhcp4_lease_file():
 
 
 def test_gen_dhcp6_lease_file():
-    expected = '''address,duid,valid_lifetime,expire,subnet_id,pref_lifetime,lease_type,iaid,prefix_len,fqdn_fwd,fqdn_rev,hostname,hwaddr,state,user_context
+    expected = """address,duid,valid_lifetime,expire,subnet_id,pref_lifetime,lease_type,iaid,prefix_len,fqdn_fwd,fqdn_rev,hostname,hwaddr,state,user_context
 3001:db8:1:42::1,0,600,642,1,300,0,7,128,1,1,host-1.example.org,,1,
 3001:db8:1:42::2,01:02:03:02,600,642,1,300,0,7,128,1,1,host-2.example.org,,0,
 3001:db8:1:42::3,0,600,642,1,300,0,7,128,1,1,host-3.example.org,,1,
@@ -56,7 +56,7 @@ def test_gen_dhcp6_lease_file():
 3001:db8:1:42::17,0,600,642,1,300,0,7,128,1,1,host-17.example.org,,1,
 3001:db8:1:42::18,01:02:03:18,600,642,1,300,0,7,128,1,1,host-18.example.org,,0,
 3001:db8:1:42::19,0,600,642,1,300,0,7,128,1,1,host-19.example.org,,1,
-'''
+"""
 
     with tempfile.TemporaryFile("r+t") as f:
         gen_dhcp6_lease_file(f, start=datetime.fromtimestamp(42))

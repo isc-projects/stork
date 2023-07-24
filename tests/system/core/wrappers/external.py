@@ -34,7 +34,7 @@ class ExternalPackages(Agent, Server):
         """
         Restarts the Stork Server and waits to recover an operational status.
         """
-        self._restart_supervisor_service('stork-server')
+        self._restart_supervisor_service("stork-server")
 
     def update_agent_to_latest_version(self):
         """Installs the latest Stork Agent revision from the package."""

@@ -6,7 +6,7 @@ import core.version
 def test_get_version():
     # Arrange
     # Major, minor, patch are numeric delimited by dots
-    pattern = re.compile(r'\d+\.\d+\.\d+')
+    pattern = re.compile(r"\d+\.\d+\.\d+")
 
     # Act
     version = core.version.get_version()

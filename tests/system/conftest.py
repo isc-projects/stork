@@ -10,43 +10,51 @@ import pytest
 # Flake8 warnings are suppressed. We want to import all fixtures, so people implementing new fixtures according
 # to python docs would have their lives easier and not figure out why it's not working. The F401 warning seems
 # a bit bogus, anyway.
-from core.fixtures import server_service, kea_service, ha_pair_service, bind9_service, \
-                          perfdhcp_service, package_service, finish  # noqa: F401 pylint: disable=unused-import
+# pylint: disable=unused-import
+from core.fixtures import (  # noqa: F401
+    server_service,
+    kea_service,
+    ha_pair_service,
+    bind9_service,
+    perfdhcp_service,
+    package_service,
+    finish,
+)
 from core.compose_factory import create_docker_compose
 
 # In case of xdist the output is hidden by default.
 # The redirection below forces output to screen.
-if os.environ.get('PYTEST_XDIST_WORKER', False):
+if os.environ.get("PYTEST_XDIST_WORKER", False):
     sys.stdout = sys.stderr
 
 
 def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argument
-    '''Called at the start of running the runtest protocol for a single item.'''
-    banner = f'\n\n************ START   {nodeid} '
-    banner += '*' * (140 - len(banner))
-    banner += '\n'
-    banner = f'\u001b[36m{banner}\u001b[0m'
+    """Called at the start of running the runtest protocol for a single item."""
+    banner = f"\n\n************ START   {nodeid} "
+    banner += "*" * (140 - len(banner))
+    banner += "\n"
+    banner = f"\u001b[36m{banner}\u001b[0m"
     print(banner)
 
 
 def pytest_runtest_logfinish(nodeid, location):  # pylint: disable=unused-argument
-    '''Called at the end of running the runtest protocol for a single item.'''
-    banner = f'\n************ END   {nodeid} '
-    banner += '*' * (140 - len(banner))
-    banner = f'\u001b[36;1m{banner}\u001b[0m'
+    """Called at the end of running the runtest protocol for a single item."""
+    banner = f"\n************ END   {nodeid} "
+    banner += "*" * (140 - len(banner))
+    banner = f"\u001b[36;1m{banner}\u001b[0m"
     print(banner)
 
 
 def pytest_runtest_logreport(report):
-    '''Process the TestReport produced for each of the setup, call and teardown runtest phases of an item.'''
-    if report.when == 'call':
+    """Process the TestReport produced for each of the setup, call and teardown runtest phases of an item."""
+    if report.when == "call":
         duration = datetime.timedelta(seconds=int(report.duration))
-        banner = f'\n************ RESULT {report.outcome.upper()}   {report.nodeid}  took {duration}  '
-        banner += '*' * (140 - len(banner))
-        if report.outcome == 'passed':
-            banner = f'\u001b[32;1m{banner}\u001b[0m'
+        banner = f"\n************ RESULT {report.outcome.upper()}   {report.nodeid}  took {duration}  "
+        banner += "*" * (140 - len(banner))
+        if report.outcome == "passed":
+            banner = f"\u001b[32;1m{banner}\u001b[0m"
         else:
-            banner = f'\u001b[31;1m{banner}\u001b[0m'
+            banner = f"\u001b[31;1m{banner}\u001b[0m"
         print(banner)
 
 
@@ -74,12 +82,14 @@ def pytestsessionstart(session):  # pylint: disable=unused-argument
     compose = create_docker_compose()
     compose.down()
     # Remove old test results
-    tests_dir = Path('test-results')
+    tests_dir = Path("test-results")
     if tests_dir.exists():
         shutil.rmtree(tests_dir)
 
 
-def pytest_collection_modifyitems(session, config, items):  # pylint: disable=unused-argument
+def pytest_collection_modifyitems(
+    session, config, items
+):  # pylint: disable=unused-argument
     """
     The hook to add additional decorators/markers to the tests.
     """
@@ -94,7 +104,7 @@ def pytest_collection_modifyitems(session, config, items):  # pylint: disable=un
     # before starting the test and adjusting timeout after it starts.
     default_timeout = datetime.timedelta(minutes=20)
     for item in items:
-        if item.get_closest_marker('timeout') is None:
+        if item.get_closest_marker("timeout") is None:
             item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
 
     # Skip all tests using the disabled services.

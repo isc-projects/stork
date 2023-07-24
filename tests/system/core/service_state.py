@@ -2,6 +2,7 @@ class ServiceState:
     """
     Container for the current service state details.
     """
+
     def __init__(self, status, exit_code, health, health_details):
         """
         Constructs the service state.

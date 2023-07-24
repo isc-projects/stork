@@ -7,16 +7,18 @@ from core.prometheus_parser import text_fd_to_metric_families
 
 def test_memoize():
     """Memoized function should be executed only one for specific arguments"""
+
     # Arrange
-    class Foo:
-        '''Minimal class to test memoize decorator.'''
+    class Foo:  # pylint: disable=too-few-public-methods
+        """Minimal class to test memoize decorator."""
+
         def __init__(self, suffix):
             self.suffix = suffix
             self.call_count = 0
 
         @memoize
         def method(self, value):
-            '''Counts call and returns value with appended by suffix.'''
+            """Counts call and returns value with appended by suffix."""
             self.call_count += 1
             return value + self.suffix
 
@@ -200,9 +202,10 @@ def test_prometheus_parser():
     """Checks if the parser properly processes the Stork Agent output of the
     metrics endpoint."""
     # Arrange
-    dataset_path = os.path.join(os.path.dirname(
-        __file__), "data", "stork_agent_metrics.txt")
-    with open(dataset_path, "rt", encoding='utf-8') as f:
+    dataset_path = os.path.join(
+        os.path.dirname(__file__), "data", "stork_agent_metrics.txt"
+    )
+    with open(dataset_path, "rt", encoding="utf-8") as f:
         # Act
         metrics = list(text_fd_to_metric_families(f))
 

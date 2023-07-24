@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 
 def subprocess_result_mock(status, stdout, stderr):
-    '''Returns mock compatible with the subprocess run output.'''
+    """Returns mock compatible with the subprocess run output."""
     mock = MagicMock()
     mock.returncode = status
     mock.stdout = stdout

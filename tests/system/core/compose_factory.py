@@ -28,9 +28,11 @@ def detect_compose_binary():
     raise Exception("docker compose or docker-compose are not available")
 
 
-def create_docker_compose(env_vars: Dict[str, str] = None,
-                          build_args: Dict[str, str] = None,
-                          compose_detector=detect_compose_binary) -> DockerCompose:
+def create_docker_compose(
+    env_vars: Dict[str, str] = None,
+    build_args: Dict[str, str] = None,
+    compose_detector=detect_compose_binary,
+) -> DockerCompose:
     """
     Creates the docker-compose controller that uses the system tests
     docker-compose file.
@@ -54,7 +56,7 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
     is enabled.
     """
     profiles = []
-    if os.environ.get('CS_REPO_ACCESS_TOKEN', '') != '':
+    if os.environ.get("CS_REPO_ACCESS_TOKEN", "") != "":
         profiles.append("premium")
 
     return DockerCompose(
@@ -64,9 +66,7 @@ def create_docker_compose(env_vars: Dict[str, str] = None,
         env_vars=env_vars,
         build_args=build_args,
         build=True,
-        default_mapped_hostname=os.environ.get(
-            "DEFAULT_MAPPED_ADDRESS", "localhost"
-        ),
+        default_mapped_hostname=os.environ.get("DEFAULT_MAPPED_ADDRESS", "localhost"),
         compose_base=compose_detector(),
-        profiles=profiles
+        profiles=profiles,
     )

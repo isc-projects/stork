@@ -39,9 +39,9 @@ def test_command_contains_single_compose_file():
 
 
 def test_command_contains_multiple_compose_file():
-    compose = DockerCompose("project-dir",
-                            compose_file_name=(
-                                "compose1.yaml", "compose2.yaml"))
+    compose = DockerCompose(
+        "project-dir", compose_file_name=("compose1.yaml", "compose2.yaml")
+    )
     cmd = compose.docker_compose_command()
     assert "-f compose1.yaml -f compose2.yaml" in " ".join(cmd)
 
@@ -328,9 +328,9 @@ def test_logs_calls_proper_command():
     # Calls the logs command?
     assert cmd[len(base_cmd)] == "logs"
     # Forces no colors?
-    assert "--no-color" in cmd[len(base_cmd):]
+    assert "--no-color" in cmd[len(base_cmd) :]
     # Adds timestamps?
-    assert "-t" in cmd[len(base_cmd):]
+    assert "-t" in cmd[len(base_cmd) :]
     # No more arguments
     assert len(cmd) == len(base_cmd) + 3
     # Checks output by default?
@@ -371,7 +371,7 @@ def test_ps_calls_proper_command():
     # Calls the ps command?
     assert cmd[len(base_cmd)] == "ps"
     # Includes all services?
-    assert "--all" in cmd[len(base_cmd):]
+    assert "--all" in cmd[len(base_cmd) :]
     # No more arguments
     assert len(cmd) == len(base_cmd) + 2
     # Checks output by default?
@@ -392,8 +392,8 @@ def test_exec_calls_proper_command():
     mock.assert_called_once()
     cmd = mock.call_args.kwargs["cmd"]
     assert " ".join(cmd).startswith(" ".join(base_cmd))
-    assert "exec" in cmd[len(base_cmd):]
-    assert "-T" in cmd[len(base_cmd):]
+    assert "exec" in cmd[len(base_cmd) :]
+    assert "-T" in cmd[len(base_cmd) :]
     assert cmd[-4] == "service"
     assert cmd[-3] == "command"
     assert cmd[-2] == "arg1"
@@ -416,8 +416,7 @@ def test_inspect_calls_proper_command():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.side_effect = [(0, "container-id", ""),
-                        (0, "value-foo<@;@>value-bar", "")]
+    mock.side_effect = [(0, "container-id", ""), (0, "value-foo<@;@>value-bar", "")]
     compose._call_command = mock
     # Act
     result = compose.inspect("service", "foo", "bar")
@@ -432,8 +431,7 @@ def test_inspect_calls_proper_command():
 def test_inspect_supports_none():
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.side_effect = [(0, "container-id", ""),
-                        (0, "value-foo<@;@><@NONE@>", "")]
+    mock.side_effect = [(0, "container-id", ""), (0, "value-foo<@;@><@NONE@>", "")]
     compose._call_command = mock
     # Act
     result = compose.inspect("service", "foo", "bar?")
@@ -445,8 +443,7 @@ def test_inspect_raw_calls_proper_command():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.side_effect = [(0, "container-id", ""),
-                        (0, '{ "format": "json" }', "")]
+    mock.side_effect = [(0, "container-id", ""), (0, '{ "format": "json" }', "")]
     compose._call_command = mock
     # Act
     result = compose.inspect_raw("service")
@@ -498,7 +495,9 @@ def test_get_service_ip_address_uses_proper_network_name():
     # Assert
     compose = DockerCompose("project-dir", project_name="prefix")
     mock = MagicMock()
-    mock.return_value = ["123.45.67.89", ]
+    mock.return_value = [
+        "123.45.67.89",
+    ]
     compose.inspect = mock
     # Act
     ip_address = compose.get_service_ip_address("service", "network", family=4)
@@ -569,7 +568,7 @@ def test_get_service_state_with_health_dump():
         '43.466869471+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:43.719447396+01:00","End":"2022-11-17T11:58:43.77988077'
         '7+01:00","ExitCode":0,"Output":""},{"Start":"2022-11-17T11:58:44.032315268+01:00","End":"2022-11-17T11:58:44.102159649+01:00","E'
         'xitCode":0,"Output":""}]',
-        ""
+        "",
     )
     compose._call_command = mock
     # Act
@@ -584,7 +583,11 @@ def test_get_service_state_with_health_dump_semicolon():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.return_value = (0, 'running<@;@>0<@;@>unhealthy<@;@>{"Log":[{"Output":"foo;bar"}]', "")
+    mock.return_value = (
+        0,
+        'running<@;@>0<@;@>unhealthy<@;@>{"Log":[{"Output":"foo;bar"}]',
+        "",
+    )
     compose._call_command = mock
     # Act
     state = compose.get_service_state("service")
@@ -647,6 +650,7 @@ def test_is_not_operational_for_unknown_container():
     # Arrange
     def side_effect(*args, **kwargs):
         raise LookupError()
+
     compose = DockerCompose("project-dir")
     mock = MagicMock()
     mock.side_effect = side_effect
@@ -688,9 +692,11 @@ def test_wait_for_operational_retry_to_success():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    mock.side_effect = [ServiceState("starting", 0, "starting", None),
-                        ServiceState("running", 0, "starting", None),
-                        ServiceState("running", 0, "healthy", None)]
+    mock.side_effect = [
+        ServiceState("starting", 0, "starting", None),
+        ServiceState("running", 0, "starting", None),
+        ServiceState("running", 0, "healthy", None),
+    ]
     compose.get_service_state = mock
     # Act
     compose.wait_for_operational("service")
@@ -704,7 +710,7 @@ def test_wait_for_operational_retry_to_success_without_health():
     mock = MagicMock()
     mock.side_effect = [
         ServiceState("starting", 0, None, None),
-        ServiceState("running", 0, None, None)
+        ServiceState("running", 0, None, None),
     ]
     compose.get_service_state = mock
     # Act
@@ -719,7 +725,7 @@ def test_wait_for_operational_unhealthy():
     mock = MagicMock()
     mock.side_effect = [
         ServiceState("running", 0, "unhealthy", None),
-        ServiceState("running", 0, "healthy", None)
+        ServiceState("running", 0, "healthy", None),
     ]
     compose.get_service_state = mock
     # Act
@@ -774,19 +780,10 @@ def test_is_enabled_reads_config():
     compose = DockerCompose("project-dir", profiles=["premium"])
     mock = MagicMock()
     config = {
-        'services': {
-            'foo': {
-                'profiles': [
-                    'test',
-                    'premium'
-                ]
-            },
-            'bar': {
-                'profiles': [
-                    'non-premium'
-                ]
-            },
-            'baz': {}
+        "services": {
+            "foo": {"profiles": ["test", "premium"]},
+            "bar": {"profiles": ["non-premium"]},
+            "baz": {},
         }
     }
     config_yaml = yaml.safe_dump(config)
@@ -812,9 +809,7 @@ def test_is_enabled_for_unknown_service():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    config = {
-        'services': {}
-    }
+    config = {"services": {}}
     config_yaml = yaml.safe_dump(config)
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock

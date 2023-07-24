@@ -40,15 +40,15 @@ logger = setup_logger(__name__)
 
 
 class NoSuchPortExposed(Exception):
-    '''The error thrown when a given port is not exposed in the compose YAML.'''
+    """The error thrown when a given port is not exposed in the compose YAML."""
 
 
 class ContainerNotRunningException(Exception):
-    '''The error thrown when a given container is not in the "running" state.'''
+    """The error thrown when a given container is not in the "running" state."""
 
 
 class ContainerExitedException(Exception):
-    '''The error thrown when a given container is in the "exited" state.'''
+    """The error thrown when a given container is in the "exited" state."""
 
 
 _INSPECT_DELIMITER = "<@;@>"
@@ -103,7 +103,7 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
         as_json = False
         if item.startswith(json_prefix):
             as_json = True
-            item = item[len(json_prefix):]
+            item = item[len(json_prefix) :]
 
         components = item.split(component_delimiter)
         begins = []
@@ -111,17 +111,31 @@ def _construct_inspect_format(properties: Tuple[str, ...]) -> str:
         for component in components:
             if component.endswith("?"):
                 component = component[:-1]
-                begins.append('{{ if index %s "%s" }}' % (  # pylint: disable=consider-using-f-string
-                    component_delimiter.join(path), component
-                ))
+                begins.append(
+                    # pylint: disable=consider-using-f-string
+                    '{{ if index %s "%s" }}'
+                    % (
+                        component_delimiter.join(path),
+                        component,
+                    )
+                )
             path.append(component)
 
-        format_property = "%s{{ %s%s }}%s" % (  # pylint: disable=consider-using-f-string
-            "".join(begins),
-            json_prefix if as_json else "",
-            component_delimiter.join(path),
-            "".join(["{{ else }}%s{{ end }}" %  # pylint: disable=consider-using-f-string
-                    _INSPECT_NONE_MARK, ] * len(begins))
+        format_property = (
+            # pylint: disable=consider-using-f-string
+            "%s{{ %s%s }}%s"
+            % (
+                "".join(begins),
+                json_prefix if as_json else "",
+                component_delimiter.join(path),
+                "".join(
+                    [
+                        "{{ else }}%s{{ end }}"
+                        % _INSPECT_NONE_MARK,  # pylint: disable=consider-using-f-string
+                    ]
+                    * len(begins)
+                ),
+            )
         )
         formats.append(format_property)
 
@@ -166,39 +180,43 @@ class DockerCompose:
     """
 
     def __init__(  # pylint: disable=too-many-arguments
-            self,
-            project_directory: str,
-            compose_file_name="docker-compose.yml",
-            pull=False,
-            build=False,
-            env_file: str = None,
-            env_vars: Dict[str, str] = None,
-            build_args: Dict[str, str] = None,
-            project_name: str = None,
-            use_build_kit=True,
-            default_mapped_hostname: str = None,
-            compose_base: List[str] = None,
-            profiles=None):
+        self,
+        project_directory: str,
+        compose_file_name="docker-compose.yml",
+        pull=False,
+        build=False,
+        env_file: str = None,
+        env_vars: Dict[str, str] = None,
+        build_args: Dict[str, str] = None,
+        project_name: str = None,
+        use_build_kit=True,
+        default_mapped_hostname: str = None,
+        compose_base: List[str] = None,
+        profiles=None,
+    ):
         self._project_directory = project_directory
-        self._compose_file_names = compose_file_name if isinstance(
-            compose_file_name, (list, tuple)
-        ) else [compose_file_name]
+        self._compose_file_names = (
+            compose_file_name
+            if isinstance(compose_file_name, (list, tuple))
+            else [compose_file_name]
+        )
         self._pull = pull
         self._build = build
         self._env_file = env_file
         self._env_vars = env_vars
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
-        self._compose_base = compose_base if compose_base is not None else ["docker", "compose"]
+        self._compose_base = (
+            compose_base if compose_base is not None else ["docker", "compose"]
+        )
         self._profiles = profiles if profiles is not None else []
 
         if build_args is not None:
-            build_args_pairs = [("--build-arg", f"{pair[0]}={pair[1]}")
-                                for pair in build_args.items()]
+            build_args_pairs = [
+                ("--build-arg", f"{pair[0]}={pair[1]}") for pair in build_args.items()
+            ]
             # Flatten list
-            build_args_strings = [item
-                                  for pair in build_args_pairs
-                                  for item in pair]
+            build_args_strings = [item for pair in build_args_pairs for item in pair]
 
             self._build_args = build_args_strings
         else:
@@ -218,13 +236,19 @@ class DockerCompose:
         list[str]
             The docker compose command parts
         """
-        docker_compose_cmd = [*self._compose_base, '--ansi', 'never',
-                              "--project-directory", self._project_directory,
-                              "--project-name", self._project_name]
+        docker_compose_cmd = [
+            *self._compose_base,
+            "--ansi",
+            "never",
+            "--project-directory",
+            self._project_directory,
+            "--project-name",
+            self._project_name,
+        ]
         for file in self._compose_file_names:
-            docker_compose_cmd.extend(['-f', file])
+            docker_compose_cmd.extend(["-f", file])
         if self._env_file:
-            docker_compose_cmd.extend(['--env-file', self._env_file])
+            docker_compose_cmd.extend(["--env-file", self._env_file])
         for profile in self._profiles:
             docker_compose_cmd.extend(["--profile", profile])
         return docker_compose_cmd
@@ -238,28 +262,24 @@ class DockerCompose:
             "build",
             *self._build_args,
             "--",
-            *service_names
+            *service_names,
         ]
 
         env = None
         if self._use_build_kit:
-            env = {
-                "COMPOSE_DOCKER_CLI_BUILD": "1",
-                "DOCKER_BUILDKIT": "1"
-            }
+            env = {"COMPOSE_DOCKER_CLI_BUILD": "1", "DOCKER_BUILDKIT": "1"}
 
-        self._call_command(cmd=build_cmd, env_vars=env,
-                           capture_output=False)
+        self._call_command(cmd=build_cmd, env_vars=env, capture_output=False)
         logger.info("End build containers")
 
     def pull(self, *service_names):
         """Pull the images from a repository."""
-        pull_cmd = self.docker_compose_command() + ['pull', *service_names]
+        pull_cmd = self.docker_compose_command() + ["pull", *service_names]
         self._call_command(cmd=pull_cmd, capture_output=False)
 
     def up(self, *service_names):  # pylint: disable=invalid-name
         """Up the docker compose services."""
-        up_cmd = self.docker_compose_command() + ['up', '-d', *service_names]
+        up_cmd = self.docker_compose_command() + ["up", "-d", *service_names]
         self._call_command(cmd=up_cmd, capture_output=False)
 
     def start(self, *service_names):
@@ -279,7 +299,7 @@ class DockerCompose:
         """
         Down (stop and remove including volumes) the docker compose environment.
         """
-        down_cmd = self.docker_compose_command() + ['down', '-v']
+        down_cmd = self.docker_compose_command() + ["down", "-v"]
         self._call_command(cmd=down_cmd)
 
     def run(self, service_name: str, *args: str, check=True):
@@ -295,7 +315,8 @@ class DockerCompose:
             "run",
             "--no-deps",
             service_name,
-            *args]
+            *args,
+        ]
         return self._call_command(cmd=run_cmd, check=check)
 
     def logs(self, *service_names: str):
@@ -354,12 +375,11 @@ class DockerCompose:
         tuple[str, str, int]
             stdout, stderr, return code
         """
-        exec_cmd = self.docker_compose_command(
-        ) + ['exec', '-T', service_name] + command
+        exec_cmd = (
+            self.docker_compose_command() + ["exec", "-T", service_name] + command
+        )
         return self._call_command(
-            cmd=exec_cmd,
-            check=check,
-            capture_output=capture_output
+            cmd=exec_cmd, check=check, capture_output=capture_output
         )
 
     def inspect(self, service_name, *properties: str) -> List[str]:
@@ -391,8 +411,10 @@ class DockerCompose:
         _, stdout, _ = self._call_command(cmd=cmd)
 
         # Split the values and parse none's.
-        return [i if i != _INSPECT_NONE_MARK else None
-                for i in stdout.split(_INSPECT_DELIMITER)]
+        return [
+            i if i != _INSPECT_NONE_MARK else None
+            for i in stdout.split(_INSPECT_DELIMITER)
+        ]
 
     def inspect_raw(self, service_name) -> str:
         """Returns the low-level information on Docker containers as JSON."""
@@ -419,12 +441,13 @@ class DockerCompose:
         tuple[str, str]:
             The hostname and port for the service
         """
-        port_cmd = self.docker_compose_command() + ["port", service_name,
-                                                    str(port)]
+        port_cmd = self.docker_compose_command() + ["port", service_name, str(port)]
         _, stdout, _ = self._call_command(cmd=port_cmd)
         result = stdout.split(":")
         if len(result) == 1:
-            raise NoSuchPortExposed(f"Port {port} was not exposed for service {service_name}")
+            raise NoSuchPortExposed(
+                f"Port {port} was not exposed for service {service_name}"
+            )
         mapped_host, mapped_port = result
         mapped_port = int(mapped_port)
         if self._default_mapped_hostname is not None and mapped_host == "0.0.0.0":
@@ -455,7 +478,7 @@ class DockerCompose:
         prefixed_network_name = f"{self._project_name}_{network_name}"
         return self.inspect(
             service_name,
-            f".NetworkSettings.Networks.{prefixed_network_name}.{ip_property}"
+            f".NetworkSettings.Networks.{prefixed_network_name}.{ip_property}",
         )[0]
 
     def get_container_id(self, service_name):
@@ -499,11 +522,13 @@ class DockerCompose:
         ServiceState
             container state
         """
-        data = self.inspect(service_name,
-                            ".State.Status",
-                            ".State.ExitCode",
-                            ".State.Health?.Status",
-                            "json .State.Health?")
+        data = self.inspect(
+            service_name,
+            ".State.Status",
+            ".State.ExitCode",
+            ".State.Health?.Status",
+            "json .State.Health?",
+        )
         return ServiceState(*data)
 
     def is_operational(self, service_name):
@@ -522,7 +547,7 @@ class DockerCompose:
         cmd = self.docker_compose_command() + opts
 
         _, stdout, _ = self._call_command(cmd, capture_output=True)
-        if stdout.strip() == '':
+        if stdout.strip() == "":
             return []
 
         services = [line.strip() for line in stdout.split("\n")]
@@ -534,8 +559,9 @@ class DockerCompose:
                 created_services.append(service)
         return created_services
 
-    @wait_for_success(ContainerNotRunningException,
-                      wait_msg="Waiting to be operational...")
+    @wait_for_success(
+        ContainerNotRunningException, wait_msg="Waiting to be operational..."
+    )
     def wait_for_operational(self, service_name):
         """
         Waits for the running and healthy (if the HEALTHCHECK is specified)
@@ -584,7 +610,7 @@ class DockerCompose:
         it has no profiles or has at least one profile provided by the --profile
         flag or the COMPOSE_PROFILES environment variable."""
         config = self._read_config_yaml()
-        services_config = config['services']
+        services_config = config["services"]
         service_config = services_config.get(service_name)
         if service_config is None:
             # Docker-compose V1 returns all services from the configuration
@@ -608,7 +634,9 @@ class DockerCompose:
     @memoize
     def _read_config_yaml(self):
         """Reads the configuration YAMS file and parses it."""
-        config_cmd = self.docker_compose_command() + ["config", ]
+        config_cmd = self.docker_compose_command() + [
+            "config",
+        ]
         _, stdout, _ = self._call_command(cmd=config_cmd)
         return yaml.safe_load(stdout)
 
@@ -628,8 +656,9 @@ class DockerCompose:
             opts["stdout"] = subprocess.PIPE
             opts["stderr"] = subprocess.PIPE
 
-        result = subprocess.run(cmd, check=check, cwd=self._project_directory,
-                                env=env, **opts)
+        result = subprocess.run(
+            cmd, check=check, cwd=self._project_directory, env=env, **opts
+        )
         stdout: bytes = result.stdout
         stderr: bytes = result.stderr
         if capture_output:

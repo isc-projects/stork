@@ -47,7 +47,7 @@ class Metric(NamedTuple):
     documentation: str
     typ: str
     samples: List[Sample]
-    unit: Optional[str] = ''
+    unit: Optional[str] = ""
 
 
 def text_string_to_metric_families(text):
@@ -59,8 +59,8 @@ def text_string_to_metric_families(text):
 
 
 ESCAPE_SEQUENCES = {
-    '\\\\': '\\',
-    '\\n': '\n',
+    "\\\\": "\\",
+    "\\n": "\n",
     '\\"': '"',
 }
 
@@ -69,7 +69,7 @@ def replace_escape_sequence(match):
     return ESCAPE_SEQUENCES[match.group(0)]
 
 
-HELP_ESCAPING_RE = re.compile(r'\\[\\n]')
+HELP_ESCAPING_RE = re.compile(r"\\[\\n]")
 ESCAPING_RE = re.compile(r'\\[\\n"]')
 
 
@@ -83,8 +83,7 @@ def _replace_escaping(s):
 
 def _is_character_escaped(s, charpos):
     num_bslashes = 0
-    while (charpos > num_bslashes
-           and s[charpos - 1 - num_bslashes] == '\\'):
+    while charpos > num_bslashes and s[charpos - 1 - num_bslashes] == "\\":
         num_bslashes += 1
     return num_bslashes % 2 == 1
 
@@ -107,7 +106,7 @@ def _parse_labels(labels_string):
             # The label name is before the equal
             value_start = sub_labels.index("=")
             label_name = sub_labels[:value_start]
-            sub_labels = sub_labels[value_start + 1:].lstrip()
+            sub_labels = sub_labels[value_start + 1 :].lstrip()
             # Find the first quote after the equal
             quote_start = sub_labels.index('"') + 1
             value_substr = sub_labels[quote_start:]
@@ -129,7 +128,7 @@ def _parse_labels(labels_string):
             labels[label_name.strip()] = label_value
 
             # Remove the processed label from the sub-slice for next iteration
-            sub_labels = sub_labels[quote_end + 1:]
+            sub_labels = sub_labels[quote_end + 1 :]
             next_comma = sub_labels.find(",") + 1
             sub_labels = sub_labels[next_comma:].lstrip()
 
@@ -160,9 +159,9 @@ def _parse_sample(text):
         # The name is before the labels
         name = text[:label_start].strip()
         # We ignore the starting curly brace
-        label = text[label_start + 1:label_end]
+        label = text[label_start + 1 : label_end]
         # The value is after the label end (ignoring curly brace and space)
-        value, timestamp = _parse_value_and_timestamp(text[label_end + 2:])
+        value, timestamp = _parse_value_and_timestamp(text[label_end + 2 :])
         return Sample(name, _parse_labels(label), value, timestamp)
 
     # We don't have labels
@@ -187,22 +186,22 @@ def text_fd_to_metric_families(fd):
 
     Yields Metric's.
     """
-    name = ''
-    documentation = ''
-    typ = 'untyped'
+    name = ""
+    documentation = ""
+    typ = "untyped"
     samples = []
     allowed_names = []
 
     def build_metric(name, documentation, typ, samples):
         # Munge counters into OpenMetrics representation
         # used internally.
-        if typ == 'counter':
-            if name.endswith('_total'):
+        if typ == "counter":
+            if name.endswith("_total"):
                 name = name[:-6]
             else:
                 new_samples = []
                 for s in samples:
-                    new_samples.append(Sample(s[0] + '_total', *s[1:]))
+                    new_samples.append(Sample(s[0] + "_total", *s[1:]))
                     samples = new_samples
         metric = Metric(name, documentation, typ, samples)
         return metric
@@ -210,59 +209,59 @@ def text_fd_to_metric_families(fd):
     for line in fd:
         line = line.strip()
 
-        if line.startswith('#'):
+        if line.startswith("#"):
             parts = line.split(None, 3)
             if len(parts) < 2:
                 continue
-            if parts[1] == 'HELP':
+            if parts[1] == "HELP":
                 if parts[2] != name:
-                    if name != '':
+                    if name != "":
                         yield build_metric(name, documentation, typ, samples)
                     # New metric
                     name = parts[2]
-                    typ = 'untyped'
+                    typ = "untyped"
                     samples = []
                     allowed_names = [parts[2]]
                 if len(parts) == 4:
                     documentation = _replace_help_escaping(parts[3])
                 else:
-                    documentation = ''
-            elif parts[1] == 'TYPE':
+                    documentation = ""
+            elif parts[1] == "TYPE":
                 if parts[2] != name:
-                    if name != '':
+                    if name != "":
                         yield build_metric(name, documentation, typ, samples)
                     # New metric
                     name = parts[2]
-                    documentation = ''
+                    documentation = ""
                     samples = []
                 typ = parts[3]
                 allowed_names = {
-                    'counter': [''],
-                    'gauge': [''],
-                    'summary': ['_count', '_sum', ''],
-                    'histogram': ['_count', '_sum', '_bucket'],
-                }.get(typ, [''])
+                    "counter": [""],
+                    "gauge": [""],
+                    "summary": ["_count", "_sum", ""],
+                    "histogram": ["_count", "_sum", "_bucket"],
+                }.get(typ, [""])
                 allowed_names = [name + n for n in allowed_names]
             else:
                 # Ignore other comment tokens
                 pass
-        elif line == '':
+        elif line == "":
             # Ignore blank lines
             pass
         else:
             sample = _parse_sample(line)
             if sample.name not in allowed_names:
-                if name != '':
+                if name != "":
                     yield build_metric(name, documentation, typ, samples)
                 # New metric, yield immediately as untyped singleton
-                name = ''
-                documentation = ''
-                typ = 'untyped'
+                name = ""
+                documentation = ""
+                typ = "untyped"
                 samples = []
                 allowed_names = []
                 yield build_metric(sample[0], documentation, typ, [sample])
             else:
                 samples.append(sample)
 
-    if name != '':
+    if name != "":
         yield build_metric(name, documentation, typ, samples)

@@ -10,7 +10,7 @@ def get_version():
     """Returns the current Stork version from the GO file."""
     version_file = os.path.join(project_directory, "backend/version.go")
     pattern = re.compile(r'const Version = "(.*)"')
-    with open(version_file, "rt", encoding='utf-8') as f:
+    with open(version_file, "rt", encoding="utf-8") as f:
         for line in f:
             match = pattern.match(line)
             if match is None:

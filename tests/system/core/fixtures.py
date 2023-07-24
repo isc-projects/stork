@@ -13,7 +13,9 @@ from core import lease_generators
 logger = setup_logger(__name__)
 
 
-def _agent_parametrize(fixture_name, service_name, suppress_registration=False, bind9_version=None):
+def _agent_parametrize(
+    fixture_name, service_name, suppress_registration=False, bind9_version=None
+):
     """
     Helper for parametrizing the agent fixtures.
 
@@ -33,11 +35,17 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False, 
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return pytest.mark.parametrize(fixture_name, [{
-        "service_name": service_name,
-        "suppress_registration": suppress_registration,
-        "bind9_version": bind9_version
-    }], indirect=True)
+    return pytest.mark.parametrize(
+        fixture_name,
+        [
+            {
+                "service_name": service_name,
+                "suppress_registration": suppress_registration,
+                "bind9_version": bind9_version,
+            }
+        ],
+        indirect=True,
+    )
 
 
 def kea_parametrize(service_name="agent-kea", suppress_registration=False):
@@ -59,7 +67,11 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     return _agent_parametrize("kea_service", service_name, suppress_registration)
 
 
-def ha_pair_parametrize(first_service_name="agent-kea-ha1", second_service_name="agent-kea-ha2", suppress_registration=False):
+def ha_pair_parametrize(
+    first_service_name="agent-kea-ha1",
+    second_service_name="agent-kea-ha2",
+    suppress_registration=False,
+):
     """
     Helper for parametrizing the Kea fixture.
 
@@ -77,14 +89,24 @@ def ha_pair_parametrize(first_service_name="agent-kea-ha1", second_service_name=
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return pytest.mark.parametrize("ha_pair_service", [{
-        "first_service_name": first_service_name,
-        "second_service_name": second_service_name,
-        "suppress_registration": suppress_registration
-    }], indirect=True)
+    return pytest.mark.parametrize(
+        "ha_pair_service",
+        [
+            {
+                "first_service_name": first_service_name,
+                "second_service_name": second_service_name,
+                "suppress_registration": suppress_registration,
+            }
+        ],
+        indirect=True,
+    )
 
 
-def bind9_parametrize(service_name="agent-bind9", suppress_registration=False, version=None,):
+def bind9_parametrize(
+    service_name="agent-bind9",
+    suppress_registration=False,
+    version=None,
+):
     """
     Helper for parametrize the Bind9 fixture.
 
@@ -102,7 +124,9 @@ def bind9_parametrize(service_name="agent-bind9", suppress_registration=False, v
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("bind9_service", service_name, suppress_registration, bind9_version=version)
+    return _agent_parametrize(
+        "bind9_service", service_name, suppress_registration, bind9_version=version
+    )
 
 
 def server_parametrize(service_name="server"):
@@ -119,9 +143,9 @@ def server_parametrize(service_name="server"):
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return pytest.mark.parametrize("server_service", [{
-        "service_name": service_name
-    }], indirect=True)
+    return pytest.mark.parametrize(
+        "server_service", [{"service_name": service_name}], indirect=True
+    )
 
 
 def package_parametrize(version):
@@ -129,9 +153,9 @@ def package_parametrize(version):
     Sets the version of packages to install from the external repository.
     Empty version means the latest available.
     """
-    return pytest.mark.parametrize("package_service", [{
-        "version": version
-    }], indirect=True)
+    return pytest.mark.parametrize(
+        "package_service", [{"version": version}], indirect=True
+    )
 
 
 @pytest.fixture
@@ -193,10 +217,7 @@ def kea_service(request):
     -----
     You can use the kea_parametrize helper for configure the service.
     """
-    param = {
-        "service_name": "agent-kea",
-        "suppress_registration": False
-    }
+    param = {"service_name": "agent-kea", "suppress_registration": False}
 
     if hasattr(request, "param"):
         param.update(request.param)
@@ -229,7 +250,7 @@ def ha_pair_service(request):
     param = {
         "first_service_name": "agent-kea-ha1",
         "second_service_name": "agent-kea-ha2",
-        "suppress_registration": False
+        "suppress_registration": False,
     }
 
     if hasattr(request, "param"):
@@ -239,15 +260,14 @@ def ha_pair_service(request):
         request, param["first_service_name"], param["suppress_registration"]
     )
     second_wrapper = _prepare_kea_wrapper(
-        request,
-        param["second_service_name"],
-        param["suppress_registration"],
-        "kea-ha2"
+        request, param["second_service_name"], param["suppress_registration"], "kea-ha2"
     )
     return first_wrapper, second_wrapper
 
 
-def _prepare_kea_wrapper(request, service_name: str, suppress_registration: bool, config_dirname="kea"):
+def _prepare_kea_wrapper(
+    request, service_name: str, suppress_registration: bool, config_dirname="kea"
+):
     """
     The helper function setting up the Kea Server service and guarantees that
     it is operational.
@@ -279,10 +299,10 @@ def _prepare_kea_wrapper(request, service_name: str, suppress_registration: bool
 
     # Re-generate the lease files
     config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
-    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt", encoding='utf-8') as f:
+    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt", encoding="utf-8") as f:
         lease_generators.gen_dhcp4_lease_file(f)
 
-    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt", encoding='utf-8') as f:
+    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt", encoding="utf-8") as f:
         lease_generators.gen_dhcp6_lease_file(f)
 
     # Setup wrapper
@@ -329,7 +349,7 @@ def bind9_service(request):
     # Starts server service or suppresses registration
     env_vars = None
     server_service_instance = None
-    if param['suppress_registration']:
+    if param["suppress_registration"]:
         env_vars = {"STORK_SERVER_URL": ""}
     else:
         # We need the Server to perform the registration
@@ -337,16 +357,16 @@ def bind9_service(request):
 
     build_args = {}
     if param["bind9_version"] is not None:
-        build_args['BIND9_VERSION'] = param["bind9_version"]
+        build_args["BIND9_VERSION"] = param["bind9_version"]
 
     # Setup wrapper
-    service_name = param['service_name']
+    service_name = param["service_name"]
     compose = create_docker_compose(env_vars=env_vars, build_args=build_args)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Bind9(compose, service_name, server_service_instance)
 
-    if not param['suppress_registration']:
+    if not param["suppress_registration"]:
         wrapper.wait_for_registration()
 
     return wrapper
@@ -376,16 +396,12 @@ def package_service(request):
     from the packages fetched from the external repository and guarantees that
     they are operational.
     """
-    param = {
-        "version": ""
-    }
+    param = {"version": ""}
 
     if hasattr(request, "param"):
         param.update(request.param)
 
-    env_vars = {
-        "STORK_CLOUDSMITH_VERSION": param["version"]
-    }
+    env_vars = {"STORK_CLOUDSMITH_VERSION": param["version"]}
 
     compose = create_docker_compose(env_vars)
     service_name = "packages"
@@ -415,12 +431,12 @@ def finish(request):
             return
 
         # prepare test directory for logs, etc
-        tests_dir = Path('test-results')
+        tests_dir = Path("test-results")
         tests_dir.mkdir(exist_ok=True)
         test_name = function_name
-        test_name = test_name.replace('[', '__')
-        test_name = test_name.replace('/', '_')
-        test_name = test_name.replace(']', '')
+        test_name = test_name.replace("[", "__")
+        test_name = test_name.replace("/", "_")
+        test_name = test_name.replace("]", "")
         test_dir = tests_dir / test_name
         if test_dir.exists():
             shutil.rmtree(test_dir)
@@ -430,10 +446,10 @@ def finish(request):
         stdout, stderr = compose.logs()
 
         # Write logs
-        with open(test_dir / "stdout.log", 'wt', encoding='utf-8') as f:
+        with open(test_dir / "stdout.log", "wt", encoding="utf-8") as f:
             f.write(stdout)
 
-        with open(test_dir / "stderr.log", 'wt', encoding='utf-8') as f:
+        with open(test_dir / "stderr.log", "wt", encoding="utf-8") as f:
             f.write(stderr)
 
         # Collect inspect for non-operational services
@@ -444,13 +460,13 @@ def finish(request):
             has_non_operational_service = True
             inspect_stdout = compose.inspect_raw(service_name)
             filename = f"inspect-{service_name}.json"
-            with open(test_dir / filename, "wt", encoding='utf-8') as f:
+            with open(test_dir / filename, "wt", encoding="utf-8") as f:
                 f.write(inspect_stdout)
 
         if has_non_operational_service:
             # Collect service statuses
             ps_stdout = compose.ps()
-            with open(test_dir / "ps.out", "wt", encoding='utf-8') as f:
+            with open(test_dir / "ps.out", "wt", encoding="utf-8") as f:
                 f.write(ps_stdout)
 
     def collect_logs_and_down_all():
@@ -458,4 +474,5 @@ def finish(request):
         # Down all containers
         compose = create_docker_compose()
         compose.down()
+
     request.addfinalizer(collect_logs_and_down_all)

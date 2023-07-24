@@ -22,7 +22,7 @@ class Kea(Agent):
         csv.DictReader
             The CSV reader ready to read the content.
         """
-        path = f'/var/lib/kea/kea-leases{family}.csv'
+        path = f"/var/lib/kea/kea-leases{family}.csv"
         stdout = self._read_file(path)
         return csv.DictReader(io.StringIO(stdout))
 

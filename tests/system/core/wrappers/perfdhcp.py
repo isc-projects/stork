@@ -36,19 +36,21 @@ class Perfdhcp:
     def _run(self, parameters: List[str]):
         """Calls the perfdhcp application."""
         status, stdout, stderr = self._compose.run(
-            self._service_name, *parameters, check=False)
+            self._service_name, *parameters, check=False
+        )
         if status not in (0, 3):
-            raise subprocess.CalledProcessError(
-                status, "perfdhcp", stdout, stderr)
+            raise subprocess.CalledProcessError(status, "perfdhcp", stdout, stderr)
         if status == 3:
             print(stdout)
 
     @staticmethod
-    def _generate_traffic_flags(family: int,
-                                target: Union[str, List[str]],
-                                mac_prefix: str = None,
-                                option: Tuple[str, str] = None,
-                                duid_prefix: str = None):
+    def _generate_traffic_flags(
+        family: int,
+        target: Union[str, List[str]],
+        mac_prefix: str = None,
+        option: Tuple[str, str] = None,
+        duid_prefix: str = None,
+    ):
         """
         Generates the parameters set for perfdhcp. See perfdhcp documentation
         for details.
@@ -63,13 +65,17 @@ class Perfdhcp:
             # IP family
             f"-{family}",
             # Ratio
-            "-r", "1",
+            "-r",
+            "1",
             # Range
-            "-R", "10",
+            "-R",
+            "10",
             # Test period
-            "-p", "10",
+            "-p",
+            "10",
             # Exit wait time
-            "-W", "10"
+            "-W",
+            "10",
         ]
 
         if mac_prefix is not None:
@@ -88,8 +94,7 @@ class Perfdhcp:
 
         return flags
 
-    def generate_ipv4_traffic(self, ip_address: str, mac_prefix=None,
-                              option=None):
+    def generate_ipv4_traffic(self, ip_address: str, mac_prefix=None, option=None):
         """
         Generate the IPv4 traffic.
 
@@ -104,15 +109,11 @@ class Perfdhcp:
             Two strings - key and value, by default None (not used)
         """
         flags = Perfdhcp._generate_traffic_flags(
-            family=4,
-            target=ip_address,
-            mac_prefix=mac_prefix,
-            option=option
+            family=4, target=ip_address, mac_prefix=mac_prefix, option=option
         )
         self._run(flags)
 
-    def generate_ipv6_traffic(self, interface: str, option=None,
-                              duid_prefix=None):
+    def generate_ipv6_traffic(self, interface: str, option=None, duid_prefix=None):
         """
         Generate the IPv6 traffic.
 
@@ -126,8 +127,6 @@ class Perfdhcp:
             First 4 digits of DUID, by default None (not used)
         """
         flags = Perfdhcp._generate_traffic_flags(
-            family=6,
-            target=["-l", interface],
-            option=option,
-            duid_prefix=duid_prefix)
+            family=6, target=["-l", interface], option=option, duid_prefix=duid_prefix
+        )
         self._run(flags)

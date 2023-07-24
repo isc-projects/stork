@@ -10,8 +10,9 @@ from core.prometheus_parser import text_fd_to_metric_families
 class Agent(ComposeServiceWrapper):
     """A wrapper for the Stork Agent docker-compose service."""
 
-    def __init__(self, compose: DockerCompose, service_name: str,
-                 server_service: Server):
+    def __init__(
+        self, compose: DockerCompose, service_name: str, server_service: Server
+    ):
         """
         A wrapper constructor.
 
@@ -46,10 +47,10 @@ class Agent(ComposeServiceWrapper):
     def hash_cert_files(self):
         """Calculates the hashes of the TLS credentials used by the agent."""
         cert_paths = [
-            '/var/lib/stork-agent/certs/key.pem',
-            '/var/lib/stork-agent/certs/cert.pem',
-            '/var/lib/stork-agent/certs/ca.pem',
-            '/var/lib/stork-agent/tokens/agent-token.txt'
+            "/var/lib/stork-agent/certs/key.pem",
+            "/var/lib/stork-agent/certs/cert.pem",
+            "/var/lib/stork-agent/certs/ca.pem",
+            "/var/lib/stork-agent/tokens/agent-token.txt",
         ]
 
         hashes = {}
@@ -72,11 +73,11 @@ class Agent(ComposeServiceWrapper):
         """
         Restarts the Stork Agent and waits to recover an operational status.
         """
-        self._restart_supervisor_service('stork-agent')
+        self._restart_supervisor_service("stork-agent")
 
     def reload_stork_agent(self):
         """Sends SIGHUP to the stork-agent."""
-        self._reload_supervisor_service('stork-agent')
+        self._reload_supervisor_service("stork-agent")
 
     def is_registered(self):
         """True if an agent was successfuly registered. Otherwise False."""
@@ -94,4 +95,4 @@ class Agent(ComposeServiceWrapper):
 
     def get_stork_agent_pid(self):
         """Returns PID of the stork-agent process."""
-        return self._get_pid('stork-agent')
+        return self._get_pid("stork-agent")

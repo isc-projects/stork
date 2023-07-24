@@ -12,7 +12,7 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     server_service.wait_for_host_reservation_pulling()
 
     # List hosts
-    hosts = server_service.list_hosts('192.0.2.42')
+    hosts = server_service.list_hosts("192.0.2.42")
     assert hosts is not None
     assert len(hosts.items) == 1
     host = hosts.items[0]
@@ -32,22 +32,17 @@ def test_add_host_reservation(kea_service: Kea, server_service: Server):
 
     # Add host
     raw_host = {
-        "host_identifiers": [{
-            "id_type": "flex-id",
-            "id_hex_value": "01:02:03:04:05:06"
-        }],
-        'address_reservations': [{
-            "address": "10.42.42.42"
-        }],
+        "host_identifiers": [
+            {"id_type": "flex-id", "id_hex_value": "01:02:03:04:05:06"}
+        ],
+        "address_reservations": [{"address": "10.42.42.42"}],
         "hostname": "foobar",
-        "local_hosts": []
+        "local_hosts": [],
     }
 
     with server_service.transaction_create_host_reservation() as (ctx, submit, _):
         daemon = [d for d in ctx["daemons"] if d["name"] == "dhcp4"][0]
-        raw_host["local_hosts"].append({
-            "daemon_id": daemon["id"]
-        })
+        raw_host["local_hosts"].append({"daemon_id": daemon["id"]})
         submit(raw_host)
 
     server_service.wait_for_host_reservation_pulling()
@@ -78,7 +73,11 @@ def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: S
         with server_service.transaction_create_host_reservation() as (_, _, cancel):
             cancel()
 
-        with server_service.transaction_update_host_reservation(host_id) as (_, _, cancel):
+        with server_service.transaction_update_host_reservation(host_id) as (
+            _,
+            _,
+            cancel,
+        ):
             cancel()
 
 
@@ -123,7 +122,9 @@ def test_update_host_reservation(kea_service: Kea, server_service: Server):
 
 
 @kea_parametrize("agent-kea-premium-radius")
-def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Server, perfdhcp_service: Perfdhcp):
+def test_get_host_reservations_from_radius(
+    kea_service: Kea, server_service: Server, perfdhcp_service: Perfdhcp
+):
     """
     Tests that the RADIUS hook configured to an accounting doesn't cause to
     generate false disconnect events and doesn't interrupt fetching
@@ -136,7 +137,7 @@ def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Ser
     # callout. Perfdhcp generates the network traffic that triggers this call.
     perfdhcp_service.generate_ipv4_traffic(
         ip_address=kea_service.get_internal_ip_address("subnet_00", family=4),
-        mac_prefix="00:00"
+        mac_prefix="00:00",
     )
 
     # Waits for send the "reservation-get-page" command to Kea.
@@ -148,12 +149,11 @@ def test_get_host_reservations_from_radius(kea_service: Kea, server_service: Ser
     for event in events.items:
         text: str = event.text.strip()
         assert not (
-            text.startswith("Communication with <daemon") and
-            text.endswith("failed")
+            text.startswith("Communication with <daemon") and text.endswith("failed")
         )
 
     # Fetches the host reservations properly.
-    hosts = server_service.list_hosts('192.0.2.42')
+    hosts = server_service.list_hosts("192.0.2.42")
     assert hosts is not None
     assert len(hosts.items) == 1
     host = hosts.items[0]

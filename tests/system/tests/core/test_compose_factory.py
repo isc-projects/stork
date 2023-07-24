@@ -40,7 +40,9 @@ def test_create_compose_single_compose_file():
 @patch("subprocess.run")
 def test_create_compose_uses_environment_variables(subprocess_run_mock: MagicMock):
     source_env_vars = dict(foo="1", bar="2")
-    compose = create_docker_compose(env_vars=source_env_vars, compose_detector=fake_compose_binary_detector)
+    compose = create_docker_compose(
+        env_vars=source_env_vars, compose_detector=fake_compose_binary_detector
+    )
     compose.up()
     subprocess_run_mock.assert_called_once()
     target_env_vars = subprocess_run_mock.call_args.kwargs["env"]
@@ -66,7 +68,9 @@ def test_port_preserves_custom_address(subprocess_run_mock: MagicMock):
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"0.0.0.0:42080", b""))
-def test_port_uses_default_address_from_environment_variable(subprocess_run_mock: MagicMock):
+def test_port_uses_default_address_from_environment_variable(
+    subprocess_run_mock: MagicMock,
+):
     os.environ["DEFAULT_MAPPED_ADDRESS"] = "foobar"
     compose = create_docker_compose(compose_detector=fake_compose_binary_detector)
     address, _ = compose.port("server", 8080)

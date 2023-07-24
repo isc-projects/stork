@@ -37,8 +37,7 @@ class ComposeServiceWrapper:
     def _read_file(self, path: str):
         """Read a content of a given file from the container."""
         cmd = ["cat", path]
-        _, stdout, _ = self._compose.exec(
-            self._service_name, cmd)
+        _, stdout, _ = self._compose.exec(self._service_name, cmd)
         return stdout
 
     def _hash_file(self, path: str):
@@ -56,8 +55,9 @@ class ComposeServiceWrapper:
         Returns an internal Docker-network IP address from a given IP family
         assigned to the service in a given subnet.
         """
-        return self._compose.get_service_ip_address(self._service_name,
-                                                    subnet_name, family=family)
+        return self._compose.get_service_ip_address(
+            self._service_name, subnet_name, family=family
+        )
 
     def _get_pid(self, process_name: str):
         """Returns a PID of the specfified process."""
