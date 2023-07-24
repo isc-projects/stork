@@ -34,8 +34,10 @@ mccabe==0.7.0
     #   pylint
 mypy-extensions==1.0.0
     # via black
-pathspec==0.11.1
-    # via black
+pathspec==0.9.0
+    # via
+    #   -r rakelib/init_deps/pylinters.in
+    #   black
 platformdirs==2.4.0
     # via
     #   -r rakelib/init_deps/pylinters.in

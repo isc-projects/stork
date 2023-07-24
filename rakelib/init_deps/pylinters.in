@@ -14,3 +14,4 @@ platformdirs <= 2.4.0
 pylint <= 2.13.9
 tomli <= 1.2.3
 click <= 8.0.4
+pathspec <= 0.9.0 
