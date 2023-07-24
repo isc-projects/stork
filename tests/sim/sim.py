@@ -5,11 +5,14 @@ import shlex
 import pprint
 import subprocess
 from xmlrpc.client import ServerProxy
+from logging import Logger
 
 from flask import Flask, request
+from flask.logging import create_logger
 import requests
 
-app = None
+app: Flask = None
+log: Logger = None
 
 STORK_SERVER_URL = os.environ.get('STORK_SERVER_URL', 'http://server:8080')
 
@@ -26,7 +29,7 @@ def _login_session():
 
 
 def start_perfdhcp(subnet):
-    app.logger.info("SUBNET %s", subnet)
+    log.info("SUBNET %s", subnet)
     rate, clients = subnet['rate'], subnet['clients']
     client_class = subnet['clientClass']
     mac_prefix = client_class[6:].replace('-', ':')
@@ -53,7 +56,7 @@ def _refresh_subnets():
         url = '%s/api/subnets?start=0&limit=100' % STORK_SERVER_URL
         r = s.get(url)
         data = r.json()
-        app.logger.info('SN %s', data)
+        log.info('SN %s', data)
 
         if not data:
             return
@@ -68,7 +71,7 @@ def _refresh_subnets():
 
         app.subnets = data
     except Exception as e:
-        app.logger.info("IGNORED EXCEPTION %s" % str(e))
+        log.info("IGNORED EXCEPTION %s", str(e))
 
 
 def serialize_subnets(subnets):
@@ -92,9 +95,9 @@ def run_dig(server):
     address = server['machine']['address']
     cmd = 'dig %s +tries=1 +retry=0 @%s %s %s' % (tcp, address, qname, qtype)
     print('exec %d times: %s' % (clients, cmd), file=sys.stderr)
-    for i in range(0, clients):
+    for _ in range(0, clients):
         args = shlex.split(cmd)
-        subprocess.run(args)
+        subprocess.run(args, check=False)
 
 
 def start_flamethrower(server):
@@ -141,7 +144,7 @@ def _refresh_servers():
         print('data: %s' % app.servers, file=sys.stderr)
 
     except Exception as e:
-        app.logger.info("IGNORED EXCEPTION %s" % str(e))
+        log.info("IGNORED EXCEPTION %s", str(e))
 
 
 def serialize_servers(servers):
@@ -157,14 +160,18 @@ def serialize_servers(servers):
     return json.dumps(data)
 
 
-def main():
-    global app
-    app = Flask(__name__, static_url_path='', static_folder='')
+def init():
+    app_instance = Flask(__name__, static_url_path='', static_folder='')
+    log_instance = create_logger(app)
+    return app_instance, log_instance
 
+
+def main():
     _refresh_subnets()
     _refresh_servers()
 
 
+app, log = init()
 main()
 
 
@@ -297,7 +304,7 @@ def _get_services():
     for m in machines:
         s = ServerProxy('http://%s:9001/RPC2' % m['address'])
         try:
-            services = s.supervisor.getAllProcessInfo()
+            services = s.supervisor.getAllProcessInfo()  # pylint: disable=no-member
         except Exception:
             continue
         pprint.pprint(services)
@@ -326,9 +333,9 @@ def put_service(index):
     s = ServerProxy('http://%s:9001/RPC2' % service['machine'])
 
     if data['operation'] == 'stop':
-        s.supervisor.stopProcess(service['name'])
+        s.supervisor.stopProcess(service['name'])  # pylint: disable=no-member
     elif data['operation'] == 'start':
-        s.supervisor.startProcess(service['name'])
+        s.supervisor.startProcess(service['name'])  # pylint: disable=no-member
 
     data = _get_services()
     return json.dumps(data)
