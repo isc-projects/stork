@@ -1,3 +1,9 @@
+* 321 [build] slawek
+
+    Refactored and formatted to the Python codebase to reach the highest
+    quality rate from the linter.
+    (Gitlab #1044)
+
 * 320 [bug] slawek
 
     Fixed a bug in the script installing the Stork agent using a server token.
