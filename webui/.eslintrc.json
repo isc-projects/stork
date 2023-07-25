@@ -3,6 +3,7 @@
     "ignorePatterns": ["projects/**/*"],
     "overrides": [
         {
+            "plugins": ["jsdoc"],
             "files": ["*.ts"],
             "parserOptions": {
                 "project": ["tsconfig.json", "e2e/tsconfig.json"],
@@ -28,7 +29,8 @@
                         "style": "camelCase",
                         "type": "attribute"
                     }
-                ]
+                ],
+                "jsdoc/require-jsdoc": ["error", {}]
             }
         },
         {
