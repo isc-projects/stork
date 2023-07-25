@@ -1,9 +1,13 @@
 import csv
-import time
+from datetime import datetime, timedelta
 
 
-def gen_dhcp4_lease_file(target):
+def gen_dhcp4_lease_file(target, start: datetime = None, lifetime: timedelta = timedelta(minutes=10)):
     '''Generates the DHCPv4 lease file.'''
+    if start is None:
+        start = datetime.now()
+    expire = start + lifetime
+
     # DHCPv4 lease file header.
     fileheader = [
         'address',
@@ -37,7 +41,7 @@ def gen_dhcp4_lease_file(target):
             'state': i % 2,
         }
         lease['address'] = f'192.0.2.{i}'
-        lease['expire'] = str(time.time() + 600)
+        lease['expire'] = str(int(expire.timestamp()))
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
@@ -47,8 +51,12 @@ def gen_dhcp4_lease_file(target):
         lease_writer.writerow(lease)
 
 
-def gen_dhcp6_lease_file(target):
+def gen_dhcp6_lease_file(target, start: datetime = None, lifetime: timedelta = timedelta(minutes=10)):
     '''Generates the DHCPv6 lease file.'''
+    if start is None:
+        start = datetime.now()
+    expire = start + lifetime
+
     # DHCPv6 lease file header.
     fileheader = [
         'address',
@@ -89,7 +97,7 @@ def gen_dhcp6_lease_file(target):
             'state': i % 2
         }
         lease['address'] = f'3001:db8:1:42::{i}'
-        lease['expire'] = str(time.time() + 600)
+        lease['expire'] = str(int(expire.timestamp()))
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
