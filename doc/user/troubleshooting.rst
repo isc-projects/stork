@@ -186,8 +186,8 @@ This section describes the solutions for some common issues with the Stork agent
               DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
               agent logs comprises the ``The Kea application has no DHCP daemons configured`` message.
 :Solution:    The ``kea-ctrl-agent.conf`` file misses the ``control-sockets`` property.
-:Explanation: The detection of the Kea components bases on the control socket list from the Stork agent configuration
-              file. The list must be configured properly to allow Stork to send commands to Kea daemons. See
+:Explanation: Stork detects Kea components using the control socket list from the Kea Control Agent configuration file.
+              The list must be configured properly to allow Stork to send commands to Kea daemons. See
               `Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>` for details.
               This property is missing by default if you install Kea from the Debian/Ubuntu repository.
               To avoid this and similar problems, we recommend to use our official packages available on
