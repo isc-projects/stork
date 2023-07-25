@@ -379,6 +379,8 @@ system_testing:
   artifacts:
     paths:
       - tests/system/test-results/**/*.log
+      - tests/system/config/kea/kea-leases4.csv
+      - tests/system/config/kea/kea-leases6.csv
     expire_in: 1 week
     when: always
 
