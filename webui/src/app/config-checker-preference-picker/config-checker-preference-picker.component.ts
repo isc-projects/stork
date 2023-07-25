@@ -220,7 +220,7 @@ export class ConfigCheckerPreferencePickerComponent {
                     'HTTP authentication credentials (i.e., Basic Auth) are configured.'
                 )
             case 'ca_control_sockets':
-                return 'The checker verifying if the Kea Control Agent has configured the control sockets.'
+                return 'The checker verifying if the Kea Control Agent configuration includes the control sockets.'
             default:
                 return ''
         }

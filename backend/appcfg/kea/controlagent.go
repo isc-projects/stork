@@ -54,10 +54,7 @@ func (cs *ControlSockets) GetConfiguredDaemonNames() (names []string) {
 
 // Returns true if any control socket is configured.
 func (cs *ControlSockets) HasAnyConfiguredDaemon() bool {
-	if cs == nil {
-		return false
-	}
-	return cs.D2 != nil || cs.Dhcp4 != nil || cs.Dhcp6 != nil || cs.NetConf != nil
+	return cs != nil && (cs.D2 != nil || cs.Dhcp4 != nil || cs.Dhcp6 != nil || cs.NetConf != nil)
 }
 
 // Returns the configured control sockets.

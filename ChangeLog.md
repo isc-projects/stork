@@ -1,8 +1,8 @@
 * 318 [func] slawek
 
-    Added a new checker to verify if the Kea Control Agent has configured the
-    control sockets. Added a descriptive message about possible missing control
-    socket in the configuration of the Kea DHCP daemons.
+    Added a new checker to verify if the Kea Control Agent configuration
+    includes the control sockets. Added a descriptive message about possibly
+    missing control socket configuration of the Kea DHCP daemons.
     (Gitlab #1045)
 
 * 317 [bug] slawek

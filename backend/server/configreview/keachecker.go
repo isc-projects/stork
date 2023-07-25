@@ -1243,7 +1243,7 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 	case controlSockets.Dhcp4 == nil && controlSockets.Dhcp6 == nil:
 		return NewReport(ctx, "The control sockets entry in the Kea Control "+
 			"Agent {daemon} configuration doesn't contain path to any DHCP "+
-			"daemon so Stork cannot detect them. You need to provide the "+
+			"daemon, so Stork cannot detect them. You need to provide the "+
 			"proper socket paths in the \"dhcp4\" and/or \"dhcp6\" properties "+
 			"of the \"control-sockets\" top-level entry.").
 			referencingDaemon(ctx.subjectDaemon).create()

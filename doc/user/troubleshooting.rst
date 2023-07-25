@@ -180,8 +180,8 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       Stork shows only Kea Control Agent tab on the application page. It doesn't detect any Kea DHCP server
-              although the DHCP daemons are running and allocate leases. 
+:Issue:       Stork shows only Kea Control Agent tab on the application page. It detects no Kea DHCP servers,
+              although the DHCP daemons are running and allocating leases. 
 :Description: There are only a single tab titled "CA" on the Kea application page but no data about any DHCP daemon or
               DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
               agent logs comprises the ``The Kea application has no DHCP daemons configured`` message.
