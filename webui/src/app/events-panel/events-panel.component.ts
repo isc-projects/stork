@@ -364,6 +364,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.events.total += 1
     }
 
+    /** Callback called on selecting a machine in dropdown. */
     onMachineSelect(event) {
         if (event.value === null) {
             this.filter.machine = null
@@ -373,6 +374,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
     }
 
+    /** Callback called on selecting an application in dropdown. */
     onAppTypeSelect(event) {
         if (event.value === null) {
             this.filter.appType = null
@@ -382,6 +384,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
     }
 
+    /** Callback called on selecting a daemon type in dropdown. */
     onDaemonTypeSelect(event) {
         if (event.value === null) {
             this.filter.daemonType = null
@@ -391,6 +394,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
     }
 
+    /** Callback called on selecting a user in dropdown. */
     onUserSelect(event) {
         if (event.value === null) {
             this.filter.user = null

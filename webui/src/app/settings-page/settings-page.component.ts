@@ -63,6 +63,9 @@ export class SettingsPageComponent implements OnInit {
         )
     }
 
+    /**
+     * Saves the current values of the settings on the backend side.
+     */
     saveSettings() {
         if (!this.settingsForm.valid) {
             return
@@ -89,7 +92,11 @@ export class SettingsPageComponent implements OnInit {
         )
     }
 
-    hasError(name, errType) {
+    /**
+     * Indicates if the given form field has assigned error with the
+     * specific name.
+     */
+    hasError(name: string, errType: string) {
         const setting = this.settingsForm.get(name)
         if (setting.errors && setting.errors[errType]) {
             return true

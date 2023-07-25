@@ -9,7 +9,6 @@ import { SettingsService } from './backend/api/api'
 })
 export class SettingService {
     private settingsBS = new BehaviorSubject({})
-    private settings = {}
 
     constructor(private auth: AuthService, private settingsApi: SettingsService) {
         // Only get the settings when the user is logged in.
@@ -17,7 +16,6 @@ export class SettingService {
             if (this.auth.currentUserValue) {
                 this.settingsApi.getSettings().subscribe(
                     (data) => {
-                        this.settings = data
                         this.settingsBS.next(data)
                     },
                     (err) => {
@@ -28,6 +26,7 @@ export class SettingService {
         })
     }
 
+    /** Returns the server settings as observable. */
     getSettings() {
         return this.settingsBS.asObservable()
     }

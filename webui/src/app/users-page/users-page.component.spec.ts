@@ -22,6 +22,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 class MockParamMap {
+    /** Always returns null. */
     get(name: string): string | null {
         return null
     }

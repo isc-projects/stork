@@ -1,14 +1,14 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router'
+import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
 import { Subscription } from 'rxjs'
 import { Machine } from '../backend'
 
 import { ServicesService } from '../backend/api/api'
-import { LoadingService } from '../loading.service'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, getErrorMessage } from '../utils'
+import { Table } from 'primeng/table'
 
 interface AppType {
     name: string
@@ -63,15 +63,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         private router: Router,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
-        private serverData: ServerDataService,
-        private loadingService: LoadingService
+        private serverData: ServerDataService
     ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
     }
 
-    switchToTab(index) {
+    /** Switches to tab with the given index. */
+    switchToTab(index: number) {
         if (this.activeTabIdx === index) {
             return
         }
@@ -82,6 +82,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
     }
 
+    /** Add a new machine tab. */
     addMachineTab(machine: Machine) {
         this.openedMachines.push({
             machine,
@@ -239,6 +240,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         })
     }
 
+    /**
+     * Handler called by the PrimeNG table to load the machine data.
+     * @param event Pagination event
+     */
     loadMachines(event) {
         let text
         if (event.filters.text) {
@@ -265,11 +270,13 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         this.refreshUnauthorizedMachinesCount()
     }
 
+    /** Callback called on canceling the edit machine dialog. */
     cancelMachineDialog() {
         this.changeMachineAddressDlgVisible = false
     }
 
-    keyUpMachineDlg(event, machineTab) {
+    /** Callback called on key pressed in the edit machine dialog. */
+    keyUpMachineDlg(event: KeyboardEvent, machineTab: Machine) {
         if (event.key === 'Enter') {
             if (this.changeMachineAddressDlgVisible) {
                 this.saveMachine(machineTab)
@@ -277,21 +284,30 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    refreshMachinesList(machinesTable) {
+    /** Callback called on clicking the refresh button. */
+    refreshMachinesList(machinesTable: Table) {
         machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
     }
 
-    keyUpFilterText(machinesTable, event) {
+    /**
+     * Callback called on key press in the search box.
+     * Triggers filtering the displayed machines by text.
+     */
+    keyUpFilterText(machinesTable: Table, event: KeyboardEvent) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
             machinesTable.filter(this.filterText, 'text', 'equals')
         }
     }
 
-    filterByApp(machinesTable) {
+    /**
+     * Filters the displayed data by application ID.
+     */
+    filterByApp(machinesTable: Table) {
         machinesTable.filter(this.selectedAppType.value, 'app', 'equals')
     }
 
-    closeTab(event, idx) {
+    /** Closes a tab with the given index. */
+    closeTab(event: PointerEvent, idx: number) {
         this.openedMachines.splice(idx - 1, 1)
         this.tabs.splice(idx, 1)
         if (this.activeTabIdx === idx) {
@@ -309,7 +325,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    _refreshMachineState(machine) {
+    /** Fetches new machine state from API. */
+    _refreshMachineState(machine: Machine) {
         this.servicesApi.getMachineState(machine.id).subscribe(
             (data) => {
                 if (data.error) {
@@ -481,12 +498,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         })
     }
 
+    /** Sets the edit form-related members using the value of the current machine. */
     editAddress(machineTab) {
         this.machineAddress = machineTab.machine.address
         this.agentPort = machineTab.machine.agentPort.toString() // later string is expected in this.agentPort
         this.changeMachineAddressDlgVisible = true
     }
 
+    /** Alters a given machine in API. */
     saveMachine(machineTab) {
         if (this.machineAddress === machineTab.machine.address && this.agentPort === machineTab.machine.agentPort) {
             machineTab.changeMachineAddressDlgVisible = false
@@ -517,6 +536,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         )
     }
 
+    /**
+     * Callback called on machine tab click.
+     */
     refreshMachineState(machinesTab) {
         this._refreshMachineState(machinesTab.machine)
     }

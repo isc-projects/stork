@@ -38,12 +38,6 @@ import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/d
 import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 
-class MockParamMap {
-    get(name: string): string | null {
-        return null
-    }
-}
-
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
     let fixture: ComponentFixture<HostsPageComponent>

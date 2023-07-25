@@ -27,6 +27,7 @@ import { TabMenuModule } from 'primeng/tabmenu'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 class MockParamMap {
+    /** Always returns null. */
     get(name: string): string | null {
         return null
     }

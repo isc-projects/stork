@@ -1,6 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core'
 
 import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
+import { App } from '../backend'
 
 @Component({
     selector: 'app-app-daemons-status',
@@ -12,7 +13,8 @@ export class AppDaemonsStatusComponent {
 
     constructor() {}
 
-    sortDaemonsByImportance(app) {
+    /** Returns a list of daemon sorted using custom rules. */
+    sortDaemonsByImportance(app: App) {
         const daemonMap = []
         const daemons = []
 

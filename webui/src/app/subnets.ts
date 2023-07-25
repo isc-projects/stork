@@ -47,6 +47,11 @@ export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | b
     }
 }
 
+/**
+ * Get a BigInt value of statistic with the given name. If the statistic is
+ * missing or subnet leaks the statistics, returns zero. If the value is not
+ * numeric, returns null.
+ */
 export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string): bigint | null {
     if (subnet.stats == null || !subnet.stats.hasOwnProperty(name)) {
         return BigInt(0)
@@ -61,7 +66,12 @@ export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string):
             return null
     }
 }
-
+/**
+ * Parses all string statistics of subnet-like object as big integers.
+ * Stork Server returns big counters (e.g., IPv6 statistics) as strings to
+ * prevent problems with floating-point number precision. The big integers are
+ * not supported by the OpenAPI specification.
+ */
 export function parseSubnetStatisticValues(subnet: Subnet | SharedNetwork | LocalSubnet): void {
     // Parse the own statistics.
     if (subnet.stats == null) {

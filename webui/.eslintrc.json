@@ -1,6 +1,6 @@
 {
     "root": true,
-    "ignorePatterns": ["projects/**/*"],
+    "ignorePatterns": ["projects/**/*", "src/app/backend/**/*"],
     "overrides": [
         {
             "plugins": ["jsdoc"],
@@ -30,7 +30,19 @@
                         "type": "attribute"
                     }
                 ],
-                "jsdoc/require-jsdoc": ["error", {}]
+                "jsdoc/require-jsdoc": [
+                    "error",
+                    {
+                        "require": {
+                            "MethodDefinition": true
+                        },
+                        "exemptEmptyFunctions": true,
+                        "enableFixer": false,
+                        "checkConstructors": false,
+                        "checkGetters": false,
+                        "checkSetters": false
+                    }
+                ]
             }
         },
         {

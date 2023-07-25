@@ -14,7 +14,8 @@ describe('HaStatusPanelComponent', () => {
     let component: HaStatusPanelComponent
     let fixture: ComponentFixture<HaStatusPanelComponent>
 
-    function itHasStatusIconAndText(icon, color, text) {
+    /** Asserts the status HTML. Accepts expected icon, color, and text. */
+    function itHasStatusIconAndText(icon: string, color: string, text: string) {
         // The table cell holding control status has an id. Let's access
         // that cell by id to verify that it contains both the icon and
         // the status text.
@@ -40,7 +41,8 @@ describe('HaStatusPanelComponent', () => {
         expect(controlStatusNative.textContent).toBe(text)
     }
 
-    function itHasStateIconAndText(icon, color, text) {
+    /** Asserts the state HTML. Accepts expected icon, color, and text. */
+    function itHasStateIconAndText(icon: string, color: string, text: string) {
         // The table cell holding server state has an id. Let's access this
         // cell by id to verify that it contains both the icon and the
         // state text.

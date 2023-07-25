@@ -35,6 +35,7 @@ describe('EventsPanelComponent', () => {
     let component: EventsPanelComponent
     let fixture: ComponentFixture<EventsPanelComponent>
 
+    /** Checks if component contains an event with a given name and value. */
     function itContainsSearchParam(name, value) {
         const source = component.eventSource
         expect(source).toBeTruthy()

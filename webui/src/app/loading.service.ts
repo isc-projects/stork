@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 
+/**
+ * Global loading service.
+ *
+ * Note: It seems to be unused from the beginning. Use with caution.
+ */
 @Injectable({
     providedIn: 'root',
 })
@@ -8,10 +13,12 @@ export class LoadingService {
     counter = 0
     texts = []
 
-    constructor() {}
-
     private loadInProgress = new BehaviorSubject({ state: false, text: '' })
 
+    /**
+     * Requests to start the global loading.
+     * @param text Text to display
+     */
     start(text) {
         this.texts.push(text)
         this.counter += 1
@@ -21,6 +28,11 @@ export class LoadingService {
         })
     }
 
+    /**
+     * Requests to stop the global loading. All callers of the @start method
+     * must call the @stop method to stop loading.
+     * @param text Text to display
+     */
     stop(text) {
         for (let i = 0; i < this.texts.length; i++) {
             if (this.texts[i] === text) {
@@ -41,6 +53,7 @@ export class LoadingService {
         }
     }
 
+    /** Returns the loading state as an observable. */
     getState() {
         return this.loadInProgress.asObservable()
     }

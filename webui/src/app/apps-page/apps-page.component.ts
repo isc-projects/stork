@@ -6,9 +6,15 @@ import { MessageService, MenuItem } from 'primeng/api'
 
 import { daemonStatusErred, getErrorMessage } from '../utils'
 import { ServicesService } from '../backend/api/api'
-import { LoadingService } from '../loading.service'
+import { App } from '../backend'
+import { Table } from 'primeng/table'
+import { Menu } from 'primeng/menu'
 
-function htmlizeExtVersion(app) {
+/**
+ * Replaces the newlines in the versions with the HTML-compatible line breaks.
+ * @param app Application
+ */
+function htmlizeExtVersion(app: App) {
     if (app.details.extendedVersion) {
         app.details.extendedVersion = app.details.extendedVersion.replace(/\n/g, '<br>')
     }
@@ -71,14 +77,14 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private servicesApi: ServicesService,
-        private msgSrv: MessageService,
-        private loadingService: LoadingService
+        private msgSrv: MessageService
     ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
     }
 
+    /** Returns a human-readable application label. */
     getAppsLabel() {
         if (this.appType === 'bind9') {
             return 'BIND 9 Apps'
@@ -87,7 +93,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    switchToTab(index) {
+    /** Switches to tab with a given index. */
+    switchToTab(index: number) {
         if (this.activeTabIdx === index) {
             return
         }
@@ -99,7 +106,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    addAppTab(app) {
+    /** Append a new tab for the given application. */
+    addAppTab(app: App) {
         this.openedApps.push({
             app,
         })
@@ -201,6 +209,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         )
     }
 
+    /**
+     * Function called by the table data loader. Accepts the pagination event.
+     */
     loadApps(event) {
         if (this.appType === '') {
             // appType has not been set yet so do not load anything
@@ -227,13 +238,17 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             })
     }
 
-    keyUpFilterText(appsTable, event) {
+    /**
+     * Callback called on typing in the filter input box.
+     */
+    keyUpFilterText(appsTable: Table, event: KeyboardEvent) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
             appsTable.filter(this.filterText, 'text', 'equals')
         }
     }
 
-    closeTab(event, idx) {
+    /** Closes tab with a given index. */
+    closeTab(event: PointerEvent, idx: number) {
         this.openedApps.splice(idx - 1, 1)
         this.tabs.splice(idx, 1)
         if (this.activeTabIdx === idx) {
@@ -251,7 +266,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    _refreshAppState(app) {
+    /** Fetches an application state from the API. */
+    _refreshAppState(app: App) {
         this.servicesApi.getApp(app.id).subscribe(
             (data) => {
                 this.msgSrv.add({
@@ -292,7 +308,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    showAppMenu(event, appMenu, app) {
+    /** Callback called on click on the application menu button. */
+    showAppMenu(event: PointerEvent, appMenu: Menu, app: App) {
         appMenu.toggle(event)
 
         // connect method to refresh machine state
@@ -301,10 +318,12 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    onRefreshApp(event) {
+    /** Callback called on click the refresh button. */
+    onRefreshApp(event: PointerEvent) {
         this._refreshAppState(this.appTab.app)
     }
 
+    /** Callback called on click the refresh application list button. */
     refreshAppsList(appsTable) {
         appsTable.onLazyLoad.emit(appsTable.createLazyLoadMetadata())
     }

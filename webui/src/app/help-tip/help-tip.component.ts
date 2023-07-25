@@ -34,6 +34,7 @@ export class HelpTipComponent {
 
     constructor() {}
 
+    /** Show/hide the help tip content. */
     toggleOverlay(ev) {
         this.overlay.toggle(ev)
     }

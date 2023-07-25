@@ -118,6 +118,7 @@ import { UtilizationStatsChartComponent } from './utilization-stats-chart/utiliz
 import { UtilizationStatsChartsComponent } from './utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board/cascaded-parameters-board.component'
 
+/** Create the OpenAPI client configuration. */
 export function cfgFactory() {
     const params: ConfigurationParameters = {
         apiKeys: {},

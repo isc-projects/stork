@@ -2,28 +2,36 @@ import * as moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { Bind9Daemon, KeaDaemon } from './backend'
 
-export function datetimeToLocal(d) {
+/**
+ * Formats the date-like object as local date-time string.
+ * @param d Date
+ * @returns formatted string on success, otherwise stringified @d
+ */
+export function datetimeToLocal(d: moment.MomentInput): string {
     try {
         let tz = Intl.DateTimeFormat().resolvedOptions().timeZone
         if (!tz) {
             tz = moment.tz.guess()
         }
+
+        let md = moment(d)
+
         if (tz) {
-            d = moment(d).tz(tz)
+            md = md.tz(tz)
             tz = ''
         } else {
-            d = moment(d)
             tz = ' UTC'
         }
 
         // If year is < 2 it means that the date is not set.
         // In Go if date is zeroed then it is 0001.01.01.
-        if (d.year() < 2) {
+        // TODO: Do it better.
+        if (md.year() < 2) {
             return ''
         }
-        return d.format('YYYY-MM-DD HH:mm:ss') + tz
+        return md.format('YYYY-MM-DD HH:mm:ss') + tz
     } catch (e) {
-        return d
+        return d.toString()
     }
 }
 
@@ -387,7 +395,7 @@ export function stringToHex(s: string, separator = ':'): string {
     return output.join(separator)
 }
 
-// General purpose function to extract an error message from object.
+/** General purpose function to extract an error message from object. */
 export function getErrorMessage(err: any): string {
     if (err.error && err.error.message) {
         return err.error.message

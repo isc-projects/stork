@@ -5,7 +5,13 @@ import { datetimeToLocal, epochToLocal } from '../utils'
     name: 'localtime',
 })
 export class LocaltimePipe implements PipeTransform {
-    transform(value: any, ...args: any[]): any {
+    /**
+     * Formats a given value as local date-time.
+     * @param value If the value is integer, it is treated as epoch timestamp.
+     *              Otherwise, it is parsed to get date object.
+     * @returns Formatted date or stringified value.
+     */
+    transform(value: moment.MomentInput) {
         // If this is an integer we guess that it is an epoch time.
         if (Number.isInteger(value)) {
             return epochToLocal(value)

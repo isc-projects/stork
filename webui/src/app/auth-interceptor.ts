@@ -11,6 +11,10 @@ import { getErrorMessage } from './utils'
 export class AuthInterceptor implements HttpInterceptor {
     constructor(private router: Router, private auth: AuthService) {}
 
+    /**
+     * It handles the authentication errors and redirects a user to login or
+     * forbidden page. If the error is not authentication error, passes it through.
+     */
     private handleAuthError(err: HttpErrorResponse): Observable<any> {
         // The server sometimes returns HTTP Error 403 when the session expires
         // but the browser still remembers it in the local storage. The 403 may
@@ -31,6 +35,10 @@ export class AuthInterceptor implements HttpInterceptor {
         return throwError(err)
     }
 
+    /**
+     * The rxJS pipe interceptor function. It calls the authentication error
+     * handler on error.
+     */
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         return next.handle(req).pipe(catchError((x) => this.handleAuthError(x)))
     }

@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { Router, ActivatedRoute } from '@angular/router'
+import { Router, ActivatedRoute, ParamMap } from '@angular/router'
 
 import { Table } from 'primeng/table'
 
@@ -81,7 +81,12 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    updateOurQueryParams(params) {
+    /**
+     * Updates the query parameters stored in the member of this class using
+     * query parameters from the router.
+     * @param params URL query parameters from router.
+     */
+    updateOurQueryParams(params: ParamMap) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
             this.queryParams.dhcpVersion = params.get('dhcpVersion')
         }

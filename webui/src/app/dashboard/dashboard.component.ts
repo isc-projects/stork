@@ -19,7 +19,7 @@ import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { DhcpOverview, LocalSubnet, Subnet, Subnets } from '../backend'
+import { DhcpDaemon, DhcpOverview, LocalSubnet, Subnet, Subnets } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 
 type DhcpOverviewParsed = ModifyDeep<
@@ -370,7 +370,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      *          time if it is non-zero or 'never' if the specified timestamp
      *          is zero.
      */
-    showHAFailureTime(daemon) {
+    showHAFailureTime(daemon: DhcpDaemon) {
         if (!daemon.haEnabled || !daemon.haState || daemon.haState.length === 0) {
             return ''
         }
