@@ -67,7 +67,7 @@
         "@typescript-eslint/parser": "^5.55.0",
         "babel-loader": "^9.1.2",
         "eslint": "^8.36.0",
-        "eslint-plugin-jsdoc": "^46.4.4",
+        "eslint-plugin-jsdoc": "^39.3.6",
         "eslint-plugin-storybook": "^0.6.11",
         "jasmine-core": "~4.6.0",
         "jasmine-spec-reporter": "~7.0.0",
