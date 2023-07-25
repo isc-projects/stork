@@ -375,8 +375,8 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         return Server._api_transaction(on_begin, on_submit, on_cancel)
 
-    @contextmanager
     @staticmethod
+    @contextmanager
     def _api_transaction(
             on_begin: Callable[[], T1],
             on_submit: Callable[[int, T2], None],
