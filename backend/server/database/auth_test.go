@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"os/user"
 	"testing"
 
@@ -28,6 +29,43 @@ func skipIfNonLocalConnection(t *testing.T, settings *dbops.DatabaseSettings) {
 func skipIfLocalConnection(t *testing.T, settings *dbops.DatabaseSettings) {
 	if settings.Host == "" || storkutil.IsSocket(settings.Host) {
 		t.Skip("This test is available only if the database is connected over TCP/IP.")
+	}
+}
+
+// Skips the test if the connection is performed to the Docker database over
+// localhost.
+//
+// Warning: The helper doesn't work if the unit tests are not running by the
+// Rakefile.
+//
+// The trust auth-related tests fail if the database is running in Docker
+// and the connection is established over localhost gateway.
+// It is caused because the connection is improperly recognized as local. The
+// database host in our configuration is set to 127.0.0.1, but in practice, the
+// operation system redirects the connection to the Docker container.
+// It causes the Stork treats the database as local, but the container sees the
+// connection as remote (the Docker IP gateway address) and requires the
+// password.
+//
+// Postgres in Docker is usually (and by default) configured to use a non-trust
+// authentication method. The trust method is explicitly discouraged by the
+// Docker image documentation.
+//
+// Conditions to occur the problem:
+//   - Not providing a password
+//   - Postgres in Docker container configured to use the trust authentication
+//     method
+//   - Stork configured to connect the database using the localhost address
+//   - Stork must be running on the same machine where the containers are hosted
+func skipIfDockerDatabaseAndLocalhost(t *testing.T, settings *dbops.DatabaseSettings) {
+	if settings.Host != "localhost" && settings.Host != "127.0.0.1" && settings.Host != "::1" {
+		// Non-localhost.
+		return
+	}
+
+	if value, _ := os.LookupEnv("STORK_DATABASE_IN_DOCKER"); value == "true" {
+		t.Skip("This test is not available because the database is running " +
+			"in Docker and connection is performed over localhost.")
 	}
 }
 
@@ -197,6 +235,8 @@ func TestConnectUsingTrustAuth(t *testing.T) {
 	// Arrange
 	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
 	defer teardown()
+
+	skipIfDockerDatabaseAndLocalhost(t, settings)
 
 	userTest, teardownUser := setupCustomUser(t, db, maintenance.PgAuthMethodTrust)
 	defer teardownUser()

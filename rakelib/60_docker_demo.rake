@@ -328,6 +328,8 @@ task :pre_docker_db do
     ENV["STORK_DATABASE_MAINTENANCE_NAME"] = "stork"
     ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] = "stork"
     ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] = "stork"
+    # Environment database to allow skip problematic unit tests.
+    ENV["STORK_DATABASE_IN_DOCKER"] = "true"
 end
 
 # Waits for a given docker-compose service be operational (Up and Healthy status)
