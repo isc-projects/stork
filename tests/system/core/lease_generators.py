@@ -41,8 +41,8 @@ def gen_dhcp4_lease_file(target):
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
-            lease['hwaddr'] = f'00:01:02d:03:04:{i:02d}'
-            lease['client_id'] = f'01:02d:03:{i:02d}'
+            lease['hwaddr'] = f'00:01:02:03:04:{i:02d}'
+            lease['client_id'] = f'01:02:03:{i:02d}'
 
         lease_writer.writerow(lease)
 
@@ -93,6 +93,6 @@ def gen_dhcp6_lease_file(target):
 
         # Only non-declined leases contain MAC address and client id.
         if i % 2 == 0:
-            lease['duid'] = f'01:02d:03:{i:02d}'
+            lease['duid'] = f'01:02:03:{i:02d}'
 
         lease_writer.writerow(lease)
