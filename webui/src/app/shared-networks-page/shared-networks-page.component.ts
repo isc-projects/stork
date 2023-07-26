@@ -14,7 +14,7 @@ import {
     SharedNetworkWithUniquePools,
 } from '../subnets'
 import { Subscription, concat, of } from 'rxjs'
-import { filter, map, share, take } from 'rxjs/operators'
+import { filter, map, take } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 
@@ -145,7 +145,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         this.subscriptions.add(
             this.route.paramMap.subscribe(
                 (params) => {
-                    // Get subnet id.
+                    // Get shared network id.
                     const id = params.get('id')
                     let numericId = parseInt(id, 10)
                     if (Number.isNaN(numericId)) {
@@ -379,8 +379,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                     const msg = getErrorMessage(error)
                     this.messageService.add({
                         severity: 'error',
-                        summary: 'Cannot get subnet',
-                        detail: `Error getting subnet with ID ${sharedNetworkId}: ${msg}`,
+                        summary: 'Cannot get shared network',
+                        detail: `Error getting shared network with ID ${sharedNetworkId}: ${msg}`,
                         life: 10000,
                     })
                 })

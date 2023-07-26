@@ -20,7 +20,7 @@ export class UtilizationStatsChartsComponent {
     /**
      * Subnet or shared network instance.
      */
-    @Input() network: Subnet | SharedNetwork
+    @Input() network: Subnet & SharedNetwork
 
     /**
      * Checks if the subnet or shared network has IPv6 type.
@@ -28,10 +28,7 @@ export class UtilizationStatsChartsComponent {
      * @return true if the subnet or shared network has IPv6 type, false otherwise.
      */
     get isIPv6(): boolean {
-        return (
-            ('subnet' in this.network && this.network.subnet?.includes(':')) ||
-            ('universe' in this.network && this.network.universe == IPType.IPv6)
-        )
+        return this.network.universe == IPType.IPv6 || this.network.subnet?.includes(':')
     }
 
     /**
@@ -40,10 +37,7 @@ export class UtilizationStatsChartsComponent {
      * @return true if subnet or shared network includes configured address pools.
      */
     get hasAddressPools(): boolean {
-        return (
-            ('subnet' in this.network && hasAddressPools(this.network)) ||
-            ('subnets' in this.network && this.network.subnets?.some((s) => hasAddressPools(s)))
-        )
+        return this.network.subnets?.some((s) => hasAddressPools(s)) || hasAddressPools(this.network)
     }
 
     /**
@@ -52,10 +46,7 @@ export class UtilizationStatsChartsComponent {
      * @return true if subnet or shared network includes configured prefix pools.
      */
     get hasPrefixPools(): boolean {
-        return (
-            ('subnet' in this.network && hasPrefixPools(this.network)) ||
-            ('subnets' in this.network && this.network.subnets?.some((s) => hasPrefixPools(s)))
-        )
+        return this.network.subnets?.some((s) => hasPrefixPools(s)) || hasPrefixPools(this.network)
     }
 
     /**
@@ -65,6 +56,6 @@ export class UtilizationStatsChartsComponent {
      * shared network.
      */
     get localSubnets(): LocalSubnet[] {
-        return 'localSubnets' in this.network ? this.network.localSubnets : []
+        return this.network.localSubnets || []
     }
 }
