@@ -224,7 +224,7 @@ This section describes the solutions for some common issues with the Stork serve
 
 :Issue:       The server is running but rejects the HTTP requests due to the TLS handshake error.
 :Description: The HTTP requests sent via an Internet browser or tools like ``curl`` are rejected. The clients show a
-              message similar to: ``OpenSSL SSL_write: Broken pipe, errno 32``. The Stork  serverlogs contain the
+              message similar to: ``OpenSSL SSL_write: Broken pipe, errno 32``. The Stork  server logs contain the
               ``TLS handshake error`` entry with the ``tls: client didn't provide a certificate`` description.
 :Solution 1.: Leave the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable and the ``--rest-tls-ca`` flag empty.
 :Solution 2.: Configure the Internet browser or HTTP tool to use the valid and trusted TLS client certificate.
