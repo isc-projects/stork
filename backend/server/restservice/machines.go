@@ -41,16 +41,6 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-// Converts the Golang date to the pointer to OpenAPI datetime. It handles
-// the zero value checking.
-func convertToOptionalDatetime(date time.Time) *strfmt.DateTime {
-	if date.IsZero() {
-		return nil
-	}
-	datetime := strfmt.DateTime(date)
-	return &datetime
-}
-
 // Convert db machine to rest structure.
 func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	apps := []*models.App{}
