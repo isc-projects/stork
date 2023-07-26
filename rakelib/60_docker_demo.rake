@@ -328,7 +328,7 @@ task :pre_docker_db do
     ENV["STORK_DATABASE_MAINTENANCE_NAME"] = "stork"
     ENV["STORK_DATABASE_MAINTENANCE_USER_NAME"] = "stork"
     ENV["STORK_DATABASE_MAINTENANCE_PASSWORD"] = "stork"
-    # Environment database to allow skip problematic unit tests.
+    # Environment variable to skip some unit tests not working under Docker.
     ENV["STORK_DATABASE_IN_DOCKER"] = "true"
 end
 

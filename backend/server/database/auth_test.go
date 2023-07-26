@@ -32,26 +32,25 @@ func skipIfLocalConnection(t *testing.T, settings *dbops.DatabaseSettings) {
 	}
 }
 
-// Skips the test if the connection is performed to the Docker database over
-// localhost.
+// Skips the test if the connection to the database running in Docker is over localhost.
 //
-// Warning: The helper doesn't work if the unit tests are not running by the
+// Warning: The helper doesn't work if the unit tests are not started by the
 // Rakefile.
 //
 // The trust auth-related tests fail if the database is running in Docker
 // and the connection is established over localhost gateway.
-// It is caused because the connection is improperly recognized as local. The
+// In that case the connection is improperly recognized as local. The
 // database host in our configuration is set to 127.0.0.1, but in practice, the
-// operation system redirects the connection to the Docker container.
-// It causes the Stork treats the database as local, but the container sees the
-// connection as remote (the Docker IP gateway address) and requires the
+// operating system redirects the connection to the Docker container.
+// In this case Stork treats the database as local, but the container sees the
+// connection as remote (the Docker IP gateway address) and requires a
 // password.
 //
 // Postgres in Docker is usually (and by default) configured to use a non-trust
 // authentication method. The trust method is explicitly discouraged by the
 // Docker image documentation.
 //
-// Conditions to occur the problem:
+// Conditions triggering the problem:
 //   - Not providing a password
 //   - Postgres in Docker container configured to use the trust authentication
 //     method
@@ -65,7 +64,7 @@ func skipIfDockerDatabaseAndLocalhost(t *testing.T, settings *dbops.DatabaseSett
 
 	if value, _ := os.LookupEnv("STORK_DATABASE_IN_DOCKER"); value == "true" {
 		t.Skip("This test is not available because the database is running " +
-			"in Docker and connection is performed over localhost.")
+			"in Docker and connection is established over localhost.")
 	}
 }
 
