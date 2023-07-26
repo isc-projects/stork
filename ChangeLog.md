@@ -1,3 +1,9 @@
+* 319 [func] marcin
+
+    Created shared network view in the WebUI that contains shared network
+    details, including DHCP parameters and options.
+    (Gitlab #1119)
+
 * 318 [func] slawek
 
     Added a new checker to verify if the Kea Control Agent configuration
