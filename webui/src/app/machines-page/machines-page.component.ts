@@ -276,7 +276,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     }
 
     /** Callback called on key pressed in the edit machine dialog. */
-    keyUpMachineDlg(event: KeyboardEvent, machineTab: Machine) {
+    keyUpMachineDlg(event: KeyboardEvent, machineTab) {
         if (event.key === 'Enter') {
             if (this.changeMachineAddressDlgVisible) {
                 this.saveMachine(machineTab)
