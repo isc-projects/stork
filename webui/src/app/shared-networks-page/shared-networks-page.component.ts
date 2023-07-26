@@ -288,7 +288,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * one IPv6 subnet
      */
     get isAnyIPv6SubnetVisible(): boolean {
-        return this.networks.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
+        return !!this.networks?.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
     }
 
     /**

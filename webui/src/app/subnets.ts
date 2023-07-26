@@ -105,6 +105,9 @@ export function parseSubnetStatisticValues(subnet: Subnet | SharedNetwork | Loca
  * JSON parser converts them to double precision number. It causes losing precision.
  */
 export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] | LocalSubnet[]): void {
+    if (!subnets) {
+        return
+    }
     for (const subnet of subnets) {
         // Parse the nested statistics.
         if ('subnets' in subnet) {
