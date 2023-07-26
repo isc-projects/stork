@@ -1,17 +1,17 @@
-<ng-container *ngIf="subnet; else noSubnetBlock">
+<ng-container *ngIf="network; else noNetworkBlock">
     <div class="flex flex-wrap">
-        <div *ngIf="subnet.addrUtilization || hasAddressPools">
+        <div *ngIf="network.addrUtilization || hasAddressPools">
             <app-utilization-stats-chart
                 title="Total"
                 leaseType="{{ isIPv6 ? 'na' : 'address' }}"
-                [network]="subnet"
+                [network]="network"
             ></app-utilization-stats-chart>
         </div>
-        <div *ngIf="subnet.pdUtilization || hasPrefixPools">
-            <app-utilization-stats-chart title="Total" leaseType="pd" [network]="subnet"></app-utilization-stats-chart>
+        <div *ngIf="network.pdUtilization || hasPrefixPools">
+            <app-utilization-stats-chart title="Total" leaseType="pd" [network]="network"></app-utilization-stats-chart>
         </div>
-        <ng-container class="flex flex-wrap" *ngIf="subnet.localSubnets && subnet.localSubnets.length > 1">
-            <ng-container *ngFor="let localSubnet of subnet.localSubnets">
+        <ng-container class="flex flex-wrap" *ngIf="localSubnets && localSubnets.length > 1">
+            <ng-container *ngFor="let localSubnet of localSubnets">
                 <div *ngIf="localSubnet.pools?.length > 0">
                     <app-utilization-stats-chart
                         [title]="localSubnet.appName"
@@ -31,9 +31,9 @@
     </div>
     <p-divider></p-divider>
     <span class="font-italic text-sm"
-        >Statistics collected at {{ subnet.statsCollectedAt | date : 'short' | placeholder : 'never' }}</span
+        >Statistics collected at {{ network.statsCollectedAt | date : 'short' | placeholder : 'never' }}</span
     >
 </ng-container>
-<ng-template #noSubnetBlock>
-    <div>Subnet data unavailable.</div>
+<ng-template #noNetworkBlock>
+    <div>Statistics data unavailable.</div>
 </ng-template>

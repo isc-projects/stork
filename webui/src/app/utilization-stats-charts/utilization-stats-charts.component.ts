@@ -1,10 +1,11 @@
 import { Component, Input } from '@angular/core'
-import { Subnet } from '../backend'
+import { LocalSubnet, SharedNetwork, Subnet } from '../backend'
 import { hasAddressPools, hasPrefixPools } from '../subnets'
+import { IPType } from '../iptype'
 
 /**
  * A component displaying pie charts with address and delegated prefix
- * utilizations for a subnet.
+ * utilizations for a subnet or shared network.
  *
  * It displays only total statistics when there is only one server associated
  * with the subnets. If there are more servers, it displays the total statistics
@@ -17,34 +18,53 @@ import { hasAddressPools, hasPrefixPools } from '../subnets'
 })
 export class UtilizationStatsChartsComponent {
     /**
-     * Subnet instance with local subnet instances.
+     * Subnet or shared network instance.
      */
-    @Input() subnet: Subnet
+    @Input() network: Subnet | SharedNetwork
 
     /**
-     * Checks if the subnet has IPv6 type.
+     * Checks if the subnet or shared network has IPv6 type.
      *
-     * @return true if the subnet has IPv6 type, false otherwise.
+     * @return true if the subnet or shared network has IPv6 type, false otherwise.
      */
     get isIPv6(): boolean {
-        return this.subnet.subnet.includes(':')
+        return (
+            ('subnet' in this.network && this.network.subnet?.includes(':')) ||
+            ('universe' in this.network && this.network.universe == IPType.IPv6)
+        )
     }
 
     /**
-     * Checks if there are any address pools defined for the subnet.
+     * Checks if there are any address pools defined for the subnet or shared network.
      *
-     * @return true if subnet includes configured address pools.
+     * @return true if subnet or shared network includes configured address pools.
      */
     get hasAddressPools(): boolean {
-        return hasAddressPools(this.subnet)
+        return (
+            ('subnet' in this.network && hasAddressPools(this.network)) ||
+            ('subnets' in this.network && this.network.subnets?.some((s) => hasAddressPools(s)))
+        )
     }
 
     /**
-     * Checks if there are any prefix pools defined for the subnet.
+     * Checks if there are any prefix pools defined for the subnet or shared network.
      *
-     * @return true if subnet includes configured prefix pools.
+     * @return true if subnet or shared network includes configured prefix pools.
      */
     get hasPrefixPools(): boolean {
-        return hasPrefixPools(this.subnet)
+        return (
+            ('subnet' in this.network && hasPrefixPools(this.network)) ||
+            ('subnets' in this.network && this.network.subnets?.some((s) => hasPrefixPools(s)))
+        )
+    }
+
+    /**
+     * Returns an array of local subnet instances if the instance is a subnet.
+     *
+     * @returns local subnet instances or an empty array if the instance is a
+     * shared network.
+     */
+    get localSubnets(): LocalSubnet[] {
+        return 'localSubnets' in this.network ? this.network.localSubnets : []
     }
 }

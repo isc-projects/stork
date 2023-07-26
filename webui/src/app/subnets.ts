@@ -1,5 +1,12 @@
-import { Local } from 'protractor/built/driverProviders'
 import { DelegatedPrefix, LocalSubnet, SharedNetwork, Subnet } from './backend'
+
+/**
+ * Represents a shared network with the lists of unique pools extracted.
+ */
+export interface SharedNetworkWithUniquePools extends SharedNetwork {
+    pools?: Array<string>
+    prefixDelegationPools?: Array<DelegatedPrefix>
+}
 
 /**
  * Represents a subnet with the lists of unique pools extracted.
@@ -279,6 +286,93 @@ export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
                         subnet.localSubnets[0].keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash ||
                     ls.keaConfigSubnetParameters?.globalParameters?.optionsHash !==
                         subnet.localSubnets[0].keaConfigSubnetParameters?.globalParameters?.optionsHash
+            )
+    )
+}
+
+/**
+ * Converts the list of subnets into the subnets with extracted unique pools.
+ *
+ * The address and delegated prefix pools are carried in the objects associating
+ * them with the respective DHCP servers. The servers with the same subnets often
+ * have the same pools configured (e.g. in the high availability case). This function
+ * detects pools eliminating the repeated ones. The returned list of subnets contains
+ * the lists of unique pools found on both servers.
+ *
+ * @param subnets a list of subnets received from the Stork server.
+ * @returns a list of converted subnets with the list of unique pools attached.
+ */
+export function extractUniqueSharedNetworkPools(sharedNetworks: SharedNetwork[]): SharedNetworkWithUniquePools[] {
+    let convertedSharedNetworks: SharedNetworkWithUniquePools[] = []
+    for (const sharedNetwork of sharedNetworks) {
+        let pools: Array<string> = []
+        let prefixDelegationPools: Array<DelegatedPrefix> = []
+        let convertedSharedNetwork: SharedNetworkWithUniquePools = sharedNetwork
+        convertedSharedNetworks.push(convertedSharedNetwork)
+        if (!sharedNetwork.subnets) {
+            continue
+        }
+        const convertedSubnets = extractUniqueSubnetPools(convertedSharedNetwork.subnets)
+        for (const subnet of convertedSubnets) {
+            if (subnet.pools) {
+                for (const pool of subnet.pools) {
+                    // Add the pool only if it doesn't exist yet.
+                    if (!pools.includes(pool)) {
+                        pools.push(pool)
+                    }
+                }
+            }
+            if (subnet.prefixDelegationPools) {
+                for (const pdPool of subnet.prefixDelegationPools) {
+                    // Add the pool only if the identical pool doesn't exist yet.
+                    if (
+                        !prefixDelegationPools.some(
+                            (p) =>
+                                p.prefix === pdPool.prefix &&
+                                p.delegatedLength === pdPool.delegatedLength &&
+                                p.excludedPrefix === pdPool.excludedPrefix
+                        )
+                    ) {
+                        prefixDelegationPools.push(pdPool)
+                    }
+                }
+            }
+        }
+        if (pools.length) {
+            convertedSharedNetwork.pools = pools.sort()
+        }
+        if (prefixDelegationPools.length) {
+            convertedSharedNetwork.prefixDelegationPools = prefixDelegationPools.sort((a, b) =>
+                a.prefix.localeCompare(b.prefix)
+            )
+        }
+    }
+    return convertedSharedNetworks
+}
+
+/**
+ * Utility function checking if there are differences between
+ * DHCP options in the shared network.
+ *
+ * It checks differences between the option hashes at shared network and global
+ * configuration inheritance levels.
+ *
+ * @param sharedNetwork shared network instance.
+ * @returns true if there are differences in DHCP options, false otherwise.
+ */
+export function hasDifferentLocalSharedNetworkOptions(sharedNetwork: SharedNetwork): boolean {
+    return (
+        !!(sharedNetwork.localSharedNetworks?.length > 0) &&
+        sharedNetwork.localSharedNetworks
+            .slice(1)
+            .some(
+                (ls) =>
+                    ls.keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters?.optionsHash !==
+                        sharedNetwork.localSharedNetworks[0].keaConfigSharedNetworkParameters
+                            ?.sharedNetworkLevelParameters?.optionsHash ||
+                    ls.keaConfigSharedNetworkParameters?.globalParameters?.optionsHash !==
+                        sharedNetwork.localSharedNetworks[0].keaConfigSharedNetworkParameters?.globalParameters
+                            ?.optionsHash
             )
     )
 }

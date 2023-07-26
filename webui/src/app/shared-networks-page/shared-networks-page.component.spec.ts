@@ -25,6 +25,13 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { MessageService } from 'primeng/api'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
+import { FieldsetModule } from 'primeng/fieldset'
+import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
+import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
+import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
+import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
+import { DividerModule } from 'primeng/divider'
+import { ChartModule } from 'primeng/chart'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -41,7 +48,10 @@ describe('SharedNetworksPageComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 BreadcrumbModule,
+                ChartModule,
+                DividerModule,
                 DropdownModule,
+                FieldsetModule,
                 FormsModule,
                 HttpClientTestingModule,
                 NoopAnimationsModule,
@@ -62,15 +72,19 @@ describe('SharedNetworksPageComponent', () => {
                 TooltipModule,
             ],
             declarations: [
+                AddressPoolBarComponent,
                 BreadcrumbsComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                DelegatedPrefixBarComponent,
                 SharedNetworksPageComponent,
                 SharedNetworkTabComponent,
                 SubnetBarComponent,
+                UtilizationStatsChartComponent,
+                UtilizationStatsChartsComponent,
             ],
             providers: [
                 DHCPService,

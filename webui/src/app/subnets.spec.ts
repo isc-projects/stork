@@ -10,6 +10,8 @@ import {
     hasAddressPools,
     hasPrefixPools,
     hasDifferentLocalSubnetOptions,
+    extractUniqueSharedNetworkPools,
+    hasDifferentLocalSharedNetworkOptions,
 } from './subnets'
 
 describe('subnets', () => {
@@ -652,5 +654,333 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeFalse()
+    })
+
+    it('extracts unique pools from a shared network', () => {
+        const sharedNetworks6 = [
+            {
+                name: 'foo',
+                subnets: [
+                    {
+                        subnet: '3000::/120',
+                        localSubnets: [
+                            {
+                                pools: [
+                                    '3000::1-3000::5',
+                                    '3000::10-3000::15',
+                                    '3000::20-3000::35',
+                                    '3000::40-3000::65',
+                                ],
+                                prefixDelegationPools: [
+                                    {
+                                        prefix: '3001::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3001::/96',
+                                    },
+                                    {
+                                        prefix: '3002::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3002::/96',
+                                    },
+                                    {
+                                        prefix: '3003::/64',
+                                        delegatedLength: 80,
+                                    },
+                                ],
+                            },
+                            {
+                                pools: [
+                                    '3000::1-3000::5',
+                                    '3000::10-3000::15',
+                                    '3000::20-3000::35',
+                                    '3000::70-3000::85',
+                                ],
+                                prefixDelegationPools: [
+                                    {
+                                        prefix: '3001::/64',
+                                        delegatedLength: 88,
+                                        excludedPrefix: '3001::/96',
+                                    },
+                                    {
+                                        prefix: '3002::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3002::/112',
+                                    },
+                                    {
+                                        prefix: '3003::/64',
+                                        delegatedLength: 80,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ]
+
+        const convertedSharedNetworks = extractUniqueSharedNetworkPools(sharedNetworks6)
+        expect(convertedSharedNetworks.length).toBe(1)
+        expect(convertedSharedNetworks[0].pools?.length).toBe(5)
+        expect(convertedSharedNetworks[0].prefixDelegationPools?.length).toBe(5)
+
+        expect(convertedSharedNetworks[0].pools[0]).toBe('3000::1-3000::5')
+        expect(convertedSharedNetworks[0].pools[1]).toBe('3000::10-3000::15')
+        expect(convertedSharedNetworks[0].pools[2]).toBe('3000::20-3000::35')
+        expect(convertedSharedNetworks[0].pools[3]).toBe('3000::40-3000::65')
+        expect(convertedSharedNetworks[0].pools[4]).toBe('3000::70-3000::85')
+
+        expect(convertedSharedNetworks[0].prefixDelegationPools[0].prefix).toBe('3001::/64')
+        expect(convertedSharedNetworks[0].prefixDelegationPools[1].prefix).toBe('3001::/64')
+        expect(convertedSharedNetworks[0].prefixDelegationPools[2].prefix).toBe('3002::/64')
+        expect(convertedSharedNetworks[0].prefixDelegationPools[3].prefix).toBe('3002::/64')
+        expect(convertedSharedNetworks[0].prefixDelegationPools[4].prefix).toBe('3003::/64')
+    })
+
+    it('extracts unique pools for several shared networks', () => {
+        const sharedNetworks6 = [
+            {
+                name: 'foo',
+                subnets: [
+                    {
+                        subnet: '3000::/120',
+                        localSubnets: [
+                            {
+                                pools: [
+                                    '3000::1-3000::5',
+                                    '3000::10-3000::15',
+                                    '3000::20-3000::35',
+                                    '3000::40-3000::65',
+                                ],
+                                prefixDelegationPools: [
+                                    {
+                                        prefix: '3001::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3001::/96',
+                                    },
+                                    {
+                                        prefix: '3002::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3002::/96',
+                                    },
+                                    {
+                                        prefix: '3003::/64',
+                                        delegatedLength: 80,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                name: 'bar',
+                subnets: [
+                    {
+                        subnet: '3000::/120',
+                        localSubnets: [
+                            {
+                                pools: [
+                                    '3000::1-3000::5',
+                                    '3000::10-3000::15',
+                                    '3000::20-3000::35',
+                                    '3000::70-3000::85',
+                                ],
+                                prefixDelegationPools: [
+                                    {
+                                        prefix: '3001::/64',
+                                        delegatedLength: 88,
+                                        excludedPrefix: '3001::/96',
+                                    },
+                                    {
+                                        prefix: '3002::/64',
+                                        delegatedLength: 80,
+                                        excludedPrefix: '3002::/112',
+                                    },
+                                    {
+                                        prefix: '3003::/64',
+                                        delegatedLength: 80,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ]
+
+        const convertedSharedNetworks = extractUniqueSharedNetworkPools(sharedNetworks6)
+        expect(convertedSharedNetworks.length).toBe(2)
+        expect(convertedSharedNetworks[0].pools?.length).toBe(4)
+        expect(convertedSharedNetworks[0].prefixDelegationPools?.length).toBe(3)
+        expect(convertedSharedNetworks[1].pools?.length).toBe(4)
+        expect(convertedSharedNetworks[1].prefixDelegationPools?.length).toBe(3)
+    })
+
+    it('detects different shared network options for servers', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '345',
+                        },
+                        globalParameters: {
+                            optionsHash: '234',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
+    })
+
+    it('detects different shared network options for servers for the null hash', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: null,
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
+    })
+
+    it('detects different options for servers for the null parameters', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: null,
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
+    })
+    it('detects different shared network options for servers for non-existing parameters', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
+    })
+
+    it('detects the same shared network options for servers', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
+    })
+
+    it('detects the same shared network options for servers for null hashes', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
     })
 })

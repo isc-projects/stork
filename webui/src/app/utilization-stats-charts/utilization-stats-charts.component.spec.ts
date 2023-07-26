@@ -39,7 +39,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display total statistics only', () => {
-        component.subnet = {
+        component.network = {
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -74,7 +74,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display address statistics for more servers', () => {
-        component.subnet = {
+        component.network = {
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -129,7 +129,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display address statistics for no pools when utilization exists', () => {
-        component.subnet = {
+        component.network = {
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -162,7 +162,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display total prefix statistics only', () => {
-        component.subnet = {
+        component.network = {
             subnet: '2001:db8:1::/64',
             addrUtilization: 0,
             pdUtilization: 60,
@@ -199,7 +199,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display total prefix statistics for more servers', () => {
-        component.subnet = {
+        component.network = {
             subnet: '2001:db8:1::/64',
             addrUtilization: 0,
             pdUtilization: 60,
@@ -258,7 +258,7 @@ describe('UtilizationStatsChartsComponent', () => {
     })
 
     it('should display prefix statistics for no pools when utilization exists', () => {
-        component.subnet = {
+        component.network = {
             subnet: '2001:db8:1::/64',
             addrUtilization: 0,
             pdUtilization: 60,

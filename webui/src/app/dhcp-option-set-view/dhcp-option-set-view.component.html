@@ -45,8 +45,8 @@
         </div>
     </ng-template>
 </p-tree>
-<p-divider type="dashed"></p-divider>
 <ng-container *ngIf="optionNodes.length >= 2 && combinedOptionNodes.length > 0">
+    <p-divider type="dashed"></p-divider>
     <div class="flex align-items-center">
         <p-checkbox
             [(ngModel)]="currentLevelOnlyMode"

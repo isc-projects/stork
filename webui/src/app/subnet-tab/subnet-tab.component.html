@@ -132,7 +132,7 @@
         class="mb-4"
     >
         <p-fieldset id="stats-fieldset" legend="Statistics">
-            <app-utilization-stats-charts [subnet]="subnet"></app-utilization-stats-charts>
+            <app-utilization-stats-charts [network]="subnet"></app-utilization-stats-charts>
         </p-fieldset>
     </div>
     <ng-container *ngIf="subnet.localSubnets?.length > 0">

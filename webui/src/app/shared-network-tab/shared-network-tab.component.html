@@ -1,1 +1,129 @@
-<p>shared-network-tab works!</p>
+<div *ngIf="sharedNetwork" class="mt-4 ml-2">
+    <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
+        <div class="fa fa-project-diagram mr-2"></div>
+        <div id="tab-title-span">Shared Network {{ sharedNetwork.name }}</div>
+        <div>
+            <app-help-tip title="Shared Network View">
+                <p>
+                    Multiple DHCP servers can share a shared network when they run in High Availability mode or when
+                    they are connected to a shared lease database. In this case, the servers typically have the same
+                    shared network configuration (i.e., the same subnets, DHCP options, and other DHCP-specific
+                    parameters). However, there are valid cases when the shared network configurations differ on
+                    individual servers. For example, interfaces used for subnet selection may have a different names.
+                </p>
+                <p>The detailed address utilization statistics use the following naming conventions:</p>
+                <ul>
+                    <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
+                    <li>
+                        <span class="monospace">assigned</span> - the number of allocated leases including declined
+                        leases.
+                    </li>
+                    <li>
+                        <span class="monospace">used</span> - the number of allocated leases excluding declined leases.
+                    </li>
+                    <li><span class="monospace">declined</span> - the number of declined leases.</li>
+                    <li><span class="monospace">declined</span> - the number of leases available for allocation.</li>
+                </ul>
+                <p>
+                    The DHCP parameters can be specified at global and shared network levels. The list below contains
+                    all parameters configured for all servers owning the shared network, and at both configuration
+                    levels. An effective value is displayed next to a parameter name. You can expand a parameter by
+                    clicking the button to the left of the parameter name to view the values specified at the different
+                    levels for each server. The shared network-level value takes precedence over the global value.
+                </p>
+            </app-help-tip>
+        </div>
+    </div>
+    <div class="mb-4">
+        <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Shared Network">
+            <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
+                <ng-template pTemplate="body" let-l>
+                    <tr>
+                        <td class="border-none w-15rem">
+                            <app-entity-link
+                                entity="app"
+                                [showEntityName]="false"
+                                [attrs]="{ type: 'kea', id: l.appId, name: l.appName }"
+                            ></app-entity-link>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </p-fieldset>
+    </div>
+    <div class="mb-4">
+        <p-fieldset legend="Subnets">
+            <div *ngIf="!sharedNetwork.subnets || sharedNetwork.subnets.length === 0; else subnetsExistBlock">
+                No subnets configured.
+            </div>
+            <ng-template #subnetsExistBlock>
+                <app-subnet-bar
+                    class="utilization-bar"
+                    *ngFor="let subnet of sharedNetwork.subnets"
+                    [subnet]="subnet"
+                ></app-subnet-bar>
+            </ng-template>
+        </p-fieldset>
+    </div>
+    <div class="mb-4">
+        <p-fieldset legend="Pools">
+            <div *ngIf="!sharedNetwork.pools || sharedNetwork.pools.length === 0; else poolsExistBlock">
+                No pools configured.
+            </div>
+            <ng-template #poolsExistBlock>
+                <ng-container *ngFor="let pool of sharedNetwork.pools">
+                    <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
+                </ng-container>
+                <ng-container *ngFor="let pool of sharedNetwork.prefixDelegationPools">
+                    <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
+                </ng-container>
+            </ng-template>
+        </p-fieldset>
+    </div>
+    <!--
+        Always show the utilization when the subnet has some dynamic lease pools.
+        Some subnets may lack the pools but have static IP reservations. These
+        cases are rare but they are valid. If the utilization is non-zero we
+        display the utilization charts too.
+    -->
+    <div
+        class="flex flex-wrap"
+        *ngIf="sharedNetwork.addrUtilization || sharedNetwork.pdUtilization || sharedNetwork.stats"
+        class="mb-4"
+    >
+        <p-fieldset id="stats-fieldset" legend="Statistics">
+            <app-utilization-stats-charts [network]="sharedNetwork"></app-utilization-stats-charts>
+        </p-fieldset>
+    </div>
+    <ng-container *ngIf="sharedNetwork.localSharedNetworks?.length > 0">
+        <div class="mb-4">
+            <p-fieldset legend="DHCP Parameters">
+                <app-cascaded-parameters-board
+                    [levels]="['Shared Network', 'Global']"
+                    [data]="dhcpParameters"
+                    [excludedParameters]="['options', 'optionsHash']"
+                ></app-cascaded-parameters-board>
+            </p-fieldset>
+        </div>
+        <div *ngFor="let localSharedNetwork of sharedNetwork.localSharedNetworks; let i = index" class="mb-4">
+            <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()">
+                <ng-template pTemplate="header">
+                    <span
+                        >DHCP Options&nbsp;/&nbsp;
+                        <a
+                            *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
+                            routerLink="/apps/kea/{{ localSharedNetwork.appId }}"
+                        >
+                            {{ localSharedNetwork.appName }}
+                        </a>
+                        <ng-template #equalDhcpOptionsBlock>
+                            <span class="font-normal"> All Servers </span>
+                        </ng-template>
+                    </span>
+                </ng-template>
+                <app-dhcp-option-set-view [options]="dhcpOptions[i]" [levels]="['shared-network', 'global']">
+                </app-dhcp-option-set-view>
+            </p-fieldset>
+        </div>
+    </ng-container>
+</div>

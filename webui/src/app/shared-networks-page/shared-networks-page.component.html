@@ -174,5 +174,5 @@
 
 <!-- Shared network tab template -->
 <ng-template #openedTabBlock>
-    <app-shared-network-tab></app-shared-network-tab>
+    <app-shared-network-tab [sharedNetwork]="openedSharedNetworks[activeTabIndex]"></app-shared-network-tab>
 </ng-template>

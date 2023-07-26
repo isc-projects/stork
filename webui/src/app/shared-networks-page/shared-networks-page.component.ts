@@ -10,6 +10,8 @@ import {
     getAssignedAddresses,
     parseSubnetsStatisticValues,
     parseSubnetStatisticValues,
+    extractUniqueSharedNetworkPools,
+    SharedNetworkWithUniquePools,
 } from '../subnets'
 import { Subscription, concat, of } from 'rxjs'
 import { filter, map, share, take } from 'rxjs/operators'
@@ -31,7 +33,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     @ViewChild('networksTable') networksTable: Table
 
     // networks
-    networks: SharedNetwork[] = []
+    networks: SharedNetworkWithUniquePools[] = []
     totalNetworks = 0
 
     // filters
@@ -71,7 +73,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * The entry corresponding to shared networks list is not related to any specific
      * shared network. Its ID is 0.
      */
-    openedSharedNetworks: SharedNetwork[] = [{ id: 0 }]
+    openedSharedNetworks: SharedNetworkWithUniquePools[] = [{ id: 0 }]
 
     /**
      * Constructor.
@@ -194,7 +196,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             )
             .subscribe(
                 (data) => {
-                    this.networks = data.items
+                    this.networks = data.items ? extractUniqueSharedNetworkPools(data.items) : null
                     this.totalNetworks = data.total
                 },
                 (error) => {
@@ -368,7 +370,10 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 // Execute and use.
                 .toPromise()
                 .then((data) => {
-                    this.appendTab(data)
+                    if (data) {
+                        const networks = extractUniqueSharedNetworkPools([data])
+                        this.appendTab(networks[0])
+                    }
                 })
                 .catch((error) => {
                     const msg = getErrorMessage(error)
