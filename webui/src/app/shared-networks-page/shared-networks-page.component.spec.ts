@@ -299,6 +299,10 @@ describe('SharedNetworksPageComponent', () => {
             of(fakeResponses[2] as HttpEvent<SharedNetworks>)
         )
 
+        spyOn(dhcpService, 'getSharedNetwork').and.returnValues(
+            of(fakeResponses[0].items[0] as HttpEvent<SharedNetwork>)
+        )
+
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
