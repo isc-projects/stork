@@ -83,7 +83,7 @@ export class SubnetBarComponent {
                     lines.push('Assigned PDs: ' + stats['assigned-pds'].toLocaleString('en-US'))
                 }
             }
-            lines.push('Collected at: ' + datetimeToLocal(this._subnet.statsCollectedAt) || 'never')
+            lines.push('Collected at: ' + (datetimeToLocal(this._subnet.statsCollectedAt) || 'never'))
             this.tooltip = lines.join('<br>')
         } else {
             this.tooltip = 'No stats yet'
