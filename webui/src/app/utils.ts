@@ -7,7 +7,11 @@ import { Bind9Daemon, KeaDaemon } from './backend'
  * @param d Date
  * @returns formatted string on success, otherwise stringified @d
  */
-export function datetimeToLocal(d: moment.MomentInput): string {
+export function datetimeToLocal(d: moment.MomentInput): string | null {
+    if (d == null) {
+        return null
+    }
+
     try {
         let tz = Intl.DateTimeFormat().resolvedOptions().timeZone
         if (!tz) {
@@ -23,12 +27,6 @@ export function datetimeToLocal(d: moment.MomentInput): string {
             tz = ' UTC'
         }
 
-        // If year is < 2 it means that the date is not set.
-        // In Go if date is zeroed then it is 0001.01.01.
-        // TODO: Do it better.
-        if (md.year() < 2) {
-            return ''
-        }
         return md.format('YYYY-MM-DD HH:mm:ss') + tz
     } catch (e) {
         return d.toString()

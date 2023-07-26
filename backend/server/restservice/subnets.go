@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -24,7 +23,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		AddrUtilization:  float64(sn.AddrUtilization) / 10,
 		PdUtilization:    float64(sn.PdUtilization) / 10,
 		Stats:            sn.Stats,
-		StatsCollectedAt: strfmt.DateTime(sn.StatsCollectedAt),
+		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
 	}
 
 	if sn.SharedNetwork != nil {
@@ -40,7 +39,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			MachineAddress:   lsn.Daemon.App.Machine.Address,
 			MachineHostname:  lsn.Daemon.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
-			StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
+			StatsCollectedAt: convertToOptionalDatetime(lsn.StatsCollectedAt),
 		}
 		for _, poolDetails := range lsn.AddressPools {
 			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
@@ -413,7 +412,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 			AddrUtilization:  float64(net.AddrUtilization) / 10,
 			PdUtilization:    float64(net.PdUtilization) / 10,
 			Stats:            net.Stats,
-			StatsCollectedAt: strfmt.DateTime(net.StatsCollectedAt),
+			StatsCollectedAt: convertToOptionalDatetime(net.StatsCollectedAt),
 		}
 		sharedNetworks.Items = append(sharedNetworks.Items, sharedNetwork)
 	}

@@ -252,6 +252,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	require.Len(t, okRsp.Payload.Apps, 2)
 	require.Equal(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Apps[0].Type)
 	require.Equal(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Apps[1].Type)
+	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
 func TestCreateMachine(t *testing.T) {
@@ -474,6 +475,7 @@ func TestCreateMachine(t *testing.T) {
 	require.True(t, m1.Authorized)
 	// agent cert isn't re-signed so fingerprint should be the same
 	require.Equal(t, certFingerprint1, m1.CertFingerprint)
+	require.True(t, m1.LastVisitedAt.IsZero())
 
 	// add another machine but with no server token (agent token is used for authorization)
 	addr = "5.6.7.8"
@@ -641,8 +643,9 @@ func TestGetMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
+		Address:       "localhost",
+		AgentPort:     8080,
+		LastVisitedAt: time.Now(),
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
@@ -655,6 +658,7 @@ func TestGetMachine(t *testing.T) {
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineOK)
 	require.Equal(t, m.ID, okRsp.Payload.ID)
+	require.NotNil(t, okRsp.Payload.LastVisitedAt)
 
 	// add machine 2
 	m2 := &dbmodel.Machine{
@@ -690,6 +694,7 @@ func TestGetMachine(t *testing.T) {
 	require.Len(t, okRsp.Payload.Apps, 1)
 	require.Equal(t, s.ID, okRsp.Payload.Apps[0].ID)
 	require.Len(t, okRsp.Payload.Apps[0].AccessPoints, 1)
+	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
 func TestUpdateMachine(t *testing.T) {
@@ -758,6 +763,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.Equal(t, m.ID, okRsp.Payload.ID)
 	require.Equal(t, addr, *okRsp.Payload.Address)
 	require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
+	require.Nil(t, okRsp.Payload.LastVisitedAt)
 
 	// setup a user session, it is required to check user role in UpdateMachine
 	// in case of authorization change
@@ -2399,4 +2405,15 @@ func TestGetAccessPointKey(t *testing.T) {
 	okRsp, ok := rsp.(*services.GetAccessPointKeyOK)
 	require.True(t, ok)
 	require.EqualValues(t, "secret", okRsp.Payload)
+}
+
+// Test that the time is converted to the datetime pointer properly.
+func TestConvertToOptionalDatetime(t *testing.T) {
+	t.Run("zero", func(t *testing.T) {
+		require.Nil(t, convertToOptionalDatetime(time.Time{}))
+	})
+
+	t.Run("non-zero", func(t *testing.T) {
+		require.NotNil(t, convertToOptionalDatetime(time.Now()))
+	})
 }

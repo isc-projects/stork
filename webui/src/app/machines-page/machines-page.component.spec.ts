@@ -23,6 +23,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -50,6 +51,7 @@ describe('MachinesPageComponent', () => {
             declarations: [
                 MachinesPageComponent,
                 LocaltimePipe,
+                PlaceholderPipe,
                 BreadcrumbsComponent,
                 HelpTipComponent,
                 AppDaemonsStatusComponent,

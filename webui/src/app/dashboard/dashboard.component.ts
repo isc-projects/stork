@@ -183,7 +183,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         parseSubnetsStatisticValues(v.subnets6.items)
                     }
 
-                    return v as DhcpOverviewParsed
+                    return v as unknown as DhcpOverviewParsed
                 })
             )
             .toPromise()

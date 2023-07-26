@@ -9,6 +9,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { SharedModule } from 'primeng/api'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('HaStatusPanelComponent', () => {
     let component: HaStatusPanelComponent
@@ -71,7 +73,7 @@ describe('HaStatusPanelComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [PanelModule, NoopAnimationsModule, SharedModule, OverlayPanelModule],
-            declarations: [HaStatusPanelComponent, HelpTipComponent],
+            declarations: [HaStatusPanelComponent, HelpTipComponent, LocaltimePipe, PlaceholderPipe],
         }).compileComponents()
     }))
 

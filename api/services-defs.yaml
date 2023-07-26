@@ -140,6 +140,7 @@
       lastVisitedAt:
         type: string
         format: date-time
+        x-nullable: true
       error:
         type: string
       apps:
@@ -245,6 +246,7 @@
       reloadedAt:
         type: string
         format: date-time
+        x-nullable: true
       hooks:
         type: array
         items:
@@ -304,6 +306,7 @@
       reloadedAt:
         type: string
         format: date-time
+        x-nullable: true
       zoneCount:
         type: integer
       autoZoneCount:
@@ -373,6 +376,7 @@
       failoverTime:
         type: string
         format: date-time
+        x-nullable: true
       id:
         type: integer
       inTouch:
@@ -388,6 +392,7 @@
       statusTime:
         type: string
         format: date-time
+        x-nullable: true
       commInterrupted:
         type: integer
       connectingClients:

@@ -294,7 +294,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
 
     /** Returns true if the daemon was never running correctly. */
     isNeverFetchedDaemon(daemon: KeaDaemon) {
-        return daemon.reloadedAt === '0001-01-01T00:00:00.000Z'
+        return daemon.reloadedAt == null
     }
 
     /** Returns true if the daemon is DHCP daemon. */

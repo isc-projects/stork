@@ -19,6 +19,7 @@ import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
 import { PanelModule } from 'primeng/panel'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 class Daemon {
     name = 'bind9'
@@ -62,7 +63,13 @@ describe('Bind9AppTabComponent', () => {
                 NoopAnimationsModule,
                 PanelModule,
             ],
-            declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent, AppOverviewComponent],
+            declarations: [
+                Bind9AppTabComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                RenameAppDialogComponent,
+                AppOverviewComponent,
+            ],
         }).compileComponents()
     }))
 

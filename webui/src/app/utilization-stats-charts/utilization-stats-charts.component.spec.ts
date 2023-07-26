@@ -10,6 +10,7 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { NumberPipe } from '../pipes/number.pipe'
 import { TooltipModule } from 'primeng/tooltip'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('UtilizationStatsChartsComponent', () => {
     let component: UtilizationStatsChartsComponent
@@ -22,6 +23,7 @@ describe('UtilizationStatsChartsComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 NumberPipe,
+                PlaceholderPipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],

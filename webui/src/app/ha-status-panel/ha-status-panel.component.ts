@@ -468,21 +468,6 @@ export class HaStatusPanelComponent {
     }
 
     /**
-     * Returns timestamp as local time or 'n/a'.
-     *
-     * @param t Time value to be converted.
-     *
-     * @returns Time in local time or 'n/a' if the timestamp is equal to 0.
-     */
-    formattedTime(t): string {
-        const localTime = datetimeToLocal(t)
-        if (localTime.length === 0) {
-            return 'n/a'
-        }
-        return localTime
-    }
-
-    /**
      * Returns formatted heartbeat status for the server.
      *
      * This information is only available if the extended status format

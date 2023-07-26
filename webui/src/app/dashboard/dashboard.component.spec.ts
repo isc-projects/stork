@@ -87,7 +87,7 @@ describe('DashboardComponent', () => {
                     appId: 27,
                     appName: 'kea@localhost',
                     appVersion: '2.0.0',
-                    haFailureAt: '0001-01-01T00:00:00.000Z',
+                    haFailureAt: null,
                     machine: 'pc',
                     machineId: 15,
                     monitored: true,
@@ -206,12 +206,12 @@ describe('DashboardComponent', () => {
         expect(component.showHAFailureTime(daemon2)).toBe('')
         expect(component.haStateIcon(daemon2)).toBe('ban')
 
-        const daemon3 = { haEnabled: true, haState: '', haFailureAt: '0001-01-01' }
+        const daemon3 = { haEnabled: true, haState: '', haFailureAt: null }
         expect(component.showHAState(daemon3)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon3)).toBe('')
         expect(component.haStateIcon(daemon3)).toBe('spin pi-spinner')
 
-        const daemon4 = { haEnabled: true, haFailureAt: '0001-01-01' }
+        const daemon4 = { haEnabled: true }
         expect(component.showHAState(daemon4)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon4)).toBe('')
         expect(component.haStateIcon(daemon4)).toBe('spin pi-spinner')

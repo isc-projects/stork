@@ -198,6 +198,7 @@ func TestGetMachineByID(t *testing.T) {
 	require.Equal(t, "abcd", m.Apps[0].AccessPoints[0].Key)
 	require.Len(t, m.Apps[0].Daemons, 1)
 	require.Equal(t, "kea-dhcp4", m.Apps[0].Daemons[0].Name)
+	require.True(t, m.LastVisitedAt.IsZero())
 
 	// delete machine
 	err = DeleteMachine(db, m)

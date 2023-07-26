@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
@@ -207,7 +208,7 @@ func TestGetSubnets(t *testing.T) {
 	require.Equal(t, a4.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 	require.EqualValues(t, dbmodel.SubnetStats(nil), okRsp.Payload.Items[0].Stats)
-	require.EqualValues(t, time.Time{}, okRsp.Payload.Items[0].StatsCollectedAt)
+	require.Nil(t, okRsp.Payload.Items[0].StatsCollectedAt)
 
 	// get subnets from app a46
 	params = dhcp.GetSubnetsParams{
@@ -241,7 +242,8 @@ func TestGetSubnets(t *testing.T) {
 		(okRsp.Payload.Items[0].LocalSubnets[0].ID == 1 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 3) ||
 			(okRsp.Payload.Items[0].LocalSubnets[0].ID == 3 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 1))
 	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(dbmodel.SubnetStats)["bar"])
-	require.EqualValues(t, time.Time{}.Add(2*time.Hour), okRsp.Payload.Items[1].StatsCollectedAt)
+	require.NotNil(t, okRsp.Payload.Items[1].StatsCollectedAt)
+	require.EqualValues(t, time.Time{}.Add(2*time.Hour), *okRsp.Payload.Items[1].StatsCollectedAt)
 
 	// get v6 subnets
 	dhcpVer = 6
@@ -261,7 +263,8 @@ func TestGetSubnets(t *testing.T) {
 			okRsp.Payload.Items[2].LocalSubnets[0].ID,
 		})
 	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.SubnetStats)["baz"])
-	require.EqualValues(t, time.Time{}.Add(3*time.Hour), okRsp.Payload.Items[2].StatsCollectedAt)
+	require.NotNil(t, okRsp.Payload.Items[2].StatsCollectedAt)
+	require.EqualValues(t, time.Time{}.Add(3*time.Hour), *okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, 24, okRsp.Payload.Items[2].AddrUtilization)
 	require.EqualValues(t, 42, okRsp.Payload.Items[2].PdUtilization)
 
@@ -1124,4 +1127,23 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.Equal(t, a4.Name, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppName)
 	require.Nil(t, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].Stats)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})
+}
+
+// Test that the zero statistics collected timestamp is omitted in the
+// serialized JSON.
+func TestSubnetToRestAPIEmptyStatsCollectedTimestamp(t *testing.T) {
+	// Arrange
+	settings := RestAPISettings{}
+	rapi, _ := NewRestAPI(&settings)
+
+	subnetDB := &dbmodel.Subnet{}
+
+	// Act
+	subnetAPI := rapi.subnetToRestAPI(subnetDB)
+	subnetJSON, err := json.Marshal(subnetAPI)
+
+	// Assert
+	require.NotNil(t, subnetAPI)
+	require.NoError(t, err)
+	require.NotContains(t, string(subnetJSON), "statsCollectedAt")
 }

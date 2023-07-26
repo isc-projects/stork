@@ -1,4 +1,12 @@
-import { clamp, stringToHex, getErrorMessage, humanCount, formatShortExcludedPrefix, getGrafanaUrl } from './utils'
+import {
+    clamp,
+    stringToHex,
+    getErrorMessage,
+    humanCount,
+    formatShortExcludedPrefix,
+    getGrafanaUrl,
+    datetimeToLocal,
+} from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -214,5 +222,14 @@ describe('utils', () => {
         const baseURL = 'http://grafana.url/segment'
         const grafanaURL = getGrafanaUrl(baseURL, 'dhcp4')
         expect(grafanaURL).toBe('http://grafana.url/segment/d/hRf18FvWz/')
+    })
+
+    it('should parse string to datetime', () => {
+        const date = '1353-10-31T12:34:56Z'
+        expect(datetimeToLocal(date)).not.toBeNull()
+    })
+
+    it('should not parse null to datetime', () => {
+        expect(datetimeToLocal(null)).toBeNull()
     })
 })

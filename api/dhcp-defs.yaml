@@ -275,6 +275,7 @@
       statsCollectedAt:
         type: string
         format: date-time
+        x-nullable: true
       pools:
         type: array
         items:
@@ -319,6 +320,7 @@
       statsCollectedAt:
         type: string
         format: date-time
+        x-nullable: true
       localSubnets:
         type: array
         items:
@@ -357,6 +359,7 @@
       statsCollectedAt:
         type: string
         format: date-time
+        x-nullable: true
 
   SharedNetworks:
     type: object
@@ -432,6 +435,7 @@
       haFailureAt:
         type: string
         format: date-time
+        x-nullable: true
       uptime:
         type: integer
       agentCommErrors:

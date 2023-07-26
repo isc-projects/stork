@@ -136,7 +136,7 @@ describe('SubnetsPageComponent', () => {
                                 pools: ['1.1.0.4-1.1.255.254'],
                             },
                         ],
-                        statsCollectedAt: '0001-01-01T00:00:00.000Z',
+                        statsCollectedAt: null,
                         subnet: '1.1.0.0/16',
                     },
                     {

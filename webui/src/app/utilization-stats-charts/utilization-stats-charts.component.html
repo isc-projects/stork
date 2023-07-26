@@ -30,7 +30,9 @@
         </ng-container>
     </div>
     <p-divider></p-divider>
-    <span class="font-italic text-sm">Statistics collected at {{ subnet.statsCollectedAt | date : 'short' }}</span>
+    <span class="font-italic text-sm"
+        >Statistics collected at {{ subnet.statsCollectedAt | date : 'short' | placeholder : 'never' }}</span
+    >
 </ng-container>
 <ng-template #noSubnetBlock>
     <div>Subnet data unavailable.</div>

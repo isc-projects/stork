@@ -34,6 +34,7 @@ import { ButtonModule } from 'primeng/button'
 import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 class Details {
     daemons: any = [
@@ -131,6 +132,7 @@ describe('KeaAppTabComponent', () => {
                 KeaAppTabComponent,
                 HaStatusComponent,
                 LocaltimePipe,
+                PlaceholderPipe,
                 RenameAppDialogComponent,
                 EventsPanelComponent,
                 ConfigReviewPanelComponent,
@@ -344,10 +346,16 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should properly recognize that daemon was never monitored', () => {
-        // Go-style zero date.
-        expect(component.isNeverFetchedDaemon({ reloadedAt: '0001-01-01T00:00:00.000Z' })).toBeTrue()
-        // Any other timestamp.
-        for (const timestamp of ['1970-01-01T12:00:00Z', '0001-01-01 00:00:00.000 UTC', 'foobar']) {
+        expect(component.isNeverFetchedDaemon({})).toBeTrue()
+        expect(component.isNeverFetchedDaemon({ reloadedAt: undefined })).toBeTrue()
+        expect(component.isNeverFetchedDaemon({ reloadedAt: null })).toBeTrue()
+        // Any value.
+        for (const timestamp of [
+            '1970-01-01T12:00:00Z',
+            '0001-01-01 00:00:00.000 UTC',
+            '0001-01-01T00:00:00.000Z',
+            'foobar',
+        ]) {
             expect(component.isNeverFetchedDaemon({ reloadedAt: timestamp })).toBeFalse()
         }
     })

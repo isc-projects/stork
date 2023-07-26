@@ -41,6 +41,16 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
+// Converts the Golang date to the pointer to OpenAPI datetime. It handles
+// the zero value checking.
+func convertToOptionalDatetime(date time.Time) *strfmt.DateTime {
+	if date.IsZero() {
+		return nil
+	}
+	datetime := strfmt.DateTime(date)
+	return &datetime
+}
+
 // Convert db machine to rest structure.
 func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	apps := []*models.App{}
@@ -72,7 +82,7 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 		VirtualizationRole:       dbMachine.State.VirtualizationRole,
 		HostID:                   dbMachine.State.HostID,
 		AgentUsesHTTPCredentials: dbMachine.State.AgentUsesHTTPCredentials,
-		LastVisitedAt:            strfmt.DateTime(dbMachine.LastVisitedAt),
+		LastVisitedAt:            convertToOptionalDatetime(dbMachine.LastVisitedAt),
 		Error:                    dbMachine.Error,
 		Apps:                     apps,
 	}
@@ -932,7 +942,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 				Monitored:       bind9DaemonDB.Monitored,
 				Version:         bind9DaemonDB.Version,
 				Uptime:          bind9DaemonDB.Uptime,
-				ReloadedAt:      strfmt.DateTime(bind9DaemonDB.ReloadedAt),
+				ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
 				ZoneCount:       bind9DaemonDB.Bind9Daemon.Stats.ZoneCount,
 				AutoZoneCount:   bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount,
 				QueryHits:       queryHits,
@@ -979,7 +989,7 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 		Version:         dbDaemon.Version,
 		ExtendedVersion: dbDaemon.ExtendedVersion,
 		Uptime:          dbDaemon.Uptime,
-		ReloadedAt:      strfmt.DateTime(dbDaemon.ReloadedAt),
+		ReloadedAt:      convertToOptionalDatetime(dbDaemon.ReloadedAt),
 		Hooks:           []string{},
 		Backends:        []*models.KeaDaemonDatabase{},
 		Files:           []*models.File{},
@@ -1149,7 +1159,7 @@ func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStat
 		}
 		// Calculate age.
 		age := make([]int64, 2)
-		statusTime := make([]strfmt.DateTime, 2)
+		statusTime := make([]*strfmt.DateTime, 2)
 		now := storkutil.UTCNow()
 		for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
 			// If status time hasn't been set yet, return a negative age value to
@@ -1158,16 +1168,18 @@ func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStat
 				age[i] = -1
 			} else {
 				age[i] = int64(now.Sub(t).Seconds())
-				statusTime[i] = strfmt.DateTime(t)
+				datetime := strfmt.DateTime(t)
+				statusTime[i] = &datetime
 			}
 		}
 		// Format failover times into string.
-		failoverTime := make([]strfmt.DateTime, 2)
+		failoverTime := make([]*strfmt.DateTime, 2)
 		for i, t := range []time.Time{ha.PrimaryLastFailoverAt, ha.SecondaryLastFailoverAt} {
 			// Only display the non-zero failover times and the times that are
 			// before current time.
 			if !t.IsZero() && now.After(t) {
-				failoverTime[i] = strfmt.DateTime(t)
+				datetime := strfmt.DateTime(t)
+				failoverTime[i] = &datetime
 			}
 		}
 		// Get the control addresses and app ids for daemons taking part in HA.
@@ -1438,13 +1450,13 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			var (
 				haEnabled   bool
 				haState     string
-				haFailureAt strfmt.DateTime
+				haFailureAt *strfmt.DateTime
 			)
 			if haOverview := dbDaemon.GetHAOverview(); len(haOverview) > 0 {
 				haEnabled = true
 				haState = haOverview[0].State
 				if !haOverview[0].LastFailureAt.IsZero() {
-					haFailureAt = strfmt.DateTime(haOverview[0].LastFailureAt)
+					haFailureAt = convertToOptionalDatetime(haOverview[0].LastFailureAt)
 				}
 			}
 			agentErrors := int64(0)
