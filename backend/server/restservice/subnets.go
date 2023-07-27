@@ -399,7 +399,7 @@ func (r *RestAPI) sharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *models.Shar
 		AddrUtilization:  float64(sn.AddrUtilization) / 10,
 		PdUtilization:    float64(sn.PdUtilization) / 10,
 		Stats:            sn.Stats,
-		StatsCollectedAt: convertToOptionalDatetime(net.StatsCollectedAt),
+		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
 	}
 
 	for _, lsn := range sn.LocalSharedNetworks {
