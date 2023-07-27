@@ -747,6 +747,16 @@ This section describes how to install an agent using a script and packages
 downloaded from the Stork server and register the agent
 using a server token.
 
+To enable this installation method, you need first download from CloudSmith the
+Stork agent packages for operating systems where agents will be installed and
+put the files in the ``assets/pkgs`` subdirectory of the directory with Stork
+UI static content (defined by the ``STORK_REST_STATIC_FILES_DIR`` environment
+variable, default ``/usr/share/stork/www``). The supported package types are
+DEB, RPM, and APK (it is not officially distributed yet). The package filenames
+must start with the ``isc-stork-agent`` prefix and ends with the ``.deb``,
+``.rpm``, or ``.apk`` extensions. It is recommended to leave the original
+filenames.
+
 Open Stork in the web browser and log in as a user from the "super admin" group.
 Select ``Services`` and then ``Machines`` from the menu. Click on the
 ``How to Install Agent on New Machine`` button to display the agent
