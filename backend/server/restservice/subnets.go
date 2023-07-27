@@ -624,7 +624,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 // global DHCP configuration parameters. The returned information is sufficient to
 // open a form for editing the shared network.
 func (r *RestAPI) GetSharedNetwork(ctx context.Context, params dhcp.GetSharedNetworkParams) middleware.Responder {
-	dbSharedNetwork, err := dbmodel.GetSharedNetworkWithSubnets(r.DB, params.ID)
+	dbSharedNetwork, err := dbmodel.GetSharedNetwork(r.DB, params.ID)
 	if err != nil {
 		// Error while communicating with the database.
 		msg := fmt.Sprintf("Problem fetching shared network with ID %d from db", params.ID)

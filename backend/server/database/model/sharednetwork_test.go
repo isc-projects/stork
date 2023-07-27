@@ -120,13 +120,15 @@ func TestAddSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)
 	require.NotZero(t, returned.CreatedAt)
 }
 
+// Test that a shared network with subnets and pools can be added and
+// retrieved from the database.
 func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -137,7 +139,9 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		Name:   "funny name",
 		Family: 6,
 		LocalSharedNetworks: []*LocalSharedNetwork{
-			{},
+			{
+				DaemonID: apps[1].Daemons[1].ID,
+			},
 		},
 		Subnets: []Subnet{
 			{
@@ -237,8 +241,8 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		}
 	}
 
-	t.Run("GetSharedNetworksWithSubnets", func(t *testing.T) {
-		returnedNetwork, err := GetSharedNetworkWithSubnets(db, network.ID)
+	t.Run("GetSharedNetwork", func(t *testing.T) {
+		returnedNetwork, err := GetSharedNetwork(db, network.ID)
 		require.NoError(t, err)
 		require.NotNil(t, returnedNetwork)
 		verifySharedNetworkFn(t, returnedNetwork)
@@ -308,7 +312,7 @@ func TestAddLocalSharedNetworks(t *testing.T) {
 	err = AddLocalSharedNetworks(db, network)
 	require.NoError(t, err)
 
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, "my name", returned.Name)
@@ -403,7 +407,7 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	err = UpdateSharedNetwork(db, &network)
 	require.NoError(t, err)
 
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)
@@ -417,7 +421,7 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	}))
 	require.NoError(t, err)
 
-	returned, err = GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err = GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.EqualValues(t, 10, returned.AddrUtilization)
@@ -450,7 +454,7 @@ func TestDeleteSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
@@ -485,7 +489,7 @@ func TestDeleteSharedNetworkWithSubnets(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
@@ -531,16 +535,16 @@ func TestDeleteStaleSharedNetworks(t *testing.T) {
 	require.EqualValues(t, 2, count)
 
 	// The first shared network should still exist.
-	returned, err := GetSharedNetworkWithSubnets(db, networks[0].ID)
+	returned, err := GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 
 	// The other two should have been deleted.
-	returned, err = GetSharedNetworkWithSubnets(db, networks[1].ID)
+	returned, err = GetSharedNetwork(db, networks[1].ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
-	returned, err = GetSharedNetworkWithSubnets(db, networks[2].ID)
+	returned, err = GetSharedNetwork(db, networks[2].ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
@@ -584,7 +588,7 @@ func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
 	require.EqualValues(t, 1, n)
 
 	// Get the shared network fromn the database.
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 
@@ -647,7 +651,7 @@ func TestDeleteOrphanedSharedNetworks(t *testing.T) {
 	require.EqualValues(t, n, 1)
 
 	// Make sure that the shared network has been deleted.
-	returned, err := GetSharedNetworkWithSubnets(db, network.ID)
+	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 }

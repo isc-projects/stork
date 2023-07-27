@@ -207,7 +207,7 @@ func GetAllSharedNetworks(dbi dbops.DBI, family int) ([]SharedNetwork, error) {
 }
 
 // Fetches a shared network with the subnets it contains.
-func GetSharedNetworkWithSubnets(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
+func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
 	network = &SharedNetwork{}
 	err = dbi.Model(network).
 		Relation("LocalSharedNetworks.Daemon.KeaDaemon").

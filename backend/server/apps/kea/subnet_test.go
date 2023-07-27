@@ -221,7 +221,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, networks, 1)
 
 	// Make sure that the number of subnets stored for the shared network is 2.
-	network, err := dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err := dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 2)
 
@@ -286,7 +286,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, networks, 1)
 
 	// It should now contain 3 subnets.
-	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err = dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 3)
 
@@ -299,7 +299,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, networks, 1)
 
-	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err = dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 3)
 }
@@ -406,7 +406,7 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	require.Len(t, networks, 1)
 
 	// Ensure that the shared network holds two subnets.
-	network, err := dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err := dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 2)
 
@@ -456,7 +456,7 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	require.Len(t, subnets, 2)
 
 	// Ensure that only one subnet is now in our shared network.
-	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err = dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 1)
 	require.Equal(t, "192.0.3.0/24", network.Subnets[0].Prefix)
@@ -504,7 +504,7 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	require.Len(t, networks, 1)
 
 	// Verify the subnet prefix within the shared network.
-	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	network, err = dbmodel.GetSharedNetwork(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 1)
 	require.Equal(t, "192.0.3.0/24", network.Subnets[0].Prefix)

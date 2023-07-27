@@ -1116,7 +1116,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 	require.EqualValues(t, 1, count)
 
 	// Make sure the shared network still exists.
-	network, err = GetSharedNetworkWithSubnets(db, network.ID)
+	network, err = GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, network)
 	require.Empty(t, network.Subnets)
