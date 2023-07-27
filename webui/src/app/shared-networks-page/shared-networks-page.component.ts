@@ -406,7 +406,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * @param index Tab index.
      */
     private switchToTab(index: number) {
-        if (this.activeTabIndex == index) {
+        if (this.activeTabIndex === index) {
             return
         }
         this.activeTabIndex = index

@@ -125,7 +125,7 @@
                                 <app-entity-link
                                     [showEntityName]="false"
                                     entity="shared-network"
-                                    [attrs]="{ id: net.id, name: net.name }"
+                                    [attrs]="net"
                                 ></app-entity-link>
                             </td>
                             <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
