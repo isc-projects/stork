@@ -1,3 +1,9 @@
+* 320 [bug] slawek
+
+    Fixed a bug in the agent installation script that caused it to be unusable.
+    The script doesn't longer require not distributed package types.
+    (Gitlab #932)
+
 * 319 [func] marcin
 
     Created shared network view in the WebUI that contains shared network
