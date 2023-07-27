@@ -97,55 +97,144 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		requestReceived = true
 	})
 
-	tmpDir, err := os.MkdirTemp("", "mdlw")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	handler := agentInstallerMiddleware(nextHandler, tmpDir)
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	handler := agentInstallerMiddleware(nextHandler, sb.BasePath)
 
 	// let do some request but when there is no folder with static content
-	req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	resp.Body.Close()
-	require.EqualValues(t, 500, resp.StatusCode)
-	require.False(t, requestReceived)
+	t.Run("missing package folder", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, 500, resp.StatusCode)
+		require.False(t, requestReceived)
+	})
 
 	// prepare folders
-	os.Mkdir(path.Join(tmpDir, "assets"), 0o755)
-	packagesDir := path.Join(tmpDir, "assets/pkgs")
-	os.Mkdir(packagesDir, 0o755)
+	packagesDir, _ := sb.JoinDir("assets/pkgs")
 
-	// let do some request
-	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
-	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	resp = w.Result()
-	resp.Body.Close()
-	require.EqualValues(t, 404, resp.StatusCode)
-	require.False(t, requestReceived)
+	t.Run("empty package directory", func(t *testing.T) {
+		// let do some request
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, 404, resp.StatusCode)
+		require.False(t, requestReceived)
+	})
 
-	// create packages
-	for _, extension := range []string{".deb", ".apk", ".rpm"} {
-		f, err := os.Create(path.Join(packagesDir, "isc-stork-agent"+extension))
+	t.Run("only DEB package in the package directory", func(t *testing.T) {
+		f, err := os.Create(path.Join(packagesDir, "isc-stork-agent.deb"))
 		require.NoError(t, err)
 		f.Close()
-	}
+		defer os.Remove(f.Name())
 
-	// let do some request
-	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
-	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	resp = w.Result()
-	resp.Body.Close()
-	require.EqualValues(t, 200, resp.StatusCode)
-	require.False(t, requestReceived)
+		// let do some request
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
 
-	// let request something else, it should be forwarded to nextHandler
-	req = httptest.NewRequest("GET", "http://localhost/api/users", nil)
-	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	require.True(t, requestReceived)
+		resp := w.Result()
+		defer resp.Body.Close()
+		contentRaw, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		content := string(contentRaw)
+
+		require.EqualValues(t, 200, resp.StatusCode)
+		require.False(t, requestReceived)
+		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.deb")
+		require.Contains(t, content, "/etc/debian_version")
+		require.NotContains(t, content, "/etc/redhat-release")
+		require.NotContains(t, content, "/etc/alpine-release")
+	})
+
+	t.Run("only RPM package in the package directory", func(t *testing.T) {
+		f, err := os.Create(path.Join(packagesDir, "isc-stork-agent.rpm"))
+		require.NoError(t, err)
+		f.Close()
+		defer os.Remove(f.Name())
+
+		// let do some request
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		defer resp.Body.Close()
+		contentRaw, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		content := string(contentRaw)
+
+		require.EqualValues(t, 200, resp.StatusCode)
+		require.False(t, requestReceived)
+		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.rpm")
+		require.NotContains(t, content, "/etc/debian_version")
+		require.Contains(t, content, "/etc/redhat-release")
+		require.NotContains(t, content, "/etc/alpine-release")
+	})
+
+	t.Run("only APK package in the package directory", func(t *testing.T) {
+		f, err := os.Create(path.Join(packagesDir, "isc-stork-agent.apk"))
+		require.NoError(t, err)
+		f.Close()
+		defer os.Remove(f.Name())
+
+		// let do some request
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		defer resp.Body.Close()
+		contentRaw, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		content := string(contentRaw)
+
+		require.EqualValues(t, 200, resp.StatusCode)
+		require.False(t, requestReceived)
+		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.apk")
+		require.NotContains(t, content, "/etc/debian_version")
+		require.NotContains(t, content, "/etc/redhat-release")
+		require.Contains(t, content, "/etc/alpine-release")
+	})
+
+	t.Run("all packages in the package directory", func(t *testing.T) {
+		// create all packages
+		for _, extension := range []string{".deb", ".rpm", ".apk"} {
+			f, err := os.Create(path.Join(packagesDir, "isc-stork-agent"+extension))
+			require.NoError(t, err)
+			f.Close()
+		}
+
+		// let do some request
+		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		defer resp.Body.Close()
+		contentRaw, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		content := string(contentRaw)
+
+		require.EqualValues(t, 200, resp.StatusCode)
+		require.False(t, requestReceived)
+		require.Contains(t, content, "/etc/debian_version")
+		require.Contains(t, content, "/etc/redhat-release")
+		require.Contains(t, content, "/etc/alpine-release")
+	})
+
+	t.Run("unsupported request", func(t *testing.T) {
+		// let request something else, it should be forwarded to nextHandler
+		req := httptest.NewRequest("GET", "http://localhost/api/users", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		require.True(t, requestReceived)
+	})
 }
 
 // Check if metricsMiddleware works and handles requests correctly.

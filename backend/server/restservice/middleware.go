@@ -153,16 +153,24 @@ set -e -x
 
 rm -f /tmp/isc-stork-agent.{deb,rpm,apk}
 
+{{ if .DebPath }}
 if [ -e /etc/debian_version ]; then
-    curl -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}{{.DebPath}}"
+    curl -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}/{{.DebPath}}"
     DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold /tmp/isc-stork-agent.deb
-elif [ -e /etc/alpine-release ]; then
-	wget -O /tmp/isc-stork-agent.apk "{{.ServerAddress}}{{.ApkPath}}"
+fi
+{{ end }}
+{{ if .ApkPath }}
+if [ -e /etc/alpine-release ]; then
+	wget -O /tmp/isc-stork-agent.apk "{{.ServerAddress}}/{{.ApkPath}}"
 	apk add --no-cache --no-network /tmp/isc-stork-agent.apk
-else
-    curl -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}{{.RpmPath}}"
+fi
+{{ end }}
+{{ if .RpmPath }}
+if [ -e /etc/redhat-release ]; then
+    curl -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}/{{.RpmPath}}"
     yum install -y /tmp/isc-stork-agent.rpm
 fi
+{{ end }}
 
 systemctl daemon-reload
 systemctl enable isc-stork-agent
@@ -175,7 +183,8 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/stork-install-agent.sh") {
-			pkgsDir := path.Join(staticFilesDir, "assets/pkgs")
+			pkgsRelativeDir := "assets/pkgs"
+			pkgsDir := path.Join(staticFilesDir, pkgsRelativeDir)
 			files, err := os.ReadDir(pkgsDir)
 			if err != nil {
 				msg := fmt.Sprintf("Problem reading '%s' directory with packages: %s\n", pkgsDir, err)
@@ -194,23 +203,27 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 
 				for _, extension := range packageExtensions {
 					if strings.HasSuffix(f.Name(), extension) {
-						packageFiles[extension] = f.Name()
+						packageFiles[extension] = path.Join(pkgsRelativeDir, f.Name())
 					}
 				}
 			}
 
-			if len(packageFiles) != len(packageExtensions) {
-				for _, extension := range packageExtensions {
-					if _, ok := packageFiles[extension]; ok {
-						continue
-					}
-
-					msg := fmt.Sprintf("Cannot find agent %s file in '%s' directory\n", extension, pkgsDir)
-					log.Errorf(msg)
-					w.WriteHeader(http.StatusNotFound)
-					fmt.Fprint(w, msg)
-					return
+			if len(packageFiles) == 0 {
+				msg := fmt.Sprintf("Cannot find any agent package in '%s' directory\n", pkgsDir)
+				log.Errorf(msg)
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprint(w, msg)
+				return
+			} else if len(packageFiles) < len(packageExtensions) {
+				var availableExtensions []string
+				for extension := range packageFiles {
+					availableExtensions = append(availableExtensions, extension)
 				}
+
+				log.Warningf(
+					"The packages are not available for all operating systems, available packages: %s",
+					strings.Join(availableExtensions, ", "),
+				)
 			}
 
 			data := map[string]string{
