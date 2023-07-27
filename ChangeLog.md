@@ -1,7 +1,10 @@
 * 320 [bug] slawek
 
-    Fixed a bug in the agent installation script that caused it to be unusable.
-    The script doesn't longer require not distributed package types.
+    Fixed a bug in the script installing the Stork agent using a server token.
+    This bug caused installation errors due to wrong paths to the deployed
+    packages. The script no longer requires all Stork agent package formats to
+    be deployed in the Stork server, and it will use the available formats for
+    the matching operating systems where the Stork agent is installed.
     (Gitlab #932)
 
 * 319 [func] marcin
