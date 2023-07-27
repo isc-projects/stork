@@ -212,8 +212,8 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 				msg := fmt.Sprintf(
 					"Cannot find any agent package in '%s' directory. You "+
 						"must download the Stork agent packages from "+
-						"CloudSmith and put them in that directory to enable "+
-						"this script to work.\n",
+						"CloudSmith and put them in that directory to make "+
+						"stork-install-agent.sh work.\n",
 					pkgsDir,
 				)
 				log.Errorf(msg)
