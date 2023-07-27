@@ -221,7 +221,10 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 				}
 
 				log.Warningf(
-					"The packages are not available for all operating systems, available packages: %s",
+					"Not all supported stork-agent package types are "+
+						"available for the agent installation using a server "+
+						"token. It will cause the agent installation errors "+
+						"on the systems using packages other than these: %s",
 					strings.Join(availableExtensions, ", "),
 				)
 			}
