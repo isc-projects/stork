@@ -52,30 +52,30 @@
     </div>
     <div class="mb-4">
         <p-fieldset legend="Subnets">
-            <div *ngIf="!sharedNetwork.subnets || sharedNetwork.subnets.length === 0; else subnetsExistBlock">
-                No subnets configured.
-            </div>
-            <ng-template #subnetsExistBlock>
+            <div *ngIf="sharedNetwork.subnets?.length > 0; else subnetsNotExistBlock">
                 <app-subnet-bar
                     class="utilization-bar"
                     *ngFor="let subnet of sharedNetwork.subnets"
                     [subnet]="subnet"
                 ></app-subnet-bar>
+            </div>
+            <ng-template #subnetsNotExistBlock>
+                <div>No subnets configured.</div>
             </ng-template>
         </p-fieldset>
     </div>
     <div class="mb-4">
         <p-fieldset legend="Pools">
-            <div *ngIf="!sharedNetwork.pools || sharedNetwork.pools.length === 0; else poolsExistBlock">
-                No pools configured.
-            </div>
-            <ng-template #poolsExistBlock>
+            <div *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock">
                 <ng-container *ngFor="let pool of sharedNetwork.pools">
                     <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
                 </ng-container>
                 <ng-container *ngFor="let pool of sharedNetwork.prefixDelegationPools">
                     <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
                 </ng-container>
+            </div>
+            <ng-template #poolsNotExistBlock>
+                <div>No pools configured.</div>
             </ng-template>
         </p-fieldset>
     </div>
