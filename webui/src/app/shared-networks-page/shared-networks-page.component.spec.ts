@@ -32,6 +32,7 @@ import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.co
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { DividerModule } from 'primeng/divider'
 import { ChartModule } from 'primeng/chart'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -80,6 +81,7 @@ describe('SharedNetworksPageComponent', () => {
                 HumanCountPipe,
                 NumberPipe,
                 DelegatedPrefixBarComponent,
+                PlaceholderPipe,
                 SharedNetworksPageComponent,
                 SharedNetworkTabComponent,
                 SubnetBarComponent,
