@@ -875,6 +875,10 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:up:postgres``              | Build and run a Postgres container.                           |
    +----------------------------------------+---------------------------------------------------------------+
+   | ``rake demo:up:webui``                 | Build and run the webUI containers. One on the Nginx server   |
+   |                                        | (published port is 8080) and the second on the Apache server  |
+   |                                        | (published port is 8081).                                     |
+   +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:up``                       | Build and run all above containers                            |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:down``                     | Stop and remove all containers and all referenced volumes and |
