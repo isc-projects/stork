@@ -173,8 +173,8 @@ namespace :demo do
             docker_up_services("simulator")
         end
 
-        desc 'Run server and web UI in separate containers'
-        task :server => [DOCKER_COMPOSE] do
+        desc 'Build and run web UI served by Nginx and Apache in separate containers'
+        task :webui => [DOCKER_COMPOSE] do
             docker_up_services("webui", "webui-apache")
         end
     end
