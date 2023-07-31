@@ -337,6 +337,12 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
    for the Stork Server installed from the binary packages. It's the default location
    for the static content.
 
+* ``STORK_REST_BASE_URL`` - the base URL of the UI
+
+   Specify this flag if the UI is served from a subdirectory (not the root URL).
+   It must start and end with a slash. Example: https://www.example.com/admin/stork/
+   would need to have "/admin/stork/" as the ``rest-base-url``.
+
 .. note::
 
    The Stork agent must trust the REST TLS certificate presented by Stork server.
@@ -392,6 +398,48 @@ Stork can read and combine the configuration parameters from a few sources simul
 The command line flags have precedence over the environment variables read from the file
 when the `--use-env-file` flag is specified. The environment variables read from the file
 take precedence over the environment variables set in the current shell.
+
+
+.. _web-ui-reverse-proxy:
+
+Stork UI behind a reverse proxy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A reverse proxy is a server solution responsible for preliminary processing
+incoming requests from the Internet and redirecting them to specific web
+services running in the internal network. The reverse proxies may help increase
+performance (e.g., by caching responses), security (e.g., by enveloping the
+responses in TLS, logging the requests), and reliability (e.g., by allowing
+switching web service instances).
+
+Stork is distributed with the basic configuration for Nginx. It is available,
+after installation from a package, in the file: ``dist/server/usr/share/stork/examples/nginx-stork.conf``.
+The same file is located in git repository in the file: ``etc/nginx-stork.conf``.
+
+Stork also supports sharing the web application from the URL subdirectory. 
+It may be needed while there is no dedicated domain for Stork Server, and the
+web application is served from the subdirectory of the existing domain
+(e.g., ``http://example.com/stork``).
+
+If the backend executable (``stork-server``) and UI files (``/usr/share/stork/www``
+by default) are on the same machine, backend is responsible for sharing the UI
+static files. Provide the necessary subdirectory as a base URL using the
+``--rest-base-url`` CLI flag or the ``STORK_REST_BASE_URL`` environment variable.
+The value must be surrounded by slashes (e.g.: ``/stork/``). The ``--rest-base-url``
+CLI flag affects both the backend and UI. It changes the value of the ``<base>``
+HTML tag in the ``index.html`` file (that modifies all links and URLs used by
+UI) and turns on the simple remapping of the requested URL (the backend trims
+the base path from processed URLs). The reverse proxy doesn't require any
+special configuration.
+
+Another configuration is required if the backend and UI files are located on
+the different machines. In this case, you must manually modify the the value of
+the ``<base>`` HTML tag in the ``index.html`` file. The ``href`` attribute
+must be set to the necessary subdirectory. The value must be surrounded by
+slashes (e.g.: ``/stork/``). Configure your HTTP server to rewrite the
+requested URL and remove the base URL before passing the requests to Stork
+Server. Look at the ``<VirtualHost>`` section in the ``etc/httpd-stork.conf``
+file for example Apache configuration.
 
 
 Securing the Database Connection

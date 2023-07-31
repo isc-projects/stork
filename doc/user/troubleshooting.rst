@@ -237,28 +237,3 @@ This section describes the solutions for some common issues with the Stork serve
               access to only trusted users. You shouldn't use it if you don't have a CA configured or want to allow to
               login to the Stork server from any computer without prior setup.
 
---------------
-
-:Issue:       The Stork UI must be served from subdirectory. The backend and UI files are located on the same machine.
-:Description: Due to environmental configuration, there is no dedicated domain for Stork Server. Instead of it, the web
-              application is served from the subdirectory of the existing domain (e.g., http://example.com/stork). The
-              backend executable (``stork-server``) and UI files (``/usr/share/stork/www`` by default) are on the same
-              machine and backend is responsible for sharing the UI static files.
-:Solution:    Provide the necessary subdirectory as a base URL using the ``--rest-base-url`` CLI flag or the
-              ``STORK_REST_BASE_URL`` environment variable. The value must be surrounded by slashes (e.g.: ``/stork/``).
-:Explanation: The ``--rest-base-url`` CLI flag affects both the backend and UI. It changes the value of the ``<base>`` HTML tag
-              in the ``index.html`` file (that modifies all links and URLs used by UI) and turns on the simple remapping
-              of the requested URL (the backend trims the base path from processed URLs).
-
---------------
-
-:Issue:       The Stork UI must be served from subdirectory. The backend and UI files are located on the different machines.
-:Description: Due to environmental configuration, there is no dedicated domain for Stork Server. Instead of it, the web
-              application is served from the subdirectory of the existing domain (e.g., http://example.com/stork). The
-              backend executable (``stork-server``) and UI files (``/usr/share/stork/www`` by default) are on different
-              same machines and the dedicated HTTP server (reverse proxy) is responsible for sharing the UI static files.
-:Solution:    Manually modify the  the value of the ``<base>`` HTML tag in the ``index.html`` file. The ``href`` attribute
-              must be set to the necessary subdirectory. The value must be surrounded by slashes (e.g.: ``/stork/``).
-              Configure your HTTP server to rewrite the requested URL and remove the base URL before passing the requests
-              to Stork Server. Look at the ``<VirtualHost>`` section in the ``etc/httpd-stork.conf`` file for example
-              Apache configuration.
