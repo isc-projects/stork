@@ -58,6 +58,12 @@ stages:
     - rake prepare
     - rake prepare:deps
 
+.base_build_debian_arm:
+  extends: .base_build_debian
+  tags:
+    - aarch64
+    - linux
+
 .base_build_ubi:
   stage: checks
   rules:
@@ -186,8 +192,20 @@ tarball:
 
 ### build rpm & deb packages ###
 
-build_debs:
+build_debs_amd64:
   extends: .base_build_debian
+  stage: build
+  script:
+    - rake build:agent_pkg
+    - rake build:server_pkg
+    - cp dist/pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
+
+build_debs_arm64:
+  extends: .base_build_debian_arm
   stage: build
   script:
     - rake build:agent_pkg
@@ -247,7 +265,7 @@ packages:
   rules:
     - when: on_success
   needs:
-    - build_debs
+    - build_debs_amd64
     - build_rpms
     - build_apks
   script:
@@ -287,7 +305,7 @@ install_debs:
     - "dpkg -r isc-stork-agent"
     - "dpkg -r isc-stork-server"
   needs:
-    - build_debs
+    - build_debs_amd64
 
 install_rpms:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:latest
