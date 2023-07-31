@@ -60,6 +60,15 @@ stages:
 
 .base_build_debian_arm:
   extends: .base_build_debian
+  cache:
+    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/
+      - webui/node_modules/
+      - /root/.cache/go-build
+      - /var/lib/dpkg/info
+    fallback_keys:
+      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
   tags:
     - aarch64
     - linux
