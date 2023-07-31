@@ -30,7 +30,7 @@ func SkipIfCurrentUserIgnoresFilePermissions(t *testing.T) {
 	_, err = os.ReadFile(filepath)
 	if err == nil {
 		// File permission ignored.
-		t.Skip("Skip test due to a current user is unaffected by the file " +
+		t.Skip("Skip the test because the current user is unaffected by the file " +
 			"permissions (it may be super-user or the filesystem doesn't " +
 			"support file permissions)")
 	}

@@ -59,7 +59,7 @@ type RestAPISettings struct {
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
-	BaseURL        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base url" default:"/" env:"STORK_REST_BASE_URL"`
+	BaseURL        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base-url" default:"/" env:"STORK_REST_BASE_URL"`
 }
 
 // Runtime information and settings for RestAPI service.
@@ -314,18 +314,17 @@ func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFile
 
 // Sets up the base URL in the UI files. It modifies the <base> HTML tag value
 // in the index.html file. The base URL is necessary to fetch the assets,
-// scripts, and stylesheets and make calls to API, so it must be appropriately
-// set before loading UI. It means it cannot be dynamically fetched from the
-// backend. The frontend part doesn't have its own configuration that may store
-// this value. So it must be set in the general server configuration file or
-// using server flags. Before loading the web application, there is no way to
-// pass the value from the backend to the frontend (we cannot use HTTP headers
-// because they are available in Javascript only for dynamic AJAX calls; we
-// cannot pass it as a static JSON or JS script because it requires the valid
-// resource path that is unknown without base URL; the environment variables
-// are not available due the frontend executes on user machine). This function
-// alters the HTML index file and modifies the <base> HTML tag to set the
-// proper path.
+// scripts, and stylesheets and make calls to the API, so it must be set before
+// loading the UI. It cannot be dynamically fetched from the backend. The frontend
+// doesn't have its own configuration for this value. Therefore, it must be set in
+// the general server configuration file or using the server flags. Before loading
+// the web application, there is no way to pass the value from the backend to the
+// frontend (we cannot use HTTP headers because they are available in Javascript
+// only for dynamic AJAX calls; we cannot pass it as a static JSON or JS script
+// because it requires a valid resource path that is unknown without a base URL;
+// the environment variables are not available because the frontend runs on a user
+// machine). This function alters the HTML index file and modifies the <base> HTML
+// tag to set the desired path.
 // If the configuration does not provide the base URL, it leaves the default
 // value ('/').
 // The base URL must have leading and trailing slashes.
@@ -344,7 +343,7 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 	}
 
 	// Angular builder (ng) strips the closing slash and space but I'm afraid
-	// it is a version or configuration specific, so I make them optional.
+	// it is version or configuration specific, so I make them optional.
 	baseHrefPattern := regexp.MustCompile(`<base href=".*"(/?\s*)>`)
 	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$1>`, baseURL)
 
@@ -362,16 +361,16 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 	case errors.Is(err, os.ErrNotExist):
 		// The UI files may be located on another machine.
 		log.WithError(err).Warningf(
-			"cannot alter the base URL in the '%s' file due to missing file, "+
-				"if the files are located on separate machine, you need "+
+			"Cannot alter the base URL in the '%s' file because it is missing. "+
+				"If the files are located on separate machine, you need "+
 				"manually change the 'href' value of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
 	case errors.Is(err, os.ErrPermission):
 		// The backend doesn't have the permission to operate on index.file.
 		log.WithError(err).Warningf(
-			"cannot alter the base URL in the '%s' file due to insufficient "+
+			"Cannot alter the base URL in the '%s' file due to insufficient "+
 				"file permissions. You need to grant access to read and write "+
-				"for Stork Server user or manually change the 'href' value "+
+				"for the Stork Server user or manually change the 'href' value "+
 				"of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
 	default:
