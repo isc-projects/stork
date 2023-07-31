@@ -237,7 +237,7 @@ build_rpms:
       - isc-stork-*.rpm
     expire_in: 1 hour
 
-build_apks:
+build_apks_amd64:
   stage: checks
   rules:
     - when: always
@@ -269,6 +269,18 @@ build_apks:
       - isc-stork-*.apk
     expire_in: 1 hour
 
+build_apks_arm64:
+  cache:
+    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - webui/node_modules/
+      - tools/
+    fallback_keys:
+      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
+  tags:
+    - aarch64
+    - linux
+
 packages:
   stage: checks
   rules:
@@ -276,7 +288,7 @@ packages:
   needs:
     - build_debs_amd64
     - build_rpms
-    - build_apks
+    - build_apks_amd64
   script:
     - ":"
   artifacts:
@@ -367,7 +379,7 @@ install_apks:
     - "apk del isc-stork-agent"
     - "apk del isc-stork-server"
   needs:
-    - build_apks
+    - build_apks_amd64
 
 ### system testing ###
 
