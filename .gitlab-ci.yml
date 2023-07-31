@@ -194,7 +194,7 @@ tarball:
 
 build_debs_amd64:
   extends: .base_build_debian
-  stage: build
+  stage: checks
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -206,7 +206,7 @@ build_debs_amd64:
 
 build_debs_arm64:
   extends: .base_build_debian_arm
-  stage: build
+  stage: checks
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -218,7 +218,7 @@ build_debs_arm64:
 
 build_rpms:
   extends: .base_build_ubi
-  stage: build
+  stage: checks
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -229,7 +229,7 @@ build_rpms:
     expire_in: 1 hour
 
 build_apks:
-  stage: build
+  stage: checks
   rules:
     - when: always
   cache:
@@ -261,7 +261,7 @@ build_apks:
     expire_in: 1 hour
 
 packages:
-  stage: build
+  stage: checks
   rules:
     - when: on_success
   needs:
