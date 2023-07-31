@@ -59,7 +59,7 @@ type RestAPISettings struct {
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
-	BaseURL        string `long:"base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the base-url" default:"/" env:"STORK_REST_BASE_URL"`
+	BaseURL        string `long:"rest-base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the rest-base-url" default:"/" env:"STORK_REST_BASE_URL"`
 }
 
 // Runtime information and settings for RestAPI service.

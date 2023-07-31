@@ -244,9 +244,9 @@ This section describes the solutions for some common issues with the Stork serve
               application is served from the subdirectory of the existing domain (e.g., http://example.com/stork). The
               backend executable (``stork-server``) and UI files (``/usr/share/stork/www`` by default) are on the same
               machine and backend is responsible for sharing the UI static files.
-:Solution:    Provide the necessary subdirectory as a base URL using the ``--base-url`` CLI flag or the
+:Solution:    Provide the necessary subdirectory as a base URL using the ``--rest-base-url`` CLI flag or the
               ``STORK_REST_BASE_URL`` environment variable. The value must be surrounded by slashes (e.g.: ``/stork/``).
-:Explanation: The ``--base-url`` CLI flag affects both the backend and UI. It changes the value of the ``<base>`` HTML tag
+:Explanation: The ``--rest-base-url`` CLI flag affects both the backend and UI. It changes the value of the ``<base>`` HTML tag
               in the ``index.html`` file (that modifies all links and URLs used by UI) and turns on the simple remapping
               of the requested URL (the backend trims the base path from processed URLs).
 
