@@ -288,8 +288,10 @@ packages:
     - when: on_success
   needs:
     - build_debs_amd64
+    - build_debs_arm64
     - build_rpms
     - build_apks_amd64
+    - build_apks_arm64
   script:
     - ":"
   artifacts:
