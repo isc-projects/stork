@@ -344,27 +344,22 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 
 	// Angular builder (ng) strips the closing slash and space but I'm afraid
 	// it is version or configuration specific, so I make them optional.
-	baseHrefPattern := regexp.MustCompile(`<base href=".*"(/?\s*)>`)
-	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$1>`, baseURL)
+	baseHrefPattern := regexp.MustCompile(`<base href="(.*)"(/?\s*)>`)
+	baseHrefReplacement := fmt.Sprintf(`<base href="%s"$2>`, baseURL)
 
-	// Edit the index file.
+	// Read the index file.
 	indexFilePath := path.Join(staticFilesDir, "index.html")
 	indexFileContent, err := os.ReadFile(indexFilePath)
 
-	if err == nil {
-		indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
-		err = os.WriteFile(indexFilePath, indexFileContent, 0)
-	}
-
-	// Error handling.
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		// The UI files may be located on another machine.
 		log.WithError(err).Warningf(
-			"Cannot alter the base URL in the '%s' file because it is missing. "+
+			"Cannot read the base URL in the '%s' file because it is missing. "+
 				"If the files are located on separate machine, you need "+
 				"manually change the 'href' value of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
+		return nil
 	case errors.Is(err, os.ErrPermission):
 		// The backend doesn't have the permission to operate on index.file.
 		log.WithError(err).Warningf(
@@ -373,12 +368,41 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 				"for the Stork Server user or manually change the 'href' value "+
 				"of the <base> HTML tag to '%s'",
 			indexFilePath, baseURL)
-	default:
-		// Other errors.
-		return pkgerrors.Wrapf(err, "cannot alter the '%s' file", indexFilePath)
+		return nil
+	case err != nil:
+		// Another error.
+		return pkgerrors.Wrapf(err, "cannot read the '%s' file", indexFilePath)
 	}
 
-	return nil
+	// Check if the URL differs.
+	matches := baseHrefPattern.FindSubmatch(indexFileContent)
+	if len(matches) == 0 {
+		return pkgerrors.Errorf("the base tag is missing in the '%s' file", indexFilePath)
+	}
+	if len(matches) != 3 {
+		return pkgerrors.Errorf("the base tag is incomplete in the '%s' file", indexFilePath)
+	}
+	currentURL := string(matches[1])
+	if currentURL == baseURL {
+		// The URL is not changed.
+		return nil
+	}
+
+	// Edit the index file.
+	indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
+	err = os.WriteFile(indexFilePath, indexFileContent, 0)
+
+	if errors.Is(err, os.ErrPermission) {
+		// The backend doesn't have the permission to operate on index.file.
+		log.WithError(err).Errorf(
+			"Cannot write the base URL in the '%s' file due to insufficient "+
+				"file permissions. You need to grant access to read and write "+
+				"for the Stork Server user or manually change the 'href' value "+
+				"of the <base> HTML tag to '%s'",
+			indexFilePath, baseURL)
+	}
+
+	return pkgerrors.Wrapf(err, "cannot alter the '%s' file", indexFilePath)
 }
 
 // Serve the API.

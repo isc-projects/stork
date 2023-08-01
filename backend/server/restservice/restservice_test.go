@@ -331,7 +331,7 @@ func TestSetBaseURLForInsufficientReadPermission(t *testing.T) {
 	require.EqualValues(t, `<base href="/foo/">`, string(content))
 }
 
-// Test that no error is returned if there is no read right on the index file.
+// Test that an error is returned if there is no write right on the index file.
 func TestSetBaseURLForInsufficientWritePermission(t *testing.T) {
 	// Arrange
 	storktest.SkipIfCurrentUserIgnoresFilePermissions(t)
@@ -344,6 +344,28 @@ func TestSetBaseURLForInsufficientWritePermission(t *testing.T) {
 
 	// Act
 	err := setBaseURLInIndexFile("/bar/", directory)
+
+	// Assert
+	require.Error(t, err)
+	_ = os.Chmod(filepath, 0o700)
+	content, _ := os.ReadFile(filepath)
+	require.EqualValues(t, `<base href="/foo/">`, string(content))
+}
+
+// Test that no error is returned if there is no write right on the index file
+// but the base tag is not changed.
+func TestSetBaseURLForInsufficientWritePermissionExistingValue(t *testing.T) {
+	// Arrange
+	storktest.SkipIfCurrentUserIgnoresFilePermissions(t)
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	filepath, _ := sb.Write("index.html", `<base href="/foo/">`)
+	directory := path.Dir(filepath)
+	_ = os.Chmod(filepath, 0o400)
+
+	// Act
+	err := setBaseURLInIndexFile("/foo/", directory)
 
 	// Assert
 	require.NoError(t, err)
