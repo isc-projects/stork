@@ -33,8 +33,8 @@ func NewHookManager() *HookManager {
 func (hm *HookManager) OnBeforeForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) error {
 	errors := hooksutil.CallSequential(hm.GetExecutor(), func(carrier forwardtokeaoverhttpcallouts.BeforeForwardToKeaOverHTTPCallouts) error {
 		err := carrier.OnBeforeForwardToKeaOverHTTP(ctx, in)
-		err = errors.Wrap(err, "error occurred in the OnBeforeForwardToKeaOverHTTP callout")
+		err = errors.WithStack(err)
 		return err
 	})
-	return storkutil.CombineErrors("error in the onBeforeForwardToKeaOverHTTP callout", errors)
+	return storkutil.CombineErrors("error occurred in the onBeforeForwardToKeaOverHTTP callout", errors)
 }
