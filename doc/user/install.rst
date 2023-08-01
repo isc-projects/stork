@@ -402,7 +402,7 @@ take precedence over the environment variables set in the current shell.
 
 .. _web-ui-reverse-proxy:
 
-Stork UI behind a reverse proxy
+Stork UI Behind a Reverse Proxy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A reverse proxy is a server solution responsible for preliminary processing
@@ -412,19 +412,19 @@ performance (e.g., by caching responses), security (e.g., by enveloping the
 responses in TLS, logging the requests), and reliability (e.g., by allowing
 switching web service instances).
 
-Stork is distributed with the basic configuration for Nginx. It is available,
-after installation from a package, in the file: ``dist/server/usr/share/stork/examples/nginx-stork.conf``.
-The same file is located in git repository in the file: ``etc/nginx-stork.conf``.
+Stork is distributed with a basic configuration for Nginx. It is available,
+after installation from a package, in the ``dist/server/usr/share/stork/examples/nginx-stork.conf`` file.
+The same file is located in git repository: ``etc/nginx-stork.conf``.
 
-Stork also supports sharing the web application from the URL subdirectory. 
-It may be needed while there is no dedicated domain for Stork Server, and the
-web application is served from the subdirectory of the existing domain
+Stork Server can be configured to expose the web application from a URL subdirectory. 
+It may be needed when there is no dedicated domain for Stork Server, and the
+web application is served from the subdirectory of an existing domain
 (e.g., ``http://example.com/stork``).
 
 If the backend executable (``stork-server``) and UI files (``/usr/share/stork/www``
-by default) are on the same machine, backend is responsible for sharing the UI
-static files. Provide the necessary subdirectory as a base URL using the
-``--rest-base-url`` CLI flag or the ``STORK_REST_BASE_URL`` environment variable.
+by default) are on the same machine, the backend is responsible for sharing the UI
+static files. You can configure the necessary subdirectory using the ``--rest-base-url``
+CLI flag or the ``STORK_REST_BASE_URL`` environment variable.
 The value must be surrounded by slashes (e.g.: ``/stork/``). The ``--rest-base-url``
 CLI flag affects both the backend and UI. It changes the value of the ``<base>``
 HTML tag in the ``index.html`` file (that modifies all links and URLs used by
@@ -432,14 +432,13 @@ UI) and turns on the simple remapping of the requested URL (the backend trims
 the base path from processed URLs). The reverse proxy doesn't require any
 special configuration.
 
-Another configuration is required if the backend and UI files are located on
-the different machines. In this case, you must manually modify the the value of
-the ``<base>`` HTML tag in the ``index.html`` file. The ``href`` attribute
-must be set to the necessary subdirectory. The value must be surrounded by
-slashes (e.g.: ``/stork/``). Configure your HTTP server to rewrite the
-requested URL and remove the base URL before passing the requests to Stork
-Server. Look at the ``<VirtualHost>`` section in the ``etc/httpd-stork.conf``
-file for example Apache configuration.
+If the backend and the UI files are located on different machines, you must
+manually modify the value of the ``<base>`` HTML tag in the ``index.html``
+file. The ``href`` attribute must be set to a necessary subdirectory.
+The value must be surrounded by slashes (e.g.: ``/stork/``). Configure your
+HTTP proxy server to rewrite the requested URL and remove the base URL before
+passing the requests to Stork Server. Look at the ``<VirtualHost>`` section
+in the ``etc/httpd-stork.conf`` file for example Apache configuration.
 
 
 Securing the Database Connection

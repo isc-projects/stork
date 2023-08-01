@@ -101,8 +101,7 @@ webui
    the custom development of a Stork API client. The content is served by Nginx.
 webui-apache
    This container is similar to the previous one, except Apache serves it, and
-   the web UI is available under the `/stork` sub-directory. The UI shared by
-   this container is published on the 8081 port.
+   the web UI is available under the `/stork` sub-directory, port 8081.
 agent-bind9
    This container runs a BIND 9 server. With this container, the agent
    can be added as a machine and Stork will begin monitoring its BIND
