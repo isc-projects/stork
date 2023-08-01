@@ -457,11 +457,12 @@ export function formatShortExcludedPrefix(prefix: string, excludedPrefix: string
     // Fallback to full excluded prefix.
     return excludedPrefix
 }
-
-// Constructs the base API URL by combining the global base URL from the
-// base HTML tag with the API URL provided in the Angular configuration.
-// It allows to configure the base URL in a single place (index.html) without
-// rebuilding the application.
+/**
+ * Constructs the base API URL by combining the global base URL from the
+ * base HTML tag with the API URL provided in the Angular configuration.
+ * It allows to configure the base URL in a single place (index.html) without
+ * rebuilding the application.
+ */
 export function getBaseApiPath(apiUrl: string) {
     // Check if the API path is not relative to root.
     if (apiUrl.includes('://')) {
