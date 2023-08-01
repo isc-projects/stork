@@ -11,10 +11,12 @@ export class PlaceholderPipe implements PipeTransform {
     transform(value: string, unspecified: string = '(not specified)', empty: string = '(empty)'): string {
         if (value == null) {
             return unspecified
-        } else if (value == '') {
+        } else if (value === '') {
             return empty
         } else {
-            return value
+            // Explicitly convert to a string because the actual type of
+            // the value can be different.
+            return value.toString()
         }
     }
 }

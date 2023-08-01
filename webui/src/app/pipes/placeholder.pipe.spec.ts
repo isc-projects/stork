@@ -29,4 +29,22 @@ describe('PlaceholderPipe', () => {
         const placeholder = pipe.transform('baz', 'foo', 'bar')
         expect(placeholder).toBe('baz')
     })
+
+    it('should display false for a boolean false value', () => {
+        const pipe = new PlaceholderPipe()
+        const placeholder = pipe.transform(false as any, 'foo', 'bar')
+        expect(placeholder).toBe('false')
+    })
+
+    it('should display true for a boolean true value', () => {
+        const pipe = new PlaceholderPipe()
+        const placeholder = pipe.transform(true as any, 'foo', 'bar')
+        expect(placeholder).toBe('true')
+    })
+
+    it('should display zero for a zero number', () => {
+        const pipe = new PlaceholderPipe()
+        const placeholder = pipe.transform(0 as any, 'foo', 'bar')
+        expect(placeholder).toBe('0')
+    })
 })
