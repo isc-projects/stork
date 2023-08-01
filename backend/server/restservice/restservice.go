@@ -376,10 +376,10 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 
 	// Check if the URL differs.
 	matches := baseHrefPattern.FindSubmatch(indexFileContent)
-	if len(matches) == 0 {
+	switch {
+	case len(matches) == 0:
 		return pkgerrors.Errorf("the base tag is missing in the '%s' file", indexFilePath)
-	}
-	if len(matches) != 3 {
+	case len(matches) != 3:
 		return pkgerrors.Errorf("the base tag is incomplete in the '%s' file", indexFilePath)
 	}
 	currentURL := string(matches[1])
