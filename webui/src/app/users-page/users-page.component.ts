@@ -255,9 +255,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             })
         }
 
-        userForm.statusChanges.subscribe((status) => {
-            console.log(status)
-        })
         this.userTab.userForm = userForm
     }
 
