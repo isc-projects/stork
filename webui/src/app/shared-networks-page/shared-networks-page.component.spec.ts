@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { FormsModule } from '@angular/forms'
@@ -429,26 +429,26 @@ describe('SharedNetworksPageComponent', () => {
         }
     })
 
-    it('should open and close tabs', async () => {
+    it('should open and close tabs', fakeAsync(() => {
         component.openTabBySharedNetworkId(1)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         expect(component.openedSharedNetworks.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
 
         component.closeTabByIndex(1)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         expect(component.openedSharedNetworks.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
 
         component.closeTabByIndex(0)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         expect(component.openedSharedNetworks.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
-    })
+    }))
 })
