@@ -225,7 +225,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
 
         // The authentication hooks may not support returning profile details
-        // as email, fist and last names, or groups.
+        // as email, first and last names, or groups.
         if (this.isInternalUser) {
             formConfig.userFirst.push(Validators.required)
             formConfig.userLast.push(Validators.required)
