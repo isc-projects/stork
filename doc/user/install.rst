@@ -437,8 +437,22 @@ manually modify the value of the ``<base>`` HTML tag in the ``index.html``
 file. The ``href`` attribute must be set to a necessary subdirectory.
 The value must be surrounded by slashes (e.g.: ``/stork/``). Configure your
 HTTP proxy server to rewrite the requested URL and remove the base URL before
-passing the requests to Stork Server. Look at the ``<VirtualHost>`` section
-in the ``etc/httpd-stork.conf`` file for example Apache configuration.
+passing the requests to Stork Server. Below is an example of configuring the
+``<VirtualHost>`` section for Apache. See the ``etc/httpd-stork.conf`` file for
+full configuration.
+
+.. code-block::
+
+   <VirtualHost *:81>
+      <LocationMatch "^/stork">
+         RewriteEngine On
+         RewriteCond %{REQUEST_URI} ^/stork/(.*)
+         RewriteRule ^ /%1 [L]
+      </LocationMatch>
+
+      # Other location rules here...
+
+   </VirtualHost>
 
 
 Securing the Database Connection
