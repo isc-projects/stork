@@ -125,7 +125,7 @@ func TestCreateUserConflictEmail(t *testing.T) {
 }
 
 // Tests that create user account with already existing but empty email is
-// rejected via REST API.
+// allowed via REST API.
 func TestCreateUserConflictEmailEmpty(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -140,7 +140,6 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 	ctx := context.Background()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
-	// Login is missing here.
 	su := dbmodel.SystemUser{
 		Login:    "bar",
 		Email:    "",
@@ -148,7 +147,7 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 		Name:     "John",
 	}
 
-	// New user has an email which conflicts with another user email.
+	// New user has an empty email which conflicts with another user email.
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
@@ -156,7 +155,7 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 		},
 	}
 
-	// Attempt to create the user and verify the response is negative.
+	// Attempt to create the user and verify the response is positive.
 	rsp := rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserOK{}, rsp)
 }
