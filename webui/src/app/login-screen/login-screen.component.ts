@@ -85,6 +85,7 @@ export class LoginScreenComponent implements OnInit {
             .then((methods) => {
                 this.authenticationMethods = methods
                 this.authenticationMethod = methods[0]
+                this.loginForm.controls.authenticationMethod.setValue(this.authenticationMethod)
             })
     }
 
@@ -111,8 +112,11 @@ export class LoginScreenComponent implements OnInit {
      * Performs a login operation.
      */
     signIn() {
-        this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
-        this.router.navigate([this.returnUrl])
+        Object.keys(this.loginForm.controls).forEach((k) => this.loginForm.get(k).markAsDirty())
+        if (this.loginForm.valid) {
+            this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
+            this.router.navigate([this.returnUrl])
+        }
     }
 
     /**
