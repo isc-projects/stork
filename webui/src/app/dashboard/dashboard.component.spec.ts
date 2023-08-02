@@ -215,6 +215,20 @@ describe('DashboardComponent', () => {
         expect(component.showHAState(daemon4)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon4)).toBe('')
         expect(component.haStateIcon(daemon4)).toBe('spin pi-spinner')
+
+        const daemon5 = { haEnabled: true, haState: null, haFailureAt: null }
+        expect(component.showHAState(daemon5)).toBe('fetching...')
+        expect(component.showHAFailureTime(daemon5)).toBe('')
+        expect(component.haStateIcon(daemon5)).toBe('spin pi-spinner')
+    })
+
+    it('should display HA time or placeholder', () => {
+        let daemon = { haEnabled: true, haState: 'load-balancing', haFailureAt: null }
+        expect(component.showHAFailureTime(daemon)).toBe('never')
+
+        daemon = { haEnabled: true, haState: 'load-balancing', haFailureAt: '2014-06-01T12:00:00Z' }
+        expect(component.showHAFailureTime(daemon)).not.toBe('never')
+        expect(component.showHAFailureTime(daemon)).not.toBe('')
     })
 
     it('should parse integer statistics', async () => {

@@ -371,11 +371,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
      *          is zero.
      */
     showHAFailureTime(daemon: DhcpDaemon) {
-        if (!daemon.haEnabled || !daemon.haState || daemon.haState.length === 0) {
+        if (!daemon.haEnabled || !daemon.haState) {
             return ''
         }
         const localTime = datetimeToLocal(daemon.haFailureAt)
-        if (localTime.length === 0) {
+        if (!localTime) {
             return 'never'
         }
         return localTime
