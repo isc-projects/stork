@@ -71,6 +71,7 @@
                                 type="button"
                                 label="Sign In"
                                 (click)="signIn()"
+                                [disabled]="!loginForm.valid"
                             ></button>
                         </div>
                     </div>
