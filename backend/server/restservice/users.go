@@ -95,10 +95,21 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
+	groupIDMapping := map[authenticationcallouts.UserGroupID]int{
+		authenticationcallouts.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
+		authenticationcallouts.UserGroupIDAdmin:      dbmodel.AdminGroupID,
+	}
+
 	var groups []*dbmodel.SystemGroup
 	for _, g := range calloutUser.Groups {
+		systemGroupID, ok := groupIDMapping[g]
+		if !ok {
+			log.Warningf("Unknown group returned from hook: %d", g)
+			continue
+		}
+
 		groups = append(groups, &dbmodel.SystemGroup{
-			ID: g,
+			ID: systemGroupID,
 		})
 	}
 

@@ -44,7 +44,7 @@ func TestAuthenticate(t *testing.T) {
 			Email:    "foo@example.com",
 			Lastname: "oof",
 			Name:     "ofo",
-			Groups:   []int{1, 2, 3},
+			Groups:   []authenticationcallouts.UserGroupID{1, 2, 3},
 		}, nil).
 		Times(1)
 	mock.EXPECT().
