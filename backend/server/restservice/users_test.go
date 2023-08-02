@@ -11,7 +11,6 @@ import (
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallouts"
 	dbops "isc.org/stork/server/database"
-	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -319,7 +318,7 @@ func TestDeleteUserEmptyParams(t *testing.T) {
 		Name:     "John",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -360,7 +359,7 @@ func TestDeleteUserInvalidUserID(t *testing.T) {
 		Name:     "John",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -404,7 +403,7 @@ func TestDeleteUserSameUserAsSession(t *testing.T) {
 		Name:     "John",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -448,7 +447,7 @@ func TestDeleteUser(t *testing.T) {
 		Name:     "John",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -515,7 +514,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Name:     "John",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}
@@ -530,7 +529,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Name:     "Jan",
 		Groups: []*dbmodel.SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: dbmodel.SuperAdminGroupID,
 			},
 		},
 	}

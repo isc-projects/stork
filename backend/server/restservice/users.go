@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/hooks/server/authenticationcallouts"
-	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
@@ -316,7 +315,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: dbconst.UserGroupID(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
 	con, err := dbmodel.CreateUserWithPassword(r.DB, su, string(*p))
@@ -386,7 +385,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: dbconst.UserGroupID(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
 	con, err := dbmodel.UpdateUser(r.DB, su)

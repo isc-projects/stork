@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/configreview"
-	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -118,7 +117,7 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	require.True(t, user.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}))
+	require.True(t, user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
 
 	m := &dbmodel.Machine{
 		Address:   "localhost",
@@ -212,7 +211,7 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check if user isn't a super admin
-	require.False(t, user.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}))
+	require.False(t, user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
 
 	// Fill the database
 	m := &dbmodel.Machine{

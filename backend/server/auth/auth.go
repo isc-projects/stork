@@ -6,7 +6,6 @@ import (
 	"path"
 	"strings"
 
-	dbconst "isc.org/stork/server/database/constant"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -22,7 +21,7 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 	}
 
 	// If the user is super-admin he can access all resources.
-	if user.InGroup(&dbmodel.SystemGroup{ID: dbconst.SuperAdminGroupID}) {
+	if user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
 		return true, nil
 	}
 
@@ -42,7 +41,7 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 	}
 
 	// All other resources can be accessed by the admin user.
-	if user.InGroup(&dbmodel.SystemGroup{ID: dbconst.AdminGroupID}) {
+	if user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.AdminGroupID}) {
 		return true, err
 	}
 

@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-
-	dbconst "isc.org/stork/server/database/constant"
 )
 
 // The metadata of the authentication method is used to display a selector on
@@ -45,7 +43,7 @@ type User struct {
 	Name     string
 	// It must contain internal Stork group IDs. It means that the hook should
 	// map the authentication API identifiers.
-	Groups []dbconst.UserGroupID
+	Groups []int
 }
 
 // Set of callouts used to perform authentication.

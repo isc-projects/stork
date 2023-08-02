@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	dbconst "isc.org/stork/server/database/constant"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -20,9 +19,9 @@ func TestGetGroups(t *testing.T) {
 	require.Len(t, groups, 2)
 
 	// Groups are supposed to be ordered by id.
-	require.Equal(t, dbconst.UserGroupID(1), groups[0].ID)
+	require.Equal(t, 1, groups[0].ID)
 	require.Equal(t, "super-admin", groups[0].Name)
-	require.Equal(t, dbconst.UserGroupID(2), groups[1].ID)
+	require.Equal(t, 2, groups[1].ID)
 	require.Equal(t, "admin", groups[1].Name)
 
 	// check sorting field and order ascending

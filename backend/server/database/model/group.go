@@ -7,12 +7,17 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
-	dbconst "isc.org/stork/server/database/constant"
+)
+
+// List of the user group IDs used in the server.
+const (
+	SuperAdminGroupID int = 1
+	AdminGroupID      int = 2
 )
 
 // Represents a group of users having some specific permissions.
 type SystemGroup struct {
-	ID          dbconst.UserGroupID
+	ID          int
 	Name        string
 	Description string
 

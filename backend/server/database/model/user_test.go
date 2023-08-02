@@ -9,7 +9,6 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
-	dbconst "isc.org/stork/server/database/constant"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -575,10 +574,10 @@ func TestUserGroups(t *testing.T) {
 		Name:     "John",
 		Groups: []*SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: SuperAdminGroupID,
 			},
 			{
-				ID: dbconst.AdminGroupID,
+				ID: AdminGroupID,
 			},
 		},
 	}
@@ -641,7 +640,7 @@ func TestGetUserIDByExternalID(t *testing.T) {
 		Name:                   "Name",
 		AuthenticationMethodID: "method",
 		ExternalID:             "externalID",
-		Groups:                 []*SystemGroup{{ID: dbconst.SuperAdminGroupID}},
+		Groups:                 []*SystemGroup{{ID: SuperAdminGroupID}},
 	}
 
 	_, _ = CreateUser(db, user)
@@ -657,7 +656,7 @@ func TestGetUserIDByExternalID(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, user.ID, dbUser.ID)
 	require.Len(t, dbUser.Groups, 1)
-	require.EqualValues(t, dbconst.SuperAdminGroupID, dbUser.Groups[0].ID)
+	require.EqualValues(t, SuperAdminGroupID, dbUser.Groups[0].ID)
 }
 
 // Test that user can be associated with a group and then the groups
@@ -713,7 +712,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 		Name:     "Jan",
 		Groups: []*SystemGroup{
 			{
-				ID: dbconst.SuperAdminGroupID,
+				ID: SuperAdminGroupID,
 			},
 		},
 	}
