@@ -123,8 +123,8 @@ func TestCreateUserConflictEmail(t *testing.T) {
 	require.Equal(t, "User account with provided login/email already exists", *defaultRsp.Payload.Message)
 }
 
-// Tests that create user account with already existing but empty email is
-// allowed via REST API.
+// Tests that creating a user account with an empty email is allowed when
+// another account with an empty email exists.
 func TestCreateUserConflictEmailEmpty(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
