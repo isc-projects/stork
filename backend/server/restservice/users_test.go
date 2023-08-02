@@ -146,7 +146,7 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 		Name:     "John",
 	}
 
-	// New user has an empty email which conflicts with another user email.
+	// New user has an empty email but it shouldn't conflict with another user having an empty email.
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
