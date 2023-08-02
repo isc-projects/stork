@@ -1,3 +1,5 @@
+Stork 1.12.0 released on 2023-08-02.
+
 * 322 [func] slawek
 
     Added a configuration option to handle requests directed to URL
