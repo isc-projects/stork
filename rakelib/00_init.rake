@@ -380,7 +380,8 @@ def docker_plugin(standalone_exe, command_name)
         fail "docker #{command_name} plugin or #{standalone_exe} standalone is not installed"
     end
     
-    Rake::Task[task_name].tap do |task|
+    plugin_task = Rake::Task[task_name]
+    plugin_task.tap do |task|
         # The non-file tasks with the manuall_install variable are considered as
         # dependencies. Set to true to mark it must be manually installed.
         task.instance_variable_set(:@manuall_install, true)
@@ -389,6 +390,7 @@ def docker_plugin(standalone_exe, command_name)
         # an access to the variables from the outter scope in Ruby.
         task.instance_variable_set(:@standalone_exe, standalone_exe)
         task.instance_variable_set(:@command_name, command_name)
+        task.instance_variable_set(:@task_name, task_name)
 
         def task.standalone_exe()
             self.instance_variable_get(:@standalone_exe)
@@ -433,7 +435,7 @@ def docker_plugin(standalone_exe, command_name)
         # Return the task name. It is used for compatibility with Rake. The
         # identifier of the task and the to_s output must be the same.
         def task.to_s
-            return task_name
+            self.instance_variable_get(:@task_name)
         end
 
         # Handle the splat operator call (*task_name). The splat operator should
@@ -447,8 +449,7 @@ def docker_plugin(standalone_exe, command_name)
             end
         end
     end
-
-    return task_name
+    return plugin_task
 end
 
 # Fetches the file from the network. You should add the WGET to the
