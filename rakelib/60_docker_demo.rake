@@ -247,20 +247,6 @@ namespace :demo do
 
         sh *DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
     end
-    
-    #######################
-    ### Docker registry ###
-    #######################
-    
-    # ToDo: This task is not refactored.
-    desc 'Prepare containers that are using in GitLab CI processes'
-    task :build_ci_containers => [DOCKER] do
-        sh DOCKER, "build",
-        "--no-cache",
-        "-f", "docker/images/ci/ubuntu-18.04.Dockerfile",
-        "-t", "registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/"
-        #sh 'docker push registry.gitlab.isc.org/isc-projects/stork/ci-base:latest'
-    end
 end
 
 ############################################
