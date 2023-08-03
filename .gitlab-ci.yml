@@ -1,4 +1,4 @@
-image: registry.gitlab.isc.org/isc-projects/stork/ci-base:latest
+image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
 
 # Only create pipelines for merge requests and pushes/merges to the main branch
 workflow:
