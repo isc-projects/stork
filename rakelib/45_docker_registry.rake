@@ -12,11 +12,15 @@ namespace :push do
     # The cache may be disabled by the CACHE environment variable set to "false".
     # The image is multi-architecture - AMD64 and ARM64.
     task :build_and_push, [:source, :target] => [DOCKER, DOCKER_BUILDX] do |t, args|
-        opts = []
+        build_opts = []
+        build_platforms = [
+            "--platform", "linux/amd64",
+            "--platform", "linux/arm64/v8",
+        ]
 
         # Cache options.
         if ENV["CACHE"] == "false"
-            opts.append "--no-cache"
+            build_opts.append "--no-cache"
         end
 
         # Prepare the target.
@@ -33,29 +37,53 @@ namespace :push do
         target = "#{args[:target]}:#{tag}"
 
         # Determine operation to perform.
+        # --push or --load
+        post_build_opts = []
+        # All build platform or none (current machine platform)
+        post_build_platforms = []
+
         push = ENV["PUSH"]
         if push.nil?
             fail "You must specify the operation: PUSH=true (for push) or PUSH=false (for build only)"
         end
         if push == "true"
-            opts.append "--push"
             sh DOCKER, "login", "registry.gitlab.isc.org"
+            post_build_opts.append "--push"
+            # Load doesn't support multi-platform manifest.
+            post_build_platforms = build_platforms
+        else
+            post_build_opts.append "--load"
         end
 
         # Execture commands.
+        # We build the CI images using the buildx plugin instead of the standard
+        # build command to enable multi-architecture build on the machines
+        # that aren't multi-architectural (standard computers).
+
+        # Constant builder name to re-use build cache.
         builder_name = "stork"
         _, status = Open3.capture2 *DOCKER_BUILDX, "use", builder_name
         if status != 0
             sh *DOCKER_BUILDX, "create", "--use", "--name", builder_name
         end
 
-        sh *DOCKER_BUILDX, "build",
-            *opts,
-            "--platform", "linux/amd64",
-            "--platform", "linux/arm64/v8",
+        opts = [
             "-f", args[:source],
             "-t", target,
             "docker/"
+        ]
+
+        # Build for all platforms
+        sh *DOCKER_BUILDX, "build",
+            *build_opts,
+            *build_platforms,
+            *opts
+
+        # Load or push
+        sh *DOCKER_BUILDX, "build",
+            *post_build_opts,
+            *post_build_platforms,
+            *opts
     end
 
     desc 'Prepare image that is using in GitLab CI processes. Use
@@ -85,7 +113,7 @@ end
 
 namespace :check do
     desc 'Check the external dependencies related to the distribution'
-    task :docker_registry do
+    task :registry do
         check_deps(__FILE__)
     end
 end
