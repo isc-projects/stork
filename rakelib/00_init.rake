@@ -364,6 +364,93 @@ def require_manual_install_on(task_name, *conditions)
     return create_manually_installed_file_task(program)
 end
 
+# Creates a prerequirement task for the Docker plugin.
+# Accepts the name of the standalone executable name (for old Docker version)
+# and Docker subcommand name (for modern Docker versions).
+# The function picks the available way to execute the plugin.
+# The command takes precedeence over the standalone executable.
+# The created prerequisite should be used with the splat operator in the 'sh'
+# calls.
+def docker_plugin(standalone_exe, command_name)
+    # Docker compose requirement task
+    task_name = standalone_exe
+    task task_name => [DOCKER] do
+        # The docker plugin must be manually installed. If it is installed,
+        # the task body is never called.
+        fail "docker #{command_name} plugin or #{standalone_exe} standalone is not installed"
+    end
+    
+    Rake::Task[task_name].tap do |task|
+        # The non-file tasks with the manuall_install variable are considered as
+        # dependencies. Set to true to mark it must be manually installed.
+        task.instance_variable_set(:@manuall_install, true)
+
+        # The functions or methods defined in other functions don't have
+        # an access to the variables from the outter scope in Ruby.
+        task.instance_variable_set(:@standalone_exe, standalone_exe)
+        task.instance_variable_set(:@command_name, command_name)
+
+        def task.standalone_exe()
+            self.instance_variable_get(:@standalone_exe)
+        end
+
+        def task.command_name()
+            self.instance_variable_get(:@command_name)
+        end
+
+        # Check if the docker plugin is installed.
+        def is_docker_plugin_command_supported()
+            begin
+                _, _, status = Open3.capture3 DOCKER, command_name
+                return status == 0
+            rescue
+                # Missing docker command in system.
+                return false
+            end
+        end
+
+        # Check if the standalone executable is installed.
+        def task.is_docker_plugin_standalone_supported()
+            return !which(standalone_exe).nil?
+        end
+
+        # Check if the task should be called. It is internally called by Rake.
+        # Return false if the docker plugin is ready to use.
+        def task.needed?
+            # Fail the task if the docker plugin is missing.
+            return !is_docker_plugin_command_supported() && !is_docker_plugin_standalone_supported()
+        end
+
+        # Return the string representation of the task.
+        def task.name
+            if is_docker_plugin_command_supported() || !is_docker_plugin_standalone_supported()
+                return "#{DOCKER} #{command_name}"
+            else
+                return which(standalone_exe)
+            end
+        end
+
+        # Return the task name. It is used for compatibility with Rake. The
+        # identifier of the task and the to_s output must be the same.
+        def task.to_s
+            return task_name
+        end
+
+        # Handle the splat operator call (*task_name). The splat operator should
+        # be used to call the task-related command.
+        # E.g.: sh *DOCKER_COMPOSE, --foo, --bar
+        def task.to_a
+            if is_docker_plugin_command_supported() || !is_docker_plugin_standalone_supported()
+                return [DOCKER, command_name]
+            else
+                return [which(standalone_exe)]
+            end
+        end
+    end
+
+    return task_name
+end
+
 # Fetches the file from the network. You should add the WGET to the
 # prerequisites of the task that uses this function.
 # The file is saved in the target location.
@@ -658,70 +745,9 @@ CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
 ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
 CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
 
-# Docker compose requirement task
-task :docker_compose => [DOCKER] do
-    # The docker compose (or docker-compose) must be manually installed. If it
-    # is installed, the task body is never called.
-    fail "docker compose plugin or docker-compose standalone is not installed"
-end
-
-# The constant to use as prerequisites.
-DOCKER_COMPOSE = Rake::Task[:docker_compose]
-
-Rake::Task[:docker_compose].tap do |task|
-    # The non-file tasks with the manuall_install variable are considered as
-    # dependencies. Set to true to mark it must be manually installed.
-    task.instance_variable_set(:@manuall_install, true)
-
-    # Check if the docker compose plugin is installed.
-    def is_docker_compose_v2_supported()
-        begin
-            _, _, status = Open3.capture3 DOCKER, "compose"
-            return status == 0
-        rescue
-            # Missing docker command in system.
-            return false
-        end
-    end
-
-    # Check if the standalone docker-compose is installed.
-    def is_docker_compose_v1_supported()
-        return !which("docker-compose").nil?
-    end
-
-    # Check if the task should be called. It is internally called by Rake.
-    # Return false if the docker compose or docker-compose is ready to use.
-    def task.needed?
-        # Fail the task if the docker compose or docker-compose is missing.
-        return !is_docker_compose_v2_supported() && !is_docker_compose_v1_supported()
-    end
-
-    # Return the string representation of the task.
-    def task.name
-        if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
-            return "#{DOCKER} compose"
-        else
-            return which("docker-compose")
-        end
-    end
-
-    # Return the task name. It is used for compatibility with Rake. The
-    # identifier of the task and the to_s output must be the same.
-    def task.to_s
-        return :docker_compose.to_s
-    end
-
-    # Handle the splat operator call (*task_name). The splat operator should
-    # be used to call the task-related command.
-    # E.g.: sh *DOCKER_COMPOSE, --foo, --bar
-    def task.to_a
-        if is_docker_compose_v2_supported() || !is_docker_compose_v1_supported()
-            return [DOCKER, "compose"]
-        else
-            return [which("docker-compose")]
-        end
-    end
-end
+# Docker plugins
+DOCKER_COMPOSE = docker_plugin("docker-compose", "compose")
+DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
