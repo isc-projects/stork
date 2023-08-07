@@ -12,6 +12,7 @@ RUN apt-get update \
         openjdk-11-jre-headless \
         python3.8-dev \
         python3.8-venv \
+        python3.8-distutils \
         make \
         ruby \
         ruby-dev \
@@ -22,5 +23,5 @@ RUN apt-get update \
         wget \
         chromium-browser \
         && rm -rf /var/lib/apt/lists/* \
-        && rm /usr/bin/python3 \
+        && rm -f /usr/bin/python3 \
         && ln -s /usr/bin/python3.8 /usr/bin/python3
