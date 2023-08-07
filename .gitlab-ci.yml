@@ -96,6 +96,20 @@ stages:
     - rake prepare
     - rake prepare:deps
 
+.base_build_ubi_arm:
+  extends: .base_build_ubi
+  cache:
+    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/
+      - webui/node_modules/
+      - /root/.cache/go-build
+    fallback_keys:
+      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
+  tags:
+    - aarch64
+    - linux
+
 lint_backend:
   extends: .base_build_debian
   script:
@@ -225,8 +239,20 @@ build_debs_arm64:
       - isc-stork-*.deb
     expire_in: 1 hour
 
-build_rpms:
+build_rpms_amd64:
   extends: .base_build_ubi
+  stage: checks
+  script:
+    - rake build:agent_pkg
+    - rake build:server_pkg
+    - cp dist/pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
+
+build_rpms_arm64:
+  extends: .base_build_ubi_arm
   stage: checks
   script:
     - rake build:agent_pkg
@@ -289,7 +315,8 @@ packages:
   needs:
     - build_debs_amd64
     - build_debs_arm64
-    - build_rpms
+    - build_rpms_amd64
+    - build_rpms_arm64
     - build_apks_amd64
     - build_apks_arm64
   script:
@@ -357,7 +384,7 @@ install_rpms:
     - "rpm -e isc-stork-agent"
     - "rpm -e isc-stork-server"
   needs:
-    - build_rpms
+    - build_rpms_amd64
 
 install_apks:
   image: alpine:3.15
