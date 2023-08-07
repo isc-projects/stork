@@ -19,9 +19,9 @@ func TestGetGroups(t *testing.T) {
 	require.Len(t, groups, 2)
 
 	// Groups are supposed to be ordered by id.
-	require.Equal(t, 1, groups[0].ID)
+	require.Equal(t, SuperAdminGroupID, groups[0].ID)
 	require.Equal(t, "super-admin", groups[0].Name)
-	require.Equal(t, 2, groups[1].ID)
+	require.Equal(t, AdminGroupID, groups[1].ID)
 	require.Equal(t, "admin", groups[1].Name)
 
 	// check sorting field and order ascending
