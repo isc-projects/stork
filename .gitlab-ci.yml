@@ -433,6 +433,11 @@ install_apks_amd64:
     - "apk del isc-stork-server"
   needs:
     - build_apks_amd64
+  artifacts:
+    paths:
+      - core.*
+    expire_in: 1 week
+    when: always
 
 install_apks_arm64:
   extends: install_apks_amd64
