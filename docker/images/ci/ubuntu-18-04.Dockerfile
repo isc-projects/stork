@@ -20,6 +20,7 @@ RUN apt-get update \
         software-properties-common \
         unzip \
         wget \
+        chromium-browser \
         && rm -rf /var/lib/apt/lists/* \
         && rm /usr/bin/python3 \
         && ln -s /usr/bin/python3.8 /usr/bin/python3
