@@ -9,6 +9,8 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+const noneGroupID int = 0
+
 // Helper function checking if the user belonging to the specified group
 // has access to the resource.
 func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
@@ -17,7 +19,7 @@ func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
 	user := &dbmodel.SystemUser{
 		ID: 5,
 	}
-	if groupID > 0 {
+	if groupID != noneGroupID {
 		user.Groups = []*dbmodel.SystemGroup{
 			{
 				ID: groupID,
@@ -37,39 +39,39 @@ func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
 // has appropriate access privileges.
 func TestAuthorize(t *testing.T) {
 	// Admin group have limited access to the users' management.
-	require.False(t, authorizeAccept(t, 2, "/users?start=0&limit=10", "GET"))
-	require.False(t, authorizeAccept(t, 2, "/users/list", "GET"))
-	require.False(t, authorizeAccept(t, 2, "/users/4/password", "GET"))
-	require.False(t, authorizeAccept(t, 2, "/users//4/password/", "GET"))
-	require.True(t, authorizeAccept(t, 2, "/users/5", "GET"))
-	require.True(t, authorizeAccept(t, 2, "/users/5/password", "GET"))
-	require.True(t, authorizeAccept(t, 2, "/users//5//password", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users?start=0&limit=10", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users/list", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users/4/password", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users//4/password/", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users/5", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users/5/password", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users//5//password", "GET"))
 
 	// Super-admin has no such restrictions.
-	require.True(t, authorizeAccept(t, 1, "/users?start=0&limit=10", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users/list", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users/4/password", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users//4/password/", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users/5", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users/5/password", "GET"))
-	require.True(t, authorizeAccept(t, 1, "/users//5//password", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users?start=0&limit=10", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users/list", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users/4/password", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users//4/password/", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users/5", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users/5/password", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.SuperAdminGroupID, "/users//5//password", "GET"))
 
 	// Admin group have no restriction on machines.
-	require.True(t, authorizeAccept(t, 2, "/machines/1/", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.AdminGroupID, "/machines/1/", "GET"))
 
 	// But someone who belongs to no groups would not be able
 	// to access machines.
-	require.False(t, authorizeAccept(t, 0, "/machines/1/", "GET"))
+	require.False(t, authorizeAccept(t, noneGroupID, "/machines/1/", "GET"))
 
 	// The same in case of someone belonging to non existing group.
-	require.False(t, authorizeAccept(t, 3, "/machines/1/", "GET"))
+	require.False(t, authorizeAccept(t, 999, "/machines/1/", "GET"))
 
 	// Someone who belongs to no groups would be able to log out.
-	require.True(t, authorizeAccept(t, 0, "/sessions", "DELETE"))
+	require.True(t, authorizeAccept(t, noneGroupID, "/sessions", "DELETE"))
 
 	// Someone who belongs to no groups would be able to their and only their profile.
-	require.True(t, authorizeAccept(t, 0, "/users/5", "GET"))
-	require.True(t, authorizeAccept(t, 0, "/users/5/password", "GET"))
-	require.False(t, authorizeAccept(t, 0, "/users/4", "GET"))
-	require.False(t, authorizeAccept(t, 0, "/users/4/password", "GET"))
+	require.True(t, authorizeAccept(t, noneGroupID, "/users/5", "GET"))
+	require.True(t, authorizeAccept(t, noneGroupID, "/users/5/password", "GET"))
+	require.False(t, authorizeAccept(t, noneGroupID, "/users/4", "GET"))
+	require.False(t, authorizeAccept(t, noneGroupID, "/users/4/password", "GET"))
 }
