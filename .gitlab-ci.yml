@@ -85,7 +85,7 @@ stages:
       - /root/.cache/go-build
     fallback_keys:
       - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:latest
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:1
   tags:
     - linux
     - amd64
@@ -359,7 +359,7 @@ install_debs:
     - build_debs_amd64
 
 install_rpms:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:latest
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:1
   tags:
     - linux
     - amd64
