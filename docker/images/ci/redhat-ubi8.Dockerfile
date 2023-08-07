@@ -3,7 +3,7 @@ FROM redhat/ubi8:8.6
 WORKDIR /repo
 RUN dnf install -y \
     gcc-8.5.* \
-    git-2.31.* \
+    git-2.39.* \
     java-11-openjdk-headless-1:11.0.* \
     make-1:4.2.* \
     procps-ng-3.3.* \
