@@ -16,7 +16,20 @@ CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
 ### Functions ###
 #################
 
-def forEachHook(f)
+# Iterates over the hook directories and executes the given block for each
+# of them.
+# The block may accept three arguments:
+#
+# 1. Hook directory name
+# 2. Absolute path to the hook directory
+# 3. Absolute path the the subdirectory in the hook directory containing the
+#    go.mod file (source subdirectory).
+#
+# The current working directory during the block execution is the subdirectory
+# containing the go.mod file.
+def forEachHook(&block)
+    require 'find'
+
     hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
 
     Dir.foreach(hook_directory) do |dir_name|
@@ -24,7 +37,27 @@ def forEachHook(f)
         next if dir_name == '.' or dir_name == '..' or !File.directory? path
 
         Dir.chdir(path) do
-            f.call(dir_name)
+            project_path = File.expand_path path
+
+            # Search for the go.mod
+            src_path = nil
+
+            Find.find '.' do |path|
+                if File.basename(path) == 'go.mod'
+                    src_path = File.dirname(path)
+                    break
+                end
+            end
+
+            if src_path.nil?
+                fail 'Cannot find the go.mod file'
+            end
+
+            src_path = File.expand_path src_path
+
+            Dir.chdir(src_path) do
+                block.call(dir_name, project_path, src_path)
+            end
         end
     end
 end
@@ -82,20 +115,21 @@ namespace :hook do
 
         mod_files = ["go.mod", "go.sum"]
 
-        forEachHook(lambda { |dir_name|
+        forEachHook do |dir_name, project_path|
             # Make a backup of the original mod files
             Dir.mktmpdir do |temp|
                 sh "cp", *mod_files, temp
 
                 puts "Building #{dir_name}..."
                 sh "rake", "build"
-                sh "cp", *FileList["build/*.so"], hook_directory
+
+                sh "cp", *FileList[File.join(project_path, "build/*.so")], hook_directory
 
                 # Back the changes in Go mod files.
                 puts "Reverting remap operation..."
                 sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
             end
-        })
+        end
     end
 
     desc "Lint hooks against the Stork core rules.
@@ -115,12 +149,12 @@ namespace :hook do
         hook_directory_rel = hook_directory.relative_path_from main_directory
         config_path = File.expand_path "backend/.golangci.yml"
 
-        forEachHook(lambda { |dir_name|
+        forEachHook do |dir_name|
             sh GOLANGCILINT, "run",
                 "-c",  config_path,
                 "--path-prefix", File.join(hook_directory_rel, dir_name),
                 *opts
-        })
+        end
     end
 
     desc "Remap the dependency path to the Stork core. It specifies the source
@@ -136,7 +170,7 @@ namespace :hook do
         remote_url = "gitlab.isc.org/isc-projects/stork/backend"
         core_commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
 
-        forEachHook(lambda { |dir_name|
+        forEachHook do |dir_name|
             target = nil
 
             if !ENV["COMMIT"].nil?
@@ -171,7 +205,7 @@ namespace :hook do
 
             sh GO, "mod", "edit", "-replace", "#{main_module}=#{target}"
             sh GO, "mod", "tidy"
-        })
+        end
     end
 
     desc "List dependencies of a given callout specification package
