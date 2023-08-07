@@ -75,6 +75,10 @@ func createUserGroups(dbi dbops.DBI, user *SystemUser) (err error) {
 
 	if len(user.Groups) > 0 {
 		for _, g := range user.Groups {
+			if g.ID == 0 {
+				return pkgerrors.Errorf("the zero (0) group ID is not allowed")
+			}
+
 			associations = append(associations, SystemUserToGroup{
 				UserID:  user.ID,
 				GroupID: g.ID,
