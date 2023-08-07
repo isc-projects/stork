@@ -329,7 +329,7 @@ packages:
 
 ### install packages ###
 
-install_debs:
+install_debs_amd64:
   tags:
     - linux
     - amd64
@@ -338,16 +338,14 @@ install_debs:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - apt-get update
-    - apt-get install -y man
-    # Ubuntu has dpkg configured to ignore man files by default.
-    - rm /etc/dpkg/dpkg.cfg.d/excludes
+  variables:
+    ARCH: amd64
   script:
-    - "dpkg -i isc-stork-*.deb"
+    - "dpkg -i isc-stork-*${ARCH}.deb"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
-    - "dpkg -i isc-stork-*.deb"
+    - "dpkg -i isc-stork-*${ARCH}.deb"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
@@ -359,23 +357,34 @@ install_debs:
   needs:
     - build_debs_amd64
 
-install_rpms:
+install_debs_arm64:
+  extends: install_debs_amd64
+  tags:
+    - aarch64
+    - linux
+  variables:
+    ARCH: arm64
+  needs:
+    - build_debs_arm64
+
+install_rpms_amd64:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:1
   tags:
     - linux
     - amd64
     - ssd
   stage: build
+  variables:
+    ARCH: amd64
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - yum install -y man
   script:
-    - "rpm -i isc-stork-*.rpm"
+    - "rpm -i isc-stork-*${ARCH}.rpm"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
-    - "rpm -U --force isc-stork-*.rpm"
+    - "rpm -U --force isc-stork-*${ARCH}.rpm"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
@@ -387,20 +396,33 @@ install_rpms:
   needs:
     - build_rpms_amd64
 
-install_apks:
+install_rpms_arm64:
+  extends: install_rpms_amd64
+  tags:
+    - aarch64
+    - linux
+  variables:
+    ARCH: arm64
+  needs:
+    - build_rpms_arm64
+
+install_apks_amd64:
   image: alpine:3.15
   tags:
     - linux
     - amd64
     - ssd
   stage: build
-  script:
+  variables:
+    ARCH: amd64
+  before_script:
     - "apk add --no-cache mandoc"
-    - "apk add --no-cache --allow-untrusted isc-stork-*.apk"
+  script:
+    - "apk add --no-cache --allow-untrusted isc-stork-**${ARCH}.apk"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
-    - "apk add --no-cache --allow-untrusted isc-stork-*.apk"
+    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
@@ -411,6 +433,16 @@ install_apks:
     - "apk del isc-stork-server"
   needs:
     - build_apks_amd64
+
+install_apks_arm64:
+  extends: install_apks_amd64
+  tags:
+    - aarch64
+    - linux
+  variables:
+    ARCH: arm64
+  needs:
+    - build_apks_arm64
 
 ### system testing ###
 

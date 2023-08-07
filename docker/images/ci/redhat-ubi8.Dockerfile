@@ -7,6 +7,7 @@ RUN dnf install -y \
     java-11-openjdk-headless-1:11.0.* \
     tzdata-java-2023c-* \
     make-1:4.2.* \
+    man \
     procps-ng-3.3.* \
     python38-3.8.* \
     python3-virtualenv-15.1.* \
@@ -15,6 +16,8 @@ RUN dnf install -y \
     ruby-devel-2.5.* \
     unzip-6.0 \
     wget-1.19.* \
+    # Clean up cache.
     && dnf clean all \
+    # Replace default Python.
     && rm -f /usr/bin/python3 \
     && ln -s /usr/bin/python3.8 /usr/bin/python3
