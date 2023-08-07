@@ -53,8 +53,8 @@ stages:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - apt-get update
-    - apt-get install -y python3-dev ruby-dev make python3-venv python3-wheel
+    # - apt-get update
+    # - apt-get install -y python3-dev ruby-dev make python3-venv python3-wheel
     - rake prepare
     - rake prepare:deps
 
@@ -93,6 +93,9 @@ stages:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    # Ruby bundler rejects installing packages if the temporary directory is
+    # world-writeable.
+    - chmod +t /tmp
     - rake prepare
     - rake prepare:deps
 
