@@ -298,6 +298,8 @@ build_apks_amd64:
 
 build_apks_arm64:
   extends: build_apks_amd64
+  variables:
+    CGO_ENABLED: 0
   cache:
     key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
     paths:
