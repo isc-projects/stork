@@ -146,6 +146,9 @@ unittest_backend:
   services:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
+  variables:
+    # CGO is required by the race detector.
+    CGO_ENABLED: 1
   script:
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
