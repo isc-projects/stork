@@ -9,6 +9,18 @@ func init() {
 			ALTER TABLE system_user
 				ALTER COLUMN name DROP NOT NULL,
 				ALTER COLUMN lastname DROP NOT NULL;
+			
+			UPDATE system_user
+			SET name = NULL
+			WHERE name = '';
+
+			UPDATE system_user
+			SET lastname = NULL
+			WHERE lastname = '';
+
+			UPDATE system_user
+			SET email = NULL
+			WHERE email = '';
 		`)
 		return err
 	}, func(db migrations.DB) error {
