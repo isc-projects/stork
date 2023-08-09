@@ -23,16 +23,6 @@ variables:
   LC_ALL: C.UTF-8
   LANG: C.UTF-8
 
-  # There is an observed issue with executing the ARM binary on Alpine. Running
-  # a program causes the segmentation fault.
-  # The core dump comprises only three first frames and thousands of goroutines.
-  # The problem occurs if CGO is enabled (default) and the built-in `plugin`
-  # package is imported.
-  # The minimal code example that causes the segmentation fault is available in
-  # the "https://gitlab.isc.org/slawek/golang-arm-plugin-segfault" repository.
-  # Stork doesn't utilize CGO code, so disabling it should be safe.
-  CGO_ENABLED: 0
-
 # stages order
 stages:
   - checks
@@ -311,6 +301,19 @@ build_apks_amd64:
 
 build_apks_arm64:
   extends: build_apks_amd64
+  variables:
+    # There is an observed issue with executing the ARM binary on Alpine. Running
+    # a program causes the segmentation fault.
+    # The core dump comprises only three first frames and thousands of goroutines.
+    # The problem occurs if CGO is enabled (default) and the built-in `plugin`
+    # package is imported.
+    # The minimal code example that causes the segmentation fault is available in
+    # the "https://gitlab.isc.org/slawek/golang-arm-plugin-segfault" repository.
+    # Stork doesn't utilize CGO code, so disabling it should be safe.
+    # The problem is solved in Go 1.21 so the below environment variable should be
+    # removed when the Go version is updated.
+    # TODO: Remove CGO_ENABLED: 0 when Go version is updated to 1.21.
+    CGO_ENABLED: 0
   cache:
     key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
     paths:
