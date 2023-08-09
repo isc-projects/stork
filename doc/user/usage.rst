@@ -26,6 +26,9 @@ restrictions:
   (_).
 - The ``e-mail`` field is optional, but if specified, it must be a
   well-formed e-mail address.
+- The ``firstname`` and ``lastname`` fields are mandatory for the users managed
+  by Stork itself. The users authenticated via external (hook) authentication
+  may lack these fields.
 - The ``password`` must only contain letters, digits, @, ., !, +, or -,
   and must be at least eight characters long.
 

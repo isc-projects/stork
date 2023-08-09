@@ -306,7 +306,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || p == nil {
+	if u == nil || p == nil || u.Name == "" || u.Lastname == "" {
 		msg := "Failed to create new user account: missing data"
 		log.Warn(msg)
 		rspErr := models.APIError{Message: &msg}
@@ -385,6 +385,16 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		log.Warn(msg)
 		rspErr := models.APIError{Message: &msg}
 		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	}
+
+	isInternal := u.AuthenticationMethodID == nil || *u.AuthenticationMethodID == dbmodel.AuthenticationMethodIDInternal
+	if isInternal && (u.Name == "" || u.Lastname == "") {
+		msg := "Failed to update user account: missing first or last name"
+		log.Warn(msg)
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 	}
 
 	su := &dbmodel.SystemUser{
