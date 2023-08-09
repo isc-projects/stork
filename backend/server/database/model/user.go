@@ -25,8 +25,8 @@ type SystemUser struct {
 	ID                     int
 	Login                  string
 	Email                  string
-	Lastname               string `pg:",use_zero"`
-	Name                   string `pg:",use_zero"`
+	Lastname               string
+	Name                   string
 	AuthenticationMethodID string `pg:"auth_method"`
 	ExternalID             string
 

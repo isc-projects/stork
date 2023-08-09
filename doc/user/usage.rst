@@ -26,7 +26,6 @@ restrictions:
   (_).
 - The ``e-mail`` field is optional, but if specified, it must be a
   well-formed e-mail address.
-- The ``firstname`` and ``lastname`` fields are mandatory.
 - The ``password`` must only contain letters, digits, @, ., !, +, or -,
   and must be at least eight characters long.
 

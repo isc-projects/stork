@@ -2,10 +2,6 @@
     type: object
     required:
       - id
-      - login
-      - email
-      - name
-      - lastname
       - authenticationMethodId
     properties:
       id:

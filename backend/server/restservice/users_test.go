@@ -280,10 +280,10 @@ func TestCreateUser(t *testing.T) {
 	require.IsType(t, &users.CreateUserOK{}, rsp)
 	okRsp := rsp.(*users.CreateUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
-	require.Equal(t, *okRsp.Payload.Email, su.Email)
-	require.Equal(t, *okRsp.Payload.Lastname, su.Lastname)
-	require.Equal(t, *okRsp.Payload.Login, su.Login)
-	require.Equal(t, *okRsp.Payload.Name, su.Name)
+	require.Equal(t, okRsp.Payload.Email, su.Email)
+	require.Equal(t, okRsp.Payload.Lastname, su.Lastname)
+	require.Equal(t, okRsp.Payload.Login, su.Login)
+	require.Equal(t, okRsp.Payload.Name, su.Name)
 
 	// Also check that the user is indeed in the database.
 	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
@@ -475,10 +475,10 @@ func TestDeleteUser(t *testing.T) {
 	require.IsType(t, &users.DeleteUserOK{}, rsp)
 	okRsp := rsp.(*users.DeleteUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
-	require.Equal(t, *okRsp.Payload.Email, su2.Email)
-	require.Equal(t, *okRsp.Payload.Lastname, su2.Lastname)
-	require.Equal(t, *okRsp.Payload.Login, su2.Login)
-	require.Equal(t, *okRsp.Payload.Name, su2.Name)
+	require.Equal(t, okRsp.Payload.Email, su2.Email)
+	require.Equal(t, okRsp.Payload.Lastname, su2.Lastname)
+	require.Equal(t, okRsp.Payload.Login, su2.Login)
+	require.Equal(t, okRsp.Payload.Name, su2.Name)
 
 	// Also check that the user is indeed not in the database.
 	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
@@ -548,10 +548,10 @@ func TestDeleteUserInGroup(t *testing.T) {
 	require.IsType(t, &users.DeleteUserOK{}, rsp)
 	okRsp := rsp.(*users.DeleteUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
-	require.Equal(t, *okRsp.Payload.Email, su2.Email)
-	require.Equal(t, *okRsp.Payload.Lastname, su2.Lastname)
-	require.Equal(t, *okRsp.Payload.Login, su2.Login)
-	require.Equal(t, *okRsp.Payload.Name, su2.Name)
+	require.Equal(t, okRsp.Payload.Email, su2.Email)
+	require.Equal(t, okRsp.Payload.Lastname, su2.Lastname)
+	require.Equal(t, okRsp.Payload.Login, su2.Login)
+	require.Equal(t, okRsp.Payload.Name, su2.Name)
 
 	// Also check that the user is indeed not in the database.
 	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
@@ -975,18 +975,18 @@ func TestGetUsers(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
 
 	// Check the default user (admin)
-	require.Equal(t, "admin", *okRsp.Payload.Items[0].Login)
-	require.Equal(t, "admin", *okRsp.Payload.Items[0].Name)
-	require.Equal(t, "admin", *okRsp.Payload.Items[0].Lastname)
-	require.Equal(t, "", *okRsp.Payload.Items[0].Email)
+	require.Equal(t, "admin", okRsp.Payload.Items[0].Login)
+	require.Equal(t, "admin", okRsp.Payload.Items[0].Name)
+	require.Equal(t, "admin", okRsp.Payload.Items[0].Lastname)
+	require.Equal(t, "", okRsp.Payload.Items[0].Email)
 	require.Equal(t, dbmodel.AuthenticationMethodIDInternal, *okRsp.Payload.Items[0].AuthenticationMethodID)
 	require.Empty(t, okRsp.Payload.Items[0].ExternalID)
 
 	// Check the user we just added
-	require.Equal(t, "johndoe", *okRsp.Payload.Items[1].Login)
-	require.Equal(t, "John", *okRsp.Payload.Items[1].Name)
-	require.Equal(t, "Doe", *okRsp.Payload.Items[1].Lastname)
-	require.Equal(t, "jd@example.org", *okRsp.Payload.Items[1].Email)
+	require.Equal(t, "johndoe", okRsp.Payload.Items[1].Login)
+	require.Equal(t, "John", okRsp.Payload.Items[1].Name)
+	require.Equal(t, "Doe", okRsp.Payload.Items[1].Lastname)
+	require.Equal(t, "jd@example.org", okRsp.Payload.Items[1].Email)
 	require.Equal(t, "LDAP", *okRsp.Payload.Items[1].AuthenticationMethodID)
 	require.Equal(t, "34ddae6b-f702-469d-8796-63c853496c49", okRsp.Payload.Items[1].ExternalID)
 
@@ -1024,11 +1024,11 @@ func TestGetUser(t *testing.T) {
 	rsp := rapi.GetUser(ctx, params)
 	require.IsType(t, &users.GetUserOK{}, rsp)
 	okRsp := rsp.(*users.GetUserOK)
-	require.Equal(t, user.Email, *okRsp.Payload.Email) // we expect 2 users (admin and john doe)
-	require.Equal(t, id, *okRsp.Payload.ID)            // user ID
-	require.Equal(t, user.Login, *okRsp.Payload.Login)
-	require.Equal(t, user.Name, *okRsp.Payload.Name)
-	require.Equal(t, user.Lastname, *okRsp.Payload.Lastname)
+	require.Equal(t, user.Email, okRsp.Payload.Email) // we expect 2 users (admin and john doe)
+	require.Equal(t, id, *okRsp.Payload.ID)           // user ID
+	require.Equal(t, user.Login, okRsp.Payload.Login)
+	require.Equal(t, user.Name, okRsp.Payload.Name)
+	require.Equal(t, user.Lastname, okRsp.Payload.Lastname)
 
 	// TODO: check that the new user belongs to a group
 	// require.Len(t, okRsp.Payload.Groups, 1)

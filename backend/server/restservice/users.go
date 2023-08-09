@@ -21,11 +21,11 @@ import (
 func newRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.ID)
 	r := &models.User{
-		Email:                  &u.Email,
-		Name:                   &u.Name,
+		Email:                  u.Email,
+		Name:                   u.Name,
 		ID:                     &id,
-		Lastname:               &u.Lastname,
-		Login:                  &u.Login,
+		Lastname:               u.Lastname,
+		Login:                  u.Login,
 		AuthenticationMethodID: &u.AuthenticationMethodID,
 		ExternalID:             u.ExternalID,
 		Groups:                 []int64{},
@@ -306,12 +306,12 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil || p == nil {
+	if u == nil || p == nil {
 		msg := "Failed to create new user account: missing data"
 		log.Warn(msg)
 		rspErr := models.APIError{Message: &msg}
 		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
-	} else if *u.Login == "" && *u.Email == "" {
+	} else if u.Login == "" && u.Email == "" {
 		msg := "Failed to create new user account: missing identifier"
 		log.Warn(msg)
 		rspErr := models.APIError{Message: &msg}
@@ -319,10 +319,10 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	}
 
 	su := &dbmodel.SystemUser{
-		Login:    *u.Login,
-		Email:    *u.Email,
-		Lastname: *u.Lastname,
-		Name:     *u.Name,
+		Login:    u.Login,
+		Email:    u.Email,
+		Lastname: u.Lastname,
+		Name:     u.Name,
 	}
 
 	for _, gid := range u.Groups {
@@ -373,14 +373,14 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	u := params.Account.User
 	p := params.Account.Password
 
-	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
+	if u == nil || u.ID == nil {
 		msg := "Failed to update user account: missing data"
 		log.Warn(msg)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
 		return users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
-	} else if *u.Login == "" && *u.Email == "" {
+	} else if u.Login == "" && u.Email == "" {
 		msg := "Failed to create new user account: missing identifier"
 		log.Warn(msg)
 		rspErr := models.APIError{Message: &msg}
@@ -389,10 +389,10 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 	su := &dbmodel.SystemUser{
 		ID:       int(*u.ID),
-		Login:    *u.Login,
-		Email:    *u.Email,
-		Lastname: *u.Lastname,
-		Name:     *u.Name,
+		Login:    u.Login,
+		Email:    u.Email,
+		Lastname: u.Lastname,
+		Name:     u.Name,
 	}
 
 	for _, gid := range u.Groups {
@@ -412,8 +412,8 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	} else if err != nil {
 		log.WithFields(log.Fields{
 			"userID": *u.ID,
-			"login":  *u.Login,
-			"email":  *u.Email,
+			"login":  u.Login,
+			"email":  u.Email,
 		}).WithError(err).Errorf("Failed to update user account for user %s", su.Identity())
 
 		msg := fmt.Sprintf("Failed to update user account for user %s", su.Identity())
@@ -433,8 +433,8 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"userID": *u.ID,
-				"login":  *u.Login,
-				"email":  *u.Email,
+				"login":  u.Login,
+				"email":  u.Email,
 			}).WithError(err).Errorf("Failed to update password for user %s", su.Identity())
 
 			msg := fmt.Sprintf("Failed to update password for user %s", su.Identity())

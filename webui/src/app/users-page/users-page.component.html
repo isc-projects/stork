@@ -88,7 +88,7 @@
         <ng-template pTemplate="body" let-u>
             <tr class="alternate-list">
                 <td align="center">
-                    <a routerLink="/users/{{ u.id }}">{{ u.login }}</a>
+                    <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
                     <sup *ngIf="auth.currentUserValue.id === u.id"><span id="youtag">It's you</span></sup>
                 </td>
                 <td align="center">

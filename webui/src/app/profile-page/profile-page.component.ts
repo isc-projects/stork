@@ -62,10 +62,18 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
      * them is returned (typically the case for the admin account).
      */
     public get profilePanelHeader(): string {
-        let hdr = this.currentUser.name
-        if (this.currentUser.name !== this.currentUser.lastname) {
-            hdr += ' ' + this.currentUser.lastname
+        if (!!this.currentUser.name && !!this.currentUser.lastname) {
+            return `${this.currentUser.name} ${this.currentUser.lastname}`
+        } else if (!!this.currentUser.name) {
+            return this.currentUser.name
+        } else if (!!this.currentUser.lastname) {
+            return this.currentUser.lastname
+        } else if (!!this.currentUser.login) {
+            return this.currentUser.login
+        } else if (!!this.currentUser.email) {
+            return this.currentUser.email
+        } else {
+            return this.currentUser.id.toString()
         }
-        return hdr
     }
 }
