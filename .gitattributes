@@ -23,4 +23,3 @@ rakelib/init_deps/pytest.txt            -diff merge=ours
 rakelib/init_deps/sphinx.txt            -diff merge=ours
 tests/sim/requirements.txt              -diff merge=ours
 webui/package-lock.json                 -diff merge=ours
-ChangeLog.md                            -diff merge=union
