@@ -214,6 +214,35 @@ func TestCreateUserEmptyParams(t *testing.T) {
 	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
 }
 
+// Test that create user account with empty first and last names is rejected
+// via REST API.
+func TestCreateUserEmptyFirstAndLastNames(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			Password: storkutil.Ptr(models.Password("pass")),
+			User: &models.User{
+				Login: "foo",
+			},
+		},
+	}
+
+	// Act
+	rsp := rapi.CreateUser(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to create new user account: missing data", *defaultRsp.Payload.Message)
+}
+
 // Tests that create user account with empty request is rejected via REST API.
 func TestCreateUserEmptyRequest(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
