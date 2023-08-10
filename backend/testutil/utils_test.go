@@ -211,7 +211,7 @@ func TestCreateEnvironmentRestorePoint(t *testing.T) {
 }
 
 // Test that the restore point clears the OS arguments.
-func Test(t *testing.T) {
+func TestCreateOsArgsRestorePoint(t *testing.T) {
 	// Arrange & Act
 	restorePoint := CreateOsArgsRestorePoint()
 
