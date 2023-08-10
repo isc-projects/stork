@@ -624,6 +624,77 @@ func TestUpdateUserEmptyParams(t *testing.T) {
 	require.Equal(t, "Failed to update user account: missing data", *defaultRsp.Payload.Message)
 }
 
+// Tests that update user account with empty first and last names is rejected
+// via REST API for an internal user.
+func TestUpdateUserEmptyParamsForInternalUser(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	su := dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+	}
+	_, _ = dbmodel.CreateUser(db, &su)
+
+	// Act
+	user := newRestUser(su)
+	user.Name = ""
+	user.Lastname = ""
+
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: user,
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to update user account: missing first or last name", *defaultRsp.Payload.Message)
+}
+
+// Tests that update user account with empty first and last names is rejected
+// via REST API for an external user.
+func TestUpdateUserEmptyParamsForExternalUser(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(dbSettings, db)
+
+	su := dbmodel.SystemUser{
+		Email:                  "jan@example.org",
+		Lastname:               "Kowalski",
+		Name:                   "Jan",
+		AuthenticationMethodID: "external",
+		ExternalID:             "42",
+	}
+	_, _ = dbmodel.CreateUser(db, &su)
+
+	// Act
+	user := newRestUser(su)
+	user.Name = ""
+	user.Lastname = ""
+
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: user,
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.UpdateUserOK{}, rsp)
+}
+
 // Tests that update user account with empty request is rejected via REST API.
 func TestUpdateUserEmptyRequest(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
