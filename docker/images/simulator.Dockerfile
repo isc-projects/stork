@@ -34,13 +34,13 @@ RUN apt-get update \
     && make \
     && make install \
     # Install perfdhcp
-    && curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-2-0/cfg/setup/bash.deb.sh' | bash \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-2-4/cfg/setup/bash.deb.sh' | bash \
     && apt-get update \
     && apt-get install \
         -y \
         --no-install-recommends \
-        isc-kea-admin=2.0.1-isc20211214132435 \
-        isc-kea-common=2.0.1-isc20211214132435 \
+        isc-kea-admin=2.4.0-isc20230630120747 \
+        isc-kea-common=2.4.0-isc20230630120747 \
     && mkdir -p /var/run/kea/ \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

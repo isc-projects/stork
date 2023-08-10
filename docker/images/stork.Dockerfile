@@ -2,8 +2,8 @@
 ### Arguments ###
 #################
 
-ARG KEA_REPO=public/isc/kea-2-0
-ARG KEA_VERSION=2.0.2-isc20220227221539
+ARG KEA_REPO=public/isc/kea-2-4
+ARG KEA_VERSION=2.4.0-isc20230630120747
 # Indicate if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
@@ -254,10 +254,9 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
         && apt-get install \
         --no-install-recommends \
         -y \
-        python3-isc-kea-connector=${KEA_VERSION} \
         isc-kea-ctrl-agent=${KEA_VERSION} \
-        isc-kea-dhcp4-server=${KEA_VERSION} \
-        isc-kea-dhcp6-server=${KEA_VERSION} \
+        isc-kea-dhcp4=${KEA_VERSION} \
+        isc-kea-dhcp6=${KEA_VERSION} \
         isc-kea-admin=${KEA_VERSION} \
         isc-kea-common=${KEA_VERSION} \
         && apt-get clean \

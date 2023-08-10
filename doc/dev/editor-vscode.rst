@@ -43,9 +43,9 @@ environment.
                     "${selectedText}"
                 ],
                 "env": {
-                    // "KEA_VER": "2.0.2-isc20220227221539",
-                    // "KEA_PUBLIC_REPO": "public/isc/kea-2-0",
-                    // "KEA_PREMIUM_REPO": "<your-cloudsmith-token-here>/isc/kea-2-0-prv"
+                    // "KEA_VER": "2.4.0-isc20230630120747",
+                    // "KEA_PUBLIC_REPO": "public/isc/kea-2-4",
+                    // "KEA_PREMIUM_REPO": "<your-cloudsmith-token-here>/isc/kea-2-4-prv"
                     // "CS_REPO_ACCESS_TOKEN": "<your-cloudsmith-token-here>"
                 }
             }

@@ -254,7 +254,7 @@ Unit Tests Database Authentication
 
 A few special test cases check if Stork is operational for various database
 authentication methods: ``trust``, ``peer``, ``ident``, ``md5``, and
-``scram-sha-256``. 
+``scram-sha-256``.
 These tests require meeting certain conditions to be run. If any of them is
 not satisfied, the test case is skipped.
 
@@ -476,9 +476,9 @@ To run the test cases with a specific Kea version, provide it in the KEA_VERSION
 
 .. code-block:: console
 
-    $ rake systemtest KEA_VERSION=2.0
-    $ rake systemtest KEA_VERSION=2.0.2
-    $ rake systemtest KEA_VERSION=2.0.2-isc20220227221539
+    $ rake systemtest KEA_VERSION=2.4
+    $ rake systemtest KEA_VERSION=2.4.0
+    $ rake systemtest KEA_VERSION=2.4.0-isc20230630120747
 
 Accepted version format is: ``MAJOR.MINOR[.PATCH][-REVISION]``. The version must
 contain at least major and minor components.

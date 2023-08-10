@@ -64,7 +64,7 @@ It is possible to run the demo with premium features enabled in the Kea
 apps; it requires the demo to be started with an access token for the Kea premium
 repositories. Access tokens are provided to ISC's paid support customers and
 format-specific setup instructions can be found on
-https://cloudsmith.io/~isc/repos/kea-2-0-prv/setup/#tab-formats-deb. ISC paid support
+https://cloudsmith.io/~isc/repos/kea-2-4-prv/setup/#tab-formats-deb. ISC paid support
 customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
