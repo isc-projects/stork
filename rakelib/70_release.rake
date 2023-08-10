@@ -26,15 +26,17 @@ namespace :release do
             end
         end
 
+        # Prepend the unreleased Changelog entries to the Changelog file.
+        Rake::Task['release:changelog'].invoke()
+
         # Announce release in ChangeLog.
         days_to_add = (3 + 7 - Date.today.wday) % 7
         next_wednesday = Date.today + days_to_add
         File.open('ChangeLog.md', 'r') do |file_r|
             contents = file_r.read
             contents = "Stork #{ENV["VERSION"]} released on #{next_wednesday}.\n\n" + contents
-            File.open('ChangeLog.md', 'w') do |file_w|
-                file_w.write(contents)
-            end
+
+            File.write('ChangeLog.md', contents)
         end
 
         # Put out an informative message that the bump was successful.
@@ -71,6 +73,87 @@ namespace :release do
         end
     end
 
+    desc 'Merge unreleased Changelog entries to the Changelog file'
+    task :changelog do
+        # This script reads the Changelog entries from the "changelog/"
+        # directory. It fills up the number of entries, concats them by a blank
+        # line and prepends to the Changelog.md file. 
+
+        changelog_dir = 'changelog'
+        changelog_file = 'ChangeLog.md'
+
+        # Read the Changelog file content.
+        changelog_content = File.read(changelog_file)
+
+        # Get the start number of the entries by iterating over the Changelog lines.
+        start = 0
+        changelog_content.each_line do |line|
+            # Seach for first entry header. Skip the release header.
+            if line.start_with? '*'
+                start = Integer(line.split(' ')[1])
+                break
+            end
+        end
+
+        # List files in the changelog directory.
+        entry_filenames = Dir.entries(changelog_dir)        
+        entry_files = []
+
+        entry_filenames.each do |entry_filename|
+            entry_file = File.join(changelog_dir, entry_filename)
+            # Filter out non-files.
+            if !File.file?(entry_file)
+                next
+            end
+
+            # Skip hidden files.
+            if entry_filename.start_with? '.'
+                next
+            end
+
+            # Append entry to the list.
+            entry_files.push(entry_file)
+        end
+
+        # Iterate over the entry files.
+        entries = []
+        entry_files.each do |entry_file|
+            # Read the file content.
+            entry_content = File.read(entry_file)
+
+            # Strip the whitespace from the beginning and the end of the file.
+            entry_content.strip!
+
+            # Increment the start number.
+            start += 1
+
+            # Prepend the entry with the number.
+            entry_content = "* #{start} #{entry_content}"
+
+            # Append the entry to the list.
+            entries.push(entry_content)
+        end
+
+        # Return if there are no entries.
+        if entries.length == 0
+            puts "No entries to merge."
+            next
+        end
+
+        # Concat the entries.
+        merged = entries.join("\n\n")
+
+        # Concat the new entries and current Changelog content.
+        merged = merged + "\n\n" + changelog_content
+        
+        # Write the new Changelog content.
+        File.write(changelog_file, merged)
+
+        # Remove the files in the changelog directory.
+        entry_files.each do |entry_file|
+            File.delete(entry_file)
+        end
+    end
 
     desc 'Prepare release notes'
     task :notes => [WGET, SED, PERL, FOLD] do
