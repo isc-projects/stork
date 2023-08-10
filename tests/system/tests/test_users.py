@@ -10,7 +10,7 @@ def test_users_management(server_service: Server):
 
     users = server_service.list_users()
     assert users["total"] == 1
-    assert users["items"][0]["email"] == ""
+    assert "email" not in users["items"][0]
     assert users["items"][0]["groups"] == [1]
     assert users["items"][0]["id"] == 1
     assert users["items"][0]["lastname"] == "admin"
