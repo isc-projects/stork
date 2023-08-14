@@ -90,11 +90,12 @@ type Host struct {
 // which it has been retrieved. It provides M:N relationship between hosts
 // and daemons.
 type LocalHost struct {
-	HostID     int64   `pg:",pk"`
-	DaemonID   int64   `pg:",pk"`
-	Daemon     *Daemon `pg:"rel:has-one"`
-	Host       *Host   `pg:"rel:has-one"`
-	DataSource HostDataSource
+	HostID     int64          `pg:",pk"`
+	DaemonID   int64          `pg:",pk"`
+	DataSource HostDataSource `pg:",pk"`
+
+	Daemon *Daemon `pg:"rel:has-one"`
+	Host   *Host   `pg:"rel:has-one"`
 
 	ClientClasses     []string `pg:",array"`
 	NextServer        string
