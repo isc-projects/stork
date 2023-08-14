@@ -462,6 +462,8 @@ services:
       - storknet
     environment:
       MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "4417:3306"
 
 networks:
   storknet:
