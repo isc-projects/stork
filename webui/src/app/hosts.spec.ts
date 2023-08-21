@@ -6,35 +6,33 @@ import {
     hasDifferentLocalHostData,
     hasDifferentLocalHostOptions,
 } from './hosts'
+import { LocalHost } from './backend'
 
 describe('hosts', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
 
     it('detects differences between DHCP options', () => {
-        const host: Host = {
-            localHosts: [
-                {
-                    optionsHash: '123',
-                    clientClasses: ['foo', 'bar'],
-                },
-                {
-                    optionsHash: '234',
-                    clientClasses: ['foo', 'bar'],
-                },
-                {
-                    optionsHash: '123',
-                    clientClasses: ['foo', 'bar'],
-                },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeTrue()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeTrue()
+        const localHosts: LocalHost[] = [
+            {
+                optionsHash: '123',
+                clientClasses: ['foo', 'bar'],
+            },
+            {
+                optionsHash: '234',
+                clientClasses: ['foo', 'bar'],
+            },
+            {
+                optionsHash: '123',
+                clientClasses: ['foo', 'bar'],
+            },
+        ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeTrue()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeTrue()
     })
 
     it('detects differences between client classes', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
@@ -47,14 +45,12 @@ describe('hosts', () => {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostData(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostData(localHosts)).toBeTrue()
     })
 
     it('detects differences between boot fields', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
@@ -70,15 +66,13 @@ describe('hosts', () => {
                     clientClasses: ['foo', 'bar'],
                     nextServer: '192.0.2.1',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
-        expect(hasDifferentLocalHostData(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
+        expect(hasDifferentLocalHostData(localHosts)).toBeTrue()
     })
 
     it('detects that there are no differences', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo', 'bar'],
@@ -100,17 +94,15 @@ describe('hosts', () => {
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/boot',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 
     it('detects no differences for all null options hashes', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: null,
                     clientClasses: ['foo', 'bar'],
@@ -123,16 +115,14 @@ describe('hosts', () => {
                     optionsHash: null,
                     clientClasses: ['foo', 'bar'],
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 
     it('detects no differences when client classes are in different order', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: null,
                     clientClasses: ['foo', 'bar', 'baz'],
@@ -145,16 +135,14 @@ describe('hosts', () => {
                     optionsHash: null,
                     clientClasses: ['baz', 'bar', 'foo'],
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 
     it('detects no differences for all null client', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     clientClasses: null,
                 },
@@ -164,16 +152,14 @@ describe('hosts', () => {
                 {
                     clientClasses: null,
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 
     it('detects differences for some null client classes', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     clientClasses: null,
                 },
@@ -183,16 +169,14 @@ describe('hosts', () => {
                 {
                     clientClasses: ['foo'],
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeTrue()
-        expect(hasDifferentLocalHostData(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeTrue()
+        expect(hasDifferentLocalHostData(localHosts)).toBeTrue()
     })
 
     it('detects differences for next server', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     nextServer: '192.0.2.2',
                     serverHostname: 'foo',
@@ -208,14 +192,12 @@ describe('hosts', () => {
                     serverHostname: 'foo',
                     bootFileName: '/tmp/bootfile',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
     })
 
     it('detects differences for server hostname', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     nextServer: '192.0.2.1',
                     serverHostname: 'foo',
@@ -231,14 +213,12 @@ describe('hosts', () => {
                     serverHostname: 'foo',
                     bootFileName: '/tmp/bootfile',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
     })
 
     it('detects differences for boot file name', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     nextServer: '192.0.2.1',
                     serverHostname: 'foo',
@@ -254,34 +234,29 @@ describe('hosts', () => {
                     serverHostname: 'foo',
                     bootFileName: '/tmp/bootfile',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostBootFields(host)).toBeTrue()
+            ]
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
     })
 
     it('detects no differences when there is a single local host', () => {
-        const host: Host = {
-            localHosts: [
+        const localHosts = [
                 {
                     optionsHash: '123',
                     clientClasses: ['foo'],
                     nextServer: '192.0.2.1',
                 },
-            ],
-        }
-        expect(hasDifferentLocalHostOptions(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+            ]
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 
     it('detects no differences when there is no local host', () => {
-        const host: Host = {
-            localHosts: [],
-        }
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(host)).toBeFalse()
-        expect(hasDifferentLocalHostBootFields(host)).toBeFalse()
-        expect(hasDifferentLocalHostData(host)).toBeFalse()
+        const localHosts = []
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostBootFields(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
     })
 })
