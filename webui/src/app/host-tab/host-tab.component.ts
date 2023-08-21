@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { Host, IPReservation } from '../backend'
+import { Host, IPReservation, LocalHost } from '../backend'
 
 import { DHCPService } from '../backend/api/api'
 import {
@@ -168,6 +168,20 @@ export class HostTabComponent {
      */
     get leasesSearchInProgress() {
         return this._leasesSearchStatus.get(this.host.id) ? true : false
+    }
+
+    /**
+     * Returns local host grouped by the app ID. 
+     */
+    get localHostsByAppId(): LocalHost[] {
+        const localHostsByAppId = {}
+        this.host.localHosts?.forEach((localHost) => {
+            if (!localHostsByAppId[localHost.appId]) {
+                localHostsByAppId[localHost.appId] = []
+            }
+            localHostsByAppId[localHost.appId].push(localHost)
+        })
+        return Object.values(localHostsByAppId)
     }
 
     /**
@@ -472,6 +486,13 @@ export class HostTabComponent {
     }
 
     /**
+     * Checks if all provided DHCP servers have equal set of DHCP options.
+     */
+    daemonsHaveEqualDhcpOptions(localHosts: LocalHost[]): boolean {
+        return !hasDifferentLocalHostData(localHosts)
+    }
+
+    /**
      * Checks if all DHCP servers owning the reservation have equal set of
      * DHCP options.
      *
@@ -479,7 +500,7 @@ export class HostTabComponent {
      *          otherwise.
      */
     allDaemonsHaveEqualDhcpOptions(): boolean {
-        return !hasDifferentLocalHostData(this.host)
+        return this.daemonsHaveEqualDhcpOptions(this.host.localHosts)
     }
 
     /**
@@ -489,7 +510,7 @@ export class HostTabComponent {
      * @returns true, if all DHCP servers have equal set of client classes.
      */
     allDaemonsHaveEqualClientClasses(): boolean {
-        return !hasDifferentLocalHostClientClasses(this.host)
+        return !hasDifferentLocalHostClientClasses(this.host.localHosts)
     }
 
     /**
@@ -499,6 +520,6 @@ export class HostTabComponent {
      * @returns true if, all DHCP servers have equal set of boot fields.
      */
     allDaemonsHaveEqualBootFields(): boolean {
-        return !hasDifferentLocalHostBootFields(this.host)
+        return !hasDifferentLocalHostBootFields(this.host.localHosts)
     }
 }

@@ -577,7 +577,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Split form mode is only set when there are multiple servers associated
         // with the edited host and at least one of the servers has different
         // set of DHCP options, client classes or boot fields.
-        const splitFormMode = hasDifferentLocalHostData(host)
+        const splitFormMode = hasDifferentLocalHostData(host.localHosts)
         this.formGroup.get('splitFormMode').setValue(splitFormMode)
 
         for (let i = 0; i < (splitFormMode ? host.localHosts.length : 1); i++) {
