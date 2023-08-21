@@ -61,6 +61,11 @@ export class HostTabComponent {
     currentHost: Host
 
     /**
+     * Local hosts of the @currentHost grouped by the app ID.
+     */
+    currentLocalHostsByAppId: LocalHost[][] = []
+
+    /**
      * Indicates if the boot fields panel should be displayed.
      */
     displayBootFields: boolean
@@ -126,6 +131,7 @@ export class HostTabComponent {
     set host(host) {
         // Make the new host current.
         this.currentHost = host
+        this.currentLocalHostsByAppId = []
         // The host is null if the tab with a list of hosts is selected.
         if (!this.currentHost) {
             return
@@ -143,6 +149,21 @@ export class HostTabComponent {
         this.displayBootFields = !!this.currentHost.localHosts?.some(
             (lh) => lh.nextServer || lh.serverHostname || lh.bootFileName
         )
+
+        // Group local hosts by the app ID.
+        const localHostsByAppID = (host.localHosts ?? [])
+            // Group by app ID.
+            .reduce<Record<number, LocalHost[]>>((acc, lh) => {
+                if (!acc[lh.appId]) {
+                    // Create an array for the app ID if it doesn't exist yet.
+                    acc[lh.appId] = []
+                }
+                // Add the local host to the array.
+                acc[lh.appId].push(lh)
+                // Return the accumulator.
+                return acc
+            }, {})
+        this.currentLocalHostsByAppId = Object.values(localHostsByAppID)
     }
 
     /**
@@ -173,15 +194,8 @@ export class HostTabComponent {
     /**
      * Returns local host grouped by the app ID. 
      */
-    get localHostsByAppId(): LocalHost[] {
-        const localHostsByAppId = {}
-        this.host.localHosts?.forEach((localHost) => {
-            if (!localHostsByAppId[localHost.appId]) {
-                localHostsByAppId[localHost.appId] = []
-            }
-            localHostsByAppId[localHost.appId].push(localHost)
-        })
-        return Object.values(localHostsByAppId)
+    get localHostsByAppId(): LocalHost[][] {
+        return this.currentLocalHostsByAppId
     }
 
     /**
