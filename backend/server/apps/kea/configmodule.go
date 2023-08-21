@@ -228,7 +228,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	// Try to lock configurations.
 	ctx, err = module.manager.Lock(ctx, daemonIDs...)
 	if err != nil {
-		return ctx, errors.Wrap(config.LockError, err.Error())
+		return ctx, errors.Wrap(config.ErrLock, err.Error())
 	}
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)

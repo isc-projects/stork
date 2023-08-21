@@ -55,4 +55,4 @@ func (e NoSubnetCmdsHookError) Error() string {
 }
 
 // An error returned when it was not possible to lock daemons' configuration.
-var LockError = errors.New("problem with locking daemons configuration")
+var ErrLock = errors.New("problem with locking daemons configuration")
