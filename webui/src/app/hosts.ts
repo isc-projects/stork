@@ -33,9 +33,7 @@ export function hasDifferentLocalHostOptions(localHosts: LocalHost[]): boolean {
     if (localHosts == null || localHosts.length <= 1) {
         return false
     }
-    return localHosts
-        .slice(1)
-        .some((lh) => lh.optionsHash !== localHosts[0].optionsHash)
+    return localHosts.slice(1).some((lh) => lh.optionsHash !== localHosts[0].optionsHash)
 }
 
 /**
@@ -53,11 +51,7 @@ export function hasDifferentLocalHostClientClasses(localHosts: LocalHost[]): boo
 
     return localHosts
         .slice(1)
-        .some(
-            (lh) =>
-                JSON.stringify(lh.clientClasses?.sort()) !==
-                JSON.stringify(localHosts[0].clientClasses?.sort())
-        )
+        .some((lh) => JSON.stringify(lh.clientClasses?.sort()) !== JSON.stringify(localHosts[0].clientClasses?.sort()))
 }
 
 /**
@@ -74,11 +68,11 @@ export function hasDifferentLocalHostBootFields(localHosts: LocalHost[]): boolea
 
     const reference = localHosts[0]
     return localHosts
-            .slice(1)
-            .some(
-                (lh) =>
-                    lh.nextServer !== reference.nextServer ||
-                    lh.serverHostname !== reference.serverHostname ||
-                    lh.bootFileName !== reference.bootFileName
-            )
+        .slice(1)
+        .some(
+            (lh) =>
+                lh.nextServer !== reference.nextServer ||
+                lh.serverHostname !== reference.serverHostname ||
+                lh.bootFileName !== reference.bootFileName
+        )
 }

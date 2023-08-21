@@ -50,7 +50,9 @@
                                     <sup>
                                         <ng-container *ngFor="let l of ls">
                                             <span *ngIf="l.dataSource === 'config'" class="cfg-srctag">config</span>
-                                            <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
+                                            <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag"
+                                                >host_cmds</span
+                                            >
                                         </ng-container>
                                     </sup>
                                 </td>
@@ -237,9 +239,7 @@
                 <!-- All daemons have the same DHCP options -->
                 <div class="mb-4">
                     <p-fieldset *ngIf="allDaemonsHaveEqualDhcpOptions(); else differentDHCPOptionsBlock">
-                        <ng-template pTemplate="header">
-                            DHCP Options / All Servers
-                        </ng-template>
+                        <ng-template pTemplate="header"> DHCP Options / All Servers </ng-template>
                         <app-dhcp-option-set-view [options]="[host?.localHosts?.[0]?.options]" [levels]="['host']">
                         </app-dhcp-option-set-view>
                     </p-fieldset>
@@ -249,16 +249,24 @@
                 <ng-template #differentDHCPOptionsBlock>
                     <ng-container *ngFor="let localHostGroup of localHostsByAppId">
                         <!-- All daemons belonging to a given app have the same DHCP options.  -->
-                        <ng-container *ngIf="daemonsHaveEqualDhcpOptions(localHostGroup) else differentDHCPOptionsForAppBlock">
+                        <ng-container
+                            *ngIf="daemonsHaveEqualDhcpOptions(localHostGroup); else differentDHCPOptionsForAppBlock"
+                        >
                             <div class="mb-4">
                                 <p-fieldset>
                                     <ng-template pTemplate="header">
                                         <ng-container
                                             [ngTemplateOutlet]="sectionHeaderContent"
-                                            [ngTemplateOutletContext]="{ title: 'DHCP Options', localHosts: localHostGroup }"
+                                            [ngTemplateOutletContext]="{
+                                                title: 'DHCP Options',
+                                                localHosts: localHostGroup
+                                            }"
                                         ></ng-container>
                                     </ng-template>
-                                    <app-dhcp-option-set-view [options]="[localHostGroup[0].options]" [levels]="['host']">
+                                    <app-dhcp-option-set-view
+                                        [options]="[localHostGroup[0].options]"
+                                        [levels]="['host']"
+                                    >
                                     </app-dhcp-option-set-view>
                                 </p-fieldset>
                             </div>
@@ -271,7 +279,10 @@
                                         <ng-template pTemplate="header">
                                             <ng-container
                                                 [ngTemplateOutlet]="sectionHeaderContent"
-                                                [ngTemplateOutletContext]="{ title: 'DHCP Options', localHosts: [localHost] }"
+                                                [ngTemplateOutletContext]="{
+                                                    title: 'DHCP Options',
+                                                    localHosts: [localHost]
+                                                }"
                                             ></ng-container>
                                         </ng-template>
                                         <app-dhcp-option-set-view [options]="[localHost.options]" [levels]="['host']">
@@ -323,7 +334,8 @@
     <span>
         {{ title }}&nbsp;/&nbsp;
         <a routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
-        <ng-container *ngFor="let localHost of localHosts"
+        <ng-container
+            *ngFor="let localHost of localHosts"
             [ngTemplateOutlet]="dataSourceLabel"
             [ngTemplateOutletContext]="{ dataSource: localHost.dataSource }"
         ></ng-container>

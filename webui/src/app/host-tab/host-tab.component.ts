@@ -192,7 +192,7 @@ export class HostTabComponent {
     }
 
     /**
-     * Returns local host grouped by the app ID. 
+     * Returns local host grouped by the app ID.
      */
     get localHostsByAppId(): LocalHost[][] {
         return this.currentLocalHostsByAppId
