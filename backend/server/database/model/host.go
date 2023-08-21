@@ -563,8 +563,7 @@ func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
 	for i := range host.LocalHosts {
 		host.LocalHosts[i].HostID = host.ID
 		q := dbi.Model(&host.LocalHosts[i]).
-			OnConflict("(daemon_id, host_id) DO UPDATE").
-			Set("data_source = EXCLUDED.data_source").
+			OnConflict("(daemon_id, host_id, data_source) DO UPDATE").
 			Set("client_classes = EXCLUDED.client_classes").
 			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
 			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
