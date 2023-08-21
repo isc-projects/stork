@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	config "isc.org/stork/server/config"
@@ -106,7 +106,7 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 	var err error
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.Errorf("context lacks state")
+		return ctx, errors.Errorf("context lacks state")
 	}
 	for _, pu := range state.Updates {
 		switch pu.Operation {
@@ -123,7 +123,7 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 		case "subnet_delete":
 			ctx, err = module.commitSubnetDelete(ctx)
 		default:
-			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
+			err = errors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
 		if err != nil {
 			return ctx, err
@@ -144,15 +144,15 @@ func (module *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, 
 // to Kea upon commit.
 func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
 	if len(host.LocalHosts) == 0 {
-		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
+		return ctx, errors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
 	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
-			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
+			return ctx, errors.Errorf("applied host %d is associated with nil daemon", host.ID)
 		}
 		if lh.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
+			return ctx, errors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -187,7 +187,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -196,11 +196,11 @@ func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context,
 	}
 	for _, update := range state.Updates {
 		if update.Recipe.HostAfterUpdate == nil {
-			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing host creation")
+			return ctx, errors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing host creation")
 		}
 		err = dbmodel.AddHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "host has been successfully added to Kea but adding to the Stork database failed")
+			return ctx, errors.WithMessagef(err, "host has been successfully added to Kea but adding to the Stork database failed")
 		}
 	}
 	return ctx, nil
@@ -218,7 +218,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	}
 	// Host does not exist.
 	if host == nil {
-		return ctx, pkgerrors.WithStack(config.NewHostNotFoundError(hostID))
+		return ctx, errors.WithStack(config.NewHostNotFoundError(hostID))
 	}
 	// Get the list of daemons whose configurations must be locked for updates.
 	var daemonIDs []int64
@@ -228,7 +228,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	// Try to lock configurations.
 	ctx, err = module.manager.Lock(ctx, daemonIDs...)
 	if err != nil {
-		return ctx, pkgerrors.WithStack(config.NewLockError())
+		return ctx, errors.Wrap(config.LockError, err.Error())
 	}
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
@@ -250,7 +250,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 // daemon owning the reservation.
 func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
 	if len(host.LocalHosts) == 0 {
-		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
+		return ctx, errors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
 	// Retrieve existing host from the context. We will need it for sending
 	// the reservation-del commands, in case the DHCP identifier changes.
@@ -260,17 +260,17 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	}
 	existingHost := recipe.HostBeforeUpdate
 	if existingHost == nil {
-		return ctx, pkgerrors.New("internal server error: host instance cannot be nil when committing host update")
+		return ctx, errors.New("internal server error: host instance cannot be nil when committing host update")
 	}
 
 	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
 		if lh.Daemon == nil {
-			return ctx, pkgerrors.Errorf("updated host %d is associated with nil daemon", host.ID)
+			return ctx, errors.Errorf("updated host %d is associated with nil daemon", host.ID)
 		}
 		if lh.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("updated host %d is associated with nil app", host.ID)
+			return ctx, errors.Errorf("updated host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
 		deleteArguments, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, existingHost)
@@ -286,10 +286,10 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	// Re-create the host reservations.
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
-			return ctx, pkgerrors.Errorf("applied host %d is associated with nil daemon", host.ID)
+			return ctx, errors.Errorf("applied host %d is associated with nil daemon", host.ID)
 		}
 		if lh.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("applied host %d is associated with nil app", host.ID)
+			return ctx, errors.Errorf("applied host %d is associated with nil app", host.ID)
 		}
 		// Convert the updated host information to Kea reservation.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -314,7 +314,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -323,11 +323,11 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 	}
 	for _, update := range state.Updates {
 		if update.Recipe.HostAfterUpdate == nil {
-			return ctx, pkgerrors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
+			return ctx, errors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
 		}
 		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
+			return ctx, errors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil
@@ -343,15 +343,15 @@ func (module *ConfigModule) BeginHostDelete(ctx context.Context) (context.Contex
 // to Kea upon commit.
 func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
 	if len(host.LocalHosts) == 0 {
-		return ctx, pkgerrors.Errorf("deleted host %d is not associated with any daemon", host.ID)
+		return ctx, errors.Errorf("deleted host %d is not associated with any daemon", host.ID)
 	}
 	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
-			return ctx, pkgerrors.Errorf("deleted host %d is associated with nil daemon", host.ID)
+			return ctx, errors.Errorf("deleted host %d is associated with nil daemon", host.ID)
 		}
 		if lh.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("deleted host %d is associated with nil app", host.ID)
+			return ctx, errors.Errorf("deleted host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
 		reservation, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, host)
@@ -386,7 +386,7 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -395,11 +395,11 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 	}
 	for _, update := range state.Updates {
 		if update.Recipe.HostID == nil {
-			return ctx, pkgerrors.New("server logic error: the host ID cannot be nil when committing host deletion")
+			return ctx, errors.New("server logic error: the host ID cannot be nil when committing host deletion")
 		}
 		err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "host has been successfully deleted in Kea but deleting in the Stork database failed")
+			return ctx, errors.WithMessagef(err, "host has been successfully deleted in Kea but deleting in the Stork database failed")
 		}
 	}
 	return ctx, nil
@@ -410,7 +410,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 func (module *ConfigModule) commitChanges(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	for _, update := range state.Updates {
 		// Retrieve associations between the commands and apps.
@@ -436,7 +436,7 @@ func (module *ConfigModule) commitChanges(ctx context.Context) (context.Context,
 				}
 			}
 			if err != nil {
-				err = pkgerrors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
+				err = errors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
 				return ctx, err
 			}
 		}
@@ -455,12 +455,12 @@ func (module *ConfigModule) BeginSubnetAdd(ctx context.Context) (context.Context
 // Applies new subnet. It prepares necessary commands to be sent to Kea upon commit.
 func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
 	if len(subnet.LocalSubnets) == 0 {
-		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+		return ctx, errors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
 	}
 	// Get the highest local subnet ID from the database.
 	localSubnetID, err := dbmodel.GetMaxLocalSubnetID(module.manager.GetDB())
 	if err != nil {
-		return ctx, pkgerrors.WithMessagef(err, "failed querying the database to generate ID for the new subnet")
+		return ctx, errors.WithMessagef(err, "failed querying the database to generate ID for the new subnet")
 	}
 	// Next subnet ID should be available. Assign it to all local subnets.
 	localSubnetID++
@@ -477,10 +477,10 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	// Update the subnet instances.
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
-			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
 		}
 		if ls.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
 		}
 		// Convert the updated subnet information to Kea subnet.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -569,7 +569,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 func (module *ConfigModule) commitSubnetAdd(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -578,14 +578,14 @@ func (module *ConfigModule) commitSubnetAdd(ctx context.Context) (context.Contex
 	}
 	for i, update := range state.Updates {
 		if update.Recipe.SubnetAfterUpdate == nil {
-			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet creation")
+			return ctx, errors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet creation")
 		}
 		addedSubnets, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
+			return ctx, errors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
 		}
 		if len(addedSubnets) != 1 {
-			return ctx, pkgerrors.Errorf("subnet has been successfully created in Kea but Stork was unable to determine its new identifier")
+			return ctx, errors.Errorf("subnet has been successfully created in Kea but Stork was unable to determine its new identifier")
 		}
 		recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, i)
 		if err != nil {
@@ -611,7 +611,7 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 	}
 	// Subnet does not exist.
 	if subnet == nil {
-		return ctx, pkgerrors.WithStack(config.NewSubnetNotFoundError(subnetID))
+		return ctx, errors.WithStack(config.NewSubnetNotFoundError(subnetID))
 	}
 
 	// Get the list of daemons for whose configurations must be locked for
@@ -619,17 +619,17 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 	var daemonIDs []int64
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon.KeaDaemon.Config == nil {
-			return ctx, pkgerrors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
 		}
 		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
-			return ctx, pkgerrors.WithStack(config.NewNoSubnetCmdsHookError())
+			return ctx, errors.WithStack(config.NewNoSubnetCmdsHookError())
 		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)
 	}
 	// Try to lock configurations.
 	ctx, err = module.manager.Lock(ctx, daemonIDs...)
 	if err != nil {
-		return ctx, pkgerrors.WithStack(config.NewLockError())
+		return ctx, errors.WithStack(config.NewLockError())
 	}
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "subnet_update", daemonIDs...)
@@ -648,7 +648,7 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 // Applies updated subnet. It prepares necessary commands to be sent to Kea upon commit.
 func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
 	if len(subnet.LocalSubnets) == 0 {
-		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+		return ctx, errors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
 	}
 	// Retrieve existing subnet from the context. We may need it for sending
 	// the subnet4-del or subnet6-del commands.
@@ -658,7 +658,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	}
 	existingSubnet := recipe.SubnetBeforeUpdate
 	if existingSubnet == nil {
-		return ctx, pkgerrors.New("internal server error: subnet instance cannot be nil when committing subnet update")
+		return ctx, errors.New("internal server error: subnet instance cannot be nil when committing subnet update")
 	}
 
 	var (
@@ -676,10 +676,10 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	// Update the subnet instances.
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
-			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
 		}
 		if ls.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
 		}
 		// Check if this is a new association.
 		existingAssociation := false
@@ -838,7 +838,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -847,11 +847,11 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 	}
 	for _, update := range state.Updates {
 		if update.Recipe.SubnetAfterUpdate == nil {
-			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet update")
+			return ctx, errors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet update")
 		}
 		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
+			return ctx, errors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil
@@ -861,15 +861,15 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 // to Kea upon commit.
 func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
 	if len(subnet.LocalSubnets) == 0 {
-		return ctx, pkgerrors.Errorf("deleted subnet %d is not associated with any daemon", subnet.ID)
+		return ctx, errors.Errorf("deleted subnet %d is not associated with any daemon", subnet.ID)
 	}
 	var commands []ConfigCommand
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
-			return ctx, pkgerrors.Errorf("deleted subnet %d is associated with nil daemon", subnet.ID)
+			return ctx, errors.Errorf("deleted subnet %d is associated with nil daemon", subnet.ID)
 		}
 		if ls.Daemon.App == nil {
-			return ctx, pkgerrors.Errorf("deleted subnet %d is associated with nil app", subnet.ID)
+			return ctx, errors.Errorf("deleted subnet %d is associated with nil app", subnet.ID)
 		}
 		// Convert the host information to Kea reservation.
 		deletedSubnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(ls.DaemonID, subnet)
@@ -916,7 +916,7 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 func (module *ConfigModule) commitSubnetDelete(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
-		return ctx, pkgerrors.New("context lacks state")
+		return ctx, errors.New("context lacks state")
 	}
 	var err error
 	ctx, err = module.commitChanges(ctx)
@@ -925,11 +925,11 @@ func (module *ConfigModule) commitSubnetDelete(ctx context.Context) (context.Con
 	}
 	for _, update := range state.Updates {
 		if update.Recipe.SubnetID == nil {
-			return ctx, pkgerrors.New("server logic error: the subnet ID cannot be nil when committing subnet deletion")
+			return ctx, errors.New("server logic error: the subnet ID cannot be nil when committing subnet deletion")
 		}
 		err = dbmodel.DeleteSubnet(module.manager.GetDB(), *update.Recipe.SubnetID)
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully deleted in Kea but deleting in the Stork database failed")
+			return ctx, errors.WithMessagef(err, "subnet has been successfully deleted in Kea but deleting in the Stork database failed")
 		}
 	}
 	return ctx, nil

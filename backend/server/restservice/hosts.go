@@ -235,7 +235,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
 		msg := "Problem with fetching Kea daemons from the database"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	// Convert daemons list to REST API format and extract their configured
@@ -474,18 +474,17 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	if err != nil {
 		var (
 			hostNotFound *config.HostNotFoundError
-			lock         *config.LockError
 		)
 		switch {
 		case errors.As(err, &hostNotFound):
 			// Failed to find host.
 			msg := fmt.Sprintf("Unable to edit the host reservation with ID %d because it cannot be found", params.HostID)
-			log.Error(msg)
+			log.WithError(err).Error("Failed to find host")
 			rsp := dhcp.NewUpdateHostBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
-		case errors.As(err, &lock):
+		case errors.Is(err, config.LockError):
 			// Failed to lock daemons.
 			msg := fmt.Sprintf("Unable to edit the host reservation with ID %d because it may be currently edited by another user", params.HostID)
 			log.WithError(err).Error(msg)
