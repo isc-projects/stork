@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { Host, IPReservation, LocalHost } from '../backend'
+import { Host, IPReservation, Lease, LeasesSearchErredApp, LocalHost } from '../backend'
 
 import { DHCPService } from '../backend/api/api'
 import {
@@ -16,6 +16,16 @@ enum HostReservationUsage {
     Declined,
     Expired,
     Used,
+}
+
+/**
+ * The internal lease info structure.
+ */
+interface LeaseInfo {
+    leases: Lease[]
+    usage?: HostReservationUsage
+    culprit?: Lease
+
 }
 
 /**
@@ -61,9 +71,16 @@ export class HostTabComponent {
     currentHost: Host
 
     /**
-     * Local hosts of the @currentHost grouped by the app ID.
+     * Local hosts of the @currentHost grouped by differential daemons.
+     * If all the daemons have the same set of options, the array will
+     * contain a single element.
      */
-    currentLocalHostsByAppId: LocalHost[][] = []
+    currentDifferentLocalHosts: {
+        dhcpOptions: LocalHost[][]
+        bootFields: LocalHost[][]
+        clientClasses: LocalHost[][]
+        appID: LocalHost[][]
+    } = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
 
     /**
      * Indicates if the boot fields panel should be displayed.
@@ -77,23 +94,23 @@ export class HostTabComponent {
      * host tabs and avoid fetching lease information for a current
      * host whenever a different tab is selected.
      */
-    private _leasesForHosts = new Map()
+    private _leasesForHosts = new Map<number, Map<string, LeaseInfo>>()
 
     /**
      * Leases fetched for currently selected tab (host).
      */
-    currentLeases: any
+    currentLeases: Map<string, LeaseInfo>
 
     /**
      * A map of booleans indicating for which hosts leases search
      * is in progress.
      */
-    private _leasesSearchStatus = new Map()
+    private _leasesSearchStatus = new Map<number, boolean>()
 
     /**
      * List of Kea apps which returned an error during leases search.
      */
-    erredApps = []
+    erredApps: LeasesSearchErredApp[] = []
 
     hostDeleted = false
 
@@ -116,7 +133,7 @@ export class HostTabComponent {
     @Input()
     get host() {
         return this.currentHost
-    }
+    }    
 
     /**
      * Sets a host to be displayed by the component.
@@ -131,7 +148,7 @@ export class HostTabComponent {
     set host(host) {
         // Make the new host current.
         this.currentHost = host
-        this.currentLocalHostsByAppId = []
+        this.currentDifferentLocalHosts = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
         // The host is null if the tab with a list of hosts is selected.
         if (!this.currentHost) {
             return
@@ -151,19 +168,69 @@ export class HostTabComponent {
         )
 
         // Group local hosts by the app ID.
-        const localHostsByAppID = (host.localHosts ?? [])
-            // Group by app ID.
-            .reduce<Record<number, LocalHost[]>>((acc, lh) => {
-                if (!acc[lh.appId]) {
-                    // Create an array for the app ID if it doesn't exist yet.
-                    acc[lh.appId] = []
+        const localHostsByAppID = Object.values(
+            (host.localHosts ?? [])
+                // Group by app ID.
+                .reduce<Record<number, LocalHost[]>>((acc, lh) => {
+                    if (!acc[lh.appId]) {
+                        // Create an array for the app ID if it doesn't exist yet.
+                        acc[lh.appId] = []
+                    }
+                    // Add the local host to the array.
+                    acc[lh.appId].push(lh)
+                    // Return the accumulator.
+                    return acc
+                }, {})
+        )
+    
+        // Group local hosts by the boot fields equality.
+        const localHostsByBootFields: LocalHost[][] = []
+        if (this.allDaemonsHaveEqualBootFields()) {
+            localHostsByBootFields.push(this.host.localHosts)
+        } else {
+            for (let localHosts of localHostsByAppID) {
+                if (this.daemonsHaveEqualBootFields(localHosts)) {
+                    localHostsByBootFields.push(localHosts)
+                } else {
+                    localHostsByBootFields.push(...localHosts.map((lh) => [lh]))
                 }
-                // Add the local host to the array.
-                acc[lh.appId].push(lh)
-                // Return the accumulator.
-                return acc
-            }, {})
-        this.currentLocalHostsByAppId = Object.values(localHostsByAppID)
+            }
+        }
+
+        // Group local hosts by the DHCP options equality.
+        const localHostsByDhcpOptions: LocalHost[][] = []
+        if (this.allDaemonsHaveEqualDhcpOptions()) {
+            localHostsByDhcpOptions.push(this.host.localHosts)
+        } else {
+            for (let localHosts of localHostsByAppID) {
+                if (this.daemonsHaveEqualDhcpOptions(localHosts)) {
+                    localHostsByDhcpOptions.push(localHosts)
+                } else {
+                    localHostsByDhcpOptions.push(...localHosts.map((lh) => [lh]))
+                }
+            }
+        }
+
+        // Group local hosts by the client classes equality.
+        const localHostsByClientClasses: LocalHost[][] = []
+        if (this.allDaemonsHaveEqualClientClasses()) {
+            localHostsByClientClasses.push(this.host.localHosts)
+        } else {
+            for (let localHosts of localHostsByAppID) {
+                if (this.daemonsHaveEqualClientClasses(localHosts)) {
+                    localHostsByClientClasses.push(localHosts)
+                } else {
+                    localHostsByClientClasses.push(...localHosts.map((lh) => [lh]))
+                }
+            }
+        }
+
+        this.currentDifferentLocalHosts = {
+            bootFields: localHostsByBootFields,
+            dhcpOptions: localHostsByDhcpOptions,
+            clientClasses: localHostsByClientClasses,
+            appID: localHostsByAppID
+        }
     }
 
     /**
@@ -188,14 +255,7 @@ export class HostTabComponent {
      *          host, false otherwise.
      */
     get leasesSearchInProgress() {
-        return this._leasesSearchStatus.get(this.host.id) ? true : false
-    }
-
-    /**
-     * Returns local host grouped by the app ID.
-     */
-    get localHostsByAppId(): LocalHost[][] {
-        return this.currentLocalHostsByAppId
+        return !!this._leasesSearchStatus.get(this.host.id)
     }
 
     /**
@@ -216,7 +276,7 @@ export class HostTabComponent {
                 // Finished searching the leases.
                 this._leasesSearchStatus.set(hostId, false)
                 // Collect the lease information and store it in the cache.
-                const leases = new Map()
+                const leases = new Map<string, LeaseInfo>()
                 if (data.items) {
                     for (const lease of data.items) {
                         this._mergeLease(leases, data.conflicts, lease)
@@ -251,7 +311,7 @@ export class HostTabComponent {
      * @param conflicts array of conflicting lease ids.
      * @param newLease a lease to be merged to the cache.
      */
-    private _mergeLease(leases, conflicts, newLease) {
+    private _mergeLease(leases: Map<string, LeaseInfo>, conflicts, newLease: Lease) {
         // Check if the lease is in conflict with the host reservation.
         if (conflicts) {
             for (const conflictId of conflicts) {
@@ -337,7 +397,7 @@ export class HostTabComponent {
      *        delegated prefix.
      * @returns lease state summary text.
      */
-    getLeaseSummary(leaseInfo) {
+    getLeaseSummary(leaseInfo: LeaseInfo) {
         let summary = 'Lease information unavailable.'
         if (!leaseInfo.culprit) {
             return summary
@@ -518,13 +578,33 @@ export class HostTabComponent {
     }
 
     /**
+     * Checks if provided DHCP servers owning the reservation have equal set of
+     * client classes.
+     *
+     * @returns true, if provided DHCP servers have equal set of client classes.
+     */
+    daemonsHaveEqualClientClasses(localHosts: LocalHost[]): boolean {
+        return !hasDifferentLocalHostClientClasses(localHosts)
+    }
+
+    /**
      * Checks if all DHCP servers owning the reservation have equal set of
      * client classes.
      *
      * @returns true, if all DHCP servers have equal set of client classes.
      */
     allDaemonsHaveEqualClientClasses(): boolean {
-        return !hasDifferentLocalHostClientClasses(this.host.localHosts)
+        return this.daemonsHaveEqualClientClasses(this.host.localHosts)
+    }
+
+    /**
+     * Checks if provided DHCP servers owning the reservation have equal set of
+     * boot fields, i.e. next server, server hostname, boot file name.
+     *
+     * @returns true if, provided DHCP servers have equal set of boot fields.
+     */
+    daemonsHaveEqualBootFields(localHosts: LocalHost[]): boolean {
+        return !hasDifferentLocalHostBootFields(localHosts)
     }
 
     /**
@@ -534,6 +614,6 @@ export class HostTabComponent {
      * @returns true if, all DHCP servers have equal set of boot fields.
      */
     allDaemonsHaveEqualBootFields(): boolean {
-        return !hasDifferentLocalHostBootFields(this.host.localHosts)
+        return this.daemonsHaveEqualBootFields(this.host.localHosts)
     }
 }
