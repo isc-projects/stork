@@ -216,27 +216,26 @@
                     </p-fieldset>
                 </div>
                 
-                <div *ngFor="let localHost of host.localHosts; let i = index" class="mb-4">
-                    <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualClientClasses()">
+
+                <!-- Client classes -->
+                <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.dhcpOptions">
+                    <p-fieldset>
                         <ng-template pTemplate="header">
-                            <span
-                                >Client Classes&nbsp;/&nbsp;
-                                <a
-                                    *ngIf="!allDaemonsHaveEqualClientClasses(); else equalClientClassesBlock"
-                                    routerLink="/apps/kea/{{ localHost.appId }}"
-                                >
-                                    {{ localHost.appName }}
-                                </a>
-                                <ng-template #equalClientClassesBlock>
-                                    <span class="font-normal"> All Servers </span>
-                                </ng-template>
-                            </span>
+                            <ng-container
+                                [ngTemplateOutlet]="sectionHeaderContent"
+                                [ngTemplateOutletContext]="{
+                                    title: 'Client Classes',
+                                    localHosts: localHosts,
+                                    all: currentDifferentLocalHosts.clientClasses.length === 1
+                                }"
+                            ></ng-container>
                         </ng-template>
-                        <app-dhcp-client-class-set-view [clientClasses]="localHost.clientClasses">
+                        <app-dhcp-client-class-set-view [clientClasses]="localHosts[0].clientClasses">
                         </app-dhcp-client-class-set-view>
                     </p-fieldset>
                 </div>
 
+                <!-- DHCP options -->
                 <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.dhcpOptions">
                     <p-fieldset>
                         <ng-template pTemplate="header">
@@ -293,14 +292,14 @@
 <ng-template #sectionHeaderContent let-title="title" let-localHosts="localHosts" let-all="all">
     <span>
         {{ title }}&nbsp;/&nbsp;
-        <a routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
+        <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
         <ng-container *ngIf="!all">
             <ng-container *ngFor="let localHost of localHosts">
                 <span *ngIf="localHost.dataSource === 'config'" class="cfg-srctag">config</span>
                 <span *ngIf="localHost.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>        
             </ng-container>
         </ng-container>
-        <span *ngIf="all">All Servers</span>
+        <span class="font-normal" *ngIf="all">All Servers</span>
     </span>
 </ng-template>
 
