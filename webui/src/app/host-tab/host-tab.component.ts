@@ -25,7 +25,6 @@ interface LeaseInfo {
     leases: Lease[]
     usage?: HostReservationUsage
     culprit?: Lease
-
 }
 
 /**
@@ -133,7 +132,7 @@ export class HostTabComponent {
     @Input()
     get host() {
         return this.currentHost
-    }    
+    }
 
     /**
      * Sets a host to be displayed by the component.
@@ -182,7 +181,7 @@ export class HostTabComponent {
                     return acc
                 }, {})
         )
-    
+
         // Group local hosts by the boot fields equality.
         const localHostsByBootFields: LocalHost[][] = []
         if (this.allDaemonsHaveEqualBootFields()) {
@@ -229,7 +228,7 @@ export class HostTabComponent {
             bootFields: localHostsByBootFields,
             dhcpOptions: localHostsByDhcpOptions,
             clientClasses: localHostsByClientClasses,
-            appID: localHostsByAppID
+            appID: localHostsByAppID,
         }
     }
 

@@ -171,7 +171,7 @@
                     </p-table>
                 </p-fieldset>
             </div>
-            <ng-container *ngIf="host.localHosts?.length > 0">                
+            <ng-container *ngIf="host.localHosts?.length > 0">
                 <!-- Boot fields -->
                 <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.bootFields">
                     <p-fieldset>
@@ -292,10 +292,9 @@
         <ng-container *ngIf="!all">
             <ng-container *ngFor="let localHost of localHosts">
                 <span *ngIf="localHost.dataSource === 'config'" class="cfg-srctag">config</span>
-                <span *ngIf="localHost.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>        
+                <span *ngIf="localHost.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
             </ng-container>
         </ng-container>
         <span class="font-normal" *ngIf="all">All Servers</span>
     </span>
 </ng-template>
-
