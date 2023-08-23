@@ -117,7 +117,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     _hosts: Host[]
 
-     /**
+    /**
      * Holds local hosts of all currently displayed host reservations grouped by app ID.
      * It is indexed by host ID.
      */
@@ -139,24 +139,29 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         this._hosts = hosts
 
         // For each host group the local hosts by app ID.
-        this.localHostsGroupedByApp = Object.fromEntries(this.hosts.map(host => {
-            if (!host.localHosts) {
-                return [host.id, []]
-            }
+        this.localHostsGroupedByApp = Object.fromEntries(
+            this.hosts.map((host) => {
+                if (!host.localHosts) {
+                    return [host.id, []]
+                }
 
-            return [host.id, Object.values(
-                // Group the local hosts by app ID.
-                host.localHosts.reduce<Record<number, LocalHost[]>>((accApp, localHost) => {
-                    if (!accApp[localHost.appId]) {
-                        accApp[localHost.appId] = []
-                    }
+                return [
+                    host.id,
+                    Object.values(
+                        // Group the local hosts by app ID.
+                        host.localHosts.reduce<Record<number, LocalHost[]>>((accApp, localHost) => {
+                            if (!accApp[localHost.appId]) {
+                                accApp[localHost.appId] = []
+                            }
 
-                    accApp[localHost.appId].push(localHost)
+                            accApp[localHost.appId].push(localHost)
 
-                    return accApp
-                }, {})
-            )]
-        }))
+                            return accApp
+                        }, {})
+                    ),
+                ]
+            })
+        )
     }
 
     /**

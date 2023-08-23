@@ -48,8 +48,10 @@
                                 <td class="border-none w-10rem">
                                     <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
                                     <sup>
-                                        <app-host-data-source-label *ngFor="let l of ls"
-                                            [dataSource]="l.dataSource"></app-host-data-source-label>
+                                        <app-host-data-source-label
+                                            *ngFor="let l of ls"
+                                            [dataSource]="l.dataSource"
+                                        ></app-host-data-source-label>
                                     </sup>
                                 </td>
                             </tr>
@@ -193,7 +195,9 @@
                             <div class="flex align-items-center">
                                 <div class="p-2 w-10rem">Server hostname</div>
                                 <div class="pl-2 monospace">
-                                    <ng-container *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec">
+                                    <ng-container
+                                        *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec"
+                                    >
                                         {{ localHosts[0].serverHostname }}
                                     </ng-container>
                                 </div>
@@ -288,8 +292,10 @@
         {{ title }}&nbsp;/&nbsp;
         <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
         <sub *ngIf="!all">
-            <app-host-data-source-label *ngFor="let localHost of localHosts"
-                    [dataSource]="localHost.dataSource"></app-host-data-source-label>
+            <app-host-data-source-label
+                *ngFor="let localHost of localHosts"
+                [dataSource]="localHost.dataSource"
+            ></app-host-data-source-label>
         </sub>
         <span class="font-normal" *ngIf="all">All Servers</span>
     </span>

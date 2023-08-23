@@ -61,7 +61,7 @@ describe('HostTabComponent', () => {
                 HelpTipComponent,
                 HostTabComponent,
                 IdentifierComponent,
-                HostDataSourceLabelComponent
+                HostDataSourceLabelComponent,
             ],
         }).compileComponents()
     }))
@@ -512,8 +512,6 @@ describe('HostTabComponent', () => {
         }
         let summary = component.getLeaseSummary(leaseInfo)
         expect(summary).toContain('Found 1 assigned lease with the expiration time at')
-
-        
 
         // Two leases in use.
         leaseInfo = {
