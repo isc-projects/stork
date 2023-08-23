@@ -1,4 +1,4 @@
-import { Host, LocalHost } from './backend'
+import { LocalHost } from './backend'
 
 /**
  * Utility function checking if there are differences between

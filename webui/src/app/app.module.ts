@@ -120,6 +120,7 @@ import { UtilizationStatsChartComponent } from './utilization-stats-chart/utiliz
 import { UtilizationStatsChartsComponent } from './utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board/cascaded-parameters-board.component'
 import { SharedNetworkTabComponent } from './shared-network-tab/shared-network-tab.component'
+import { HostDataSourceLabelComponent } from './host-data-source-label/host-data-source-label.component'
 import { SharedParametersFormComponent } from './shared-parameters-form/shared-parameters-form.component'
 import { SubnetFormComponent } from './subnet-form/subnet-form.component'
 import { AddressPoolFormComponent } from './address-pool-form/address-pool-form.component'
@@ -204,6 +205,7 @@ export function cfgFactory() {
         AddressPoolFormComponent,
         PrefixPoolFormComponent,
         ArrayValueSetFormComponent,
+        HostDataSourceLabelComponent,
     ],
     imports: [
         BrowserModule,

@@ -1,0 +1,3 @@
+<span *ngIf="dataSource === 'config'" class="datasource datasource--config">config</span>
+<span *ngIf="dataSource === 'api'" class="datasource datasource--hostcmds">host_cmds</span>
+<span *ngIf="dataSource !== 'config' && dataSource !== 'api'" class="datasource">{{ dataSource }}</span>

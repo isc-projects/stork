@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing'
-import { Host } from './backend/model/host'
 import {
     hasDifferentLocalHostBootFields,
     hasDifferentLocalHostClientClasses,
