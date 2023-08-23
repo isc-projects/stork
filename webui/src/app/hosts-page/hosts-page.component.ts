@@ -9,7 +9,7 @@ import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
 import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
-import { Host } from '../backend'
+import { Host, LocalHost } from '../backend'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -115,7 +115,49 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     /**
      * Holds all currently displayed host reservations.
      */
-    hosts: Host[]
+    _hosts: Host[]
+
+     /**
+     * Holds local hosts of all currently displayed host reservations grouped by app ID.
+     * It is indexed by host ID.
+     */
+    localHostsGroupedByApp: Record<number, LocalHost[][]>
+
+    /**
+     * Returns all currently displayed host reservations.
+     */
+    get hosts(): Host[] {
+        return this._hosts
+    }
+
+    /**
+     * Sets all currently displayed host reservations.
+     * Groups the local hosts by app ID and stores the result in
+     * @this.localHostsGroupedByApp.
+     */
+    set hosts(hosts: Host[]) {
+        this._hosts = hosts
+
+        // For each host group the local hosts by app ID.
+        this.localHostsGroupedByApp = Object.fromEntries(this.hosts.map(host => {
+            if (!host.localHosts) {
+                return [host.id, []]
+            }
+
+            return [host.id, Object.values(
+                // Group the local hosts by app ID.
+                host.localHosts.reduce<Record<number, LocalHost[]>>((accApp, localHost) => {
+                    if (!accApp[localHost.appId]) {
+                        accApp[localHost.appId] = []
+                    }
+
+                    accApp[localHost.appId].push(localHost)
+
+                    return accApp
+                }, {})
+            )]
+        }))
+    }
 
     /**
      * Holds the counter of all hosts.
@@ -607,25 +649,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 queryParamsHandling: 'merge',
             })
         }
-    }
-
-    /**
-     * Returns tooltip explaining where the server has the given host
-     * reservation specified, i.e. in the configuration file or a database.
-     *
-     * @param dataSource data source provided as a string.
-     * @returns The tooltip text.
-     */
-    hostDataSourceTooltip(dataSource): string {
-        switch (dataSource) {
-            case 'config':
-                return "This host is specified in the server's configuration file."
-            case 'api':
-                return "This host is specified in the server's host database."
-            default:
-                break
-        }
-        return ''
     }
 
     /**

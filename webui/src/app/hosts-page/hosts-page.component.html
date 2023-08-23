@@ -202,11 +202,10 @@
                         <td>global</td>
                     </ng-template>
                     <td>
-                        <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
-                            >{{ lh.appName }}
-                            <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">
-                                <span *ngIf="lh.dataSource === 'config'" id="cfg-srctag">config </span>
-                                <span *ngIf="lh.dataSource === 'api'" id="hostcmds-srctag">host_cmds </span>
+                        <a *ngFor="let lhs of localHostsGroupedByApp[h.id]" routerLink="/apps/kea/{{ lhs[0].appId }}" class="block white-space-nowrap"
+                            >{{ lhs[0].appName }}
+                            <sup>
+                                <app-host-data-source-label *ngFor="let lh of lhs" [dataSource]="lh.dataSource"></app-host-data-source-label>
                             </sup>
                         </a>
                     </td>

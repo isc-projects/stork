@@ -287,10 +287,10 @@
     <span>
         {{ title }}&nbsp;/&nbsp;
         <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
-        <ng-container *ngIf="!all">
+        <sub *ngIf="!all">
             <app-host-data-source-label *ngFor="let localHost of localHosts"
                     [dataSource]="localHost.dataSource"></app-host-data-source-label>
-        </ng-container>
+        </sub>
         <span class="font-normal" *ngIf="all">All Servers</span>
     </span>
 </ng-template>
