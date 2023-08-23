@@ -48,12 +48,8 @@
                                 <td class="border-none w-10rem">
                                     <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
                                     <sup>
-                                        <ng-container *ngFor="let l of ls">
-                                            <span *ngIf="l.dataSource === 'config'" class="cfg-srctag">config</span>
-                                            <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag"
-                                                >host_cmds</span
-                                            >
-                                        </ng-container>
+                                        <app-host-data-source-label *ngFor="let l of ls"
+                                            [dataSource]="l.dataSource"></app-host-data-source-label>
                                     </sup>
                                 </td>
                             </tr>
@@ -173,45 +169,47 @@
             </div>
             <ng-container *ngIf="host.localHosts?.length > 0">
                 <!-- Boot fields -->
-                <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.bootFields">
-                    <p-fieldset>
-                        <ng-template pTemplate="header">
-                            <ng-container
-                                [ngTemplateOutlet]="sectionHeaderContent"
-                                [ngTemplateOutletContext]="{
-                                    title: 'Boot Fields',
-                                    localHosts: localHosts,
-                                    all: currentDifferentLocalHosts.bootFields.length === 1
-                                }"
-                            ></ng-container>
-                        </ng-template>
-                        <div class="flex align-items-center">
-                            <div class="p-2 w-10rem">Next server</div>
-                            <div class="pl-2 monospace">
-                                <ng-container *ngIf="localHosts[0].nextServer?.length > 0; else bootFieldUnspec">
-                                    {{ localHosts[0].nextServer }}
-                                </ng-container>
+                <ng-container *ngIf="displayBootFields">
+                    <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.bootFields">
+                        <p-fieldset>
+                            <ng-template pTemplate="header">
+                                <ng-container
+                                    [ngTemplateOutlet]="sectionHeaderContent"
+                                    [ngTemplateOutletContext]="{
+                                        title: 'Boot Fields',
+                                        localHosts: localHosts,
+                                        all: currentDifferentLocalHosts.bootFields.length === 1
+                                    }"
+                                ></ng-container>
+                            </ng-template>
+                            <div class="flex align-items-center">
+                                <div class="p-2 w-10rem">Next server</div>
+                                <div class="pl-2 monospace">
+                                    <ng-container *ngIf="localHosts[0].nextServer?.length > 0; else bootFieldUnspec">
+                                        {{ localHosts[0].nextServer }}
+                                    </ng-container>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex align-items-center">
-                            <div class="p-2 w-10rem">Server hostname</div>
-                            <div class="pl-2 monospace">
-                                <ng-container *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec">
-                                    {{ localHosts[0].serverHostname }}
-                                </ng-container>
+                            <div class="flex align-items-center">
+                                <div class="p-2 w-10rem">Server hostname</div>
+                                <div class="pl-2 monospace">
+                                    <ng-container *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec">
+                                        {{ localHosts[0].serverHostname }}
+                                    </ng-container>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex align-items-center">
-                            <div class="p-2 w-10rem">Boot file name</div>
-                            <div class="pl-2 monospace">
-                                <ng-container *ngIf="localHosts[0].bootFileName?.length > 0; else bootFieldUnspec">
-                                    {{ localHosts[0].bootFileName }}
-                                </ng-container>
+                            <div class="flex align-items-center">
+                                <div class="p-2 w-10rem">Boot file name</div>
+                                <div class="pl-2 monospace">
+                                    <ng-container *ngIf="localHosts[0].bootFileName?.length > 0; else bootFieldUnspec">
+                                        {{ localHosts[0].bootFileName }}
+                                    </ng-container>
+                                </div>
                             </div>
-                        </div>
-                        <ng-template #bootFieldUnspec> - </ng-template>
-                    </p-fieldset>
-                </div>
+                            <ng-template #bootFieldUnspec> - </ng-template>
+                        </p-fieldset>
+                    </div>
+                </ng-container>
 
                 <!-- Client classes -->
                 <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.dhcpOptions">
@@ -290,10 +288,8 @@
         {{ title }}&nbsp;/&nbsp;
         <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
         <ng-container *ngIf="!all">
-            <ng-container *ngFor="let localHost of localHosts">
-                <span *ngIf="localHost.dataSource === 'config'" class="cfg-srctag">config</span>
-                <span *ngIf="localHost.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
-            </ng-container>
+            <app-host-data-source-label *ngFor="let localHost of localHosts"
+                    [dataSource]="localHost.dataSource"></app-host-data-source-label>
         </ng-container>
         <span class="font-normal" *ngIf="all">All Servers</span>
     </span>

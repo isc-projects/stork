@@ -37,6 +37,7 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -100,6 +101,7 @@ describe('HostsPageComponent', () => {
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
                 DhcpOptionSetViewComponent,
+                HostDataSourceLabelComponent,
             ],
         }).compileComponents()
     }))

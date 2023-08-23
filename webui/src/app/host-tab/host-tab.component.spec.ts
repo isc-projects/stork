@@ -11,7 +11,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 import { of, throwError } from 'rxjs'
 
-import { DHCPService } from '../backend'
+import { DHCPService, Lease } from '../backend'
 import { HostTabComponent } from './host-tab.component'
 import { RouterModule } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -26,6 +26,7 @@ import { TagModule } from 'primeng/tag'
 import { ChipModule } from 'primeng/chip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { DividerModule } from 'primeng/divider'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -60,6 +61,7 @@ describe('HostTabComponent', () => {
                 HelpTipComponent,
                 HostTabComponent,
                 IdentifierComponent,
+                HostDataSourceLabelComponent
             ],
         }).compileComponents()
     }))
@@ -148,12 +150,12 @@ describe('HostTabComponent', () => {
         expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
         expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
 
-        let configTag = appsFieldset.query(By.css('.cfg-srctag'))
-        expect(configTag).toBeTruthy()
-        expect(configTag.nativeElement.innerText).toBe('config')
-        configTag = appsFieldset.query(By.css('.hostcmds-srctag'))
-        expect(configTag).toBeTruthy()
-        expect(configTag.nativeElement.innerText).toBe('host_cmds')
+        let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
+        expect(datasourceLabel).toBeTruthy()
+        expect(datasourceLabel.nativeElement.innerText).toBe('config')
+        datasourceLabel = appsFieldset.query(By.css('.datasource--hostcmds'))
+        expect(datasourceLabel).toBeTruthy()
+        expect(datasourceLabel.nativeElement.innerText).toBe('host_cmds')
 
         const bootFieldsFieldset = fieldsets[4]
         expect(bootFieldsFieldset).toBeTruthy()
@@ -248,12 +250,12 @@ describe('HostTabComponent', () => {
         expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
         expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
 
-        let configTag = appsFieldset.query(By.css('.cfg-srctag'))
-        expect(configTag).toBeTruthy()
-        expect(configTag.nativeElement.innerText).toBe('config')
-        configTag = appsFieldset.query(By.css('.hostcmds-srctag'))
-        expect(configTag).toBeTruthy()
-        expect(configTag.nativeElement.innerText).toBe('host_cmds')
+        let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
+        expect(datasourceLabel).toBeTruthy()
+        expect(datasourceLabel.nativeElement.innerText).toBe('config')
+        datasourceLabel = appsFieldset.query(By.css('.datasource--hostcmds'))
+        expect(datasourceLabel).toBeTruthy()
+        expect(datasourceLabel.nativeElement.innerText).toBe('host_cmds')
     })
 
     it('should display global host tab title', () => {
@@ -498,18 +500,20 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Used,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         let summary = component.getLeaseSummary(leaseInfo)
         expect(summary).toContain('Found 1 assigned lease with the expiration time at')
+
+        
 
         // Two leases in use.
         leaseInfo = {
@@ -517,19 +521,19 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Used,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
                 {
                     hwAddress: '2a:2b:2c:2d:2e:2f',
                     cltt: 1000,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -543,14 +547,14 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: testCltt,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Expired,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: testCltt,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -564,19 +568,19 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Expired,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
                 {
                     hwAddress: '2a:2b:2c:2d:2e:2f',
                     cltt: 1000,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -588,14 +592,14 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Declined,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -607,19 +611,19 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Declined,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
                 {
                     hwAddress: '2a:2b:2c:2d:2e:2f',
                     cltt: 1000,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -633,19 +637,19 @@ describe('HostTabComponent', () => {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Conflicted,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
                 {
                     hwAddress: '2a:2b:2c:2d:2e:2f',
                     cltt: 1000,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
@@ -660,14 +664,14 @@ describe('HostTabComponent', () => {
                 duid: '11:12:13',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Conflicted,
             leases: [
                 {
                     duid: '11:12:13',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo2)
@@ -680,14 +684,14 @@ describe('HostTabComponent', () => {
                 clientId: '11:12:13',
                 cltt: 0,
                 validLifetime: 3600,
-            },
+            } as Lease,
             usage: component.Usage.Conflicted,
             leases: [
                 {
                     clientId: '11:12:13',
                     cltt: 0,
                     validLifetime: 3600,
-                },
+                } as Lease,
             ],
         }
         summary = component.getLeaseSummary(leaseInfo3)
