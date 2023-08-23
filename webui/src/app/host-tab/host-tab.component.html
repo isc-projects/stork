@@ -47,12 +47,18 @@
                             <tr>
                                 <td class="border-none w-10rem">
                                     <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
-                                    <sup>
-                                        <app-host-data-source-label
-                                            *ngFor="let l of ls"
-                                            [dataSource]="l.dataSource"
-                                        ></app-host-data-source-label>
-                                    </sup>
+                                    <app-host-data-source-label class="ml-2"
+                                        *ngFor="let l of ls"
+                                        [dataSource]="l.dataSource"
+                                    ></app-host-data-source-label>
+                                    <ng-container
+                                        *ngIf="!daemonsHaveEqualBootFields(ls) || !daemonsHaveEqualClientClasses(ls) || !daemonsHaveEqualDhcpOptions(ls) else duplicateCandidate"
+                                        [ngTemplateOutlet]="conflictLabel"></ng-container>
+                                    <ng-template #duplicateCandidate>
+                                        <ng-container *ngIf="ls.length > 1"
+                                            [ngTemplateOutlet]="duplicateLabel">
+                                        </ng-container>
+                                    </ng-template>
                                 </td>
                             </tr>
                         </ng-template>
@@ -263,7 +269,7 @@
             icon="pi pi-refresh"
             (click)="refreshLeases()"
         ></button>
-        <ng-container *ngIf="host.localHosts && host.localHosts.length > 0 && host.localHosts[0].dataSource === 'api'">
+        <ng-container *ngIf="hasAnyLocalHostFromDatabase(host)">
             <button
                 type="button"
                 pButton
@@ -291,12 +297,34 @@
     <span>
         {{ title }}&nbsp;/&nbsp;
         <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
-        <sub *ngIf="!all">
-            <app-host-data-source-label
-                *ngFor="let localHost of localHosts"
+        <ng-container *ngIf="!all">
+            <app-host-data-source-label *ngFor="let localHost of localHosts"
+                class="ml-2"
                 [dataSource]="localHost.dataSource"
             ></app-host-data-source-label>
-        </sub>
+            <!-- The local host data duplicated - there are multiple items in a list. -->
+            <ng-container *ngIf="localHosts.length > 1" [ngTemplateOutlet]="duplicateLabel"></ng-container>
+        </ng-container>
         <span class="font-normal" *ngIf="all">All Servers</span>
     </span>
+</ng-template>
+
+<!-- Conflict label -->
+<ng-template #conflictLabel>
+    <p-tag
+        class="ml-2"
+        value="conflict"
+        severity="danger"
+        pTooltip="The host is configured differently in the configuration file and host database."
+        ></p-tag>
+</ng-template>
+
+<!-- Duplicate label -->
+<ng-template #duplicateLabel>
+    <p-tag
+        class="ml-2"
+        value="duplicate"
+        severity="warning"
+        pTooltip="The host is duplicated in the configuration file and host database."
+        ></p-tag>
 </ng-template>

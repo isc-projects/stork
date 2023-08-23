@@ -1,20 +1,22 @@
 <!-- Config -->
-<span
+<p-tag
     *ngIf="dataSource === 'config'"
-    class="datasource datasource--config"
+    styleClass="datasource--config"
     pTooltip="This host is specified in the server's configuration file."
     tooltipPosition="bottom"
-    >config</span
+    value="config"
+    ></p-tag
 >
 
 <!-- API -->
-<span
+<p-tag
     *ngIf="dataSource === 'api'"
-    class="datasource datasource--hostcmds"
+    styleClass="datasource--hostcmds"
     pTooltip="This host is specified in the server's host database."
     tooltipPosition="bottom"
-    >host_cmds</span
+    value="host_cmds"
+    ></p-tag
 >
 
 <!-- Unknown -->
-<span *ngIf="dataSource !== 'config' && dataSource !== 'api'" class="datasource">{{ dataSource }}</span>
+<p-tag *ngIf="dataSource !== 'config' && dataSource !== 'api'">{{ dataSource }}</p-tag>

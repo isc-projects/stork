@@ -558,6 +558,10 @@ export class HostTabComponent {
             })
     }
 
+    hasAnyLocalHostFromDatabase(host: Host) {
+        return !!host.localHosts?.some((lh) => lh.dataSource === 'api')
+    }
+
     /**
      * Checks if all provided DHCP servers have equal set of DHCP options.
      */

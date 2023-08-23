@@ -202,18 +202,33 @@
                         <td>global</td>
                     </ng-template>
                     <td>
-                        <a
-                            *ngFor="let lhs of localHostsGroupedByApp[h.id]"
-                            routerLink="/apps/kea/{{ lhs[0].appId }}"
-                            class="block white-space-nowrap"
-                            >{{ lhs[0].appName }}
-                            <sup>
-                                <app-host-data-source-label
-                                    *ngFor="let lh of lhs"
-                                    [dataSource]="lh.dataSource"
-                                ></app-host-data-source-label>
-                            </sup>
-                        </a>
+                        <div *ngFor="let lhs of localHostsGroupedByApp[h.id]" class="flex align-items-baseline">
+                            <!-- Hyperlink to the host page -->
+                            <a
+                                routerLink="/apps/kea/{{ lhs[0].appId }}"
+                                class="block white-space-nowrap"
+                                >{{ lhs[0].appName }}
+                            </a>
+                            <!-- Data source labels -->
+                            <app-host-data-source-label *ngFor="let lh of lhs"
+                                class="ml-2 mt-1"
+                                [dataSource]="lh.dataSource"
+                            ></app-host-data-source-label>
+                            <!-- Conflict label -->
+                            <p-tag *ngIf="getLocalHostsState(lhs) === 'conflict'"
+                                class="ml-2 mt-1"
+                                value="conflict"
+                                severity="danger"
+                                pTooltip="The host is configured differently in the configuration file and host database."
+                                ></p-tag>
+                            <!-- Duplicate label -->
+                            <p-tag *ngIf="getLocalHostsState(lhs) === 'duplicate'"
+                                class="ml-2 mt-1"
+                                value="duplicate"
+                                severity="warning"
+                                pTooltip="The host is duplicated in the configuration file and host database."
+                                ></p-tag>          
+                        </div>
                     </td>
                 </tr>
             </ng-template>
