@@ -1150,7 +1150,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             this._genericFormService.setValuesFromFormGroup(this.getBootFieldsGroup(i), localHosts[i])
         }
         // Copy non-editable daemons.
-        for (let lh of this.savedUpdateHostBeginData.host.localHosts) {
+        for (let lh of this.savedUpdateHostBeginData?.host.localHosts) {
             if (lh.dataSource === 'config') {
                 localHosts.push(lh)
             }
