@@ -430,14 +430,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		if !hasLocalHostFromConfig {
 			err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
 		} else {
-			for _, lh := range host.LocalHosts {
-				if lh.DataSource == dbmodel.HostDataSourceAPI {
-					_, err = dbmodel.DeleteDaemonFromHosts(db, lh.DaemonID, lh.DataSource)
-					if err != nil {
-						return ctx, errors.WithMessagef(err, "could not delete daemon %d from host %d", lh.DaemonID, *update.Recipe.HostID)
-					}
-				}
-			}
+			_, err = dbmodel.DeleteDaemonsFromHost(db, *update.Recipe.HostID, dbmodel.HostDataSourceAPI)
 		}
 		if err != nil {
 			return ctx, errors.WithMessagef(err, "host has been successfully deleted in Kea but deleting in the Stork database failed")

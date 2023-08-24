@@ -618,6 +618,26 @@ func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource HostDataSou
 	return int64(result.RowsAffected()), nil
 }
 
+// Dissociates a daemon from the given host and data source. The dataSource
+// designates a data source from which the deleted hosts were fetched. If it
+// is an empty value the hosts from all sources are deleted. The first returned
+// value indicates if any row was removed from the local_host table.
+func DeleteDaemonsFromHost(dbi dbops.DBI, hostID int64, dataSource HostDataSource) (int64, error) {
+	q := dbi.Model((*LocalHost)(nil)).
+		Where("host_id = ?", hostID)
+
+	if len(dataSource) > 0 {
+		q = q.Where("data_source = ?", dataSource)
+	}
+
+	result, err := q.Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem deleting the daemons from the %d host and the '%s' data source", hostID, dataSource)
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
+}
+
 // Deletes hosts which are not associated with any apps. Returns deleted host
 // count and an error.
 func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
