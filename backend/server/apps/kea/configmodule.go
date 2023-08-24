@@ -223,7 +223,10 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	// Get the list of daemons whose configurations must be locked for updates.
 	var daemonIDs []int64
 	for _, lh := range host.LocalHosts {
-		daemonIDs = append(daemonIDs, lh.DaemonID)
+		// Skip the local hosts from the configuration file.
+		if lh.DataSource == dbmodel.HostDataSourceAPI {
+			daemonIDs = append(daemonIDs, lh.DaemonID)
+		}
 	}
 	// Try to lock configurations.
 	ctx, err = module.manager.Lock(ctx, daemonIDs...)
@@ -266,6 +269,9 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
+		if lh.DataSource == dbmodel.HostDataSourceConfig {
+			continue
+		}
 		if lh.Daemon == nil {
 			return ctx, errors.Errorf("updated host %d is associated with nil daemon", host.ID)
 		}
@@ -285,6 +291,9 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	}
 	// Re-create the host reservations.
 	for _, lh := range host.LocalHosts {
+		if lh.DataSource == dbmodel.HostDataSourceConfig {
+			continue
+		}
 		if lh.Daemon == nil {
 			return ctx, errors.Errorf("applied host %d is associated with nil daemon", host.ID)
 		}
@@ -347,6 +356,9 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 	}
 	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
+		if lh.DataSource == dbmodel.HostDataSourceConfig {
+			continue
+		}
 		if lh.Daemon == nil {
 			return ctx, errors.Errorf("deleted host %d is associated with nil daemon", host.ID)
 		}
@@ -388,7 +400,9 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 	if !ok {
 		return ctx, errors.New("context lacks state")
 	}
+
 	var err error
+	db := module.manager.GetDB()
 	ctx, err = module.commitChanges(ctx)
 	if err != nil {
 		return ctx, err
@@ -397,7 +411,34 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		if update.Recipe.HostID == nil {
 			return ctx, errors.New("server logic error: the host ID cannot be nil when committing host deletion")
 		}
-		err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
+
+		host, err := dbmodel.GetHost(db, *update.Recipe.HostID)
+		if err != nil {
+			return ctx, errors.WithMessagef(err, "could not retrieve host %d from the database", *update.Recipe.HostID)
+		}
+
+		// If there is any local host from the configuration, keep the host and
+		// remove the local hosts from the API.
+		hasLocalHostFromConfig := false
+		for _, lh := range host.LocalHosts {
+			if lh.DataSource == dbmodel.HostDataSourceConfig {
+				hasLocalHostFromConfig = true
+				break
+			}
+		}
+
+		if !hasLocalHostFromConfig {
+			err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
+		} else {
+			for _, lh := range host.LocalHosts {
+				if lh.DataSource == dbmodel.HostDataSourceAPI {
+					_, err = dbmodel.DeleteDaemonFromHosts(db, lh.DaemonID, lh.DataSource)
+					if err != nil {
+						return ctx, errors.WithMessagef(err, "could not delete daemon %d from host %d", lh.DaemonID, *update.Recipe.HostID)
+					}
+				}
+			}
+		}
 		if err != nil {
 			return ctx, errors.WithMessagef(err, "host has been successfully deleted in Kea but deleting in the Stork database failed")
 		}

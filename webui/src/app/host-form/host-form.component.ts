@@ -525,8 +525,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
      */
     private _initializeHost(host: Host): void {
         const selectedDaemons: number[] = []
-        if (host.localHosts?.length > 0) {
-            for (let lh of host.localHosts) {
+        const localHosts = this._getEditableLocalHosts(host)
+        if (localHosts.length > 0) {
+            for (let lh of localHosts) {
                 selectedDaemons.push(lh.daemonId)
             }
             this.formGroup.get('selectedDaemons').setValue(selectedDaemons)
@@ -577,21 +578,21 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Split form mode is only set when there are multiple servers associated
         // with the edited host and at least one of the servers has different
         // set of DHCP options, client classes or boot fields.
-        const splitFormMode = hasDifferentLocalHostData(host.localHosts)
+        const splitFormMode = hasDifferentLocalHostData(localHosts)
         this.formGroup.get('splitFormMode').setValue(splitFormMode)
 
-        for (let i = 0; i < (splitFormMode ? host.localHosts.length : 1); i++) {
+        for (let i = 0; i < (splitFormMode ? localHosts.length : 1); i++) {
             // Options.
             this._genericFormService.setArrayControl(
                 i,
                 this.optionsArray,
                 this._optionSetFormService.convertOptionsToForm(
                     this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
-                    host.localHosts[i].options
+                    localHosts[i].options
                 )
             )
             // Client classes.
-            const clientClasses = host.localHosts[i].clientClasses ? [...host.localHosts[i].clientClasses] : []
+            const clientClasses = localHosts[i].clientClasses ? [...localHosts[i].clientClasses] : []
             this._genericFormService.setArrayControl(
                 i,
                 this.clientClassesArray,
@@ -599,7 +600,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             )
             // Boot fields.
             let bootFields = this._createDefaultBootFieldsFormGroup()
-            this._genericFormService.setFormGroupValues(bootFields, host.localHosts[i])
+            this._genericFormService.setFormGroupValues(bootFields, localHosts[i])
             this._genericFormService.setArrayControl(i, this.bootFieldsArray, bootFields)
         }
     }
@@ -683,6 +684,16 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 value: 'flex-id',
             },
         ]
+    }
+
+    /**
+     * Returns the list of local hosts coming from the hosts database.
+     */
+    private _getEditableLocalHosts(host: Host): LocalHost[] {
+        if (!host.localHosts) {
+            return []
+        }
+        return host.localHosts.filter((lh) => lh.dataSource === 'api')
     }
 
     /**
@@ -1137,6 +1148,12 @@ export class HostFormComponent implements OnInit, OnDestroy {
             })
             // Boot fields.
             this._genericFormService.setValuesFromFormGroup(this.getBootFieldsGroup(i), localHosts[i])
+        }
+        // Copy non-editable daemons.
+        for (let lh of this.savedUpdateHostBeginData.host.localHosts) {
+            if (lh.dataSource === 'config') {
+                localHosts.push(lh)
+            }
         }
 
         // Use hex value or convert text value to hex.

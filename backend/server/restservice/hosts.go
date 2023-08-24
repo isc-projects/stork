@@ -104,15 +104,9 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 		var err error
 
 		if lh.DataSource == "" {
-			// Default data source for entries created using API.
-			ds = dbmodel.HostDataSourceAPI
+			return nil, errors.Errorf("missing local host data source")
 		} else if ds, err = dbmodel.ParseHostDataSource(lh.DataSource); err != nil {
-			return nil, err
-		}
-
-		// Validate data source.
-		if ds != dbmodel.HostDataSourceAPI {
-			return nil, errors.Errorf("invalid local host data source (required: '%s' or empty)", dbmodel.HostDataSourceAPI)
+			return nil, errors.WithMessage(err, "invalid local host data source")
 		}
 
 		localHost := dbmodel.LocalHost{

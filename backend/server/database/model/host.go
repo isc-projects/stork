@@ -1104,12 +1104,12 @@ func (host *Host) PopulateSubnet(dbi dbops.DBI) error {
 }
 
 // Sets LocalHost instance for the Host. If the corresponding LocalHost
-// (having the same daemon ID) already exists, it is replaced with the
-// specified instance. Otherwise, the instance is appended to the slice
-// of LocalHosts.
+// (having the same daemon ID and data source) already exists, it is replaced
+// with the specified instance. Otherwise, the instance is appended to the
+// slice of LocalHosts.
 func (host *Host) SetLocalHost(localHost *LocalHost) {
 	for i, lh := range host.LocalHosts {
-		if lh.DaemonID == localHost.DaemonID {
+		if lh.DaemonID == localHost.DaemonID && lh.DataSource == localHost.DataSource {
 			host.LocalHosts[i] = *localHost
 			return
 		}
