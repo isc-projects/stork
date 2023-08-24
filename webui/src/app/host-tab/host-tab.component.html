@@ -296,8 +296,8 @@
 <ng-template #sectionHeaderContent let-title="title" let-localHosts="localHosts" let-all="all">
     <span>
         {{ title }}&nbsp;/&nbsp;
-        <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
         <ng-container *ngIf="!all">
+            <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
             <app-host-data-source-label *ngFor="let localHost of localHosts"
                 class="ml-2"
                 [dataSource]="localHost.dataSource"
