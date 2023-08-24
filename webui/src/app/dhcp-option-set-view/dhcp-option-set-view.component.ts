@@ -118,13 +118,6 @@ export class DhcpOptionSetViewComponent implements OnInit {
         for (let optionNodes of this.optionNodes) {
             for (let optionNode of optionNodes)
                 if (optionNode.type === 'option') {
-                    if (
-                        this.combinedOptionNodes.some(
-                            (n) => (n.data as OptionNode).code === (optionNode.data as OptionNode).code
-                        )
-                    ) {
-                        continue
-                    }
                     this.combinedOptionNodes.push(optionNode)
                 }
         }
