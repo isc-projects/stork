@@ -7,7 +7,7 @@ import { DHCPService } from '../backend/api/api'
 import {
     hasDifferentLocalHostBootFields,
     hasDifferentLocalHostClientClasses,
-    hasDifferentLocalHostData,
+    hasDifferentLocalHostOptions,
 } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
 
@@ -566,7 +566,7 @@ export class HostTabComponent {
      * Checks if all provided DHCP servers have equal set of DHCP options.
      */
     daemonsHaveEqualDhcpOptions(localHosts: LocalHost[]): boolean {
-        return !hasDifferentLocalHostData(localHosts)
+        return !hasDifferentLocalHostOptions(localHosts)
     }
 
     /**
