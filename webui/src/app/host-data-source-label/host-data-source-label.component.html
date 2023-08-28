@@ -5,8 +5,7 @@
     pTooltip="This host is specified in the server's configuration file."
     tooltipPosition="bottom"
     value="config"
-    ></p-tag
->
+></p-tag>
 
 <!-- API -->
 <p-tag
@@ -15,8 +14,7 @@
     pTooltip="This host is specified in the server's host database."
     tooltipPosition="bottom"
     value="host_cmds"
-    ></p-tag
->
+></p-tag>
 
 <!-- Unknown -->
 <p-tag *ngIf="dataSource !== 'config' && dataSource !== 'api'">{{ dataSource }}</p-tag>

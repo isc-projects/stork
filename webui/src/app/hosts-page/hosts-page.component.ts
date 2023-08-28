@@ -638,13 +638,17 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         return '[' + host.id + ']'
     }
 
-    // Returns the state of the local hosts from the same application/daemon.
-    // The state is null if the host reservations are defined only in the
-    // configuration file or host database. If they are defined in both places
-    // the state is one of the following:
-    // - duplicate - reservations have the same boot fields, client classes, and
-    //               DHCP options
-    // - conflict - reservations are configured differently.
+    /**
+     * Returns the state of the local hosts from the same application/daemon.
+     * The state is null if the host reservations are defined only in the
+     * configuration file or host database. If they are defined in both places
+     * the state is one of the following:
+     * - duplicate - reservations have the same boot fields, client classes, and
+     *               DHCP options
+     * - conflict - reservations are configured differently.
+     *
+     * @param localHosts local hosts to be checked.
+     */
     getLocalHostsState(localHosts: LocalHost[]): 'conflict' | 'duplicate' | null {
         if (localHosts.length <= 1) {
             return null
