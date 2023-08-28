@@ -231,7 +231,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	// Try to lock configurations.
 	ctx, err = module.manager.Lock(ctx, daemonIDs...)
 	if err != nil {
-		return ctx, errors.Wrap(config.ErrLock, err.Error())
+		return ctx, errors.Wrap(config.NewLockError(), err.Error())
 	}
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "host_update", daemonIDs...)
@@ -348,7 +348,10 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 			return ctx, errors.WithMessagef(err, "could not retrieve local hosts for host %d from the database", update.Recipe.HostAfterUpdate.ID)
 		}
 		// Concatenate the local hosts from the API and the config file.
-		update.Recipe.HostAfterUpdate.LocalHosts = append(localHostsFromAPI, localHostsFromConfig...)
+		var allLocalHosts []dbmodel.LocalHost
+		allLocalHosts = append(allLocalHosts, localHostsFromAPI...)
+		allLocalHosts = append(allLocalHosts, localHostsFromConfig...)
+		update.Recipe.HostAfterUpdate.LocalHosts = allLocalHosts
 
 		// Update the host in the database.
 		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)

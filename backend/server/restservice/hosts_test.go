@@ -16,6 +16,7 @@ import (
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
+	storkutil "isc.org/stork/util"
 )
 
 func mockStatusError(commandName string, cmdResponses []interface{}) {
@@ -471,8 +472,8 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		require.Equal(t, "stork.example.org", lh.ServerHostname)
 
 		// No DHCP options
-		require.Empty(t, lh.DHCPOptionSet)
-		require.Empty(t, lh.DHCPOptionSetHash)
+		require.Empty(t, lh.DHCPOptionSet.Options)
+		require.Empty(t, lh.DHCPOptionSet.Hash)
 	}
 }
 
@@ -999,15 +1000,15 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 		require.Equal(t, "stork.example.org", lh.ServerHostname)
 
 		// DHCP options
-		require.Len(t, lh.DHCPOptionSet, 1)
-		require.True(t, lh.DHCPOptionSet[0].AlwaysSend)
-		require.EqualValues(t, 3, lh.DHCPOptionSet[0].Code)
-		require.Len(t, lh.DHCPOptionSet[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, lh.DHCPOptionSet[0].Fields[0].FieldType)
-		require.Len(t, lh.DHCPOptionSet[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", lh.DHCPOptionSet[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lh.DHCPOptionSet[0].Space)
-		require.NotEmpty(t, lh.DHCPOptionSetHash)
+		require.Len(t, lh.DHCPOptionSet.Options, 1)
+		require.True(t, lh.DHCPOptionSet.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, lh.DHCPOptionSet.Options[0].Code)
+		require.Len(t, lh.DHCPOptionSet.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lh.DHCPOptionSet.Options[0].Fields[0].FieldType)
+		require.Len(t, lh.DHCPOptionSet.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lh.DHCPOptionSet.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lh.DHCPOptionSet.Options[0].Space)
+		require.NotEmpty(t, lh.DHCPOptionSet.Hash)
 	}
 }
 
@@ -1440,4 +1441,54 @@ func TestDeleteHostError(t *testing.T) {
 		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
 	})
+}
+
+// Test that hash calculated from two different instances of the DHCP options
+// but containing the same options is the same.
+func TestDHCPOptionsHash(t *testing.T) {
+	// Arrange
+	// Create API.
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	rapi, err := NewRestAPI(dbSettings, db, lookup)
+	require.NoError(t, err)
+
+	// Create options.
+	option1 := &models.DHCPOption{
+		AlwaysSend:  false,
+		Code:        20,
+		Encapsulate: "",
+		Fields: []*models.DHCPOptionField{
+			{
+				FieldType: "bool",
+				Values:    []string{"true"},
+			},
+		},
+	}
+
+	option2 := &models.DHCPOption{
+		AlwaysSend:  false,
+		Code:        20,
+		Encapsulate: "",
+		Fields: []*models.DHCPOptionField{
+			{
+				FieldType: "bool",
+				Values:    []string{"true"},
+			},
+		},
+	}
+
+	flattenOptions1, _ := rapi.flattenDHCPOptions("", []*models.DHCPOption{option1}, 0)
+	flattenOptions2, _ := rapi.flattenDHCPOptions("", []*models.DHCPOption{option2}, 0)
+
+	// Act
+	hash1 := storkutil.Fnv128(flattenOptions1)
+	hash2 := storkutil.Fnv128(flattenOptions2)
+
+	// Assert
+	require.Equal(t, hash1, hash2)
 }

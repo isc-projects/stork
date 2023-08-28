@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -123,6 +124,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 		apps[i] = app
 	}
 
+	hasher := keaconfig.NewHasher()
 	hosts = []dbmodel.Host{
 		{
 			SubnetID: 1,
@@ -259,7 +261,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 						"foo",
 						"bar",
 					},
-					DHCPOptionSet: []dbmodel.DHCPOption{
+					DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{
 						{
 							Code: 23,
 							Fields: []dbmodel.DHCPOptionField{
@@ -276,8 +278,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Space:    dhcpmodel.DHCPv6OptionSpace,
 							Universe: storkutil.IPv6,
 						},
-					},
-					DHCPOptionSetHash: "hash-value",
+					}, hasher),
 				},
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
@@ -286,7 +287,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 						"foo",
 						"bar",
 					},
-					DHCPOptionSet: []dbmodel.DHCPOption{
+					DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{
 						{
 							Code: 23,
 							Fields: []dbmodel.DHCPOptionField{
@@ -303,8 +304,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Space:    dhcpmodel.DHCPv6OptionSpace,
 							Universe: storkutil.IPv6,
 						},
-					},
-					DHCPOptionSetHash: "hash-value",
+					}, hasher),
 				},
 			},
 		},

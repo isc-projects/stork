@@ -26,7 +26,7 @@ func TestNoSubnetCmdsHookError(t *testing.T) {
 
 // Test creation of an error which indicates a problem with locking
 // configuration.
-func TestErrLock(t *testing.T) {
-	err := ErrLock
+func TestLockError(t *testing.T) {
+	err := NewLockError()
 	require.EqualError(t, err, "problem with locking daemons configuration")
 }

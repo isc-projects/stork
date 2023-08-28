@@ -129,6 +129,7 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 // associated with a single global subnet depending on how many daemons
 // serve the same subnet.
 type LocalSubnet struct {
+	DHCPOptionSet
 	ID            int64
 	SubnetID      int64
 	DaemonID      int64
@@ -143,9 +144,6 @@ type LocalSubnet struct {
 	PrefixPools  []PrefixPool  `pg:"rel:has-many"`
 
 	KeaParameters *keaconfig.SubnetParameters
-
-	DHCPOptionSet     []DHCPOption
-	DHCPOptionSetHash string
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.
@@ -223,8 +221,8 @@ func (s *Subnet) GetPrefixPools(daemonID int64) (accessors []dhcpmodel.PrefixPoo
 func (s *Subnet) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptionAccessor) {
 	for _, ls := range s.LocalSubnets {
 		if ls.DaemonID == daemonID {
-			for i := range ls.DHCPOptionSet {
-				accessors = append(accessors, ls.DHCPOptionSet[i])
+			for i := range ls.DHCPOptionSet.Options {
+				accessors = append(accessors, ls.DHCPOptionSet.Options[i])
 			}
 		}
 	}

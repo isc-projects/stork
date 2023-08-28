@@ -43,15 +43,13 @@ type SharedNetwork struct {
 // single global shared networks, depending on how many daemons serve the
 // same shared network.
 type LocalSharedNetwork struct {
+	DHCPOptionSet
 	SharedNetworkID int64          `pg:",pk"`
 	DaemonID        int64          `pg:",pk"`
 	Daemon          *Daemon        `pg:"rel:has-one"`
 	SharedNetwork   *SharedNetwork `pg:"rel:has-one"`
 
 	KeaParameters *keaconfig.SharedNetworkParameters
-
-	DHCPOptionSet     []DHCPOption
-	DHCPOptionSetHash string
 }
 
 // Returns shared network name.
@@ -85,8 +83,8 @@ func (sn *SharedNetwork) GetKeaParameters(daemonID int64) *keaconfig.SharedNetwo
 func (sn *SharedNetwork) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptionAccessor) {
 	for _, lsn := range sn.LocalSharedNetworks {
 		if lsn.DaemonID == daemonID {
-			for i := range lsn.DHCPOptionSet {
-				accessors = append(accessors, lsn.DHCPOptionSet[i])
+			for i := range lsn.DHCPOptionSet.Options {
+				accessors = append(accessors, lsn.DHCPOptionSet.Options[i])
 			}
 		}
 	}
@@ -412,7 +410,7 @@ func DeleteEmptySharedNetworks(dbi dbops.DBI) (int64, error) {
 	return int64(result.RowsAffected()), nil
 }
 
-// Deletes shared networkswhich are no longer associated with any daemons.
+// Deletes shared networks which are no longer associated with any daemons.
 // Returns deleted shared networks count and an error.
 func DeleteOrphanedSharedNetworks(dbi dbops.DBI) (int64, error) {
 	subquery := dbi.Model(&[]LocalSharedNetwork{}).

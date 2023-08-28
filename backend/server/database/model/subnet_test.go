@@ -230,7 +230,7 @@ func TestGetSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 
-	// Make suare that the local subnet and the daemon have been fetched.
+	// Make sure that the local subnet and the daemon have been fetched.
 	require.Equal(t, subnet.Prefix, returned.Prefix)
 	require.Len(t, returned.LocalSubnets, 1)
 	require.NotNil(t, returned.LocalSubnets[0].Daemon)
@@ -896,8 +896,10 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID:          app.Daemons[0].ID,
-					DHCPOptionSetHash: "xyz",
+					DaemonID: app.Daemons[0].ID,
+					DHCPOptionSet: DHCPOptionSet{
+						Hash: "xyz",
+					},
 				},
 			},
 		},
@@ -1688,25 +1690,26 @@ func TestSubnetGetPrefixPools(t *testing.T) {
 
 // Test implementation of the dhcpmodel.SubnetAccessor interface (GetDHCPOptions() function).
 func TestSubnetGetDHCPOptions(t *testing.T) {
+	hasher := keaconfig.NewHasher()
 	subnet := Subnet{
 		LocalSubnets: []*LocalSubnet{
 			{
 				DaemonID: 110,
-				DHCPOptionSet: []DHCPOption{
+				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
 					{
 						Code:  7,
 						Space: dhcpmodel.DHCPv4OptionSpace,
 					},
-				},
+				}, hasher),
 			},
 			{
 				DaemonID: 111,
-				DHCPOptionSet: []DHCPOption{
+				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
 					{
 						Code:  8,
 						Space: dhcpmodel.DHCPv4OptionSpace,
 					},
-				},
+				}, hasher),
 			},
 		},
 	}

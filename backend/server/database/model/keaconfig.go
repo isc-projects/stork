@@ -204,14 +204,17 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		}
 		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
 	}
+
+	optionSet := []DHCPOption{}
 	for _, d := range keaSubnet.GetDHCPOptions() {
 		option, err := NewDHCPOptionFromKea(d, keaSubnet.GetUniverse(), lookup)
 		if err != nil {
 			return nil, err
 		}
-		convertedSubnet.LocalSubnets[0].DHCPOptionSet = append(convertedSubnet.LocalSubnets[0].DHCPOptionSet, *option)
-		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = hasher.Hash(convertedSubnet.LocalSubnets[0].DHCPOptionSet)
+		optionSet = append(optionSet, *option)
 	}
+	convertedSubnet.LocalSubnets[0].SetDHCPOptions(optionSet, hasher)
+
 	return convertedSubnet, nil
 }
 
@@ -237,14 +240,16 @@ func NewSharedNetworkFromKea(sharedNetwork keaconfig.SharedNetwork, family int, 
 		}
 		newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
 	}
+
+	optionSet := []DHCPOption{}
 	for _, d := range sharedNetwork.GetDHCPOptions() {
 		option, err := NewDHCPOptionFromKea(d, storkutil.IPType(family), lookup)
 		if err != nil {
 			return nil, err
 		}
-		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet = append(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet, *option)
-		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = keaconfig.NewHasher().Hash(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet)
+		optionSet = append(optionSet, *option)
 	}
+	newSharedNetwork.LocalSharedNetworks[0].SetDHCPOptions(optionSet, keaconfig.NewHasher())
 	return newSharedNetwork, nil
 }
 
@@ -325,14 +330,15 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 	if daemon.Name == DaemonNameDHCPv6 {
 		universe = storkutil.IPv6
 	}
+	optionSet := []DHCPOption{}
 	for _, d := range reservation.OptionData {
 		hostOption, err := NewDHCPOptionFromKea(d, universe, lookup)
 		if err != nil {
 			return nil, err
 		}
-		lh.DHCPOptionSet = append(lh.DHCPOptionSet, *hostOption)
-		lh.DHCPOptionSetHash = keaconfig.NewHasher().Hash(lh.DHCPOptionSet)
+		optionSet = append(optionSet, *hostOption)
 	}
+	lh.SetDHCPOptions(optionSet, keaconfig.NewHasher())
 	host.LocalHosts = append(host.LocalHosts, lh)
 	return &host, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -957,13 +958,13 @@ func TestAddHostLocalHosts(t *testing.T) {
 			"foo",
 			"bar",
 		},
-		DHCPOptionSet: []DHCPOption{
+		DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
 			{
 				Code:  254,
 				Name:  "foo",
 				Space: dhcpmodel.DHCPv4OptionSpace,
 			},
-		},
+		}, keaconfig.NewHasher()),
 	})
 	err := AddHostLocalHosts(db, &host)
 	require.NoError(t, err)
@@ -1022,10 +1023,10 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Equal(t, "bar", returnedList[0].LocalHosts[0].ClientClasses[1])
 
 	// Make sure that DHCP options are returned.
-	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet, 1)
-	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Code)
-	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet[0].Name)
-	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet[0].Space)
+	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet.Options, 1)
+	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Code)
+	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Name)
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Space)
 }
 
 // Test that the host and its local host can be added within a single transaction.
@@ -1675,13 +1676,13 @@ func TestKeaConfigHostInterface(t *testing.T) {
 					"foo",
 					"bar",
 				},
-				DHCPOptionSet: []DHCPOption{
+				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
 					{
 						Code:        123,
 						Encapsulate: "dhcp4",
 						Universe:    storkutil.IPv4,
 					},
-				},
+				}, keaconfig.NewHasher()),
 			},
 		},
 	}

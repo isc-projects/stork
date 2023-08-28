@@ -90,6 +90,7 @@ type Host struct {
 // which it has been retrieved. It provides M:N relationship between hosts
 // and daemons.
 type LocalHost struct {
+	DHCPOptionSet
 	HostID     int64          `pg:",pk"`
 	DaemonID   int64          `pg:",pk"`
 	DataSource HostDataSource `pg:",pk"`
@@ -97,12 +98,10 @@ type LocalHost struct {
 	Daemon *Daemon `pg:"rel:has-one"`
 	Host   *Host   `pg:"rel:has-one"`
 
-	ClientClasses     []string `pg:",array"`
-	NextServer        string
-	ServerHostname    string
-	BootFileName      string
-	DHCPOptionSet     []DHCPOption
-	DHCPOptionSetHash string
+	ClientClasses  []string `pg:",array"`
+	NextServer     string
+	ServerHostname string
+	BootFileName   string
 }
 
 // Associates a host with DHCP with host identifiers.
@@ -1067,7 +1066,7 @@ func (host Host) GetBootFileName(daemonID int64) (bootFileName string) {
 func (host Host) GetDHCPOptions(daemonID int64) (options []dhcpmodel.DHCPOptionAccessor) {
 	for _, lh := range host.LocalHosts {
 		if lh.DaemonID == daemonID {
-			for _, o := range lh.DHCPOptionSet {
+			for _, o := range lh.DHCPOptionSet.Options {
 				options = append(options, o)
 			}
 		}

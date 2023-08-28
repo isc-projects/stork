@@ -67,9 +67,9 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			ServerHostname: dbLocalHost.ServerHostname,
 			BootFileName:   dbLocalHost.BootFileName,
 			ClientClasses:  dbLocalHost.ClientClasses,
-			OptionsHash:    dbLocalHost.DHCPOptionSetHash,
+			OptionsHash:    dbLocalHost.DHCPOptionSet.Hash,
 		}
-		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet, "", 0)
+		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet.Options, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
 	}
 	return host
@@ -117,13 +117,11 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			ServerHostname: lh.ServerHostname,
 			BootFileName:   lh.BootFileName,
 		}
-		localHost.DHCPOptionSet, err = r.flattenDHCPOptions("", lh.Options, 0)
+		options, err := r.flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {
 			return nil, err
 		}
-		if len(localHost.DHCPOptionSet) > 0 {
-			localHost.DHCPOptionSetHash = keaconfig.NewHasher().Hash(localHost.DHCPOptionSet)
-		}
+		localHost.DHCPOptionSet.SetDHCPOptions(options, keaconfig.NewHasher())
 		host.SetLocalHost(&localHost)
 	}
 	return host, nil
@@ -466,7 +464,10 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	var err error
 	cctx, err = r.ConfigManager.GetKeaModule().BeginHostUpdate(cctx, params.HostID)
 	if err != nil {
-		var hostNotFound *config.HostNotFoundError
+		var (
+			hostNotFound *config.HostNotFoundError
+			lock         *config.LockError
+		)
 		switch {
 		case errors.As(err, &hostNotFound):
 			// Failed to find host.
@@ -476,7 +477,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 				Message: &msg,
 			})
 			return rsp
-		case errors.Is(err, config.ErrLock):
+		case errors.As(err, &lock):
 			// Failed to lock daemons.
 			msg := fmt.Sprintf("Unable to edit the host reservation with ID %d because it may be currently edited by another user", params.HostID)
 			log.WithError(err).Error(msg)
