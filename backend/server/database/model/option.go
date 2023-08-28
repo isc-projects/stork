@@ -18,12 +18,16 @@ type DHCPOptionSet struct {
 	Hash    string       `pg:"dhcp_option_set_hash"`
 }
 
+// Constructs a new instance of the DHCPOptionSet structure.
 func NewDHCPOptionSet(options []DHCPOption, hasher storkutil.Hasher) DHCPOptionSet {
 	instance := DHCPOptionSet{}
 	instance.SetDHCPOptions(options, hasher)
 	return instance
 }
 
+// Sets the specified DHCP options and calculates the hash.
+// Calculates a hash of the DHCP options. It ignores the option name because
+// it may be not set (e.g.: in DHCP option provided via REST API).
 func (s *DHCPOptionSet) SetDHCPOptions(options []DHCPOption, hasher storkutil.Hasher) {
 	s.Options = options
 	if len(options) != 0 {
@@ -44,6 +48,7 @@ func (s *DHCPOptionSet) SetDHCPOptions(options []DHCPOption, hasher storkutil.Ha
 	}
 }
 
+// Checks if two DHCP option sets are equal by comparing their hashes.
 func (s *DHCPOptionSet) Equals(other *DHCPOptionSet) bool {
 	return s.Hash == other.Hash
 }
