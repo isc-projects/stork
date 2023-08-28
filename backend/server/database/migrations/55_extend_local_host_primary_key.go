@@ -11,6 +11,11 @@ func init() {
 			ALTER TABLE local_host
                 ADD CONSTRAINT local_host_pkey
 					PRIMARY KEY (host_id, daemon_id, data_source);
+
+			-- Reset the Kea config hashes to re-calculate the hashes of the
+			-- DHCP options of the host reservations coming from the
+			-- configuration file.
+			UPDATE kea_daemon SET config_hash = NULL;
 		`)
 		return err
 	}, func(d migrations.DB) error {
@@ -19,6 +24,11 @@ func init() {
 			ALTER TABLE local_host
 				ADD CONSTRAINT local_host_pkey
 					PRIMARY KEY (host_id, daemon_id);
+
+			-- Reset the Kea config hashes to re-calculate the hashes of the
+			-- DHCP options of the host reservations coming from the
+			-- configuration file.
+			UPDATE kea_daemon SET config_hash = NULL;
 		`)
 		return err
 	})
