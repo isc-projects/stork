@@ -240,22 +240,22 @@ export class HostFormComponent implements OnInit, OnDestroy {
     ]
 
     /**
-     * Default placeholder displayed in the IPv4 resevation input box.
+     * Default placeholder displayed in the IPv4 reservation input box.
      */
     static defaultIPv4Placeholder = '?.?.?.?'
 
     /**
-     * Default placeholder displayed in the IPv6 resevation input box.
+     * Default placeholder displayed in the IPv6 reservation input box.
      */
     static defaultIPv6Placeholder = 'e.g. 2001:db8:1::'
 
     /**
-     * Current placeholder displayed in the IPv4 resevation input box.
+     * Current placeholder displayed in the IPv4 reservation input box.
      */
     ipv4Placeholder = HostFormComponent.defaultIPv4Placeholder
 
     /**
-     * Current placeholder displayed in the IPv6 resevation input box.
+     * Current placeholder displayed in the IPv6 reservation input box.
      */
     ipv6Placeholder = HostFormComponent.defaultIPv6Placeholder
 
@@ -1148,12 +1148,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
             })
             // Boot fields.
             this._genericFormService.setValuesFromFormGroup(this.getBootFieldsGroup(i), localHosts[i])
-        }
-        // Copy non-editable daemons.
-        for (let lh of this.savedUpdateHostBeginData?.host.localHosts) {
-            if (lh.dataSource === 'config') {
-                localHosts.push(lh)
-            }
         }
 
         // Use hex value or convert text value to hex.
