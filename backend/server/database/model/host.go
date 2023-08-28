@@ -598,6 +598,28 @@ func AddHostWithLocalHosts(dbi dbops.DBI, host *Host) error {
 	return addHostWithLocalHosts(dbi.(*pg.Tx), host)
 }
 
+// Fetches the local hosts of a given host coming from a specific data source.
+// If the data source is zero, returns all local hosts.
+func GetLocalHosts(dbi dbops.DBI, hostID int64, dataSource HostDataSource) ([]LocalHost, error) {
+	localHosts := []LocalHost{}
+	q := dbi.Model(&localHosts).
+		Where("host_id = ?", hostID)
+
+	if len(dataSource) > 0 {
+		q = q.Where("data_source = ?", dataSource)
+	}
+
+	err := q.Select()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, nil
+		}
+		err = pkgerrors.Wrapf(err, "problem getting local hosts for host %d", hostID)
+		return nil, err
+	}
+	return localHosts, nil
+}
+
 // Dissociates a daemon from the hosts. The dataSource designates a data
 // source from which the deleted hosts were fetched. If it is an empty value
 // the hosts from all sources are deleted. The first returned value indicates

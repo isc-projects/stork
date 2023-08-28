@@ -334,6 +334,23 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 		if update.Recipe.HostAfterUpdate == nil {
 			return ctx, errors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
 		}
+
+		// Filter out the local hosts from the API.
+		localHostsFromAPI := []dbmodel.LocalHost{}
+		for _, lh := range update.Recipe.HostAfterUpdate.LocalHosts {
+			if lh.DataSource != dbmodel.HostDataSourceConfig {
+				localHostsFromAPI = append(localHostsFromAPI, lh)
+			}
+		}
+		// Keep unchanged the local hosts from the config file.
+		localHostsFromConfig, err := dbmodel.GetLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate.ID, dbmodel.HostDataSourceConfig)
+		if err != nil {
+			return ctx, errors.WithMessagef(err, "could not retrieve local hosts for host %d from the database", update.Recipe.HostAfterUpdate.ID)
+		}
+		// Concatenate the local hosts from the API and the config file.
+		update.Recipe.HostAfterUpdate.LocalHosts = append(localHostsFromAPI, localHostsFromConfig...)
+
+		// Update the host in the database.
 		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
 			return ctx, errors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
