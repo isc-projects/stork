@@ -27,7 +27,20 @@ func NewDHCPOptionSet(options []DHCPOption, hasher storkutil.Hasher) DHCPOptionS
 func (s *DHCPOptionSet) SetDHCPOptions(options []DHCPOption, hasher storkutil.Hasher) {
 	s.Options = options
 	if len(options) != 0 {
+		// Ignore DHCP option name in hash calculations.
+		names := make([]string, len(options))
+		for i := range options {
+			names[i] = options[i].Name
+			options[i].Name = ""
+		}
+
+		// Calculate hash.
 		s.Hash = hasher.Hash(options)
+
+		// Restore names.
+		for i := range options {
+			options[i].Name = names[i]
+		}
 	}
 }
 
