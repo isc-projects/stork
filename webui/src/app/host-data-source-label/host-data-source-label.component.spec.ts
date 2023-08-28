@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HostDataSourceLabelComponent } from './host-data-source-label.component'
+import { TagModule } from 'primeng/tag'
 
 describe('HostDataSourceLabelComponent', () => {
     let component: HostDataSourceLabelComponent
@@ -9,6 +10,7 @@ describe('HostDataSourceLabelComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [HostDataSourceLabelComponent],
+            imports: [TagModule]
         }).compileComponents()
 
         fixture = TestBed.createComponent(HostDataSourceLabelComponent)

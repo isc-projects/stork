@@ -38,6 +38,7 @@ import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/d
 import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { TagModule } from 'primeng/tag'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -87,6 +88,7 @@ describe('HostsPageComponent', () => {
                 ReactiveFormsModule,
                 ConfirmDialogModule,
                 TreeModule,
+                TagModule
             ],
             declarations: [
                 EntityLinkComponent,
