@@ -265,36 +265,44 @@
             </ng-container>
         </div>
     </div>
-    <div class="flex mt-6">
-        <button
-            type="button"
-            pButton
-            [disabled]="leasesSearchInProgress"
-            label="Leases"
-            id="refresh-app-button"
-            icon="pi pi-refresh"
-            (click)="refreshLeases()"
-        ></button>
-        <ng-container *ngIf="hasAnyLocalHostFromDatabase(host)">
+    <div class="mt-6">
+        <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()" class="mb-2">
+            <p-message
+                severity="warn"
+                text='The "Edit" and "Delete" operations affect only the configurations stored in the host database (labeled as "host_cmds").'
+            ></p-message>
+        </div>
+        <div class="flex">
             <button
                 type="button"
                 pButton
-                [disabled]="hostDeleted"
-                label="Edit"
-                icon="pi pi-pencil"
-                class="p-button-info ml-2"
-                (click)="onHostEditBegin()"
+                [disabled]="leasesSearchInProgress"
+                label="Leases"
+                id="refresh-app-button"
+                icon="pi pi-refresh"
+                (click)="refreshLeases()"
             ></button>
-            <button
-                type="button"
-                pButton
-                [disabled]="hostDeleted"
-                label="Delete"
-                icon="pi pi-times"
-                class="p-button-danger ml-2"
-                (click)="confirmDeleteHost()"
-            ></button>
-        </ng-container>
+            <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="hostDeleted"
+                    label="Edit"
+                    icon="pi pi-pencil"
+                    class="p-button-info ml-2"
+                    (click)="onHostEditBegin()"
+                ></button>
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="hostDeleted"
+                    label="Delete"
+                    icon="pi pi-times"
+                    class="p-button-danger ml-2"
+                    (click)="confirmDeleteHost()"
+                ></button>
+            </ng-container>
+        </div>
     </div>
 </div>
 

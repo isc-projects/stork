@@ -559,10 +559,17 @@ export class HostTabComponent {
     }
 
     /**
-     * Checks if the provided DHCP servers have equal set of DHCP options.
+     * Checks if there is at least one local host from the host database.
      */
-    hasAnyLocalHostFromDatabase(host: Host) {
-        return !!host.localHosts?.some((lh) => lh.dataSource === 'api')
+    hasAnyLocalHostFromDatabase() {
+        return !!this.host.localHosts?.some((lh) => lh.dataSource === 'api')
+    }
+
+    /**
+     * Checks if there is at least one local host from the configuration.
+     */
+    hasAnyLocalHostFromConfig() {
+        return !!this.host.localHosts?.some((lh) => lh.dataSource === 'config')
     }
 
     /**
