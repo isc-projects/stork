@@ -120,14 +120,14 @@ export class DhcpOptionSetViewComponent implements OnInit {
                 if (treeOptionNode.type === 'option') {
                     const optionNode = treeOptionNode.data as OptionNode
                     if (
-                        this.combinedOptionNodes.
-                            map(n => n.data as OptionNode).
+                        this.combinedOptionNodes
+                            .map((n) => n.data as OptionNode)
                             // Check if there is another node with the same
                             // code but different level. We allow to have the
                             // same option code at the same level to display
                             // the duplicated options, e.g., for host
                             // reservations.
-                            some(d => d.code === optionNode.code && d.level !== optionNode.level)
+                            .some((d) => d.code === optionNode.code && d.level !== optionNode.level)
                     ) {
                         continue
                     }
