@@ -49,7 +49,7 @@ func (s *DHCPOptionSet) SetDHCPOptions(options []DHCPOption, hasher storkutil.Ha
 }
 
 // Checks if two DHCP option sets are equal by comparing their hashes.
-func (s *DHCPOptionSet) Equals(other *DHCPOptionSet) bool {
+func (s *DHCPOptionSet) IsEqualTo(other DHCPOptionSet) bool {
 	return s.Hash == other.Hash
 }
 

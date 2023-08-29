@@ -2012,3 +2012,268 @@ func TestJoinDifferentHosts(t *testing.T) {
 	ok := host1.Join(host2)
 	require.False(t, ok)
 }
+
+// Test that the daemons are removed from a host properly. Only associations
+// related to the configuration file are removed.
+func TestDeleteDaemonsFromHostConfigDataSource(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 2)
+
+	// Act
+	count, err := DeleteDaemonsFromHost(db, host.ID, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 1)
+	require.EqualValues(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
+}
+
+// Test that the daemons are removed from a host properly. Only associations
+// related to the host database are removed.
+func TestDeleteDaemonsFromHostAPIDataSource(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 2)
+
+	// Act
+	count, err := DeleteDaemonsFromHost(db, host.ID, HostDataSourceAPI)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 1)
+	require.EqualValues(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
+}
+
+// Test that the daemons are removed from a host properly. All associations
+// are removed.
+func TestDeleteDaemonsFromHostAllDataSource(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 2)
+
+	// Act
+	count, err := DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 0)
+}
+
+// Test that the error is returned if the daemons could not be removed from a
+// host.
+func TestDeleteDaemonsFromHostError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	host, _ = GetHost(db, host.ID)
+	require.Len(t, host.LocalHosts, 2)
+
+	teardown()
+
+	// Act
+	count, err := DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
+
+	// Assert
+	require.Error(t, err)
+	require.Zero(t, count)
+}
+
+// Test that the fetching local hosts for a given host ID and config data
+// source works properly.
+func TestGetLocalHostsConfigDataSource(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	// Act
+	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceConfig)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, localHosts, 1)
+	require.EqualValues(t, HostDataSourceConfig, localHosts[0].DataSource)
+}
+
+// Test that the fetching local hosts for a given host ID and API data source
+// works properly.
+func TestGetLocalHostsAPIDataSource(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	// Act
+	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceAPI)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, localHosts, 1)
+	require.EqualValues(t, HostDataSourceAPI, localHosts[0].DataSource)
+}
+
+// Test that the fetching local hosts for a given host ID and all data sources
+// works properly.
+func TestGetLocalHostsAllDataSources(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	// Act
+	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceUnspecified)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, localHosts, 2)
+	dataSources := []HostDataSource{localHosts[0].DataSource, localHosts[1].DataSource}
+	require.Contains(t, dataSources, HostDataSourceConfig)
+	require.Contains(t, dataSources, HostDataSourceAPI)
+}
+
+// Test that the no local hosts and no error are returned for an unknown host
+// ID and any data source works properly.
+func TestGetLocalHostsUnknownHost(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	t.Run("config", func(t *testing.T) {
+		// Act
+		localHosts, err := GetLocalHosts(db, 42, HostDataSourceConfig)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, localHosts, 0)
+	})
+
+	t.Run("api", func(t *testing.T) {
+		// Act
+		localHosts, err := GetLocalHosts(db, 42, HostDataSourceAPI)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, localHosts, 0)
+	})
+
+	t.Run("all", func(t *testing.T) {
+		// Act
+		localHosts, err := GetLocalHosts(db, 42, HostDataSourceUnspecified)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, localHosts, 0)
+	})
+}
+
+// Test that the fetching local hosts for an unavailable database causes an
+// error.
+func TestGetLocalHostsError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemon, _, _ := addTestDaemons(db)
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	_ = AddHost(db, host)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+
+	teardown()
+
+	// Act
+	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceAPI)
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, localHosts)
+}

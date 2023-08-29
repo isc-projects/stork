@@ -79,3 +79,19 @@ func TestDHCPOptionSetHashIgnoreName(t *testing.T) {
 	// Assert
 	require.Equal(t, noNameHash, withNameHash)
 }
+
+// Test that the equality of DHCP option sets is equality of their hashes.
+func TestDHCPOptionSetIsEqualTo(t *testing.T) {
+	// Arrange
+	optionSet1 := DHCPOptionSet{Hash: "foo"}
+	optionSet2 := DHCPOptionSet{Hash: "foo"}
+	optionSet3 := DHCPOptionSet{Hash: "bar"}
+
+	// Act & Assert
+	require.True(t, optionSet1.IsEqualTo(optionSet2))
+	require.True(t, optionSet2.IsEqualTo(optionSet1))
+	require.False(t, optionSet1.IsEqualTo(optionSet3))
+	require.False(t, optionSet2.IsEqualTo(optionSet3))
+	require.False(t, optionSet3.IsEqualTo(optionSet1))
+	require.False(t, optionSet3.IsEqualTo(optionSet2))
+}

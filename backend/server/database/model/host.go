@@ -21,8 +21,9 @@ type HostDataSource string
 
 // Valid host data sources.
 const (
-	HostDataSourceConfig HostDataSource = "config"
-	HostDataSourceAPI    HostDataSource = "api"
+	HostDataSourceUnspecified HostDataSource = ""
+	HostDataSourceConfig      HostDataSource = "config"
+	HostDataSourceAPI         HostDataSource = "api"
 )
 
 // Converts HostDataSource to string.
@@ -391,7 +392,7 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 		Where("lh.daemon_id = ?", daemonID)
 
 	// Optionally filter by a data source.
-	if len(dataSource) > 0 {
+	if dataSource != HostDataSourceUnspecified {
 		q = q.Where("lh.data_source = ?", dataSource)
 	}
 
@@ -604,7 +605,7 @@ func GetLocalHosts(dbi dbops.DBI, hostID int64, dataSource HostDataSource) ([]Lo
 	q := dbi.Model(&localHosts).
 		Where("host_id = ?", hostID)
 
-	if len(dataSource) > 0 {
+	if dataSource != HostDataSourceUnspecified {
 		q = q.Where("data_source = ?", dataSource)
 	}
 
@@ -627,7 +628,7 @@ func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource HostDataSou
 	q := dbi.Model((*LocalHost)(nil)).
 		Where("daemon_id = ?", daemonID)
 
-	if len(dataSource) > 0 {
+	if dataSource != HostDataSourceUnspecified {
 		q = q.Where("data_source = ?", dataSource)
 	}
 
@@ -647,7 +648,7 @@ func DeleteDaemonsFromHost(dbi dbops.DBI, hostID int64, dataSource HostDataSourc
 	q := dbi.Model((*LocalHost)(nil)).
 		Where("host_id = ?", hostID)
 
-	if len(dataSource) > 0 {
+	if dataSource != HostDataSourceUnspecified {
 		q = q.Where("data_source = ?", dataSource)
 	}
 
