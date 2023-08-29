@@ -88,7 +88,7 @@ describe('HostsPageComponent', () => {
                 ReactiveFormsModule,
                 ConfirmDialogModule,
                 TreeModule,
-                TagModule
+                TagModule,
             ],
             declarations: [
                 EntityLinkComponent,

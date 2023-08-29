@@ -10,7 +10,7 @@ describe('HostDataSourceLabelComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [HostDataSourceLabelComponent],
-            imports: [TagModule]
+            imports: [TagModule],
         }).compileComponents()
 
         fixture = TestBed.createComponent(HostDataSourceLabelComponent)

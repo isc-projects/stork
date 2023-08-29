@@ -665,7 +665,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * pairs allowing filtering by various keys. Filtering is realized
      * server-side.
      */
-    keyUpFilterText(event: Pick<KeyboardEvent, "key">) {
+    keyUpFilterText(event: Pick<KeyboardEvent, 'key'>) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
             const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
                 this.filterText,
