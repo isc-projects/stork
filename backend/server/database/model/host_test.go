@@ -1925,16 +1925,18 @@ func TestSetLocalHost(t *testing.T) {
 	require.EqualValues(t, 234, host.LocalHosts[1].DaemonID)
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
 
-	// Replace the first instance with a new one.
+	// Append a new instance with existing daemon ID but a new data source.
 	host.SetLocalHost(&LocalHost{
 		DaemonID:   123,
 		DataSource: HostDataSourceAPI,
 	})
-	require.Len(t, host.LocalHosts, 2)
+	require.Len(t, host.LocalHosts, 3)
 	require.EqualValues(t, 123, host.LocalHosts[0].DaemonID)
-	require.Equal(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
+	require.Equal(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
 	require.EqualValues(t, 234, host.LocalHosts[1].DaemonID)
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
+	require.EqualValues(t, 123, host.LocalHosts[2].DaemonID)
+	require.Equal(t, HostDataSourceAPI, host.LocalHosts[2].DataSource)
 }
 
 // Test that two hosts can be joined by copying LocalHost information from
