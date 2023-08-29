@@ -1212,7 +1212,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments.(map[string]interface{}), "duid")
-	require.Equal(t, "0", (arguments.(map[string]interface{}))["duid"])
+	require.Equal(t, "00:00:00", (arguments.(map[string]interface{}))["duid"])
 
 	// Simulate an error in the first response. The app returning an error should
 	// be recorded, but the DHCPv6 lease should still be returned.

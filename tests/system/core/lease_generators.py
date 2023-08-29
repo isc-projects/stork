@@ -86,7 +86,7 @@ def gen_dhcp6_lease_file(
     for i in range(1, 20):
         # Even leases are in default state. Odd leases are declined.
         lease = {
-            "duid": "0",
+            "duid": "00:00:00",
             "valid_lifetime": 600,
             "subnet_id": 1,
             "pref_lifetime": 300,

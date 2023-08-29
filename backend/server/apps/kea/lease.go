@@ -164,9 +164,9 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 			daemons = append(daemons, "dhcp4")
 			propertyName = "client-id"
 		case "lease6-get-by-duid":
-			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by a zero byte.
+			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by 3 zero bytes.
 			if len(sentPropertyValue) == 0 {
-				sentPropertyValue = "0"
+				sentPropertyValue = "00:00:00"
 			}
 			daemons = append(daemons, "dhcp6")
 			propertyName = "duid"

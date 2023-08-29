@@ -153,7 +153,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
                 "leases": [
                     {
                         "cltt": 12345678,
-                        "duid": "00",
+                        "duid": "00:00:00",
                         "iaid": 1,
                         "ip-address": "2001:db8:2::1",
                         "preferred-lft": 500,
@@ -567,7 +567,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.NotNil(t, leases[1].State)
 	require.Empty(t, leases[1].HwAddress)
 	require.Empty(t, leases[1].ClientID)
-	require.Empty(t, leases[1].Duid)
+	require.Equal(t, "00:00:00", leases[1].Duid)
 
 	// Ensure that appropriate commands were sent to Kea.
 	require.Len(t, agents.RecordedCommands, 2)

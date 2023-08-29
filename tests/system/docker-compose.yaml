@@ -91,7 +91,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
       args:
-        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-0}
+        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-4}
         KEA_VERSION: ${KEA_VERSION:-2.4.0-isc20230630120747}
 
   agent-kea:
@@ -134,11 +134,11 @@ services:
       - $PWD/tests/system/config/kea/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
       - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - $PWD/tests/system/config/kea-multi-threading/multi-threading-disabled.json:/etc/kea/multi-threading.json
+      - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading-disabled.json:/etc/kea/ha-multi-threading.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-host-database.json
-      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/multi-threading.json
-      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/ha-multi-threading.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
@@ -202,7 +202,7 @@ services:
     extends: agent-kea
     build:
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-0}-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-4}-prv
         KEA_PREMIUM: "premium"
     profiles:
       - premium

@@ -1,6 +1,6 @@
 * 323 [build] razvan
 
-    Updated Kea version to 2.4.0 in demo.
+    Updated Kea version to 2.4.0 in demo and system tests.
     (Gitlab #995)
 
 Stork 1.12.0 released on 2023-08-02.

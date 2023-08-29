@@ -45,7 +45,6 @@ def test_search_leases(kea_service: Kea, server_service: Server):
         # Declined leases should lack identifiers.
         assert "hwaddr" not in lease
         assert "clientId" not in lease
-        assert "duid" not in lease
         # The state is declined.
         assert lease["state"] == 1
         # An address should be set.

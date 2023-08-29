@@ -249,7 +249,27 @@ RUN apt-get update \
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 ARG KEA_REPO
 ARG KEA_VERSION
-RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
+ARG KEA_LEGACY_PKGS
+RUN if [ ${KEA_LEGACY_PKGS} == "false" ]; then \
+        wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
+        && apt-get update \
+        && apt-get install \
+        --no-install-recommends \
+        -y \
+        python3-isc-kea-connector=${KEA_VERSION} \
+        isc-kea-ctrl-agent=${KEA_VERSION} \
+        isc-kea-dhcp4-server=${KEA_VERSION} \
+        isc-kea-dhcp6-server=${KEA_VERSION} \
+        isc-kea-admin=${KEA_VERSION} \
+        isc-kea-common=${KEA_VERSION} \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && mkdir -p /var/run/kea/ \
+        # Puts empty credentials file to allow mount it as volume.
+        && mkdir -p /etc/stork/ \
+        && echo "{}" > /etc/stork/agent-credentials.json ;\
+    else \
+        wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
         --no-install-recommends \
@@ -259,12 +279,15 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
         isc-kea-dhcp6=${KEA_VERSION} \
         isc-kea-admin=${KEA_VERSION} \
         isc-kea-common=${KEA_VERSION} \
+        isc-kea-hooks=${KEA_VERSION} \
+        isc-kea-perfdhcp=${KEA_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
         # Puts empty credentials file to allow mount it as volume.
         && mkdir -p /etc/stork/ \
-        && echo "{}" > /etc/stork/agent-credentials.json
+        && echo "{}" > /etc/stork/agent-credentials.json ;\
+    fi
 
 # Install premium packages. The KEA_REPO variable must
 # be set to the private repository and include an access token.

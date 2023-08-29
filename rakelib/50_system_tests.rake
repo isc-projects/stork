@@ -182,17 +182,26 @@ namespace :systemtest do
         # Parse Kea version
         if !ENV["KEA_VERSION"].nil?
             kea_version = ENV["KEA_VERSION"]
-        
+
             # Extract major and minor components from version.
             kea_version_major = ""
             kea_version_minor = ""
-        
+
+            # Reject packages for Kea prior to 2.0.0
+            kea_eol_major="1"
+            kea_eol_minor="9"
+
+            # Enable legacy packages for Kea prior to 2.3.0
+            kea_legacy_pkgs = "false"
+            kea_legacy_major = "2"
+            kea_legacy_minor = "2"
+
             major_separator_index = kea_version.index('.')
             if major_separator_index.nil?
                 fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - missing dot separator"
             end
             kea_version_major = kea_version[0..major_separator_index-1]
-        
+
             minor_separator_index = kea_version[major_separator_index+1..-1].index('.')
             if !minor_separator_index.nil?
                 minor_separator_index += major_separator_index + 1
@@ -203,19 +212,29 @@ namespace :systemtest do
             if kea_version_minor == ""
                 fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - empty minor component"
             end
-        
+
             # Enhance the Kea version with wildcard if the full package is not provided.
             if minor_separator_index.nil?
-                # Add patch wildcard if not provided. 
+                # Add patch wildcard if not provided.
                 kea_version += ".*"
             elsif !kea_version.include? '-'
                 # Add revision wildcard if the full package name is not provided.
                 kea_version += "-*"
             end
-        
+
+            if Integer(kea_version_major + kea_version_minor) <= Integer(kea_eol_major + kea_eol_minor) then
+                fail "You need to specify a newer version than #{kea_eol_major}.#{kea_eol_minor} which is EOL."
+            end
+
+            # Enable legacy packages for Kea prior to 2.3.0
+            if Integer(kea_version_major + kea_version_minor) <= Integer(kea_legacy_major + kea_legacy_minor) then
+                kea_legacy_pkgs = "true"
+            end
+
             ENV["KEA_VERSION"] = kea_version
             ENV["KEA_VERSION_MAJOR"] = kea_version_major
             ENV["KEA_VERSION_MINOR"] = kea_version_minor
+            ENV["KEA_LEGACY_PKGS"] = kea_legacy_pkgs
         end
     end
 
