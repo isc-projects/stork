@@ -115,10 +115,23 @@ export class DhcpOptionSetViewComponent implements OnInit {
             this.optionNodes.push(this.convertOptionsToNodes(this.options[i], this.levels[i]))
         }
 
-        for (let optionNodes of this.optionNodes) {
-            for (let optionNode of optionNodes)
-                if (optionNode.type === 'option') {
-                    this.combinedOptionNodes.push(optionNode)
+        for (let treeOptionNodes of this.optionNodes) {
+            for (let treeOptionNode of treeOptionNodes)
+                if (treeOptionNode.type === 'option') {
+                    const optionNode = treeOptionNode.data as OptionNode
+                    if (
+                        this.combinedOptionNodes.
+                            map(n => n.data as OptionNode).
+                            // Check if there is another node with the same
+                            // code but different level. We allow to have the
+                            // same option code at the same level to display
+                            // the duplicated options, e.g., for host
+                            // reservations.
+                            some(d => d.code === optionNode.code && d.level !== optionNode.level)
+                    ) {
+                        continue
+                    }
+                    this.combinedOptionNodes.push(treeOptionNode)
                 }
         }
         this.displayedOptionNodes = this.combinedOptionNodes

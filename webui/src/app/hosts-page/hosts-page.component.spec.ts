@@ -139,10 +139,11 @@ describe('HostsPageComponent', () => {
         // The cell includes a link to the app.
         expect(appNameTd.children.length).toBe(1)
         const appLink = appNameTd.children[0]
-        expect(appLink.nativeElement.innerText).toBe('frog config')
+        expect(appLink.nativeElement.textContent).toBe('frog config')
         // Verify that the link to the app is correct.
-        expect(appLink.properties.hasOwnProperty('pathname')).toBeTrue()
-        expect(appLink.properties.pathname).toBe('/apps/kea/1')
+        const appLinkAnchor = appLink.query(By.css('a'))
+        expect(appLinkAnchor.properties.hasOwnProperty('pathname')).toBeTrue()
+        expect(appLinkAnchor.properties.pathname).toBe('/apps/kea/1')
     })
 
     it('should open and close host tabs', () => {
