@@ -27,6 +27,7 @@ import { ChipModule } from 'primeng/chip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { MessageModule } from 'primeng/message'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -53,6 +54,7 @@ describe('HostTabComponent', () => {
                 ToggleButtonModule,
                 TreeModule,
                 TagModule,
+                MessageModule,
             ],
             declarations: [
                 DhcpClientClassSetViewComponent,

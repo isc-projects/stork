@@ -39,6 +39,7 @@ import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { TagModule } from 'primeng/tag'
+import { MessagesModule } from 'primeng/messages'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -89,6 +90,7 @@ describe('HostsPageComponent', () => {
                 ConfirmDialogModule,
                 TreeModule,
                 TagModule,
+                MessagesModule,
             ],
             declarations: [
                 EntityLinkComponent,
