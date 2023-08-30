@@ -1208,7 +1208,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
 	require.Empty(t, (arguments.(map[string]interface{}))["hw-address"])
 
-	// Ensure that the DUID sent in the second command is empty.
+	// Ensure that the DUID sent in the second command is empty (00:00:00).
 	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments.(map[string]interface{}), "duid")
@@ -1221,6 +1221,83 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, erredApps, 1)
 	require.Len(t, leases, 1)
+}
+
+// Test that Stork sends a single zero DUID to Kea when searching for declined
+// leases and Kea version is less than 2.3.8.
+func TestFindDeclinedLeasesPriorKea2_3_8(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine with the Kea app including both DHCPv4 and DHCPv6
+	// daemon with the lease_cmds hooks library loaded.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Meta: dbmodel.AppMeta{
+			Version: "2.3.7",
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Simulate Kea returning 4 leases, one in the default state and three
+	// in the declined state.
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetDeclined, nil)
+
+	leases, erredApps, err := FindDeclinedLeases(db, agents)
+	require.NoError(t, err)
+	require.Empty(t, erredApps)
+
+	// One lease should be ignored and three returned.
+	require.Len(t, leases, 3)
+
+	// Ensure that the DUID sent in the second command is empty ("0").
+	arguments := agents.RecordedCommands[1].(*keactrl.Command).Arguments
+	require.NotNil(t, arguments)
+	require.Contains(t, arguments.(map[string]interface{}), "duid")
+	require.Equal(t, "0", (arguments.(map[string]interface{}))["duid"])
 }
 
 // Test that a search for declined leases returns empty result when
