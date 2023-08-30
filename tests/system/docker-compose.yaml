@@ -93,6 +93,7 @@ services:
       args:
         KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-4}
         KEA_VERSION: ${KEA_VERSION:-2.4.0-isc20230630120747}
+        KEA_LEGACY_PKGS: ${KEA_LEGACY_PKGS:-false}
 
   agent-kea:
     extends: agent-kea-base

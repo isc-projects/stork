@@ -229,6 +229,7 @@ namespace :systemtest do
             # Enable legacy packages for Kea prior to 2.3.0
             if Integer(kea_version_major + kea_version_minor) <= Integer(kea_legacy_major + kea_legacy_minor) then
                 kea_legacy_pkgs = "true"
+                puts "Use the Kea legacy packages"
             end
 
             ENV["KEA_VERSION"] = kea_version

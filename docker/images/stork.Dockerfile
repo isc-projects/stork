@@ -4,9 +4,11 @@
 
 ARG KEA_REPO=public/isc/kea-2-4
 ARG KEA_VERSION=2.4.0-isc20230630120747
-# Indicate if the premium packages should be installed.
+# Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
+# Indicates if the Kea legacy packages (prior 2.3) should be installed.
+ARG KEA_LEGACY_PKGS="false"
 ARG BIND9_VERSION=9.18
 
 ###################
@@ -250,44 +252,38 @@ SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 ARG KEA_REPO
 ARG KEA_VERSION
 ARG KEA_LEGACY_PKGS
-RUN if [ ${KEA_LEGACY_PKGS} == "false" ]; then \
-        wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
+RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
-        && apt-get install \
-        --no-install-recommends \
-        -y \
-        python3-isc-kea-connector=${KEA_VERSION} \
-        isc-kea-ctrl-agent=${KEA_VERSION} \
-        isc-kea-dhcp4-server=${KEA_VERSION} \
-        isc-kea-dhcp6-server=${KEA_VERSION} \
-        isc-kea-admin=${KEA_VERSION} \
-        isc-kea-common=${KEA_VERSION} \
+        && if [ ${KEA_LEGACY_PKGS} == "true" ]; then \
+                apt-get install \
+                --no-install-recommends \
+                -y \
+                python3-isc-kea-connector=${KEA_VERSION} \
+                isc-kea-ctrl-agent=${KEA_VERSION} \
+                isc-kea-dhcp4-server=${KEA_VERSION} \
+                isc-kea-dhcp6-server=${KEA_VERSION} \
+                isc-kea-admin=${KEA_VERSION} \
+                isc-kea-common=${KEA_VERSION} \
+                ;\
+        else \
+                apt-get install \
+                --no-install-recommends \
+                -y \
+                isc-kea-ctrl-agent=${KEA_VERSION} \
+                isc-kea-dhcp4=${KEA_VERSION} \
+                isc-kea-dhcp6=${KEA_VERSION} \
+                isc-kea-admin=${KEA_VERSION} \
+                isc-kea-common=${KEA_VERSION} \
+                isc-kea-hooks=${KEA_VERSION} \
+                isc-kea-perfdhcp=${KEA_VERSION} \
+                ;\
+        fi \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
         # Puts empty credentials file to allow mount it as volume.
         && mkdir -p /etc/stork/ \
-        && echo "{}" > /etc/stork/agent-credentials.json ;\
-    else \
-        wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
-        && apt-get update \
-        && apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-kea-ctrl-agent=${KEA_VERSION} \
-        isc-kea-dhcp4=${KEA_VERSION} \
-        isc-kea-dhcp6=${KEA_VERSION} \
-        isc-kea-admin=${KEA_VERSION} \
-        isc-kea-common=${KEA_VERSION} \
-        isc-kea-hooks=${KEA_VERSION} \
-        isc-kea-perfdhcp=${KEA_VERSION} \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && mkdir -p /var/run/kea/ \
-        # Puts empty credentials file to allow mount it as volume.
-        && mkdir -p /etc/stork/ \
-        && echo "{}" > /etc/stork/agent-credentials.json ;\
-    fi
+        && echo "{}" > /etc/stork/agent-credentials.json
 
 # Install premium packages. The KEA_REPO variable must
 # be set to the private repository and include an access token.
