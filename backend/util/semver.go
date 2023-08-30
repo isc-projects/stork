@@ -3,6 +3,8 @@ package storkutil
 import (
 	"fmt"
 	"math"
+
+	"github.com/pkg/errors"
 )
 
 // Represents a semantic version number.
@@ -68,7 +70,7 @@ func ParseSemanticVersion(version string) (SemanticVersion, error) {
 	var v SemanticVersion
 	_, err := fmt.Sscanf(version, "%d.%d.%d", &v.Major, &v.Minor, &v.Patch)
 	if err != nil {
-		return v, err
+		return v, errors.Wrap(err, "invalid semantic version")
 	}
 	return v, nil
 }
