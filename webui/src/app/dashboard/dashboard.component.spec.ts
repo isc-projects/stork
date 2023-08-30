@@ -127,7 +127,11 @@ describe('DashboardComponent', () => {
                                 id: 41,
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
-                                pools: ['1.0.0.4-1.0.255.254'],
+                                pools: [
+                                    {
+                                        pool: '1.0.0.4-1.0.255.254',
+                                    },
+                                ],
                             },
                         ],
                         subnet: '1.0.0.0/16',
@@ -153,7 +157,11 @@ describe('DashboardComponent', () => {
                                 appName: 'kea@localhost',
                                 machineAddress: 'localhost',
                                 machineHostname: 'pc',
-                                pools: ['10.3::1-10.3::100'],
+                                pools: [
+                                    {
+                                        pool: '10.3::1-10.3::100',
+                                    },
+                                ],
                             },
                         ],
                         stats: {

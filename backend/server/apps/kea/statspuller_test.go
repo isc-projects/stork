@@ -438,11 +438,11 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	for i := range app.Daemons {
 		sharedNetworks, subnets, err := detectDaemonNetworks(db, app.Daemons[i], lookup)
 		require.NoError(t, err)
-		_, err = dbmodel.CommitNetworksIntoDB(db, sharedNetworks, subnets, app.Daemons[i])
+		_, err = dbmodel.CommitNetworksIntoDB(db, sharedNetworks, subnets)
 		require.NoError(t, err)
 		hosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i], lookup)
 		require.NoError(t, err)
-		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, app.Daemons[i])
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts)
 		require.NoError(t, err)
 	}
 
@@ -781,11 +781,11 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	for _, daemon := range daemons {
 		sharedNetworks, subnets, err := detectDaemonNetworks(db, daemon, lookup)
 		require.NoError(t, err)
-		_, err = dbmodel.CommitNetworksIntoDB(db, sharedNetworks, subnets, daemon)
+		_, err = dbmodel.CommitNetworksIntoDB(db, sharedNetworks, subnets)
 		require.NoError(t, err)
 		hosts, err := detectGlobalHostsFromConfig(db, daemon, lookup)
 		require.NoError(t, err)
-		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, daemon)
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts)
 		require.NoError(t, err)
 	}
 

@@ -53,7 +53,11 @@ describe('UtilizationStatsChartsComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@192.0.2.1',
-                    pools: ['192.0.2.1-192.0.2.100'],
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.100',
+                        },
+                    ],
                     stats: {
                         'total-addresses': 240,
                         'assigned-addresses': 70,
@@ -88,7 +92,11 @@ describe('UtilizationStatsChartsComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@192.0.2.1',
-                    pools: ['192.0.2.1-192.0.2.100'],
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.100',
+                        },
+                    ],
                     stats: {
                         'total-addresses': 240,
                         'assigned-addresses': 50,
@@ -98,7 +106,11 @@ describe('UtilizationStatsChartsComponent', () => {
                 {
                     id: 12223,
                     appName: 'bar@192.0.2.2',
-                    pools: ['192.0.2.1-192.0.2.100'],
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.100',
+                        },
+                    ],
                     stats: {
                         'total-addresses': 240,
                         'assigned-addresses': 20,

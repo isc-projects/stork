@@ -85,6 +85,11 @@ func (pp *PrefixPool) GetModel() *dhcpmodel.PrefixPool {
 	}
 }
 
+// Returns a slice of interfaces describing the DHCP options for a prefix pool.
+func (pp *PrefixPool) GetKeaParameters() *keaconfig.PoolParameters {
+	return pp.KeaParameters
+}
+
 // Returns a slice of interfaces describing the DHCP options for a pool.
 func (pp *PrefixPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor) {
 	for i := range pp.DHCPOptionSet {

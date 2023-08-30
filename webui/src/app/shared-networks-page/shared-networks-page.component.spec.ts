@@ -125,7 +125,11 @@ describe('SharedNetworksPageComponent', () => {
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
-                                        pools: ['1.0.0.4-1.0.255.254'],
+                                        pools: [
+                                            {
+                                                pool: '1.0.0.4-1.0.255.254',
+                                            },
+                                        ],
                                     },
                                 ],
                                 subnet: '1.0.0.0/16',
@@ -166,7 +170,11 @@ describe('SharedNetworksPageComponent', () => {
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
-                                        pools: ['1.0.0.4-1.0.255.254'],
+                                        pools: [
+                                            {
+                                                pool: '1.0.0.4-1.0.255.254',
+                                            },
+                                        ],
                                     },
                                 ],
                                 subnet: '1.0.0.0/16',

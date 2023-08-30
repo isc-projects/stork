@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { DelegatedPrefix } from '../backend'
+import { DelegatedPrefixPool } from '../backend'
 import { formatShortExcludedPrefix } from '../utils'
 
 /**
@@ -16,7 +16,7 @@ export class DelegatedPrefixBarComponent {
     /**
      * The delegated prefix object. It may contain the excluded prefix.
      */
-    @Input() prefix: DelegatedPrefix
+    @Input() prefix: DelegatedPrefixPool
 
     /**
      * Returns the short representation of the excluded prefix.

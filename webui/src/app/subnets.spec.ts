@@ -163,7 +163,20 @@ describe('subnets', () => {
                 subnet: '3000::/120',
                 localSubnets: [
                     {
-                        pools: ['3000::1-3000::5', '3000::10-3000::15', '3000::20-3000::35', '3000::40-3000::65'],
+                        pools: [
+                            {
+                                pool: '3000::1-3000::5',
+                            },
+                            {
+                                pool: '3000::10-3000::15',
+                            },
+                            {
+                                pool: '3000::20-3000::35',
+                            },
+                            {
+                                pool: '3000::40-3000::65',
+                            },
+                        ],
                         prefixDelegationPools: [
                             {
                                 prefix: '3001::/64',
@@ -182,7 +195,20 @@ describe('subnets', () => {
                         ],
                     },
                     {
-                        pools: ['3000::1-3000::5', '3000::10-3000::15', '3000::20-3000::35', '3000::70-3000::85'],
+                        pools: [
+                            {
+                                pool: '3000::1-3000::5',
+                            },
+                            {
+                                pool: '3000::10-3000::15',
+                            },
+                            {
+                                pool: '3000::20-3000::35',
+                            },
+                            {
+                                pool: '3000::70-3000::85',
+                            },
+                        ],
                         prefixDelegationPools: [
                             {
                                 prefix: '3001::/64',
@@ -209,11 +235,11 @@ describe('subnets', () => {
         expect(convertedSubnets[0].pools?.length).toBe(5)
         expect(convertedSubnets[0].prefixDelegationPools?.length).toBe(5)
 
-        expect(convertedSubnets[0].pools[0]).toBe('3000::1-3000::5')
-        expect(convertedSubnets[0].pools[1]).toBe('3000::10-3000::15')
-        expect(convertedSubnets[0].pools[2]).toBe('3000::20-3000::35')
-        expect(convertedSubnets[0].pools[3]).toBe('3000::40-3000::65')
-        expect(convertedSubnets[0].pools[4]).toBe('3000::70-3000::85')
+        expect(convertedSubnets[0].pools[0].pool).toBe('3000::1-3000::5')
+        expect(convertedSubnets[0].pools[1].pool).toBe('3000::10-3000::15')
+        expect(convertedSubnets[0].pools[2].pool).toBe('3000::20-3000::35')
+        expect(convertedSubnets[0].pools[3].pool).toBe('3000::40-3000::65')
+        expect(convertedSubnets[0].pools[4].pool).toBe('3000::70-3000::85')
 
         expect(convertedSubnets[0].prefixDelegationPools[0].prefix).toBe('3001::/64')
         expect(convertedSubnets[0].prefixDelegationPools[1].prefix).toBe('3001::/64')
@@ -228,7 +254,11 @@ describe('subnets', () => {
                 subnet: '192.0.2.0/24',
                 localSubnets: [
                     {
-                        pools: ['192.0.2.10-192.0.2.20'],
+                        pools: [
+                            {
+                                pool: '192.0.2.10-192.0.2.20',
+                            },
+                        ],
                     },
                 ],
             },
@@ -236,7 +266,11 @@ describe('subnets', () => {
                 subnet: '192.0.3.0/24',
                 localSubnets: [
                     {
-                        pools: ['192.0.3.10-192.0.3.20'],
+                        pools: [
+                            {
+                                pool: '192.0.3.10-192.0.3.20',
+                            },
+                        ],
                     },
                 ],
             },
@@ -244,7 +278,11 @@ describe('subnets', () => {
                 subnet: '192.0.4.0/24',
                 localSubnets: [
                     {
-                        pools: ['192.0.4.10-192.0.4.20'],
+                        pools: [
+                            {
+                                pool: '192.0.4.10-192.0.4.20',
+                            },
+                        ],
                     },
                 ],
             },
@@ -279,10 +317,21 @@ describe('subnets', () => {
             subnet: '192.0.2.0/24',
             localSubnets: [
                 {
-                    pools: ['192.0.2.10-192.0.2.20', '192.0.2.30-192.0.2.40'],
+                    pools: [
+                        {
+                            pool: '192.0.2.10-192.0.2.20',
+                        },
+                        {
+                            pool: '192.0.2.30-192.0.2.40',
+                        },
+                    ],
                 },
                 {
-                    pools: ['192.0.2.10-192.0.2.20'],
+                    pools: [
+                        {
+                            pool: '192.0.2.10-192.0.2.20',
+                        },
+                    ],
                 },
             ],
         }
@@ -296,7 +345,14 @@ describe('subnets', () => {
             subnet: '192.0.2.0/24',
             localSubnets: [
                 {
-                    pools: ['192.0.2.10-192.0.2.20', '192.0.2.30-192.0.2.40'],
+                    pools: [
+                        {
+                            pool: '192.0.2.10-192.0.2.20',
+                        },
+                        {
+                            pool: '192.0.2.30-192.0.2.40',
+                        },
+                    ],
                 },
                 {
                     pools: null,
@@ -418,7 +474,14 @@ describe('subnets', () => {
             subnet: '2001:db8:1::/64',
             localSubnets: [
                 {
-                    pools: ['2001:db8:1::20-2001:db8:1::40', '2001:db8:1::60-2001:db8:1::80'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::20-2001:db8:1::40',
+                        },
+                        {
+                            pool: '2001:db8:1::60-2001:db8:1::80',
+                        },
+                    ],
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -432,7 +495,14 @@ describe('subnets', () => {
                     ],
                 },
                 {
-                    pools: ['2001:db8:1::60-2001:db8:1::80', '2001:db8:1::20-2001:db8:1::40'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::60-2001:db8:1::80',
+                        },
+                        {
+                            pool: '2001:db8:1::20-2001:db8:1::40',
+                        },
+                    ],
                     prefixDelegationPools: [
                         {
                             prefix: '3000:1::',
@@ -666,10 +736,18 @@ describe('subnets', () => {
                         localSubnets: [
                             {
                                 pools: [
-                                    '3000::1-3000::5',
-                                    '3000::10-3000::15',
-                                    '3000::20-3000::35',
-                                    '3000::40-3000::65',
+                                    {
+                                        pool: '3000::1-3000::5',
+                                    },
+                                    {
+                                        pool: '3000::10-3000::15',
+                                    },
+                                    {
+                                        pool: '3000::20-3000::35',
+                                    },
+                                    {
+                                        pool: '3000::40-3000::65',
+                                    },
                                 ],
                                 prefixDelegationPools: [
                                     {
@@ -690,10 +768,18 @@ describe('subnets', () => {
                             },
                             {
                                 pools: [
-                                    '3000::1-3000::5',
-                                    '3000::10-3000::15',
-                                    '3000::20-3000::35',
-                                    '3000::70-3000::85',
+                                    {
+                                        pool: '3000::1-3000::5',
+                                    },
+                                    {
+                                        pool: '3000::10-3000::15',
+                                    },
+                                    {
+                                        pool: '3000::20-3000::35',
+                                    },
+                                    {
+                                        pool: '3000::70-3000::85',
+                                    },
                                 ],
                                 prefixDelegationPools: [
                                     {
@@ -723,11 +809,11 @@ describe('subnets', () => {
         expect(convertedSharedNetworks[0].pools?.length).toBe(5)
         expect(convertedSharedNetworks[0].prefixDelegationPools?.length).toBe(5)
 
-        expect(convertedSharedNetworks[0].pools[0]).toBe('3000::1-3000::5')
-        expect(convertedSharedNetworks[0].pools[1]).toBe('3000::10-3000::15')
-        expect(convertedSharedNetworks[0].pools[2]).toBe('3000::20-3000::35')
-        expect(convertedSharedNetworks[0].pools[3]).toBe('3000::40-3000::65')
-        expect(convertedSharedNetworks[0].pools[4]).toBe('3000::70-3000::85')
+        expect(convertedSharedNetworks[0].pools[0].pool).toBe('3000::1-3000::5')
+        expect(convertedSharedNetworks[0].pools[1].pool).toBe('3000::10-3000::15')
+        expect(convertedSharedNetworks[0].pools[2].pool).toBe('3000::20-3000::35')
+        expect(convertedSharedNetworks[0].pools[3].pool).toBe('3000::40-3000::65')
+        expect(convertedSharedNetworks[0].pools[4].pool).toBe('3000::70-3000::85')
 
         expect(convertedSharedNetworks[0].prefixDelegationPools[0].prefix).toBe('3001::/64')
         expect(convertedSharedNetworks[0].prefixDelegationPools[1].prefix).toBe('3001::/64')
@@ -746,10 +832,18 @@ describe('subnets', () => {
                         localSubnets: [
                             {
                                 pools: [
-                                    '3000::1-3000::5',
-                                    '3000::10-3000::15',
-                                    '3000::20-3000::35',
-                                    '3000::40-3000::65',
+                                    {
+                                        pool: '3000::1-3000::5',
+                                    },
+                                    {
+                                        pool: '3000::10-3000::15',
+                                    },
+                                    {
+                                        pool: '3000::20-3000::35',
+                                    },
+                                    {
+                                        pool: '3000::40-3000::65',
+                                    },
                                 ],
                                 prefixDelegationPools: [
                                     {
@@ -780,10 +874,18 @@ describe('subnets', () => {
                         localSubnets: [
                             {
                                 pools: [
-                                    '3000::1-3000::5',
-                                    '3000::10-3000::15',
-                                    '3000::20-3000::35',
-                                    '3000::70-3000::85',
+                                    {
+                                        pool: '3000::1-3000::5',
+                                    },
+                                    {
+                                        pool: '3000::10-3000::15',
+                                    },
+                                    {
+                                        pool: '3000::20-3000::35',
+                                    },
+                                    {
+                                        pool: '3000::70-3000::85',
+                                    },
                                 ],
                                 prefixDelegationPools: [
                                     {

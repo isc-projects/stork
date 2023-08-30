@@ -278,19 +278,19 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// Convert subnets list to REST API format.
 	respSubnets := []*models.Subnet{}
 	for i := range subnets {
-		respSubnets = append(respSubnets, r.subnetToRestAPI(&subnets[i]))
+		respSubnets = append(respSubnets, r.convertFromSubnet(&subnets[i]))
 	}
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
 		msg := "unable to begin transaction because user is not logged in"
-		log.Error("Problem with creating transaction context because user has no session")
+		log.Error("Problem with creating transaction context for host reservation because a user has no session")
 		return nil, nil, nil, nil, http.StatusForbidden, msg
 	}
 	// Create configuration context.
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
-		msg := "problem with creating transaction context"
+		msg := "problem with creating transaction context for host reservation"
 		log.Error(err)
 		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
@@ -313,7 +313,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Begin host add transaction.
 	var err error
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginHostAdd(cctx); err != nil {
-		msg := "problem with initializing transaction for host creating new host"
+		msg := "problem with initializing transaction for creating host reservation"
 		log.Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -324,7 +324,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Retrieve the generated context ID.
 	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
 	if !ok {
-		msg := "problem with retrieving context ID for a transaction"
+		msg := "problem with retrieving context ID for a transaction to create host reservation"
 		log.Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -369,14 +369,14 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to submit because user is not logged in"
+		msg := "unable to submit the host reservation because user is not logged in"
 		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction expired"
+		msg := "transaction for host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -442,14 +442,14 @@ func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactio
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to cancel transaction because user is not logged in"
+		msg := "unable to cancel transaction for deleting the host reservation because user is not logged in"
 		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction expired"
+		msg := "transaction for deleting the host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -603,7 +603,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to begin transaction because user is not logged in"
+		msg := "unable to begin transaction for a host reservation because a user is not logged in"
 		log.Error("Problem with creating transaction context because user has no session")
 		rsp := dhcp.NewDeleteHostDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,

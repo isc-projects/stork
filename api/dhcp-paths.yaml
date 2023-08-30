@@ -347,6 +347,93 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /subnets/{subnetId}/transaction:
+    post:
+      summary: Begin transaction for updating an existing subnet.
+      description: >-
+        Creates a transaction in the config manager to update an existing subnet. It returns
+        the existing subnet information and a current list of available DHCP servers. This
+        information is required in the form in which the user edits subnet data.
+      operationId: updateSubnetBegin
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: subnetId
+          type: integer
+          required: true
+          description: Subnet ID to which the transaction pertains.
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/UpdateSubnetBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /subnets/{subnetId}/transaction/{id}:
+    delete:
+      summary: Cancel transaction to update a subnet.
+      description: Cancels the transaction to update a subnet in the config manager.
+      operationId: updateSubnetDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: subnetId
+          type: integer
+          required: true
+          description: Subnet ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /subnets/{subnetId}/transaction/{id}/submit:
+    post:
+      summary: Submit transaction updating a subnet.
+      description: >-
+        Submits a transaction causing the server to update subnet on respective
+        DHCP servers. It applies and submits the transaction in Stork config
+        manager.
+      operationId:
+        updateSubnetSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: subnetId
+          type: integer
+          required: true
+          description: Subnet ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: subnet
+          description: Updated subnet information.
+          schema:
+            $ref: '#/definitions/Subnet'
+      responses:
+        200:
+          description: Subnet successfully updated.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /shared-networks:
     get:
       summary: Get list of DHCP shared networks.

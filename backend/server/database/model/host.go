@@ -639,14 +639,9 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 // can be associated with a subnet or can be made global. The committed hosts
 // must already include associations with the daemons and other information
 // specific to daemons, e.g., DHCP options.
-func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon) (err error) {
+func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
-		for j := range hosts[i].LocalHosts {
-			if hosts[i].LocalHosts[j].DaemonID == 0 {
-				hosts[i].LocalHosts[j].DaemonID = daemon.ID
-			}
-		}
 		if hosts[i].ID == 0 {
 			err = AddHost(dbi, &hosts[i])
 			if err != nil {
@@ -668,20 +663,20 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daem
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon) (err error) {
+func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host) (err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return commitHostsIntoDB(dbi, hosts, 0, daemon)
+			return commitHostsIntoDB(dbi, hosts, 0)
 		})
 		return
 	}
-	return commitHostsIntoDB(dbi, hosts, 0, daemon)
+	return commitHostsIntoDB(dbi, hosts, 0)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet, daemon *Daemon) (err error) {
-	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID, daemon)
+func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet) (err error) {
+	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID)
 }
 
 // This function checks if the given host includes a reservation for the

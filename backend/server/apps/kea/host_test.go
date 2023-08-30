@@ -615,9 +615,9 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	// Commit the hosts into the database.
 	tx, err := db.Begin()
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, app.Daemons[0])
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts)
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, app.Daemons[1])
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts)
 	require.NoError(t, err)
 	err = tx.Commit()
 	require.NoError(t, err)

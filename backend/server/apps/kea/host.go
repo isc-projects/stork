@@ -533,7 +533,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 		if overriddenHosts, err = overrideIntoDatabaseHosts(tx, int64(0), hosts); err != nil {
 			return
 		}
-		if err = dbmodel.CommitGlobalHostsIntoDB(tx, overriddenHosts, daemon); err != nil {
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, overriddenHosts); err != nil {
 			return
 		}
 		// We're done with global hosts, so let's get the next chunk of
@@ -558,7 +558,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	// new hosts into the subnet instance and commit everything to the
 	// database.
 	subnet.Hosts = overriddenHosts
-	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon); err != nil {
+	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet); err != nil {
 		return
 	}
 	return nil

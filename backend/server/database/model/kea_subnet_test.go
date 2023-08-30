@@ -162,7 +162,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4.Daemons[0])
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
 	require.NoError(t, err)
 
 	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
@@ -233,7 +233,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0])
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
 	require.NoError(t, err)
 
 	// Kea app with DHCPv4 and DHCPv6 subnets.
@@ -339,7 +339,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 	for i := range a46.Daemons {
-		_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{appSubnets[i]}, a46.Daemons[i])
+		_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{appSubnets[i]})
 		require.NoError(t, err)
 	}
 
@@ -687,7 +687,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4.Daemons[0])
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -766,7 +766,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0])
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
 	require.NoError(t, err)
 
 	// Get all shared networks.

@@ -4,9 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	keaconfig "isc.org/stork/appcfg/kea"
+	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 
@@ -15,7 +20,7 @@ import (
 )
 
 // Creates a REST API representation of a subnet from a database model.
-func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
+func (r *RestAPI) convertFromSubnet(sn *dbmodel.Subnet) *models.Subnet {
 	subnet := &models.Subnet{
 		ID:               sn.ID,
 		Subnet:           sn.Prefix,
@@ -44,7 +49,9 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		}
 		for _, poolDetails := range lsn.AddressPools {
 			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
-			localSubnet.Pools = append(localSubnet.Pools, pool)
+			localSubnet.Pools = append(localSubnet.Pools, &models.Pool{
+				Pool: &pool,
+			})
 		}
 
 		for _, prefixPoolDetails := range lsn.PrefixPools {
@@ -52,7 +59,7 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			delegatedLength := int64(prefixPoolDetails.DelegatedLen)
 			localSubnet.PrefixDelegationPools = append(
 				localSubnet.PrefixDelegationPools,
-				&models.DelegatedPrefix{
+				&models.DelegatedPrefixPool{
 					Prefix:          &prefix,
 					DelegatedLength: &delegatedLength,
 					ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
@@ -295,6 +302,155 @@ func (r *RestAPI) subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	return subnet
 }
 
+// Convert subnet from the format used in REST API to a database subnet representation.
+// It is used when Stork user modifies or creates new subnet. Thus, it doesn't populate
+// subnet statistics as it is not specified by Stork user. It is pulled from the Kea
+// servers periodically.
+func (r *RestAPI) convertToSubnet(restSubnet *models.Subnet) (*dbmodel.Subnet, error) {
+	subnet := &dbmodel.Subnet{
+		ID:              restSubnet.ID,
+		Prefix:          restSubnet.Subnet,
+		ClientClass:     restSubnet.ClientClass,
+		SharedNetworkID: restSubnet.SharedNetworkID,
+	}
+	// Convert local subnet containing associations of the subnet with daemons.
+	for _, ls := range restSubnet.LocalSubnets {
+		localSubnet := &dbmodel.LocalSubnet{
+			LocalSubnetID: ls.ID,
+			DaemonID:      ls.DaemonID,
+		}
+		for _, poolDetails := range ls.Pools {
+			pool, err := dbmodel.NewAddressPoolFromRange(*poolDetails.Pool)
+			if err != nil {
+				return nil, err
+			}
+			if poolDetails.KeaConfigPoolParameters != nil {
+				pool.KeaParameters = &keaconfig.PoolParameters{
+					ClientClassParameters: keaconfig.ClientClassParameters{
+						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaConfigPoolParameters.ClientClass),
+						RequireClientClasses: poolDetails.KeaConfigPoolParameters.RequireClientClasses,
+					},
+				}
+				// DHCP options.
+				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", poolDetails.KeaConfigPoolParameters.Options, 0)
+				if err != nil {
+					return nil, err
+				}
+				if len(pool.DHCPOptionSet) > 0 {
+					pool.DHCPOptionSetHash = storkutil.Fnv128(pool.DHCPOptionSet)
+				}
+			}
+			localSubnet.AddressPools = append(localSubnet.AddressPools, *pool)
+		}
+
+		for _, prefixPoolDetails := range ls.PrefixDelegationPools {
+			pool, err := dbmodel.NewPrefixPool(*prefixPoolDetails.Prefix, int(*prefixPoolDetails.DelegatedLength), prefixPoolDetails.ExcludedPrefix)
+			if err != nil {
+				return nil, err
+			}
+			if prefixPoolDetails.KeaConfigPoolParameters != nil {
+				pool.KeaParameters = &keaconfig.PoolParameters{
+					ClientClassParameters: keaconfig.ClientClassParameters{
+						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaConfigPoolParameters.ClientClass),
+						RequireClientClasses: prefixPoolDetails.KeaConfigPoolParameters.RequireClientClasses,
+					},
+				}
+				// DHCP options.
+				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", prefixPoolDetails.KeaConfigPoolParameters.Options, 0)
+				if err != nil {
+					return nil, err
+				}
+				if len(pool.DHCPOptionSet) > 0 {
+					pool.DHCPOptionSetHash = storkutil.Fnv128(pool.DHCPOptionSet)
+				}
+			}
+			localSubnet.PrefixPools = append(localSubnet.PrefixPools, *pool)
+		}
+		var err error
+		if ls.KeaConfigSubnetParameters != nil && ls.KeaConfigSubnetParameters.SubnetLevelParameters != nil {
+			keaParameters := ls.KeaConfigSubnetParameters.SubnetLevelParameters
+			localSubnet.KeaParameters = &keaconfig.SubnetParameters{
+				CacheParameters: keaconfig.CacheParameters{
+					CacheThreshold: keaParameters.CacheThreshold,
+					CacheMaxAge:    keaParameters.CacheMaxAge,
+				},
+				ClientClassParameters: keaconfig.ClientClassParameters{
+					ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
+					RequireClientClasses: keaParameters.RequireClientClasses,
+				},
+				DDNSParameters: keaconfig.DDNSParameters{
+					DDNSGeneratedPrefix:       storkutil.NullifyEmptyString(keaParameters.DdnsGeneratedPrefix),
+					DDNSOverrideClientUpdate:  keaParameters.DdnsOverrideClientUpdate,
+					DDNSOverrideNoUpdate:      keaParameters.DdnsOverrideNoUpdate,
+					DDNSQualifyingSuffix:      storkutil.NullifyEmptyString(keaParameters.DdnsQualifyingSuffix),
+					DDNSReplaceClientName:     storkutil.NullifyEmptyString(keaParameters.DdnsReplaceClientName),
+					DDNSSendUpdates:           keaParameters.DdnsSendUpdates,
+					DDNSUpdateOnRenew:         keaParameters.DdnsUpdateOnRenew,
+					DDNSUseConflictResolution: keaParameters.DdnsUseConflictResolution,
+				},
+				FourOverSixParameters: keaconfig.FourOverSixParameters{
+					FourOverSixInterface:   storkutil.NullifyEmptyString(keaParameters.FourOverSixInterface),
+					FourOverSixInterfaceID: storkutil.NullifyEmptyString(keaParameters.FourOverSixInterfaceID),
+					FourOverSixSubnet:      storkutil.NullifyEmptyString(keaParameters.FourOverSixSubnet),
+				},
+				HostnameCharParameters: keaconfig.HostnameCharParameters{
+					HostnameCharReplacement: storkutil.NullifyEmptyString(keaParameters.HostnameCharReplacement),
+					HostnameCharSet:         storkutil.NullifyEmptyString(keaParameters.HostnameCharSet),
+				},
+				PreferredLifetimeParameters: keaconfig.PreferredLifetimeParameters{
+					MaxPreferredLifetime: keaParameters.MaxPreferredLifetime,
+					MinPreferredLifetime: keaParameters.MinPreferredLifetime,
+					PreferredLifetime:    keaParameters.PreferredLifetime,
+				},
+				ReservationParameters: keaconfig.ReservationParameters{
+					ReservationMode:       storkutil.NullifyEmptyString(keaParameters.ReservationMode),
+					ReservationsGlobal:    keaParameters.ReservationsGlobal,
+					ReservationsInSubnet:  keaParameters.ReservationsInSubnet,
+					ReservationsOutOfPool: keaParameters.ReservationsOutOfPool,
+				},
+				TimerParameters: keaconfig.TimerParameters{
+					CalculateTeeTimes: keaParameters.CalculateTeeTimes,
+					RebindTimer:       keaParameters.RebindTimer,
+					RenewTimer:        keaParameters.RenewTimer,
+					T1Percent:         keaParameters.T1Percent,
+					T2Percent:         keaParameters.T2Percent,
+				},
+				ValidLifetimeParameters: keaconfig.ValidLifetimeParameters{
+					MaxValidLifetime: keaParameters.MaxValidLifetime,
+					MinValidLifetime: keaParameters.MinValidLifetime,
+					ValidLifetime:    keaParameters.ValidLifetime,
+				},
+				Allocator:         storkutil.NullifyEmptyString(keaParameters.Allocator),
+				Authoritative:     keaParameters.Authoritative,
+				BootFileName:      storkutil.NullifyEmptyString(keaParameters.BootFileName),
+				Interface:         storkutil.NullifyEmptyString(keaParameters.Interface),
+				InterfaceID:       storkutil.NullifyEmptyString(keaParameters.InterfaceID),
+				MatchClientID:     keaParameters.MatchClientID,
+				NextServer:        storkutil.NullifyEmptyString(keaParameters.NextServer),
+				PDAllocator:       storkutil.NullifyEmptyString(keaParameters.PdAllocator),
+				RapidCommit:       keaParameters.RapidCommit,
+				ServerHostname:    storkutil.NullifyEmptyString(keaParameters.ServerHostname),
+				StoreExtendedInfo: keaParameters.StoreExtendedInfo,
+			}
+			if keaParameters.Relay != nil {
+				localSubnet.KeaParameters.Relay = &keaconfig.Relay{
+					IPAddresses: keaParameters.Relay.IPAddresses,
+				}
+			}
+			// DHCP options.
+			localSubnet.DHCPOptionSet, err = r.flattenDHCPOptions("", ls.KeaConfigSubnetParameters.SubnetLevelParameters.Options, 0)
+			if err != nil {
+				return nil, err
+			}
+			if len(localSubnet.DHCPOptionSet) > 0 {
+				localSubnet.DHCPOptionSetHash = storkutil.Fnv128(localSubnet.DHCPOptionSet)
+			}
+		}
+		subnet.SetLocalSubnet(localSubnet)
+	}
+	return subnet, nil
+}
+
 func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsByPageFilters, sortField string, sortDir dbmodel.SortDirEnum) (*models.Subnets, error) {
 	// get subnets from db
 	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.DB, offset, limit, filters, sortField, sortDir)
@@ -310,7 +466,7 @@ func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsByPage
 	// go through subnets from db and change their format to ReST one
 	for _, snTmp := range dbSubnets {
 		sn := snTmp
-		subnet := r.subnetToRestAPI(&sn)
+		subnet := r.convertFromSubnet(&sn)
 		subnets.Items = append(subnets.Items, subnet)
 	}
 
@@ -375,7 +531,7 @@ func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) mi
 		return rsp
 	}
 
-	subnet := r.subnetToRestAPI(dbSubnet)
+	subnet := r.convertFromSubnet(dbSubnet)
 	rsp := dhcp.NewGetSubnetOK().WithPayload(subnet)
 	return rsp
 }
@@ -387,7 +543,7 @@ func (r *RestAPI) sharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *models.Shar
 	// be the case but let's be safe.
 	for _, snTmp := range sn.Subnets {
 		sn := snTmp
-		subnet := r.subnetToRestAPI(&sn)
+		subnet := r.convertFromSubnet(&sn)
 		subnets = append(subnets, subnet)
 	}
 	// Create shared network.
@@ -647,5 +803,249 @@ func (r *RestAPI) GetSharedNetwork(ctx context.Context, params dhcp.GetSharedNet
 
 	sharedNetwork := r.sharedNetworkToRestAPI(dbSharedNetwork)
 	rsp := dhcp.NewGetSharedNetworkOK().WithPayload(sharedNetwork)
+	return rsp
+}
+
+// Common function for executed when creating a new transaction for when the
+// subnet is created or updated. It fetches available DHCP daemons. It also
+// creates transaction context. If an error occurs, an http error code and
+// message are returned.
+func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*models.KeaDaemon, context.Context, int, string) {
+	// A list of Kea DHCP daemons will be needed in the user form,
+	// so the user can select which servers send the subnet to.
+	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
+	if err != nil {
+		msg := "problem with fetching Kea daemons from the database"
+		log.Error(err)
+		return nil, nil, http.StatusInternalServerError, msg
+	}
+	// Convert daemons list to REST API format and extract their configured
+	// client classes.
+	respDaemons := []*models.KeaDaemon{}
+	for i := range daemons {
+		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
+			// Filter the daemons with subnet_cmds hook library.
+			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); exists {
+				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
+			}
+		}
+	}
+
+	// If there are no daemons with subnet_cmds hooks library loaded there is no way
+	// to add new host reservation. In that case, we don't begin a transaction.
+	if len(respDaemons) == 0 {
+		msg := "unable to begin transaction for adding new subnet because there are no Kea servers with subnet_cmds hooks library available"
+		log.Error(msg)
+		return nil, nil, http.StatusBadRequest, msg
+	}
+	// Get the logged user's ID.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "unable to begin transaction because user is not logged in"
+		log.Error("Problem with creating transaction context because user has no session")
+		return nil, nil, http.StatusForbidden, msg
+	}
+	// Create configuration context.
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "problem with creating transaction context"
+		log.Error(err)
+		return nil, nil, http.StatusInternalServerError, msg
+	}
+	return respDaemons, cctx, 0, ""
+}
+
+// Common function that implements the POST calls to apply and commit a new
+// or updated subnet. The ctx parameter is the REST API context. The
+// transactionID is the identifier of the current configuration transaction
+// used by the function to recover the transaction context. The restSubnet is
+// the pointer to the subnet specified by the user. It is converted by this
+// function to the database model. The applyFunc is the function of the Kea
+// config module that applies the specified subnet. It is one of the ApplySubnetAdd
+// or ApplySubnetUpdate, depending on whether the new subnet is created (via
+// CreateSubnetSubmit) or updated (via UpdateSubnetSubmit). The apply functions
+// receive the transaction context and a pointer to the subnet. They return the
+// updated context and error. This function returns the HTTP error code if an
+// error occurs or 0 when there is no error. In addition it returns an error
+// string to be included in the HTTP response or an empty string if there is no
+// error.
+func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transactionID int64, restSubnet *models.Subnet, applyFunc func(context.Context, *dbmodel.Subnet) (context.Context, error)) (int, string) {
+	// Make sure that the subnet information is present.
+	if restSubnet == nil {
+		msg := "subnet information not specified"
+		log.Errorf(msg)
+		return http.StatusBadRequest, msg
+	}
+	// Get the user ID and recover the transaction context.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "unable to submit the subnet because user is not logged in"
+		log.Error("Problem with recovering transaction context because user has no session")
+		return http.StatusForbidden, msg
+	}
+	// Retrieve the context from the config manager.
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	if cctx == nil {
+		msg := "transaction expired for the subnet update"
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
+		return http.StatusNotFound, msg
+	}
+
+	// Convert subnet information from REST API to database format.
+	subnet, err := r.convertToSubnet(restSubnet)
+	if err != nil {
+		msg := "error parsing specified subnet"
+		log.Error(err)
+		return http.StatusBadRequest, msg
+	}
+	err = subnet.PopulateDaemons(r.DB)
+	if err != nil {
+		msg := "specified subnet is associated with daemons that no longer exist"
+		log.Error(err)
+		return http.StatusNotFound, msg
+	}
+	// Apply the subnet information (create Kea commands).
+	cctx, err = applyFunc(cctx, subnet)
+	if err != nil {
+		msg := "problem with applying subnet information"
+		log.Error(err)
+		return http.StatusInternalServerError, msg
+	}
+	// Send the commands to Kea servers.
+	cctx, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := fmt.Sprintf("problem with committing subnet information: %s", err)
+		log.Error(err)
+		return http.StatusConflict, msg
+	}
+	// Everything ok. Cleanup and send OK to the client.
+	r.ConfigManager.Done(cctx)
+	return 0, ""
+}
+
+// Common function that implements the DELETE calls to cancel adding new
+// or updating a subnet. It removes the specified transaction from the
+// config manager, if the transaction exists. It  returns the HTTP error code
+// if an error occurs or 0 when there is no error. In addition it returns an
+// error string to be included in the HTTP response or an empty string if there
+// is no error.
+func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transactionID int64) (int, string) {
+	// Get the user ID and recover the transaction context.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "unable to cancel transaction for the subnet because user is not logged in"
+		log.Error("Problem with recovering transaction context because user has no session")
+		return http.StatusForbidden, msg
+	}
+	// Retrieve the context from the config manager.
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	if cctx == nil {
+		msg := "transaction expired for the subnet update"
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
+		return http.StatusNotFound, msg
+	}
+	r.ConfigManager.Done(cctx)
+	return 0, ""
+}
+
+// Implements the POST call to create new transaction for updating an
+// existing subnet (subnets/{subnetId}/transaction).
+func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubnetBeginParams) middleware.Responder {
+	// Execute the common part between create and update operations. It retrieves
+	// the daemons and creates a transaction context.
+	respDaemons, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	if code != 0 {
+		// Error case.
+		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Begin subnet update transaction. It retrieves current subnet information and
+	// locks daemons for updates.
+	var err error
+	cctx, err = r.ConfigManager.GetKeaModule().BeginSubnetUpdate(cctx, params.SubnetID)
+	if err != nil {
+		var (
+			subnetNotFound *config.SubnetNotFoundError
+			lock           *config.LockError
+		)
+		switch {
+		case errors.As(err, &subnetNotFound):
+			// Failed to find subnet.
+			msg := err.Error()
+			log.Error(err)
+			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		case errors.As(err, &lock):
+			// Failed to lock daemons.
+			msg := err.Error()
+			log.Error(err)
+			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusLocked).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		default:
+			// Other error.
+			msg := "problem with initializing transaction for subnet update"
+			log.Error(msg)
+			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+	state, _ := config.GetTransactionState[kea.ConfigRecipe](cctx)
+	subnet := state.Updates[0].Recipe.SubnetBeforeUpdate
+
+	// Retrieve the generated context ID.
+	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
+	if !ok {
+		msg := "problem with retrieving context ID for a transaction to update a subnet"
+		log.Error(msg)
+		rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Remember the context, i.e. new transaction has been successfully created.
+	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
+
+	// Return transaction ID and daemons to the user.
+	contents := &models.UpdateSubnetBeginResponse{
+		ID:      cctxID,
+		Subnet:  r.convertFromSubnet(subnet),
+		Daemons: respDaemons,
+	}
+	rsp := dhcp.NewUpdateSubnetBeginOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the POST call and commits an updated subnet (subnets/{subnetId}/transaction/{id}/submit).
+func (r *RestAPI) UpdateSubnetSubmit(ctx context.Context, params dhcp.UpdateSubnetSubmitParams) middleware.Responder {
+	if code, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetUpdate); code != 0 {
+		// Error case.
+		rsp := dhcp.NewUpdateSubnetSubmitDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := dhcp.NewUpdateSubnetSubmitOK()
+	return rsp
+}
+
+// Implements the DELETE call to cancel updating a subnet (subnets/{subnetId}/transaction/{id}).
+// It removes the specified transaction from the config manager, if the transaction exists.
+func (r *RestAPI) UpdateSubnetDelete(ctx context.Context, params dhcp.UpdateSubnetDeleteParams) middleware.Responder {
+	if code, msg := r.commonCreateOrUpdateSubnetDelete(ctx, params.ID); code != 0 {
+		// Error case.
+		rsp := dhcp.NewUpdateSubnetDeleteDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := dhcp.NewUpdateSubnetDeleteOK()
 	return rsp
 }

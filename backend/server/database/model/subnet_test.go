@@ -836,6 +836,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 					LocalSubnets: []*LocalSubnet{
 						{
+							DaemonID:      app.Daemons[0].ID,
 							LocalSubnetID: 13,
 						},
 					},
@@ -843,6 +844,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
+					DaemonID:          app.Daemons[0].ID,
 					DHCPOptionSetHash: "xyz",
 				},
 			},
@@ -874,13 +876,14 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSubnets: []*LocalSubnet{
 				{
+					DaemonID: app.Daemons[0].ID,
 					SubnetID: 14,
 				},
 			},
 		},
 	}
 	// Attempt to create the global shared network and subnet.
-	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0])
+	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 1)
 
@@ -910,7 +913,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	// Make sure we can commit the networks again without an error.
-	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0])
+	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 0)
 }
@@ -1697,4 +1700,36 @@ func TestJoinSubnets(t *testing.T) {
 	require.EqualValues(t, 1, subnet0.LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 2, subnet0.LocalSubnets[1].DaemonID)
 	require.EqualValues(t, 3, subnet0.LocalSubnets[2].DaemonID)
+}
+
+// Test that daemon information can be populated to the existing
+// subnet instance when LocalSubnet instances merely contain DaemonID
+// values.
+func TestPopulateSubnetDaemons(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps to the database.
+	apps := addTestSubnetApps(t, db)
+
+	// Create bare subnet that lacks Daemon instances but has valid DaemonID values.
+	subnet := &Subnet{
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := subnet.PopulateDaemons(db)
+	require.NoError(t, err)
+
+	// Make sure that the daemon information was assigned to the subnet.
+	require.Len(t, subnet.LocalSubnets, 2)
+	require.NotNil(t, subnet.LocalSubnets[0].Daemon)
+	require.EqualValues(t, apps[0].Daemons[0].ID, subnet.LocalSubnets[0].Daemon.ID)
+	require.NotNil(t, subnet.LocalSubnets[1].Daemon)
+	require.EqualValues(t, apps[1].Daemons[0].ID, subnet.LocalSubnets[1].Daemon.ID)
 }

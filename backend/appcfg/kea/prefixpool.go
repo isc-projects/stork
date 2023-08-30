@@ -14,7 +14,7 @@ type PrefixPool interface {
 
 // Represents prefix delegation pool structure within Kea configuration.
 type PDPool struct {
-	Prefix               string
+	Prefix               string             `json:"prefix"`
 	PrefixLen            int                `json:"prefix-len"`
 	DelegatedLen         int                `json:"delegated-len"`
 	ExcludedPrefix       string             `json:"excluded-prefix,omitempty"`

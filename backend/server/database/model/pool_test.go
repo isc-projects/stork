@@ -185,6 +185,23 @@ func TestPrefixPoolGetModel(t *testing.T) {
 	require.Equal(t, "3001::/96", model.ExcludedPrefix)
 }
 
+// Test retrieving Kea parameters from a prefix pool.
+func TestPrefixPoolGetKeaParameters(t *testing.T) {
+	pool := PrefixPool{
+		Prefix:        "3001::/80",
+		KeaParameters: &keaconfig.PoolParameters{},
+	}
+	require.Equal(t, pool.GetKeaParameters(), pool.KeaParameters)
+}
+
+// Test retrieving Kea parameters from a prefix pool when the parameters are nil.
+func TestPrefixPoolGetNilKeaParameters(t *testing.T) {
+	pool := PrefixPool{
+		Prefix: "3001::/80",
+	}
+	require.Nil(t, pool.GetKeaParameters())
+}
+
 // Test the implementation of the dhcpmodel.PrefixPoolAccessor interface
 // (GetDHCPOptions() function).
 func TestPrefixPoolGetDHCPOptions(t *testing.T) {

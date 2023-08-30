@@ -1,19 +1,19 @@
-import { DelegatedPrefix, LocalSubnet, SharedNetwork, Subnet } from './backend'
+import { DelegatedPrefixPool, LocalSubnet, Pool, SharedNetwork, Subnet } from './backend'
 
 /**
  * Represents a shared network with the lists of unique pools extracted.
  */
 export interface SharedNetworkWithUniquePools extends SharedNetwork {
-    pools?: Array<string>
-    prefixDelegationPools?: Array<DelegatedPrefix>
+    pools?: Array<Pool>
+    prefixDelegationPools?: Array<DelegatedPrefixPool>
 }
 
 /**
  * Represents a subnet with the lists of unique pools extracted.
  */
 export interface SubnetWithUniquePools extends Subnet {
-    pools?: Array<string>
-    prefixDelegationPools?: Array<DelegatedPrefix>
+    pools?: Array<Pool>
+    prefixDelegationPools?: Array<DelegatedPrefixPool>
 }
 
 /**
@@ -136,8 +136,8 @@ export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] 
 export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePools[] {
     let convertedSubnets: SubnetWithUniquePools[] = []
     for (const subnet of subnets) {
-        let pools: Array<string> = []
-        let prefixDelegationPools: Array<DelegatedPrefix> = []
+        let pools: Array<Pool> = []
+        let prefixDelegationPools: Array<DelegatedPrefixPool> = []
         let convertedSubnet: SubnetWithUniquePools = subnet
         convertedSubnets.push(convertedSubnet)
         if (!subnet.localSubnets) {
@@ -147,7 +147,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[]): SubnetWithUniquePoo
             if (ls.pools) {
                 for (const pool of ls.pools) {
                     // Add the pool only if it doesn't exist yet.
-                    if (!pools.includes(pool)) {
+                    if (!pools.some((p) => p.pool === pool.pool)) {
                         pools.push(pool)
                     }
                 }
@@ -243,7 +243,7 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
         // Check for different address pools.
         if (subnet.localSubnets[i].pools && subnet.localSubnets[0].pools) {
             for (const pool of subnet.localSubnets[i].pools) {
-                if (!subnet.localSubnets[0].pools.includes(pool)) {
+                if (!subnet.localSubnets[0].pools.some((p) => p.pool === pool.pool)) {
                     return true
                 }
             }
@@ -308,8 +308,8 @@ export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
 export function extractUniqueSharedNetworkPools(sharedNetworks: SharedNetwork[]): SharedNetworkWithUniquePools[] {
     let convertedSharedNetworks: SharedNetworkWithUniquePools[] = []
     for (const sharedNetwork of sharedNetworks) {
-        let pools: Array<string> = []
-        let prefixDelegationPools: Array<DelegatedPrefix> = []
+        let pools: Array<Pool> = []
+        let prefixDelegationPools: Array<DelegatedPrefixPool> = []
         let convertedSharedNetwork: SharedNetworkWithUniquePools = sharedNetwork
         convertedSharedNetworks.push(convertedSharedNetwork)
         if (!sharedNetwork.subnets) {
@@ -320,7 +320,7 @@ export function extractUniqueSharedNetworkPools(sharedNetworks: SharedNetwork[])
             if (subnet.pools) {
                 for (const pool of subnet.pools) {
                     // Add the pool only if it doesn't exist yet.
-                    if (!pools.includes(pool)) {
+                    if (!pools.some((p) => p.pool === pool.pool)) {
                         pools.push(pool)
                     }
                 }

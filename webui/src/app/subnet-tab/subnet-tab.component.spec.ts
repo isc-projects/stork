@@ -90,7 +90,11 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@192.0.2.1',
-                    pools: ['192.0.2.1-192.0.2.100'],
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.100',
+                        },
+                    ],
                     stats: {
                         'total-addresses': 240,
                         'assigned-addresses': 70,
@@ -223,7 +227,11 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@2001:db8:1::1',
-                    pools: ['2001:db8:1::2-2001:db8:1::786'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::2-2001:db8:1::786',
+                        },
+                    ],
                     stats: {
                         'total-nas': 1000,
                         'assigned-nas': 30,
@@ -275,7 +283,11 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@2001:db8:1::1',
-                    pools: ['2001:db8:1::2-2001:db8:1::768'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::2-2001:db8:1::768',
+                        },
+                    ],
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -339,7 +351,11 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     appName: 'foo@2001:db8:1::1',
-                    pools: ['2001:db8:1::2-2001:db8:1::768'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::2-2001:db8:1::768',
+                        },
+                    ],
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -380,7 +396,11 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 25432,
                     appName: 'bar@2001:db8:2::5',
-                    pools: ['2001:db8:1::2-2001:db8:1::768'],
+                    pools: [
+                        {
+                            pool: '2001:db8:1::2-2001:db8:1::768',
+                        },
+                    ],
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',

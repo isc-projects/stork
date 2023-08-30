@@ -198,7 +198,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
-	_, err = CommitNetworksIntoDB(db, []SharedNetwork{*network}, []Subnet{}, apps[0].Daemons[1])
+	_, err = CommitNetworksIntoDB(db, []SharedNetwork{*network}, []Subnet{})
 	require.NoError(t, err)
 
 	// Create a common function verifying the contents of a shared network and its subnets.

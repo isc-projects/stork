@@ -3,6 +3,7 @@ package kea
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,8 +17,9 @@ import (
 	appstest "isc.org/stork/server/apps/test"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
-	storktestdbmodel "isc.org/stork/server/test/dbmodel"
+	storktest "isc.org/stork/server/test/dbmodel"
 	storkutil "isc.org/stork/util"
 )
 
@@ -274,7 +276,7 @@ func TestCommitHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := storktestdbmodel.AddTestHosts(t, db)
+	_, apps := storktest.AddTestHosts(t, db)
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
@@ -464,7 +466,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := storktestdbmodel.AddTestHosts(t, db)
+	_, apps := storktest.AddTestHosts(t, db)
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
@@ -588,7 +590,7 @@ func TestBeginHostUpdate(t *testing.T) {
 	module := NewConfigModule(manager)
 	require.NotNil(t, module)
 
-	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+	hosts, apps := storktest.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -788,7 +790,7 @@ func TestCommitHostUpdate(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := storktestdbmodel.AddTestHosts(t, db)
+	_, apps := storktest.AddTestHosts(t, db)
 
 	// Create host reservation.
 	host := &dbmodel.Host{
@@ -1014,7 +1016,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := storktestdbmodel.AddTestHosts(t, db)
+	_, apps := storktest.AddTestHosts(t, db)
 
 	// Create the host.
 	host := &dbmodel.Host{
@@ -1280,7 +1282,7 @@ func TestCommitHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+	hosts, apps := storktest.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
@@ -1344,7 +1346,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+	hosts, apps := storktest.AddTestHosts(t, db)
 	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
 	require.NoError(t, err)
 
@@ -1411,4 +1413,650 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	returnedHost, err := dbmodel.GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.Nil(t, returnedHost)
+}
+
+// Test the first stage of updating a subnet. It checks that the subnet information
+// is fetched from the database and stored in the context. It also checks that
+// appropriate locks are applied.
+func TestBeginSubnetUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	ctx, err := module.BeginSubnetUpdate(context.Background(), subnets[0].ID)
+	require.NoError(t, err)
+
+	// Make sure that the locks have been applied on the daemons owning
+	// the host.
+	require.Contains(t, manager.locks, apps[0].Daemons[0].ID)
+	require.Contains(t, manager.locks, apps[1].Daemons[0].ID)
+
+	// Make sure that the host information has been stored in the context.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, state.Updates, 1)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
+	require.Equal(t, "subnet_update", state.Updates[0].Operation)
+	require.NotNil(t, state.Updates[0].Recipe.SubnetBeforeUpdate)
+	require.Equal(t, "192.0.2.0/24", state.Updates[0].Recipe.SubnetBeforeUpdate.Prefix)
+	require.Len(t, state.Updates[0].Recipe.SubnetBeforeUpdate.LocalSubnets, 2)
+}
+
+// Test second stage of a subnet update.
+func TestApplySubnetUpdate(t *testing.T) {
+	// Create dummy subnet to be stored in the context. We will later check if
+	// it is preserved after applying host update.
+	subnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.10",
+						UpperBound: "192.0.2.100",
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.10",
+						UpperBound: "192.0.2.100",
+					},
+				},
+			},
+		},
+	}
+
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1, 2}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: subnet,
+		},
+	}
+	err := state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Simulate updating subnet entry.
+	subnet = &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.100",
+						UpperBound: "192.0.2.200",
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.100",
+						UpperBound: "192.0.2.200",
+					},
+				},
+			},
+		},
+	}
+	ctx, err = module.ApplySubnetUpdate(ctx, subnet)
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, stateReturned.Scheduled)
+
+	require.Len(t, stateReturned.Updates, 1)
+	update := stateReturned.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "subnet_update", update.Operation)
+	require.NotNil(t, update.Recipe)
+	require.NotNil(t, update.Recipe.SubnetBeforeUpdate)
+
+	// There should be two commands ready to send.
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 4)
+
+	// Validate the commands to be sent to Kea.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "subnet4-update",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"subnet4": [
+							{
+								"id": 0,
+								"subnet": "192.0.2.0/24",
+								"pools": [
+									{
+										"pool": "192.0.2.100-192.0.2.200"
+									}
+								]
+							}
+						]
+					}
+				}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+
+		// Verify they are associated with appropriate apps.
+		app := commands[i].App
+		require.Equal(t, app, subnet.LocalSubnets[i%2].Daemon.App)
+	}
+}
+
+// Test committing updated subnet, i.e. actually sending control commands to Kea.
+func TestCommitSubnetUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	daemonIDs := []int64{apps[0].Daemons[0].ID, apps[1].Daemons[0].ID}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: &subnets[0],
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Copy the subnet and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedSubnet := subnets[0]
+	modifiedSubnet.CreatedAt = time.Time{}
+	modifiedSubnet.ClientClass = "foo"
+	modifiedSubnet.LocalSubnets[0].KeaParameters.Allocator = storkutil.Ptr("random")
+	modifiedSubnet.LocalSubnets[1].KeaParameters.Allocator = storkutil.Ptr("random")
+
+	ctx, err = module.ApplySubnetUpdate(ctx, &modifiedSubnet)
+	require.NoError(t, err)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 4)
+	require.Len(t, agents.RecordedCommands, 4)
+
+	// The resective commands should be sent to different servers.
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+
+	// Validate the sent commands and URLS.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+				"command": "subnet4-update",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24",
+							"allocator": "random"
+						}
+					]
+				}
+			}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp4" ]
+					}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the subnet has been updated in the database.
+	updatedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedSubnet)
+	require.Equal(t, "foo", updatedSubnet.ClientClass)
+	require.Len(t, updatedSubnet.LocalSubnets, 2)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+}
+
+// Test scheduling config changes in the database, retrieving and committing it.
+func TestCommitScheduledSubnetUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// User is required to associate the config change with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	serverConfig := `{
+		"Dhcp6": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet6": [
+						{
+							"id": 1,
+							"subnet": "2001:db8:1::/64"
+						}
+					]
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	daemonIDs := []int64{apps[0].Daemons[0].ID, apps[1].Daemons[0].ID}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	// Set user id in the context.
+	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: &subnets[0],
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Copy the subnet and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedSubnet := subnets[0]
+	modifiedSubnet.CreatedAt = time.Time{}
+	modifiedSubnet.ClientClass = "foo"
+	modifiedSubnet.LocalSubnets[0].KeaParameters.Allocator = storkutil.Ptr("random")
+	modifiedSubnet.LocalSubnets[1].KeaParameters.Allocator = storkutil.Ptr("random")
+
+	ctx, err = module.ApplySubnetUpdate(ctx, &modifiedSubnet)
+	require.NoError(t, err)
+
+	// Simulate scheduling the config change and retrieving it from the database.
+	// The context will hold re-created transaction state.
+	ctx = manager.scheduleAndGetChange(ctx, t)
+	require.NotNil(t, ctx)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedCommands, 4)
+
+	// Validate the sent commands and URLS.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "subnet6-update",
+					"service": [ "dhcp6" ],
+					"arguments": {
+						"subnet6": [
+							{
+								"id": 1,
+								"subnet": "2001:db8:1::/64",
+								"allocator": "random"
+							}
+						]
+					}
+				}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp6" ]
+					}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the subnet has been updated in the database.
+	updatedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedSubnet)
+	require.Equal(t, "foo", updatedSubnet.ClientClass)
+	require.Len(t, updatedSubnet.LocalSubnets, 2)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+}
+
+// Test that error is returned when Kea response contains error status code.
+func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		json := []byte(`[
+            {
+                "result": 1,
+                "text": "error is error"
+            }
+        ]`)
+		command := keactrl.NewCommand("subnet4-update", []string{"dhcp4"}, nil)
+		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	})
+
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	daemonIDs := []int64{apps[0].Daemons[0].ID}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: &subnets[0],
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	ctx, err = module.ApplySubnetUpdate(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	_, err = module.Commit(ctx)
+	require.ErrorContains(t, err, fmt.Sprintf("subnet4-update command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'error is error'", apps[0].Name))
+
+	// Other commands should not be sent in this case.
+	require.Len(t, agents.RecordedCommands, 1)
 }

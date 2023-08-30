@@ -1313,7 +1313,7 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 	}
 	// Add the hosts and their associations with the daemon to the database.
 	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0])
+		return CommitGlobalHostsIntoDB(tx, hosts)
 	})
 	require.NoError(t, err)
 
@@ -1329,51 +1329,6 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 		require.EqualValues(t, apps[0].Daemons[0].ID, h.LocalHosts[0].DaemonID)
 		require.Zero(t, h.SubnetID)
 	}
-}
-
-// Test that CommitGlobalHostsIntoDB sets daemon ID when it is not
-// already set.
-func TestCommitGlobalHostsIntoDBLateSetDaemonID(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	apps := addTestSubnetApps(t, db)
-
-	// Create two global hosts. The global hosts have no subnet ID.
-	hosts := []Host{
-		{
-			HostIdentifiers: []HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{1, 2, 3, 4, 5, 6},
-				},
-			},
-			IPReservations: []IPReservation{
-				{
-					Address: "192.0.2.56",
-				},
-			},
-			LocalHosts: []LocalHost{
-				{
-					DataSource: HostDataSourceAPI,
-				},
-			},
-		},
-	}
-	// Add the hosts and their associations with the daemon to the database.
-	err := CommitGlobalHostsIntoDB(db, hosts, apps[0].Daemons[0])
-	require.NoError(t, err)
-
-	// Fetch global hosts.
-	returned, err := GetHostsBySubnetID(db, 0)
-	require.NoError(t, err)
-	require.Len(t, returned, 1)
-
-	// Make sure that the returned hosts are associated with the given daemon
-	// and that they remain global, i.e. subnet id is unspecified.
-	require.Len(t, returned[0].LocalHosts, 1)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returned[0].LocalHosts[0].DaemonID)
-	require.Zero(t, returned[0].SubnetID)
 }
 
 // Test that the prefix reservations are properly recognized.

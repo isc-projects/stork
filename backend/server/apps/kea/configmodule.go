@@ -37,14 +37,28 @@ type HostConfigRecipeParams struct {
 	HostID *int64
 }
 
+// A structure embedded in the ConfigRecipe grouping parameters used
+// in transactions adding, updating and deleting subnets.
+type SubnetConfigRecipeParams struct {
+	// An instance of the subnet before an update. It is typically fetched
+	// at the beginning of the subnet update (e.g., when a user clicks the
+	// subnet edit button).
+	SubnetBeforeUpdate *dbmodel.Subnet
+	// An instance of the subnet after it has been added or updated. This
+	// instance is held in the context until it is committed  or scheduled
+	// for committing later. It is set when a new subnet is added or an
+	// existing subnet is updated.
+	SubnetAfterUpdate *dbmodel.Subnet
+	// Edited or deleted subnet ID.
+	SubnetID *int64
+}
+
 // Represents a Kea config change recipe. A recipe is associated with
 // each config update and may comprise several commands sent to different
 // Kea servers. Other data stored in the recipe structure are used in the
 // Kea config module to pass the information between various configuration
 // stages (begin, apply, commit/schedule). This structure is meant to be
-// generic for different configuration use cases in Kea. Should we need to
-// support a subnet configuration we will extend it with a new embedded
-// structure holding parameters appropriate for this new use case.
+// generic for different configuration use cases in Kea.
 type ConfigRecipe struct {
 	// A list of commands and the corresponding targets to be sent to
 	// apply a configuration update.
@@ -52,6 +66,9 @@ type ConfigRecipe struct {
 	// Embedded structure holding the parameters appropriate for the
 	// host management.
 	HostConfigRecipeParams
+	// Embedded structure holding the parameters appropriate for the
+	// subnet management.
+	SubnetConfigRecipeParams
 }
 
 // A configuration manager module responsible for the Kea configuration.
@@ -98,6 +115,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 			ctx, err = module.commitHostUpdate(ctx)
 		case "host_delete":
 			ctx, err = module.commitHostDelete(ctx)
+		case "subnet_update":
+			ctx, err = module.commitSubnetUpdate(ctx)
 		default:
 			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
@@ -166,7 +185,7 @@ func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context,
 		return ctx, pkgerrors.New("context lacks state")
 	}
 	var err error
-	ctx, err = module.commitHostChanges(ctx)
+	ctx, err = module.commitChanges(ctx)
 	if err != nil {
 		return ctx, err
 	}
@@ -196,8 +215,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	if host == nil {
 		return ctx, pkgerrors.WithStack(config.NewHostNotFoundError(hostID))
 	}
-	// Get the list of daemons for whose configurations must be locked for
-	// updates.
+	// Get the list of daemons whose configurations must be locked for updates.
 	var daemonIDs []int64
 	for _, lh := range host.LocalHosts {
 		daemonIDs = append(daemonIDs, lh.DaemonID)
@@ -294,7 +312,7 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 		return ctx, pkgerrors.New("context lacks state")
 	}
 	var err error
-	ctx, err = module.commitHostChanges(ctx)
+	ctx, err = module.commitChanges(ctx)
 	if err != nil {
 		return ctx, err
 	}
@@ -366,7 +384,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		return ctx, pkgerrors.New("context lacks state")
 	}
 	var err error
-	ctx, err = module.commitHostChanges(ctx)
+	ctx, err = module.commitChanges(ctx)
 	if err != nil {
 		return ctx, err
 	}
@@ -382,9 +400,9 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 	return ctx, nil
 }
 
-// Generic function used to commit host changes (i.e., delete,  add or update host reservation)
+// Generic function used to commit configuration changes (e.g., delete, add or update host reservation)
 // using the data stored in the context.
-func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Context, error) {
+func (module *ConfigModule) commitChanges(ctx context.Context) (context.Context, error) {
 	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
@@ -416,6 +434,129 @@ func (module *ConfigModule) commitHostChanges(ctx context.Context) (context.Cont
 				err = pkgerrors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
 				return ctx, err
 			}
+		}
+	}
+	return ctx, nil
+}
+
+// Begins a subnet update. It fetches the specified subnet from the database
+// and stores it in the context state. Then, it locks the daemons associated
+// with the subnet for updates.
+func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int64) (context.Context, error) {
+	// Try to get the subnet to be updated from the database.
+	subnet, err := dbmodel.GetSubnet(module.manager.GetDB(), subnetID)
+	if err != nil {
+		// Internal database error.
+		return ctx, err
+	}
+	// Subnet does not exist.
+	if subnet == nil {
+		return ctx, pkgerrors.WithStack(config.NewSubnetNotFoundError(subnetID))
+	}
+	// Get the list of daemons for whose configurations must be locked for
+	// updates.
+	var daemonIDs []int64
+	for _, ls := range subnet.LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	// Try to lock configurations.
+	ctx, err = module.manager.Lock(ctx, daemonIDs...)
+	if err != nil {
+		return ctx, pkgerrors.WithStack(config.NewLockError())
+	}
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "subnet_update", daemonIDs...)
+	recipe := &ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: subnet,
+		},
+	}
+	if err := state.SetRecipeForUpdate(0, recipe); err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Applies updated subnet. It prepares necessary commands to be sent to Kea upon commit.
+func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
+	if len(subnet.LocalSubnets) == 0 {
+		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+	}
+	var commands []ConfigCommand
+	// Update the subnet instances.
+	for _, ls := range subnet.LocalSubnets {
+		if ls.Daemon == nil {
+			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+		}
+		if ls.Daemon.App == nil {
+			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+		}
+		// Convert the updated subnet information to Kea subnet.
+		lookup := module.manager.GetDHCPOptionDefinitionLookup()
+		updateArguments := make(map[string]any)
+		appCommand := ConfigCommand{}
+		switch subnet.GetFamily() {
+		case 4:
+			subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
+			if err != nil {
+				return ctx, err
+			}
+			updateArguments["subnet4"] = []*keaconfig.Subnet4{
+				subnet4,
+			}
+			appCommand.Command = keactrl.NewCommand("subnet4-update", []string{ls.Daemon.Name}, updateArguments)
+		default:
+			subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
+			if err != nil {
+				return ctx, err
+			}
+			updateArguments["subnet6"] = []*keaconfig.Subnet6{
+				subnet6,
+			}
+			appCommand.Command = keactrl.NewCommand("subnet6-update", []string{ls.Daemon.Name}, updateArguments)
+		}
+		appCommand.App = ls.Daemon.App
+		commands = append(commands, appCommand)
+	}
+
+	// Create the commands to write the updated configuration to files. The subnet
+	// changes won't persist across the servers' restarts otherwise.
+	for _, ls := range subnet.LocalSubnets {
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			App:     ls.Daemon.App,
+		})
+	}
+
+	// Store the data in the existing recipe.
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	if err != nil {
+		return ctx, err
+	}
+	recipe.SubnetAfterUpdate = subnet
+	recipe.Commands = commands
+	return config.SetRecipeForUpdate(ctx, 0, recipe)
+}
+
+// Create the updated subnet in the Kea servers.
+func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.SubnetAfterUpdate == nil {
+			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet update")
+		}
+		_, err = dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
+		if err != nil {
+			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil

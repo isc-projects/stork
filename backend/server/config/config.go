@@ -64,6 +64,8 @@ type KeaModule interface {
 	ApplyHostUpdate(context.Context, *dbmodel.Host) (context.Context, error)
 	BeginHostDelete(context.Context) (context.Context, error)
 	ApplyHostDelete(context.Context, *dbmodel.Host) (context.Context, error)
+	BeginSubnetUpdate(context.Context, int64) (context.Context, error)
+	ApplySubnetUpdate(context.Context, *dbmodel.Subnet) (context.Context, error)
 }
 
 // Interface of the Kea configuration module used by the manager to

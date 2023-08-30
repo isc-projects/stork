@@ -598,6 +598,24 @@ func addOnCommitSubnetEvents(app *dbmodel.App, daemon *dbmodel.Daemon, addedSubn
 // are created. Note that multiple apps can be associated with the same subnet.
 func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta, lookup keaconfig.DHCPOptionDefinitionLookup) (err error) {
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		// Let's first add or update the app in the database. It must be done
+		// before detecting the subnets and shared networks because we need to
+		// know daemon IDs to associate the subnets and shared networks with.
+		// The daemon IDs are assigned by the database when the daemons are
+		// first added.
+		var addedDaemons, deletedDaemons []*dbmodel.Daemon
+		if app.ID == 0 {
+			// New app, insert it.
+			addedDaemons, err = dbmodel.AddApp(tx, app)
+		} else {
+			// Existing app, update it if needed.
+			addedDaemons, deletedDaemons, err = dbmodel.UpdateApp(tx, app)
+		}
+
+		if err != nil {
+			return err
+		}
+
 		networks := make(map[string][]dbmodel.SharedNetwork)
 		subnets := make(map[string][]dbmodel.Subnet)
 		globalHosts := make(map[string][]dbmodel.Host)
@@ -640,33 +658,20 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			}
 		}
 
-		var addedDaemons, deletedDaemons []*dbmodel.Daemon
-		if app.ID == 0 {
-			// New app, insert it.
-			addedDaemons, err = dbmodel.AddApp(tx, app)
-		} else {
-			// Existing app, update it if needed.
-			addedDaemons, deletedDaemons, err = dbmodel.UpdateApp(tx, app)
-		}
-
-		if err != nil {
-			return err
-		}
-
 		// Add events to the database.
 		addOnCommitAppEvents(app, addedDaemons, deletedDaemons, state, eventCenter)
 
 		for _, daemon := range app.Daemons {
 			// For the given daemon, iterate over the networks and subnets and update their
 			// global instances accordingly in the database.
-			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.Name], subnets[daemon.Name], daemon)
+			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.Name], subnets[daemon.Name])
 			if err != nil {
 				return err
 			}
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
-			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon); err != nil {
+			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name]); err != nil {
 				return err
 			}
 

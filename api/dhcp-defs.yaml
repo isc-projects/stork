@@ -253,6 +253,36 @@
         items:
           type: string
 
+# Pool
+
+  Pool:
+    type: object
+    required:
+      - pool
+    properties:
+      pool:
+        type: string
+      keaConfigPoolParameters:
+        $ref: '#/definitions/KeaConfigPoolParameters'
+
+# Delegated prefix pool
+
+  DelegatedPrefixPool:
+    type: object
+    required:
+      - prefix
+      - delegatedLength
+    properties:
+      prefix:
+        type: string
+      delegatedLength:
+        type: integer
+      excludedPrefix:
+        type: string
+      keaConfigPoolParameters:
+        $ref: '#/definitions/KeaConfigPoolParameters'
+
+
 # Subnet
 
   LocalSubnet:
@@ -279,26 +309,13 @@
       pools:
         type: array
         items:
-          type: string
+          $ref: '#/definitions/Pool'
       prefixDelegationPools:
         type: array
         items:
-          $ref: '#/definitions/DelegatedPrefix'
+          $ref: '#/definitions/DelegatedPrefixPool'
       keaConfigSubnetParameters:
           $ref: '#/definitions/KeaConfigSubnetParameters'
-
-  DelegatedPrefix:
-    type: object
-    required:
-      - prefix
-      - delegatedLength
-    properties:
-      prefix:
-        type: string
-      delegatedLength:
-        type: integer
-      excludedPrefix:
-        type: string
 
   Subnet:
     type: object
@@ -338,6 +355,18 @@
       total:
         type: integer
 
+  UpdateSubnetBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      subnet:
+        $ref: '#/definitions/Subnet'
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
 
 # Shared Network
 

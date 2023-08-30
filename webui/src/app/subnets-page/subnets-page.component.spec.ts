@@ -25,6 +25,7 @@ import { MessageModule } from 'primeng/message'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 
 class MockParamMap {
     /** Always returns null. */
@@ -79,6 +80,7 @@ describe('SubnetsPageComponent', () => {
                 HumanCountPipe,
                 NumberPipe,
                 EntityLinkComponent,
+                AddressPoolBarComponent,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)

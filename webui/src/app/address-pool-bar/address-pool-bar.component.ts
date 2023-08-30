@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core'
+import { Pool } from '../backend'
 
 /**
  * A component displaying an address pool.
@@ -10,7 +11,7 @@ import { Component, Input } from '@angular/core'
 })
 export class AddressPoolBarComponent {
     /**
-     * Address pool as text.
+     * Address pool.
      */
-    @Input() pool: string
+    @Input() pool: Pool
 }

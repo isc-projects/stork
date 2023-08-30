@@ -273,6 +273,38 @@ func (s *Subnet) AfterInsert(ctx context.Context) error {
 	return nil
 }
 
+// Fetches daemon information for each daemon ID within the local subnets.
+// The subnet information can be partial when it is created from the request
+// received over the REST API. In particular, the LocalSubnets can merely
+// contain DaemonID values and the Daemon pointers can be nil. In order
+// to initialize Daemon pointers, this function fetches the daemons from
+// the database and assigns them to the respective LocalSubnet instances.
+// If any of the daemons does not exist or an error occurs, the subnet
+// is not updated.
+func (s Subnet) PopulateDaemons(dbi dbops.DBI) error {
+	var daemons []*Daemon
+	for _, ls := range s.LocalSubnets {
+		// DaemonID is required for this function to run.
+		if ls.DaemonID == 0 {
+			return pkgerrors.Errorf("problem with populating daemons: subnet %d lacks daemon ID", s.ID)
+		}
+		daemon, err := GetDaemonByID(dbi, ls.DaemonID)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem with populating daemons")
+		}
+		// Daemon does not exist.
+		if daemon == nil {
+			return pkgerrors.Errorf("problem with populating daemons for subnet %d: daemon %d does not exist", s.ID, ls.DaemonID)
+		}
+		daemons = append(daemons, daemon)
+	}
+	// Everything fine. Assign fetched daemons to the subnet.
+	for i := range s.LocalSubnets {
+		s.LocalSubnets[i].Daemon = daemons[i]
+	}
+	return nil
+}
+
 // Add address and prefix pools from the local subnet instance and remove the ones
 // that no longer belong to the local subnet in a transaction.
 // The subnet is expected to exist in the database.
@@ -765,10 +797,12 @@ func (s *Subnet) GetApp(appID int64) *App {
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application. Returns a list of added subnets.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *Daemon) (addedSubnets []*Subnet, err error) {
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
-		subnet.SharedNetworkID = networkID
+		if networkID != 0 {
+			subnet.SharedNetworkID = networkID
+		}
 
 		if subnet.ID == 0 {
 			err = AddSubnet(tx, subnet)
@@ -786,18 +820,12 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 				return nil, err
 			}
 		}
-		// Ensure that the daemon IDs are set.
-		for i := range subnet.LocalSubnets {
-			if subnet.LocalSubnets[i].DaemonID == 0 {
-				subnet.LocalSubnets[i].DaemonID = daemon.ID
-			}
-		}
 		err = AddLocalSubnets(tx, subnet)
 		if err != nil {
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, daemon)
+		err = CommitSubnetHostsIntoDB(tx, subnet)
 		if err != nil {
 			return nil, err
 		}
@@ -808,7 +836,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *D
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app. Returns a list of added subnets.
 // This function runs all database operations in a transaction.
-func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet, daemon *Daemon) ([]*Subnet, error) {
+func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet) ([]*Subnet, error) {
 	var (
 		addedSubnets      []*Subnet
 		addedSubnetsToNet []*Subnet
@@ -827,17 +855,11 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 				return nil, err
 			}
 		}
-		// Ensure that the daemon IDs are set.
-		for i := range network.LocalSharedNetworks {
-			if network.LocalSharedNetworks[i].DaemonID == 0 {
-				network.LocalSharedNetworks[i].DaemonID = daemon.ID
-			}
-		}
 		if err = AddLocalSharedNetworks(tx, network); err != nil {
 			return nil, err
 		}
 		// Associate subnets with the daemon.
-		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, daemon)
+		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets)
 		if err != nil {
 			return nil, err
 		}
@@ -846,7 +868,7 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 
 	// Finally, add top level subnets to the database and associate them with
 	// the Kea daemon.
-	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, daemon)
+	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets)
 	if err != nil {
 		return nil, err
 	}
@@ -857,15 +879,15 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified daemon. Returns a list of added subnets.
-func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Subnet, daemon *Daemon) (addedSubnets []*Subnet, err error) {
+func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Subnet) (addedSubnets []*Subnet, err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			addedSubnets, err = commitNetworksIntoDB(tx, networks, subnets, daemon)
+			addedSubnets, err = commitNetworksIntoDB(tx, networks, subnets)
 			return err
 		})
 		return
 	}
-	addedSubnets, err = commitNetworksIntoDB(dbi.(*pg.Tx), networks, subnets, daemon)
+	addedSubnets, err = commitNetworksIntoDB(dbi.(*pg.Tx), networks, subnets)
 	return
 }
 

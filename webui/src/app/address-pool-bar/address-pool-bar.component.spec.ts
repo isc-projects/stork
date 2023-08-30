@@ -21,7 +21,9 @@ describe('AddressPoolBarComponent', () => {
     })
 
     it('should display an address pool', () => {
-        component.pool = '192.0.2.0/24'
+        component.pool = {
+            pool: '192.0.2.0/24',
+        }
         fixture.detectChanges()
 
         expect(fixture.debugElement.nativeElement.innerText).toContain('192.0.2.0/24')
