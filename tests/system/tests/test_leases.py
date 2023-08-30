@@ -44,41 +44,31 @@ def test_search_leases(kea_service: Kea, server_service: Server):
 
     # Search declined leases.
     data = server_service.list_leases("state:declined")
-    assert data["total"] >= 10
-    # IPv4
-    for lease in data["items"][:10]:
+
+    # The Kea prior 2.3.8 used a single "0" as an empty DUID.
+    # The lease file is generated before running the container, so we don't
+    # know the Kea version beforehand and we cannot use the proper value.
+    # All generated declined leases have the "00:00:00" DUID, so the old Kea
+    # DHCP daemon doesn't recognize them as declined. I didn't find a
+    # workaround without completely rewriting the lease generation.
+    assert data["total"] == 20 if version >= (2, 3, 8) else 10
+
+    for lease in data["items"]:
         # Declined leases should lack identifiers.
         assert "hwaddr" not in lease
         assert "clientId" not in lease
         assert "ip_address" in lease
-        assert "." in lease["ip_address"]
-        assert "duid" not in lease
+        if ":" in lease["ip_address"]:
+            assert lease["duid"] == "00:00:00"
+        else:
+            assert "duid" not in lease
         # The state is declined.
         assert lease["state"] == 1
+
+    # Sanity checks of leases.
     assert data["items"][0]["ip_address"] == "192.0.2.1"
-
-    # IPv6
-    if version >= (2, 3, 8):
-        assert data["total"] == 20
-        for lease in data["items"][10:]:
-            # Declined leases should lack identifiers.
-            assert "hwaddr" not in lease
-            assert "clientId" not in lease
-            assert "ip_address" in lease
-            assert ":" in lease["ip_address"]
-            assert lease["duid"] == "00:00:00"
-            # The state is declined.
-            assert lease["state"] == 1
+    if data["total"] > 10:
         assert data["items"][10]["ip_address"] == "3001:db8:1:42::1"
-    else:
-        # The Kea prior 2.3.8 used a single "0" as an empty DUID.
-        # The lease file is generated before running the container, so we don't
-        # know the Kea version beforehand and we cannot use the proper value.
-        # All generated declined leases have the "00:00:00" DUID, so the old Kea
-        # DHCP daemon doesn't recognize them as declined. I didn't find a
-        # workaround without completely rewriting the lease generation.
-        assert data["total"] == 10
-
     assert data["conflicts"] is None
 
     # Blank search text should return none leases
