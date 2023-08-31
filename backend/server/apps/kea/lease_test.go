@@ -1293,11 +1293,39 @@ func TestFindDeclinedLeasesPriorKea2_3_8(t *testing.T) {
 	// One lease should be ignored and three returned.
 	require.Len(t, leases, 3)
 
+	// Basic checks if expected leases were returned.
+	for i, ipaddr := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
+		require.EqualValues(t, app.ID, leases[i].AppID)
+		require.NotNil(t, leases[i].App)
+		require.Equal(t, ipaddr, leases[i].IPAddress)
+		require.EqualValues(t, keadata.LeaseStateDeclined, leases[i].State)
+	}
+
+	// Ensure that Stork has sent two commands, one to the DHCPv4 server and one
+	// to the DHCPv6 server.
+	require.Len(t, agents.RecordedCommands, 2)
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].GetCommand())
+
+	// Ensure that the hw-address sent in the first command is empty.
+	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
+	require.NotNil(t, arguments)
+	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
+	require.Empty(t, (arguments.(map[string]interface{}))["hw-address"])
+
 	// Ensure that the DUID sent in the second command is empty ("0").
-	arguments := agents.RecordedCommands[1].(*keactrl.Command).Arguments
+	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments.(map[string]interface{}), "duid")
 	require.Equal(t, "0", (arguments.(map[string]interface{}))["duid"])
+
+	// Simulate an error in the first response. The app returning an error should
+	// be recorded, but the DHCPv6 lease should still be returned.
+	agents = agentcommtest.NewFakeAgents(mockLeasesGetDeclinedErrors, nil)
+	leases, erredApps, err = FindDeclinedLeases(db, agents)
+	require.NoError(t, err)
+	require.Len(t, erredApps, 1)
+	require.Len(t, leases, 1)
 }
 
 // Test that a search for declined leases returns empty result when
