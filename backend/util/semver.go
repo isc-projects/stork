@@ -69,10 +69,7 @@ func (v SemanticVersion) GreaterThanOrEqual(other SemanticVersion) bool {
 func ParseSemanticVersion(version string) (SemanticVersion, error) {
 	var v SemanticVersion
 	_, err := fmt.Sscanf(version, "%d.%d.%d", &v.Major, &v.Minor, &v.Patch)
-	if err != nil {
-		return v, errors.Wrap(err, "invalid semantic version")
-	}
-	return v, nil
+	return v, errors.Wrap(err, "invalid semantic version")
 }
 
 // Parses a semantic version string into a SemanticVersion struct. If the
