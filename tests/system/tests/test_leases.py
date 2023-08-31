@@ -67,7 +67,7 @@ def test_search_leases(kea_service: Kea, server_service: Server):
 
     # Sanity checks of leases.
     assert data["items"][0]["ip_address"] == "192.0.2.1"
-    if data["total"] > 10:
+    if version >= (2, 3, 8):
         assert data["items"][10]["ip_address"] == "3001:db8:1:42::1"
     assert data["conflicts"] is None
 

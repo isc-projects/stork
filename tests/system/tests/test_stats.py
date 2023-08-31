@@ -41,4 +41,5 @@ def test_get_kea_stats(
 
     # Check if Stork Agent handles all metrics returned by Kea.
     # Disable this check because Prometheus is missing pool stats.
+    # @todo: enable after fixing #1153.
     # assert not kea_service.has_encountered_unsupported_statistic()

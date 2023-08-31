@@ -28,38 +28,24 @@ func (v SemanticVersion) String() string {
 
 // Returns true if the semantic version is less than the other semantic version.
 func (v SemanticVersion) LessThan(other SemanticVersion) bool {
-	if v.Major < other.Major {
-		return true
-	} else if v.Major > other.Major {
-		return false
+	if v.Major == other.Major {
+		if v.Minor == other.Minor {
+			return (v.Patch < other.Patch)
+		}
+		return (v.Minor < other.Minor)
 	}
-	if v.Minor < other.Minor {
-		return true
-	} else if v.Minor > other.Minor {
-		return false
-	}
-	if v.Patch < other.Patch {
-		return true
-	}
-	return false
+	return (v.Major < other.Major)
 }
 
 // Returns true if the semantic version is greater than the other semantic version.
 func (v SemanticVersion) GreaterThan(other SemanticVersion) bool {
-	if v.Major > other.Major {
-		return true
-	} else if v.Major < other.Major {
-		return false
+	if v.Major == other.Major {
+		if v.Minor == other.Minor {
+			return (v.Patch > other.Patch)
+		}
+		return (v.Minor > other.Minor)
 	}
-	if v.Minor > other.Minor {
-		return true
-	} else if v.Minor < other.Minor {
-		return false
-	}
-	if v.Patch > other.Patch {
-		return true
-	}
-	return false
+	return (v.Major > other.Major)
 }
 
 // Returns true if the semantic version is equal to the other semantic version.

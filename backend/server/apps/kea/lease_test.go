@@ -1208,7 +1208,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Contains(t, arguments.(map[string]interface{}), "hw-address")
 	require.Empty(t, (arguments.(map[string]interface{}))["hw-address"])
 
-	// Ensure that the DUID sent in the second command is empty (00:00:00).
+	// Ensure that the DUID sent in the second command is empty ("00:00:00").
 	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments.(map[string]interface{}), "duid")

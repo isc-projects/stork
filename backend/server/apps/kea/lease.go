@@ -164,7 +164,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 			daemons = append(daemons, "dhcp4")
 			propertyName = "client-id"
 		case "lease6-get-by-duid":
-			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by a single zero (Kea < 2.3.8) or 3 zero bytes (Kea >= 2.3.8).
+			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by 1 zero byte (Kea < 2.3.8) or 3 zero bytes (Kea >= 2.3.8).
 			if len(sentPropertyValue) == 0 {
 				semver := storkutil.ParseSemanticVersionOrLatest(dbApp.Meta.Version)
 				if semver.LessThan(storkutil.NewSemanticVersion(2, 3, 8)) {
