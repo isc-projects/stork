@@ -32,22 +32,22 @@ func (v SemanticVersion) String() string {
 func (v SemanticVersion) LessThan(other SemanticVersion) bool {
 	if v.Major == other.Major {
 		if v.Minor == other.Minor {
-			return (v.Patch < other.Patch)
+			return v.Patch < other.Patch
 		}
-		return (v.Minor < other.Minor)
+		return v.Minor < other.Minor
 	}
-	return (v.Major < other.Major)
+	return v.Major < other.Major
 }
 
 // Returns true if the semantic version is greater than the other semantic version.
 func (v SemanticVersion) GreaterThan(other SemanticVersion) bool {
 	if v.Major == other.Major {
 		if v.Minor == other.Minor {
-			return (v.Patch > other.Patch)
+			return v.Patch > other.Patch
 		}
-		return (v.Minor > other.Minor)
+		return v.Minor > other.Minor
 	}
-	return (v.Major > other.Major)
+	return v.Major > other.Major
 }
 
 // Returns true if the semantic version is equal to the other semantic version.
