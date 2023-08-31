@@ -53,12 +53,7 @@
                                         [dataSource]="l.dataSource"
                                     ></app-host-data-source-label>
                                     <ng-container
-                                        *ngIf="
-                                            !daemonsHaveEqualBootFields(ls) ||
-                                                !daemonsHaveEqualClientClasses(ls) ||
-                                                !daemonsHaveEqualDhcpOptions(ls);
-                                            else duplicateCandidate
-                                        "
+                                        *ngIf="daemonsHaveDifferentHostData(ls); else duplicateCandidate"
                                         [ngTemplateOutlet]="conflictLabel"
                                     ></ng-container>
                                     <ng-template #duplicateCandidate>

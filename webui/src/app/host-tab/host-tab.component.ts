@@ -7,6 +7,7 @@ import { DHCPService } from '../backend/api/api'
 import {
     hasDifferentLocalHostBootFields,
     hasDifferentLocalHostClientClasses,
+    hasDifferentLocalHostData,
     hasDifferentLocalHostOptions,
 } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
@@ -184,44 +185,44 @@ export class HostTabComponent {
 
         // Group local hosts by the boot fields equality.
         const localHostsByBootFields: LocalHost[][] = []
-        if (this.allDaemonsHaveEqualBootFields()) {
-            localHostsByBootFields.push(this.host.localHosts)
-        } else {
+        if (hasDifferentLocalHostBootFields(this.host.localHosts)) {
             for (let localHosts of localHostsByAppID) {
-                if (this.daemonsHaveEqualBootFields(localHosts)) {
-                    localHostsByBootFields.push(localHosts)
-                } else {
+                if (hasDifferentLocalHostBootFields(localHosts)) {
                     localHostsByBootFields.push(...localHosts.map((lh) => [lh]))
+                } else {
+                    localHostsByBootFields.push(localHosts)
                 }
             }
+        } else {
+            localHostsByBootFields.push(this.host.localHosts)
         }
 
         // Group local hosts by the DHCP options equality.
         const localHostsByDhcpOptions: LocalHost[][] = []
-        if (this.allDaemonsHaveEqualDhcpOptions()) {
-            localHostsByDhcpOptions.push(this.host.localHosts)
-        } else {
+        if (hasDifferentLocalHostOptions(this.host.localHosts)) {
             for (let localHosts of localHostsByAppID) {
-                if (this.daemonsHaveEqualDhcpOptions(localHosts)) {
-                    localHostsByDhcpOptions.push(localHosts)
-                } else {
+                if (hasDifferentLocalHostOptions(localHosts)) {
                     localHostsByDhcpOptions.push(...localHosts.map((lh) => [lh]))
+                } else {
+                    localHostsByDhcpOptions.push(localHosts)
                 }
             }
+        } else {
+            localHostsByDhcpOptions.push(this.host.localHosts)
         }
 
         // Group local hosts by the client classes equality.
         const localHostsByClientClasses: LocalHost[][] = []
-        if (this.allDaemonsHaveEqualClientClasses()) {
-            localHostsByClientClasses.push(this.host.localHosts)
-        } else {
+        if (hasDifferentLocalHostClientClasses(this.host.localHosts)) {
             for (let localHosts of localHostsByAppID) {
-                if (this.daemonsHaveEqualClientClasses(localHosts)) {
-                    localHostsByClientClasses.push(localHosts)
-                } else {
+                if (hasDifferentLocalHostClientClasses(localHosts)) {
                     localHostsByClientClasses.push(...localHosts.map((lh) => [lh]))
+                } else {
+                    localHostsByClientClasses.push(localHosts)
                 }
             }
+        } else {
+            localHostsByClientClasses.push(this.host.localHosts)
         }
 
         this.currentDifferentLocalHosts = {
@@ -573,60 +574,11 @@ export class HostTabComponent {
     }
 
     /**
-     * Checks if all provided DHCP servers have equal set of DHCP options.
-     */
-    daemonsHaveEqualDhcpOptions(localHosts: LocalHost[]): boolean {
-        return !hasDifferentLocalHostOptions(localHosts)
-    }
-
-    /**
-     * Checks if all DHCP servers owning the reservation have equal set of
-     * DHCP options.
+     * Checks if provided DHCP servers owning the reservation have different data.
      *
-     * @returns true, if all DHCP servers have equal option set hashes, false
-     *          otherwise.
+     * @returns true, if provided DHCP servers have different data.
      */
-    allDaemonsHaveEqualDhcpOptions(): boolean {
-        return this.daemonsHaveEqualDhcpOptions(this.host.localHosts)
-    }
-
-    /**
-     * Checks if provided DHCP servers owning the reservation have equal set of
-     * client classes.
-     *
-     * @returns true, if provided DHCP servers have equal set of client classes.
-     */
-    daemonsHaveEqualClientClasses(localHosts: LocalHost[]): boolean {
-        return !hasDifferentLocalHostClientClasses(localHosts)
-    }
-
-    /**
-     * Checks if all DHCP servers owning the reservation have equal set of
-     * client classes.
-     *
-     * @returns true, if all DHCP servers have equal set of client classes.
-     */
-    allDaemonsHaveEqualClientClasses(): boolean {
-        return this.daemonsHaveEqualClientClasses(this.host.localHosts)
-    }
-
-    /**
-     * Checks if provided DHCP servers owning the reservation have equal set of
-     * boot fields, i.e. next server, server hostname, boot file name.
-     *
-     * @returns true if, provided DHCP servers have equal set of boot fields.
-     */
-    daemonsHaveEqualBootFields(localHosts: LocalHost[]): boolean {
-        return !hasDifferentLocalHostBootFields(localHosts)
-    }
-
-    /**
-     * Checks if all DHCP servers owning the reservation have equal set of
-     * boot fields, i.e. next server, server hostname, boot file name.
-     *
-     * @returns true if, all DHCP servers have equal set of boot fields.
-     */
-    allDaemonsHaveEqualBootFields(): boolean {
-        return this.daemonsHaveEqualBootFields(this.host.localHosts)
+    daemonsHaveDifferentHostData(localHosts: LocalHost[]): boolean {
+        return hasDifferentLocalHostData(localHosts)
     }
 }
