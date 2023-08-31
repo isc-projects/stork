@@ -552,7 +552,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Empty(t, okRsp.Payload.ErredApps)
 
 	// Verify that the lease contents were parsed correctly. Specifically, we should
-	// ensure that HW address, client-id and DUID are empty.
+	// ensure that HW address, client-id and DUID (in v4 case) are empty.
 	leases := okRsp.Payload.Items
 	require.NotNil(t, leases[0].IPAddress)
 	require.Equal(t, "192.0.2.1", *leases[0].IPAddress)
