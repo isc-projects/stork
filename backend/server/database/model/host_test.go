@@ -820,6 +820,217 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	require.Contains(t, []int64{hosts[0].ID, hosts[2].ID}, returned[1].ID)
 }
 
+// Test that page of the hosts is empty if the inconsistent DHCP data filter
+// is set but there are no local hosts with conflicted or duplicated data.
+func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = addTestHosts(t, db)
+
+	filters := HostsByPageFilters{
+		DHCPDataConflict:  storkutil.Ptr(true),
+		DHCPDataDuplicate: storkutil.Ptr(true),
+	}
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.Zero(t, total)
+	require.Empty(t, returned)
+}
+
+// Test that page of the hosts doesn't contain the hosts with duplicated
+// if the duplicated DHCP data filter is set.
+func TestGetHostsByPageDuplicate(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	filters := HostsByPageFilters{
+		DHCPDataDuplicate: storkutil.Ptr(true),
+	}
+
+	hosts := addTestHosts(t, db)
+	host := hosts[0]
+	daemon, _, _ := addTestDaemons(db)
+
+	_ = AddDaemonToHost(db, &host, daemon.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &host, daemon.ID, HostDataSourceConfig)
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.EqualValues(t, host.ID, returned[0].ID)
+}
+
+// Test that page of the hosts contains only hosts with conflicted local hosts
+// if the conflicted DHCP data filter is set.
+func TestGetHostsByPageConflict(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	filters := HostsByPageFilters{
+		DHCPDataConflict: storkutil.Ptr(true),
+	}
+
+	hosts := addTestHosts(t, db)
+	host := hosts[0]
+	daemon, _, _ := addTestDaemons(db)
+
+	hasher := keaconfig.NewHasher()
+	testCases := map[string][]LocalHost{
+		"DHCP options": {
+			{
+				HostID:     host.ID,
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{{
+					Code: 42,
+				}}, hasher),
+			},
+			{
+				HostID:     host.ID,
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{{
+					Code: 24,
+				}}, hasher),
+			},
+		},
+		"Client classes": {
+			{
+				HostID:        host.ID,
+				DaemonID:      daemon.ID,
+				DataSource:    HostDataSourceAPI,
+				ClientClasses: []string{"foo", "bar"},
+			},
+			{
+				HostID:        host.ID,
+				DaemonID:      daemon.ID,
+				DataSource:    HostDataSourceConfig,
+				ClientClasses: []string{"foo", "baz"},
+			},
+		},
+		"Boot filename": {
+			{
+				HostID:       host.ID,
+				DaemonID:     daemon.ID,
+				DataSource:   HostDataSourceAPI,
+				BootFileName: "foo",
+			},
+			{
+				HostID:       host.ID,
+				DaemonID:     daemon.ID,
+				DataSource:   HostDataSourceConfig,
+				BootFileName: "bar",
+			},
+		},
+		"Next server": {
+			{
+				HostID:     host.ID,
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+				NextServer: "foo",
+			},
+			{
+				HostID:     host.ID,
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+				NextServer: "bar",
+			},
+		},
+		"Server hostname": {
+			{
+				HostID:         host.ID,
+				DaemonID:       daemon.ID,
+				DataSource:     HostDataSourceAPI,
+				ServerHostname: "foo",
+			},
+			{
+				HostID:         host.ID,
+				DaemonID:       daemon.ID,
+				DataSource:     HostDataSourceConfig,
+				ServerHostname: "bar",
+			},
+		},
+	}
+
+	for label, localHosts := range testCases {
+		label := label
+
+		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
+		host.LocalHosts = localHosts
+		_ = AddHostLocalHosts(db, &host)
+
+		t.Run(label, func(t *testing.T) {
+			// Act
+			returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+			// Assert
+			require.NoError(t, err)
+			require.EqualValues(t, total, 1)
+			require.Len(t, returned, 1)
+			require.EqualValues(t, host.ID, returned[0].ID)
+		})
+	}
+}
+
+// Test that page of the hosts contains hosts with conflicted and duplicated
+// local hosts if both conflicted and duplicated DHCP data filter are set.
+func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	filters := HostsByPageFilters{
+		DHCPDataConflict:  storkutil.Ptr(true),
+		DHCPDataDuplicate: storkutil.Ptr(true),
+	}
+
+	hosts := addTestHosts(t, db)
+	host0 := hosts[0]
+	daemon, _, _ := addTestDaemons(db)
+
+	// Duplicates
+	_ = AddDaemonToHost(db, &host0, daemon.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &host0, daemon.ID, HostDataSourceConfig)
+
+	// Conflicts
+	host1 := hosts[1]
+	host1.LocalHosts = []LocalHost{
+		{
+			HostID:       host1.ID,
+			DaemonID:     daemon.ID,
+			DataSource:   HostDataSourceAPI,
+			BootFileName: "foo",
+		},
+		{
+			HostID:       host1.ID,
+			DaemonID:     daemon.ID,
+			DataSource:   HostDataSourceConfig,
+			BootFileName: "bar",
+		},
+	}
+	_ = AddHostLocalHosts(db, &host1)
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+}
+
 // Test hosts can be sorted by different fields.
 func TestGetHostsByPageWithSorting(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

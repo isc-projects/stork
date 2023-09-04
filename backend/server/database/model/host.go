@@ -422,12 +422,20 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 // colons while searching for hosts by host identifiers. If Global flag is true then only
 // hosts from the global scope are returned (i.e. not assigned to any subnet), if false
 // then only hosts from subnets are returned.
+//
+// The DHCPDataConflict flag indicates whether to return only hosts with
+// conflicted (different) DHCP data in related Kea configurations.
+
+// The DHCPDataDuplicate flag indicates whether to return only hosts with
+// duplicated (the same) DHCP data in related Kea configurations.
 type HostsByPageFilters struct {
-	AppID         *int64
-	SubnetID      *int64
-	LocalSubnetID *int64
-	FilterText    *string
-	Global        *bool
+	AppID             *int64
+	SubnetID          *int64
+	LocalSubnetID     *int64
+	FilterText        *string
+	Global            *bool
+	DHCPDataConflict  *bool
+	DHCPDataDuplicate *bool
 }
 
 // Fetches a collection of hosts from the database.
@@ -442,34 +450,75 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	hosts := []Host{}
 	q := dbi.Model(&hosts)
 
-	// prepare distinct on expression to include sort field, otherwise distinct on will fail
+	// Prepare distinct on expression to include sort field, otherwise distinct
+	// on will fail.
 	distinctOnFields := "host.id"
 	if sortField != "" && sortField != "id" && sortField != "host.id" {
 		distinctOnFields = sortField + ", " + distinctOnFields
 	}
 	q = q.DistinctOn(distinctOnFields)
 
-	// When filtering by appID we also need the local_host table as it holds the
-	// application identifier.
+	// Filter by app ID.
+	// When filtering by appID we also need the local_host
+	// table as it holds the application identifier.
 	if filters.AppID != nil && *filters.AppID != 0 {
 		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 		q = q.Join("JOIN daemon").JoinOn("local_host.daemon_id = daemon.id")
 		q = q.Where("daemon.app_id = ?", *filters.AppID)
 	}
 
-	// filter by subnet id
+	// // Filter by conflict.
+	filterByConflict := filters.DHCPDataConflict != nil && *filters.DHCPDataConflict
+	filterByDuplicate := filters.DHCPDataDuplicate != nil && *filters.DHCPDataDuplicate
+	if filterByConflict || filterByDuplicate {
+		conflictSubquery := dbi.Model((*struct {
+			tableName struct{} `pg:"local_host"`
+			HostID    int64
+			Conflict  bool
+		})(nil)).
+			DistinctOn("host_id").
+			Column("host_id").
+			ColumnExpr(`COALESCE(
+				max(dhcp_option_set_hash) != min(dhcp_option_set_hash)
+				OR max(client_classes) != min(client_classes)
+				OR max(next_server) != min(next_server)
+				OR max(server_hostname) != min(server_hostname)
+				OR max(boot_file_name) != min(boot_file_name)
+			, FALSE) AS conflict`).
+			Group("host_id", "daemon_id").
+			Having("COUNT(*) > 1").
+			Order("host_id")
+
+		q = q.Join("LEFT JOIN (?) AS duplicate", conflictSubquery).
+			JoinOn("host.id = duplicate.host_id")
+
+		// Joined 'conflict' column is TRUE is the DHCP data are inconsistent
+		// in the local hosts, FALSE if they are consistent/duplicated, or
+		// NULL if there is only one local host.
+		q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+			if filterByConflict {
+				q = q.WhereOr("duplicate.conflict = TRUE")
+			}
+			if filterByDuplicate {
+				q = q.WhereOr("duplicate.conflict = FALSE")
+			}
+			return q, nil
+		})
+	}
+
+	// Filter by subnet ID.
 	if filters.SubnetID != nil && *filters.SubnetID != 0 {
-		// Get hosts for matching subnet id.
+		// Get hosts for matching subnet ID.
 		q = q.Where("host.subnet_id = ?", *filters.SubnetID)
 	}
 
-	// filter by local subnet id
+	// Filter by local subnet ID.
 	if filters.LocalSubnetID != nil {
 		q = q.Join("JOIN local_subnet").JoinOn("local_subnet.subnet_id = host.subnet_id")
 		q = q.Where("local_subnet.local_subnet_id = ?", *filters.LocalSubnetID)
 	}
 
-	// filter global or non-global hosts
+	// Filter global or non-global hosts.
 	if (filters.Global != nil && *filters.Global) || (filters.SubnetID != nil && *filters.SubnetID == 0) {
 		q = q.WhereOr("host.subnet_id IS NULL")
 	}
@@ -477,7 +526,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.WhereOr("host.subnet_id IS NOT NULL")
 	}
 
-	// filter by text
+	// Filter by text.
 	if filters.FilterText != nil && len(*filters.FilterText) > 0 {
 		// It is possible that the user is typing a search text with colons
 		// for host identifiers. We need to remove them because they are
@@ -513,7 +562,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Relation("Subnet")
 	}
 
-	// prepare sorting expression, offset and limit
+	// Prepare sorting expression, offset and limit.
 	ordExpr := prepareOrderExpr("host", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

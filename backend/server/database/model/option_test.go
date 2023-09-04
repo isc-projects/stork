@@ -71,9 +71,10 @@ func TestDHCPOptionSetHashIgnoreName(t *testing.T) {
 	optionSet := DHCPOptionSet{}
 
 	// Act
-	optionSet.SetDHCPOptions([]DHCPOption{{}})
+	hasher := keaconfig.NewHasher()
+	optionSet.SetDHCPOptions([]DHCPOption{{}}, hasher)
 	noNameHash := optionSet.Hash
-	optionSet.SetDHCPOptions([]DHCPOption{{Name: "foo"}})
+	optionSet.SetDHCPOptions([]DHCPOption{{Name: "foo"}}, hasher)
 	withNameHash := optionSet.Hash
 
 	// Assert
