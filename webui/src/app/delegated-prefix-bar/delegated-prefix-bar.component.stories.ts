@@ -1,6 +1,6 @@
 import { Meta, Story, moduleMetadata } from '@storybook/angular'
 import { DelegatedPrefixBarComponent } from './delegated-prefix-bar.component'
-import { DelegatedPrefix } from '../backend'
+import { DelegatedPrefixPool } from '../backend'
 
 export default {
     title: 'App/DelegatedPrefixBar',
@@ -21,7 +21,7 @@ StandardPrefix.args = {
     prefix: {
         prefix: '3001:42::/64',
         delegatedLength: 80,
-    } as DelegatedPrefix,
+    } as DelegatedPrefixPool,
 }
 
 export const ExcludedPrefix = Template.bind({})
@@ -30,5 +30,5 @@ ExcludedPrefix.args = {
         prefix: '2001:db8:1:8000::/48',
         delegatedLength: 64,
         excludedPrefix: '2001:db8:1:8000:cafe:80::/72',
-    } as DelegatedPrefix,
+    } as DelegatedPrefixPool,
 }
