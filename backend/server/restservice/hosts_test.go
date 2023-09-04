@@ -163,6 +163,40 @@ func TestGetHostsByLocalSubnetID(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 }
 
+// Test that hosts can be filtered by conflicted configurations.
+func TestGetHostsByConflicts(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add hosts. All hosts have local hosts from the API data source only.
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
+	host := hosts[0]
+	localHost := host.LocalHosts[0]
+
+	// Add a conflicted local host with different data source.
+	host.LocalHosts = append(host.LocalHosts, dbmodel.LocalHost{
+		HostID:     localHost.HostID,
+		DaemonID:   localHost.DaemonID,
+		DataSource: dbmodel.HostDataSourceConfig,
+		NextServer: "foobar",
+	})
+	err = dbmodel.AddHostLocalHosts(db, &host)
+	require.NoError(t, err)
+
+	params := dhcp.GetHostsParams{
+		Conflict: storkutil.Ptr(true),
+	}
+	rsp := rapi.GetHosts(ctx, params)
+	require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostsOK)
+	require.Len(t, okRsp.Payload.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+}
+
 // Test that hosts can be filtered by text.
 func TestGetHostsWithFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

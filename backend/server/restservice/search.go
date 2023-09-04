@@ -55,7 +55,7 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 	}
 
 	// get list of hosts
-	hosts, err := r.getHosts(0, 5, 0, nil, nil, &text, nil, "", dbmodel.SortDirAny)
+	hosts, err := r.getHosts(0, 5, dbmodel.HostsByPageFilters{FilterText: &text}, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "Cannot get hosts from the db")
 	}

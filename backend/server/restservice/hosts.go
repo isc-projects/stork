@@ -135,15 +135,8 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 
 // Fetches host reservations from the database and converts to the data formats
 // used in REST API.
-func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, localSubnetID *int64, filterText *string, global *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
+func (r *RestAPI) getHosts(offset, limit int64, filters dbmodel.HostsByPageFilters, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
 	// Get the hosts from the database.
-	filters := dbmodel.HostsByPageFilters{
-		AppID:         &appID,
-		SubnetID:      subnetID,
-		LocalSubnetID: localSubnetID,
-		FilterText:    filterText,
-		Global:        global,
-	}
 	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, filters, sortField, sortDir)
 	if err != nil {
 		return nil, err
@@ -175,13 +168,16 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
-	var appID int64
-	if params.AppID != nil {
-		appID = *params.AppID
+	// Get hosts from DB.
+	filters := dbmodel.HostsByPageFilters{
+		AppID:            params.AppID,
+		SubnetID:         params.SubnetID,
+		LocalSubnetID:    params.LocalSubnetID,
+		FilterText:       params.Text,
+		Global:           params.Global,
+		DHCPDataConflict: params.Conflict,
 	}
-
-	// get hosts from db
-	hosts, err := r.getHosts(start, limit, appID, params.SubnetID, params.LocalSubnetID, params.Text, params.Global, "", dbmodel.SortDirAny)
+	hosts, err := r.getHosts(start, limit, filters, "", dbmodel.SortDirAny)
 	if err != nil {
 		msg := "Problem fetching hosts from the database"
 		log.Error(err)

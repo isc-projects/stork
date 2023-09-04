@@ -70,6 +70,12 @@
             If true then return only reservations from global scope, if false then return
             only reservations from subnets, if null then both types of hosts are return.
           type: boolean
+        - name: conflict
+          in: query
+          description: >-
+            If true, then return only reservations related to daemons with inconsistent
+            (conflicted) DHCP configurations.
+          type: boolean
       responses:
         200:
           description: List of hosts
