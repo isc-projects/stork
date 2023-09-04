@@ -170,6 +170,7 @@ namespace :unittest do
                     file = items[0]
                     func = items[1]
                     cov = items[2].strip()[0..-2].to_f
+                    rel_path = file.gsub("isc.org/stork/", "backend/")
 
                     # Skips the mock files.
                     if file.end_with? "mock_test.go"
