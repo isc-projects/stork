@@ -5,7 +5,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
-import { DHCPService, Host } from '../backend'
+import { DHCPService, Host, LocalHost } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -1275,5 +1275,53 @@ describe('HostsPageComponent', () => {
                 expect(item.daemonId).toBeLessThan(10 * (appId + 1))
             }
         }
+    })
+
+    it('should recognize the state of local hosts', () => {
+        // Conflict
+        let localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo'
+            },
+            {
+                appId: 1,
+                daemonId: 2,
+                nextServer: 'bar'
+            },
+        ] as LocalHost[]
+        
+        let state = component.getLocalHostsState(localHosts)
+        expect(state).toBe('conflict')
+
+        // Duplicate
+        localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo'
+            },
+            {
+                appId: 1,
+                daemonId: 2,
+                nextServer: 'foo'
+            }
+        ] as LocalHost[]
+
+        state = component.getLocalHostsState(localHosts)
+        expect(state).toBe('duplicate')
+
+        // Null
+        localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo'
+            }
+        ] as LocalHost[]
+
+        state = component.getLocalHostsState(localHosts)
+        expect(state).toBeNull()
     })
 })
