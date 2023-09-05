@@ -11,7 +11,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 import { of, throwError } from 'rxjs'
 
-import { DHCPService, Lease } from '../backend'
+import { DHCPService, Host, Lease } from '../backend'
 import { HostTabComponent } from './host-tab.component'
 import { RouterModule } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -1100,5 +1100,258 @@ describe('HostTabComponent', () => {
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(4)
         expect(fieldsets[3].properties.innerText).toContain('No options configured.')
+    })
+
+    it('should group local hosts by app ID properly', () => {
+        const host = {
+            localHosts: [
+                {
+                    appId: 3,
+                    daemonId: 31,
+                },
+                {
+                    appId: 3,
+                    daemonId: 32,
+                },
+                {
+                    appId: 3,
+                    daemonId: 33,
+                },
+                {
+                    appId: 2,
+                    daemonId: 21,
+                },
+                {
+                    appId: 2,
+                    daemonId: 22,
+                },
+                {
+                    appId: 1,
+                    daemonId: 11,
+                },
+            ],
+        } as Host
+
+        component.host = host
+        const groups = component.currentDifferentLocalHosts.appID
+
+        expect(groups.length).toBe(3)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+            expect(group.length).toBe(appId)
+            for (let item of group) {
+                expect(item.daemonId).toBeGreaterThan(10 * appId)
+                expect(item.daemonId).toBeLessThan(10 * (appId + 1))
+            }
+        }
+    })
+
+    it('should group local hosts by different boot fields properly', () => {
+        const host = {
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    bootFileName: 'foo',
+                    serverHostname: 'bar',
+                    nextServer: 'baz',
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                    bootFileName: 'foo',
+                    serverHostname: 'bar',
+                    nextServer: 'baz',
+                },
+                {
+                    appId: 1,
+                    daemonId: 3,
+                    bootFileName: 'oof',
+                    serverHostname: 'rab',
+                    nextServer: 'zab',
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                    bootFileName: 'foo',
+                    serverHostname: 'bar',
+                    nextServer: 'baz',
+                },
+                {
+                    appId: 2,
+                    daemonId: 5,
+                    bootFileName: 'foo',
+                    serverHostname: 'bar',
+                    nextServer: 'baz',
+                },
+            ],
+        } as Host
+
+        component.host = host
+        const groups = component.currentDifferentLocalHosts.bootFields
+
+        expect(groups.length).toBe(4)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+
+            switch (appId) {
+                case 1:
+                    expect(group.length).toBe(1)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(3)
+                    break
+                case 2:
+                    expect(group.length).toBe(2)
+                    for (const item of group) {
+                        expect(item.daemonId).toBeGreaterThanOrEqual(4)
+                    }
+            }
+        }
+    })
+
+    it('should group local hosts by different client classes properly', () => {
+        const host = {
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    clientClasses: ['foo', 'bar'],
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                    clientClasses: ['foo', 'bar'],
+                },
+                {
+                    appId: 1,
+                    daemonId: 3,
+                    clientClasses: ['oof', 'rab'],
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                    clientClasses: ['foo', 'bar'],
+                },
+                {
+                    appId: 2,
+                    daemonId: 5,
+                    clientClasses: ['foo', 'bar'],
+                },
+            ],
+        } as Host
+
+        component.host = host
+        const groups = component.currentDifferentLocalHosts.clientClasses
+
+        expect(groups.length).toBe(4)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+
+            switch (appId) {
+                case 1:
+                    expect(group.length).toBe(1)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(3)
+                    break
+                case 2:
+                    expect(group.length).toBe(2)
+                    for (const item of group) {
+                        expect(item.daemonId).toBeGreaterThanOrEqual(4)
+                    }
+            }
+        }
+    })
+
+    it('should group local hosts by different hash of DHCP options properly', () => {
+        const host = {
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    optionsHash: 'foo',
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                    optionsHash: 'foo',
+                },
+                {
+                    appId: 1,
+                    daemonId: 3,
+                    optionsHash: 'oof',
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                    optionsHash: 'foo',
+                },
+                {
+                    appId: 2,
+                    daemonId: 5,
+                    optionsHash: 'foo',
+                },
+            ],
+        } as Host
+
+        component.host = host
+        const groups = component.currentDifferentLocalHosts.dhcpOptions
+
+        expect(groups.length).toBe(4)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+
+            switch (appId) {
+                case 1:
+                    expect(group.length).toBe(1)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(3)
+                    break
+                case 2:
+                    expect(group.length).toBe(2)
+                    for (const item of group) {
+                        expect(item.daemonId).toBeGreaterThanOrEqual(4)
+                    }
+            }
+        }
+    })
+
+    it('should group all local hosts into a single group if there are no differences', () => {
+        const host = {
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                },
+                {
+                    appId: 1,
+                    daemonId: 3,
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                },
+                {
+                    appId: 2,
+                    daemonId: 5,
+                },
+            ],
+        } as Host
+
+        component.host = host
+
+        for (const groups of [
+            component.currentDifferentLocalHosts.bootFields,
+            component.currentDifferentLocalHosts.clientClasses,
+            component.currentDifferentLocalHosts.dhcpOptions,
+        ]) {
+            expect(groups.length).toBe(1)
+            const group = groups[0]
+            expect(group.length).toBe(5)
+        }
     })
 })
