@@ -5,7 +5,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
-import { DHCPService } from '../backend'
+import { DHCPService, Host } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -1230,4 +1230,50 @@ describe('HostsPageComponent', () => {
         const errMsgs = fixture.debugElement.queryAll(By.css('.p-error'))
         expect(errMsgs.length).toBe(3)
     }))
+
+    it('should group the local hosts by appId', () => {
+        const host = {
+            id: 42,
+            localHosts: [
+                {
+                    appId: 3,
+                    daemonId: 31,
+                },
+                {
+                    appId: 3,
+                    daemonId: 32,
+                },
+                {
+                    appId: 3,
+                    daemonId: 33,
+                },
+                {
+                    appId: 2,
+                    daemonId: 21,
+                },
+                {
+                    appId: 2,
+                    daemonId: 22,
+                },
+                {
+                    appId: 1,
+                    daemonId: 11,
+                },
+            ],
+        } as Host
+
+        component.hosts = [host]
+        const groups = component.localHostsGroupedByApp[host.id]
+
+        expect(groups.length).toBe(3)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+            expect(group.length).toBe(appId)
+            for (let item of group) {
+                expect(item.daemonId).toBeGreaterThan(10 * appId)
+                expect(item.daemonId).toBeLessThan(10 * (appId + 1))
+            }
+        }
+    })
 })
