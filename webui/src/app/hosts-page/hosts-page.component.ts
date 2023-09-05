@@ -386,9 +386,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             filterTextFormatErrors.push('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
         }
 
-        const parseBoolean = (val: string) => {
-            val === 'true' ? true : val === 'false' ? false : null
-        }
+        const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 
         // Global.
         const g = params.get('global')
