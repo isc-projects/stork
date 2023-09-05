@@ -468,9 +468,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// // Filter by conflict.
-	filterByConflict := filters.DHCPDataConflict != nil && *filters.DHCPDataConflict
-	filterByDuplicate := filters.DHCPDataDuplicate != nil && *filters.DHCPDataDuplicate
-	if filterByConflict || filterByDuplicate {
+	if filters.DHCPDataConflict != nil || filters.DHCPDataDuplicate != nil {
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
 			HostID    int64
@@ -496,11 +494,31 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// in the local hosts, FALSE if they are consistent/duplicated, or
 		// NULL if there is only one local host.
 		q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
-			if filterByConflict {
+			// Filter by conflict -> Return conflicted.
+			// Filter by duplicate -> Return duplicated.
+			// Filter by conflict AND duplicate -> Return conflicted and duplicated.
+			// Filter by NOT conflict -> Return duplicated and single.
+			// Filter by NOT duplicate -> Return conflicted and single.
+			// Filter by NOT conflict AND NOT duplicate -> Return single.
+			// Filter by conflict AND NOT duplicate -> Return conflicted and single.
+			// Filter by NOT conflict AND duplicate -> Return duplicated and single.
+			// Note: Above AND doesn't mean logical AND but rather a combination of filters.
+
+			// Filter by conflict or filter by NOT duplicate.
+			if (filters.DHCPDataConflict != nil && *filters.DHCPDataConflict) ||
+				(filters.DHCPDataConflict == nil && filters.DHCPDataDuplicate != nil && !*filters.DHCPDataDuplicate) {
 				q = q.WhereOr("duplicate.conflict = TRUE")
 			}
-			if filterByDuplicate {
+
+			// Filter by duplicate or filter by NOT conflict.
+			if (filters.DHCPDataDuplicate != nil && *filters.DHCPDataDuplicate) ||
+				(filters.DHCPDataDuplicate == nil && filters.DHCPDataConflict != nil && !*filters.DHCPDataConflict) {
 				q = q.WhereOr("duplicate.conflict = FALSE")
+			}
+
+			// Filter by NOT conflict or filter by NOT duplicate.
+			if (filters.DHCPDataConflict != nil && !*filters.DHCPDataConflict) || (filters.DHCPDataDuplicate != nil && !*filters.DHCPDataDuplicate) {
+				q = q.WhereOr("duplicate.conflict IS NULL")
 			}
 			return q, nil
 		})
