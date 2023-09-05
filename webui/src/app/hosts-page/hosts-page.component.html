@@ -81,6 +81,11 @@
                         that are associated with certain subnets.
                     </p>
                     <p>
+                        Hosts can be filtered by inconsistent DHCP configurations of their related daemons. Typing
+                        <b>is:conflict</b> will cause all hosts with different DHCP data configured in various host
+                        sources on the same daemon to be returned.
+                    </p>
+                    <p>
                         In addition, hosts can be filtered by an explicitly selected field using the expression:
                         <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
                         explicit filtering are:
