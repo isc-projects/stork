@@ -1164,6 +1164,22 @@ describe('HostsPageComponent', () => {
         expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId:2).')
     }))
 
+    it('hosts list should be filtered by conflicts', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'is:conflict'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, true)
+
+        expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
+    }))
+
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
         component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
