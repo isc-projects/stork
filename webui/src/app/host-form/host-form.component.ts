@@ -525,7 +525,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      */
     private _initializeHost(host: Host): void {
         const selectedDaemons: number[] = []
-        const localHosts = this._getEditableLocalHosts(host)
+        const localHosts = (host.localHosts || []).filter((lh) => lh.dataSource === 'api')
         if (localHosts.length > 0) {
             for (let lh of localHosts) {
                 selectedDaemons.push(lh.daemonId)
@@ -684,16 +684,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 value: 'flex-id',
             },
         ]
-    }
-
-    /**
-     * Returns the list of local hosts coming from the hosts database.
-     */
-    private _getEditableLocalHosts(host: Host): LocalHost[] {
-        if (!host.localHosts) {
-            return []
-        }
-        return host.localHosts.filter((lh) => lh.dataSource === 'api')
     }
 
     /**
