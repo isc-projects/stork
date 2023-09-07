@@ -593,6 +593,35 @@ func TestGetHostsByPageLocalSubnetID(t *testing.T) {
 	require.Empty(t, returned)
 }
 
+// Test that hosts can be filtered by subnet and local subnet IDs at the same time.
+func TestGetHostsByPageSubnetAndLocalSubnetID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	addTestHosts(t, db)
+	subnets, _ := GetSubnetsByPrefix(db, "192.0.2.0/24")
+	_ = AddDaemonToSubnet(db, &subnets[0], apps[0].Daemons[0])
+
+	// The subnet has local id of 123 and there is a host associated
+	// with this subnet.
+	localSubnetID := int64(123)
+	filters := HostsByPageFilters{
+		LocalSubnetID: &localSubnetID,
+		SubnetID:      &subnets[0].ID,
+	}
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+}
+
 // Test that page of the hosts can be fetched with filtering by app id.
 func TestGetHostsByPageApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

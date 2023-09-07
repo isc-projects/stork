@@ -459,7 +459,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	// filter by subnet id
 	if filters.SubnetID != nil && *filters.SubnetID != 0 {
 		// Get hosts for matching subnet id.
-		q = q.Where("subnet_id = ?", *filters.SubnetID)
+		q = q.Where("host.subnet_id = ?", *filters.SubnetID)
 	}
 
 	// filter by local subnet id
