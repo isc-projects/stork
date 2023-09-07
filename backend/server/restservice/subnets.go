@@ -925,7 +925,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 
 // Common function that implements the DELETE calls to cancel adding new
 // or updating a subnet. It removes the specified transaction from the
-// config manager, if the transaction exists. It  returns the HTTP error code
+// config manager, if the transaction exists. It returns the HTTP error code
 // if an error occurs or 0 when there is no error. In addition it returns an
 // error string to be included in the HTTP response or an empty string if there
 // is no error.
