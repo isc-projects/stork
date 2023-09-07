@@ -1,3 +1,10 @@
+* 330 [bug] slawek
+
+    Fixed the problem with missing issues count in a header of the
+    configuration review panel while the number of issues was zero. It was
+    causing to produce a confusing message that some issues were found.
+    (#1131, #1141)
+
 * 329 [build] slawek
 
     Updated the dependency versions used in the CI.
