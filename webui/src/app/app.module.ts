@@ -119,6 +119,7 @@ import { UtilizationStatsChartComponent } from './utilization-stats-chart/utiliz
 import { UtilizationStatsChartsComponent } from './utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board/cascaded-parameters-board.component'
 import { SharedNetworkTabComponent } from './shared-network-tab/shared-network-tab.component'
+import { SharedParametersFormComponent } from './shared-parameters-form/shared-parameters-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -193,6 +194,7 @@ export function cfgFactory() {
         UtilizationStatsChartsComponent,
         CascadedParametersBoardComponent,
         SharedNetworkTabComponent,
+        SharedParametersFormComponent,
     ],
     imports: [
         BrowserModule,

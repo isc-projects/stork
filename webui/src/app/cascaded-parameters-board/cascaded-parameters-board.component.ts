@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core'
+import { uncamelCase } from '../utils'
 
 /**
  * Allowed types of the parameters displayed in the table.
@@ -172,7 +173,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                     }
                 }
                 // Check if we already have the parameter processed for a different data set.
-                let parameterName = this.uncamelCase(key)
+                let parameterName = uncamelCase(key)
                 let cascadedParameter = this.rows.find((v) => v.name === parameterName)
                 if (!cascadedParameter) {
                     // It is the first time we see this parameter. Let's add it.
@@ -193,34 +194,6 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
         this.rows.sort((a: CascadedParameterRow, b: CascadedParameterRow) => {
             return a.name.localeCompare(b.name)
         })
-    }
-
-    /**
-     * Converts parameter names from camel case to long names.
-     *
-     * The words in the long names begin with upper case and are separated with
-     * space characters. For example: 'cacheThreshold' becomes 'Cache Threshold'.
-     *
-     * It also handles several special cases. When the converted name begins with:
-     * - ddns - it is converted to DDNS,
-     * - pd - it is converted to PD,
-     * - ip - it is converted to IP,
-     * - underscore character - it is removed.
-     *
-     * @param key a name to be converted in camel case notation.
-     * @returns converted name.
-     */
-    private uncamelCase(key: string): string {
-        let text = key.trim().replace(/_/g, '')
-        if (text.length === 0) {
-            return key
-        }
-        text = text.replace(/([A-Z]+)/g, ' $1')
-        text = text.replace(/^ddns/g, 'DDNS')
-        text = text.replace(/^pd/g, 'PD')
-        text = text.replace(/^ip/g, 'IP')
-        text = text.charAt(0).toUpperCase() + text.slice(1)
-        return text
     }
 
     /**
@@ -251,7 +224,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                 if (typeof val === 'object' && !Array.isArray(val)) {
                     for (let k of Object.keys(val)) {
                         // Replace the original key with a long name.
-                        let newKey = this.uncamelCase(k)
+                        let newKey = uncamelCase(k)
                         val[newKey] = val[k]
                         delete val[k]
                     }

@@ -31,6 +31,12 @@ export class DhcpClientClassSetFormComponent implements OnInit {
     @Input() classFormControl: UntypedFormControl
 
     /**
+     * Specifies whether the component should show a floating placeholder
+     * displaying an advisory information.
+     */
+    @Input() floatingPlaceholder: boolean = true
+
+    /**
      * Generated input box identifier.
      */
     inputId: string

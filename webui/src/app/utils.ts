@@ -503,3 +503,31 @@ export class MockParamMap {
         return false
     }
 }
+
+/**
+ * Converts parameter names from camel case to long names.
+ *
+ * The words in the long names begin with upper case and are separated with
+ * space characters. For example: 'cacheThreshold' becomes 'Cache Threshold'.
+ *
+ * It also handles several special cases. When the converted name begins with:
+ * - ddns - it is converted to DDNS,
+ * - pd - it is converted to PD,
+ * - ip - it is converted to IP,
+ * - underscore character - it is removed.
+ *
+ * @param key a name to be converted in camel case notation.
+ * @returns converted name.
+ */
+export function uncamelCase(key: string): string {
+    let text = key.trim().replace(/_/g, '')
+    if (text.length === 0) {
+        return key
+    }
+    text = text.replace(/([A-Z]+)/g, ' $1')
+    text = text.replace(/^ddns/g, 'DDNS')
+    text = text.replace(/^pd/g, 'PD')
+    text = text.replace(/^ip/g, 'IP')
+    text = text.charAt(0).toUpperCase() + text.slice(1)
+    return text
+}

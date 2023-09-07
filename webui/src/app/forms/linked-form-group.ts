@@ -1,10 +1,4 @@
-import {
-    AbstractControl,
-    AbstractControlOptions,
-    AsyncValidatorFn,
-    UntypedFormGroup,
-    ValidatorFn,
-} from '@angular/forms'
+import { AbstractControl, AbstractControlOptions, AsyncValidatorFn, FormGroup, ValidatorFn } from '@angular/forms'
 
 /**
  * Extends the FormGroup with custom data of selected type.
@@ -20,7 +14,10 @@ import {
  * safe in this particular case. The derived class does not call any
  * protected methods and is independent of the base class's API.
  */
-export class LinkedFormGroup<LinkedData> extends UntypedFormGroup {
+export class LinkedFormGroup<
+    LinkedData,
+    TControl extends { [K in keyof TControl]: AbstractControl<any> } = any
+> extends FormGroup<TControl> {
     /**
      * Custom data associated with the form group.
      */
@@ -36,7 +33,7 @@ export class LinkedFormGroup<LinkedData> extends UntypedFormGroup {
      */
     constructor(
         data: LinkedData,
-        controls: { [key: string]: AbstractControl },
+        controls: TControl,
         validatorOrOpts?: ValidatorFn | AbstractControlOptions | ValidatorFn[],
         asyncValidator?: AsyncValidatorFn | AsyncValidatorFn[]
     ) {

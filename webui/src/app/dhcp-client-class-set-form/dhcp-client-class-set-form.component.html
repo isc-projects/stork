@@ -1,14 +1,15 @@
 <div class="flex align-items-center">
-    <span class="p-float-label">
+    <span class="{{ floatingPlaceholder ? 'p-float-label' : '' }}">
         <p-chips
             ngDefaultControl
             inputId="{{ inputId }}"
             [allowDuplicate]="false"
             [addOnBlur]="true"
             [formControl]="classFormControl"
+            placeholder="{{ floatingPlaceholder ? null : 'Type or Select Class Names from List' }}"
         >
         </p-chips>
-        <label for="{{ inputId }}">Type or Select Class Names from List</label>
+        <label *ngIf="floatingPlaceholder" for="{{ inputId }}">Type or Select Class Names from List</label>
     </span>
     <p-overlayPanel #op [dismissable]="false">
         <ng-template pTemplate>
