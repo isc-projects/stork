@@ -182,7 +182,7 @@ describe('ConfigReviewPanelComponent', () => {
         const fakeReports: any = {
             status: HttpStatusCode.Ok,
             body: {
-                items: new Array(),
+                items: [],
                 total: 10,
                 totalReports: 20,
                 totalIssues: 10,
@@ -240,6 +240,53 @@ describe('ConfigReviewPanelComponent', () => {
             expect(checkerTags[i].nativeElement.innerText).toBe(fakeReports.body.items[i].checker)
             expect(reportContents[i].nativeElement.innerText).toBe(fakeReports.body.items[i].content)
         }
+    }))
+
+    it('should display zero counts properly', fakeAsync(() => {
+        const fakeReports: any = {
+            status: HttpStatusCode.Ok,
+            body: {
+                items: [],
+                total: 5,
+                totalReports: 5,
+                totalIssues: 0,
+                review: {
+                    createdAt: '2021-11-18',
+                },
+            },
+        }
+
+        for (let i = 0; i < 5; i++) {
+            const report = {
+                checker: 'checker_no_' + i,
+            }
+            fakeReports.body.items.push(report)
+        }
+
+        spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
+
+        component.daemonId = 1
+
+        // Try to get the reports.
+        component.loading = false
+        component.ngOnInit()
+        tick()
+
+        // Refresh the view.
+        fixture.detectChanges()
+
+        // Make sure the reports were recorded.
+        expect(component.reports).toBeTruthy()
+        expect(component.reports.length).toBe(5)
+        expect(component.total).toBe(5)
+        expect(component.review).toBeTruthy()
+        expect(component.totalIssues).toBe(0)
+        expect(component.totalReports).toBe(5)
+
+        // It should contain the config review summary text.
+        const reviewSummaryDiv = fixture.debugElement.query(By.css('#review-summary-div'))
+        expect(reviewSummaryDiv).toBeTruthy()
+        expect(reviewSummaryDiv.properties.innerText).toContain('0 issues found in 5 reports at 2021-11-18')
     }))
 
     it('should get daemon configs on pagination', fakeAsync(() => {
