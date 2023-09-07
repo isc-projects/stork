@@ -201,7 +201,7 @@ def serialize_servers(servers):
 def init():
     """Creates Flask application and logger."""
     app_instance = Flask(__name__, static_url_path="", static_folder="")
-    log_instance = create_logger(app)
+    log_instance = create_logger(app_instance)
     return app_instance, log_instance
 
 
