@@ -1,9 +1,9 @@
 import { HttpStatusCode } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, Input, OnInit } from '@angular/core'
 import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { of } from 'rxjs'
-import { concatMap, delay, map, retryWhen, take, tap } from 'rxjs/operators'
+import { concatMap, delay, map, retryWhen, take } from 'rxjs/operators'
 import { getErrorMessage } from '../utils'
 import { ConfigReport, ConfigReview } from '../backend'
 
@@ -258,10 +258,10 @@ export class ConfigReviewPanelComponent implements OnInit {
 
                 switch (resp.status) {
                     case HttpStatusCode.Ok:
-                        this.reports = resp.body.items
-                        this.total = resp.body.total
-                        this.totalReports = resp.body.totalReports
-                        this.totalIssues = resp.body.totalIssues
+                        this.reports = resp.body.items ?? []
+                        this.total = resp.body.total ?? 0
+                        this.totalReports = resp.body.totalReports ?? 0
+                        this.totalIssues = resp.body.totalIssues ?? 0
                         this.review = resp.body.review
                         this.busy = false
                         break

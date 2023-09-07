@@ -120,7 +120,7 @@ describe('ConfigReviewPanelComponent', () => {
         tick()
 
         // The reports, review information and the total values should be set accordingly.
-        expect(component.reports).toBeNull()
+        expect(component.reports).toEqual([])
         expect(component.total).toBe(0)
         expect(component.review).toBeTruthy()
 
@@ -279,7 +279,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports.length).toBe(5)
         expect(component.total).toBe(5)
         expect(component.review).toBeTruthy()
-        expect(component.totalIssues).not.toBeDefined()
+        expect(component.totalIssues).toBe(0)
         expect(component.totalReports).toBe(5)
 
         // It should contain the config review summary text.
