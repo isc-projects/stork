@@ -1,3 +1,9 @@
+* 325 [doc] slawek
+
+    Removed the documentation section referred to the non-existing Alpine
+    script on CloudSmith.
+    (Gitlab #1137)
+
 * 324 [func] slawek
 
     Added support for configuring the Stork server hooks.
