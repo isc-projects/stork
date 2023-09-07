@@ -106,8 +106,7 @@ describe('ConfigReviewPanelComponent', () => {
         const fakeReports: any = {
             status: HttpStatusCode.Ok,
             body: {
-                items: null,
-                total: 0,
+                // Total and items are omitted because they are zero and empty.
                 review: {
                     createdAt: '2021-11-18',
                 },
@@ -249,7 +248,7 @@ describe('ConfigReviewPanelComponent', () => {
                 items: [],
                 total: 5,
                 totalReports: 5,
-                totalIssues: 0,
+                // Total issues is omitted because it is zero.
                 review: {
                     createdAt: '2021-11-18',
                 },
@@ -280,7 +279,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports.length).toBe(5)
         expect(component.total).toBe(5)
         expect(component.review).toBeTruthy()
-        expect(component.totalIssues).toBe(0)
+        expect(component.totalIssues).not.toBeDefined()
         expect(component.totalReports).toBe(5)
 
         // It should contain the config review summary text.
