@@ -233,7 +233,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// so the user can select which servers send the reservation to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
-		msg := "problem with fetching Kea daemons from the database"
+		msg := "Problem with fetching Kea daemons from the database"
 		log.Error(err)
 		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
@@ -263,7 +263,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// If there are no daemons with host_cmds hooks library loaded there is no way
 	// to add new host reservation. In that case, we don't begin a transaction.
 	if len(respDaemons) == 0 {
-		msg := "unable to begin transaction for adding new host because there are no Kea servers with host_cmds hooks library available"
+		msg := "Unable to begin transaction for adding new host because there are no Kea servers with host_cmds hooks library available"
 		log.Error(msg)
 		return nil, nil, nil, nil, http.StatusBadRequest, msg
 	}
@@ -271,8 +271,8 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// user needs a current list of available subnets.
 	subnets, err := dbmodel.GetAllSubnets(r.DB, 0)
 	if err != nil {
-		msg := "problem with fetching subnets from the database"
-		log.Error(err)
+		msg := "Problem with fetching subnets from the database"
+		log.WithError(err).Error(msg)
 		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	// Convert subnets list to REST API format.
@@ -283,15 +283,15 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to begin transaction because user is not logged in"
+		msg := "Unable to begin transaction because user is not logged in"
 		log.Error("Problem with creating transaction context for host reservation because a user has no session")
 		return nil, nil, nil, nil, http.StatusForbidden, msg
 	}
 	// Create configuration context.
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
-		msg := "problem with creating transaction context for host reservation"
-		log.Error(err)
+		msg := "Problem with creating transaction context for host reservation"
+		log.WithError(err).Error(msg)
 		return nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	return respDaemons, respSubnets, respClientClasses, cctx, 0, ""
@@ -313,7 +313,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Begin host add transaction.
 	var err error
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginHostAdd(cctx); err != nil {
-		msg := "problem with initializing transaction for creating host reservation"
+		msg := "Problem with initializing transaction for creating host reservation"
 		log.Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -324,7 +324,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Retrieve the generated context ID.
 	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
 	if !ok {
-		msg := "problem with retrieving context ID for a transaction to create host reservation"
+		msg := "Problem with retrieving context ID for a transaction to create host reservation"
 		log.Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -362,21 +362,21 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactionID int64, restHost *models.Host, applyFunc func(context.Context, *dbmodel.Host) (context.Context, error)) (int, string) {
 	// Make sure that the host information is present.
 	if restHost == nil {
-		msg := "host information not specified"
-		log.Errorf(msg)
+		msg := "Host information not specified"
+		log.Errorf("Problem with submitting a host reservation because the host information is missing")
 		return http.StatusBadRequest, msg
 	}
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to submit the host reservation because user is not logged in"
+		msg := "Unable to submit the host reservation because user is not logged in"
 		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction for host reservation expired"
+		msg := "Transaction for host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -384,34 +384,34 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	// Convert host information from REST API to database format.
 	host, err := r.convertToHost(restHost)
 	if err != nil {
-		msg := "error parsing specified host reservation"
-		log.Error(err)
+		msg := "Error parsing specified host reservation"
+		log.WithError(err).Error(msg)
 		return http.StatusBadRequest, msg
 	}
 	err = host.PopulateDaemons(r.DB)
 	if err != nil {
-		msg := "specified host is associated with daemons that no longer exist"
-		log.Error(err)
+		msg := "Specified host is associated with daemons that no longer exist"
+		log.WithError(err).Error(msg)
 		return http.StatusNotFound, msg
 	}
 	err = host.PopulateSubnet(r.DB)
 	if err != nil {
-		msg := "problem with retrieving subnet association with the host"
-		log.Error(err)
+		msg := "Problem with retrieving subnet association with the host"
+		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, msg
 	}
 	// Apply the host information (create Kea commands).
 	cctx, err = applyFunc(cctx, host)
 	if err != nil {
-		msg := "problem with applying host information"
-		log.Error(err)
+		msg := "Problem with applying host information"
+		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, msg
 	}
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := fmt.Sprintf("problem with committing host information: %s", err)
-		log.Error(err)
+		msg := fmt.Sprintf("Problem with committing host information: %s", err)
+		log.WithError(err).Error(msg)
 		return http.StatusConflict, msg
 	}
 	// Everything ok. Cleanup and send OK to the client.
@@ -442,14 +442,14 @@ func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactio
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to cancel transaction for deleting the host reservation because user is not logged in"
+		msg := "Unable to cancel transaction for deleting the host reservation because user is not logged in"
 		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction for deleting the host reservation expired"
+		msg := "Transaction for deleting the host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -496,24 +496,24 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 		switch {
 		case errors.As(err, &hostNotFound):
 			// Failed to find host.
-			msg := err.Error()
-			log.Error(err)
+			msg := fmt.Sprintf("Unable to edit the host reservation with ID %d because it cannot be found", params.HostID)
+			log.Error(msg)
 			rsp := dhcp.NewUpdateHostBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		case errors.As(err, &lock):
 			// Failed to lock daemons.
-			msg := err.Error()
-			log.Error(err)
+			msg := fmt.Sprintf("Unable to edit the host reservation with ID %d because it may be currently edited by another user", params.HostID)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateHostBeginDefault(http.StatusLocked).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		default:
 			// Other error.
-			msg := "problem with initializing transaction for host update"
-			log.Error(msg)
+			msg := fmt.Sprintf("Problem with initializing transaction for an update of the host reservation with ID %d", params.HostID)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -526,7 +526,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	// Retrieve the generated context ID.
 	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
 	if !ok {
-		msg := "problem with retrieving context ID for a transaction"
+		msg := "Problem with retrieving context ID for a transaction"
 		log.Error(msg)
 		rsp := dhcp.NewUpdateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -586,7 +586,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	if err != nil {
 		// Error while communicating with the database.
 		msg := fmt.Sprintf("Problem fetching host reservation with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -603,7 +603,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to begin transaction for a host reservation because a user is not logged in"
+		msg := "Unable to begin transaction for a host reservation because a user is not logged in"
 		log.Error("Problem with creating transaction context because user has no session")
 		rsp := dhcp.NewDeleteHostDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
@@ -613,8 +613,8 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	// Create configuration context.
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
-		msg := "problem with creating transaction context"
-		log.Error(err)
+		msg := "Problem with creating transaction context"
+		log.WithError(err).Error(err)
 		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -623,8 +623,8 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	// Create Kea commands to delete host reservation.
 	cctx, err = r.ConfigManager.GetKeaModule().ApplyHostDelete(cctx, dbHost)
 	if err != nil {
-		msg := "problem with preparing commands for deleting host reservation"
-		log.Error(err)
+		msg := "Problem with preparing commands for deleting the host reservation"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -633,8 +633,8 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	// Send the commands to Kea servers.
 	_, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := fmt.Sprintf("problem with deleting host reservation: %s", err)
-		log.Error(err)
+		msg := fmt.Sprintf("Problem with deleting host reservation: %s", err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewDeleteHostDefault(http.StatusConflict).WithPayload(&models.APIError{
 			Message: &msg,
 		})

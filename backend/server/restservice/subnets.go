@@ -815,7 +815,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 	// so the user can select which servers send the subnet to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
-		msg := "problem with fetching Kea daemons from the database"
+		msg := "Problem with fetching Kea daemons from the database"
 		log.Error(err)
 		return nil, nil, http.StatusInternalServerError, msg
 	}
@@ -834,22 +834,22 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 	// If there are no daemons with subnet_cmds hooks library loaded there is no way
 	// to add new host reservation. In that case, we don't begin a transaction.
 	if len(respDaemons) == 0 {
-		msg := "unable to begin transaction for adding new subnet because there are no Kea servers with subnet_cmds hooks library available"
+		msg := "Unable to begin transaction for adding new subnet because there are no Kea servers with subnet_cmds hooks library available"
 		log.Error(msg)
 		return nil, nil, http.StatusBadRequest, msg
 	}
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to begin transaction because user is not logged in"
+		msg := "Unable to begin transaction because user is not logged in"
 		log.Error("Problem with creating transaction context because user has no session")
 		return nil, nil, http.StatusForbidden, msg
 	}
 	// Create configuration context.
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
-		msg := "problem with creating transaction context"
-		log.Error(err)
+		msg := "Problem with creating transaction context"
+		log.WithError(err).Error(msg)
 		return nil, nil, http.StatusInternalServerError, msg
 	}
 	return respDaemons, cctx, 0, ""
@@ -872,21 +872,21 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transactionID int64, restSubnet *models.Subnet, applyFunc func(context.Context, *dbmodel.Subnet) (context.Context, error)) (int, string) {
 	// Make sure that the subnet information is present.
 	if restSubnet == nil {
-		msg := "subnet information not specified"
-		log.Errorf(msg)
+		msg := "Subnet information not specified"
+		log.Errorf("Problem with submitting a subnet because the subnet information is missing")
 		return http.StatusBadRequest, msg
 	}
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to submit the subnet because user is not logged in"
+		msg := "Unable to submit the subnet because user is not logged in"
 		log.Error("Problem with recovering transaction context because user has no session")
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction expired for the subnet update"
+		msg := "Transaction expired for the subnet update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -894,28 +894,28 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	// Convert subnet information from REST API to database format.
 	subnet, err := r.convertToSubnet(restSubnet)
 	if err != nil {
-		msg := "error parsing specified subnet"
-		log.Error(err)
+		msg := "Error parsing specified subnet"
+		log.WithError(err).Error(msg)
 		return http.StatusBadRequest, msg
 	}
 	err = subnet.PopulateDaemons(r.DB)
 	if err != nil {
-		msg := "specified subnet is associated with daemons that no longer exist"
-		log.Error(err)
+		msg := "Specified subnet is associated with daemons that no longer exist"
+		log.WithError(err).Error(err)
 		return http.StatusNotFound, msg
 	}
 	// Apply the subnet information (create Kea commands).
 	cctx, err = applyFunc(cctx, subnet)
 	if err != nil {
-		msg := "problem with applying subnet information"
-		log.Error(err)
+		msg := "Problem with applying subnet information"
+		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, msg
 	}
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := fmt.Sprintf("problem with committing subnet information: %s", err)
-		log.Error(err)
+		msg := fmt.Sprintf("Problem with committing subnet information: %s", err)
+		log.WithError(err).Error(msg)
 		return http.StatusConflict, msg
 	}
 	// Everything ok. Cleanup and send OK to the client.
@@ -933,14 +933,14 @@ func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transact
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "unable to cancel transaction for the subnet because user is not logged in"
-		log.Error("Problem with recovering transaction context because user has no session")
+		msg := "Unable to cancel transaction for the subnet because user is not logged in"
+		log.Errorf("Problem with recovering transaction context for transaction ID %d because user has no session", user.ID)
 		return http.StatusForbidden, msg
 	}
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
-		msg := "transaction expired for the subnet update"
+		msg := "Transaction expired for the subnet update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
 		return http.StatusNotFound, msg
 	}
@@ -973,24 +973,24 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 		switch {
 		case errors.As(err, &subnetNotFound):
 			// Failed to find subnet.
-			msg := err.Error()
-			log.Error(err)
+			msg := fmt.Sprintf("Unable to edit the subnet with ID %d because it cannot be found", params.SubnetID)
+			log.Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		case errors.As(err, &lock):
 			// Failed to lock daemons.
-			msg := err.Error()
-			log.Error(err)
+			msg := fmt.Sprintf("Unable to edit the subnet with ID %d because it may be currently edited by another user", params.SubnetID)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusLocked).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		default:
 			// Other error.
-			msg := "problem with initializing transaction for subnet update"
-			log.Error(msg)
+			msg := fmt.Sprintf("Problem with initializing transaction for an update of the subnet with ID %d", params.SubnetID)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
