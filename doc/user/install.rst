@@ -267,26 +267,6 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 
    $ sudo yum install isc-stork-server
 
-Installing on Alpine
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The first step for Alpine is:
-
-.. code-block:: console
-
-   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/setup.alpine.sh' | sh
-
-Next, install the Stork server package:
-
-.. code-block:: console
-
-   $ apk add --allow-untrusted isc-stork-server
-
-.. warning::
-
-   For the time being, using the ``--allow-untrusted`` flag is the only option. The FPM packaging tool we use to prepare
-   the package doesn't support the signatures for the APK package type.
-
 Setup
 ~~~~~
 
