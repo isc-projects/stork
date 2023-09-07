@@ -87,7 +87,7 @@ func (*gzipMatcher) String() string {
 	return "gzip matcher"
 }
 
-//go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
+//go:generate mockgen -package=agentcomm -destination=apimock_test.go isc.org/stork/api AgentClient
 
 // Check if Ping works.
 func TestPing(t *testing.T) {
