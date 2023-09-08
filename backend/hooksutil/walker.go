@@ -162,7 +162,17 @@ func extractCarrier(library *LibraryManager, settings hooks.HookSettings) (hooks
 }
 
 // Iterates over the compatible plugins in a given directory and extracts
-// their CLI flags.
+// their CLI flags. The hooks are not loaded.
+//
+// Returns the collected CLI flags for each compatible hook in the directory.
+// The members of returned hook settings should be set to expected values. The
+// CLI flags related to each member are described by their tags. The keys of
+// the returned map are hook names. They uniquely identify the hooks.
+// The map keys must be preserved. They are used to assign the settings to
+// specific hooks.
+//
+// The related hook settings will be nil if the particular hook doesn't support
+// configuring.
 func (w *HookWalker) CollectCLIFlags(program, directory string) (map[string]hooks.HookSettings, error) {
 	allFlags := map[string]hooks.HookSettings{}
 	var libraryErr error

@@ -22,33 +22,9 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 	}
 }
 
-// Searches for the compatible hook libraries in a given directory and extracts
-// the their CLI flags. The hooks are not loaded.
-//
-// Returns the collected CLI flags for each compatible hook in the directory.
-// The members of returned hook settings should be set to expected values. The
-// CLI flags related to each member are described by their tags. The keys of
-// the returned map uniquely identify the hooks.
-// The map with configured hook settings should be passed to the call of the
-// RegisterHooksFromDirectory method.
-// The map keys must be preserved. They are used to assign the settings to
-// specific hooks.
-//
-// The related hook settings will be nil if the particular hook doesn't support
-// configuring. The nil value may be preserved in the map passed to the
-// RegisterHooksFromDirectory method.
-func (hm *HookManager) CollectCLIFlagsFromDirectory(program, directory string) (map[string]hooks.HookSettings, error) {
-	allSettings, err := hm.walker.CollectCLIFlags(program, directory)
-	if err != nil {
-		return nil, err
-	}
-	return allSettings, nil
-}
-
 // Registers all hooks from a given hook directory.
 //
-// The settings map passed to this method must be indexed by the same keys as
-// returned by the CollectCLIFlagsFromDirectory method.
+// The settings map passed to this method must be indexed by the hook names.
 //
 // If a particular hook doesn't support configuring, the related hook settings
 // may be nil or be omitted.
