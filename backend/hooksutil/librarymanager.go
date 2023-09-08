@@ -44,12 +44,12 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 	return &LibraryManager{path, plugin}
 }
 
-// Extracts and calls the CLIFlags function of the Stork hook.
+// Extracts and calls the CreateCLIFlags function of the Stork hook.
 // Returns the CLI flags object or nil if hook doesn't require
 // configuring. Returns error if the symbol is invalid but none if it doesn't
 // exist.
-func (lm *LibraryManager) CLIFlags() (any, error) {
-	symbolName := hooks.HookCLIFlagsFunctionName
+func (lm *LibraryManager) CreateCLIFlags() (any, error) {
+	symbolName := hooks.HookCreateCLIFlagsFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		// The only possible error from the lookup function in Go 1.19 is:
@@ -58,17 +58,17 @@ func (lm *LibraryManager) CLIFlags() (any, error) {
 		// Date: 2023-06-22
 		// Unfortunately, it doesn't have a type that can be checked.
 
-		// The CLIFlags member is optional. Return nil settings and
+		// The CreateCLIFlags member is optional. Return nil settings and
 		// continue if it is missing.
 		return nil, nil
 	}
 
-	cliFlagsFunction, ok := symbol.(hooks.HookCLIFlagsFunction)
+	createCLIFlagsFunction, ok := symbol.(hooks.HookCreateCLIFlagsFunction)
 	if !ok {
 		return nil, errors.Errorf("symbol %s has unexpected signature", symbolName)
 	}
 
-	cliFlagsInstance := cliFlagsFunction()
+	cliFlagsInstance := createCLIFlagsFunction()
 	if storkutil.IsNilPtr(cliFlagsInstance) {
 		// The hook doesn't support configuration. Return nil settings
 		// and continue.
@@ -111,24 +111,24 @@ func (lm *LibraryManager) Load(settings hooks.HookSettings) (hooks.CalloutCarrie
 	return carrier, err
 }
 
-// Extracts and calls the Version function of the Stork hook. Returns an error if
+// Extracts and calls the GetVersion function of the Stork hook. Returns an error if
 // the function is missing or fails. The output contains the compatible
 // application name (agent or server) and the expected Stork version.
-func (lm *LibraryManager) Version() (program string, version string, err error) {
-	symbolName := hooks.HookVersionFunctionName
+func (lm *LibraryManager) GetVersion() (program string, version string, err error) {
+	symbolName := hooks.HookGetVersionFunctionName
 	symbol, err := lm.p.Lookup(symbolName)
 	if err != nil {
 		err = errors.Wrapf(err, "lookup for symbol: %s failed", symbolName)
 		return
 	}
 
-	versionFunction, ok := symbol.(hooks.HookVersionFunction)
+	getVersionFunction, ok := symbol.(hooks.HookGetVersionFunction)
 	if !ok {
 		err = errors.Errorf("symbol %s has unexpected signature", symbolName)
 		return
 	}
 
-	program, version = versionFunction()
+	program, version = getVersionFunction()
 	return
 }
 

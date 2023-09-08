@@ -24,21 +24,21 @@ type (
 	HookLoadFunction = func(settings HookSettings) (CalloutCarrier, error)
 	// Returns a compatible program identifier and version of the binary. It
 	// must be safe to call before the Load function.
-	HookVersionFunction = func() (string, string)
+	HookGetVersionFunction = func() (string, string)
 	// Returns the CLI flags. It must be a pointer to structure.
 	// The object defines the accepted CLI and environment variables in the
 	// form compatible with the go-flag library. The function is optional and
 	// may be omitted if the hook doesn't require configuring.
-	HookCLIFlagsFunction = func() HookSettings
+	HookCreateCLIFlagsFunction = func() HookSettings
 )
 
 const (
 	// An embedded name for the Load function.
 	HookLoadFunctionName = "Load"
-	// An embedded name for the Version function.
-	HookVersionFunctionName = "Version"
-	// An embedded name for the CLIFlags function.
-	HookCLIFlagsFunctionName = "CLIFlags"
+	// An embedded name for the GetVersion function.
+	HookGetVersionFunctionName = "GetVersion"
+	// An embedded name for the CreateCLIFlags function.
+	HookCreateCLIFlagsFunctionName = "CreateCLIFlags"
 	// Identifier of the Stork Agent program.
 	HookProgramAgent = "Stork Agent"
 	// Identifier of the Stork Server program.

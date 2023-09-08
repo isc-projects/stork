@@ -34,9 +34,9 @@ func (p *pluginMock) Lookup(symName string) (plugin.Symbol, error) {
 	panic("Lookup not registered")
 }
 
-// Add a dedicated lookup output for the Version symbol.
-func (p *pluginMock) addLookupVersion(result any, err error) *pluginMock {
-	p.specificLookupOutput["Version"] = struct {
+// Add a dedicated lookup output for the GetVersion symbol.
+func (p *pluginMock) addLookupGetVersion(result any, err error) *pluginMock {
+	p.specificLookupOutput["GetVersion"] = struct {
 		result any
 		err    error
 	}{
@@ -58,9 +58,9 @@ func (p *pluginMock) addLookupLoad(result any, err error) *pluginMock {
 	return p
 }
 
-// Add a dedicated lookup output for the CLIFlags symbol.
-func (p *pluginMock) addLookupCLIFlags(result any, err error) *pluginMock {
-	p.specificLookupOutput["CLIFlags"] = struct {
+// Add a dedicated lookup output for the CreateCLIFlags symbol.
+func (p *pluginMock) addLookupCreateCLIFlags(result any, err error) *pluginMock {
+	p.specificLookupOutput["CreateCLIFlags"] = struct {
 		result any
 		err    error
 	}{
@@ -96,15 +96,15 @@ func validLoad(err error) hooks.HookLoadFunction {
 	}
 }
 
-// Creates a valid CLIFlags function that returns the given output.
-func validCLIFlags(settings hooks.HookSettings) hooks.HookCLIFlagsFunction {
+// Creates a valid CreateCLIFlags function that returns the given output.
+func validCreateCLIFlags(settings hooks.HookSettings) hooks.HookCreateCLIFlagsFunction {
 	return func() hooks.HookSettings {
 		return settings
 	}
 }
 
-// Creates a valid Version function that returns the given output.
-func validVersion(program, version string) hooks.HookVersionFunction {
+// Creates a valid GetVersion function that returns the given output.
+func validGetVersion(program, version string) hooks.HookGetVersionFunction {
 	return func() (string, string) {
 		return program, version
 	}
@@ -224,10 +224,10 @@ func TestLoadWithSettingsReturnCalloutCarrierOnSuccess(t *testing.T) {
 // contain the version function.
 func TestVersionReturnErrorForMissingFunction(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock().addLookupVersion(nil, errors.New("symbol not found")))
+	library := newLibraryManager("", newPluginMock().addLookupGetVersion(nil, errors.New("symbol not found")))
 
 	// Act
-	program, version, err := library.Version()
+	program, version, err := library.GetVersion()
 
 	// Assert
 	require.Empty(t, program)
@@ -239,15 +239,15 @@ func TestVersionReturnErrorForMissingFunction(t *testing.T) {
 // function has unexpected signature.
 func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock().addLookupVersion(invalidSignature, nil))
+	library := newLibraryManager("", newPluginMock().addLookupGetVersion(invalidSignature, nil))
 
 	// Act
-	program, version, err := library.Version()
+	program, version, err := library.GetVersion()
 
 	// Assert
 	require.Empty(t, program)
 	require.Empty(t, version)
-	require.ErrorContains(t, err, "symbol Version has unexpected signature")
+	require.ErrorContains(t, err, "symbol GetVersion has unexpected signature")
 }
 
 // Test that the version library function returns an application name and
@@ -255,11 +255,11 @@ func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupVersion(validVersion("bar", "baz"), nil),
+		addLookupGetVersion(validGetVersion("bar", "baz"), nil),
 	)
 
 	// Act
-	program, version, err := library.Version()
+	program, version, err := library.GetVersion()
 
 	// Assert
 	require.EqualValues(t, "bar", program)
@@ -267,69 +267,69 @@ func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that the CLIFlags library function returns nil and no error if the
+// Test that the CreateCLIFlags library function returns nil and no error if the
 // plugin doesn't contain the related function.
 func TestCLIFlagsReturnNoErrorForMissingFunction(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupCLIFlags(nil, errors.New("symbol not found")),
+		addLookupCreateCLIFlags(nil, errors.New("symbol not found")),
 	)
 
 	// Act
-	settings, err := library.CLIFlags()
+	cliFlags, err := library.CreateCLIFlags()
 
 	// Assert
 	require.NoError(t, err)
-	require.Nil(t, settings)
+	require.Nil(t, cliFlags)
 }
 
-// Test that the CLIFlags library function returns an error if the related
+// Test that the CreateCLIFlags library function returns an error if the related
 // plugin function has unexpected signature.
 func TestCLIFlagsReturnErrorForInvalidSignature(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupCLIFlags(invalidSignature, nil),
+		addLookupCreateCLIFlags(invalidSignature, nil),
 	)
 
 	// Act
-	settings, err := library.CLIFlags()
+	cliFlags, err := library.CreateCLIFlags()
 
 	// Assert
-	require.Nil(t, settings)
-	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
+	require.Nil(t, cliFlags)
+	require.ErrorContains(t, err, "symbol CreateCLIFlags has unexpected signature")
 }
 
-// Test that the CLIFlags library function returns the settings on success.
+// Test that the CreateCLIFlags library function returns the settings on success.
 func TestCLIFlagsReturnSettingsOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupCLIFlags(validCLIFlags(&struct{}{}), nil),
+		addLookupCreateCLIFlags(validCreateCLIFlags(&struct{}{}), nil),
 	)
 
 	// Act
-	settings, err := library.CLIFlags()
+	cliFlags, err := library.CreateCLIFlags()
 
 	// Assert
-	require.NotNil(t, settings)
+	require.NotNil(t, cliFlags)
 	require.NoError(t, err)
 }
 
-// Test that the CLIFlags library function can return nil.
+// Test that the CreateCLIFlags library function can return nil.
 func TestCLIFlagsReturnNil(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupCLIFlags(validCLIFlags(nil), nil),
+		addLookupCreateCLIFlags(validCreateCLIFlags(nil), nil),
 	)
 
 	// Act
-	settings, err := library.CLIFlags()
+	cliFlags, err := library.CreateCLIFlags()
 
 	// Assert
-	require.Nil(t, settings)
+	require.Nil(t, cliFlags)
 	require.NoError(t, err)
 }
 
-// Test that the CLIFlags library function must return pointer to a struct.
+// Test that the CreateCLIFlags library function must return pointer to a struct.
 func TestCLIFlagsReturnNonStructPointer(t *testing.T) {
 	// Arrange
 	var integer int
@@ -338,14 +338,14 @@ func TestCLIFlagsReturnNonStructPointer(t *testing.T) {
 	for i, value := range values {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			library := newLibraryManager("", newPluginMock().
-				addLookupCLIFlags(validCLIFlags(value), nil),
+				addLookupCreateCLIFlags(validCreateCLIFlags(value), nil),
 			)
 
 			// Act
-			settings, err := library.CLIFlags()
+			cliFlags, err := library.CreateCLIFlags()
 
 			// Assert
-			require.Nil(t, settings)
+			require.Nil(t, cliFlags)
 			require.ErrorContains(t, err, "must be a pointer to struct")
 		})
 	}

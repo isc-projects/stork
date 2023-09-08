@@ -207,7 +207,7 @@ func inspectHookFile(path string, library *hooksutil.LibraryManager, err error) 
 		return
 	}
 
-	hookProgram, hookVersion, err := library.Version()
+	hookProgram, hookVersion, err := library.GetVersion()
 	if err != nil {
 		log.
 			WithField("file", path).

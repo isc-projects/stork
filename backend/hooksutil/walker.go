@@ -74,7 +74,7 @@ func (w *HookWalker) WalkPluginLibraries(directory string, callback WalkCallback
 
 // Check if the library is compatible with the current application.
 func checkLibraryCompatibility(library *LibraryManager, expectedProgram string) error {
-	hookProgram, hookVersion, err := library.Version()
+	hookProgram, hookVersion, err := library.GetVersion()
 	if err != nil {
 		return errors.WithMessage(err, "cannot get version of the hook library")
 	}
@@ -184,7 +184,7 @@ func (w *HookWalker) CollectCLIFlags(program, directory string) (map[string]hook
 			return false
 		}
 
-		flags, err := library.CLIFlags()
+		flags, err := library.CreateCLIFlags()
 		if err != nil {
 			libraryErr = err
 			return false

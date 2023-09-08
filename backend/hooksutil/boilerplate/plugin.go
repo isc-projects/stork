@@ -10,7 +10,7 @@ func Load(settings hooks.HookSettings) (hooks.CalloutCarrier, error) {
 }
 
 // Returns an application name and expected version.
-func Version() (string, string) {
+func GetVersion() (string, string) {
 	return hooks.HookProgramAgent, hooks.StorkVersion
 }
 
@@ -18,13 +18,13 @@ func Version() (string, string) {
 // Returns the CLI flags. The returned structure includes the tags
 // with definitions of the parameters. This method (if provided) is called
 // BEFORE loading the hook.
-func CLIFlags() hooks.HookSettings {
+func CreateCLIFlags() hooks.HookSettings {
 	return nil
 }
 
 // Type guards.
 var (
-	_ hooks.HookLoadFunction     = Load
-	_ hooks.HookVersionFunction  = Version
-	_ hooks.HookCLIFlagsFunction = CLIFlags
+	_ hooks.HookLoadFunction           = Load
+	_ hooks.HookGetVersionFunction     = GetVersion
+	_ hooks.HookCreateCLIFlagsFunction = CreateCLIFlags
 )

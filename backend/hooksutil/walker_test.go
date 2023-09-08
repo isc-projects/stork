@@ -23,7 +23,7 @@ func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testi
 	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
-			addLookupVersion(validVersion("zab", "incompatible"), nil).
+			addLookupGetVersion(validGetVersion("zab", "incompatible"), nil).
 			addLookupLoad(validLoad(nil), nil),
 	), nil)
 
@@ -38,7 +38,7 @@ func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testi
 	)
 
 	// Assert
-	require.ErrorContains(t, err, "hook library dedicated for another program")
+	require.ErrorContains(t, err, "dedicated for another program")
 }
 
 // Test that the function to load all hooks returns an error if the
@@ -80,7 +80,7 @@ func TestLoadAllHooksReturnErrorForCarrierExtractingFailure(t *testing.T) {
 	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
 			addLookupLoad(validLoad(errors.New("cannot load")), nil),
 	), nil)
 
@@ -106,12 +106,12 @@ func TestLoadAllHooksReturnCalloutCarriersOnSuccess(t *testing.T) {
 	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
 			addLookupLoad(validLoad(nil), nil),
 	), nil)
 	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
 			addLookupLoad(validLoad(nil), nil),
 	), nil)
 
@@ -129,12 +129,12 @@ func TestLoadAllHooksReturnCalloutCarriersOnSuccess(t *testing.T) {
 	require.Nil(t, carriers[1].(*calloutCarrierMock).settings)
 }
 
-// Test that the verification returns an error if the Version function is missing
+// Test that the verification returns an error if the GetVersion function is missing
 // in the hook.
 func TestCheckLibraryCompatibilityMissingVersion(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupVersion(nil, errors.New("symbol not found")),
+		addLookupGetVersion(nil, errors.New("symbol not found")),
 	)
 
 	// Act
@@ -142,52 +142,52 @@ func TestCheckLibraryCompatibilityMissingVersion(t *testing.T) {
 
 	// Assert
 	require.ErrorContains(t, err, "symbol not found")
-	require.ErrorContains(t, err, "lookup for symbol: Version")
+	require.ErrorContains(t, err, "lookup for symbol: GetVersion")
 }
 
-// Test that the verification returns an error if the Version function has an
+// Test that the verification returns an error if the GetVersion function has an
 // invalid signature.
-func TestCheckLibraryCompatibilityInvalidVersion(t *testing.T) {
+func TestCheckLibraryCompatibilityInvalidGetVersion(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
-		addLookupVersion(invalidSignature, nil),
+		addLookupGetVersion(invalidSignature, nil),
 	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
 
 	// Assert
-	require.ErrorContains(t, err, "symbol Version has unexpected signature")
+	require.ErrorContains(t, err, "symbol GetVersion has unexpected signature")
 }
 
 // Test that the verification returns an error if the hook is dedicated for
 // another application.
 func TestCheckLibraryCompatibilityNonMatchingApplication(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock().
-		addLookupVersion(validVersion("bar", ""), nil),
+	library := newLibraryManager("bar", newPluginMock().
+		addLookupGetVersion(validGetVersion("bar", ""), nil),
 	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
 
 	// Assert
-	require.ErrorContains(t, err, "hook library dedicated for another program: bar")
+	require.ErrorContains(t, err, "hook library (bar) dedicated for another program: bar")
 }
 
 // Test that the verification returns an error if the hook is dedicated for
 // another Stork version.
 func TestCheckLibraryCompatibilityNonMatchingVersion(t *testing.T) {
 	// Arrange
-	library := newLibraryManager("", newPluginMock().
-		addLookupVersion(validVersion("foo", "non.matching.version"), nil),
+	library := newLibraryManager("bar", newPluginMock().
+		addLookupGetVersion(validGetVersion("foo", "non.matching.version"), nil),
 	)
 
 	// Act
 	err := checkLibraryCompatibility(library, "foo")
 
 	// Assert
-	require.ErrorContains(t, err, "incompatible hook version: non.matching.version")
+	require.ErrorContains(t, err, "incompatible hook (bar) version: non.matching.version")
 }
 
 // Test that the extract carrier function returns an error if the Load
@@ -195,7 +195,7 @@ func TestCheckLibraryCompatibilityNonMatchingVersion(t *testing.T) {
 func TestExtractCalloutCarrierMissingLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
-		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupGetVersion(validGetVersion("foo", stork.Version), nil).
 		addLookupLoad(nil, errors.New("symbol not found"))
 	library := newLibraryManager("", plugin)
 
@@ -213,7 +213,7 @@ func TestExtractCalloutCarrierMissingLoad(t *testing.T) {
 func TestExtractCalloutCarrierInvalidLoad(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
-		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupGetVersion(validGetVersion("foo", stork.Version), nil).
 		addLookupLoad(invalidSignature, nil)
 	library := newLibraryManager("", plugin)
 
@@ -230,7 +230,7 @@ func TestExtractCalloutCarrierInvalidLoad(t *testing.T) {
 func TestExtractCalloutCarrierLoadFails(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
-		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupGetVersion(validGetVersion("foo", stork.Version), nil).
 		addLookupLoad(validLoad(errors.New("error in load")), nil)
 	library := newLibraryManager("", plugin)
 
@@ -246,7 +246,7 @@ func TestExtractCalloutCarrierLoadFails(t *testing.T) {
 func TestExtractCalloutCarrier(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
-		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupGetVersion(validGetVersion("foo", stork.Version), nil).
 		addLookupLoad(validLoad(nil), nil)
 	library := newLibraryManager("", plugin)
 
@@ -263,7 +263,7 @@ func TestExtractCalloutCarrier(t *testing.T) {
 func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
-		addLookupVersion(validVersion("foo", stork.Version), nil).
+		addLookupGetVersion(validGetVersion("foo", stork.Version), nil).
 		addLookupLoad(validLoad(nil), nil)
 	library := newLibraryManager("", plugin)
 	settings := &struct{}{}
@@ -314,8 +314,8 @@ func TestCollectCLIFlagsReturnErrorForInvalidSymbol(t *testing.T) {
 	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo"}, nil)
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupCLIFlags(invalidSignature, nil),
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
+			addLookupCreateCLIFlags(invalidSignature, nil),
 	), nil)
 
 	walker := newHookWalker(lookup)
@@ -325,7 +325,7 @@ func TestCollectCLIFlagsReturnErrorForInvalidSymbol(t *testing.T) {
 
 	// Assert
 	require.Nil(t, flags)
-	require.ErrorContains(t, err, "symbol CLIFlags has unexpected signature")
+	require.ErrorContains(t, err, "symbol CreateCLIFlags has unexpected signature")
 }
 
 // Test that the function to collect all hook settings returns settings on
@@ -339,13 +339,13 @@ func TestCollectCLIFlagsOnSuccess(t *testing.T) {
 	lookup.EXPECT().ListFilePaths(gomock.Any()).Return([]string{"foo", "bar"}, nil)
 	lookup.EXPECT().OpenLibrary("foo").Return(newLibraryManager("foo",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupCLIFlags(validCLIFlags(&struct{}{}), nil),
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
+			addLookupCreateCLIFlags(validCreateCLIFlags(&struct{}{}), nil),
 	), nil)
 	lookup.EXPECT().OpenLibrary("bar").Return(newLibraryManager("bar",
 		newPluginMock().
-			addLookupVersion(validVersion("baz", stork.Version), nil).
-			addLookupCLIFlags(validCLIFlags(nil), nil),
+			addLookupGetVersion(validGetVersion("baz", stork.Version), nil).
+			addLookupCreateCLIFlags(validCreateCLIFlags(nil), nil),
 	), nil)
 
 	walker := newHookWalker(lookup)
