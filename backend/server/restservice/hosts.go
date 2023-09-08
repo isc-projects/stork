@@ -280,14 +280,8 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	for i := range subnets {
 		respSubnets = append(respSubnets, r.convertSubnetToRestAPI(&subnets[i]))
 	}
-	// Get the logged user's ID.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to begin transaction because user is not logged in"
-		log.Error("Problem with creating transaction context for host reservation because a user has no session")
-		return nil, nil, nil, nil, http.StatusForbidden, msg
-	}
 	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "Problem with creating transaction context for host reservation"
@@ -366,14 +360,8 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 		log.Errorf("Problem with submitting a host reservation because the host information is missing")
 		return http.StatusBadRequest, msg
 	}
-	// Get the user ID and recover the transaction context.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to submit the host reservation because user is not logged in"
-		log.Error("Problem with recovering transaction context because user has no session")
-		return http.StatusForbidden, msg
-	}
 	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "Transaction for host reservation expired"
@@ -439,14 +427,8 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 // In addition it returns an error string to be included in the HTTP response
 // or an empty string if there is no error.
 func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactionID int64) (int, string) {
-	// Get the user ID and recover the transaction context.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to cancel transaction for deleting the host reservation because user is not logged in"
-		log.Error("Problem with recovering transaction context because user has no session")
-		return http.StatusForbidden, msg
-	}
 	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "Transaction for deleting the host reservation expired"
@@ -600,17 +582,8 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 		})
 		return rsp
 	}
-	// Get the logged user's ID.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to begin transaction for a host reservation because a user is not logged in"
-		log.Error("Problem with creating transaction context because user has no session")
-		rsp := dhcp.NewDeleteHostDefault(http.StatusForbidden).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
 	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "Problem with creating transaction context"

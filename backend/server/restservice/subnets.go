@@ -838,14 +838,8 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 		log.Error(msg)
 		return nil, nil, http.StatusBadRequest, msg
 	}
-	// Get the logged user's ID.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to begin transaction because user is not logged in"
-		log.Error("Problem with creating transaction context because user has no session")
-		return nil, nil, http.StatusForbidden, msg
-	}
 	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "Problem with creating transaction context"
@@ -876,14 +870,8 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 		log.Errorf("Problem with submitting a subnet because the subnet information is missing")
 		return http.StatusBadRequest, msg
 	}
-	// Get the user ID and recover the transaction context.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to submit the subnet because user is not logged in"
-		log.Error("Problem with recovering transaction context because user has no session")
-		return http.StatusForbidden, msg
-	}
 	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "Transaction expired for the subnet update"
@@ -930,14 +918,8 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 // error string to be included in the HTTP response or an empty string if there
 // is no error.
 func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transactionID int64) (int, string) {
-	// Get the user ID and recover the transaction context.
-	ok, user := r.SessionManager.Logged(ctx)
-	if !ok {
-		msg := "Unable to cancel transaction for the subnet because user is not logged in"
-		log.Errorf("Problem with recovering transaction context for transaction ID %d because user has no session", user.ID)
-		return http.StatusForbidden, msg
-	}
 	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
 	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
 	if cctx == nil {
 		msg := "Transaction expired for the subnet update"

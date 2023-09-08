@@ -2460,75 +2460,6 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	}
 }
 
-// Test error case when a user attempts to begin new transaction when the
-// user has no session.
-func TestUpdateSubnetBeginNoSession(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	serverConfig := `{
-		"Dhcp4": {
-			"subnet4": [
-				{
-					"id": 1,
-					"subnet": "192.0.2.0/24"
-				}
-			],
-			"hooks-libraries": [
-				{
-					"library": "libdhcp_subnet_cmds"
-				}
-			]
-		}
-	}`
-
-	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
-	require.NoError(t, err)
-	err = server1.Configure(serverConfig)
-	require.NoError(t, err)
-
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
-	require.NoError(t, err)
-
-	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
-	require.NoError(t, err)
-	require.Len(t, subnets, 1)
-
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	require.NotNil(t, fa)
-
-	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-	require.NotNil(t, lookup)
-
-	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
-	})
-	require.NotNil(t, cm)
-
-	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
-	require.NoError(t, err)
-
-	// Create session manager but do not login the user.
-	ctx, err := rapi.SessionManager.Load(context.Background(), "")
-	require.NoError(t, err)
-
-	// Begin transaction.
-	params := dhcp.UpdateSubnetBeginParams{
-		SubnetID: subnets[0].ID,
-	}
-	rsp := rapi.UpdateSubnetBegin(ctx, params)
-	require.IsType(t, &dhcp.UpdateSubnetBeginDefault{}, rsp)
-	defaultRsp := rsp.(*dhcp.UpdateSubnetBeginDefault)
-	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
-}
-
 // Test that an error is returned when it is attempted to begin new
 // transaction for updating non-existing subnet.
 func TestUpdateSubnetBeginNonExistingSubnetID(t *testing.T) {
@@ -2755,30 +2686,6 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateSubnetSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateSubnetSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-	})
-
-	// Submit transaction with valid ID and subnet but the user has no
-	// session.
-	t.Run("no user session", func(t *testing.T) {
-		err = rapi.SessionManager.LogoutHandler(ctx)
-		require.NoError(t, err)
-
-		params := dhcp.UpdateSubnetSubmitParams{
-			ID: transactionID,
-			Subnet: &models.Subnet{
-				ID:     subnets[0].ID,
-				Subnet: "192.0.2.0/24",
-				LocalSubnets: []*models.LocalSubnet{
-					{
-						DaemonID: dbapps[0].Daemons[0].ID,
-					},
-				},
-			},
-		}
-		rsp := rapi.UpdateSubnetSubmit(ctx, params)
-		require.IsType(t, &dhcp.UpdateSubnetSubmitDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.UpdateSubnetSubmitDefault)
-		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }
 

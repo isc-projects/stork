@@ -476,46 +476,6 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	}
 }
 
-// Test error case when a user attempts to begin new transaction when the
-// user has no session.
-func TestCreateHostBeginNoSession(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Create fake agents receiving reservation-add commands.
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	require.NotNil(t, fa)
-
-	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-	require.NotNil(t, lookup)
-
-	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
-	})
-	require.NotNil(t, cm)
-
-	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
-	require.NoError(t, err)
-
-	// Create session manager but do not login the user.
-	ctx, err := rapi.SessionManager.Load(context.Background(), "")
-	require.NoError(t, err)
-
-	// Make sure we have some Kea apps in the database.
-	_, _ = storktestdbmodel.AddTestHosts(t, db)
-
-	// Begin transaction.
-	params := dhcp.CreateHostBeginParams{}
-	rsp := rapi.CreateHostBegin(ctx, params)
-	require.IsType(t, &dhcp.CreateHostBeginDefault{}, rsp)
-	defaultRsp := rsp.(*dhcp.CreateHostBeginDefault)
-	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
-}
-
 // Test error case when a user attempts to begin a new transaction when
 // there are no servers with host_cmds hook library found.
 func TestCreateHostBeginNoServers(t *testing.T) {
@@ -707,29 +667,6 @@ func TestCreateHostSubmitError(t *testing.T) {
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
 	})
-
-	// Submit transaction with valid ID and host but the user has no
-	// session.
-	t.Run("no user session", func(t *testing.T) {
-		err = rapi.SessionManager.LogoutHandler(ctx)
-		require.NoError(t, err)
-
-		params := dhcp.CreateHostSubmitParams{
-			ID: transactionID,
-			Host: &models.Host{
-				LocalHosts: []*models.LocalHost{
-					{
-						DaemonID:   apps[0].Daemons[0].ID,
-						DataSource: dbmodel.HostDataSourceAPI.String(),
-					},
-				},
-			},
-		}
-		rsp := rapi.CreateHostSubmit(ctx, params)
-		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
-		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
-	})
 }
 
 // Test that the transaction to add a new host can be canceled, resulting
@@ -862,21 +799,6 @@ func TestCreateHostDeleteError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostDeleteDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	})
-
-	// Cancel transaction with valid ID and host but the user has no
-	// session.
-	t.Run("no user session", func(t *testing.T) {
-		err = rapi.SessionManager.LogoutHandler(ctx)
-		require.NoError(t, err)
-
-		params := dhcp.CreateHostDeleteParams{
-			ID: transactionID,
-		}
-		rsp := rapi.CreateHostDelete(ctx, params)
-		require.IsType(t, &dhcp.CreateHostDeleteDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
-		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }
 
@@ -1089,48 +1011,6 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	}
 }
 
-// Test error case when a user attempts to begin new transaction when the
-// user has no session.
-func TestUpdateHostBeginNoSession(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Create fake agents receiving reservation-add commands.
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	require.NotNil(t, fa)
-
-	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-	require.NotNil(t, lookup)
-
-	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
-	})
-	require.NotNil(t, cm)
-
-	// Create API.
-	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
-	require.NoError(t, err)
-
-	// Create session manager but do not login the user.
-	ctx, err := rapi.SessionManager.Load(context.Background(), "")
-	require.NoError(t, err)
-
-	// Make sure we have some Kea apps in the database.
-	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
-
-	// Begin transaction.
-	params := dhcp.UpdateHostBeginParams{
-		HostID: hosts[0].ID,
-	}
-	rsp := rapi.UpdateHostBegin(ctx, params)
-	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
-	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
-	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
-}
-
 // Test that an error is returned when it is attempted to begin new
 // transaction for updating non-existing host reservation.
 func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
@@ -1321,35 +1201,6 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-	})
-
-	// Submit transaction with valid ID and host but the user has no
-	// session.
-	t.Run("no user session", func(t *testing.T) {
-		err = rapi.SessionManager.LogoutHandler(ctx)
-		require.NoError(t, err)
-
-		params := dhcp.UpdateHostSubmitParams{
-			ID: transactionID,
-			Host: &models.Host{
-				HostIdentifiers: []*models.HostIdentifier{
-					{
-						IDType:     "hw-address",
-						IDHexValue: "010203040506",
-					},
-				},
-				LocalHosts: []*models.LocalHost{
-					{
-						DaemonID:   apps[0].Daemons[0].ID,
-						DataSource: dbmodel.HostDataSourceAPI.String(),
-					},
-				},
-			},
-		}
-		rsp := rapi.UpdateHostSubmit(ctx, params)
-		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
-		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }
 
@@ -1588,19 +1439,5 @@ func TestDeleteHostError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-	})
-
-	// Submit transaction with valid ID but the user has no session.
-	t.Run("no user session", func(t *testing.T) {
-		err = rapi.SessionManager.LogoutHandler(ctx)
-		require.NoError(t, err)
-
-		params := dhcp.DeleteHostParams{
-			ID: hosts[0].ID,
-		}
-		rsp := rapi.DeleteHost(ctx, params)
-		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
-		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }
