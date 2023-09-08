@@ -70,6 +70,9 @@ func (lm *LibraryManager) CLIFlags() (any, error) {
 
 	cliFlagsInstance := cliFlagsFunction()
 	if storkutil.IsNilPtr(cliFlagsInstance) {
+		// The hook doesn't support configuration. Return nil settings
+		// and continue.
+		//
 		// Nil pointer is a pointer but it isn't recognized as a struct pointer
 		// by the below condition.
 		return nil, nil
