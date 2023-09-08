@@ -75,15 +75,15 @@ func (w *HookWalker) WalkPluginLibraries(directory string, callback WalkCallback
 func checkLibraryCompatibility(library *LibraryManager, expectedProgram string) error {
 	hookProgram, hookVersion, err := library.Version()
 	if err != nil {
-		return errors.WithMessage(err, "cannot call version of hook library")
+		return errors.WithMessage(err, "cannot get version of the hook library")
 	}
 
 	if expectedProgram != hookProgram {
-		return errors.Errorf("hook library dedicated for another program: %s", hookProgram)
+		return errors.Errorf("hook library (%s) dedicated for another program: %s", library.GetPath(), hookProgram)
 	}
 
 	if hookVersion != stork.Version {
-		return errors.Errorf("incompatible hook version: %s", hookVersion)
+		return errors.Errorf("incompatible hook (%s) version: %s", library.GetPath(), hookVersion)
 	}
 
 	return nil
