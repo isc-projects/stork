@@ -117,13 +117,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         // handle initial query params
         const ssParams = this.route.snapshot.queryParamMap
         this.updateFilterText(ssParams)
-        this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
         this.subscriptions.add(
             this.route.queryParamMap.subscribe(
                 (params) => {
-                    this.updateFilterText(params)
                     this.updateOurQueryParams(params)
                     let event = { first: 0, rows: 10 }
                     if (this.subnetsTable) {
@@ -188,14 +186,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private updateFilterText(params: ParamMap) {
         let text = ''
-        if (params.get('text')) {
-            text += ' ' + params.get('text')
-        }
-        if (params.get('appId')) {
+        if (params.has('appId')) {
             text += ' appId:' + params.get('appId')
         }
-        if (params.get('subnetId')) {
+        if (params.has('subnetId')) {
             text += ' subnetId:' + params.get('subnetId')
+        }
+        if (params.has('text')) {
+            text += ' ' + params.get('text')
         }
         this.filterText = text.trim()
     }

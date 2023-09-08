@@ -125,7 +125,6 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             text += ' appId:' + ssParams.get('appId')
         }
         this.filterText = text.trim()
-        this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
         this.subscriptions.add(
@@ -180,8 +179,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
             this.queryParams.dhcpVersion = params.get('dhcpVersion') as '4' | '6'
         }
-        this.queryParams.text = params.get('text')
-        this.queryParams.appId = params.get('appId')
+        this.queryParams.text = params.get('text') || null
+        this.queryParams.appId = params.get('appId') || null
     }
 
     /**
