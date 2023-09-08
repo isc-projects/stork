@@ -490,3 +490,16 @@ export function getBaseApiPath(apiUrl: string) {
     }
     return baseHref + '/' + apiUrl
 }
+
+// Mock of the Angular ParamMap class.
+export class MockParamMap {
+    /** Always returns null. */
+    get(name: string): string | null {
+        return null
+    }
+
+    /** Always returns false. */
+    has(name: string): boolean {
+        return false
+    }
+}

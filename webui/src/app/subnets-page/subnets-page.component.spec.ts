@@ -26,13 +26,7 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-
-class MockParamMap {
-    /** Always returns null. */
-    get(name: string): string | null {
-        return null
-    }
-}
+import { MockParamMap } from '../utils'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent

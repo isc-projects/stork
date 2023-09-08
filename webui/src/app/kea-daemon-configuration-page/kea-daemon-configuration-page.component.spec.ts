@@ -21,13 +21,7 @@ import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { ServerDataService } from '../server-data.service'
 
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page.component'
-
-class MockParamMap {
-    /** ALways returns null. */
-    get(name: string): string | null {
-        return null
-    }
-}
+import { MockParamMap } from '../utils'
 
 describe('KeaDaemonConfigurationPageComponent', () => {
     let component: KeaDaemonConfigurationPageComponent

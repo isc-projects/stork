@@ -20,13 +20,7 @@ import { ReactiveFormsModule } from '@angular/forms'
 import { AuthService } from '../auth.service'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-
-class MockParamMap {
-    /** Always returns null. */
-    get(name: string): string | null {
-        return null
-    }
-}
+import { MockParamMap } from '../utils'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent

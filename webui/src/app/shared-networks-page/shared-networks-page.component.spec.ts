@@ -33,13 +33,7 @@ import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-p
 import { DividerModule } from 'primeng/divider'
 import { ChartModule } from 'primeng/chart'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-
-class MockParamMap {
-    /** Always returns null. */
-    get(name: string): string | null {
-        return null
-    }
-}
+import { MockParamMap } from '../utils'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
