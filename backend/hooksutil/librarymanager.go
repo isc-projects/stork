@@ -44,7 +44,7 @@ func newLibraryManager(path string, plugin pluginInterface) *LibraryManager {
 	return &LibraryManager{path, plugin}
 }
 
-// Extract and calls the CLIFlags function of the Stork hook.
+// Extracts and calls the CLIFlags function of the Stork hook.
 // Returns the CLI flags object or nil if hook doesn't require
 // configuring. Returns error if the symbol is invalid but none if it doesn't
 // exist.

@@ -19,7 +19,7 @@ type HookLookup interface {
 	OpenLibrary(path string) (*LibraryManager, error)
 }
 
-// An lookup that search for the data in system.
+// A lookup that searches for the data in system.
 type systemLookup struct{}
 
 // List all files in a given directory. Returns a sorted list of absolute paths.
@@ -32,7 +32,7 @@ func (*systemLookup) OpenLibrary(path string) (*LibraryManager, error) {
 	return NewLibraryManager(path)
 }
 
-// Provides methods to searching for hook libraries and iterate over them.
+// Provides methods to searching for hook libraries and iterating over them.
 type HookWalker struct {
 	lookup HookLookup
 }

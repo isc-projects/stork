@@ -36,7 +36,7 @@ type EnvironmentFileSettings struct {
 	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
 }
 
-// Read the hook directory settings. It's parsed after environment file
+// Read hook directory settings. They are parsed after environment file
 // settings but before the main settings.
 // It allows us to merge the hook flags with the core flags into a single output.
 type HookDirectorySettings struct {

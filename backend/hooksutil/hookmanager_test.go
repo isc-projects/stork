@@ -51,7 +51,7 @@ func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that collect CLI flags method returns an error if the directory doesn't
+// Test that collecting CLI flags method returns an error if the directory doesn't
 // exist.
 func TestCollectCLIFlagsFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	// Arrange
