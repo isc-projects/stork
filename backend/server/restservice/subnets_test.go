@@ -1150,7 +1150,7 @@ func TestSubnetToRestAPIEmptyStatsCollectedTimestamp(t *testing.T) {
 	subnetDB := &dbmodel.Subnet{}
 
 	// Act
-	subnetAPI := rapi.convertFromSubnet(subnetDB)
+	subnetAPI := rapi.convertSubnetToRestAPI(subnetDB)
 	subnetJSON, err := json.Marshal(subnetAPI)
 
 	// Assert

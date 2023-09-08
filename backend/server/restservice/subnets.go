@@ -20,7 +20,7 @@ import (
 )
 
 // Creates a REST API representation of a subnet from a database model.
-func (r *RestAPI) convertFromSubnet(sn *dbmodel.Subnet) *models.Subnet {
+func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	subnet := &models.Subnet{
 		ID:               sn.ID,
 		Subnet:           sn.Prefix,
@@ -306,7 +306,7 @@ func (r *RestAPI) convertFromSubnet(sn *dbmodel.Subnet) *models.Subnet {
 // It is used when Stork user modifies or creates new subnet. Thus, it doesn't populate
 // subnet statistics as it is not specified by Stork user. It is pulled from the Kea
 // servers periodically.
-func (r *RestAPI) convertToSubnet(restSubnet *models.Subnet) (*dbmodel.Subnet, error) {
+func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.Subnet, error) {
 	subnet := &dbmodel.Subnet{
 		ID:              restSubnet.ID,
 		Prefix:          restSubnet.Subnet,
@@ -466,7 +466,7 @@ func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsByPage
 	// go through subnets from db and change their format to ReST one
 	for _, snTmp := range dbSubnets {
 		sn := snTmp
-		subnet := r.convertFromSubnet(&sn)
+		subnet := r.convertSubnetToRestAPI(&sn)
 		subnets.Items = append(subnets.Items, subnet)
 	}
 
@@ -531,7 +531,7 @@ func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) mi
 		return rsp
 	}
 
-	subnet := r.convertFromSubnet(dbSubnet)
+	subnet := r.convertSubnetToRestAPI(dbSubnet)
 	rsp := dhcp.NewGetSubnetOK().WithPayload(subnet)
 	return rsp
 }
@@ -543,7 +543,7 @@ func (r *RestAPI) sharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *models.Shar
 	// be the case but let's be safe.
 	for _, snTmp := range sn.Subnets {
 		sn := snTmp
-		subnet := r.convertFromSubnet(&sn)
+		subnet := r.convertSubnetToRestAPI(&sn)
 		subnets = append(subnets, subnet)
 	}
 	// Create shared network.
@@ -892,7 +892,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	}
 
 	// Convert subnet information from REST API to database format.
-	subnet, err := r.convertToSubnet(restSubnet)
+	subnet, err := r.convertSubnetFromRestAPI(restSubnet)
 	if err != nil {
 		msg := "Error parsing specified subnet"
 		log.WithError(err).Error(msg)
@@ -1016,7 +1016,7 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 	// Return transaction ID and daemons to the user.
 	contents := &models.UpdateSubnetBeginResponse{
 		ID:      cctxID,
-		Subnet:  r.convertFromSubnet(subnet),
+		Subnet:  r.convertSubnetToRestAPI(subnet),
 		Daemons: respDaemons,
 	}
 	rsp := dhcp.NewUpdateSubnetBeginOK().WithPayload(contents)

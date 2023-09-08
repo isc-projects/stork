@@ -21,7 +21,7 @@ import (
 
 // Converts host reservation fetched from the database to the format
 // used in REST API.
-func (r *RestAPI) convertFromHost(dbHost *dbmodel.Host) *models.Host {
+func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 	host := &models.Host{
 		ID:       dbHost.ID,
 		SubnetID: dbHost.SubnetID,
@@ -156,7 +156,7 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, localSub
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbHosts {
-		host := r.convertFromHost(&dbHosts[i])
+		host := r.convertHostFromRestAPI(&dbHosts[i])
 		hosts.Items = append(hosts.Items, host)
 	}
 
@@ -219,7 +219,7 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 		return rsp
 	}
 	// Host found. Convert it to the format used in REST API.
-	host := r.convertFromHost(dbHost)
+	host := r.convertHostFromRestAPI(dbHost)
 	rsp := dhcp.NewGetHostOK().WithPayload(host)
 	return rsp
 }
@@ -278,7 +278,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	// Convert subnets list to REST API format.
 	respSubnets := []*models.Subnet{}
 	for i := range subnets {
-		respSubnets = append(respSubnets, r.convertFromSubnet(&subnets[i]))
+		respSubnets = append(respSubnets, r.convertSubnetToRestAPI(&subnets[i]))
 	}
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
@@ -539,7 +539,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.UpdateHostBeginResponse{
 		ID:            cctxID,
-		Host:          r.convertFromHost(host),
+		Host:          r.convertHostFromRestAPI(host),
 		Daemons:       respDaemons,
 		Subnets:       respSubnets,
 		ClientClasses: respClientClasses,
