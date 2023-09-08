@@ -1,3 +1,8 @@
+* 334 [bug] slawek
+
+    Fixed the minor filtration issues on hosts and shared networks pages.
+    (Gitlab #1140)
+
 * 333 [func] slawek
 
     Added support for BIND 9 running in the chroot mode.
