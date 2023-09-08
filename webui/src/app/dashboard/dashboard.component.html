@@ -225,7 +225,13 @@
                     </h2>
                     <table class="dashboard-section__data">
                         <tr *ngFor="let net of overview.sharedNetworks6.items" class="utilization-row">
-                            <td class="utilization-row__name">{{ net.name }}</td>
+                            <td class="utilization-row__name">
+                                <app-entity-link
+                                    [showEntityName]="false"
+                                    entity="shared-network"
+                                    [attrs]="net"
+                                ></app-entity-link>
+                            </td>
                             <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
                             <td class="utilization-row__value" style="padding-left: 1em">
                                 {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
