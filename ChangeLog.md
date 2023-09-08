@@ -1,3 +1,8 @@
+* 327 [func] slawek
+
+    Links to IPv6 shared networks on the dashboard.
+    (Gitlab #1133)
+
 * 326 [build] slawek
 
     Added support for building Stork components on the ARM architecture. Added
