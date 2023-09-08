@@ -19,6 +19,13 @@ import { filter, map, take } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 
+interface QueryParamsFilter {
+    text: string
+    dhcpVersion: '4' | '6'
+    appId: string
+    subnetId: string
+}
+
 /**
  * Component for presenting DHCP subnets.
  */
@@ -39,11 +46,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
 
     // filters
     filterText = ''
-    queryParams = {
+    queryParams: QueryParamsFilter = {
         text: null,
         dhcpVersion: null,
         appId: null,
-        localSubnetId: null,
+        subnetId: null,
     }
 
     // Tab menu
@@ -167,11 +174,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private updateOurQueryParams(params: ParamMap) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
-            this.queryParams.dhcpVersion = params.get('dhcpVersion')
+            this.queryParams.dhcpVersion = params.get('dhcpVersion') as '4' | '6'
         }
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
-        this.queryParams.localSubnetId = params.get('subnetId')
+        this.queryParams.subnetId = params.get('subnetId')
     }
 
     /**
@@ -203,7 +210,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         const params = this.queryParams
 
         this.dhcpApi
-            .getSubnets(event.first, event.rows, params.appId, params.localSubnetId, params.dhcpVersion, params.text)
+            .getSubnets(
+                event.first, event.rows,
+                Number(params.appId) || null,
+                Number(params.subnetId) || null,
+                Number(params.dhcpVersion) || null,
+                params.text
+            )
             // Custom parsing for statistics
             .pipe(
                 map((subnets) => {
@@ -244,7 +257,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId', 'subnetId'], null)
+            const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(this.filterText, ['appId', 'subnetId'], null)
             this.router.navigate(['/dhcp/subnets'], {
                 queryParams,
                 queryParamsHandling: 'merge',

@@ -1,6 +1,8 @@
 import * as moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { Bind9Daemon, KeaDaemon } from './backend'
+import { Observable, Subject } from 'rxjs'
+import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 
 /**
  * Formats the date-like object as local date-time string.
@@ -156,8 +158,8 @@ export function getGrafanaSubnetTooltip(subnet: number, machine: string) {
  * and prepare query params dict. Expected keys are passed as keys
  * and expected flags are passed as flags.
  */
-export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
-    // find all occurrences key=val in the text
+export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(text: string, keys: (keyof T)[], flags: (keyof T)[]): Partial<{ [key in keyof T]: string}> {
+    // find all occurrences key:val in the text
     const re = /(\w+):(\w*)/g
     const matches = []
     let match = re.exec(text)
@@ -167,9 +169,9 @@ export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
     }
 
     // reset query params
-    const queryParams = {
-        text: null,
-    }
+    const queryParams: Partial<{ [key in keyof T]: string}> = {}
+    queryParams.text = null
+
     for (const key of keys) {
         queryParams[key] = null
     }
@@ -199,10 +201,10 @@ export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
                     continue
                 }
                 if (m[1] === 'is') {
-                    queryParams[m[2]] = true
+                    queryParams[m[2]] = 'true'
                     found = true
                 } else if (m[1] === 'not') {
-                    queryParams[m[2]] = false
+                    queryParams[m[2]] = 'false'
                     found = true
                 }
             }

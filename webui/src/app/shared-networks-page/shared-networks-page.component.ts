@@ -18,6 +18,12 @@ import { filter, map, take } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 
+interface QueryParamsFilter {
+    text: string,
+    dhcpVersion: '4' | '6',
+    appId: string,
+}
+
 /**
  * Component for presenting shared networks in a table.
  */
@@ -39,7 +45,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     // filters
     filterText = ''
     dhcpVersions: any[]
-    queryParams = {
+    queryParams: QueryParamsFilter = {
         text: null,
         dhcpVersion: null,
         appId: null,
@@ -172,7 +178,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     updateOurQueryParams(params: ParamMap) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
-            this.queryParams.dhcpVersion = params.get('dhcpVersion')
+            this.queryParams.dhcpVersion = params.get('dhcpVersion') as '4' | '6'
         }
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
@@ -187,7 +193,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     loadNetworks(event) {
         const params = this.queryParams
         this.dhcpApi
-            .getSharedNetworks(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .getSharedNetworks(event.first, event.rows, Number(params.appId) || null, Number(params.dhcpVersion) || null, params.text)
             .pipe(
                 map((sharedNetworks) => {
                     parseSubnetsStatisticValues(sharedNetworks.items)
@@ -223,7 +229,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'], null)
+            const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(this.filterText, ['appId'], null)
 
             this.router.navigate(['/dhcp/shared-networks'], {
                 queryParams,

@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { Router, ActivatedRoute } from '@angular/router'
+import { Router, ActivatedRoute, ParamMap } from '@angular/router'
 
 import { MenuItem, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
@@ -19,6 +19,14 @@ export enum HostTabType {
     NewHost,
     EditHost,
     Host,
+}
+
+interface QueryMapFilter {
+    text: string,
+    appId: number,
+    subnetId: number,
+    keaSubnetId: number,
+    global: boolean,
 }
 
 /**
@@ -117,7 +125,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
 
     // filters
     filterText = ''
-    queryParams = {
+    queryParams: QueryMapFilter = {
         text: null,
         appId: null,
         subnetId: null,
@@ -295,7 +303,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * This update is triggered when user types in the filter box.
      * @param params query parameters received from activated route.
      */
-    private updateQueryParams(params) {
+    private updateQueryParams(params: ParamMap) {
         this.queryParams.text = params.get('text')
 
         let filterTextFormatErrors: string[] = []
@@ -580,7 +588,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(
+            const queryParams = extractKeyValsAndPrepareQueryParams<QueryMapFilter>(
                 this.filterText,
                 ['appId', 'subnetId', 'keaSubnetId'],
                 ['global']
