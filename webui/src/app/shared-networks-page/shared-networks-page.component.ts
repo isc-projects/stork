@@ -19,9 +19,9 @@ import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 
 interface QueryParamsFilter {
-    text: string,
-    dhcpVersion: '4' | '6',
-    appId: string,
+    text: string
+    dhcpVersion: '4' | '6'
+    appId: string
 }
 
 /**
@@ -192,7 +192,13 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     loadNetworks(event) {
         const params = this.queryParams
         this.dhcpApi
-            .getSharedNetworks(event.first, event.rows, Number(params.appId) || null, Number(params.dhcpVersion) || null, params.text)
+            .getSharedNetworks(
+                event.first,
+                event.rows,
+                Number(params.appId) || null,
+                Number(params.dhcpVersion) || null,
+                params.text
+            )
             .pipe(
                 map((sharedNetworks) => {
                     parseSubnetsStatisticValues(sharedNetworks.items)

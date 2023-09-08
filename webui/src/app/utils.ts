@@ -158,7 +158,11 @@ export function getGrafanaSubnetTooltip(subnet: number, machine: string) {
  * and prepare query params dict. Expected keys are passed as keys
  * and expected flags are passed as flags.
  */
-export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(text: string, keys: (keyof T)[], flags: (keyof T)[]): Partial<{ [key in keyof T]: string}> {
+export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(
+    text: string,
+    keys: (keyof T)[],
+    flags: (keyof T)[]
+): Partial<{ [key in keyof T]: string }> {
     // find all occurrences key:val in the text
     const re = /(\w+):(\w*)/g
     const matches = []
@@ -169,7 +173,7 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(
     }
 
     // reset query params
-    const queryParams: Partial<{ [key in keyof T]: string}> = {}
+    const queryParams: Partial<{ [key in keyof T]: string }> = {}
     queryParams.text = null
 
     for (const key of keys) {

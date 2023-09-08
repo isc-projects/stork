@@ -22,11 +22,11 @@ export enum HostTabType {
 }
 
 interface QueryMapFilter {
-    text: string,
-    appId: number,
-    subnetId: number,
-    keaSubnetId: number,
-    global: boolean,
+    text: string
+    appId: number
+    subnetId: number
+    keaSubnetId: number
+    global: boolean
 }
 
 /**
