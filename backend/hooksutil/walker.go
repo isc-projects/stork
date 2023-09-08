@@ -10,6 +10,7 @@ import (
 // Callback called by the walk functions.
 // Accepts the path to the hook and a library wrapper or error if the library
 // fails to open.
+// Returns true to continue the walk or false to stop.
 type WalkCallback = func(path string, library *LibraryManager, err error) bool
 
 // Interface to encapsulate the system calls and allow unit testing.
