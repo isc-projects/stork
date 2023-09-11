@@ -100,6 +100,47 @@ message automatically; to use it, go to the ``utils`` directory and
 run the ``git-hooks-install`` script. It copies the necessary file
 to the ``.git/hooks`` directory.
 
+Docker plugins
+--------------
+
+Build system utilizes below Docker plugins. They are used in specific tasks
+related to Dockerfiles.
+
+- docker compose
+- docker buildx
+
+They must be manually installed in the operating system. We support these
+plugins as standalone executables (old approach) and as subcommands of the
+Docker command (new approach). The form of the plugin depends on the installed
+Docker version.
+
+The Docker ``compose`` plugin is used to run the containers of the demo and the
+system tests.
+
+The Docker ``buildx`` plugin is used for the cross-architecture building of the
+CI Docker images.
+
+The Docker plugins can be defined as prerequisites in the Rake tasks by passing
+the subcommand name (new approach) and the executable name (old approach) to
+the ``docker_plugin`` function. 
+
+.. code-block:: ruby
+
+    DOCKER_COMPOSE = docker_plugin("docker-compose", "compose")
+
+These prerequisites can be set as task dependencies as any other prerequisites.
+
+.. code-block:: ruby
+
+    task :build => [DOCKER_COMPOSE]
+
+But these prerequisites must be passed to the ``sh`` call using the splat
+(``*``) operator.
+
+.. code-block:: ruby
+
+    sh(*DOCKER_COMPOSE, "build")
+
 Agent API
 =========
 
