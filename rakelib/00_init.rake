@@ -368,7 +368,7 @@ end
 # Accepts the name of the standalone executable name (for old Docker version)
 # and Docker subcommand name (for modern Docker versions).
 # The function picks the available way to execute the plugin.
-# The command takes precedeence over the standalone executable.
+# The command takes precedence over the standalone executable.
 # The created prerequisite should be used with the splat operator in the 'sh'
 # calls.
 def docker_plugin(standalone_exe, command_name)
@@ -387,7 +387,7 @@ def docker_plugin(standalone_exe, command_name)
         task.instance_variable_set(:@manual_install, true)
 
         # The functions or methods defined in other functions don't have
-        # an access to the variables from the outter scope in Ruby.
+        # an access to the variables from the outer scope in Ruby.
         task.instance_variable_set(:@standalone_exe, standalone_exe)
         task.instance_variable_set(:@command_name, command_name)
         task.instance_variable_set(:@task_name, task_name)
