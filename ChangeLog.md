@@ -1,3 +1,8 @@
+* 336 [bug] slawek
+
+    Fix displaying statistics of the IPv4 shared networks.
+    (Gitlab #1135)
+
 * 335 [func] marcin
 
     Implemented a form for updating selected subnet parameters.
