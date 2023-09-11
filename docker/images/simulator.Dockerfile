@@ -41,6 +41,7 @@ RUN apt-get update \
         --no-install-recommends \
         isc-kea-admin=2.4.0-isc20230630120747 \
         isc-kea-common=2.4.0-isc20230630120747 \
+        isc-kea-perfdhcp=2.4.0-isc20230630120747 \
     && mkdir -p /var/run/kea/ \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
