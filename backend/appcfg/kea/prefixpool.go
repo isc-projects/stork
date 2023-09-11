@@ -14,14 +14,13 @@ type PrefixPool interface {
 
 // Represents prefix delegation pool structure within Kea configuration.
 type PDPool struct {
-	Prefix               string             `json:"prefix"`
-	PrefixLen            int                `json:"prefix-len"`
-	DelegatedLen         int                `json:"delegated-len"`
-	ExcludedPrefix       string             `json:"excluded-prefix,omitempty"`
-	ExcludedPrefixLen    int                `json:"excluded-prefix-len,omitempty"`
-	ClientClass          string             `json:"client-class,omitempty"`
-	RequireClientClasses []string           `json:"require-client-classes,omitempty"`
-	OptionData           []SingleOptionData `json:"option-data,omitempty"`
+	Prefix            string             `json:"prefix"`
+	PrefixLen         int                `json:"prefix-len"`
+	DelegatedLen      int                `json:"delegated-len"`
+	ExcludedPrefix    string             `json:"excluded-prefix,omitempty"`
+	ExcludedPrefixLen int                `json:"excluded-prefix-len,omitempty"`
+	OptionData        []SingleOptionData `json:"option-data,omitempty"`
+	ClientClassParameters
 }
 
 // Returns a delegated prefix pool in a canonical form.
@@ -38,4 +37,11 @@ func (p PDPool) GetCanonicalExcludedPrefix() string {
 		return storkutil.FormatCIDRNotation(p.ExcludedPrefix, p.ExcludedPrefixLen)
 	}
 	return ""
+}
+
+// Returns a pointer to the pool parameters.
+func (p PDPool) GetPoolParameters() *PoolParameters {
+	return &PoolParameters{
+		ClientClassParameters: p.ClientClassParameters,
+	}
 }

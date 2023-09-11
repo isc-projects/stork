@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 //go:generate mockgen -package=keaconfig_test -destination=prefixpoolmock_test.go isc.org/stork/appcfg/kea PrefixPool
@@ -39,4 +40,30 @@ func TestGetCanonicalExcludedPrefix(t *testing.T) {
 func TestGetCanonicalExcludedPrefixEmpty(t *testing.T) {
 	pool := PDPool{}
 	require.Empty(t, pool.GetCanonicalExcludedPrefix())
+}
+
+// Test retrieving the pool parameters.
+func TestPrefixPoolGetParameters(t *testing.T) {
+	pool := PDPool{
+		ClientClassParameters: ClientClassParameters{
+			ClientClass:          storkutil.Ptr("foo"),
+			RequireClientClasses: []string{"foo", "bar"},
+		},
+	}
+	params := pool.GetPoolParameters()
+	require.NotNil(t, params)
+	require.NotNil(t, params.ClientClass)
+	require.Equal(t, "foo", *params.ClientClass)
+	require.Len(t, params.RequireClientClasses, 2)
+	require.Equal(t, "foo", params.RequireClientClasses[0])
+	require.Equal(t, "bar", params.RequireClientClasses[1])
+}
+
+// Test that an empty set of parameters can be retrieved.
+func TestPrefixPoolGetNoParameters(t *testing.T) {
+	pool := PDPool{}
+	params := pool.GetPoolParameters()
+	require.NotNil(t, params)
+	require.Nil(t, params.ClientClass)
+	require.Empty(t, params.RequireClientClasses)
 }

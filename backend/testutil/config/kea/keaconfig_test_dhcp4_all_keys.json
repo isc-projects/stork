@@ -272,7 +272,16 @@
                         "pools": [
                             {
                                 "client-class": "phones_server1",
-                                "option-data": [],
+                                "option-data": [
+                                    {
+                                        "always-send": false,
+                                        "code": 3,
+                                        "csv-format": true,
+                                        "data": "192.0.3.10",
+                                        "name": "routers",
+                                        "space": "dhcp4"
+                                    }
+                                ],
                                 "pool": "192.1.0.1 - 192.1.0.200",
                                 "require-client-classes": [ "late" ]
                             },

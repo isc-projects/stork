@@ -267,10 +267,19 @@
                                 "delegated-len": 64,
                                 "excluded-prefix": "2001:db8:1::",
                                 "excluded-prefix-len": 72,
-                                "option-data": [],
+                                "option-data": [
+                                    {
+                                        "always-send": false,
+                                        "code": 7,
+                                        "csv-format": false,
+                                        "data": "cafe",
+                                        "name": "preference",
+                                        "space": "dhcp6"
+                                    }
+                                ],
                                 "prefix": "2001:db8:1::",
                                 "prefix-len": 48,
-                                "require-client-classes": []
+                                "require-client-classes": ["bar"]
                             }
                         ],
                         "pools": [

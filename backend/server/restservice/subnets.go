@@ -48,23 +48,44 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			StatsCollectedAt: convertToOptionalDatetime(lsn.StatsCollectedAt),
 		}
 		for _, poolDetails := range lsn.AddressPools {
-			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
-			localSubnet.Pools = append(localSubnet.Pools, &models.Pool{
-				Pool: &pool,
-			})
+			pool := &models.Pool{
+				Pool: storkutil.Ptr(poolDetails.LowerBound + "-" + poolDetails.UpperBound),
+			}
+			if poolDetails.KeaParameters != nil {
+				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
+					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
+						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaParameters.ClientClass),
+						RequireClientClasses: poolDetails.KeaParameters.RequireClientClasses,
+					},
+				}
+				// DHCP options.
+				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.DHCPOptionSetHash
+				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(poolDetails.DHCPOptionSet, "", 0)
+			}
+
+			localSubnet.Pools = append(localSubnet.Pools, pool)
 		}
 
 		for _, prefixPoolDetails := range lsn.PrefixPools {
 			prefix := prefixPoolDetails.Prefix
 			delegatedLength := int64(prefixPoolDetails.DelegatedLen)
-			localSubnet.PrefixDelegationPools = append(
-				localSubnet.PrefixDelegationPools,
-				&models.DelegatedPrefixPool{
-					Prefix:          &prefix,
-					DelegatedLength: &delegatedLength,
-					ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
-				},
-			)
+			pool := &models.DelegatedPrefixPool{
+				Prefix:          &prefix,
+				DelegatedLength: &delegatedLength,
+				ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
+			}
+			localSubnet.PrefixDelegationPools = append(localSubnet.PrefixDelegationPools, pool)
+			if prefixPoolDetails.KeaParameters != nil {
+				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
+					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
+						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaParameters.ClientClass),
+						RequireClientClasses: prefixPoolDetails.KeaParameters.RequireClientClasses,
+					},
+				}
+				// DHCP options.
+				pool.KeaConfigPoolParameters.OptionsHash = prefixPoolDetails.DHCPOptionSetHash
+				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(prefixPoolDetails.DHCPOptionSet, "", 0)
+			}
 		}
 
 		// Subnet level Kea DHCP parameters.

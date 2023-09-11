@@ -368,7 +368,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		params := keaPoolAccessor.GetKeaParameters()
 		if params != nil {
 			if params.ClientClass != nil {
-				keaPool.ClientClass = *params.ClientClass
+				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
 		}
@@ -437,7 +437,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		params := keaPoolAccessor.GetKeaParameters()
 		if params != nil {
 			if params.ClientClass != nil {
-				keaPool.ClientClass = *params.ClientClass
+				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
 		}
@@ -476,7 +476,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		params := keaPoolAccessor.GetKeaParameters()
 		if params != nil {
 			if params.ClientClass != nil {
-				keaPool.ClientClass = *params.ClientClass
+				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
 		}

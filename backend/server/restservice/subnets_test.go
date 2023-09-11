@@ -353,9 +353,25 @@ func TestGetSubnet4(t *testing.T) {
 	// Validate the pools.
 	require.Len(t, ls.Pools, 2)
 	require.NotNil(t, ls.Pools[0].Pool)
+
 	require.Equal(t, "192.1.0.1-192.1.0.200", *ls.Pools[0].Pool)
+	require.NotNil(t, ls.Pools[0].KeaConfigPoolParameters)
+	require.Equal(t, "phones_server1", *ls.Pools[0].KeaConfigPoolParameters.ClientClass)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.RequireClientClasses, 1)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options, 1)
+	require.False(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].AlwaysSend)
+	require.EqualValues(t, 3, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Code)
+	require.Empty(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Encapsulate)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields, 1)
+	require.Equal(t, dhcpmodel.IPv4AddressField, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].FieldType)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values, 1)
+	require.Equal(t, "192.0.3.10", ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values[0])
+	require.EqualValues(t, storkutil.IPv4, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
+
 	require.NotNil(t, ls.Pools[1].Pool)
 	require.Equal(t, "192.3.0.1-192.3.0.200", *ls.Pools[1].Pool)
+	require.Equal(t, "phones_server2", *ls.Pools[1].KeaConfigPoolParameters.ClientClass)
+	require.Empty(t, ls.Pools[1].KeaConfigPoolParameters.RequireClientClasses)
 
 	// Validate subnet-level parameters
 	require.NotNil(t, ls.KeaConfigSubnetParameters)
@@ -817,6 +833,32 @@ func TestGetSubnet6(t *testing.T) {
 
 	require.Len(t, subnet.LocalSubnets, 1)
 	ls := subnet.LocalSubnets[0]
+
+	// Validate the prefix delegation pools.
+	require.Len(t, ls.PrefixDelegationPools, 1)
+
+	require.NotNil(t, ls.PrefixDelegationPools[0].Prefix)
+	require.Equal(t, "2001:db8:1::/48", *ls.PrefixDelegationPools[0].Prefix)
+	require.NotNil(t, ls.PrefixDelegationPools[0].DelegatedLength)
+	require.EqualValues(t, 64, *ls.PrefixDelegationPools[0].DelegatedLength)
+	require.Equal(t, "2001:db8:1::/72", ls.PrefixDelegationPools[0].ExcludedPrefix)
+
+	require.NotNil(t, ls.PrefixDelegationPools[0].KeaConfigPoolParameters)
+
+	poolParams := ls.PrefixDelegationPools[0].KeaConfigPoolParameters
+	require.Equal(t, "phones_server1", *poolParams.ClientClass)
+	require.Len(t, poolParams.RequireClientClasses, 1)
+
+	// DHCP options in a prefix pool.
+	require.Len(t, poolParams.DHCPOptions.Options, 1)
+	require.False(t, poolParams.DHCPOptions.Options[0].AlwaysSend)
+	require.EqualValues(t, 7, poolParams.DHCPOptions.Options[0].Code)
+	require.Empty(t, poolParams.DHCPOptions.Options[0].Encapsulate)
+	require.Len(t, poolParams.DHCPOptions.Options[0].Fields, 1)
+	require.Equal(t, dhcpmodel.BinaryField, poolParams.DHCPOptions.Options[0].Fields[0].FieldType)
+	require.Len(t, poolParams.DHCPOptions.Options[0].Fields[0].Values, 1)
+	require.Equal(t, "cafe", poolParams.DHCPOptions.Options[0].Fields[0].Values[0])
+	require.EqualValues(t, storkutil.IPv6, ls.PrefixDelegationPools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
 
 	// Validate subnet-level parameters
 	require.NotNil(t, ls.KeaConfigSubnetParameters)

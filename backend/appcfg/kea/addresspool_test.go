@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 //go:generate mockgen -package=keaconfig_test -destination=addresspoolmock_test.go isc.org/stork/appcfg/kea AddressPool
@@ -108,4 +109,33 @@ func TestAddressPoolGetBoundariesUpperBoundError(t *testing.T) {
 	}
 	_, _, err := pool.GetBoundaries()
 	require.Error(t, err)
+}
+
+// Test retrieving the pool parameters.
+func TestAddressPoolGetParameters(t *testing.T) {
+	pool := Pool{
+		Pool: "192.0.2.1-192.0.2.254",
+		ClientClassParameters: ClientClassParameters{
+			ClientClass:          storkutil.Ptr("foo"),
+			RequireClientClasses: []string{"foo", "bar"},
+		},
+	}
+	params := pool.GetPoolParameters()
+	require.NotNil(t, params)
+	require.NotNil(t, params.ClientClass)
+	require.Equal(t, "foo", *params.ClientClass)
+	require.Len(t, params.RequireClientClasses, 2)
+	require.Equal(t, "foo", params.RequireClientClasses[0])
+	require.Equal(t, "bar", params.RequireClientClasses[1])
+}
+
+// Test that an empty set of parameters can be retrieved.
+func TestAddressPoolGetNoParameters(t *testing.T) {
+	pool := Pool{
+		Pool: "192.0.2.1-192.0.2.254",
+	}
+	params := pool.GetPoolParameters()
+	require.NotNil(t, params)
+	require.Nil(t, params.ClientClass)
+	require.Empty(t, params.RequireClientClasses)
 }

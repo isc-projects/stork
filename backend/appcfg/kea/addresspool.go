@@ -30,10 +30,9 @@ type PoolParameters struct {
 
 // Represents an address pool structure within a Kea configuration.
 type Pool struct {
-	ClientClass          string             `json:"client-class,omitempty"`
-	OptionData           []SingleOptionData `json:"option-data,omitempty"`
-	Pool                 string             `json:"pool"`
-	RequireClientClasses []string           `json:"require-client-classes,omitempty"`
+	Pool       string             `json:"pool"`
+	OptionData []SingleOptionData `json:"option-data,omitempty"`
+	ClientClassParameters
 }
 
 // A custom unmarshal function for a Kea address pool. It removes whitespaces from
@@ -67,4 +66,11 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 func (p Pool) GetBoundaries() (net.IP, net.IP, error) {
 	lb, ub, err := storkutil.ParseIPRange(p.Pool)
 	return lb, ub, err
+}
+
+// Returns a pointer to the pool parameters.
+func (p Pool) GetPoolParameters() *PoolParameters {
+	return &PoolParameters{
+		ClientClassParameters: p.ClientClassParameters,
+	}
 }

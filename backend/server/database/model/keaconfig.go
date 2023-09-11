@@ -158,19 +158,41 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		convertedSubnet.ClientClass = *keaSubnet.GetSubnetParameters().ClientClass
 	}
 	for _, p := range keaSubnet.GetPools() {
-		lb, ub, err := p.GetBoundaries()
+		pool := p
+		lb, ub, err := pool.GetBoundaries()
 		if err != nil {
 			return nil, err
 		}
 		addressPool := NewAddressPool(lb, ub)
+		addressPool.KeaParameters = pool.GetPoolParameters()
+		// Options.
+		for _, d := range p.OptionData {
+			option, err := NewDHCPOptionFromKea(d, keaSubnet.GetUniverse(), lookup)
+			if err != nil {
+				return nil, err
+			}
+			addressPool.DHCPOptionSet = append(addressPool.DHCPOptionSet, *option)
+			addressPool.DHCPOptionSetHash = storkutil.Fnv128(addressPool.DHCPOptionSet)
+		}
 		convertedSubnet.LocalSubnets[0].AddressPools = append(convertedSubnet.LocalSubnets[0].AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.GetPDPools() {
-		prefix := p.GetCanonicalPrefix()
-		excludedPrefix := p.GetCanonicalExcludedPrefix()
+		pool := p
+		prefix := pool.GetCanonicalPrefix()
+		excludedPrefix := pool.GetCanonicalExcludedPrefix()
 		prefixPool, err := NewPrefixPool(prefix, p.DelegatedLen, excludedPrefix)
 		if err != nil {
 			return nil, err
+		}
+		prefixPool.KeaParameters = pool.GetPoolParameters()
+		// Options.
+		for _, d := range p.OptionData {
+			option, err := NewDHCPOptionFromKea(d, keaSubnet.GetUniverse(), lookup)
+			if err != nil {
+				return nil, err
+			}
+			prefixPool.DHCPOptionSet = append(prefixPool.DHCPOptionSet, *option)
+			prefixPool.DHCPOptionSetHash = storkutil.Fnv128(prefixPool.DHCPOptionSet)
 		}
 		convertedSubnet.LocalSubnets[0].PrefixPools = append(convertedSubnet.LocalSubnets[0].PrefixPools, *prefixPool)
 	}
