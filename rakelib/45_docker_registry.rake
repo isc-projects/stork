@@ -6,7 +6,8 @@
 namespace :push do
     # Build the image from the :source file.
     # The image name is defined by the :target argument.
-    # The tag is defined by the TAG environment variable.
+    # The tag is defined by the TAG environment variable. The allowed values
+    # are positive integers or the 'latest` keyword.
     # The image is pushed to the registry only if the PUSH environment variable
     # has "true" value.
     # The cache may be disabled by the CACHE environment variable set to "false".

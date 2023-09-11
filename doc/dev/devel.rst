@@ -975,6 +975,80 @@ You can use the ``rake demo:check_etchosts`` command to check your actual
 This task will automatically run if you use ``SERVER_MODE=host`` then you don't
 need to call it manually. It's mainly for diagnostic purposes.
 
+Docker containers for CI
+========================
+
+Each CI pipeline creates its copy of the base container. The additional
+packages may be installed, or operations may be performed depending on the
+content of the ``before_script`` and ``script`` properties of the
+``gitlab-ci.yaml``. It is beneficial to reduce the number of steps to a minimum
+to limit the execution time of the pipeline. Especially we should avoid
+installing additional dependencies as they take a lot of time and transfer a
+lot of data.
+
+We use custom images dedicated to use in CI. They contain all dependencies
+necessary for all tasks and are initialized and configured. They are built once
+and stored in the GitLab Docker registry. The images in our registry support
+the AMD64 and ARM64 architectures.
+
+.. warning::
+
+    The images tagged as ``latest`` are legacy. They should not be overwritten
+    because their Dockerfiles were lost (it seems they were not prepared from
+    the images stored in the repository).
+    The explicit tags should be used instead of them.
+
+The Dockerfiles of CI images are located in the ``docker/images/ci``
+directory. The Rake tasks related to the CI images are defined in the
+``rakelib/45_docker_registry.rake`` file.
+
+
+Update the Docker CI Images
+---------------------------
+
+To update the Docker CI images, follow these steps:
+
+1. Edit the specific Dockerfile.
+2. Check the next free tag number in the GitLab registry. Specify it in the
+   ``TAG`` variable. Don't use the ``latest`` keyword (unless you really know
+   what you're doing).
+3. Run the specific Rake task with the ``PUSH`` set to ``false``:
+
+    a) ``push:base_deb`` - for Debian-based image
+    b) ``push:base_rhel`` - for RHEL-based imagb
+
+    .. code-block:: console
+
+        $ rake push:base_deb TAG=42 PUSH=false
+        $ rake push:base_rhel TAG=42 PUSH=false
+
+4. Check if the build was successful.
+5. If the ``PUSH`` was set to ``false``, the image is available locally. Call
+   the below command to run the container and attach to it:
+
+    .. code-block:: console
+
+        $ docker run -it IMAGE_NAME:TAG
+        # Example:
+        $ docker run -it registry.gitlab.isc.org/isc-projects/stork/ci-base:42
+
+6. Check if the container is working as expected.
+7. If everything is OK, set the ``PUSH`` to ``true`` and run the task again.
+
+    .. code-block:: console
+
+        $ rake push:base_deb TAG=42 PUSH=true
+        $ rake push:base_rhel TAG=42 PUSH=true
+
+The newly pushed image is available in the GitLab registry.
+
+.. note::
+
+    You can observe the exclamation mark near the image tag with the hint
+    message (visible on hover) - ``Invalid tag: missing manifest digest``.
+    It is caused by
+    `a bug in the Gitlab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
+
 Packaging
 =========
 
