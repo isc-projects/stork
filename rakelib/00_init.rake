@@ -41,9 +41,9 @@ end
 # Indicates if the provided task should be considered as a dependency.
 # The dependencies are all file tasks and some particular standard tasks that
 # define the custom logic to set up and check the dependency. They are
-# recognized by the existing :@manuall_install variable.
+# recognized by the existing :@manual_install variable.
 def is_dependency_task(t)
-    t.class == Rake::FileTask || !t.instance_variable_get(:@manuall_install).nil?
+    t.class == Rake::FileTask || !t.instance_variable_get(:@manual_install).nil?
 end
 
 # Searches for the tasks in the provided file
@@ -117,7 +117,7 @@ def find_and_prepare_deps(file)
             next
         end
 
-        if t.instance_variable_get(:@manuall_install)
+        if t.instance_variable_get(:@manual_install)
             # Skips the missing top-level manually-installed prerequisites
             # to avoid interrupting preparing operation. If the
             # manually-installed prerequisite is a dependency of any
@@ -158,7 +158,7 @@ def check_deps(file)
 
     manual_install_prerequisites_tasks = []
     prerequisites_tasks.each do |t|
-        if t.instance_variable_get(:@manuall_install)
+        if t.instance_variable_get(:@manual_install)
             manual_install_prerequisites_tasks.append t
         end
     end
@@ -201,7 +201,7 @@ def add_guard(task_name, identifier, suffix)
 
     # We don't use the guard for the prerequisities that must be
     # installed manually on current operating system
-    if task.instance_variable_get(:@manuall_install)
+    if task.instance_variable_get(:@manual_install)
         return
     end
 
@@ -309,7 +309,7 @@ def create_manually_installed_file_task(path)
 
     # Add a property to indicate that it's a manually installed file.
     newTask = Rake::Task[path]
-    newTask.instance_variable_set(:@manuall_install, true)
+    newTask.instance_variable_set(:@manual_install, true)
     return newTask.name
 end
 
@@ -382,9 +382,9 @@ def docker_plugin(standalone_exe, command_name)
     
     plugin_task = Rake::Task[task_name]
     plugin_task.tap do |task|
-        # The non-file tasks with the manuall_install variable are considered as
+        # The non-file tasks with the manual_install variable are considered as
         # dependencies. Set to true to mark it must be manually installed.
-        task.instance_variable_set(:@manuall_install, true)
+        task.instance_variable_set(:@manual_install, true)
 
         # The functions or methods defined in other functions don't have
         # an access to the variables from the outter scope in Ruby.
