@@ -1255,8 +1255,9 @@ to build the packages:
    generating a DEB package with a macOS-compatible executable, which is useless.
 
 It is not recommended to compile Stork for 32-bit architectures as it may cause problems with unexpected integer
-overflows. Also compiling Stork components for Windows is discouraged because Golang's standard library may suppress
-some errors related to the file operations on the NTFS filesystem.
+overflows. Stork was never designed to operate on non-posix platforms, so Windows is not
+and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
+may suppress some errors related to the file operations on the NTFS filesystem. 
 
 Integration With Prometheus and Grafana
 =======================================
