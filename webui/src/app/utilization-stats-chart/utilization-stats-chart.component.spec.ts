@@ -29,7 +29,7 @@ describe('UtilizationStatsChartComponent', () => {
     })
 
     it('should initialize all DHCPv4 address stats', () => {
-        component.leaseType = 'address'
+        component.leaseType = 'na'
         component.network = {
             addrUtilization: 48,
             stats: {

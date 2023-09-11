@@ -33,7 +33,7 @@ export class UtilizationStatsChartComponent implements OnInit {
     /**
      * Lease type for which the statistics should be shown.
      */
-    @Input() leaseType: 'address' | 'na' | 'pd'
+    @Input() leaseType: 'na' | 'pd'
 
     /**
      * Pie chart data initialized during the component initialization.
@@ -53,7 +53,7 @@ export class UtilizationStatsChartComponent implements OnInit {
     /**
      * Number of used leases.
      *
-     * It is calculated by substracting declined from assigned addresses.
+     * It is calculated by subtracting declined from assigned addresses.
      */
     used: bigint | number
 
@@ -78,9 +78,11 @@ export class UtilizationStatsChartComponent implements OnInit {
             const documentStyle = getComputedStyle(document.documentElement)
 
             // Fetch the statistics.
-            this.total = getStatisticValue(this.network, `total-${this.pluralLeaseType()}`)
-            this.assigned = getStatisticValue(this.network, `assigned-${this.pluralLeaseType()}`)
-            this.declined = getStatisticValue(this.network, `declined-${this.pluralLeaseType()}`)
+            const { totalName, assignedName, declinedName } = this.getStatisticNames()
+
+            this.total = getStatisticValue(this.network, totalName)
+            this.assigned = getStatisticValue(this.network, assignedName)
+            this.declined = getStatisticValue(this.network, declinedName)
             this.used = this.assigned - this.declined
 
             if (this.isPD && 'pdUtilization' in this.network) {
@@ -178,18 +180,43 @@ export class UtilizationStatsChartComponent implements OnInit {
     }
 
     /**
-     * Converts the lease type to the plural form.
+     * Detects the names of the statistics for the given network.
+     * IPv4 subnet use "-addresses" suffix, IPv6 subnet use "-nas" suffix.
+     * Shared networks use "-nas" suffix for both IPv4 and IPv6 types.
+     * IPv6 prefix delegations use "-pds" suffix.
      *
-     * It is used in constructing the names of the statistics from the lease types.
-     *
-     * @returns 'addresses' for lease type 'address' and appends 's' otherwise.
+     * @returns The statistics names for the given lease type.
      */
-    private pluralLeaseType(): string {
-        switch (this.leaseType) {
-            case 'address':
-                return 'addresses'
-            default:
-                return `${this.leaseType}s`
+    private getStatisticNames(): { totalName: string; assignedName: string; declinedName: string } {
+        if (this.isPD) {
+            return {
+                totalName: 'total-pds',
+                assignedName: 'assigned-pds',
+                declinedName: 'declined-pds',
+            }
+        }
+
+        // The shared networks use the `NA` suffix for both IPv4 and IPv6 types.
+        const naNames = {
+            totalName: 'total-nas',
+            assignedName: 'assigned-nas',
+            declinedName: 'declined-nas',
+        }
+
+        if (this.network.stats == null || Object.keys(this.network.stats).length == 0) {
+            // Empty statistics.
+            return naNames
+        }
+
+        if (Object.keys(this.network.stats).some((k) => k.endsWith('-nas'))) {
+            // NAs statistics.
+            return naNames
+        }
+
+        return {
+            totalName: 'total-addresses',
+            assignedName: 'assigned-addresses',
+            declinedName: 'declined-addresses',
         }
     }
 }
