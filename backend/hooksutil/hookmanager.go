@@ -24,7 +24,8 @@ func NewHookManager(supportedTypes []reflect.Type) *HookManager {
 
 // Registers all hooks from a given hook directory.
 //
-// The settings map passed to this method must be indexed by the hook names.
+// The settings map passed to this method must be indexed by the hook names
+// returned by the "LibraryManager.GetName" function.
 //
 // If a particular hook doesn't support configuring, the related hook settings
 // may be nil or be omitted.
