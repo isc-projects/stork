@@ -81,6 +81,24 @@ export class StorkValidators {
     }
 
     /**
+     * A validator checking if an input is a valid IPv6 prefix (including length).
+     *
+     * @returns validator function.
+     */
+    static ipv6Prefix(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+                return null
+            }
+            let ipv6 = control.value
+            if (!ipv6.includes('/') || !Validator.isValidIPv6CidrNotation(ipv6)[0]) {
+                return { ipv6: `${ipv6} is not a valid IPv6 prefix.` }
+            }
+            return null
+        }
+    }
+
+    /**
      * A validator checking if an input is a valid partial or full FQDN.
      *
      * Inspired by: https://stackoverflow.com/questions/11809631/fully-qualified-domain-name-validation

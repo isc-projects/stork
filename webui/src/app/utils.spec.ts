@@ -8,6 +8,7 @@ import {
     getGrafanaUrl,
     getBaseApiPath,
     datetimeToLocal,
+    uncamelCase,
 } from './utils'
 
 describe('utils', () => {
@@ -266,5 +267,14 @@ describe('utils', () => {
         baseElement.href = '/foo/'
         const baseApiPath = getBaseApiPath('/bar')
         expect(baseApiPath).toContain('/foo/bar')
+    })
+
+    it('should convert a camel case name to a user-friendly parameter name', () => {
+        expect(uncamelCase('ddnsParameterName')).toBe('DDNS Parameter Name')
+        expect(uncamelCase('pdValue')).toBe('PD Value')
+        expect(uncamelCase('ipPrefix')).toBe('IP Prefix')
+        expect(uncamelCase('anotherParameter')).toBe('Another Parameter')
+        expect(uncamelCase('_withUnderscore')).toBe('With Underscore')
+        expect(uncamelCase('  ')).toBe('  ')
     })
 })
