@@ -363,6 +363,22 @@ HEALTHCHECK CMD [ "supervisorctl", "status" ]
 # Bind9 config: /etc/bind/named.conf
 # Bind9 database: /etc/bind/db.test
 
+FROM bind AS bind-chroot
+# Chroot must be called by the root user.
+USER root
+# Prepare a directory for the chroot environment.
+RUN mkdir -p /chroot/etc \
+        # Copy the configuration files.
+        && cp -R -p /etc/bind /chroot/etc/bind \
+        && rm -rf /etc/bind \
+        # Create the necessary directories.
+        && mkdir -p /chroot/var/cache/bind \
+        && chown bind:bind /chroot/var/cache/bind \
+        && mkdir -p /chroot/run/named \
+        && chown bind:bind /chroot/run/named \
+        && mkdir -p /chroot/usr/share \
+        && cp -R -p /usr/share/dns /chroot/usr/share
+
 #################
 ### Packaging ###
 #################
