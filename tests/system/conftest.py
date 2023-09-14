@@ -88,11 +88,11 @@ def pytestsessionstart(session):  # pylint: disable=unused-argument
 
 
 def is_debugger_active():
-    '''
+    """
     Return if the debugger is currently active.
     Source: https://stackoverflow.com/a/67065084
-    '''
-    return hasattr(sys, 'gettrace') and sys.gettrace() is not None
+    """
+    return hasattr(sys, "gettrace") and sys.gettrace() is not None
 
 
 def pytest_collection_modifyitems(
