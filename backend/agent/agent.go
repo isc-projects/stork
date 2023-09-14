@@ -231,10 +231,11 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	// Try to forward the command to rndc.
 	output, err := bind9App.sendCommand(strings.Fields(request.Request))
 	if err != nil {
-		log.WithFields(log.Fields{
-			"Address": in.Address,
-			"Port":    in.Port,
-		}).Errorf("Failed to forward commands to rndc: %+v", err)
+		log.WithError(err).
+			WithFields(log.Fields{
+				"Address": in.Address,
+				"Port":    in.Port,
+			}).Errorf("Failed to forward commands to rndc")
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = fmt.Sprintf("Failed to forward commands to rndc: %s", err.Error())
 	} else {
