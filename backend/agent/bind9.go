@@ -559,8 +559,8 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Warnf("Cannot find config file for BIND 9")
 		return nil
 	}
-	fullBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
-	log.Infof("Found BIND 9 config file in %s based on %s.", fullBind9ConfPath, bind9ConfSource)
+	prefixedBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
+	log.Infof("Found BIND 9 config file in %s based on %s.", prefixedBind9ConfPath, bind9ConfSource)
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
@@ -579,7 +579,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 	out, err := executor.Output(namedCheckconfPath, args...)
 	if err != nil {
-		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", fullBind9ConfPath, err, out)
+		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", prefixedBind9ConfPath, err, out)
 		return nil
 	}
 	cfgText := string(out)
@@ -587,7 +587,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
-		log.Warnf("Found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", fullBind9ConfPath)
+		log.Warnf("Found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", prefixedBind9ConfPath)
 		return nil
 	}
 
@@ -628,7 +628,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	err = rndcClient.DetermineDetails(
 		baseNamedDir,
 		// RNDC client doesn't support chroot.
-		path.Dir(fullBind9ConfPath),
+		path.Dir(prefixedBind9ConfPath),
 		ctrlAddress,
 		ctrlPort,
 		ctrlKey,
