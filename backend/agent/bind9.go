@@ -442,34 +442,56 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		return nil
 	}
 
-	// try to find bind9 config file(s)
+	// Try to find bind9 config file(s).
 	namedDir := match[1]
 	bind9Params := match[2]
+	// Path to actual chroot (empty if not used).
+	rootPrefix := ""
+	// Absolute path from the actual root or chroot.
 	bind9ConfPath := ""
+	bind9ConfSource := ""
 
-	// look for config file in cmd params
-	paramsPattern := regexp.MustCompile(`-c\s+(\S+)`)
-	m := paramsPattern.FindStringSubmatch(bind9Params)
+	// Look for the chroot directory.
+	chrootPathPattern := regexp.MustCompile(`-t\s+(\S+)`)
+	m := chrootPathPattern.FindStringSubmatch(bind9Params)
+	if m != nil {
+		rootPrefix = strings.TrimRight(m[1], "/")
+
+		// The cwd path is already prefixed with the chroot directory
+		// because the /proc/(pid)/cwd is absolute.
+		if strings.HasPrefix(cwd, rootPrefix) {
+			cwd = cwd[len(rootPrefix):]
+		}
+	}
+
+	// Look for config file in cmd params.
+	configPathPattern := regexp.MustCompile(`-c\s+(\S+)`)
+	m = configPathPattern.FindStringSubmatch(bind9Params)
 
 	// STEP 1: Let's try to parse -c parameter passed to named.
 	log.Debug("Looking for BIND 9 config file in -c parameter of a running process.")
 	if m != nil {
 		bind9ConfPath = m[1]
-		// if path to config is not absolute then join it with CWD of named
+		bind9ConfSource = "-c parameter of a running process"
+		// If path to config is not absolute then join it with CWD of named.
 		if !path.IsAbs(bind9ConfPath) {
 			bind9ConfPath = path.Join(cwd, bind9ConfPath)
 		}
-		log.Debugf("Found BIND 9 config file in %s based on -c parameter of a running process.", bind9ConfPath)
 	}
 
 	// STEP 2: Check if STORK_BIND9_CONFIG variable is specified it is, we'll use
 	// whatever value is provided. User knows best *cough*.
+	// We assume it is an absolute path and it includes the chroot directory if
+	// any.
 	if bind9ConfPath == "" {
 		if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
 			log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
-			if executor.IsFileExist(f) {
-				bind9ConfPath = f
-				log.Infof("Found BIND 9 config file in %s, based on STORK_BIND9_CONFIG variable", f)
+			if !strings.HasPrefix(f, rootPrefix) {
+				log.Errorf("STORK_BIND9_CONFIG must be inside the chroot directory: %s, got: %s", rootPrefix, f)
+			} else if executor.IsFileExist(f) {
+				// Trim the root prefix.
+				bind9ConfPath = f[len(rootPrefix):]
+				bind9ConfSource = "STORK_BIND9_CONFIG variable"
 			} else {
 				log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 			}
@@ -490,7 +512,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
 		namedPath, err := determineBinPath(baseNamedDir, namedExec, executor)
 		if err != nil {
-			log.Warnf("cannot determine BIND 9 executable %s: %s", namedExec, err)
+			log.Warnf("Could not determine BIND 9 executable %s: %s", namedExec, err)
 			return nil
 		}
 		out, err := executor.Output(namedPath, "-V")
@@ -499,9 +521,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			return nil
 		}
 		bind9ConfPath = parseNamedDefaultPath(out)
-		if len(bind9ConfPath) > 0 {
-			log.Infof("Found BIND 9 config file in %s based on output of `named -V`.", bind9ConfPath)
-		}
+		bind9ConfSource = "output of `named -V`"
 	}
 
 	// STEP 4: If we still don't have anything, let's look at typical locations.
@@ -509,10 +529,12 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Debugf("Looking for BIND 9 config file in typical locations.")
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
-			log.Debugf("Looking for BIND 9 config file in %s", f)
-			if executor.IsFileExist(f) {
+			// Concat with root or chroot.
+			fullPath := path.Join(rootPrefix, f)
+			log.Debugf("Looking for BIND 9 config file in %s", fullPath)
+			if executor.IsFileExist(fullPath) {
 				bind9ConfPath = f
-				log.Infof("Found BIND 9 config file in %s based on typical locations.", bind9ConfPath)
+				bind9ConfSource = "typical locations"
 				break
 			}
 		}
@@ -523,6 +545,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Warnf("Cannot find config file for BIND 9")
 		return nil
 	}
+	log.Infof("Found BIND 9 config file in %s based on %s.", path.Join(rootPrefix, bind9ConfPath), bind9ConfSource)
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
@@ -531,9 +554,17 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		return nil
 	}
 
-	out, err := executor.Output(namedCheckconfPath, "-p", bind9ConfPath)
+	// Prepare named-checkconf arguments.
+	args := []string{}
+	if rootPrefix != "" {
+		args = append(args, "-t", rootPrefix)
+	}
+	// The config path must be last.
+	args = append(args, "-p", bind9ConfPath)
+
+	out, err := executor.Output(namedCheckconfPath, args...)
 	if err != nil {
-		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
+		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", path.Join(rootPrefix, bind9ConfPath), err, out)
 		return nil
 	}
 	cfgText := string(out)
