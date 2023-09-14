@@ -87,6 +87,14 @@ def pytestsessionstart(session):  # pylint: disable=unused-argument
         shutil.rmtree(tests_dir)
 
 
+def is_debugger_active():
+    '''
+    Return if the debugger is currently active.
+    Source: https://stackoverflow.com/a/67065084
+    '''
+    return hasattr(sys, 'gettrace') and sys.gettrace() is not None
+
+
 def pytest_collection_modifyitems(
     session, config, items
 ):  # pylint: disable=unused-argument
@@ -102,10 +110,14 @@ def pytest_collection_modifyitems(
     # to build the Docker containers (longer period) or not (shorter period)
     # because there is no (built-in) way to detect if the build is necessary
     # before starting the test and adjusting timeout after it starts.
-    default_timeout = datetime.timedelta(minutes=20)
-    for item in items:
-        if item.get_closest_marker("timeout") is None:
-            item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
+    #
+    # The timeout is not set if the debugger is currently attached to the
+    # system tests. It prevents to interrupt the debugging session.
+    if not is_debugger_active():
+        default_timeout = datetime.timedelta(minutes=20)
+        for item in items:
+            if item.get_closest_marker("timeout") is None:
+                item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
 
     # Skip all tests using the disabled services.
     compose = create_docker_compose()
