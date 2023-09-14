@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -220,9 +221,18 @@ func (e *testCommandExecutor) setConfigPathInNamedOutput(path string) *testComma
 // specified files contents, similar to "cat" command.
 func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, error) {
 	if strings.Contains(command, "named-checkconf") {
-		// Pretending to run named-checkconf -p <config-file>.
-		path := args[1]
-		content, ok := e.outputs[path]
+		root := "/"
+		for i := 0; i < len(args)-2; i++ {
+			if args[i] == "-t" {
+				root = args[i+1]
+				break
+			}
+		}
+
+		config := args[len(args)-1]
+
+		fullPath := path.Join(root, config)
+		content, ok := e.outputs[fullPath]
 
 		if !ok {
 			// Reading failed.
@@ -272,17 +282,46 @@ func (e *testCommandExecutor) IsFileExist(path string) bool {
 
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
-	// create alternate config files for each step...
+	// Create alternate config files for each step.
 	config1Path := "/dir/step1.conf"
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
 
-	// check BIND 9 app detection
+	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1)
 
-	// Now run the detection as usual
+	// Now run the detection as usual.
 	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "1.1.1.1", point.Address)
+	require.EqualValues(t, 1111, point.Port)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+}
+
+// Checks detection with chroot STEP 1: if BIND9 detection takes -c parameter
+// into consideration.
+func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
+	// Create alternate config files for each step.
+	config1Path := "/dir/step1.conf"
+	chrootPath := "/chroot"
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+
+	// Check BIND 9 app detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(path.Join(chrootPath, config1Path), config1)
+
+	// Now run the detection as usual.
+	app := detectBind9App([]string{
+		"",
+		"/dir",
+		fmt.Sprintf("-t %s -c %s", chrootPath, config1Path),
+	}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -298,7 +337,7 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 	restore := testutil.CreateEnvironmentRestorePoint()
 	defer restore()
 
-	// create alternate config file...
+	// Create alternate config file...
 	confPath := "/dir/testing.conf"
 	config := `key "foo" {
 		algorithm "hmac-sha256";
@@ -308,10 +347,10 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
 
-	// ... and point STORK_BIND9_CONFIG to it
+	// ... and point STORK_BIND9_CONFIG to it.
 	os.Setenv("STORK_BIND9_CONFIG", confPath)
 
-	// check BIND 9 app detection
+	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(confPath, config)
 
@@ -327,9 +366,84 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
+// Checks detection with chroot STEP 2: if BIND9 detection takes
+// STORK_BIND9_CONFIG env var into account.
+func TestDetectBind9ChrootStep2EnvVar(t *testing.T) {
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	// Create alternate config file...
+	confPath := "/dir/testing.conf"
+	chrootPath := "/chroot"
+	fullConfPath := path.Join(chrootPath, confPath)
+	config := `key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+	};
+	controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+	};`
+
+	// ... and point STORK_BIND9_CONFIG to it.
+	os.Setenv("STORK_BIND9_CONFIG", fullConfPath)
+
+	// Check BIND 9 app detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(fullConfPath, config)
+
+	namedDir := "/dir/usr/sbin"
+	app := detectBind9App([]string{
+		"",
+		namedDir,
+		fmt.Sprintf("-t %s -some -params", chrootPath),
+	}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "192.0.2.1", point.Address)
+	require.EqualValues(t, 1234, point.Port)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+}
+
+// Checks detection with chroot STEP 2: the STORK_BIND9_CONFIG env var must be
+// prefixed with the chroot directory.
+func TestDetectBind9ChrootStep2EnvVarNotPrefixed(t *testing.T) {
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	// Create alternate config file...
+	confPath := "/dir/testing.conf"
+	chrootPath := "/chroot"
+	fullConfPath := path.Join(chrootPath, confPath)
+	config := `key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+	};
+	controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+	};`
+
+	// ... and point STORK_BIND9_CONFIG to it.
+	os.Setenv("STORK_BIND9_CONFIG", confPath)
+
+	// Check BIND 9 app detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(fullConfPath, config)
+
+	namedDir := "/dir/usr/sbin"
+	app := detectBind9App([]string{
+		"",
+		namedDir,
+		fmt.Sprintf("-t %s -some -params", chrootPath),
+	}, "", executor)
+	require.Nil(t, app)
+}
+
 // Checks detection STEP 3: parse output of the named -V command.
 func TestDetectBind9Step3BindVOutput(t *testing.T) {
-	// create alternate config file...
+	// Create alternate config file...
 	varPath := "/dir/testing.conf"
 	config := `key "foo" {
 		algorithm "hmac-sha256";
@@ -339,14 +453,50 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
 
-	// ... and tell the fake executor to return it as the output of named -V
+	// ... and tell the fake executor to return it as the output of named -V.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(varPath, config).
 		setConfigPathInNamedOutput(varPath)
 
-	// Now run the detection as usual
+	// Now run the detection as usual.
 	namedDir := "/dir/usr/sbin"
 	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "192.0.2.1", point.Address)
+	require.EqualValues(t, 1234, point.Port)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+}
+
+// Checks detection with chroot STEP 3: parse output of the named -V command.
+func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
+	// Create alternate config file...
+	varPath := "/dir/testing.conf"
+	chrootPath := "/chroot"
+	config := `key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+    };
+	controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+    };`
+
+	// ... and tell the fake executor to return it as the output of named -V.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(path.Join(chrootPath, varPath), config).
+		// The named -V returns the path relative to the chroot directory.
+		setConfigPathInNamedOutput(varPath)
+
+	// Now run the detection as usual.
+	namedDir := "/dir/usr/sbin"
+	app := detectBind9App([]string{
+		"",
+		namedDir,
+		fmt.Sprintf("-t %s -some -params", chrootPath),
+	}, "", executor)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -378,6 +528,44 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		t.Run(expectedPath, func(t *testing.T) {
 			// Act
 			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor)
+
+			// Assert
+			require.NotNil(t, app)
+			require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+			require.Len(t, app.GetBaseApp().AccessPoints, 1)
+			point := app.GetBaseApp().AccessPoints[0]
+			require.Equal(t, AccessPointControl, point.Type)
+			require.Equal(t, "192.0.2.1", point.Address)
+			require.EqualValues(t, 1234, point.Port)
+			require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+		})
+	}
+}
+
+// Checks detection wit chroot STEP 4: look at the typical locations.
+func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
+	// Arrange
+	config := `key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+    };
+	controls {
+		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
+    };`
+
+	executor := newTestCommandExecutor()
+
+	for _, expectedPath := range getPotentialNamedConfLocations() {
+		executor.
+			clear().
+			addCheckConfOutput(path.Join("/chroot", expectedPath), config)
+
+		t.Run(expectedPath, func(t *testing.T) {
+			// Act
+			app := detectBind9App(
+				[]string{"", "/dir", "-t /chroot -some -params"},
+				"", executor,
+			)
 
 			// Assert
 			require.NotNil(t, app)
