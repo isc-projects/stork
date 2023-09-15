@@ -29,7 +29,10 @@
         </td>
         <td formArrayName="values">
             <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
-                <div *ngIf="index === 0 || controls.get('unlocked').value" class="flex align-items-center pb-2">
+                <div
+                    *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
+                    class="flex align-items-center pb-2"
+                >
                     <ng-container [ngSwitch]="controls.data?.type">
                         <ng-container *ngSwitchCase="'string'">
                             <p-dropdown
@@ -46,7 +49,7 @@
                             </ng-template>
                         </ng-container>
                         <ng-container *ngSwitchCase="'boolean'">
-                            <p-triStateCheckbox [formControlName]="index"></p-triStateCheckbox>
+                            <p-triStateCheckbox ngDefaultControl [formControlName]="index"> </p-triStateCheckbox>
                         </ng-container>
                         <ng-container *ngSwitchCase="'number'">
                             <p-inputNumber
@@ -55,7 +58,7 @@
                                 [max]="controls.data.max"
                                 [minFractionDigits]="0"
                                 [maxFractionDigits]="controls.data.fractionDigits"
-                                inputStyleClass="full-width"
+                                inputStyleClass="w-full"
                                 [formControlName]="index"
                             >
                             </p-inputNumber>

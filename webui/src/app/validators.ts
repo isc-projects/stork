@@ -107,6 +107,9 @@ export class StorkValidators {
      * @returns validator function.
      */
     static fqdn(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
         if (StorkValidators.partialFqdn(control) && StorkValidators.fullFqdn(control)) {
             return { fqdn: `${control.value} is not a valid FQDN` }
         }

@@ -39,7 +39,7 @@ export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractC
      *
      * Use the {@link SubnetSetForm} to instantiate the form.
      */
-    @Input() formGroup: FormGroup<T>
+    @Input() formGroup: FormGroup<T> = null
 
     /**
      * Returns the names of all parameters in the form group.

@@ -1,16 +1,16 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
-import { FormsModule } from '@angular/forms'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { of } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -27,12 +27,38 @@ import { TabMenuModule } from 'primeng/tabmenu'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 import { MockParamMap } from '../utils'
+import { SubnetTabComponent } from '../subnet-tab/subnet-tab.component'
+import { FieldsetModule } from 'primeng/fieldset'
+import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
+import { SubnetFormComponent } from '../subnet-form/subnet-form.component'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { CheckboxModule } from 'primeng/checkbox'
+import { ButtonModule } from 'primeng/button'
+import { ChipsModule } from 'primeng/chips'
+import { DividerModule } from 'primeng/divider'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { MessagesModule } from 'primeng/messages'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { TagModule } from 'primeng/tag'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { SplitButtonModule } from 'primeng/splitbutton'
+import { ToastModule } from 'primeng/toast'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
     let router: Router
+    let route: ActivatedRoute
+    let paramMap: any
+    let paramMapSubject: BehaviorSubject<any>
+    let paramMapSpy: any
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -41,28 +67,54 @@ describe('SubnetsPageComponent', () => {
                 UsersService,
                 MessageService,
                 SettingsService,
-                {
+                /*                {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
                         queryParamMap: of(new MockParamMap()),
                         paramMap: of(new MockParamMap()),
                     },
-                },
-                RouterTestingModule,
+                }, */
+                //                RouterTestingModule,
             ],
             imports: [
                 FormsModule,
                 DropdownModule,
                 TableModule,
                 TooltipModule,
-                RouterTestingModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/subnets',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/subnets/all',
+                    },
+                    {
+                        path: 'dhcp/subnets/:id',
+                        component: SubnetsPageComponent,
+                    },
+                ]),
+                //                RouterTestingModule,
                 HttpClientTestingModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 MessageModule,
                 TabMenuModule,
+                FieldsetModule,
+                TreeModule,
+                ProgressSpinnerModule,
+                ButtonModule,
+                CheckboxModule,
+                ChipsModule,
+                DividerModule,
+                InputNumberModule,
+                MessagesModule,
+                MultiSelectModule,
+                TagModule,
+                TriStateCheckboxModule,
+                ReactiveFormsModule,
+                SplitButtonModule,
+                ToastModule,
             ],
             declarations: [
                 SubnetsPageComponent,
@@ -75,6 +127,14 @@ describe('SubnetsPageComponent', () => {
                 NumberPipe,
                 EntityLinkComponent,
                 AddressPoolBarComponent,
+                SubnetTabComponent,
+                CascadedParametersBoardComponent,
+                DhcpOptionSetViewComponent,
+                SubnetFormComponent,
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                SharedParametersFormComponent,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
@@ -197,6 +257,10 @@ describe('SubnetsPageComponent', () => {
 
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        paramMap = convertToParamMap({})
+        paramMapSubject = new BehaviorSubject(paramMap)
+        paramMapSpy = spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
         fixture.detectChanges()
     })
 
@@ -340,5 +404,214 @@ describe('SubnetsPageComponent', () => {
 
         // Act & Assert
         expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
+    })
+
+    it('should close subnet edit tab when form is submitted', async () => {
+        component.loadSubnets({})
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const updateSubnetBeginResp: any = {
+            id: 123,
+            subnet: {
+                id: 5,
+                subnet: '192.0.2.0/24',
+                localSubnets: [
+                    {
+                        id: 123,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        pools: [],
+                        keaConfigSubnetParameters: {
+                            subnetLevelParameters: {
+                                allocator: 'random',
+                                options: [],
+                                optionsHash: '',
+                            },
+                        },
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
+        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        component.onSubnetEditBegin({ id: 5 })
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        component.onSubnetFormSubmit(component.openedTabs[1].state)
+        await fixture.whenStable()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpService.updateSubnetDelete).not.toHaveBeenCalled()
+    })
+
+    it('should cancel transaction when a tab is closed', async () => {
+        component.loadSubnets({})
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const updateSubnetBeginResp: any = {
+            id: 123,
+            subnet: {
+                id: 5,
+                subnet: '192.0.2.0/24',
+                localSubnets: [
+                    {
+                        id: 123,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        pools: [],
+                        keaConfigSubnetParameters: {
+                            subnetLevelParameters: {
+                                allocator: 'random',
+                                options: [],
+                                optionsHash: '',
+                            },
+                        },
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
+        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        component.onSubnetEditBegin({ id: 5 })
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        component.closeTabByIndex(1)
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
+    })
+
+    it('should cancel transaction when cancel button is clicked', async () => {
+        component.loadSubnets({})
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const updateSubnetBeginResp: any = {
+            id: 123,
+            subnet: {
+                id: 5,
+                subnet: '192.0.2.0/24',
+                localSubnets: [
+                    {
+                        id: 123,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        pools: [],
+                        keaConfigSubnetParameters: {
+                            subnetLevelParameters: {
+                                allocator: 'random',
+                                options: [],
+                                optionsHash: '',
+                            },
+                        },
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
+        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        component.onSubnetEditBegin({ id: 5 })
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        // Cancel editing. It should close the tab and the transaction should be deleted.
+        component.onSubnetFormCancel(5)
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.tabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
     })
 })

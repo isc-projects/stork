@@ -48,6 +48,7 @@ import { TreeModule } from 'primeng/tree'
 import { DataViewModule } from 'primeng/dataview'
 import { ChipsModule } from 'primeng/chips'
 import { ChartModule } from 'primeng/chart'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -120,6 +121,7 @@ import { UtilizationStatsChartsComponent } from './utilization-stats-charts/util
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board/cascaded-parameters-board.component'
 import { SharedNetworkTabComponent } from './shared-network-tab/shared-network-tab.component'
 import { SharedParametersFormComponent } from './shared-parameters-form/shared-parameters-form.component'
+import { SubnetFormComponent } from './subnet-form/subnet-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -195,6 +197,7 @@ export function cfgFactory() {
         CascadedParametersBoardComponent,
         SharedNetworkTabComponent,
         SharedParametersFormComponent,
+        SubnetFormComponent,
     ],
     imports: [
         BrowserModule,
@@ -247,6 +250,7 @@ export function cfgFactory() {
         DataViewModule,
         ToggleButtonModule,
         ChartModule,
+        TriStateCheckboxModule,
     ],
     providers: [
         {

@@ -172,4 +172,16 @@
             </p-fieldset>
         </div>
     </ng-container>
+    <div class="flex mt-6">
+        <ng-container *ngIf="subnet.localSubnets?.length > 0">
+            <button
+                type="button"
+                pButton
+                label="Edit"
+                icon="pi pi-pencil"
+                class="p-button-info ml-2"
+                (click)="onSubnetEditBegin()"
+            ></button>
+        </ng-container>
+    </div>
 </div>

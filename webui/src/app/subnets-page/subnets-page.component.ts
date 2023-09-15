@@ -18,6 +18,74 @@ import { Subscription, concat, of } from 'rxjs'
 import { filter, map, take } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
+import { SubnetFormState } from '../forms/subnet-form'
+
+/**
+ * Enumeration for different subnet tab types displayed by the component.
+ */
+export enum SubnetTabType {
+    List = 1,
+    NewSubnet,
+    EditSubnet,
+    Subnet,
+}
+
+/**
+ * A class representing the contents of a tab displayed by the component.
+ */
+export class SubnetTab {
+    /**
+     * Preserves information specified in a subnet form.
+     */
+    state: SubnetFormState
+
+    /**
+     * Indicates if the form has been submitted.
+     */
+    submitted = false
+
+    /**
+     * Constructor.
+     *
+     * @param tabType subnet tab type.
+     * @param subnet subnet information displayed in the tab.
+     */
+    constructor(public tabType: SubnetTabType, public subnet?: Subnet) {
+        this.setSubnetTabType(tabType)
+    }
+
+    /**
+     * Sets new subnet tab type and initializes the form accordingly.
+     *
+     * It is a private function variant that does not check whether the type
+     * is already set to the desired value.
+     */
+    private setSubnetTabTypeInternal(tabType: SubnetTabType): void {
+        switch (tabType) {
+            case SubnetTabType.NewSubnet:
+            case SubnetTabType.EditSubnet:
+                this.state = new SubnetFormState()
+                break
+            default:
+                this.state = null
+                break
+        }
+        this.submitted = false
+        this.tabType = tabType
+    }
+
+    /**
+     * Sets new subnet tab type and initializes the form accordingly.
+     *
+     * It does nothing when the type is already set to the desired value.
+     */
+    public setSubnetTabType(tabType: SubnetTabType): void {
+        if (this.tabType === tabType) {
+            return
+        }
+        this.setSubnetTabTypeInternal(tabType)
+    }
+}
 
 /**
  * Specifies the filter parameters for fetching subnets that may be specified
@@ -85,7 +153,12 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * The entry corresponding to subnets list is not related to any specific
      * subnet. Its ID is 0.
      */
-    openedSubnets: Subnet[] = [{ id: 0 }]
+    openedTabs: SubnetTab[] = [new SubnetTab(SubnetTabType.List, { id: 0 })]
+
+    /**
+     * Enumeration for different tab types displayed in this component.
+     */
+    SubnetTabType = SubnetTabType
 
     grafanaUrl: string
 
@@ -350,14 +423,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnetId Subnet ID or a NaN for subnet list.
      */
     openTabBySubnetId(subnetId: number) {
-        const tabIndex = this.openedSubnets.map((t) => t.id).indexOf(subnetId)
-        if (tabIndex < 0) {
-            this.createTab(subnetId).then(() => {
-                this.switchToTab(this.openedSubnets.length - 1)
-            })
-        } else {
+        const tabIndex = this.openedTabs.map((t) => t.subnet?.id).indexOf(subnetId)
+        if (tabIndex >= 0) {
             this.switchToTab(tabIndex)
+            return
         }
+        this.createTab(subnetId).then(() => {
+            this.switchToTab(this.openedTabs.length - 1)
+        })
     }
 
     /**
@@ -371,7 +444,30 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             return
         }
 
-        this.openedSubnets.splice(index, 1)
+        if (
+            this.openedTabs[index].tabType === SubnetTabType.EditSubnet &&
+            this.openedTabs[index].subnet?.id > 0 &&
+            this.openedTabs[index].state?.transactionId > 0 &&
+            !this.openedTabs[index].submitted
+        ) {
+            this.dhcpApi
+                .updateSubnetDelete(this.openedTabs[index].subnet.id, this.openedTabs[index].state.transactionId)
+                .toPromise()
+                .catch((err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
+                    })
+                })
+        }
+
+        this.openedTabs.splice(index, 1)
         this.tabs.splice(index, 1)
 
         if (this.activeTabIndex === index) {
@@ -439,7 +535,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnet Subnet data.
      */
     private appendTab(subnet: Subnet) {
-        this.openedSubnets.push(subnet)
+        this.openedTabs.push(new SubnetTab(SubnetTabType.Subnet, subnet))
         this.tabs.push({
             label: subnet.subnet,
             routerLink: `/dhcp/subnets/${subnet.id}`,
@@ -483,5 +579,87 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
 
         const firstId = localSubnets[0].id
         return localSubnets.slice(1).some((ls) => ls.id !== firstId)
+    }
+
+    /**
+     * Event handler triggered when a user starts editing a subnet.
+     *
+     * It replaces the subnet view with the subnet edit form in the current tab.
+     *
+     * @param subnet an instance carrying subnet information.
+     */
+    onSubnetEditBegin(subnet): void {
+        let index = this.openedTabs.findIndex(
+            (t) =>
+                (t.tabType === SubnetTabType.Subnet || t.tabType === SubnetTabType.EditSubnet) &&
+                t.subnet.id === subnet.id
+        )
+        if (index >= 0) {
+            if (this.openedTabs[index].tabType !== SubnetTabType.EditSubnet) {
+                this.tabs[index].icon = 'pi pi-pencil'
+                this.openedTabs[index].setSubnetTabType(SubnetTabType.EditSubnet)
+            }
+            this.switchToTab(index)
+        }
+    }
+
+    /**
+     * Event handler triggered when user saves the edited subnet.
+     *
+     * @param event an event holding updated form data.
+     */
+    onSubnetFormSubmit(event): void {
+        // Find the form matching the form for which the notification has
+        // been sent.
+        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
+        if (index >= 0) {
+            this.openedTabs[index].submitted = true
+            this.closeTabByIndex(index)
+        }
+    }
+
+    /**
+     * Event handler triggered when subnet form editing is canceled.
+     *
+     * If the event comes from the new subnet form, the tab is closed. If the
+     * event comes from the subnet update form, the tab is turned into the
+     * subnet view. In both cases, the transaction is deleted in the server.
+     *
+     * @param subnetId subnet identifier or zero for new subnet case.
+     */
+    onSubnetFormCancel(subnetId: number): void {
+        const index = this.openedTabs.findIndex(
+            (t) => t.subnet?.id === subnetId || (t.tabType === SubnetTabType.NewSubnet && !subnetId)
+        )
+        if (index >= 0) {
+            if (
+                subnetId &&
+                this.openedTabs[index].state?.transactionId &&
+                this.openedTabs[index].tabType !== SubnetTabType.Subnet
+            ) {
+                this.dhcpApi.updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionId).toPromise()
+                this.tabs[index].icon = ''
+                this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+            } else {
+                this.closeTabByIndex(index)
+            }
+        }
+    }
+
+    /**
+     * Event handler triggered when a subnet form tab is being destroyed.
+     *
+     * The subnet form component is being destroyed and thus this parent
+     * component must save the updated form data in case a user re-opens
+     * the form tab.
+     *
+     * @param event an event holding updated form data.
+     */
+    onSubnetFormDestroy(event): void {
+        const tab = this.openedTabs.find((t) => t.state?.transactionId === event.transactionId)
+        if (tab) {
+            // Found the matching form. Update it.
+            tab.state = event
+        }
     }
 }

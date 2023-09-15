@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { DHCPOption, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
@@ -17,6 +17,12 @@ export class SubnetTabComponent implements OnInit {
      * Subnet data.
      */
     @Input() subnet: Subnet
+
+    /**
+     * An event emitter notifying a parent that user has clicked the
+     * Edit button to modify the subnet.
+     */
+    @Output() subnetEditBegin = new EventEmitter<any>()
 
     /**
      * DHCP parameters structured for display by the @link CascadedParametersBoard.
@@ -139,5 +145,15 @@ export class SubnetTabComponent implements OnInit {
      */
     allDaemonsHaveEqualDhcpOptions(): boolean {
         return !hasDifferentLocalSubnetOptions(this.subnet)
+    }
+
+    /**
+     * Event handler called when user begins subnet editing.
+     *
+     * It emits an event to the parent component to notify that subnet is
+     * is now edited.
+     */
+    onSubnetEditBegin(): void {
+        this.subnetEditBegin.emit(this.subnet)
     }
 }
