@@ -1,6 +1,6 @@
 * 325 [doc] slawek
 
-    Removed the documentation section referred to the non-existing Alpine
+    Removed the documentation section referring to the non-existing Alpine
     script on CloudSmith.
     (Gitlab #1137)
 
