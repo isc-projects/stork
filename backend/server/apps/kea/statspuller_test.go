@@ -240,7 +240,7 @@ func createDhcpConfigs() (string, string) {
 						{
 							"hw-address": "00:00:00:00:01:23",
 							"ip-address": "2001:db8:3::101",
-							"prefixes": [ "2001:db8:3:8000::/64" ]
+							"prefixes": [ "2001:db8:3:8000::/80" ]
 						},
 						{
 							"hw-address": "00:00:00:00:01:22",
