@@ -77,7 +77,7 @@ namespace :release do
     task :changelog do
         # This script reads the Changelog entries from the "changelog/"
         # directory. It fills up the number of entries, concats them by a blank
-        # line and prepends to the Changelog.md file. 
+        # line and prepends to the Changelog.md file.
 
         changelog_dir = 'changelog'
         changelog_file = 'ChangeLog.md'
@@ -96,7 +96,7 @@ namespace :release do
         end
 
         # List files in the changelog directory.
-        entry_filenames = Dir.entries(changelog_dir)        
+        entry_filenames = Dir.entries(changelog_dir)
         entry_files = []
 
         entry_filenames.each do |entry_filename|
@@ -148,7 +148,7 @@ namespace :release do
 
         # Concat the new entries and current Changelog content.
         merged = merged + "\n\n" + changelog_content
-        
+
         # Write the new Changelog content.
         File.write(changelog_file, merged)
 
