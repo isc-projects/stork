@@ -473,9 +473,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 
 		// The cwd path is already prefixed with the chroot directory
 		// because the /proc/(pid)/cwd is absolute.
-		if strings.HasPrefix(cwd, rootPrefix) {
-			cwd = cwd[len(rootPrefix):]
-		}
+		cwd = strings.TrimPrefix(cwd, rootPrefix)
 	}
 
 	// Look for config file in cmd params.
@@ -500,13 +498,14 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	if bind9ConfPath == "" {
 		if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
 			log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
-			if !strings.HasPrefix(f, rootPrefix) {
+			switch {
+			case !strings.HasPrefix(f, rootPrefix):
 				log.Errorf("STORK_BIND9_CONFIG must be inside the chroot directory: %s, got: %s", rootPrefix, f)
-			} else if executor.IsFileExist(f) {
+			case executor.IsFileExist(f):
 				// Trim the root prefix.
 				bind9ConfPath = f[len(rootPrefix):]
 				bind9ConfSource = "STORK_BIND9_CONFIG variable"
-			} else {
+			default:
 				log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
 			}
 		}

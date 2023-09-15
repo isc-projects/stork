@@ -215,7 +215,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 	// assigned. The processes that are not running anymore will be removed
 	// from the sm.visitedProcesses list to prevent it to infinitely grow over
 	// time.
-	var existingProcesses map[int32]bool
+	existingProcesses := map[int32]bool{}
 	for pid := range sm.visitedProcesses {
 		existingProcesses[pid] = false
 	}
