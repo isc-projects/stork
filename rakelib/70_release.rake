@@ -97,7 +97,7 @@ namespace :release do
 
         # List files in the changelog directory.
         entry_filenames = Dir.entries(changelog_dir)
-        entry_files = []
+        entry_files_and_timestamps = []
 
         entry_filenames.each do |entry_filename|
             entry_file = File.join(changelog_dir, entry_filename)
@@ -111,9 +111,22 @@ namespace :release do
                 next
             end
 
+            # Fetch the git committer date as the unix timestamp.
+            stdout, status = Open3.capture2 "git", "log", "-1", "--format=%ct", entry_file
+            timestamp = 0
+            if status == 0
+                timestamp = Integer(stdout)
+            end
+
             # Append entry to the list.
-            entry_files.push(entry_file)
+            entry_files_and_timestamps.push([entry_file, timestamp])
         end
+
+        # Sort the entries by the timestamp. Oldest first.
+        entry_files_and_timestamps.sort_by! { |e| e[1] }
+
+        # Extract the file names from the list.
+        entry_files = entry_files_and_timestamps.map { |e| e[0] }
 
         # Iterate over the entry files.
         entries = []
