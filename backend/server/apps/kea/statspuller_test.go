@@ -230,8 +230,8 @@ func createDhcpConfigs() (string, string) {
 					"pd-pools": [
 						{
 							"prefix": "2001:db8:3:8000::",
-							"prefix-len": 48,
-							"delegated-len": 64
+							"prefix-len": 64,
+							"delegated-len": 80
 						}
 					],
 					// 2 out-of-pool, 1 in-pool host reservations

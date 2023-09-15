@@ -710,7 +710,7 @@ func TestIPv6SubnetDispensableSomePdPoolsNoReservations(t *testing.T) {
                     "subnet": "2001:db8:1::/64",
                     "pd-pools": [
                         {
-                            "prefix": "3001::/16",
+                            "prefix": "3001::",
                             "prefix-len": 64,
                             "delegated-len": 96
                         }

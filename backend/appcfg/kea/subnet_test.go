@@ -60,7 +60,7 @@ func getAllKeysSubnet4() string {
 			{
 				"client-class": "phones_server1",
 				"option-data": [],
-				"pool": "192.1.0.1 - \t192.1.0.200",
+				"pool": "192.1.0.1 - 192.1.0.200",
 				"require-client-classes": [ "late" ]
 			},
 			{
