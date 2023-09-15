@@ -68,8 +68,6 @@ type appMonitor struct {
 	quit     chan bool       // channel for stopping app monitor
 	running  bool
 	wg       *sync.WaitGroup
-	// Store the PIDs of the visited processes and their creation timestamp.
-	visitedProcesses map[int32]int64
 
 	apps []App // list of detected apps on the host
 }
@@ -84,10 +82,9 @@ const (
 // by a dedicated method Start(). Make sure you call Start() before using app monitor.
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
-		requests:         make(chan chan []App),
-		quit:             make(chan bool),
-		wg:               &sync.WaitGroup{},
-		visitedProcesses: make(map[int32]int64),
+		requests: make(chan chan []App),
+		quit:     make(chan bool),
+		wg:       &sync.WaitGroup{},
 	}
 	return sm
 }
@@ -210,49 +207,12 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 	var apps []App
 
-	// This set is initialized with the PIDs of the previously detected
-	// processes. If the process is still running, it will have true value
-	// assigned. The processes that are not running anymore will be removed
-	// from the sm.visitedProcesses list to prevent it to infinitely grow over
-	// time.
-	existingProcesses := map[int32]bool{}
-	for pid := range sm.visitedProcesses {
-		existingProcesses[pid] = false
-	}
-
 	processes, _ := process.Processes()
 	for _, p := range processes {
 		procName, _ := p.Name()
-		var (
-			cmdline, cwd string
-			err          error
-		)
-
-		// Mark the process as existing.
-		existingProcesses[p.Pid] = true
-
-		// The detection function is a bit verbose. It produces a lot of
-		// messages that mangle the log output because it is executed
-		// periodically. This block prevents from running the detection if
-		// it is not needed. It performs the application detection only if the
-		// the process is new or it has been restarted.
-		processCreateTime, err := p.CreateTime()
-		if err == nil {
-			// Check if the process has been visited before.
-			if previousCreateTime, ok := sm.visitedProcesses[p.Pid]; ok && previousCreateTime == processCreateTime {
-				// The process has been visited before and its wasn't restarted.
-				// Copy the old app instance.
-				for _, app := range sm.apps {
-					if app.GetBaseApp().Pid == p.Pid {
-						apps = append(apps, app)
-						break
-					}
-				}
-				continue
-			}
-			// Save the process as visited.
-			sm.visitedProcesses[p.Pid] = processCreateTime
-		}
+		cmdline := ""
+		cwd := ""
+		var err error
 
 		if procName == keaProcName || procName == namedProcName {
 			cmdline, err = p.Cmdline()
@@ -292,13 +252,6 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				}
 			}
 			continue
-		}
-	}
-
-	// Remove the processes that are not running anymore.
-	for pid, exists := range existingProcesses {
-		if !exists {
-			delete(sm.visitedProcesses, pid)
 		}
 	}
 
