@@ -86,3 +86,19 @@ def test_bind9_chroot(server_service: Server, bind9_service: Bind9):
     assert len(state["apps"]) == 1
     app = state["apps"][0]
     assert app["type"] == "bind9"
+
+
+@bind9_parametrize("agent-bind9-chroot-rndc-custom")
+def test_bind9_chroot_rndc_custom(server_service: Server, bind9_service: Bind9):
+    """Check if Stork Agent can communicate with BIND 9 running in the chroot
+    environment when RNDC uses a custom configuration file and the required
+    key isn't specified in the rndc.key file."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    state, *_ = server_service.wait_for_next_machine_states()
+
+    assert len(state["apps"]) == 1
+    app = state["apps"][0]
+    assert app["type"] == "bind9"
+    assert len(app["access_points"]) == 2
+    assert app["access_points"][0]["address"] == "127.0.0.1"

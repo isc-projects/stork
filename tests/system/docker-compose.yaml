@@ -346,6 +346,13 @@ services:
       - $PWD/tests/system/config/bind/db.test:/chroot/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/chroot/etc/bind/named.conf
 
+  agent-bind9-chroot-rndc-custom:
+    extends: agent-bind9-chroot
+    volumes:
+      - $PWD/tests/system/config/bind-rndc-custom/named.conf:/chroot/etc/bind/named.conf
+      - $PWD/tests/system/config/bind-rndc-custom/rndc.key:/chroot/etc/bind/rndc.key
+      - $PWD/tests/system/config/bind-rndc-custom/rndc.conf:/chroot/etc/bind/rndc.conf
+
   perfdhcp:
     extends: agent-kea-base
     entrypoint: /usr/sbin/perfdhcp
