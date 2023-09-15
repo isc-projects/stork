@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/security/advancedtls"
@@ -25,34 +24,6 @@ import (
 
 type FakeAppMonitor struct {
 	Apps []App
-}
-
-// mockRndc mocks successful rndc output.
-func mockRndc(command []string) ([]byte, error) {
-	var output string
-
-	if len(command) > 0 && command[len(command)-1] == "status" {
-		output = "Server is up and running"
-		return []byte(output), nil
-	}
-
-	// unknown command.
-	output = "unknown command"
-	return []byte(output), nil
-}
-
-// mockRndcError mocks an error.
-func mockRndcError(command []string) ([]byte, error) {
-	log.Debugf("Mock rndc: error")
-
-	return []byte(""), errors.Errorf("mocking an error")
-}
-
-// mockRndcEmpty mocks empty output.
-func mockRndcEmpty(command []string) ([]byte, error) {
-	log.Debugf("Mock rndc: empty")
-
-	return []byte(""), nil
 }
 
 // Initializes StorkAgent instance and context used by the tests.
@@ -461,6 +432,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
+	executor := newTestCommandExecutorDefault()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -469,7 +441,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
-		RndcClient: NewRndcClient(mockRndc),
+		RndcClient: NewRndcClient(executor),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -516,6 +488,8 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
+	executor := newTestCommandExecutorDefault().
+		setRndcStatus("", errors.Errorf("mocking an error"))
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -524,7 +498,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
-		RndcClient: NewRndcClient(mockRndcError),
+		RndcClient: NewRndcClient(executor),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -570,6 +544,7 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
+	executor := newTestCommandExecutorDefault().setRndcStatus("", nil)
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -578,7 +553,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
-		RndcClient: NewRndcClient(mockRndcEmpty),
+		RndcClient: NewRndcClient(executor),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps

@@ -186,19 +186,22 @@ func TestGetCtrlAddressFromBind9Config(t *testing.T) {
 // It implements the builder pattern for the configuration methods.
 type testCommandExecutor struct {
 	configPathInNamedOutput *string
-	outputs                 map[string]string
+	checkConfOutputs        map[string]string
+	rndcStatusError         error
+	rndcStatus              string
 }
 
 // Constructs a new instance of the test command executor.
 func newTestCommandExecutor() *testCommandExecutor {
 	return &testCommandExecutor{
-		outputs: map[string]string{},
+		checkConfOutputs: map[string]string{},
+		rndcStatus:       "Server is up and running",
 	}
 }
 
 // Clears all added outputs and the config path used in the named -V output.
 func (e *testCommandExecutor) clear() *testCommandExecutor {
-	e.outputs = map[string]string{}
+	e.checkConfOutputs = map[string]string{}
 	e.configPathInNamedOutput = nil
 	return e
 }
@@ -206,7 +209,7 @@ func (e *testCommandExecutor) clear() *testCommandExecutor {
 // Add a output mock of the named-checkconf call. It accepts the configuration
 // path program and expected output text.
 func (e *testCommandExecutor) addCheckConfOutput(path, content string) *testCommandExecutor {
-	e.outputs[path] = content
+	e.checkConfOutputs[path] = content
 	return e
 }
 
@@ -214,6 +217,13 @@ func (e *testCommandExecutor) addCheckConfOutput(path, content string) *testComm
 // If the path is not set, the output doesn't contain the configuration path.
 func (e *testCommandExecutor) setConfigPathInNamedOutput(path string) *testCommandExecutor {
 	e.configPathInNamedOutput = &path
+	return e
+}
+
+// Set the output from the RNDC status command.
+func (e *testCommandExecutor) setRndcStatus(status string, err error) *testCommandExecutor {
+	e.rndcStatus = status
+	e.rndcStatusError = err
 	return e
 }
 
@@ -232,7 +242,7 @@ func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, er
 		config := args[len(args)-1]
 
 		fullPath := path.Join(root, config)
-		content, ok := e.outputs[fullPath]
+		content, ok := e.checkConfOutputs[fullPath]
 
 		if !ok {
 			// Reading failed.
@@ -255,6 +265,13 @@ func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, er
 		return []byte(text), nil
 	}
 
+	if strings.HasSuffix(command, "rndc") {
+		if len(args) > 0 && args[len(args)-1] == "status" {
+			return []byte(e.rndcStatus), e.rndcStatusError
+		}
+		return []byte("unknown command"), nil
+	}
+
 	return nil, nil
 }
 
@@ -272,7 +289,7 @@ func (e *testCommandExecutor) LookPath(command string) (string, error) {
 
 // Check if there is an output for a given configuration path.
 func (e *testCommandExecutor) IsFileExist(path string) bool {
-	for configuredPath := range e.outputs {
+	for configuredPath := range e.checkConfOutputs {
 		if configuredPath == path {
 			return true
 		}
@@ -806,4 +823,113 @@ func TestBind9RndcKeyString(t *testing.T) {
 
 	// Act & Assert
 	require.EqualValues(t, "foo:bar:baz", key.String())
+}
+
+// Test that the RNDC parameters are determined correctly if the RNDC key name
+// is not set and the default RNDC key exists.
+func TestDetermineDetailsUseDefaultKey(t *testing.T) {
+	// Arrange
+	executor := newTestCommandExecutor()
+	executor.addCheckConfOutput("/conf_dir/rndc.key", "")
+	client := NewRndcClient(executor)
+	expectedBaseCommand := []string{
+		"/usr/sbin/rndc",
+		"-s", "address",
+		"-p", "42",
+		"-k", "/conf_dir/rndc.key",
+	}
+
+	// Act
+	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, nil)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, expectedBaseCommand, client.BaseCommand)
+}
+
+// Test that the determination of the RNDC parameters throws an error if the
+// RNDC key name is not set but the default RNDC key does not exist.
+func TestDetermineDetailsUseMissingDefaultKey(t *testing.T) {
+	// Arrange
+	executor := newTestCommandExecutor()
+	client := NewRndcClient(executor)
+
+	// Act
+	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, nil)
+
+	// Assert
+	require.Error(t, err)
+}
+
+// Test that the RNDC parameters are determined correctly if the RNDC key name
+// is set and the default RNDC config exists.
+func TestDetermineDetailsCustomKeyExistingConfig(t *testing.T) {
+	// Arrange
+	executor := newTestCommandExecutor()
+	executor.addCheckConfOutput("/conf_dir/rndc.conf", "")
+	client := NewRndcClient(executor)
+	expectedBaseCommand := []string{
+		"/usr/sbin/rndc",
+		"-s", "address",
+		"-p", "42",
+		"-y", "name",
+		"-c", "/conf_dir/rndc.conf",
+	}
+	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+
+	// Act
+	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, expectedBaseCommand, client.BaseCommand)
+}
+
+// Test that the RNDC parameters are determined correctly if the RNDC key name
+// is set, the default RNDC config does not exists but the default RNDC key
+// file exists.
+func TestDetermineDetailsCustomKeyMissingConfigExistingKey(t *testing.T) {
+	// Arrange
+	executor := newTestCommandExecutor()
+	executor.addCheckConfOutput("/conf_dir/rndc.key", "")
+	client := NewRndcClient(executor)
+	expectedBaseCommand := []string{
+		"/usr/sbin/rndc",
+		"-s", "address",
+		"-p", "42",
+		"-y", "name",
+		// Use the -c flag instead of -k.
+		"-c", "/conf_dir/rndc.key",
+	}
+	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+
+	// Act
+	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, expectedBaseCommand, client.BaseCommand)
+}
+
+// Test that the RNDC parameters are determined correctly if the RNDC key name
+// is set, the default RNDC config does not exists, and the default RNDC key
+// does not exist too.
+func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
+	// Arrange
+	executor := newTestCommandExecutor()
+	client := NewRndcClient(executor)
+	expectedBaseCommand := []string{
+		"/usr/sbin/rndc",
+		"-s", "address",
+		"-p", "42",
+		"-y", "name",
+	}
+	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+
+	// Act
+	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, expectedBaseCommand, client.BaseCommand)
 }

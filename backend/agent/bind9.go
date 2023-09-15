@@ -3,7 +3,6 @@ package agent
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -87,20 +86,14 @@ const (
 
 // Object for interacting with named using rndc.
 type RndcClient struct {
-	execute     CommandExecutor
+	executor    storkutil.CommandExecutor
 	BaseCommand []string
 }
 
-// CommandExecutor takes an array of strings, with the first element of the
-// array being the program to call, followed by its arguments.  It returns
-// the command output, and possibly an error (for example if running the
-// command failed).
-type CommandExecutor func([]string) ([]byte, error)
-
 // Create an rndc client to communicate with BIND 9 named daemon.
-func NewRndcClient(ce CommandExecutor) *RndcClient {
+func NewRndcClient(ce storkutil.CommandExecutor) *RndcClient {
 	rndcClient := &RndcClient{
-		execute: ce,
+		executor: ce,
 	}
 	return rndcClient
 }
@@ -108,8 +101,8 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 // Determine rndc details in the system.
 // It find rndc executable and prepare base command with all necessary
 // parameters including rndc secret key.
-func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey *Bind9RndcKey, executor storkutil.CommandExecutor) error {
-	rndcPath, err := determineBinPath(baseNamedDir, rndcExec, executor)
+func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey *Bind9RndcKey) error {
+	rndcPath, err := determineBinPath(baseNamedDir, rndcExec, rc.executor)
 	if err != nil {
 		return err
 	}
@@ -121,10 +114,10 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 	if ctrlKey != nil {
 		cmd = append(cmd, "-y")
 		cmd = append(cmd, ctrlKey.Name)
-		if _, err := os.Stat(rndcConfPath); err == nil {
+		if rc.executor.IsFileExist(rndcConfPath) {
 			cmd = append(cmd, "-c")
 			cmd = append(cmd, rndcConfPath)
-		} else if _, err := os.Stat(rndcKeyPath); err == nil {
+		} else if rc.executor.IsFileExist(rndcKeyPath) {
 			cmd = append(cmd, "-c")
 			cmd = append(cmd, rndcKeyPath)
 		} else {
@@ -132,8 +125,8 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 		}
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
-		if !executor.IsFileExist(keyPath) {
-			return errors.Wrap(err, "cannot determine rndc key")
+		if !rc.executor.IsFileExist(keyPath) {
+			return errors.Errorf("the rndc key fie %s does not exist", keyPath)
 		}
 		cmd = append(cmd, "-k")
 		cmd = append(cmd, keyPath)
@@ -149,7 +142,11 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 	rndcCommand = append(rndcCommand, command...)
 	log.Debugf("Rndc: %+v", rndcCommand)
 
-	return rc.execute(rndcCommand)
+	if len(rndcCommand) == 0 {
+		return nil, errors.New("no rndc command specified")
+	}
+
+	return rc.executor.Output(rndcCommand[0], rndcCommand[1:]...)
 }
 
 // getRndcKey looks for the key with a given `name` in `contents`.
@@ -616,14 +613,8 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		log.Warnf("Cannot parse BIND 9 statistics-channels clause. Unable to gather statistics.")
 	}
 
-	// rndc is the command to interface with BIND 9.
-	rndc := func(command []string) ([]byte, error) {
-		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
-		return cmd.Output()
-	}
-
 	// determine rndc details
-	rndcClient := NewRndcClient(rndc)
+	rndcClient := NewRndcClient(executor)
 	err = rndcClient.DetermineDetails(
 		baseNamedDir,
 		// RNDC client doesn't support chroot.
@@ -631,7 +622,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		ctrlAddress,
 		ctrlPort,
 		ctrlKey,
-		executor,
 	)
 	if err != nil {
 		log.Warnf("Cannot determine BIND 9 rndc details: %s", err)
