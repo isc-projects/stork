@@ -75,11 +75,11 @@ namespace :release do
 
     desc 'Merge unreleased Changelog entries to the Changelog file'
     task :changelog do
-        # This script reads the Changelog entries from the "changelog/"
+        # This script reads the Changelog entries from the "changelog_unreleased/"
         # directory. It fills up the number of entries, concats them by a blank
         # line and prepends to the Changelog.md file.
 
-        changelog_dir = 'changelog'
+        changelog_dir = 'changelog_unreleased'
         changelog_file = 'ChangeLog.md'
 
         # Read the Changelog file content.
