@@ -1,3 +1,8 @@
+* 333 [func] slawek
+
+    Added a support for BIND 9 running in the chroot mode.
+    (Gitlab #974)
+
 * 332 [func] slawek
 
     Added support for Postgres 15+. System tests now run on Postgres 16.
