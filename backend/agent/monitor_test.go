@@ -166,6 +166,25 @@ func TestDetectApps(t *testing.T) {
 	am.detectApps(sa)
 }
 
+// Test that the processes visited during the detection are remembered.
+func TestDetectAppsRememberProcesses(t *testing.T) {
+	// Arrange
+	// The visited map includes one process that for sure is not running.
+	am := &appMonitor{visitedProcesses: map[int32]int64{-42: 0}}
+	hm := NewHookManager()
+	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
+	httpClient, _ := NewHTTPClient(false)
+	sa := NewStorkAgent(settings, am, httpClient, hm)
+
+	// Act
+	am.detectApps(sa)
+
+	// Assert
+	require.NotEmpty(t, am.visitedProcesses)
+	// The not running process should be removed from the map.
+	require.NotContains(t, am.visitedProcesses, int32(-42))
+}
+
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{visitedProcesses: map[int32]int64{}}
