@@ -114,13 +114,14 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 	if ctrlKey != nil {
 		cmd = append(cmd, "-y")
 		cmd = append(cmd, ctrlKey.Name)
-		if rc.executor.IsFileExist(rndcConfPath) {
+		switch {
+		case rc.executor.IsFileExist(rndcConfPath):
 			cmd = append(cmd, "-c")
 			cmd = append(cmd, rndcConfPath)
-		} else if rc.executor.IsFileExist(rndcKeyPath) {
+		case rc.executor.IsFileExist(rndcKeyPath):
 			cmd = append(cmd, "-c")
 			cmd = append(cmd, rndcKeyPath)
-		} else {
+		default:
 			log.Warnf("Could not determine RNDC key file in the %s directory. It may be wrong detected by BIND 9.", bind9ConfDir)
 		}
 	} else {
