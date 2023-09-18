@@ -32,9 +32,15 @@ import (
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Settings       *cli.Context
-	AppMonitor     AppMonitor
-	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
+	Settings   *cli.Context
+	AppMonitor AppMonitor
+	// To communicate with named statistics-channel.
+	GeneralHTTPClient *HTTPClient
+	// To communicate with Kea Control Agent.
+	// It may contain the HTTP credentials.
+	// If the agent is registered, it will use the GRPC credentials obtained
+	// from the server as TLS client certificate.
+	KeaHTTPClient  *HTTPClient
 	server         *grpc.Server
 	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
@@ -45,16 +51,17 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient *HTTPClient, hookManager *HookManager) *StorkAgent {
+func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Settings:       settings,
-		AppMonitor:     appMonitor,
-		HTTPClient:     httpClient,
-		logTailer:      logTailer,
-		keaInterceptor: newKeaInterceptor(),
-		hookManager:    hookManager,
+		Settings:          settings,
+		AppMonitor:        appMonitor,
+		GeneralHTTPClient: httpClient,
+		KeaHTTPClient:     keaHTTPClient,
+		logTailer:         logTailer,
+		keaInterceptor:    newKeaInterceptor(),
+		hookManager:       hookManager,
 	}
 
 	registerKeaInterceptFns(sa)
@@ -192,7 +199,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		VirtualizationRole:       hostInfo.VirtualizationRole,
 		HostID:                   hostInfo.HostID,
 		Error:                    "",
-		AgentUsesHTTPCredentials: sa.HTTPClient.HasAuthenticationCredentials(),
+		AgentUsesHTTPCredentials: sa.KeaHTTPClient.HasAuthenticationCredentials(),
 	}
 
 	return &state, nil
@@ -263,7 +270,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	}
 
 	// Try to forward the command to named daemon.
-	namedRsp, err := sa.HTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+	namedRsp, err := sa.GeneralHTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"URL": reqURL,
@@ -325,7 +332,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			Status: &agentapi.Status{},
 		}
 		// Try to forward the command to Kea Control Agent.
-		keaRsp, err := sa.HTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+		keaRsp, err := sa.KeaHTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"URL": reqURL,

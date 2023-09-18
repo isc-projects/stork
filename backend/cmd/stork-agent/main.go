@@ -77,10 +77,11 @@ func runAgent(settings *cli.Context, reload bool) error {
 		}
 	}
 
-	// Prepare the HTTP client. Before registration it has no HTTP credentials
-	// or TLS certificates.
+	skipTLSCertVerification := settings.Bool("skip-tls-cert-verification")
+	// Prepare the general HTTP client. It has no HTTP credentials or TLS
+	// certificates.
 	httpClient := agent.NewHTTPClient()
-	httpClient.SetSkipTLSVerification(settings.Bool("skip-tls-cert-verification"))
+	httpClient.SetSkipTLSVerification(skipTLSCertVerification)
 
 	// Try registering the agent in the server using the agent token.
 	if settings.String("server-url") != "" {
@@ -97,17 +98,36 @@ func runAgent(settings *cli.Context, reload bool) error {
 	// Start app monitor.
 	appMonitor := agent.NewAppMonitor()
 
-	// Prepare HTTP client. It may now use the certificates obtained during the registration.
-	err = httpClient.LoadCredentials()
-	if err != nil {
+	// Prepare Kea HTTP client. It may use the certificates obtained during
+	// the registration and GRPC credentials as TLS credentials.
+	keaHTTPClient := agent.NewHTTPClient()
+	keaHTTPClient.SetSkipTLSVerification(skipTLSCertVerification)
+
+	ok, err := keaHTTPClient.LoadCredentials()
+	switch {
+	case err != nil:
 		log.WithError(err).Fatal("Could not load the HTTP credentials")
+	case !ok:
+		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", agent.CredentialsFile)
+	default:
+		log.Infof("The Basic Auth credentials have been loaded from file (%s)", agent.CredentialsFile)
+	}
+
+	ok, err = keaHTTPClient.LoadGRPCCertificates()
+	switch {
+	case err != nil:
+		log.WithError(err).Error("Could not load the GRPC credentials")
+	case !ok:
+		log.Warn("The GRPC credentials file is missing - the requests to Kea will not contain the client TLS certificate")
+	default:
+		log.Info("The GRPC credentials will be used as the client TLS certificate when connecting to Kea")
 	}
 
 	// Prepare agent gRPC handler
-	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, hookManager)
+	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, keaHTTPClient, hookManager)
 
 	// Prepare Prometheus exporters.
-	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor, httpClient)
+	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor, keaHTTPClient)
 	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor, httpClient)
 
 	err = storkAgent.Setup()

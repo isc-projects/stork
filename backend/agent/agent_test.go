@@ -52,11 +52,12 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
-		AppMonitor:     &fam,
-		HTTPClient:     httpClient,
-		logTailer:      newLogTailer(),
-		keaInterceptor: newKeaInterceptor(),
-		hookManager:    NewHookManager(),
+		AppMonitor:        &fam,
+		GeneralHTTPClient: httpClient,
+		KeaHTTPClient:     httpClient,
+		logTailer:         newLogTailer(),
+		keaInterceptor:    newKeaInterceptor(),
+		hookManager:       NewHookManager(),
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
@@ -108,10 +109,12 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
+	generalHTTPClient := NewHTTPClient()
+	keaHTTPClient := NewHTTPClient()
+	sa := NewStorkAgent(settings, fam, generalHTTPClient, keaHTTPClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
-	require.NotNil(t, sa.HTTPClient)
+	require.Equal(t, generalHTTPClient, sa.GeneralHTTPClient)
+	require.Equal(t, keaHTTPClient, sa.KeaHTTPClient)
 }
 
 // Check if an agent returns a response to a ping message..
@@ -201,6 +204,9 @@ func TestGetState(t *testing.T) {
 	defer teardown()
 
 	// Prepare credentials file.
+	// Recreate Stork agent.
+	sa, ctx, teardown = setupAgentTest()
+	defer teardown()
 	restorePaths := RememberPaths()
 	defer restorePaths()
 	sb := testutil.NewSandbox()
@@ -219,8 +225,9 @@ func TestGetState(t *testing.T) {
 
 	CredentialsFile, _ = sb.Write("credentials.json", content)
 
-	err = sa.HTTPClient.LoadCredentials()
+	ok, err := sa.KeaHTTPClient.LoadCredentials()
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)

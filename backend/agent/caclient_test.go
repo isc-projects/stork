@@ -42,10 +42,11 @@ func TestLoadGRPCCertificates(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Act
-	err := client.LoadGRPCCertificates()
+	ok, err := client.LoadGRPCCertificates()
 
 	// Assert
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	transport := client.client.Transport.(*http.Transport)
 	require.NotNil(t, transport)
@@ -77,10 +78,11 @@ func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Act
-	err := client.LoadGRPCCertificates()
+	ok, err := client.LoadGRPCCertificates()
 
 	// Assert
-	require.Error(t, err)
+	require.NoError(t, err)
+	require.False(t, ok)
 
 	transport := client.client.Transport.(*http.Transport)
 	require.NotNil(t, transport)
@@ -158,8 +160,9 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Load credentials
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 	require.NoError(t, err)
+	require.True(t, ok)
 	require.NotNil(t, client.credentials)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
@@ -187,8 +190,9 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	client.SetSkipTLSVerification(true)
 
 	// Load credentials
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 	require.NoError(t, err)
+	require.False(t, ok)
 	require.Nil(t, client.credentials)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
@@ -239,8 +243,9 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	require.False(t, client.HasAuthenticationCredentials())
 
 	// Load credentials.
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	// Act & Assert
 	require.True(t, client.HasAuthenticationCredentials())
@@ -263,10 +268,11 @@ func TestLoadCredentialsNoEntries(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Act
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 
 	// Assert
 	require.NoError(t, err)
+	require.True(t, ok)
 	require.False(t, client.HasAuthenticationCredentials())
 }
 
@@ -287,10 +293,11 @@ func TestLoadCredentialsEmptyFile(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Act
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 
 	// Assert
 	require.Error(t, err)
+	require.False(t, ok)
 	require.False(t, client.HasAuthenticationCredentials())
 }
 
@@ -306,9 +313,10 @@ func TestLoadCredentialsCredentialsMissingFile(t *testing.T) {
 	client := NewHTTPClient()
 
 	// Act
-	err := client.LoadCredentials()
+	ok, err := client.LoadCredentials()
 
 	// Assert
 	require.NoError(t, err)
+	require.False(t, ok)
 	require.False(t, client.HasAuthenticationCredentials())
 }

@@ -231,7 +231,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			// detect kea
 			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				keaApp := detectKeaApp(m, cwd, storkAgent.HTTPClient)
+				keaApp := detectKeaApp(m, cwd, storkAgent.KeaHTTPClient)
 				if keaApp != nil {
 					keaApp.GetBaseApp().Pid = p.Pid
 					apps = append(apps, keaApp)

@@ -20,7 +20,7 @@ func TestGetApps(t *testing.T) {
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, am, httpClient, hm)
+	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -159,7 +159,7 @@ func TestDetectApps(t *testing.T) {
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, am, httpClient, hm)
+	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
 	am.detectApps(sa)
 }
 
@@ -184,7 +184,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	hm := NewHookManager()
 
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am, httpClient, hm)
+	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
