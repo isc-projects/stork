@@ -11,9 +11,7 @@ import (
 
 // Test the case that the command is successfully sent to Kea.
 func TestSendCommand(t *testing.T) {
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	gock.InterceptClient(httpClient.client)
 
 	// Expect appropriate content type and the body. If they are not matched
@@ -36,7 +34,7 @@ func TestSendCommand(t *testing.T) {
 		HTTPClient: httpClient,
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.NoError(t, err)
 
 	require.Len(t, responses, 1)
@@ -44,9 +42,7 @@ func TestSendCommand(t *testing.T) {
 
 // Test the case when Kea returns invalid response to the command.
 func TestSendCommandInvalidResponse(t *testing.T) {
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	gock.InterceptClient(httpClient.client)
 
 	// Return invalid response. Arguments must be a map not an integer.
@@ -68,16 +64,14 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 		HTTPClient: httpClient,
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 
 // Test the case when Kea server is unreachable.
 func TestSendCommandNoKea(t *testing.T) {
 	command := keactrl.NewCommand("list-commands", nil, nil)
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
@@ -86,7 +80,7 @@ func TestSendCommandNoKea(t *testing.T) {
 		HTTPClient: httpClient,
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 
@@ -94,9 +88,7 @@ func TestSendCommandNoKea(t *testing.T) {
 // application by sending the request to the Kea Control Agent and the
 // daemons behind it.
 func TestKeaAllowedLogs(t *testing.T) {
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	gock.InterceptClient(httpClient.client)
 
 	// The first config-get command should go to the Kea Control Agent.
@@ -129,7 +121,7 @@ func TestKeaAllowedLogs(t *testing.T) {
         }
     }]`
 	caResponse := make([]map[string]interface{}, 1)
-	err = json.Unmarshal([]byte(caResponseJSON), &caResponse)
+	err := json.Unmarshal([]byte(caResponseJSON), &caResponse)
 	require.NoError(t, err)
 	gock.New("https://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
@@ -204,9 +196,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 // from the Kea daemons is lower than the number of services specified in the
 // command.
 func TestKeaAllowedLogsFewerResponses(t *testing.T) {
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	gock.InterceptClient(httpClient.client)
 
 	defer gock.Off()
@@ -222,7 +212,7 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
         }
     ]`
 	dhcpResponses := make([]map[string]interface{}, 1)
-	err = json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
+	err := json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
 	require.NoError(t, err)
 
 	gock.New("https://localhost:45634").

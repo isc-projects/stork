@@ -77,10 +77,14 @@ func runAgent(settings *cli.Context, reload bool) error {
 		}
 	}
 
+	// Prepare the HTTP client. Before registration it has no HTTP credentials
+	// or TLS certificates.
+	httpClient := agent.NewHTTPClient()
+	httpClient.SetSkipTLSVerification(settings.Bool("skip-tls-cert-verification"))
+
 	// Try registering the agent in the server using the agent token.
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
-		httpClient, err := agent.NewHTTPClient(settings.Bool("skip-tls-cert-verification"))
 		if err != nil {
 			log.WithError(err).Fatal("Could not initialize the HTTP client")
 		}
@@ -93,10 +97,10 @@ func runAgent(settings *cli.Context, reload bool) error {
 	// Start app monitor.
 	appMonitor := agent.NewAppMonitor()
 
-	// Prepare HTTP client. It may use the certificates obtained during the registration.
-	httpClient, err := agent.NewHTTPClient(settings.Bool("skip-tls-cert-verification"))
+	// Prepare HTTP client. It may now use the certificates obtained during the registration.
+	err = httpClient.LoadCredentials()
 	if err != nil {
-		log.WithError(err).Fatal("Could not initialize the HTTP client")
+		log.WithError(err).Fatal("Could not load the HTTP credentials")
 	}
 
 	// Prepare agent gRPC handler
@@ -173,10 +177,8 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	httpClient, err := agent.NewHTTPClient(cfg.Bool("skip-tls-cert-verification"))
-	if err != nil {
-		log.WithError(err).Fatal("Could not initialize the HTTP client")
-	}
+	httpClient := agent.NewHTTPClient()
+	httpClient.SetSkipTLSVerification(cfg.Bool("skip-tls-cert-verification"))
 
 	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false, httpClient) {
 		log.Println("Registration completed successfully")

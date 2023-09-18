@@ -28,20 +28,27 @@ type FakeAppMonitor struct {
 
 // Initializes StorkAgent instance and context used by the tests.
 // Returns the teardown function that must be called to clean up the
-// self-generated certificates.
+// mocked paths.
 func setupAgentTest() (*StorkAgent, context.Context, func()) {
 	return setupAgentTestWithHooks(nil)
 }
 
 // Initializes StorkAgent instance and context used by the tests. Loads the
 // given list of callout carriers (hooks' contents).
-// Returns the teardown function that must be called to clean up the
-// self-generated certificates.
 func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context, func()) {
-	cleanup, _ := GenerateSelfSignedCerts()
-
-	httpClient, _ := NewHTTPClient(true)
+	httpClient := NewHTTPClient()
+	httpClient.SetSkipTLSVerification(true)
 	gock.InterceptClient(httpClient.client)
+
+	restorePaths := RememberPaths()
+	sb := testutil.NewSandbox()
+
+	// Replace the default paths.
+	RootCAFile = path.Join(sb.BasePath, "ca-not-exists.pem")
+	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
+	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists")
+	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
@@ -55,7 +62,10 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
 	sa.Setup()
 	ctx := context.Background()
-	return sa, ctx, cleanup
+	return sa, ctx, func() {
+		sb.Close()
+		restorePaths()
+	}
 }
 
 func (fam *FakeAppMonitor) GetApps() []App {
@@ -98,8 +108,7 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
@@ -187,12 +196,15 @@ func TestGetState(t *testing.T) {
 	require.False(t, point.UseSecureProtocol)
 	require.EqualValues(t, "foo", point.Key)
 
+	// Recreate Stork agent.
+	sa, ctx, teardown = setupAgentTest()
+	defer teardown()
+
 	// Prepare credentials file.
 	restorePaths := RememberPaths()
 	defer restorePaths()
-
-	tmpDir, _ := os.MkdirTemp("", "reg")
-	CredentialsFile = path.Join(tmpDir, "credentials.json")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
 	content := `{
 		"basic_auth": [
@@ -205,11 +217,11 @@ func TestGetState(t *testing.T) {
 		]
 	}`
 
-	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
+	CredentialsFile, _ = sb.Write("credentials.json", content)
 
-	// Recreate Stork agent.
-	sa, ctx, teardown = setupAgentTest()
-	defer teardown()
+	err = sa.HTTPClient.LoadCredentials()
+	require.NoError(t, err)
+
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.True(t, rsp.AgentUsesHTTPCredentials)

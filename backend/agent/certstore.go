@@ -30,7 +30,8 @@ type CertStore struct {
 	agentTokenPath string
 }
 
-// Constructs a new cert store instance. Uses the default paths.
+// Constructs a new cert store instance. Uses the paths where the GRPC
+// certificates, obtained from the server, are located.
 func NewCertStoreDefault() *CertStore {
 	return &CertStore{
 		keyPEMPath:     KeyPEMFile,

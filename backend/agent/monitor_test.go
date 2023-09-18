@@ -19,9 +19,7 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient, teardown, err := newHTTPClientWithCerts(false)
-	require.NoError(t, err)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.Start(sa)
 	apps := am.GetApps()
@@ -160,8 +158,7 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.detectApps(sa)
 }
@@ -169,8 +166,7 @@ func TestDetectApps(t *testing.T) {
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 	am.apps = append(am.apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type: AppTypeKea,
@@ -288,8 +284,7 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Empty(t, ctrlPoint.Key)
 	}
 
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
@@ -458,8 +453,7 @@ func TestDetectConfiguredDaemons(t *testing.T) {
 	configPath, clean := makeKeaConfFile()
 	defer clean()
 
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
@@ -486,8 +480,7 @@ func TestDetectConfiguredSingleDaemon(t *testing.T) {
 		}
 	} }`)
 
-	httpClient, teardown, _ := newHTTPClientWithCerts(false)
-	defer teardown()
+	httpClient := NewHTTPClient()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)

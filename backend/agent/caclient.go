@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	storkutil "isc.org/stork/util"
 )
 
 // CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
@@ -21,92 +20,112 @@ var CredentialsFile = "/etc/stork/agent-credentials.json" //nolint:gochecknoglob
 // HTTPClient is a normal http client.
 type HTTPClient struct {
 	client      *http.Client
+	transport   *http.Transport
 	credentials *CredentialsStore
 }
 
-// Create a client to contact with Kea Control Agent or named statistics-channel.
-// If @skipTLSVerification is true then it doesn't verify the server credentials
-// over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func NewHTTPClient(skipTLSVerification bool) (*HTTPClient, error) {
+// Creates a client to contact with Kea Control Agent or named statistics-channel.
+func NewHTTPClient() *HTTPClient {
+	transport := &http.Transport{}
+	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+		transport = defaultTransport.Clone()
+	} else {
+		// The gomock library uses own implementation of the RoundTripper.
+		// It should never happen on production.
+		log.Warn("Could not clone default transport, using empty")
+	}
+
+	transport.TLSClientConfig = &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
 	// The instance of the client which is created here disables HTTP/2 and should
 	// be used whenever the communication with the Kea servers is required.
 	// append the client certificates from the CA
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
+	//
+	// Creating empty, non-nil map here disables the HTTP/2.
+	// In fact the not-nil TLSClientConfig disables HTTP/2 anyway but it is
+	// not documented strictly.
+	transport.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
+	return &HTTPClient{
+		client: &http.Client{
+			Transport: transport,
+		},
+		transport:   transport,
+		credentials: nil,
+	}
+}
+
+// If true then it doesn't verify the server credentials
+// over HTTPS. It may be useful when Kea uses a self-signed certificate.
+func (c *HTTPClient) SetSkipTLSVerification(skipTLSVerification bool) {
+	c.transport.TLSClientConfig.InsecureSkipVerify = skipTLSVerification
+}
+
+// Loads the HTTP credentials from a file. The credentials will be used if
+// necessary to authenticate the requests.
+func (c *HTTPClient) LoadCredentials() error {
+	credentialsStore := NewCredentialsStore()
+	// Check if the credential file exist
+	_, err := os.Stat(CredentialsFile)
+	if errors.Is(err, os.ErrNotExist) {
+		// The credentials file may not exist.
+		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
+		return nil
+	}
+	if err != nil {
+		// Unexpected error.
+		return errors.Wrapf(err, "could not access the Basic Auth credentials file (%s)", CredentialsFile)
 	}
 
+	file, err := os.Open(CredentialsFile)
+	if err != nil {
+		return errors.Wrapf(err, "could not read the Basic Auth credentials from file (%s)", CredentialsFile)
+	}
+	defer file.Close()
+
+	err = credentialsStore.Read(file)
+	if err != nil {
+		return errors.WithMessagef(err, "could not read the credentials file (%s)", CredentialsFile)
+	}
+
+	log.Infof("Configured to use the Basic Auth credentials from file (%s)", CredentialsFile)
+	c.credentials = credentialsStore
+	return nil
+}
+
+// Loads the TLS certificates from a file. The certificates will be attached
+// to all sent requests.
+// The GRPC certificates are self-signed by default. It means the requests
+// will be rejected if the server verifies the client credentials.
+func (c *HTTPClient) LoadGRPCCertificates() error {
 	tlsCertStore := NewCertStoreDefault()
 	isEmpty, err := tlsCertStore.IsEmpty()
 	if err != nil {
-		log.WithError(err).Error("Cannot stat the TLS files")
-		return nil, err
+		return errors.WithMessage(err, "cannot stat the TLS files")
 	}
-	certValidationErr := tlsCertStore.IsValid()
-
-	tlsCert, tlsCertErr := tlsCertStore.ReadTLSCert()
-	tlsRootCA, tlsRootCAErr := tlsCertStore.ReadRootCA()
-	err = storkutil.CombineErrors("HTTP TLS is not used", []error{tlsCertErr, tlsRootCAErr})
-	switch {
-	case err == nil:
-		tlsConfig.Certificates = []tls.Certificate{*tlsCert}
-		tlsConfig.RootCAs = tlsRootCA
-		log.Info("Configured TLS for HTTP connections.")
-		// TLS configured properly. Continue.
-	case isEmpty:
-		log.WithError(err).Info("GRPC certificates not found. Skip configuring TLS.")
-		// TLS was not requested. Continue.
-	case certValidationErr != nil:
-		log.WithError(err).Error("GRPC certificates are not valid. Skip configuring TLS.")
-		// Invalid TLS certs. Continue.
-	default:
-		log.WithError(err).Warning("TLS for HTTP connections is not configured")
-		// TLS was requested but the configuration is invalid. Break.
-		return nil, err
+	if isEmpty {
+		return errors.Errorf("GRPC certificates not found")
 	}
 
-	httpTransport := &http.Transport{
-		// Creating empty, non-nil map here disables the HTTP/2.
-		TLSNextProto:    make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
-		TLSClientConfig: tlsConfig,
+	err = tlsCertStore.IsValid()
+	if err != nil {
+		return errors.WithMessage(err, "GRPC certificates are not valid")
 	}
 
-	httpClient := &http.Client{
-		Transport: httpTransport,
+	tlsCert, err := tlsCertStore.ReadTLSCert()
+	if err != nil {
+		return errors.WithMessage(err, "cannot read the TLS certificate")
 	}
 
-	credentialsStore := NewCredentialsStore()
-	// Check if the credential file exist
-	_, err = os.Stat(CredentialsFile)
-	switch {
-	case err == nil:
-		file, err := os.Open(CredentialsFile)
-		if err == nil {
-			defer file.Close()
-			err = credentialsStore.Read(file)
-			err = errors.WithMessagef(err, "could not read the credentials file (%s)", CredentialsFile)
-		}
-		if err == nil {
-			log.Infof("Configured to use the Basic Auth credentials from file (%s)", CredentialsFile)
-		} else {
-			log.WithError(err).Warnf("Could not read the Basic Auth credentials from file (%s)", CredentialsFile)
-			return nil, err
-		}
-	case errors.Is(err, os.ErrNotExist):
-		// The credentials file may not exist.
-		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
-	default:
-		// Unexpected error.
-		log.WithError(err).Error("Could not access the Basic Auth credentials file")
-		return nil, err
+	tlsRootCA, err := tlsCertStore.ReadRootCA()
+	if err != nil {
+		return errors.WithMessage(err, "cannot read the TLS root CA")
 	}
 
-	client := &HTTPClient{
-		client:      httpClient,
-		credentials: credentialsStore,
-	}
-
-	return client, nil
+	c.transport.TLSClientConfig.Certificates = []tls.Certificate{*tlsCert}
+	c.transport.TLSClientConfig.RootCAs = tlsRootCA
+	return nil
 }
 
 // Sends a request to a given endpoint using the HTTP POST method. The payload
@@ -122,11 +141,13 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	if basicAuth, ok := c.credentials.GetBasicAuthByURL(url); ok {
-		secret := fmt.Sprintf("%s:%s", basicAuth.User, basicAuth.Password)
-		encodedSecret := base64.StdEncoding.EncodeToString([]byte(secret))
-		headerContent := fmt.Sprintf("Basic %s", encodedSecret)
-		req.Header.Add("Authorization", headerContent)
+	if c.credentials != nil {
+		if basicAuth, ok := c.credentials.GetBasicAuthByURL(url); ok {
+			secret := fmt.Sprintf("%s:%s", basicAuth.User, basicAuth.Password)
+			encodedSecret := base64.StdEncoding.EncodeToString([]byte(secret))
+			headerContent := fmt.Sprintf("Basic %s", encodedSecret)
+			req.Header.Add("Authorization", headerContent)
+		}
 	}
 
 	rsp, err := c.client.Do(req)
@@ -139,5 +160,5 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 // Indicates if the Stork Agent attaches the authentication credentials to
 // the requests.
 func (c *HTTPClient) HasAuthenticationCredentials() bool {
-	return !c.credentials.IsEmpty()
+	return c.credentials != nil && !c.credentials.IsEmpty()
 }
