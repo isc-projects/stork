@@ -1,3 +1,9 @@
+* 337 [bug] slawek
+
+    Fixed attaching the self-signed TLS credentials to the request sent from
+    agent to server that caused rejections due to TLS verification error.
+    (Gitlab #1154)
+
 * 336 [bug] slawek
 
     Fix displaying statistics of the IPv4 shared networks.
