@@ -62,7 +62,7 @@ func TestLoadGRPCCertificates(t *testing.T) {
 }
 
 // Check that HTTP client returns an error if the TLS credentials could not be
-// / loaded because the certificate files are missing.
+// loaded because the certificate files are missing.
 func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 	// Arrange
 	cleanup := RememberPaths()
