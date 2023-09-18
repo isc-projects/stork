@@ -47,8 +47,9 @@ stages:
     - when: always
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   cache:
     key: $CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
     paths:
@@ -76,8 +77,10 @@ stages:
     fallback_keys:
       - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
 
 .base_build_ubi:
   stage: checks
@@ -94,8 +97,9 @@ stages:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:2
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -113,8 +117,10 @@ stages:
     fallback_keys:
       - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
 
 .base_build_alpine:
   stage: checks
@@ -130,8 +136,9 @@ stages:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -149,8 +156,10 @@ stages:
     fallback_keys:
       - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
 
 lint_backend:
   extends: .base_build_debian
@@ -235,8 +244,9 @@ danger:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -258,8 +268,9 @@ tarball:
     - when: always
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   script:
     - rake release:tarball
   artifacts:
@@ -363,8 +374,9 @@ packages:
 install_debs_amd64:
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   stage: build
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
@@ -391,8 +403,10 @@ install_debs_amd64:
 install_debs_arm64:
   extends: install_debs_amd64
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
   variables:
     ARCH: arm64
   needs:
@@ -402,8 +416,9 @@ install_rpms_amd64:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:2
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   stage: build
   variables:
     ARCH: x86_64
@@ -430,8 +445,10 @@ install_rpms_amd64:
 install_rpms_arm64:
   extends: install_rpms_amd64
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
   variables:
     ARCH: aarch64
   needs:
@@ -441,8 +458,9 @@ install_apks_amd64:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   stage: build
   variables:
     ARCH: amd64
@@ -471,8 +489,10 @@ install_apks_amd64:
 install_apks_arm64:
   extends: install_apks_amd64
   tags:
-    - aarch64
     - linux
+    - aws
+    - runner-manager
+    - aarch64
   variables:
     ARCH: arm64
   needs:
@@ -484,10 +504,11 @@ system_testing:
   stage: system_tests
   allow_failure: false
   tags:
-    - linux
     - docker
+    - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   services:
     - docker:dind
   rules:
@@ -698,8 +719,9 @@ upload_to_repo:
   allow_failure: true
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
     - stork-repo
   needs:
     - tarball
@@ -733,8 +755,9 @@ deploy_demo:
   allow_failure: true
   tags:
     - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   needs:
     - danger
   before_script:
@@ -768,10 +791,11 @@ upload_packages:
   allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
-    - linux
     - docker
+    - linux
+    - aws
+    - runner-manager
     - amd64
-    - ssd
   needs:
     - packages
   variables:
