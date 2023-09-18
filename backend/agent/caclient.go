@@ -62,38 +62,6 @@ func (c *HTTPClient) SetSkipTLSVerification(skipTLSVerification bool) {
 	c.transport.TLSClientConfig.InsecureSkipVerify = skipTLSVerification
 }
 
-// Loads the HTTP credentials from a file. The credentials will be used if
-// necessary to authenticate the requests. Returns true if the credentials
-// has been loaded successfully. Returns false if the credentials file does
-// not exist.
-func (c *HTTPClient) LoadCredentials() (bool, error) {
-	credentialsStore := NewCredentialsStore()
-	// Check if the credential file exist
-	_, err := os.Stat(CredentialsFile)
-	if errors.Is(err, os.ErrNotExist) {
-		// The credentials file may not exist.
-		return false, nil
-	}
-	if err != nil {
-		// Unexpected error.
-		return false, errors.Wrapf(err, "could not access the Basic Auth credentials file (%s)", CredentialsFile)
-	}
-
-	file, err := os.Open(CredentialsFile)
-	if err != nil {
-		return false, errors.Wrapf(err, "could not read the Basic Auth credentials from file (%s)", CredentialsFile)
-	}
-	defer file.Close()
-
-	err = credentialsStore.Read(file)
-	if err != nil {
-		return false, errors.WithMessagef(err, "could not read the credentials file (%s)", CredentialsFile)
-	}
-
-	c.credentials = credentialsStore
-	return true, nil
-}
-
 // Loads the TLS certificates from a file. The certificates will be attached
 // to all sent requests.
 // The GRPC certificates are self-signed by default. It means the requests
@@ -127,6 +95,38 @@ func (c *HTTPClient) LoadGRPCCertificates() (bool, error) {
 
 	c.transport.TLSClientConfig.Certificates = []tls.Certificate{*tlsCert}
 	c.transport.TLSClientConfig.RootCAs = tlsRootCA
+	return true, nil
+}
+
+// Loads the HTTP credentials from a file. The credentials will be used if
+// necessary to authenticate the requests. Returns true if the credentials
+// has been loaded successfully. Returns false if the credentials file does
+// not exist.
+func (c *HTTPClient) LoadCredentials() (bool, error) {
+	credentialsStore := NewCredentialsStore()
+	// Check if the credential file exist
+	_, err := os.Stat(CredentialsFile)
+	if errors.Is(err, os.ErrNotExist) {
+		// The credentials file may not exist.
+		return false, nil
+	}
+	if err != nil {
+		// Unexpected error.
+		return false, errors.Wrapf(err, "could not access the Basic Auth credentials file (%s)", CredentialsFile)
+	}
+
+	file, err := os.Open(CredentialsFile)
+	if err != nil {
+		return false, errors.Wrapf(err, "could not read the Basic Auth credentials from file (%s)", CredentialsFile)
+	}
+	defer file.Close()
+
+	err = credentialsStore.Read(file)
+	if err != nil {
+		return false, errors.WithMessagef(err, "could not read the credentials file (%s)", CredentialsFile)
+	}
+
+	c.credentials = credentialsStore
 	return true, nil
 }
 
