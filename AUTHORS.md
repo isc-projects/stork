@@ -3,21 +3,28 @@
 
 Primary developers:
 
-- Marcin Siodelski (database, server, agent, UI, Kea)
-- Michał Nowikowski (server, agent, UI, Prometheus, release engineering)
+- Marcin Siodelski (regular maintainer, database, server, agent, UI, config management, Kea)
+- Sławek Figiel (regular maintainer, server, agent, UI, hooks, LDAP, system tests,
+                 registration, config migration, prometheus)
+
+Active developers:
+
 - Tomek Mrugalski (documentation, testing, Kea, project management)
 - Vicky Risk (product management, marketing)
-- Matthijs Mekking (BIND 9, Prometheus)
 - Włodek Wencel (QA, release engineering)
-- Thomas Markwalder (Kea)
 - Andrei Pavel (CI, release engineering, UI)
-- Sławek Figiel (server, agent, UI, prometheus)
-- Marcin Godzina (QA)
+- Marcin Godzina (QA, release engineering)
 - Suzanne Goldlust (documentation)
 - Razvan Becheriu (database, server, UI)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.
+
+Former developers:
+
+- Thomas Markwalder (Kea)
+- Matthijs Mekking (BIND 9, Prometheus)
+- Michał Nowikowski (server, agent, UI, Prometheus, release engineering)
 
 We have received the following contributions:
 
