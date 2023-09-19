@@ -157,7 +157,8 @@ namespace :demo do
             docker_up_services("agent-bind9")
         end
         
-        desc 'Build and run container with Postgres'
+        desc 'Build and run container with Postgres
+            POSTGRES_VERSION - use specific Postgres database version - optional'
         task :postgres => [DOCKER_COMPOSE] do
             docker_up_services("postgres")
         end
@@ -324,7 +325,8 @@ end
 
 namespace :unittest do
     desc 'Run local unit tests with Docker database
-    DB_TRACE - trace SQL queries - default: false'
+    DB_TRACE - trace SQL queries - default: false
+    POSTGRES_VERSION - use specific Postgres database version - optional'
     task :backend_db do
         ENV["STORK_DATABASE_NAME"] = "storktest"
         Rake::Task[:pre_docker_db].invoke()

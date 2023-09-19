@@ -142,6 +142,7 @@ desc 'Run system tests
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
     BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
+    POSTGRES_VERSION - use specific Postgres database version - optional
     EXIT_FIRST - exit on the first error - optional, default: false'
 task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
