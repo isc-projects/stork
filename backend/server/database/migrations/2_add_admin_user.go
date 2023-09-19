@@ -48,7 +48,7 @@ func init() {
 
              -- Transforms a raw password to a hash before INSERT/UPDATE.
              CREATE TRIGGER system_user_before_insert_update
-             BEFORE INSERT OR UPDATE ON system_user
+             BEFORE INSERT OR UPDATE ON public.system_user
                FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
              -- The admin is the default user who can use the 'admin' password to
@@ -64,7 +64,7 @@ func init() {
                WHERE login = 'admin';
 
              -- Removes the trigger hashing passwords.
-             DROP TRIGGER IF EXISTS system_user_before_insert_update ON system_user;
+             DROP TRIGGER IF EXISTS system_user_before_insert_update ON public.system_user;
 
              -- Removes the password hashing function.
              DROP FUNCTION IF EXISTS system_user_hash_password;

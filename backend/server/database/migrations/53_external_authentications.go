@@ -11,7 +11,7 @@ func init() {
 				password_hash TEXT NOT NULL,
 				CONSTRAINT system_user_password_pkey PRIMARY KEY (id),
 				CONSTRAINT system_user_password_id_fkey FOREIGN KEY (id)
-                    REFERENCES system_user (id) MATCH FULL
+                    REFERENCES public.system_user (id) MATCH FULL
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
 			);
@@ -19,13 +19,13 @@ func init() {
 			-- Move password hashes to the new table.
 			INSERT INTO system_user_password(id, password_hash)
 			SELECT id, password_hash
-			FROM system_user;
+			FROM public.system_user;
 
 			-- Drop an existing password hash trigger.
-			DROP TRIGGER system_user_before_insert_update ON system_user;
+			DROP TRIGGER system_user_before_insert_update ON public.system_user;
 
 			-- Drop the old password hash column.
-			ALTER TABLE system_user DROP COLUMN password_hash;
+			ALTER TABLE public.system_user DROP COLUMN password_hash;
 
 			-- Recreate the trigger on the new column.
 			CREATE TRIGGER system_user_password_before_insert_update
@@ -33,28 +33,28 @@ func init() {
                 FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
 			-- Add a column for an authentication method.
-			ALTER TABLE system_user ADD COLUMN auth_method TEXT DEFAULT 'internal' NOT NULL;
+			ALTER TABLE public.system_user ADD COLUMN auth_method TEXT DEFAULT 'internal' NOT NULL;
 
 			-- Update constraints for login and email.
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                DROP CONSTRAINT system_user_login_unique_idx;
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                ADD CONSTRAINT system_user_login_unique_idx UNIQUE (auth_method, login);
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                DROP CONSTRAINT system_user_email_unique_idx;
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                ADD CONSTRAINT system_user_email_unique_idx UNIQUE (auth_method, email);
 
 			-- Add a column for an external ID.
-			ALTER TABLE system_user ADD COLUMN external_id TEXT;
+			ALTER TABLE public.system_user ADD COLUMN external_id TEXT;
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
 				ADD CONSTRAINT system_user_external_id_unique_idx UNIQUE (auth_method, external_id);
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
 				ADD CONSTRAINT system_user_external_id_required_for_external_users CHECK (
 					(auth_method = 'internal') = (external_id IS NULL)
 				);
@@ -63,41 +63,41 @@ func init() {
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
 			-- Drop the rows representing the external users.
-			DELETE FROM system_user WHERE system_user.auth_method != 'internal';
+			DELETE FROM public.system_user WHERE auth_method != 'internal';
 
 			-- Drop the external ID column.
-			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_required_for_external_users;
+			ALTER TABLE public.system_user DROP CONSTRAINT system_user_external_id_required_for_external_users;
 
-			ALTER TABLE system_user DROP CONSTRAINT system_user_external_id_unique_idx;
+			ALTER TABLE public.system_user DROP CONSTRAINT system_user_external_id_unique_idx;
 
-			ALTER TABLE system_user DROP COLUMN external_id;
+			ALTER TABLE public.system_user DROP COLUMN external_id;
 
 			-- Restore the original unique indexes.
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                DROP CONSTRAINT system_user_login_unique_idx;
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                ADD CONSTRAINT system_user_login_unique_idx UNIQUE (login);
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                DROP CONSTRAINT system_user_email_unique_idx;
 
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
                ADD CONSTRAINT system_user_email_unique_idx UNIQUE (email);
 
 			-- Drop the authentication method column.
-			ALTER TABLE system_user DROP COLUMN auth_method;
+			ALTER TABLE public.system_user DROP COLUMN auth_method;
 
 			-- Drop trigger on the password table.
 			DROP TRIGGER system_user_password_before_insert_update ON system_user_password;
 
 			-- Create the password hash column in the system user table.
 			-- Generate the random password for all rows.
-			ALTER TABLE system_user
+			ALTER TABLE public.system_user
 			ADD COLUMN password_hash TEXT NOT NULL DEFAULT crypt(md5(random()::text), gen_salt('bf'));
 
 			-- Drop the default statement.
-			ALTER TABLE system_user ALTER COLUMN password_hash DROP DEFAULT;
+			ALTER TABLE public.system_user ALTER COLUMN password_hash DROP DEFAULT;
 
 			-- Recreate trigger on the password hash column.
 			CREATE TRIGGER system_user_before_insert_update
@@ -105,10 +105,10 @@ func init() {
                 FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
 			-- Restore the password hashes in the system user table.
-			UPDATE system_user
+			UPDATE public.system_user
 			SET password_hash = system_user_password.password_hash
 			FROM system_user_password
-			WHERE system_user.id = system_user_password.id;
+			WHERE public.system_user.id = system_user_password.id;
 
 			-- Drop the password table.
 			DROP TABLE system_user_password;

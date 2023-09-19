@@ -71,7 +71,7 @@ func init() {
 		// It is hard (if possible) to do this with pure ORM. This query associates
 		// all existing users except user admin with the group admin.
 		_, err = db.Exec(`WITH non_admin_assoc AS (
-                            SELECT id, 2 FROM system_user WHERE id != 1
+                            SELECT id, 2 FROM public.system_user WHERE id != 1
                           )
                           INSERT INTO system_user_to_group SELECT * FROM non_admin_assoc`)
 		if err != nil {

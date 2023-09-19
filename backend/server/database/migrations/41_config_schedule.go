@@ -17,7 +17,7 @@ func init() {
                 user_id BIGINT NOT NULL,
                 updates JSONB NOT NULL,
                 CONSTRAINT scheduled_config_change_user FOREIGN KEY (user_id)
-                    REFERENCES system_user(id)
+                    REFERENCES public.system_user(id)
                         ON UPDATE CASCADE
                         ON DELETE CASCADE
             );

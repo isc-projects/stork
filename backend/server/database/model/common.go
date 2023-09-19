@@ -23,13 +23,14 @@ const (
 // in the result.
 func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) string {
 	orderExpr := ""
+	escapedTableName := "\"" + tableName + "\""
 	if sortField != "" {
 		if !strings.Contains(sortField, ".") {
-			orderExpr += tableName + "."
+			orderExpr += escapedTableName + "."
 		}
 		orderExpr += sortField + " "
 	} else {
-		orderExpr = tableName + ".id "
+		orderExpr = escapedTableName + ".id "
 	}
 	switch sortDir {
 	case SortDirDesc:

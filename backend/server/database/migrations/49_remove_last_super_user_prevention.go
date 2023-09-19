@@ -31,14 +31,14 @@ func init() {
 
             -- Check last super-admin user before delete.
             CREATE TRIGGER system_user_before_delete
-            BEFORE DELETE ON system_user
+            BEFORE DELETE ON public.system_user
               FOR EACH ROW EXECUTE PROCEDURE system_user_check_last_user();
             `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
             -- Removes the trigger checking last super-admin user.
-            DROP TRIGGER IF EXISTS system_user_before_delete ON system_user;
+            DROP TRIGGER IF EXISTS system_user_before_delete ON public.system_user;
 
             -- Removes the check last super-admin user function.
             DROP FUNCTION IF EXISTS system_user_check_last_user;

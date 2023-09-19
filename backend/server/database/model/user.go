@@ -257,7 +257,7 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 func Authenticate(db *pg.DB, user *SystemUser, password string) (bool, error) {
 	// Using authentication technique described here: https://www.postgresql.org/docs/8.3/pgcrypto.html
 	err := db.Model(user).Relation("Groups").
-		Join("RIGHT JOIN system_user_password").JoinOn("system_user.id = system_user_password.id").
+		Join("RIGHT JOIN system_user_password").JoinOn("\"system_user\".id = system_user_password.id").
 		Where("password_hash = crypt(?, password_hash) AND (login = ? OR email = ?)",
 			password, user.Login, user.Email).First()
 	if err != nil {
