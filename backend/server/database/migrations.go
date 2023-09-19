@@ -141,17 +141,24 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
 		hasUser := false
 
-		if force {
-			// Drop an existing user if it exists.
+		// Check if the user already exists.
+		hasUser, err = maintenance.HasUser(tx, userName)
+		if err != nil {
+			return
+		}
+
+		if hasUser && force {
+			// Revoke the privileges first.
+			if err = maintenance.RevokeAllPrivilegesOnSchemaFromUser(tx, "public", userName); err != nil {
+				return
+			}
+
+			// Drop an existing user.
 			if err = maintenance.DropUserIfExists(tx, userName); err != nil {
 				return
 			}
-		} else {
-			// Check if the user already exists.
-			hasUser, err = maintenance.HasUser(tx, userName)
-			if err != nil {
-				return
-			}
+
+			hasUser = false
 		}
 
 		// Re-create the user.
@@ -163,6 +170,12 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 
 		// Grant the user full control over the database.
 		if err = maintenance.GrantAllPrivilegesOnDatabaseToUser(tx, dbName, userName); err != nil {
+			return
+		}
+
+		// Grant the user full control over the schema public. It is necessary for
+		// some modern Postgres installations.
+		if err = maintenance.GrantAllPrivilegesOnSchemaToUser(tx, "public", userName); err != nil {
 			return
 		}
 

@@ -43,7 +43,7 @@ then
         -c "${create_db_query}"
 fi
 
-grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER}; GRANT ALL PRIVILEGES ON SCHEMA public TO ${DB_USER};"
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
     -U "${DB_ROOT_USER}" \

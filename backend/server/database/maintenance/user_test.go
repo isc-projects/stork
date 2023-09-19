@@ -121,10 +121,37 @@ func TestGrantAllPrivileges(t *testing.T) {
 	}
 
 	// Act
-	err := maintenance.GrantAllPrivilegesOnDatabaseToUser(db, settings.DBName, userName)
+	errDatabase := maintenance.GrantAllPrivilegesOnDatabaseToUser(db, settings.DBName, userName)
+	errSchema := maintenance.GrantAllPrivilegesOnSchemaToUser(db, "public", userName)
+
+	// Assert
+	require.NoError(t, errDatabase)
+	require.NoError(t, errSchema)
+}
+
+// Test that revoking all privileges returns no error.
+// In fact, this test doesn't check if the privileges were revoked. We use a
+// custom, newly created user, and it isn't allowed to log in, so we cannot
+// check if it can perform restricted queries.
+func TestRevokeAllPrivileges(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+	userName := prepareUsername(t, "user_revoke_all_privileges")
+	if ok, _ := maintenance.HasUser(db, userName); !ok {
+		_ = maintenance.CreateUser(db, userName)
+	}
+	_ = maintenance.GrantAllPrivilegesOnDatabaseToUser(db, settings.DBName, userName)
+	_ = maintenance.GrantAllPrivilegesOnSchemaToUser(db, "public", userName)
+
+	// Act
+	err := maintenance.RevokeAllPrivilegesOnSchemaFromUser(db, "public", userName)
+	// Revoke privileges for a non-existing user.
+	errNotExists := maintenance.RevokeAllPrivilegesOnSchemaFromUser(db, "public", "stork_test_non_existing_user")
 
 	// Assert
 	require.NoError(t, err)
+	require.Error(t, errNotExists)
 }
 
 // Test that the user password can be changed.

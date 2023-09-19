@@ -47,6 +47,22 @@ func GrantAllPrivilegesOnDatabaseToUser(dbi pg.DBI, dbName, userName string) err
 	return nil
 }
 
+// Grant all privileges on a specific schema to a given user.
+func GrantAllPrivilegesOnSchemaToUser(dbi pg.DBI, schemaName, userName string) error {
+	if _, err := dbi.Exec("GRANT ALL PRIVILEGES ON SCHEMA ? TO ?;", pg.Ident(schemaName), pg.Ident(userName)); err != nil {
+		return errors.Wrapf(err, `problem granting privileges on schema "%s" to user "%s"`, schemaName, userName)
+	}
+	return nil
+}
+
+// Revoke all privileges on a specific schema from a given user.
+func RevokeAllPrivilegesOnSchemaFromUser(dbi pg.DBI, schemaName, userName string) error {
+	if _, err := dbi.Exec("REVOKE ALL PRIVILEGES ON SCHEMA ? FROM ?;", pg.Ident(schemaName), pg.Ident(userName)); err != nil {
+		return errors.Wrapf(err, `problem revoking privileges on schema "%s" from user "%s"`, schemaName, userName)
+	}
+	return nil
+}
+
 // Changes (or set) password for a given user.
 func AlterUserPassword(dbi pg.DBI, userName, password string) error {
 	if _, err := dbi.Exec("ALTER USER ? WITH PASSWORD ?", pg.Ident(userName), password); err != nil {
