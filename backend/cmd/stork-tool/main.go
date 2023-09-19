@@ -165,7 +165,7 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 	}
 	_ = db.Close()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.WithError(err).Fatal("Failed to migrate database")
 	}
 
 	availVersion := dbops.AvailableVersion()
