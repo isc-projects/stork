@@ -323,10 +323,8 @@
                         <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 }}</td>
                         <td>
                             <i
-                                class="pi pi-{{ haStateIcon(d) }}"
-                                style="font-size: 0.9rem; padding-right: 0.25rem; color: {{
-                                    haStateIconColor(haStateIcon(d))
-                                }};"
+                                class="p-0 pi pi-{{ haStateIcon(d) }}"
+                                style="font-size: 0.9rem; color: {{ haStateIconColor(haStateIcon(d)) }};"
                             ></i>
                             <span *ngIf="d.haEnabled && d.haState && d.haState.length > 0">
                                 <a routerLink="/apps/kea/{{ d.appId }}">
