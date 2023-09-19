@@ -43,12 +43,21 @@ then
         -c "${create_db_query}"
 fi
 
-grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER}; GRANT ALL PRIVILEGES ON SCHEMA public TO ${DB_USER};"
+echo "Grant all privileges on the database"
+grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
     -U "${DB_ROOT_USER}" \
     -h "${DB_HOST}" \
     -c "${grant_query}"
+
+echo "Grant all privileges on the public schema"
+PGPASSWORD=${DB_ROOT_PASSWORD} \
+psql \
+    -U "${DB_ROOT_USER}" \
+    -h "${DB_HOST}" \
+    -d "${DB_NAME}" \
+    -c "GRANT ALL PRIVILEGES ON SCHEMA public TO ${DB_USER};"
 
 if [ $has_db -eq 0 ]
 then
