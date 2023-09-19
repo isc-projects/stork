@@ -237,3 +237,16 @@ This section describes the solutions for some common issues with the Stork serve
               access to only trusted users. You shouldn't use it if you don't have a CA configured or want to allow to
               login to the Stork server from any computer without prior setup.
 
+--------------
+
+:Issue:       Server doesn't start and prints the ``permission denied for schema public`` message.
+:Description: The fresh installation of the Stork server is made, and the database is empty. The Stork server doesn't
+              start, and the Stork tool returns an error on the database migration. The logs reveal the denied access to
+              the schema public.
+:Solution 1.: Execute the ``GRANT ALL ON DATABASE stork_db TO stork_user;`` on the Stork database (replace ``stork_db``
+              and ``stork_user`` with the proper names).
+:Solution 2.: Perform migration using Stork tool with the maintenance (e.g., superuser) database credentials.
+:Explanation: In some Postgres installations (by default in Postgres 15 and above), the ``CREATE`` permission is not
+              initially granted to all users except the database owner. The stork server needs this permission to
+              perform the database migration on startup. You can grant this permission or use the Stork tool to migrate
+              the schema as the maintenance database user (e.g., superuser).
