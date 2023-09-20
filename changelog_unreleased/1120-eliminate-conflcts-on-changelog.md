@@ -1,6 +1,5 @@
 * [build] slawek
 
-    Changed the convention of preparing the Changelog file to avoid merge
-    request conflicts on this file.
+    Changed the convention of preparing the ChangeLog file to avoid merge
+    request conflicts.
     (Gitlab #1120)
-
