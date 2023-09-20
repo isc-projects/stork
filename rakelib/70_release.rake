@@ -26,7 +26,7 @@ namespace :release do
             end
         end
 
-        # Prepend the unreleased Changelog entries to the Changelog file.
+        # Prepend the unreleased ChangeLog entries to the ChangeLog file.
         Rake::Task['release:changelog'].invoke()
 
         # Announce release in ChangeLog.
@@ -73,19 +73,19 @@ namespace :release do
         end
     end
 
-    desc 'Merge unreleased Changelog entries to the Changelog file'
+    desc 'Merge unreleased ChangeLog entries to the ChangeLog file'
     task :changelog do
-        # This script reads the Changelog entries from the "changelog_unreleased/"
+        # This script reads the ChangeLog entries from the "changelog_unreleased/"
         # directory. It fills up the number of entries, concats them by a blank
-        # line and prepends to the Changelog.md file.
+        # line and prepends to the ChangeLog.md file.
 
         changelog_dir = 'changelog_unreleased'
         changelog_file = 'ChangeLog.md'
 
-        # Read the Changelog file content.
+        # Read the ChangeLog file content.
         changelog_content = File.read(changelog_file)
 
-        # Get the start number of the entries by iterating over the Changelog lines.
+        # Get the start number of the entries by iterating over the ChangeLog lines.
         start = 0
         changelog_content.each_line do |line|
             # Seach for first entry header. Skip the release header.
@@ -159,10 +159,10 @@ namespace :release do
         # Concat the entries.
         merged = entries.join("\n\n")
 
-        # Concat the new entries and current Changelog content.
+        # Concat the new entries and current ChangeLog content.
         merged = merged + "\n\n" + changelog_content
 
-        # Write the new Changelog content.
+        # Write the new ChangeLog content.
         File.write(changelog_file, merged)
 
         # Remove the files in the changelog directory.

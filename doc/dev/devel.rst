@@ -33,14 +33,14 @@ To generate documentation, simply type ``rake build:doc``.
 generated documentation will be available in the ``doc/build``
 directory.
 
-Changelog
+ChangeLog
 =========
 
-To avoid the merge conflict on the Changelog file, we introduced in Stork an
+To avoid the merge conflict on the ChangeLog file, we introduced in Stork an
 experimental way to update this file.
 
-The Changelog entry related to the particular commit is no longer added
-directly to the ``Changelog.md`` file. Instead of it, the changelog note should
+The ChangeLog entry related to the particular commit is no longer added
+directly to the ``ChangeLog.md`` file. Instead of it, the changelog note should
 be saved in a new file in the ``/changelog_unreleased`` directory. The name of
 the file should include the GitLab issue number to ensure the filename is
 unique for all merge requests.
@@ -69,13 +69,13 @@ Example:
 
     * [build] slawek
 
-        Changed the convention of preparing the Changelog file to avoid merge
+        Changed the convention of preparing the ChangeLog file to avoid merge
         request conflicts on this file.
         (Gitlab #1120)
 
 The entries are merged on release by the ``rake release:changelog`` task that
 is called by the ``rake release:bump`` task usually used in the release process.
-The release engineer commits the updated ``Changelog.md`` file (with the merged
+The release engineer commits the updated ``ChangeLog.md`` file (with the merged
 unreleased entries) and deletions in the ``changelog_unreleased`` directory.
 
 Setting Up the Development Environment
