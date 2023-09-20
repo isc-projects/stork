@@ -76,7 +76,8 @@ Example:
 The entries are merged on release by the ``rake release:changelog`` task that
 is called by the ``rake release:bump`` task usually used in the release process.
 The release engineer commits the updated ``ChangeLog.md`` file (with the merged
-unreleased entries) and deletions in the ``changelog_unreleased`` directory.
+unreleased entries) and deletes content of the ``changelog_unreleased``
+directory.
 
 Setting Up the Development Environment
 ======================================
