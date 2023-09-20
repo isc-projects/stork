@@ -42,7 +42,7 @@ stages:
     - amd64
     - ssd
   cache:
-    key: $CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
+    key: experiment-$CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
     paths:
       - tools/
       - webui/node_modules/
