@@ -39,13 +39,13 @@ ChangeLog
 To avoid the merge conflict on the ChangeLog file, we introduced in Stork an
 experimental way to update this file.
 
-The ChangeLog entry related to the particular commit is no longer added
+The ChangeLog entry related to a particular merge request is no longer added
 directly to the ``ChangeLog.md`` file. Instead of it, the changelog note should
 be saved in a new file in the ``/changelog_unreleased`` directory. The name of
 the file should include the GitLab issue number to ensure the filename is
 unique for all merge requests.
 
-The content of the file should omit the entry number. It means the format is:
+The content of the file should omit the entry number. The format is:
 
 .. code-block::
 
