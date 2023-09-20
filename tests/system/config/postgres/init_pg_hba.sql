@@ -25,3 +25,9 @@ CREATE USER "stork_scram-sha-256";
 -- doesn't work for Postgres 11.
 SET password_encryption = 'scram-sha-256';
 ALTER USER "stork_scram-sha-256" WITH PASSWORD 'stork_scram-sha-256';
+
+-- Grant all privileges on the public schema.
+GRANT ALL PRIVILEGES ON SCHEMA public TO stork_trust;
+GRANT ALL PRIVILEGES ON SCHEMA public TO stork_md5;
+GRANT ALL PRIVILEGES ON SCHEMA public TO root;
+GRANT ALL PRIVILEGES ON SCHEMA public TO "stork_scram-sha-256";
