@@ -633,7 +633,7 @@ class DockerCompose:
 
     @memoize
     def _read_config_yaml(self):
-        """Reads the configuration YAMS file and parses it."""
+        """Reads the configuration YAML file and parses it."""
         config_cmd = self.docker_compose_command() + [
             "config",
         ]
