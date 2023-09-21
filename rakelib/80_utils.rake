@@ -73,6 +73,175 @@ namespace :utils do
     task :list_go_supported_platforms => [GO] do
         sh GO, "tool", "dist", "list"
     end
+
+    desc 'List packages in a given Docker file and prints the newest available version
+        DOCKERFILE - path to the Dockerfile - required'
+    task :list_packages_in_dockerfile => DOCKER do
+        dockerfile = ENV["DOCKERFILE"]
+        if dockerfile.nil?
+            fail "You must specify the path to the Dockerfile: DOCKERFILE=/path/to/Dockerfile"
+        end
+
+        # Key is the package manager install command.
+        # Value is an array of two elements:
+        #   - package manager update command
+        #   - lambda that returns the command to check the package version
+        package_managers = {
+            "apt-get install" => [
+                ["apt-get", "update"],
+                -> (name) {["/bin/bash", "-c", "apt-cache madison #{name} | head -n 1 | cut -d'|' -f2"]}
+            ],
+            "yum install" => [
+                ["yum", "updateinfo"],
+                -> (name) {["/bin/bash", "-c", "yum info #{name} | grep Version | head -n 1 | cut -d':' -f2"]}
+            ],
+            "dnf install" => [
+                ["dnf", "updateinfo"],
+                -> (name) {["/bin/bash", "-c", "dnf info #{name} | grep Version | head -n 1 | cut -d':' -f2"]}
+            ],
+            "apk add" => [
+                ["apk", "update"],
+                -> (name) {["/bin/bash", "-c", "apk info #{name} | head -n 1 | cut -d'-' -f2"]}
+            ]
+        }
+
+        package_manager_key = nil
+
+        base_image = nil
+        container_name = nil
+        container_names = []
+
+        packages = []
+
+        File.open(dockerfile, "r") do |f|
+            f.each_line do |line|
+                # Split the content and comment.
+                parts = line.split("#", 2)
+                line_content = parts[0]
+
+                # Strip the line.
+                line_content = line_content.strip
+
+                # Skip empty lines.
+                if line_content.empty?
+                    next
+                end
+
+                if line_content =~ /^FROM\s+(.*)$/
+                    base_image = $1
+                elsif !package_manager_key.nil?
+                    # We are in the package manager call.
+
+                    # Check if the line is a begginig of another command.
+                    # In this case, it starts with && or ||.
+                    if line_content.start_with? "&&" or line_content.start_with? "||"
+                        package_manager_key = nil
+                        next
+                    end
+
+                    # Skip the flags.
+                    if line_content.start_with? "-"
+                        next
+                    end
+
+                    # Check if line is last.
+                    is_last_line = false
+                    if !line_content.end_with? '\\'
+                        # End line.
+                        is_last_line = true
+                    else
+                        # Strip the tralling backslash.
+                        line_content = line_content[0..-2]
+                        line_content = line_content.strip
+                    end
+
+                    # Split the version if any.
+                    parts = line_content.split("=", 2)
+                    package_name = parts[0]
+                    current_version = "unspecified"
+                    if parts.length == 2
+                        current_version = parts[1]
+                        # Strip the tralling asterisk.
+                        current_version = current_version[0..-2]
+                    end
+
+                    create_check_command = package_managers[package_manager_key][1]
+
+                    # Check the available version in the base image.
+                    stdout, stderr, status = Open3.capture3 DOCKER, "exec", container_name, *create_check_command.call(package_name)
+                    if status != 0
+                        fail "Failed to check the package version, status: #{status}, stderr: #{stderr}, stdout: #{stdout}"
+                    end
+                    stdout = stdout.strip
+                    available_version = stdout
+
+                    # Save the result.
+                    packages.append [base_image, package_name, current_version, available_version]
+
+                    if is_last_line
+                        package_manager_key = nil
+                    end
+
+                    next
+                end
+
+                # Check if the line is a package manager call.
+                package_managers.each do |key, _|
+                    if line_content =~ /#{key}/
+                        package_manager_key = key
+                        break
+                    end
+                end
+                    
+                if !package_manager_key.nil?
+                    # Pattern to sanitize the container name. It matches the characters
+                    # accepted by Docker.
+                    sanity_pattern = /[^a-zA-Z0-9_.-]/
+
+                    # Start a container.
+                    container_name = "stork-#{base_image}-#{package_manager_key}".gsub(sanity_pattern, "_")
+                    container_names.append container_name
+
+                    opts = []
+                    # Check if the base image is a stage.
+                    if base_image.include? " AS "
+                        parts = base_image.split(" AS ", 2)
+                        stage = parts[1]
+
+                        # Build the image.
+                        base_image = base_image.gsub(sanity_pattern, "_").downcase
+                        sh DOCKER, "build", "-t", base_image, "--target", stage, "-f", dockerfile, File.expand_path(".")
+                    elsif
+                        # Just use the base image.
+                        opts.append base_image
+                    end
+
+                    # Remove the container if it exists.
+                    sh DOCKER, "rm", "-f", container_name
+                    # Create and run the container.
+                    sh DOCKER, "run", "-d", "--name", container_name, base_image, "sleep", "infinity"
+                    # Update the container.
+                    package_update_command = package_managers[package_manager_key][0]
+                    sh DOCKER, "exec", container_name, *package_update_command
+                end
+            end
+        end
+
+        # Clean up used containers.
+        container_names.each do |container_name|
+            # Stop the container.
+            sh DOCKER, "stop", container_name
+            # Remove the container.
+            sh DOCKER, "rm", "-f", container_name
+        end
+
+        # Print the result.
+        line_format = "%-40s %-40s %-20s %-20s\n"
+        printf line_format, "Base image", "Package name", "Current version", "Available version"
+        packages.each do |p|
+            printf line_format, *p
+        end
+    end
 end
 
 
