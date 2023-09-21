@@ -1,13 +1,13 @@
-FROM redhat/ubi8:8.6
+FROM redhat/ubi8:8.8
 
 WORKDIR /repo
 RUN dnf install -y \
     gcc-8.5.* \
     git-2.39.* \
-    java-11-openjdk-headless-1:11.0.* \
+    java-11-openjdk-headless-11.0.* \
     tzdata-java-2023c-* \
-    make-1:4.2.* \
-    man \
+    make-4.2.* \
+    man-db-2.7.* \
     procps-ng-3.3.* \
     python38-3.8.* \
     python3-virtualenv-15.1.* \
