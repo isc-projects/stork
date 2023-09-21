@@ -130,8 +130,6 @@ namespace :utils do
 
                 # Substitute the environment variables.
                 line_content = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
-                    puts "Match: #{match}"
-                    puts arguments_and_envs
                     if !arguments_and_envs[$1].nil?
                         next arguments_and_envs[$1]
                     else
