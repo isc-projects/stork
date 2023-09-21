@@ -111,11 +111,12 @@ namespace :utils do
         }
 
         package_manager_key = nil
-
         base_image = nil
         container_name = nil
         container_names = []
 
+        stage_parents = { }
+        arguments_and_envs = { }
         packages = []
 
         File.open(dockerfile, "r") do |f|
@@ -127,19 +128,41 @@ namespace :utils do
                 # Strip the line.
                 line_content = line_content.strip
 
+                # Substitute the environment variables.
+                line_content = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
+                    puts "Match: #{match}"
+                    puts arguments_and_envs
+                    if !arguments_and_envs[$1].nil?
+                        next arguments_and_envs[$1]
+                    else
+                        next ENV[$1]
+                    end
+                end
+
                 # Skip empty lines.
                 if line_content.empty?
                     next
                 end
 
-                if line_content =~ /^FROM\s+(.*)$/
+                if line_content =~ /^FROM\s+(.*)$/i
                     base_image = $1
+                    if base_image =~ /(.*)\s+AS\s+(.*)/i
+                        parent = $1
+                        child = $2
+                        stage_parents[child] = parent
+                        base_image = child
+                    end
+                elsif line_content =~ /^(?:ARG|ENV)\s+(.*)(?:=|\s+)(.*)$/i
+                    value = $2
+                    if value.start_with? '"' and value.end_with? '"'
+                        value = value[1..-2]
+                    end
+                    arguments_and_envs[$1] = $2
                 elsif !package_manager_key.nil?
                     # We are in the package manager call.
 
-                    # Check if the line is a begginig of another command.
-                    # In this case, it starts with && or ||.
-                    if line_content.start_with? "&&" or line_content.start_with? "||"
+                    # Check if the line is a beggining of another command.
+                    if line_content.start_with? "&&" or line_content.start_with? "||" or line_content.start_with? ";"
                         package_manager_key = nil
                         next
                     end
@@ -187,8 +210,12 @@ namespace :utils do
                     if available_trimmed.start_with? "1:"
                         available_trimmed = available_trimmed[2..-1]
                     end
+                    current_trimmed = current_version
+                    if current_trimmed.start_with? "1:"
+                        current_trimmed = current_trimmed[2..-1]
+                    end
 
-                    is_up_to_date = available_trimmed.start_with? current_version
+                    is_up_to_date = available_trimmed.start_with? current_trimmed
 
                     # Save the result.
                     packages.append [base_image, package_name, current_version, available_version, is_up_to_date.to_s]
@@ -213,28 +240,26 @@ namespace :utils do
                     # accepted by Docker.
                     sanity_pattern = /[^a-zA-Z0-9_.-]/
 
-                    # Start a container.
-                    container_name = "stork-#{base_image}-#{package_manager_key}".gsub(sanity_pattern, "_")
-                    container_names.append container_name
-
-                    opts = []
-                    # Check if the base image is a stage.
-                    if base_image.include? " AS "
-                        parts = base_image.split(" AS ", 2)
-                        stage = parts[1]
-
-                        # Build the image.
-                        base_image = base_image.gsub(sanity_pattern, "_").downcase
-                        sh DOCKER, "build", "-t", base_image, "--target", stage, "-f", dockerfile, File.expand_path(".")
-                    elsif
-                        # Just use the base image.
-                        opts.append base_image
+                    # Search for the parent image.
+                    parent_image = base_image
+                    while !stage_parents[parent_image].nil?
+                        parent_image = stage_parents[parent_image]
                     end
+
+                    # Start a container.
+                    container_name = "stork-#{parent_image}-#{package_manager_key}".gsub(sanity_pattern, "_")
+
+                    # If the container was already used, it is not necessary to create it again.
+                    if container_names.include? container_name
+                        next
+                    end
+
+                    container_names.append container_name
 
                     # Remove the container if it exists.
                     sh DOCKER, "rm", "-f", container_name
                     # Create and run the container.
-                    sh DOCKER, "run", "-d", "--name", container_name, base_image, "sleep", "infinity"
+                    sh DOCKER, "run", "-d", "--name", container_name, parent_image, "sleep", "infinity"
                     # Update the container.
                     package_update_command = package_managers[package_manager_key][0]
                     sh DOCKER, "exec", container_name, *package_update_command
@@ -251,7 +276,7 @@ namespace :utils do
         end
 
         # Print the result.
-        line_format = "%-40s %-40s %-20s %-40s %-10s\n"
+        line_format = "%-40s %-40s %-30s %-40s %-10s\n"
         printf line_format, "Base image", "Package name", "Current version", "Available version", "Up-to-date"
         packages.each do |p|
             printf line_format, *p
