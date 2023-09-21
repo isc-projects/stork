@@ -15,31 +15,18 @@ ARG BIND9_VERSION=9.18
 ### Base images ###
 ###################
 
-FROM debian:10.13-slim AS debian-base
+FROM debian:12.1-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
         -y \
         --no-install-recommends \
-        ca-certificates=20200601* \
-        wget=1.20.* \
+        ca-certificates=20230311* \
+        wget=1.21.* \
+        supervisor=4.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
-
-# Container with a modern Supervisord installled.
-FROM debian-base AS supervisor-base
-RUN apt-get update \
-        && apt-get install \
-        -y \
-        --no-install-recommends \
-        python3.7=3.7.* \
-        python3-pip=18.* \
-        python3-setuptools=40.8.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
-        && mkdir -p /var/log/supervisor
 
 # Install system-wide dependencies
 FROM debian-base AS base
@@ -50,17 +37,17 @@ RUN apt-get update \
         -y \
         --no-install-recommends \
         unzip=6.0-* \
-        ruby-dev=1:2.5.* \
-        python3.7=3.7.* \
-        python3-venv=3.7.* \
-        python3-wheel=0.32.* \
-        python3-dev=3.7.* \
-        make=4.2.* \
-        gcc=4:8.3.* \
-        xz-utils=5.2.* \
-        libc6-dev=2.28-* \
-        openjdk-11-jre-headless=11.0.* \
-        git=1:2.20.* \
+        ruby-dev=1:3.* \
+        python3=3.11.* \
+        python3-venv=3.11.* \
+        python3-wheel=0.38.* \
+        python3-dev=3.11.* \
+        make=4.3-* \
+        gcc=4:12.2.* \
+        xz-utils=5.4.* \
+        libc6-dev=2.36-* \
+        openjdk-17-jre-headless=17.0.* \
+        git=1:2.39.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -135,18 +122,26 @@ COPY webui .
 
 # Build the Stork binaries
 FROM codebase-backend AS server-builder
-RUN rake build:server_only_dist
+# The lib directory prevents from copying the files in the next stages
+# because in Debian Bookworm the /lib directory is a link.
+RUN rake build:server_only_dist && rm -rf /app/dist/server/lib
 
 FROM codebase-webui AS webui-builder
-RUN rake build:ui_only_dist
+# The lib directory prevents from copying the files in the next stages
+# because in Debian Bookworm the /lib directory is a link.
+RUN rake build:ui_only_dist && rm -rf /app/dist/server/lib
 
 FROM codebase-backend AS agent-builder
-RUN rake build:agent_dist
+# The lib directory prevents from copying the files in the next stages
+# because in Debian Bookworm the /lib directory is a link.
+RUN rake build:agent_dist && rm -rf /app/dist/agent/lib
 
 FROM codebase AS server-full-builder
 COPY --from=server-builder /app/ /app/
 COPY --from=webui-builder /app/ /app/
-RUN rake build:server_dist
+# The lib directory prevents from copying the files in the next stages
+# because in Debian Bookworm the /lib directory is a link.
+RUN rake build:server_dist && rm -rf /app/dist/server/lib
 
 # Agent container
 FROM debian-base as agent
@@ -160,7 +155,7 @@ EXPOSE 9547
 EXPOSE 9119
 
 # Server containers
-FROM supervisor-base AS server
+FROM debian-base AS server
 COPY --from=server-builder /app/dist/server/ /
 ENTRYPOINT [ "/bin/sh", "-c", \
         "supervisord -c /etc/supervisor/supervisord.conf" ]
@@ -168,17 +163,6 @@ EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 FROM server-builder AS server-debug
-RUN apt-get update \
-        && apt-get install \
-        -y \
-        --no-install-recommends \
-        python3.7=3.7.* \
-        python3-pip=18.* \
-        python3-setuptools=40.8.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && python3.7 -m pip install --no-cache-dir supervisor==4.2 \
-        && mkdir -p /var/log/supervisor
 WORKDIR /app/rakelib
 COPY rakelib/30_dev.rake ./
 WORKDIR /app
@@ -189,7 +173,7 @@ EXPOSE 45678
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 # Web UI container
-FROM nginx:1.21-alpine AS webui
+FROM nginx:1.25-alpine AS webui
 ENV CI=true
 COPY --from=webui-builder /app/dist/server/ /
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
@@ -233,17 +217,17 @@ ENTRYPOINT [ "python3", "/app/docker/tools/gen_kea_config.py", "-o", "/etc/kea/k
 CMD [ "7000" ]
 
 # Kea with Stork Agent container
-FROM supervisor-base AS kea-base
+FROM debian-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
-        curl=7.64.* \
-        prometheus-node-exporter=0.17.* \
-        default-mysql-client=1.0.* \
-        postgresql-client=11+* \
-        apt-transport-https=1.8.* \
+        curl=7.88.* \
+        prometheus-node-exporter=1.5.* \
+        default-mysql-client=1.1.* \
+        postgresql-client=15+* \
+        apt-transport-https=2.6.* \
         gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
@@ -255,28 +239,28 @@ ARG KEA_LEGACY_PKGS
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && if [ ${KEA_LEGACY_PKGS} == "true" ]; then \
-                apt-get install \
-                --no-install-recommends \
-                -y \
-                python3-isc-kea-connector=${KEA_VERSION} \
-                isc-kea-ctrl-agent=${KEA_VERSION} \
-                isc-kea-dhcp4-server=${KEA_VERSION} \
-                isc-kea-dhcp6-server=${KEA_VERSION} \
-                isc-kea-admin=${KEA_VERSION} \
-                isc-kea-common=${KEA_VERSION} \
-                ;\
+        apt-get install \
+        --no-install-recommends \
+        -y \
+        python3-isc-kea-connector=${KEA_VERSION} \
+        isc-kea-ctrl-agent=${KEA_VERSION} \
+        isc-kea-dhcp4-server=${KEA_VERSION} \
+        isc-kea-dhcp6-server=${KEA_VERSION} \
+        isc-kea-admin=${KEA_VERSION} \
+        isc-kea-common=${KEA_VERSION} \
+        ;\
         else \
-                apt-get install \
-                --no-install-recommends \
-                -y \
-                isc-kea-ctrl-agent=${KEA_VERSION} \
-                isc-kea-dhcp4=${KEA_VERSION} \
-                isc-kea-dhcp6=${KEA_VERSION} \
-                isc-kea-admin=${KEA_VERSION} \
-                isc-kea-common=${KEA_VERSION} \
-                isc-kea-hooks=${KEA_VERSION} \
-                isc-kea-perfdhcp=${KEA_VERSION} \
-                ;\
+        apt-get install \
+        --no-install-recommends \
+        -y \
+        isc-kea-ctrl-agent=${KEA_VERSION} \
+        isc-kea-dhcp4=${KEA_VERSION} \
+        isc-kea-dhcp6=${KEA_VERSION} \
+        isc-kea-admin=${KEA_VERSION} \
+        isc-kea-common=${KEA_VERSION} \
+        isc-kea-hooks=${KEA_VERSION} \
+        isc-kea-perfdhcp=${KEA_VERSION} \
+        ;\
         fi \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
@@ -346,8 +330,8 @@ RUN apt-get update \
         && apt-get install \
         -y \
         --no-install-recommends \
-        supervisor=4.* \
-        prometheus-node-exporter=* \
+        supervisor=4.2.* \
+        prometheus-node-exporter=1.3.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # Puts empty database file to allow mounting it as a volume.
@@ -389,12 +373,12 @@ RUN rake build:server_pkg && rake utils:remove_last_package_suffix
 FROM agent-builder AS agent_package_builder
 RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
 
-FROM supervisor-base AS external-packages
+FROM debian-base AS external-packages
 RUN apt-get update \
         && apt-get install \
         --no-install-recommends \
         -y \
-        curl=7.64.* \
+        curl=7.88.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # The post-install hooks of the packages call the systemctl command
