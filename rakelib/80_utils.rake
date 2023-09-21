@@ -86,22 +86,27 @@ namespace :utils do
         # Value is an array of two elements:
         #   - package manager update command
         #   - lambda that returns the command to check the package version
+        #   - the package name and version delimiter
         package_managers = {
             "apt-get install" => [
                 ["apt-get", "update"],
-                -> (name) {["/bin/bash", "-c", "apt-cache madison #{name} | head -n 1 | cut -d'|' -f2"]}
+                -> (name) {["/bin/bash", "-c", "apt-cache madison #{name} | head -n 1 | cut -d'|' -f2"]},
+                "="
             ],
             "yum install" => [
                 ["yum", "updateinfo"],
-                -> (name) {["/bin/bash", "-c", "yum info #{name} | grep Version | head -n 1 | cut -d':' -f2"]}
+                -> (name) {["/bin/bash", "-c", "yum info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
+                "-"
             ],
             "dnf install" => [
                 ["dnf", "updateinfo"],
-                -> (name) {["/bin/bash", "-c", "dnf info #{name} | grep Version | head -n 1 | cut -d':' -f2"]}
+                -> (name) {["/bin/bash", "-c", "dnf info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
+                "-"
             ],
             "apk add" => [
                 ["apk", "update"],
-                -> (name) {["/bin/bash", "-c", "apk info #{name} | head -n 1 | cut -d'-' -f2"]}
+                -> (name) {["/bin/bash", "-c", "apk info #{name} | head -n 1 | cut -d'-' -f2"]},
+                "="
             ]
         }
 
@@ -155,17 +160,18 @@ namespace :utils do
                         line_content = line_content.strip
                     end
 
+                    create_check_command = package_managers[package_manager_key][1]
+                    version_delimiter = package_managers[package_manager_key][2]
+
                     # Split the version if any.
-                    parts = line_content.split("=", 2)
-                    package_name = parts[0]
-                    current_version = "unspecified"
-                    if parts.length == 2
-                        current_version = parts[1]
+                    package_name, _, current_version = line_content.rpartition(version_delimiter)
+                    if package_name == ""
+                        package_name = current_version
+                        current_version = "unspecified"
+                    else
                         # Strip the tralling asterisk.
                         current_version = current_version[0..-2]
                     end
-
-                    create_check_command = package_managers[package_manager_key][1]
 
                     # Check the available version in the base image.
                     stdout, stderr, status = Open3.capture3 DOCKER, "exec", container_name, *create_check_command.call(package_name)
