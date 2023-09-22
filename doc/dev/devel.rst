@@ -1049,6 +1049,77 @@ The newly pushed image is available in the GitLab registry.
     It is caused by
     `a bug in the Gitlab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
 
+Update the dependencies specified in the Dockerfiles
+----------------------------------------------------
+
+Updating the dependencies specified in the Dockerfiles is a chicken-and-egg
+problem. We need to update the base image to check if the new dependencies
+are available but we cannot update the base image without updating the
+dependencies because some old dependencies may be not available anymore.
+
+We prepared a utility task named ``utils:list_packages_in_dockerfile`` to list
+all packages specified in the Dockerfile and their versions available in the
+current base image.
+
+Steps to update the dependencies:
+
+1. Update the base image specified in the ``FROM`` directive.
+2. Run the script:
+
+    .. code-block:: console
+
+        $ rake utils:list_packages_in_dockerfile DOCKERFILE=/path/to/file.Dockerfile
+
+3. Update the dependencies in the Dockerfile.
+
+.. note::
+
+    The ``utils:list_packages_in_dockerfile`` task is not perfect. It may
+    not detect some packages, especially these installed from the external
+    repositories. It is recommended to check the Dockerfile manually.
+
+Example command output:
+
+.. code-block:: console
+
+    Base image                               Package name                             Declared version               Available version                        Up-to-date
+    ubuntu:22.04                             locales                                  2.35-                          2.35-0ubuntu3.3                          true      
+    ubuntu:22.04                             python3-pip                              22.                            22.0.2+dfsg-1ubuntu0.3                   true      
+    ubuntu:22.04                             python3-setuptools                       59.                            59.6.0-1.2ubuntu0.22.04.1                true      
+    ubuntu:22.04                             python3-wheel                            0.37.                          0.37.1-2ubuntu0.22.04.1                  true      
+    ubuntu:22.04                             rake                                     13.                            13.0.6-2                                 true      
+    ubuntu:22.04                             wget                                     1.21.                          1.21.2-2ubuntu1                          true   
+
+The "Base image" is an image or stage name specified in the ``FROM`` directive.
+The "Declared version" is a version currently specified in the Dockerfile. The
+trialing asterisks are trimmed.
+The "Available version" is latest version available in the OS repository.
+The "Available version" indicates if the "Available version" meets the
+"Declared version".
+
+Known limitations:
+
+- Each dependency must be specified in a separate line.
+- The only supported version operator is ``=`` (or ``-`` for RHEL).
+- The packages from external repositories (e.g., CloudSmith) are not detected.
+- The modifications of the package manager configuration are not considered.
+- Supported package managers: ``apt`` (Ubuntu/Debian), ``yum`` (RHEL),
+  ``dnf`` (RHEL), ``apk`` (Alpine).
+- Overriding the default values of ``ARG`` and ``ENV`` directives is not
+  supported.
+
+The example of the expected call package manager in the Dockerfile:
+
+.. code-block:: docker
+
+    RUN apt-get update && apt-get install -y \
+        locales=2.35-* \
+        python3-pip=22.* \
+        python3-setuptools=59.* \
+        python3-wheel=0.37.* \
+        rake=13.* \
+        wget=1.21.*
+
 Packaging
 =========
 

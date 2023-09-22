@@ -74,7 +74,7 @@ namespace :utils do
         sh GO, "tool", "dist", "list"
     end
 
-    desc 'List packages in a given Docker file and prints the newest available version
+    desc 'List packages in a given Docker file and prints the newest available versions
         DOCKERFILE - path to the Dockerfile - required'
     task :list_packages_in_dockerfile => DOCKER do
         dockerfile = ENV["DOCKERFILE"]
@@ -276,7 +276,7 @@ namespace :utils do
 
         # Print the result.
         line_format = "%-40s %-40s %-30s %-40s %-10s\n"
-        printf line_format, "Base image", "Package name", "Current version", "Available version", "Up-to-date"
+        printf line_format, "Base image", "Package name", "Declared version", "Available version", "Up-to-date"
         packages.each do |p|
             printf line_format, *p
         end
