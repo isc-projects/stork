@@ -69,7 +69,8 @@ confidence=
 disable=fixme, # Warnings about TODO comments.
         missing-module-docstring,
         too-few-public-methods,
-        no-member # Disabled due to Pylint bug occured when using Python 3.11: https://github.com/pylint-dev/pylint/issues/6535
+        # Disabled due to Pylint bug occured when using Python 3.11: https://github.com/pylint-dev/pylint/issues/6535
+        no-member, no-name-in-module
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
