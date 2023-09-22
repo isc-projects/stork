@@ -54,8 +54,9 @@ stages:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare
-    - rake prepare:deps
     - rake check
+    - echo "BLACK:"
+    - tools/python/bin/black --version
 
 .base_build_debian_arm:
   extends: .base_build_debian
