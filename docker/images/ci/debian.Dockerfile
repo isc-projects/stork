@@ -28,4 +28,4 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         # Replace default Python.
         && rm -f /usr/bin/python3 \
-        && ln -s /usr/bin/python3.10 /usr/bin/python3
+        && ln -s /usr/bin/python3.11 /usr/bin/python3
