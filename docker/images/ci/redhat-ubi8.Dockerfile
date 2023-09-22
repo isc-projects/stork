@@ -9,7 +9,7 @@ RUN dnf install -y \
     make-4.2.* \
     man-db-2.7.* \
     procps-ng-3.3.* \
-    python38-3.8.* \
+    python3.11-3.11.* \
     python3-virtualenv-15.1.* \
     rpm-build-4.14.* \
     rubygem-rake-12.3.* \
