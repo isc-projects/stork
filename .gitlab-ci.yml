@@ -147,7 +147,7 @@ lint_ui:
     - rake lint:ui
 
 unittest_ui:
-  extends: .base_build_debian
+  extends: .base_build_ubi
   script:
     - rake unittest:ui
 
