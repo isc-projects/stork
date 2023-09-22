@@ -11,6 +11,7 @@ RUN apt-get update \
         gnupg-agent=2.* \
         openjdk-17-jre-headless=17.* \
         python3=3.11.* \
+        python3-pip=23.* \
         python3-dev=3.11.* \
         python3-venv=3.11.* \
         python3-wheel=0.38.* \
@@ -28,4 +29,6 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         # Replace default Python.
         && rm -f /usr/bin/python3 \
-        && ln -s /usr/bin/python3.11 /usr/bin/python3
+        && ln -s /usr/bin/python3.11 /usr/bin/python3 \
+        # Debian has dpkg configured to ignore man files by default.
+        && rm /etc/dpkg/dpkg.cfg.d/docker
