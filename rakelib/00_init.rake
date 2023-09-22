@@ -648,7 +648,7 @@ ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
 python_tools_dir = File.join(tools_dir, "python")
-pythonpath = File.join(python_tools_dir, "lib")
+pythonpath = [File.join(python_tools_dir, "lib"), File.join(python_tools_dir, "lib64")]
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
@@ -1028,10 +1028,12 @@ end
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
+    sh "rm", "-rf", python_tools_dir
     sh PYTHON3_SYSTEM, "-m", "venv", python_tools_dir
     sh "touch", "-c", PYTHON
     sh PYTHON, "--version"
 end
+add_hash_guard(PYTHON, PYTHON3_SYSTEM)
 
 PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
