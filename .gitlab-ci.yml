@@ -1,4 +1,4 @@
-image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+image: registry.gitlab.isc.org/isc-projects/stork/ci-base:2
 
 # Only create pipelines for merge requests and pushes/merges to the main branch
 workflow:
@@ -83,7 +83,7 @@ stages:
       - /root/.cache/go-build
     fallback_keys:
       - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:1
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:2
   tags:
     - linux
     - amd64
@@ -91,9 +91,6 @@ stages:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    # Ruby bundler rejects installing packages if the temporary directory is
-    # world-writeable.
-    - chmod +t /tmp
     - rake prepare
     - rake prepare:deps
 
@@ -278,7 +275,7 @@ build_apks_amd64:
       - tools/
     fallback_keys:
       - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
-  image: golang:1.18-alpine3.15
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
   tags:
     - linux
     - amd64
@@ -286,8 +283,6 @@ build_apks_amd64:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    # The initially installed TAR causes FPM to fail. It must be reinstalled: https://github.com/jordansissel/fpm/issues/1375#issuecomment-317571946
-    - apk add --no-cache ruby-rake ruby-dev openjdk11-jre-headless python3 nodejs npm protoc~3.18.1 make gcc musl-dev tar binutils-gold
     - rake prepare:dist
     - rake prepare:deps
   script:
@@ -384,7 +379,7 @@ install_debs_arm64:
     - build_debs_arm64
 
 install_rpms_amd64:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:1
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8:2
   tags:
     - linux
     - amd64
@@ -423,7 +418,7 @@ install_rpms_arm64:
     - build_rpms_arm64
 
 install_apks_amd64:
-  image: alpine:3.15
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
   tags:
     - linux
     - amd64
@@ -431,8 +426,6 @@ install_apks_amd64:
   stage: build
   variables:
     ARCH: amd64
-  before_script:
-    - "apk add --no-cache mandoc"
   script:
     - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
     - "stork-agent --version"
@@ -479,7 +472,7 @@ system_testing:
     - docker:dind
   rules:
     - when: on_success
-  image: docker/compose:1.29.2
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:2
   cache:
     key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
     paths:
@@ -488,8 +481,6 @@ system_testing:
       - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
     - ip -6 route del default
-    - apk update
-    - apk add --no-cache openjdk11-jre-headless python3 openssl ruby-rake nodejs npm
     - rake prepare:systemtest
   variables:
     # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
@@ -582,7 +573,7 @@ upload_packages:
   rules:
     - when: manual
   allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
     - linux
     - docker
@@ -602,7 +593,7 @@ upload_test_packages:
   rules:
     - when: manual
   allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
     - linux
     - docker
