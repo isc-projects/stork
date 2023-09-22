@@ -204,17 +204,7 @@ namespace :utils do
                     available_version = stdout
 
                     # The current version is up-to-date if it prefixes the available version.
-                    # The optional '1:' prefix is ignored.
-                    available_trimmed = available_version
-                    if available_trimmed.start_with? "1:"
-                        available_trimmed = available_trimmed[2..-1]
-                    end
-                    current_trimmed = current_version
-                    if current_trimmed.start_with? "1:"
-                        current_trimmed = current_trimmed[2..-1]
-                    end
-
-                    is_up_to_date = available_trimmed.start_with? current_trimmed
+                    is_up_to_date = available_version.start_with? current_version
 
                     # Save the result.
                     packages.append [base_image, package_name, current_version, available_version, is_up_to_date.to_s]

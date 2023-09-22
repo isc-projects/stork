@@ -7,7 +7,7 @@ RUN apt-get update \
         build-essential=12.* \
         ca-certificates=20230311* \
         curl=7.* \
-        git=2.34.* \
+        git=1:2.34.* \
         gnupg-agent=2.* \
         openjdk-11-jre-headless=11.* \
         python3-dev=3.10.* \
@@ -16,13 +16,13 @@ RUN apt-get update \
         python3-distutils=3.10.* \
         make=4.* \
         man-db=2.* \
-        ruby=3.0* \
-        ruby-dev=3.0* \
+        ruby=1:3.0* \
+        ruby-dev=1:3.0* \
         postgresql-client=14+* \
         software-properties-common=0.99.* \
         unzip=6.* \
         wget=1.21.* \
-        chromium-browser=85.* \
+        chromium-browser=1:85.* \
         # Clean up cache.
         && rm -rf /var/lib/apt/lists/* \
         # Replace default Python.

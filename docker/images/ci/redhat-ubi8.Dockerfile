@@ -4,7 +4,7 @@ WORKDIR /repo
 RUN dnf install -y \
     gcc-8.5.* \
     git-2.39.* \
-    java-11-openjdk-headless-11.0.* \
+    java-17-openjdk-headless-17.0.* \
     tzdata-java-2023c-* \
     make-4.2.* \
     man-db-2.7.* \
