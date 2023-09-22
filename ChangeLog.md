@@ -1,3 +1,8 @@
+* 329 [build] slawek
+
+    Updated the dependency versions used in the CI.
+    (Gitlab #689)
+
 * 328 [bug] razvan
 
     Fix alignment of some UI components (spinner, help tip component).
