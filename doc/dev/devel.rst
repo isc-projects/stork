@@ -1100,7 +1100,8 @@ The "Available version" indicates if the "Available version" meets the
 Known limitations:
 
 - Each dependency must be specified in a separate line.
-- The only supported version operator is ``=`` (or ``-`` for RHEL).
+- The only supported version operator are ``=`` for ``apt``,
+  ``-`` for ``dnf`` / ``yum``, and ``~`` for ``apk``.
 - The packages from external repositories (e.g., CloudSmith) are not detected.
 - The modifications of the package manager configuration are not considered.
 - Supported package managers: ``apt`` (Ubuntu/Debian), ``yum`` (RHEL),

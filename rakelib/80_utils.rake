@@ -106,7 +106,7 @@ namespace :utils do
             "apk add" => [
                 ["apk", "update"],
                 -> (name) {["/bin/sh", "-c", "apk info #{name} | head -n 1 | sed -e 's/^#{name}-\\(.*\\) .*$/\\1/'"]},
-                "="
+                "~"
             ]
         }
 
