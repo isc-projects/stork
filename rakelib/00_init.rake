@@ -1028,9 +1028,8 @@ end
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
-    sh "rm", "-rf", python_tools_dir
+    sh "rm", "-rf", File.join(python_tools_dir, "*")
     sh PYTHON3_SYSTEM, "-m", "venv", python_tools_dir
-    sh "touch", "-c", PYTHON
     sh PYTHON, "--version"
 end
 add_hash_guard(PYTHON, PYTHON3_SYSTEM)
