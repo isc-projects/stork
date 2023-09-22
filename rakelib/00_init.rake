@@ -734,6 +734,7 @@ DROPUSER = require_manual_install_on("dropuser", any_system)
 DOCKER = require_manual_install_on("docker", any_system)
 OPENSSL = require_manual_install_on("openssl", any_system)
 GEM = require_manual_install_on("gem", any_system)
+RUBY = require_manual_install_on("ruby", any_system)
 MAKE = require_manual_install_on("make", any_system)
 GCC = require_manual_install_on("gcc", any_system)
 TAR = require_manual_install_on("tar", any_system)
@@ -753,6 +754,8 @@ DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
 file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
+    sh "rm", "-rf", File.join(ruby_tools_dir, "*")
+
     sh GEM, "install",
             "--minimal-deps",
             "--no-document",
@@ -769,6 +772,7 @@ file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
     sh BUNDLE, "--version"
 end
 add_version_guard(BUNDLE, bundler_ver)
+add_hash_guard(BUNDLE, RUBY)
 
 fpm_gemfile = File.expand_path("init_deps/fpm/Gemfile", __dir__)
 FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
