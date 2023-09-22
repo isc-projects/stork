@@ -11,13 +11,16 @@ namespace :push do
     # The image is pushed to the registry only if the PUSH environment variable
     # has "true" value.
     # The cache may be disabled by the CACHE environment variable set to "false".
-    # The image is multi-architecture - AMD64 and ARM64.
+    # The image is multi-architecture by default - AMD64 and ARM64.
+    # Set the SUPPRESS_ARM to suppred build for ARM64.
     task :build_and_push, [:source, :target] => [DOCKER, DOCKER_BUILDX] do |t, args|
         build_opts = []
         build_platforms = [
             "--platform", "linux/amd64",
-            "--platform", "linux/arm64/v8",
         ]
+        if ENV["SUPPRESS_ARM"] != "true"
+            build_platforms.append "--platform", "linux/arm64/v8"
+        end
 
         # Cache options.
         if ENV["CACHE"] == "false"
@@ -108,6 +111,44 @@ namespace :push do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/redhat-ubi8.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8"
+        )
+    end
+
+    desc 'Prepare image that is using in GitLab CI processes. Use the
+        Alpine-like system.
+        TAG - number used as the image tag or "latest" keyword - required
+        CACHE - allow using cached image layers - default: true
+        PUSH - push image to the registry - required'
+    task :base_alpine do
+        Rake::Task["push:build_and_push"].invoke(
+            "docker/images/ci/alpine.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine"
+        )
+    end
+
+    desc 'Prepare image that is using in GitLab CI processes related to
+        Docker and docker-compose.
+        TAG - number used as the image tag or "latest" keyword - required
+        CACHE - allow using cached image layers - default: true
+        PUSH - push image to the registry - required'
+    task :base_compose do
+        ENV["SUPPRESS_ARM"] = "true"
+        Rake::Task["push:build_and_push"].invoke(
+            "docker/images/ci/compose.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose"
+        )
+    end
+
+    desc 'Prepare image that is using in GitLab CI processes related to
+        CloudSmith.
+        TAG - number used as the image tag or "latest" keyword - required
+        CACHE - allow using cached image layers - default: true
+        PUSH - push image to the registry - required'
+    task :base_cloudsmith do
+        ENV["SUPPRESS_ARM"] = "true"
+        Rake::Task["push:build_and_push"].invoke(
+            "docker/images/ci/cloudsmith.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith"
         )
     end
 end
