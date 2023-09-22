@@ -1,14 +1,14 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        locales \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel \
-        rake \
-        wget
-RUN rm -rf /var/lib/apt/lists/*
-RUN locale-gen en_US.UTF-8
-RUN update-locale LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-RUN LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' pip3 install --upgrade cloudsmith-cli
+RUN apt-get update \
+        && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        locales=2.35-* \
+        python3-pip=22.* \
+        python3-setuptools=59.* \
+        python3-wheel=0.37.* \
+        rake=13.* \
+        wget=1.21.* \
+        && rm -rf /var/lib/apt/lists/* \
+        && locale-gen en_US.UTF-8 \
+        && update-locale LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' \
+        && LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' pip3 install cloudsmith-cli==1.1.1

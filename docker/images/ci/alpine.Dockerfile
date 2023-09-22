@@ -12,4 +12,5 @@ RUN apk add --no-cache \
     gcc=12.2.* \
     musl-dev=1.2.* \
     tar=1.34-* \
-    binutils-gold=2.40-*
+    binutils-gold=2.40-* \
+    mandoc=1.14.*

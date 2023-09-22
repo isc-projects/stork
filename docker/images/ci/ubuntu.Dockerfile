@@ -12,6 +12,7 @@ RUN apt-get update \
         openjdk-11-jre-headless=11.* \
         python3-dev=3.10.* \
         python3-venv=3.10.* \
+        python3-wheel=0.37.* \
         python3-distutils=3.10.* \
         make=4.* \
         man-db=2.* \
