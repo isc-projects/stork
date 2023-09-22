@@ -10,6 +10,7 @@ RUN apt-get update \
         git=1:2.34.* \
         gnupg-agent=2.* \
         openjdk-11-jre-headless=11.* \
+        python3=3.10.* \
         python3-dev=3.10.* \
         python3-venv=3.10.* \
         python3-wheel=0.37.* \
