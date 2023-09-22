@@ -648,7 +648,7 @@ ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
 python_tools_dir = File.join(tools_dir, "python")
-pythonpath = [File.join(python_tools_dir, "lib"), File.join(python_tools_dir, "lib64")]
+pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
