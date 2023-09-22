@@ -11,4 +11,4 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         && locale-gen en_US.UTF-8 \
         && update-locale LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' \
-        && LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' pip3 install cloudsmith-cli==1.1.1
+        && LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' pip3 install --no-cache-dir cloudsmith-cli==1.1.1
