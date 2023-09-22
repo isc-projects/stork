@@ -95,7 +95,7 @@ namespace :push do
         PUSH - push image to the registry - required'
     task :base_deb do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/ubuntu.Dockerfile",
+            "docker/images/ci/debian.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/ci-base",
             true
         )
