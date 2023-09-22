@@ -161,6 +161,16 @@ build_ui:
     paths:
       - webui/dist/stork/
 
+build_doc:
+  extends: .base_build_debian
+  script:
+    - rake build:doc
+  artifacts:
+    name: "doc"
+    expire_in: 1 week
+    paths:
+      - doc/build/
+
 build_backend:
   extends: .base_build_debian
   script:
