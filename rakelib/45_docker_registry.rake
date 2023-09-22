@@ -11,14 +11,12 @@ namespace :push do
     # The image is pushed to the registry only if the PUSH environment variable
     # has "true" value.
     # The cache may be disabled by the CACHE environment variable set to "false".
-    # The image is multi-architecture by default - AMD64 and ARM64.
-    # Set the SUPPRESS_ARM to suppred build for ARM64.
-    task :build_and_push, [:source, :target] => [DOCKER, DOCKER_BUILDX] do |t, args|
+    task :build_and_push, [:source, :target, :with_arm] => [DOCKER, DOCKER_BUILDX] do |t, args|
         build_opts = []
         build_platforms = [
             "--platform", "linux/amd64",
         ]
-        if ENV["SUPPRESS_ARM"] != "true"
+        if args[:with_arm]
             build_platforms.append "--platform", "linux/arm64/v8"
         end
 
@@ -98,7 +96,8 @@ namespace :push do
     task :base_deb do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/ubuntu.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/ci-base"
+            "registry.gitlab.isc.org/isc-projects/stork/ci-base",
+            true
         )
     end
 
@@ -110,7 +109,8 @@ namespace :push do
     task :base_rhel do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/redhat-ubi8.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8"
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8",
+            true
         )
     end
 
@@ -122,7 +122,8 @@ namespace :push do
     task :base_alpine do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/alpine.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine"
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine",
+            true
         )
     end
 
@@ -132,10 +133,10 @@ namespace :push do
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
     task :base_compose do
-        ENV["SUPPRESS_ARM"] = "true"
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/compose.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose"
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose",
+            false
         )
     end
 
@@ -145,10 +146,10 @@ namespace :push do
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
     task :base_cloudsmith do
-        ENV["SUPPRESS_ARM"] = "true"
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/cloudsmith.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith"
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith",
+            false
         )
     end
 end
