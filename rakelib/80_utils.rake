@@ -90,22 +90,22 @@ namespace :utils do
         package_managers = {
             "apt-get install" => [
                 ["apt-get", "update"],
-                -> (name) {["/bin/bash", "-c", "apt-cache madison #{name} | head -n 1 | cut -d'|' -f2"]},
+                -> (name) {["/bin/sh", "-c", "apt-cache madison #{name} | head -n 1 | cut -d'|' -f2"]},
                 "="
             ],
             "yum install" => [
                 ["yum", "updateinfo"],
-                -> (name) {["/bin/bash", "-c", "yum info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
+                -> (name) {["/bin/sh", "-c", "yum info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
                 "-"
             ],
             "dnf install" => [
                 ["dnf", "updateinfo"],
-                -> (name) {["/bin/bash", "-c", "dnf info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
+                -> (name) {["/bin/sh", "-c", "dnf info #{name} | grep Version | head -n 1 | cut -d':' -f2"]},
                 "-"
             ],
             "apk add" => [
                 ["apk", "update"],
-                -> (name) {["/bin/bash", "-c", "apk info #{name} | head -n 1 | cut -d'-' -f2"]},
+                -> (name) {["/bin/sh", "-c", "apk info #{name} | head -n 1 | sed -e 's/^#{name}-\\(.*\\) .*$/\\1/'"]},
                 "="
             ]
         }
@@ -195,7 +195,8 @@ namespace :utils do
                     end
 
                     # Check the available version in the base image.
-                    stdout, stderr, status = Open3.capture3 DOCKER, "exec", container_name, *create_check_command.call(package_name)
+                    check_command = create_check_command.call(package_name)
+                    stdout, stderr, status = Open3.capture3 DOCKER, "exec", container_name, *check_command
                     if status != 0
                         fail "Failed to check the package version, status: #{status}, stderr: #{stderr}, stdout: #{stdout}"
                     end
