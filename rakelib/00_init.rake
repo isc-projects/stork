@@ -763,7 +763,7 @@ file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
             "--install-dir", ruby_tools_dir,
             "bundler:#{bundler_ver}"
 
-    if !File.exists? BUNDLE
+    if !File.exist? BUNDLE
         # Workaround for old Ruby versions
         sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundler"), File.join(ruby_tools_bin_dir, "bundler")
         sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle"), BUNDLE
