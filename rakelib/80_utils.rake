@@ -189,8 +189,8 @@ namespace :utils do
                     if package_name == ""
                         package_name = current_version
                         current_version = "unspecified"
-                    else
-                        # Strip the tralling asterisk.
+                    # Strip the tralling asterisk.
+                    elsif current_version.end_with? "*"
                         current_version = current_version[0..-2]
                     end
 
