@@ -753,7 +753,7 @@ DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
-file BUNDLE => [GEM, ruby_tools_dir, ruby_tools_bin_dir] do
+file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
     sh "rm", "-rf", File.join(ruby_tools_dir, "*")
 
     sh GEM, "install",
