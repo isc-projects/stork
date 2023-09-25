@@ -789,7 +789,9 @@ namespace :update do
 
         sh PIP_COMPILE, *opts, *update_opts, "-o", all_requirements_file_txt, all_requirements_file_in
         # Install the updated versions.
-        sh PIP_SYNC, all_requirements_file_txt
+        if ENV["DRY_RUN"] != "true"
+            sh PIP_SYNC, all_requirements_file_txt
+        end
 
         # Generate the separate requirements.txt files. It uses the previously
         # upgraded versions.
