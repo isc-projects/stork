@@ -761,24 +761,19 @@ namespace :update do
 
     desc 'Update all Python dependencies
         DRY_RUN - do not update the packages, just re-generate using the local versions - default: false'
-    task :python_requirements => [PIP_COMPILE] do
+    task :python_requirements => [PIP_COMPILE, PIP_SYNC] do
         require 'pathname'
-        # Use the modern resolver (it is recommended by maintainers).
-        # Unfortunatelly, CI uses only an old pip-compile version that
-        # doesn't support the --resolver flag.
-        opts = []
-        stdout, _ = Open3.capture2 PIP_COMPILE, "--help"
-        if stdout.include? "--resolver"
-            opts.append "--resolver", "backtracking"
-        end
+
+        opts = ["--strip-extras"]
 
         # Generate a layered requirements file that composes all requirement
         # files.
         all_requirements_dir = "rakelib/init_deps"
         all_requirements_dir_path = Pathname.new all_requirements_dir
-        all_requirements_file = File.join(all_requirements_dir, "all.in")
+        all_requirements_file_in = File.join(all_requirements_dir, "all.in")
+        all_requirements_file_txt = all_requirements_file_in.ext('txt')
 
-        File.open(all_requirements_file, 'w') do |file|
+        File.open(all_requirements_file_in, 'w') do |file|
             python_requirement_files.each do |r|
                 r_path = Pathname.new r
                 r_rel_path = r_path.relative_path_from all_requirements_dir_path
@@ -792,17 +787,22 @@ namespace :update do
             update_opts.append "--upgrade"
         end
 
-        sh PIP_COMPILE, *opts, *update_opts, all_requirements_file
+        sh PIP_COMPILE, *opts, *update_opts, "-o", all_requirements_file_txt, all_requirements_file_in
+        # Install the updated versions.
+        sh PIP_SYNC, all_requirements_file_txt
 
         # Generate the separate requirements.txt files. It uses the previously
         # upgraded versions.
         python_requirement_files.each do |r|
+            # The TXT files must be previously removed; otherwise, they will
+            # not be updated due to missing the --upgrade flag.
+            FileUtils.rm r.ext('txt')
             sh PIP_COMPILE, *opts, r
         end
 
         # Clean-up
-        FileUtils.rm all_requirements_file
-        FileUtils.rm File.join(all_requirements_dir, "all.txt")
+        FileUtils.rm all_requirements_file_in
+        FileUtils.rm all_requirements_file_txt
     end
 
     desc 'Update all Ruby dependencies'
