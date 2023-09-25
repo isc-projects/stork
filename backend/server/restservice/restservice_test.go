@@ -8,8 +8,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
 	authenticationcallouts "isc.org/stork/hooks/server/authenticationcallouts"
 	agentcommtest "isc.org/stork/server/agentcomm/test"

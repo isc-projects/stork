@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallouts"
 )

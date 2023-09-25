@@ -3,9 +3,9 @@ package keaconfig_test
 import (
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 )

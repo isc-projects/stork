@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"

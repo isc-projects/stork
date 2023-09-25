@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/hooks"
 )

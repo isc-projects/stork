@@ -543,7 +543,7 @@ protoc_gen_go_grpc_ver='v1.3.0'
 richgo_ver='v0.3.12'
 govulncheck_ver='v1.0.1'
 mockery_ver='v2.34.0'
-mockgen_ver='v1.6.0'
+mockgen_ver='v0.3.0'
 golangcilint_ver='1.54.2'
 dlv_ver='v1.21.0'
 gdlv_ver='v1.11.0'
@@ -997,7 +997,7 @@ add_version_guard(MOCKERY, mockery_ver)
 
 MOCKGEN = File.join(gobin, "mockgen")
 file MOCKGEN => [GO] do
-    sh GO, "install", "github.com/golang/mock/mockgen@#{mockgen_ver}"
+    sh GO, "install", "go.uber.org/mock/mockgen@#{mockgen_ver}"
     sh MOCKGEN, "--version"
 end
 add_version_guard(MOCKGEN, mockgen_ver)

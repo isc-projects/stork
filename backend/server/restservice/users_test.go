@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallouts"
 	dbops "isc.org/stork/server/database"

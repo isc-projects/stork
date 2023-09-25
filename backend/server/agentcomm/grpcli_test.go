@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
