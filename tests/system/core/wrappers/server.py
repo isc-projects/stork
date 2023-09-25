@@ -112,11 +112,11 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """Logs in a user. Returns the user info."""
         api_instance = UsersApi(self._api_client)
         user, _, headers = api_instance.create_session(
-            credentials=dict(
-                identifier=username,
-                secret=password,
-                authentication_method_id=authentication_method_id,
-            ),
+            credentials={
+                "identifier": username,
+                "secret": password,
+                "authentication_method_id": authentication_method_id,
+            },
             _return_http_data_only=False,
         )
         session_cookie = headers["Set-Cookie"]
@@ -147,7 +147,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     def list_machines(self, authorized=None, limit=10, start=0) -> Machines:
         """Lists the machines."""
-        params = dict(start=start, limit=limit)
+        params = {"start": start, "limit": limit}
         if authorized is not None:
             params["authorized"] = authorized
         api_instance = ServicesApi(self._api_client)
@@ -157,7 +157,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         self, app_id=None, family: int = None, limit=10, start=0
     ) -> Subnets:
         """Lists the subnets from a given application and/or family."""
-        params = dict(start=start, limit=limit)
+        params = {"start": start, "limit": limit}
         if app_id is not None:
             params["app_id"] = app_id
         if family is not None:
@@ -199,7 +199,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         Events
             List of events
         """
-        params = dict(start=start, limit=limit)
+        params = {"start": start, "limit": limit}
         if daemon_type is not None:
             params["daemon_type"] = daemon_type
         if app_type is not None:
@@ -254,7 +254,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     ) -> Optional[ConfigReports]:
         """Lists the config reports for a given daemon. Returns None if the
         review is in progress."""
-        params = dict(limit=limit, start=start, id=daemon_id)
+        params = {"start": start, "limit": limit, "id": daemon_id}
         api_instance = ServicesApi(self._api_client)
 
         # OpenAPI generator doesn't support multiple status codes and empty
@@ -610,6 +610,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     # greater than 10. Additionally, if the number of subnets is less than 10,
     # each subnet generates its event.
     _pattern_added_subnets = re.compile(
+        # pylint: disable=implicit-str-concat
         r"added (?:(?:\d+ subnets)|(?:<subnet.*>)) to <daemon "
         r'id="(?P<daemon_id>\d+)" '
         r'name="(?P<daemon_name>.*)" '
@@ -715,7 +716,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         # Suppresses the input parsing and validation - a little hack
         original_call = self._api_client.call_api
-        params = dict(_check_type=False)
+        params = {"_check_type": False}
 
         def injector(*args, **kwargs):
             kwargs.update(params)

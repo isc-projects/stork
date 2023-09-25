@@ -828,8 +828,8 @@ def test_call_command_passes_command(subprocess_run_mock: MagicMock):
 
 @patch("subprocess.run")
 def test_call_command_adds_env_vars(subprocess_run_mock: MagicMock):
-    compose = DockerCompose("project-dir", env_vars=dict(global_foo="1"))
-    compose._call_command([], env_vars=dict(local_bar="2"))
+    compose = DockerCompose("project-dir", env_vars={"global_foo": "1"})
+    compose._call_command([], env_vars={"local_bar": "2"})
     subprocess_run_mock.assert_called_once()
     env = subprocess_run_mock.call_args.kwargs["env"]
     assert env["global_foo"] == "1"

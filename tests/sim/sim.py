@@ -24,9 +24,11 @@ STORK_SERVER_URL = os.environ.get("STORK_SERVER_URL", "http://server:8080")
 
 def _login_session():
     session = requests.Session()
-    credentials = dict(
-        authenticationMethodId="internal", identifier="admin", secret="admin"
-    )
+    credentials = {
+        "authenticationMethodId": "internal",
+        "identifier": "admin",
+        "secret": "admin"
+    }
     session.post(f"{STORK_SERVER_URL}/api/sessions", json=credentials)
     return session
 
@@ -75,7 +77,7 @@ def start_perfdhcp(subnet):
 
 def _refresh_subnets():
     try:
-        app.subnets = dict(items=[], total=0)
+        app.subnets = {"items": [], "total": 0}
 
         session = _login_session()
 
@@ -102,17 +104,18 @@ def _refresh_subnets():
 
 def serialize_subnets(subnets):
     """Serializes subnets to JSON."""
-    data = dict(total=subnets["total"], items=[])
+    data = {
+        "total": subnets["total"],
+        "items": []
+    }
     for subnet in subnets["items"]:
-        data["items"].append(
-            dict(
-                subnet=subnet["subnet"],
-                sharedNetwork=subnet["sharedNetwork"],
-                rate=subnet["rate"],
-                clients=subnet["clients"],
-                state=subnet["state"],
-            )
-        )
+        data["items"].append({
+            "subnet": subnet["subnet"],
+            "sharedNetwork": subnet["sharedNetwork"],
+            "rate": subnet["rate"],
+            "clients": subnet["clients"],
+            "state": subnet["state"],
+        })
     return json.dumps(data)
 
 
@@ -152,7 +155,7 @@ def start_flamethrower(server):
 
 def _refresh_servers():
     try:
-        app.servers = dict(items=[], total=0)
+        app.servers = {"items": [], "total":  0}
 
         session = _login_session()
 
@@ -182,19 +185,17 @@ def _refresh_servers():
 
 def serialize_servers(servers):
     """Serializes servers to JSON."""
-    data = dict(total=servers["total"], items=[])
+    data = {"total": servers["total"], "items": []}
     for srv in servers["items"]:
-        data["items"].append(
-            dict(
-                state=srv["state"],
-                address=srv["machine"]["address"],
-                clients=srv["clients"],
-                rate=srv["rate"],
-                transport=srv["transport"],
-                qtype=srv["qtype"],
-                qname=srv["qname"],
-            )
-        )
+        data["items"].append({
+            "state": srv["state"],
+            "address": srv["machine"]["address"],
+            "clients": srv["clients"],
+            "rate": srv["rate"],
+            "transport": srv["transport"],
+            "qtype": srv["qtype"],
+            "qname": srv["qname"]
+        })
     return json.dumps(data)
 
 
@@ -347,7 +348,7 @@ def put_perf_params(index):
 
 
 def _get_services():
-    app.services = dict(items=[], total=0)
+    app.services = {"items": [], "total": 0}
 
     session = _login_session()
 
@@ -357,7 +358,7 @@ def _get_services():
     if machines is None:
         machines = []
 
-    data = dict(total=0, items=[])
+    data = {"items": [], "total": 0}
     for machine in machines:
         address = machine["address"]
         server = ServerProxy(f"http://{address}:9001/RPC2")

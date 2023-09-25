@@ -355,6 +355,8 @@ good-names=i,
            f,
            ex,
            Run,
+           up,
+           T1, T2,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
@@ -502,8 +504,8 @@ max-locals=15
 # Maximum number of parents for a class (see R0901).
 max-parents=7
 
-# Maximum number of methods for a class (see R0904).
-max-methods=20
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=25
 
 # Maximum number of return / yield for function / method body.
 max-returns=6
@@ -511,8 +513,8 @@ max-returns=6
 # Maximum number of statements in function / method body.
 max-statements=50
 
-# Minimum number of methods for a class (see R0903).
-min-methods=2
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=2
 
 
 [EXCEPTIONS]

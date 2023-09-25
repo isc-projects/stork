@@ -18,7 +18,8 @@ statistics = True
 max-line-length = 160
 
 # The following errors and warnings will be ignored in all files.
-extend-ignore = E203  # whitespace before ':', rule is incompatible with PEP8 standard
+# E203 - whitespace before ':', rule is incompatible with PEP8 standard
+extend-ignore = E203
 #    E4,
 #    E51,
 #    W234

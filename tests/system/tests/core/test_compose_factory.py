@@ -39,7 +39,7 @@ def test_create_compose_single_compose_file():
 
 @patch("subprocess.run")
 def test_create_compose_uses_environment_variables(subprocess_run_mock: MagicMock):
-    source_env_vars = dict(foo="1", bar="2")
+    source_env_vars = {"foo": "1", "bar": "2"}
     compose = create_docker_compose(
         env_vars=source_env_vars, compose_detector=fake_compose_binary_detector
     )
