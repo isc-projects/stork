@@ -1,13 +1,24 @@
 module.exports = {
     stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+
     addons: [
         '@storybook/addon-links',
-        '@storybook/addon-essentials',
+        {
+            name: '@storybook/addon-essentials',
+            options: {
+                docs: false,
+            },
+        },
         '@storybook/addon-interactions',
         'storybook-addon-mock',
     ],
-    framework: '@storybook/angular',
-    core: {
-        builder: '@storybook/builder-webpack5',
+
+    framework: {
+        name: '@storybook/angular',
+        options: {},
+    },
+
+    docs: {
+        autodocs: false,
     },
 }

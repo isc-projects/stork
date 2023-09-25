@@ -5,6 +5,12 @@
 # You can see what browsers were selected by your queries by running:
 #   npx browserslist
 
+# 2023-09-25 I have renamed this file due to an issue described here:
+# https://github.com/storybookjs/storybook/issues/21617#issuecomment-1536490488
+# I got the "SyntaxError: Invalid or unexpected token" error on
+# ./browserslist:1 . The '.browserlistrc' is also accepted by the
+# https://github.com/browserslist/browserslist#queries specification.
+
 > 0.5%
 last 2 versions
 Firefox ESR

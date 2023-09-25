@@ -615,14 +615,16 @@ end
 
 desc 'Run Storybook
     CACHE - use internal Storybook cache, disable for fix the "Cannot GET /" problem - default: true'
-task :storybook => [NPM] + WEBUI_CODEBASE do
+task :storybook => [NPX] + WEBUI_CODEBASE do
     opts = []
     if ENV["CACHE"] == "false"
         opts.append "--no-manager-cache"
     end
 
+    ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
+
     Dir.chdir("webui") do
-        sh NPM, "run", "storybook", "--", *opts
+        sh NPX, "ng", "run", "stork:storybook", "--", *opts
     end
 end
 
@@ -736,7 +738,7 @@ namespace :update do
     desc 'Update Storybook to the latest version'
     task :storybook => [STORYBOOK] do
         Dir.chdir("webui") do
-            sh STORYBOOK, "--disable-telemetry", "upgrade"
+            sh STORYBOOK, "upgrade", "--disable-telemetry"
         end
     end
 

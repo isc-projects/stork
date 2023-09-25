@@ -10,7 +10,7 @@ import { ConfigCheckerPreferencePickerComponent } from '../config-checker-prefer
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
 import { action } from '@storybook/addon-actions'
-import { toastDecorator } from '../utils.stories'
+import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { ButtonModule } from 'primeng/button'
 

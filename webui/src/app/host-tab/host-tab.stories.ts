@@ -20,7 +20,7 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostTabComponent } from '../host-tab/host-tab.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
-import { toastDecorator } from '../utils.stories'
+import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 export default {

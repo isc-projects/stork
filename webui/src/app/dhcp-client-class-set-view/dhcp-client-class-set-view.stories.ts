@@ -3,7 +3,7 @@ import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.co
 import { Story, Meta, moduleMetadata } from '@storybook/angular'
 import { ChipModule } from 'primeng/chip'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { toastDecorator } from '../utils.stories'
+import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
 
