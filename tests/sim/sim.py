@@ -27,7 +27,7 @@ def _login_session():
     credentials = {
         "authenticationMethodId": "internal",
         "identifier": "admin",
-        "secret": "admin"
+        "secret": "admin",
     }
     session.post(f"{STORK_SERVER_URL}/api/sessions", json=credentials)
     return session
@@ -104,18 +104,17 @@ def _refresh_subnets():
 
 def serialize_subnets(subnets):
     """Serializes subnets to JSON."""
-    data = {
-        "total": subnets["total"],
-        "items": []
-    }
+    data = {"total": subnets["total"], "items": []}
     for subnet in subnets["items"]:
-        data["items"].append({
-            "subnet": subnet["subnet"],
-            "sharedNetwork": subnet["sharedNetwork"],
-            "rate": subnet["rate"],
-            "clients": subnet["clients"],
-            "state": subnet["state"],
-        })
+        data["items"].append(
+            {
+                "subnet": subnet["subnet"],
+                "sharedNetwork": subnet["sharedNetwork"],
+                "rate": subnet["rate"],
+                "clients": subnet["clients"],
+                "state": subnet["state"],
+            }
+        )
     return json.dumps(data)
 
 
@@ -155,7 +154,7 @@ def start_flamethrower(server):
 
 def _refresh_servers():
     try:
-        app.servers = {"items": [], "total":  0}
+        app.servers = {"items": [], "total": 0}
 
         session = _login_session()
 
@@ -187,15 +186,17 @@ def serialize_servers(servers):
     """Serializes servers to JSON."""
     data = {"total": servers["total"], "items": []}
     for srv in servers["items"]:
-        data["items"].append({
-            "state": srv["state"],
-            "address": srv["machine"]["address"],
-            "clients": srv["clients"],
-            "rate": srv["rate"],
-            "transport": srv["transport"],
-            "qtype": srv["qtype"],
-            "qname": srv["qname"]
-        })
+        data["items"].append(
+            {
+                "state": srv["state"],
+                "address": srv["machine"]["address"],
+                "clients": srv["clients"],
+                "rate": srv["rate"],
+                "transport": srv["transport"],
+                "qtype": srv["qtype"],
+                "qname": srv["qname"],
+            }
+        )
     return json.dumps(data)
 
 
