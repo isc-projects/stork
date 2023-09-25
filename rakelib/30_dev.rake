@@ -495,14 +495,14 @@ namespace :audit do
     desc 'Check the backend security issues'
     task :backend => [GOVULNCHECK] + go_codebase do
         Dir.chdir("backend") do
-            sh GOVULNCHECK, "-v", "./..."
+            sh GOVULNCHECK, "./..."
         end
     end
 
     desc 'Check the backend security issues (including testing codebase)'
     task :backend_tests => [GOVULNCHECK, "gen:backend:mocks"] + go_codebase do
         Dir.chdir("backend") do
-            sh GOVULNCHECK, "-v", "-test", "./..."
+            sh GOVULNCHECK, "-test", "./..."
         end
     end
 end

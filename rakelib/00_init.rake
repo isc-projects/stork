@@ -541,6 +541,7 @@ protoc_ver='24.3'
 protoc_gen_go_ver='v1.31.0'
 protoc_gen_go_grpc_ver='v1.3.0'
 richgo_ver='v0.3.12'
+govulncheck_ver='v1.0.1'
 mockery_ver='v2.34.0'
 mockgen_ver='v1.6.0'
 golangcilint_ver='1.54.2'
@@ -1018,17 +1019,12 @@ end
 add_version_guard(GDLV, gdlv_ver)
 
 GOVULNCHECK = File.join(gobin, "govulncheck")
-file GOVULNCHECK => [GO, :always_rebuild_this_task] do
-    # Govulncheck is still in the development phase. It doesn't use stable
-    # tags. Available versions have a short lifetime. We use the latest release
-    # and mark it as always out-of-date for Rake. The Go will check if the
-    # newer version is available every run. It shouldn't be problematic as long
-    # as it will be used only in a task to check the vulnerabilities.
-    sh GO, "install", "golang.org/x/vuln/cmd/govulncheck@latest"
-    if !File.file?(GOVULNCHECK)
-        fail
-    end
+file GOVULNCHECK => [GO] do
+    sh GO, "install", "golang.org/x/vuln/cmd/govulncheck@#{govulncheck_ver}"
+    sh GOVULNCHECK, "-version"
+    sh "touch", "-c", GOVULNCHECK
 end
+add_version_guard(GOVULNCHECK, govulncheck_ver)
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
