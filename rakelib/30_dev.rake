@@ -343,16 +343,24 @@ namespace :run do
     end
 
     desc 'Run Stork Agent (debug mode)
+        PORT - agent port to use - default: 8888
         HEADLESS - run debugger in headless mode - default: false'
     task :agent_debug => [DLV] + GO_AGENT_CODEBASE do
         opts = []
+        app_opts = []
 
         if ENV["HEADLESS"] == "true"
             opts = ["--headless", "-l", "0.0.0.0:45678"]
         end
 
+        if ENV["PORT"].nil?
+            ENV["PORT"] = "8888"
+        end
+
+        app_opts.append "--port", ENV["PORT"]
+
         Dir.chdir("backend/cmd/stork-agent") do
-            sh DLV, *opts, "debug"
+            sh DLV, *opts, "debug", "--", *app_opts
         end
     end
 
