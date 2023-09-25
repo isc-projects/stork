@@ -551,7 +551,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 	// Begin a new transaction for inserting the reports.
 	tx, err := d.db.Begin()
 	if err != nil {
-		return
+		return err
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
@@ -570,13 +570,13 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		dbDaemons, err = dbmodel.GetKeaDaemonsForUpdate(tx, daemons)
 	}
 	if err != nil {
-		return
+		return err
 	}
 
 	// Ensure that all daemons were in the database.
 	if len(dbDaemons) != len(daemons) {
 		err = pkgerrors.New("some daemons with reviewed configuration are missing from the database")
-		return
+		return err
 	}
 
 	// Check if the configuration of any of the daemons has changed.
@@ -586,7 +586,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 				if daemon.KeaDaemon != nil && dbDaemon.KeaDaemon != nil &&
 					daemon.KeaDaemon.ConfigHash != dbDaemon.KeaDaemon.ConfigHash {
 					err = pkgerrors.Errorf("Kea daemon %d configuration has changed since the config review began", daemon.ID)
-					return
+					return err
 				}
 			}
 		}
@@ -606,7 +606,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 			if i == 0 || daemon.ID != ctx.subjectDaemon.ID {
 				err = dbmodel.DeleteConfigReportsByDaemonID(tx, daemon.ID)
 				if err != nil {
-					return
+					return err
 				}
 			}
 		}
@@ -628,7 +628,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 		err = dbmodel.AddConfigReport(tx, cr)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
@@ -643,13 +643,13 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 		err = dbmodel.AddConfigReview(tx, configReview)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return
+		return err
 	}
 
 	if !ctx.triggers.isInternalRun() {

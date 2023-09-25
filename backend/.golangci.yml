@@ -9,7 +9,6 @@ linters:
     - unused
     - asciicheck
     - bodyclose
-    - depguard
     - dogsled
     - errorlint
     - exhaustive
@@ -44,6 +43,7 @@ linters:
     - unparam
     - whitespace
   disable:
+    - depguard        # From 1.54.2 it require to be strictly configured. Otherwise, it blocks all dependencies, including internals.
     - godox
     - maligned
     - lll
@@ -74,6 +74,21 @@ linters-settings:
       - "all"
       # Disables the rule that the comments of the exported variables ("var") must start with the variable name.
       - "-ST1022"
+  revive:
+    rules:
+      - name: unused-parameter
+        # TODO: Reenable it when the allowRegex option will be supported.
+        disabled: true
+        arguments:
+          # Allows any names started with _, not just _ itself.
+          - allowRegex: "^_"
+  nakedret:
+    # Operation of this checker was changed. Previously, it allowed to use
+    # naked returns to a particular line. Now, it disallows naked returns if
+    # the function has more lines than limit. I increased the limit to not
+    # trigger the warning on the most of the functions that previously met the
+    # requirement.
+    max-func-lines: 70
 
 issues:
   max-same-issues: 3

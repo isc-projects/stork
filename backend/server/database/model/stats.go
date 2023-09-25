@@ -67,6 +67,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 
 	statsMap := make(map[string]*big.Int)
 	for _, s := range statsList {
+		s := s
 		var value *big.Int
 		if s.Value != nil {
 			value = &s.Value.Int
