@@ -18,7 +18,10 @@ python_requirement_files = [
     "rakelib/init_deps/pytest.in",
     "rakelib/init_deps/sphinx.in",
     "rakelib/init_deps/pylinters.in",
-    "tests/sim/requirements.in",
+    # The out-of-date simulator base image blocks the updating of the Python
+    # dependencies.
+    # TODO: Update simulator.Dockerfile and uncomment this file.
+    # "tests/sim/requirements.in",
 ]
 
 #################

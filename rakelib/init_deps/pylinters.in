@@ -2,16 +2,3 @@ pylint
 flake8
 pycodestyle
 black
-
-# CI doesn't recognize higher versions
-astroid <= 2.11.7
-black <= 22.8.0
-dill <= 0.3.4
-flake8 <= 5.0.4
-isort <= 5.10.1
-lazy-object-proxy <= 1.7.1
-platformdirs <= 2.4.0
-pylint <= 2.13.9
-tomli <= 1.2.3
-click <= 8.0.4
-pathspec <= 0.9.0 
