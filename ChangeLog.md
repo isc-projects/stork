@@ -2239,4 +2239,11 @@ LEGEND
 * [perf]  Performance related change.
 * [ui]    User Interface change.
 
-*: Backward incompatible or operational change.
+Header syntax:
+
+[Leading asterisk] [Entry number] [Category] [Incompatibility mark (optional)] [Author]
+
+The header components are delimited by a single space.
+
+The backward incompatible or operational change is indicating by the
+exclamation mark (!).
