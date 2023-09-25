@@ -730,6 +730,7 @@ namespace :update do
             sh NPX, "ng", "update", *opts,
                 "@angular/core@#{version}",
                 "@angular/cli@#{version}",
+                "@angular/cdk@#{version}",
                 "@angular-eslint/schematics@#{version}",
                 "@angular-eslint/eslint-plugin@#{version}"
         end
