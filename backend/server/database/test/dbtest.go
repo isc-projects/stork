@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -74,7 +73,6 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 			"that other users are accessing it.")
 	}
 
-	rand.Seed(time.Now().UnixNano())
 	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
 
 	if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
