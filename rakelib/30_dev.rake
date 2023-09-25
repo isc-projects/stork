@@ -711,7 +711,7 @@ end
 
 namespace :update do
     desc 'Update Angular
-    VERSION - target Angular version - required
+    VERSION - target Angular version, hint: use only major and minor - required
     FORCE - ignore warnings - optional, default: false'
     task :angular => [NPX] do
         version=ENV["VERSION"]
@@ -727,7 +727,9 @@ namespace :update do
         Dir.chdir("webui") do
             sh NPX, "ng", "update", *opts,
                 "@angular/core@#{version}",
-                "@angular/cli@#{version}"
+                "@angular/cli@#{version}",
+                "@angular-eslint/schematics@#{version}",
+                "@angular-eslint/eslint-plugin@#{version}"
         end
     end
 
