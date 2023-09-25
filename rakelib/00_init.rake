@@ -551,7 +551,7 @@ node_ver='18.18.0'
 npm_ver='9.8.1'
 storybook_ver='7.4.5'
 yamlinc_ver='0.1.10'
-bundler_ver='2.3.8'
+bundler_ver='2.3.26'
 shellcheck_ver='0.9.0'
 
 # System-dependent variables
