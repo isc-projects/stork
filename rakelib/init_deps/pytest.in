@@ -2,3 +2,4 @@ pytest-timeout
 pytest
 pyyaml
 python-dateutil
+urllib3

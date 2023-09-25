@@ -26,3 +26,5 @@ six==1.16.0
     # via python-dateutil
 tomli==2.0.1
     # via pytest
+urllib3==2.0.5
+    # via -r rakelib/init_deps/pytest.in
