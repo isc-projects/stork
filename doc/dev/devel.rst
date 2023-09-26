@@ -1075,7 +1075,7 @@ Steps to update the dependencies:
 .. note::
 
     The ``utils:list_packages_in_dockerfile`` task is not perfect. It may
-    not detect some packages, especially these installed from the external
+    not detect some packages, especially the ones installed from the external
     repositories. It is recommended to check the Dockerfile manually.
 
 Example command output:
