@@ -201,11 +201,11 @@ task :pre_run_server do
             puts "Using testing UI - live UI build is active"
         else
             production_time = Time.new(1980, 1, 1)
-            if File.exists? WEBUI_DIST_DIRECTORY
+            if File.exist? WEBUI_DIST_DIRECTORY
                 production_time = File.mtime(WEBUI_DIST_DIRECTORY)
             end
             testing_time = Time.new(1980, 1, 1)
-            if File.exists? WEBUI_DEBUG_DIRECTORY
+            if File.exist? WEBUI_DEBUG_DIRECTORY
                 testing_time = File.mtime(WEBUI_DEBUG_DIRECTORY)
             end
             use_testing_ui = testing_time > production_time
