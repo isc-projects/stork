@@ -1015,7 +1015,7 @@ To update the Docker CI images, follow these steps:
 3. Run the specific Rake task with the ``PUSH`` set to ``false``:
 
     a) ``push:base_deb`` - for Debian-based image
-    b) ``push:base_rhel`` - for RHEL-based imagb
+    b) ``push:base_rhel`` - for RHEL-based image
 
     .. code-block:: console
 
