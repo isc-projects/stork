@@ -43,7 +43,7 @@ linters:
     - unparam
     - whitespace
   disable:
-    - depguard        # From 1.54.2 it require to be strictly configured. Otherwise, it blocks all dependencies, including internals.
+    - depguard        # From 1.54.2 it requires to be strictly configured. Otherwise, it blocks all dependencies, including internals.
     - godox
     - maligned
     - lll

@@ -554,7 +554,7 @@ storybook_ver='7.4.5'
 yamlinc_ver='0.1.10'
 bundler_ver='2.3.26'
 shellcheck_ver='0.9.0'
-pip_compile_ver='7.3.0'
+pip_tools_ver='7.3.0'
 
 # System-dependent variables
 case OS
@@ -1062,11 +1062,11 @@ add_hash_guard(PYTEST, pytests_requirements_file)
 
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
-    sh PIP, "install", "pip-tools==#{pip_compile_ver}"
+    sh PIP, "install", "pip-tools==#{pip_tools_ver}"
     sh "touch", "-c", PIP_COMPILE
     sh PIP_COMPILE, "--version"
 end
-add_version_guard(PIP_COMPILE, pip_compile_ver)
+add_version_guard(PIP_COMPILE, pip_tools_ver)
 
 PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
 file PIP_SYNC => [PIP_COMPILE]

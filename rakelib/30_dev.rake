@@ -804,7 +804,7 @@ namespace :update do
         # Generate the separate requirements.txt files. It uses the previously
         # upgraded versions.
         python_requirement_files.each do |r|
-            # The TXT files must be previously removed; otherwise, they will
+            # The TXT files must be removed; otherwise, they will
             # not be updated due to missing the --upgrade flag.
             FileUtils.rm r.ext('txt')
             sh PIP_COMPILE, *opts, r
