@@ -1,35 +1,19 @@
 // improve look of topbar menu
 :host ::ng-deep .stork-menubar
-  background-color: #005B9F
-  border-width: 0px
+  &.p-menubar
+    background-color: #005B9F
+    border-width: 0px
+    padding: 0
 
-:host ::ng-deep .stork-menubar.p-menubar
-  padding: 0
-
-:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link
-  color: white
-  &:hover
-    color: black
-
-:host ::ng-deep .stork-menubar.p-menubar.p-menubar-mobile-active .p-menubar-root-list > .p-menuitem > .p-menuitem-link
-  color: black
-
-:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-link
-  color: black
-
-:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-menuitem-text
-  color: inherit
-  &:hover
-    color: inherit
-
-:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-submenu-icon
-  color: inherit
-  &:hover
-    color: inherit
-
-:host ::ng-deep .stork-menubar.p-menubar .p-menubar-button
-  color: white
-  background-color: #007ad9
+  .p-menuitem
+    .p-menuitem-text
+      color: white !important
+    &:hover
+      .p-menuitem-text
+        color: black !important
+    &.p-menuitem-active
+      .p-menuitem-text
+        color: black !important
 
 @keyframes p-progress-spinner-color
   0%
