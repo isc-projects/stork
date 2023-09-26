@@ -781,7 +781,7 @@ to the ``eth0`` (the first) interface, and the ``subnet_00`` network to the
 reliably.
 
 Debugging System Tests
--------------------------
+----------------------
 
 The system test debugging may be performed at different levels. You can debug
 the test execution itself or connect the debugger to an executable running in
