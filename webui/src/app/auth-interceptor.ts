@@ -9,7 +9,10 @@ import { getErrorMessage } from './utils'
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-    constructor(private router: Router, private auth: AuthService) {}
+    constructor(
+        private router: Router,
+        private auth: AuthService
+    ) {}
 
     /**
      * It handles the authentication errors and redirects a user to login or

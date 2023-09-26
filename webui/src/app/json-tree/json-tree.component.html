@@ -52,7 +52,7 @@
 <ng-template #children>
     <div class="tree-level__value" [ngClass]="{ 'tree-level__value--hidden': areChildrenLoading() }">
         <app-json-tree
-            *ngFor="let item of value | keyvalue : keyValueComparator | slice : childStart : childEnd; let last = last"
+            *ngFor="let item of value | keyvalue: keyValueComparator | slice: childStart : childEnd; let last = last"
             [key]="item.key"
             [value]="item.value"
             [autoExpandMaxNodeCount]="autoExpandMaxNodeCount"

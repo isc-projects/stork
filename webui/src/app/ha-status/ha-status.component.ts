@@ -29,7 +29,10 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      */
     loadedOnce: boolean = false
 
-    constructor(private servicesApi: ServicesService, private messageService: MessageService) {}
+    constructor(
+        private servicesApi: ServicesService,
+        private messageService: MessageService
+    ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()

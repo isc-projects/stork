@@ -38,7 +38,10 @@ export class UserTab {
     /**
      * Constructor
      */
-    constructor(public tabType: UserTabType, public user: User) {}
+    constructor(
+        public tabType: UserTabType,
+        public user: User
+    ) {}
 
     /**
      * Returns route associated with this tab

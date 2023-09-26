@@ -10,7 +10,10 @@ import { SettingsService } from './backend/api/api'
 export class SettingService {
     private settingsBS = new BehaviorSubject({})
 
-    constructor(private auth: AuthService, private settingsApi: SettingsService) {
+    constructor(
+        private auth: AuthService,
+        private settingsApi: SettingsService
+    ) {
         // Only get the settings when the user is logged in.
         this.auth.currentUser.subscribe((x) => {
             if (this.auth.currentUserValue) {

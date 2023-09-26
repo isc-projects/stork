@@ -61,7 +61,7 @@
                     </h2>
                     <table class="dashboard-section__data">
                         <tr *ngFor="let sn of overview.subnets4.items" class="utilization-row">
-                            <td class="utilization-row__id">{{ sn.localSubnets?.[0]?.id | surround: "[":"]" }}</td>
+                            <td class="utilization-row__id">{{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}</td>
                             <td class="utilization-row__bar">
                                 <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                             </td>
@@ -186,7 +186,7 @@
                     </h2>
                     <table class="dashboard-section__data">
                         <tr *ngFor="let sn of overview.subnets6.items" class="utilization-row">
-                            <td class="utilization-row__id">{{ sn.localSubnets?.[0]?.id | surround: "[":"]" }}</td>
+                            <td class="utilization-row__id">{{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}</td>
                             <td class="utilization-row__bar">
                                 <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                             </td>

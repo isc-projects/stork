@@ -16,7 +16,11 @@ export class SettingsPageComponent implements OnInit {
 
     public settingsForm: UntypedFormGroup
 
-    constructor(private fb: UntypedFormBuilder, private settingsApi: SettingsService, private msgSrv: MessageService) {
+    constructor(
+        private fb: UntypedFormBuilder,
+        private settingsApi: SettingsService,
+        private msgSrv: MessageService
+    ) {
         this.settingsForm = this.fb.group({
             bind9_stats_puller_interval: ['', [Validators.required, Validators.min(0)]],
             grafana_url: [''],

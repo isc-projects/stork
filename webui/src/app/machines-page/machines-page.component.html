@@ -380,7 +380,7 @@ sudo ./stork-install-agent.sh</textarea
                 <td>{{ m.memory }}</td>
                 <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
                 <td class="hiding-column">{{ m.uptime || '?' }} days</td>
-                <td class="hiding-column">{{ m.lastVisitedAt | localtime | placeholder : 'never' }}</td>
+                <td class="hiding-column">{{ m.lastVisitedAt | localtime | placeholder: 'never' }}</td>
                 <td>
                     <p-message *ngIf="m.error" severity="error" text="{{ m.error }}"></p-message>
                 </td>
@@ -550,7 +550,7 @@ sudo ./stork-install-agent.sh</textarea
                 </tr>
                 <tr>
                     <td>Last Visited</td>
-                    <td>{{ machineTab.machine.lastVisitedAt | localtime | placeholder : 'never' }}</td>
+                    <td>{{ machineTab.machine.lastVisitedAt | localtime | placeholder: 'never' }}</td>
                 </tr>
             </table>
 

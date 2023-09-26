@@ -107,7 +107,10 @@ export class ConfigReviewPanelComponent implements OnInit {
      * @param msgService a service used to display error messages.
      * @param servicesApi a service used to fetch the config review reports.
      */
-    constructor(private msgService: MessageService, private servicesApi: ServicesService) {}
+    constructor(
+        private msgService: MessageService,
+        private servicesApi: ServicesService
+    ) {}
 
     /**
      * A hook invoked during the component initialization.

@@ -19,7 +19,11 @@ export class AuthService {
     public currentUser: Observable<User>
     private authenticationMethods: Observable<AuthenticationMethod[]>
 
-    constructor(private api: UsersService, private router: Router, private msgSrv: MessageService) {
+    constructor(
+        private api: UsersService,
+        private router: Router,
+        private msgSrv: MessageService
+    ) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
         this.authenticationMethods = api.getAuthenticationMethods().pipe(

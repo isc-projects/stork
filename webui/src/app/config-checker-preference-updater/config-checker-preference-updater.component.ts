@@ -51,7 +51,10 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      * @param servicesApi Used to exchange data with API.
      * @param messageService Used to generate success and error messages
      */
-    constructor(private servicesApi: ServicesService, private messageService: MessageService) {}
+    constructor(
+        private servicesApi: ServicesService,
+        private messageService: MessageService
+    ) {}
 
     /**
      * Creates two subscriptions.

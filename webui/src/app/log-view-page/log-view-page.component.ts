@@ -46,7 +46,10 @@ export class LogViewPageComponent implements OnInit {
      * @param route object used to get the requested log id
      * @param servicesApi object used in communication with the server
      */
-    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private servicesApi: ServicesService
+    ) {}
 
     /**
      * Sends initial request for log tail

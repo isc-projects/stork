@@ -25,7 +25,11 @@ export class ServerDataService {
     private _appsNames: Observable<any>
     private _daemonConfigurations: { [daemonId: number]: Observable<any> } = {}
 
-    constructor(private auth: AuthService, public servicesApi: ServicesService, private usersApi: UsersService) {}
+    constructor(
+        private auth: AuthService,
+        public servicesApi: ServicesService,
+        private usersApi: UsersService
+    ) {}
 
     /**
      * Get apps stats from the server and cache it for other subscribers.

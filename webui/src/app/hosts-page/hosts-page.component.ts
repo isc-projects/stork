@@ -41,7 +41,10 @@ export class HostTab {
      * @param tabType host tab type.
      * @param host host information displayed in the tab.
      */
-    constructor(public tabType: HostTabType, public host?: Host) {
+    constructor(
+        public tabType: HostTabType,
+        public host?: Host
+    ) {
         this._setHostTabType(tabType)
     }
 

@@ -14,7 +14,7 @@
         <tr>
             <td style="width: 45%">Status time:</td>
             <td style="width: 50%">
-                <i>{{ serverStatus.statusTime | localtime | placeholder : 'never' }}</i>
+                <i>{{ serverStatus.statusTime | localtime | placeholder: 'never' }}</i>
             </td>
             <td style="width: 5%">
                 <app-help-tip title="status time" id="status-time-help-button">
@@ -94,7 +94,7 @@
         <tr *ngIf="!singleActiveServer">
             <td>Last in partner-down:</td>
             <td>
-                <i>{{ serverStatus.failoverTime | localtime | placeholder : 'never' }}</i>
+                <i>{{ serverStatus.failoverTime | localtime | placeholder: 'never' }}</i>
             </td>
             <td>
                 <app-help-tip title="last in partner-down" id="partner-down-help-button">

@@ -11,7 +11,10 @@ export class AuthGuard {
     isAppInitialized = false
     user: any
 
-    constructor(private router: Router, private auth: AuthService) {}
+    constructor(
+        private router: Router,
+        private auth: AuthService
+    ) {}
 
     /** Indicates if a user has a permission to activate a given route. */
     canActivate(
