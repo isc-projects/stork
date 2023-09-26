@@ -1011,8 +1011,8 @@ To update the Docker CI images, follow these steps:
 
 1. Edit the specific Dockerfile.
 2. Check the next free tag number in the GitLab registry. Specify it in the
-   ``TAG`` variable. Don't use the ``latest`` keyword (unless you really know
-   what you're doing).
+   ``TAG`` variable. Don't override existing tags and don't use the ``latest`` 
+   keyword, unless you really know what you're doing.
 3. Run the specific Rake task with the ``PUSH`` set to ``false``:
 
     a) ``push:base_deb`` - for Debian-based image
