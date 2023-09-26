@@ -138,8 +138,8 @@ namespace :utils do
         # following elements:
         #   - base image
         #   - package name
-        #   - declared version (version specified in the Dockerfile)
-        #   - available version (latest version available in the base image)
+        #   - current version (version specified in the Dockerfile)
+        #   - latest version (latest version available in the base image)
         #   - boolean value indicating if the package is up-to-date
         packages = []
 
@@ -313,7 +313,7 @@ namespace :utils do
 
         # Print the result.
         line_format = "%-40s %-40s %-30s %-40s %-10s\n"
-        printf line_format, "Base image", "Package name", "Declared version", "Available version", "Up-to-date"
+        printf line_format, "Base image", "Package name", "Current version", "Latest version", "Up-to-date"
         packages.each do |p|
             printf line_format, *p
         end

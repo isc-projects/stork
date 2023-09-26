@@ -1082,7 +1082,7 @@ Example command output:
 
 .. code-block:: console
 
-    Base image                               Package name                             Declared version               Available version                        Up-to-date
+    Base image                               Package name                             Current version                Latest version                           Up-to-date
     ubuntu:22.04                             locales                                  2.35-                          2.35-0ubuntu3.3                          true      
     ubuntu:22.04                             python3-pip                              22.                            22.0.2+dfsg-1ubuntu0.3                   true      
     ubuntu:22.04                             python3-setuptools                       59.                            59.6.0-1.2ubuntu0.22.04.1                true      
@@ -1091,11 +1091,11 @@ Example command output:
     ubuntu:22.04                             wget                                     1.21.                          1.21.2-2ubuntu1                          true   
 
 The "Base image" is an image or stage name specified in the ``FROM`` directive.
-The "Declared version" is a version currently specified in the Dockerfile. The
+The "Current version" is a version currently specified in the Dockerfile. The
 trialing asterisks are trimmed.
-The "Available version" is latest version available in the OS repository.
-The "Available version" indicates if the "Available version" meets the
-"Declared version".
+The "Latest version" is latest version available in the OS repository.
+The "Latest version" indicates if the "Latest version" meets the
+"Current version".
 
 Known limitations:
 
