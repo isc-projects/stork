@@ -149,7 +149,7 @@ describe('DhcpOptionFormComponent', () => {
         // Simulate adding the uint8 option field.
         const uint8Field = component.fieldTypes.find((field) => field.label === 'uint8')
         expect(uint8Field).toBeTruthy()
-        uint8Field.command()
+        uint8Field.command({})
         fixture.detectChanges()
 
         // The Add Payload button should add another uint8 option field.
@@ -176,7 +176,7 @@ describe('DhcpOptionFormComponent', () => {
         // Iterate over the option field types and simulate adding them.
         for (let field of component.fieldTypes) {
             expect(field.command).toBeTruthy()
-            field.command()
+            field.command({})
         }
         fixture.detectChanges()
         expect(component.optionFields.length).toBe(14)

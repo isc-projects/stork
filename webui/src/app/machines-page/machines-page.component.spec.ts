@@ -252,8 +252,11 @@ describe('MachinesPageComponent', () => {
         await fixture.whenRenderingDone()
         fixture.detectChanges()
 
-        // Check the dump button
-        const dumpButton = fixture.debugElement.query(By.css('#dump-single-machine'))
+        // Check the dump button.
+        // The menu items don't render the IDs in PrimeNG >= 16.
+        const dumpButton = fixture.debugElement.query(
+            By.css('[title="Download data archive for troubleshooting purposes"]')
+        )
         expect(dumpButton).not.toBeNull()
 
         const downloadSpy = spyOn(component, 'downloadDump').and.returnValue()

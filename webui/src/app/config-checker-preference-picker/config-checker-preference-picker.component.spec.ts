@@ -35,9 +35,8 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         fixture.detectChanges()
 
         // Displays a spinner icon.
-        const icon = fixture.debugElement.query(By.css('.pi-spinner'))
+        const icon = fixture.debugElement.query(By.css('.p-icon-spin'))
         expect(icon).not.toBeNull()
-        expect(icon.classes['pi-spin']).toBeDefined()
     })
 
     it('should display a message on empty state', async () => {
