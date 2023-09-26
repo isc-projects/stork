@@ -19,7 +19,8 @@ building source code, running linters and unit tests, and running
 Stork services directly or in Docker containers.
 
 There are several other Rake targets. For a complete list of available
-tasks, use ``rake -T``. Also see the Stork `wiki
+tasks, use ``rake -T``. For an extended description of a particular task use
+``rake -D name-of-the-task``. Also see the Stork `wiki
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment#building-testing-and-running-stork>`_
 for detailed instructions.
 
