@@ -8,8 +8,8 @@ namespace :push do
     # The image name is defined by the :target argument.
     # The tag is defined by the TAG environment variable. The allowed values
     # are positive integers or the 'latest` keyword.
-    # The image is pushed to the registry only if the PUSH environment variable
-    # has "true" value.
+    # The image is pushed to the registry only if the DRY_RUN environment variable
+    # has "false" value.
     # The cache may be disabled by the CACHE environment variable set to "false".
     task :build_and_push, [:source, :target, :with_arm] => [DOCKER, DOCKER_BUILDX] do |t, args|
         build_opts = []
@@ -44,11 +44,17 @@ namespace :push do
         # All build platform or none (current machine platform)
         post_build_platforms = []
 
-        push = ENV["PUSH"]
-        if push.nil?
-            fail "You must specify the operation: PUSH=true (for push) or PUSH=false (for build only)"
+        dry_run = ENV["DRY_RUN"] != "false"
+        if dry_run
+            puts "The task is running in the DRY RUN mode. The image will "+
+                 "not be pushed to the remote registry. Instead of it, it "+
+                 "will be loaded to the local Docker daemon."
+            puts "You can run and test it using the following command:"
+            puts "\tdocker run --rm -it #{target}"
+            puts "To push the image to the remote registry, set the DRY_RUN "+
+                 "environment variable to 'false'."
         end
-        if push == "true"
+        if !dry_run
             sh DOCKER, "login", "registry.gitlab.isc.org"
             post_build_opts.append "--push"
             # Load doesn't support multi-platform manifest.
@@ -91,7 +97,7 @@ namespace :push do
     desc 'Prepare CI-purpose image based on Debian.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
-        PUSH - push image to the registry - required'
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :base_deb do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/debian.Dockerfile",
@@ -103,7 +109,7 @@ namespace :push do
     desc 'Prepare CI-purpose image based on RHEL.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
-        PUSH - push image to the registry - required'
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :base_rhel do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/redhat-ubi8.Dockerfile",
@@ -115,7 +121,7 @@ namespace :push do
     desc 'Prepare CI-purpose image based on Alpine.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
-        PUSH - push image to the registry - required'
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :base_alpine do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/alpine.Dockerfile",
@@ -127,7 +133,7 @@ namespace :push do
     desc 'Prepare CI-purpose image based on the official Docker image.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
-        PUSH - push image to the registry - required'
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :base_compose do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/compose.Dockerfile",
@@ -139,7 +145,7 @@ namespace :push do
     desc 'Prepare CI-purpose image with the CloudSmith tools.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
-        PUSH - push image to the registry - required'
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :base_cloudsmith do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/cloudsmith.Dockerfile",
