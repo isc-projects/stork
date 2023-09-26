@@ -1,3 +1,10 @@
+* 331 [build] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot and
+    updated dependencies including the Angular, PrimeNG, GoSwagger,
+    OpenAPI Generator and several Python and Ruby packages.
+    (Gitlab #1142)
+
 * 330 [bug] slawek
 
     Fixed the problem of missing issues count in the configuration review panel
