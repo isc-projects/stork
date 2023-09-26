@@ -1049,7 +1049,7 @@ The newly pushed image is available in the GitLab registry.
     It is caused by
     `a bug in the Gitlab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
 
-Update the dependencies specified in the Dockerfiles
+Update the Dependencies Specified in the Dockerfiles
 ----------------------------------------------------
 
 Updating the dependencies specified in the Dockerfiles is a chicken-and-egg
