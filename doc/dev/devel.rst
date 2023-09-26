@@ -123,7 +123,7 @@ CI Docker images.
 
 The Docker plugins can be defined as prerequisites in the Rake tasks by passing
 the subcommand name (new approach) and the executable name (old approach) to
-the ``docker_plugin`` function. 
+the ``docker_plugin`` function.
 
 .. code-block:: ruby
 
@@ -1084,12 +1084,12 @@ Example command output:
 .. code-block:: console
 
     Base image                               Package name                             Current version                Latest version                           Up-to-date
-    ubuntu:22.04                             locales                                  2.35-                          2.35-0ubuntu3.3                          true      
-    ubuntu:22.04                             python3-pip                              22.                            22.0.2+dfsg-1ubuntu0.3                   true      
-    ubuntu:22.04                             python3-setuptools                       59.                            59.6.0-1.2ubuntu0.22.04.1                true      
-    ubuntu:22.04                             python3-wheel                            0.37.                          0.37.1-2ubuntu0.22.04.1                  true      
-    ubuntu:22.04                             rake                                     13.                            13.0.6-2                                 true      
-    ubuntu:22.04                             wget                                     1.21.                          1.21.2-2ubuntu1                          true   
+    ubuntu:22.04                             locales                                  2.35-                          2.35-0ubuntu3.3                          true
+    ubuntu:22.04                             python3-pip                              22.                            22.0.2+dfsg-1ubuntu0.3                   true
+    ubuntu:22.04                             python3-setuptools                       59.                            59.6.0-1.2ubuntu0.22.04.1                true
+    ubuntu:22.04                             python3-wheel                            0.37.                          0.37.1-2ubuntu0.22.04.1                  true
+    ubuntu:22.04                             rake                                     13.                            13.0.6-2                                 true
+    ubuntu:22.04                             wget                                     1.21.                          1.21.2-2ubuntu1                          true
 
 The "Base image" is an image or stage name specified in the ``FROM`` directive.
 The "Current version" is a version currently specified in the Dockerfile. The

@@ -1,7 +1,7 @@
 # Utilities
 # The file contains helpful tasks
 # for developers that aren't strictly
-# related to the source code. 
+# related to the source code.
 
 namespace :utils do
     desc 'Generate ctags for Emacs'
@@ -14,8 +14,8 @@ namespace :utils do
         "--exclude=tools",
         "."
     end
-    
-    
+
+
     desc 'Connect gdlv GUI Go debugger to waiting dlv debugger'
     task :connect_dbg => [GDLV] do
         sh GDLV, "connect", "127.0.0.1:45678"
@@ -33,12 +33,12 @@ namespace :utils do
                 if ENV["REL"].start_with? "backend/"
                     ENV["REL"] = ENV["REL"].delete_prefix "backend/"
                 end
-                
+
                 package = File.join("isc.org/stork", ENV["REL"])
             else
                 fail "You need to provide the ABS or REL variable"
             end
-     
+
             stdout, _ = Open3.capture2 GO, "list", "-f", '# Package - import: {{ .ImportPath }} name: {{ .Name }}', package
             puts stdout
 
@@ -267,7 +267,7 @@ namespace :utils do
                         break
                     end
                 end
-                    
+
                 # Check if any package manager was found.
                 if !package_manager_key.nil?
                     # Pattern to sanitize the container name. It matches the characters

@@ -232,7 +232,7 @@ end
 # Defines the hash guard for a file task. The hash guard allows file tasks to
 # depend on the hash file instead of its timestamp. It prevents re-executing
 # tasks that depend on the external files while their dependencies are
-# refreshed but not changed (e.g., the repository is re-cloned). 
+# refreshed but not changed (e.g., the repository is re-cloned).
 # It accepts a task to be guarded and the dependency file.
 # The dependency file should not included in the prerequite list of the task.
 def add_hash_guard(task_name, prerequisite_file)
@@ -379,7 +379,7 @@ def docker_plugin(standalone_exe, command_name)
         # the task body is never called.
         fail "docker #{command_name} plugin or #{standalone_exe} standalone is not installed"
     end
-    
+
     plugin_task = Rake::Task[task_name]
     plugin_task.tap do |task|
         # The non-file tasks with the manual_install variable are considered as

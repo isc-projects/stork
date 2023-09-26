@@ -31,11 +31,11 @@ namespace :push do
             fail "You must specify the TAG environment variable"
         end
         tag = tag.rstrip
-    
+
         if tag.to_i.to_s != tag && tag != "latest"
             fail "Wrong tag: #{tag}. Only integer numbers are allowed or 'latest'."
         end
-    
+
         target = "#{args[:target]}:#{tag}"
 
         # Determine operation to perform.
