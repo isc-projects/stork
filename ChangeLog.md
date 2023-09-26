@@ -1,3 +1,8 @@
+* 328 [bug] razvan
+
+    Fix alignment of some UI components (spinner, help tip component).
+    (Gitlab #1014)
+
 * 327 [func] slawek
 
     Links to IPv6 shared networks on the dashboard.
