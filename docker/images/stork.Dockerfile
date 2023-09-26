@@ -19,11 +19,11 @@ FROM debian:12.1-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        ca-certificates=20230311* \
-        wget=1.21.* \
-        supervisor=4.2.* \
+                -y \
+                --no-install-recommends \
+                ca-certificates=20230311* \
+                wget=1.21.* \
+                supervisor=4.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 ENV CI=true
@@ -34,20 +34,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        unzip=6.0-* \
-        ruby-dev=1:3.* \
-        python3=3.11.* \
-        python3-venv=3.11.* \
-        python3-wheel=0.38.* \
-        python3-dev=3.11.* \
-        make=4.3-* \
-        gcc=4:12.2.* \
-        xz-utils=5.4.* \
-        libc6-dev=2.36-* \
-        openjdk-17-jre-headless=17.0.* \
-        git=1:2.39.* \
+                -y \
+                --no-install-recommends \
+                unzip=6.0-* \
+                ruby-dev=1:3.* \
+                python3=3.11.* \
+                python3-venv=3.11.* \
+                python3-wheel=0.38.* \
+                python3-dev=3.11.* \
+                make=4.3-* \
+                gcc=4:12.2.* \
+                xz-utils=5.4.* \
+                libc6-dev=2.36-* \
+                openjdk-17-jre-headless=17.0.* \
+                git=1:2.39.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -221,14 +221,14 @@ FROM debian-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        curl=7.88.* \
-        prometheus-node-exporter=1.5.* \
-        default-mysql-client=1.1.* \
-        postgresql-client=15+* \
-        apt-transport-https=2.6.* \
-        gnupg=2.2.* \
+                -y \
+                --no-install-recommends \
+                curl=7.88.* \
+                prometheus-node-exporter=1.5.* \
+                default-mysql-client=1.1.* \
+                postgresql-client=15+* \
+                apt-transport-https=2.6.* \
+                gnupg=2.2.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
@@ -239,28 +239,28 @@ ARG KEA_LEGACY_PKGS
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && if [ ${KEA_LEGACY_PKGS} == "true" ]; then \
-        apt-get install \
-        --no-install-recommends \
-        -y \
-        python3-isc-kea-connector=${KEA_VERSION} \
-        isc-kea-ctrl-agent=${KEA_VERSION} \
-        isc-kea-dhcp4-server=${KEA_VERSION} \
-        isc-kea-dhcp6-server=${KEA_VERSION} \
-        isc-kea-admin=${KEA_VERSION} \
-        isc-kea-common=${KEA_VERSION} \
-        ;\
-        else \
-        apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-kea-ctrl-agent=${KEA_VERSION} \
-        isc-kea-dhcp4=${KEA_VERSION} \
-        isc-kea-dhcp6=${KEA_VERSION} \
-        isc-kea-admin=${KEA_VERSION} \
-        isc-kea-common=${KEA_VERSION} \
-        isc-kea-hooks=${KEA_VERSION} \
-        isc-kea-perfdhcp=${KEA_VERSION} \
-        ;\
+                apt-get install \
+                        --no-install-recommends \
+                        -y \
+                        python3-isc-kea-connector=${KEA_VERSION} \
+                        isc-kea-ctrl-agent=${KEA_VERSION} \
+                        isc-kea-dhcp4-server=${KEA_VERSION} \
+                        isc-kea-dhcp6-server=${KEA_VERSION} \
+                        isc-kea-admin=${KEA_VERSION} \
+                        isc-kea-common=${KEA_VERSION} \
+                        ;\
+           else \
+                apt-get install \
+                        --no-install-recommends \
+                        -y \
+                        isc-kea-ctrl-agent=${KEA_VERSION} \
+                        isc-kea-dhcp4=${KEA_VERSION} \
+                        isc-kea-dhcp6=${KEA_VERSION} \
+                        isc-kea-admin=${KEA_VERSION} \
+                        isc-kea-common=${KEA_VERSION} \
+                        isc-kea-hooks=${KEA_VERSION} \
+                        isc-kea-perfdhcp=${KEA_VERSION} \
+                        ;\
         fi \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
@@ -280,16 +280,16 @@ ARG KEA_VERSION
 RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         apt-get update \
         && apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-kea-premium-host-cmds=${KEA_VERSION} \
-        isc-kea-premium-forensic-log=${KEA_VERSION} \
-        isc-kea-premium-host-cache=${KEA_VERSION} \
-        isc-kea-premium-radius=${KEA_VERSION} \
+                --no-install-recommends \
+                -y \
+                isc-kea-premium-host-cmds=${KEA_VERSION} \
+                isc-kea-premium-forensic-log=${KEA_VERSION} \
+                isc-kea-premium-host-cache=${KEA_VERSION} \
+                isc-kea-premium-radius=${KEA_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
-        )
+)
 
 # Use the "kea-base" or "keapremium-base" image as a base image
 # for this stage.
@@ -328,10 +328,10 @@ FROM internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
 # Install Bind9 dependencies
 RUN apt-get update \
         && apt-get install \
-        -y \
-        --no-install-recommends \
-        supervisor=4.2.* \
-        prometheus-node-exporter=1.3.* \
+                -y \
+                --no-install-recommends \
+                supervisor=4.2.* \
+                prometheus-node-exporter=1.3.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # Puts empty database file to allow mounting it as a volume.
@@ -376,9 +376,9 @@ RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
 FROM debian-base AS external-packages
 RUN apt-get update \
         && apt-get install \
-        --no-install-recommends \
-        -y \
-        curl=7.88.* \
+                --no-install-recommends \
+                -y \
+                curl=7.88.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         # The post-install hooks of the packages call the systemctl command
@@ -390,10 +390,10 @@ ARG STORK_CS_VERSION
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
-        --no-install-recommends \
-        -y \
-        isc-stork-agent=${STORK_CS_VERSION} \
-        isc-stork-server=${STORK_CS_VERSION} \
+                --no-install-recommends \
+                -y \
+                isc-stork-agent=${STORK_CS_VERSION} \
+                isc-stork-server=${STORK_CS_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb
