@@ -16,6 +16,7 @@ RUN dnf install -y \
     ruby-devel-2.5.* \
     unzip-6.0 \
     wget-1.19.* \
+    gcc-c++-8.5.* \
     # Clean up cache.
     && dnf clean all \
     # Replace default Python.
