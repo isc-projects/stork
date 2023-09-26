@@ -74,7 +74,7 @@ Stork 1.12.0 released on 2023-08-02.
     more straightforward and user-friendly.
     (Gitlab #1056)
 
-* 315 [bug] slawek
+* 315 [bug] ! slawek
 
     Enabled gzip compression for all communication between the Stork server and
     agent. It fixes handling a big response of named statistics endpoint.
