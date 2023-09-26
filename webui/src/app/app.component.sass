@@ -1,19 +1,35 @@
-// improve look of topbar menu
+// Improve look of topbar menu.
 :host ::ng-deep .stork-menubar
   &.p-menubar
+    // Set the blue color of the topbar.
     background-color: #005B9F
-    border-width: 0px
+    // Remove the border.
+    border-width: 0
+    // Remove unecessary spacing.
     padding: 0
 
-  .p-menuitem
-    .p-menuitem-text
-      color: white !important
+  // Apply the below changes only if the hamburger menu is not used.
+  &:not(.p-menubar-mobile-active)
+    .p-menuitem
+      .p-menuitem-text
+        // Use white text for better contrast on the blue background.
+        color: white !important
+      &:hover
+        .p-menuitem-text
+          // On hover the background is white, so use black text.
+          color: black !important
+      &.p-menuitem-active
+        .p-menuitem-text
+          // If the menu is open, the background is white, so use black text.
+          color: black !important
+
+  .p-menubar-button
+    // Use white color for the hamburger icon for better contrast on the blue
+    // background.
+    color: white !important
     &:hover
-      .p-menuitem-text
-        color: black !important
-    &.p-menuitem-active
-      .p-menuitem-text
-        color: black !important
+      // On hover the background is white, so use black text.
+      color: black !important
 
 @keyframes p-progress-spinner-color
   0%
