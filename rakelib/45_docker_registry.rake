@@ -88,8 +88,7 @@ namespace :push do
             *opts
     end
 
-    desc 'Prepare image that is using in GitLab CI processes. Use
-        the Debian-like system.
+    desc 'Prepare CI-purpose image based on Debian.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
@@ -101,8 +100,7 @@ namespace :push do
         )
     end
 
-    desc 'Prepare image that is using in GitLab CI processes. Use
-        the RHEL-like system.
+    desc 'Prepare CI-purpose image based on RHEL.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
@@ -114,8 +112,7 @@ namespace :push do
         )
     end
 
-    desc 'Prepare image that is using in GitLab CI processes. Use the
-        Alpine-like system.
+    desc 'Prepare CI-purpose image based on Alpine.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
@@ -127,8 +124,7 @@ namespace :push do
         )
     end
 
-    desc 'Prepare image that is using in GitLab CI processes related to
-        Docker and docker-compose.
+    desc 'Prepare CI-purpose image based on the official Docker image.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
@@ -140,8 +136,7 @@ namespace :push do
         )
     end
 
-    desc 'Prepare image that is using in GitLab CI processes related to
-        CloudSmith.
+    desc 'Prepare CI-purpose image with the CloudSmith tools.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         PUSH - push image to the registry - required'
