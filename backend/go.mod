@@ -31,7 +31,7 @@ require (
 	golang.org/x/net v0.15.0
 	golang.org/x/term v0.12.0
 	google.golang.org/grpc v1.58.2
-	google.golang.org/grpc/security/advancedtls v0.0.0-20230922224347-a758b6253763
+	google.golang.org/grpc/security/advancedtls v0.0.0-20230925230705-147bd8591213
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 	muzzammil.xyz/jsonc v1.0.0
