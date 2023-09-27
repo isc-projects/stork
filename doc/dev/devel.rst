@@ -1014,18 +1014,17 @@ To update the Docker CI images, follow these steps:
    ``TAG`` variable. Don't override existing tags (always keep the previous
    version around) and don't use the ``latest``  keyword, unless you really
    know what you're doing. Use incremented tags.
-3. Run the specific Rake task with the ``PUSH`` set to ``false``:
+3. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
 
-    a) ``push:base_deb`` - for Debian-based image
-    b) ``push:base_rhel`` - for RHEL-based image
+    See below for the full list of the available commands.
 
     .. code-block:: console
 
-        $ rake push:base_deb TAG=42 PUSH=false
-        $ rake push:base_rhel TAG=42 PUSH=false
+        $ rake push:base_deb TAG=42 DRY_RUN=true
+        $ rake push:base_rhel TAG=42 DRY_RUN=true
 
 4. Check if the build was successful.
-5. If the ``PUSH`` was set to ``false``, the image is available locally. Call
+5. If the ``DRY_RUN`` was set to ``true``, the image is available locally. Call
    the below command to run the container and attach to it:
 
     .. code-block:: console
@@ -1035,12 +1034,12 @@ To update the Docker CI images, follow these steps:
         $ docker run -it registry.gitlab.isc.org/isc-projects/stork/ci-base:42
 
 6. Check if the container is working as expected.
-7. If everything is OK, set the ``PUSH`` to ``true`` and run the task again.
+7. If everything is OK, set the ``DRY_RUN`` to ``false`` and run the task again.
 
     .. code-block:: console
 
-        $ rake push:base_deb TAG=42 PUSH=true
-        $ rake push:base_rhel TAG=42 PUSH=true
+        $ rake push:base_deb TAG=42 DRY_RUN=false
+        $ rake push:base_rhel TAG=42 DRY_RUN=false
 
 The newly pushed image is available in the GitLab registry.
 
@@ -1050,6 +1049,16 @@ The newly pushed image is available in the GitLab registry.
     message (visible on hover) - ``Invalid tag: missing manifest digest``.
     It is caused by
     `a bug in the Gitlab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
+
+The following Rake tasks are available:
+
+- ``rake push:base_deb`` - builds and pushes the image based on Debian.
+- ``rake push:base_rhel`` - builds and pushes the image based on RHEL (RH UBI).
+- ``rake push:base_alpine`` - builds and pushes the image based on Alpine.
+- ``rake push:base_compose`` - builds and pushes the image based on official
+    Docker image (includes docker-compose).
+- ``rake push:base_cloudsmith`` - builds and pushes the image with the CloudSmith tools
+
 
 Update the Dependencies Specified in the Dockerfiles
 ----------------------------------------------------
