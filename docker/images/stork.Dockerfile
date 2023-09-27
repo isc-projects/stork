@@ -283,6 +283,7 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
                 --no-install-recommends \
                 -y \
                 isc-kea-premium-host-cmds=${KEA_VERSION} \
+        isc-kea-premium-subnet-cmds=${KEA_VERSION} \
                 isc-kea-premium-forensic-log=${KEA_VERSION} \
                 isc-kea-premium-host-cache=${KEA_VERSION} \
                 isc-kea-premium-radius=${KEA_VERSION} \
