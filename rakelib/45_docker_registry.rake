@@ -98,7 +98,7 @@ namespace :push do
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
-    task :base_deb do
+    task :debian do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/debian.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/ci-base",
@@ -110,7 +110,7 @@ namespace :push do
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
-    task :base_rhel do
+    task :rhel do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/redhat-ubi8.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8",
@@ -122,7 +122,7 @@ namespace :push do
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
-    task :base_alpine do
+    task :alpine do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/alpine.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine",
@@ -134,7 +134,7 @@ namespace :push do
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
-    task :base_compose do
+    task :compose do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/compose.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose",
@@ -146,7 +146,7 @@ namespace :push do
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
-    task :base_cloudsmith do
+    task :cloudsmith do
         Rake::Task["push:build_and_push"].invoke(
             "docker/images/ci/cloudsmith.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith",

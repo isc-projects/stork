@@ -1020,8 +1020,8 @@ To update the Docker CI images, follow these steps:
 
     .. code-block:: console
 
-        $ rake push:base_deb TAG=42 DRY_RUN=true
-        $ rake push:base_rhel TAG=42 DRY_RUN=true
+        $ rake push:debian TAG=42 DRY_RUN=true
+        $ rake push:rhel TAG=42 DRY_RUN=true
 
 4. Check if the build was successful.
 5. If the ``DRY_RUN`` was set to ``true``, the image is available locally. Call
@@ -1038,8 +1038,8 @@ To update the Docker CI images, follow these steps:
 
     .. code-block:: console
 
-        $ rake push:base_deb TAG=42 DRY_RUN=false
-        $ rake push:base_rhel TAG=42 DRY_RUN=false
+        $ rake push:debian TAG=42 DRY_RUN=false
+        $ rake push:rhel TAG=42 DRY_RUN=false
 
 The newly pushed image is available in the GitLab registry.
 
@@ -1052,12 +1052,12 @@ The newly pushed image is available in the GitLab registry.
 
 The following Rake tasks are available:
 
-- ``rake push:base_deb`` - builds and pushes the image based on Debian.
-- ``rake push:base_rhel`` - builds and pushes the image based on RHEL (RH UBI).
-- ``rake push:base_alpine`` - builds and pushes the image based on Alpine.
-- ``rake push:base_compose`` - builds and pushes the image based on official
+- ``rake push:debian`` - builds and pushes the image based on Debian.
+- ``rake push:rhel`` - builds and pushes the image based on RHEL (RH UBI).
+- ``rake push:alpine`` - builds and pushes the image based on Alpine.
+- ``rake push:compose`` - builds and pushes the image based on official
     Docker image (includes docker-compose).
-- ``rake push:base_cloudsmith`` - builds and pushes the image with the CloudSmith tools
+- ``rake push:cloudsmith`` - builds and pushes the image with the CloudSmith tools
 
 
 Update the Dependencies Specified in the Dockerfiles
