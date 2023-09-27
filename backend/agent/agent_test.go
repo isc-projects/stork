@@ -56,13 +56,19 @@ func mockRndcEmpty(command []string) ([]byte, error) {
 }
 
 // Initializes StorkAgent instance and context used by the tests.
-func setupAgentTest() (*StorkAgent, context.Context) {
+// Returns the teardown function that must be called to clean up the
+// self-generated certificates.
+func setupAgentTest() (*StorkAgent, context.Context, func()) {
 	return setupAgentTestWithHooks(nil)
 }
 
 // Initializes StorkAgent instance and context used by the tests. Loads the
 // given list of callout carriers (hooks' contents).
-func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context) {
+// Returns the teardown function that must be called to clean up the
+// self-generated certificates.
+func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context, func()) {
+	cleanup, _ := GenerateSelfSignedCerts()
+
 	httpClient, _ := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
 
@@ -78,7 +84,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
 	sa.Setup()
 	ctx := context.Background()
-	return sa, ctx
+	return sa, ctx, cleanup
 }
 
 func (fam *FakeAppMonitor) GetApps() []App {
@@ -119,6 +125,8 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 
 // Check if NewStorkAgent can be invoked and sets SA members.
 func TestNewStorkAgent(t *testing.T) {
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient, _ := NewHTTPClient(false)
@@ -129,7 +137,9 @@ func TestNewStorkAgent(t *testing.T) {
 
 // Check if an agent returns a response to a ping message..
 func TestPing(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
+
 	args := &agentapi.PingReq{}
 	rsp, err := sa.Ping(ctx, args)
 	require.NoError(t, err)
@@ -138,7 +148,8 @@ func TestPing(t *testing.T) {
 
 // Check if GetState works.
 func TestGetState(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	// app monitor is empty, no apps should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
@@ -227,7 +238,8 @@ func TestGetState(t *testing.T) {
 	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 
 	// Recreate Stork agent.
-	sa, ctx = setupAgentTest()
+	sa, ctx, teardown = setupAgentTest()
+	defer teardown()
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.True(t, rsp.AgentUsesHTTPCredentials)
@@ -236,7 +248,8 @@ func TestGetState(t *testing.T) {
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
 func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -267,7 +280,8 @@ func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
 // code is returned.
 func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -293,7 +307,8 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 
 // Test forwarding command to Kea when no body is returned.
 func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -319,7 +334,8 @@ func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 
 // Test forwarding command when Kea is unavailable.
 func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:         "http://localhost:45634/",
@@ -338,7 +354,8 @@ func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 
 // Test successful forwarding stats request to named.
 func TestForwardToNamedStatsSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -368,7 +385,8 @@ func TestForwardToNamedStatsSuccess(t *testing.T) {
 // Test forwarding command to named when HTTP 400 (Bad Request) status
 // code is returned.
 func TestForwardToNamedStatsBadRequest(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634/json/v1").
@@ -395,7 +413,8 @@ func TestForwardToNamedStatsBadRequest(t *testing.T) {
 
 // Test forwarding command to named statistics-channel when no body is returned.
 func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634/json/v1").
@@ -421,7 +440,8 @@ func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
 
 // Test forwarding statistics request when named is unavailable.
 func TestForwardToNamedStatsNoNamed(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	req := &agentapi.ForwardToNamedStatsReq{
 		Url:               "http://localhost:45634/json/v1",
@@ -440,7 +460,8 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 
 // Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -494,7 +515,8 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 
 // Test rndc command failed to forward.
 func TestForwardRndcCommandError(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -526,7 +548,8 @@ func TestForwardRndcCommandError(t *testing.T) {
 
 // Test rndc command when there is no app.
 func TestForwardRndcCommandNoApp(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
@@ -546,7 +569,8 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 
 // Test rndc command successfully forwarded, but bad response.
 func TestForwardRndcCommandEmpty(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
@@ -579,7 +603,8 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 
 // Test that the tail of the text file can be fetched.
 func TestTailTextFile(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
 
 	filename := fmt.Sprintf("test%d.log", rand.Int63())
 	f, err := os.Create(filename)
@@ -725,7 +750,8 @@ func TestNewGRPCServerWithTLS(t *testing.T) {
 // Check if the Stork Agent prints the host and port parameters.
 func TestHostAndPortParams(t *testing.T) {
 	// Arrange
-	sa, _ := setupAgentTest()
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
 
 	flags := flag.NewFlagSet("test", 0)
 	flags.String("host", "127.0.0.1", "usage")

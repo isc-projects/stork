@@ -15,15 +15,31 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Generates the self-signed certificates and creates the HTTP client instance.
+func newHTTPClientWithCerts(skipTLSVerification bool) (*HTTPClient, func(), error) {
+	cleanup, err := GenerateSelfSignedCerts()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := NewHTTPClient(skipTLSVerification)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return client, cleanup, nil
+}
+
 // Check that HTTP client sets the TLS credentials if available.
 func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 	cleanup, err := GenerateSelfSignedCerts()
 	require.NoError(t, err)
 	defer cleanup()
 
-	client, err := NewHTTPClient(false)
+	client, cleanup, err := newHTTPClientWithCerts(false)
 	require.NoError(t, err)
 	require.NotNil(t, client)
+	defer cleanup()
 
 	transport := client.client.Transport.(*http.Transport)
 	require.NotNil(t, transport)
@@ -67,9 +83,10 @@ func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
 // Check that HTTP client may be set to skip a server
 // credentials validation.
 func TestCreateHTTPClientSkipVerification(t *testing.T) {
-	client, err := NewHTTPClient(true)
+	client, cleanup, err := newHTTPClientWithCerts(true)
 	require.NotNil(t, client)
 	require.NoError(t, err)
+	defer cleanup()
 
 	transport := client.client.Transport.(*http.Transport)
 	require.NotNil(t, transport)
@@ -83,6 +100,11 @@ func TestCreateHTTPClientSkipVerification(t *testing.T) {
 // when the credentials file contains the credentials for specific
 // network location.
 func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
+	client, cleanup, err := newHTTPClientWithCerts(true)
+	require.NotNil(t, client)
+	require.NoError(t, err)
+	defer cleanup()
+
 	restorePaths := RememberPaths()
 	defer restorePaths()
 
@@ -127,9 +149,10 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create HTTP Client
-	client, err := NewHTTPClient(true)
+	client, teardown, err := newHTTPClientWithCerts(true)
 	require.NotNil(t, client.credentials)
 	require.NoError(t, err)
+	defer teardown()
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -149,9 +172,10 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewHTTPClient(true)
+	client, cleanup, err := newHTTPClientWithCerts(true)
+	require.NotNil(t, client)
 	require.NoError(t, err)
-	require.NotNil(t, client.credentials)
+	defer cleanup()
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -160,15 +184,16 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 
 // Test that missing body in request is accepted.
 func TestCallWithMissingBody(t *testing.T) {
-	restorePaths := RememberPaths()
-	defer restorePaths()
-
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.EqualValues(t, http.NoBody, r.Body)
 	}))
 	defer ts.Close()
 
-	client, err := NewHTTPClient(false)
+	client, cleanup, err := newHTTPClientWithCerts(true)
+	require.NotNil(t, client)
+	require.NoError(t, err)
+	defer cleanup()
+
 	require.NoError(t, err)
 	res, err := client.Call(ts.URL, nil)
 	require.NoError(t, err)
@@ -200,7 +225,10 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 
 	// Act
-	client, err := NewHTTPClient(false)
+	client, cleanup, err := newHTTPClientWithCerts(false)
+	require.NotNil(t, client)
+	require.NoError(t, err)
+	defer cleanup()
 
 	// Assert
 	require.NoError(t, err)
@@ -224,7 +252,10 @@ func TestHasAuthenticationCredentialsEmptyFile(t *testing.T) {
 	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
 
 	// Act
-	client, err := NewHTTPClient(false)
+	client, cleanup, err := newHTTPClientWithCerts(false)
+	require.NotNil(t, client)
+	require.NoError(t, err)
+	defer cleanup()
 
 	// Assert
 	require.NoError(t, err)
@@ -241,7 +272,10 @@ func TestHasAuthenticationCredentialsMissingFile(t *testing.T) {
 	CredentialsFile = "/not/exist/file.json"
 
 	// Act
-	client, err := NewHTTPClient(false)
+	client, cleanup, err := newHTTPClientWithCerts(false)
+	require.NotNil(t, client)
+	require.NoError(t, err)
+	defer cleanup()
 
 	// Assert
 	require.NoError(t, err)

@@ -12,7 +12,8 @@ import (
 // configuration are recorded. The log tailer is permitted to access only
 // those log files.
 func TestIcptConfigGetLoggers(t *testing.T) {
-	sa, _ := setupAgentTest()
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
 
 	responseArgsJSON := `{
         "Dhcp4": {
@@ -80,7 +81,8 @@ func TestIcptConfigGetLoggers(t *testing.T) {
 // returns an unsupported error.
 func TestReservationGetPageUnsupported(t *testing.T) {
 	// Arrange
-	sa, _ := setupAgentTest()
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
 
 	rsp := &keactrl.Response{
 		ResponseHeader: keactrl.ResponseHeader{

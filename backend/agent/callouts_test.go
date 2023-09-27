@@ -21,7 +21,8 @@ func TestOnBeforeForwardToKeaOverHTTPCallouts(t *testing.T) {
 		OnBeforeForwardToKeaOverHTTP(context.Background(), gomock.Any()).
 		Times(1)
 
-	sa, ctx := setupAgentTestWithHooks([]hooks.CalloutCarrier{mock})
+	sa, ctx, teardown := setupAgentTestWithHooks([]hooks.CalloutCarrier{mock})
+	defer teardown()
 	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:         "http://localhost:45634/",
 		KeaRequests: []*agentapi.KeaRequest{{Request: "{ \"command\": \"list-commands\"}"}},
