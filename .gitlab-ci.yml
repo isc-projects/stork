@@ -131,7 +131,7 @@ lint_python_black:
 unittest_backend:
   extends: .base_build_debian
   services:
-    - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
+    - name: postgres:16-alpine
       alias: postgres
   variables:
     # CGO is required by the race detector.
