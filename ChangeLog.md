@@ -1,8 +1,9 @@
 * 332 [func] slawek
 
-    Added support for Postgres 16. Updated the docs to recommend granting all
-    privileges on the public schema for the Stork user to avoid problems with
-    some Postgres 15 (and above) installations.
+    Added support for Postgres 15+. System tests now run on Postgres 16.
+    Updated the docs to recommend granting all privileges on the public schema
+    for the Stork user to avoid problems with some Postgres 15 (and above)
+    installations.
     (Gitlab #1148)
 
 * 331 [build] slawek
