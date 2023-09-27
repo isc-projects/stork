@@ -36,6 +36,20 @@ func (e SubnetNotFoundError) Error() string {
 	return fmt.Sprintf("subnet with ID %d not found", e.subnetID)
 }
 
+// An error returned when some of the daemons have no libdhcp_subnet_cmds hook
+// library configured.
+type NoSubnetCmdsHookError struct{}
+
+// Create new instance of the NoSubnetCmdsHookError.
+func NewNoSubnetCmdsHookError() error {
+	return &NoSubnetCmdsHookError{}
+}
+
+// Returns error string.
+func (e NoSubnetCmdsHookError) Error() string {
+	return "libdhcp_subnet_cmds hook library not configured for some of the daemons"
+}
+
 // An error returned when it was not possible to lock daemons' configuration.
 type LockError struct{}
 

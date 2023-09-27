@@ -18,6 +18,12 @@ func TestSubnetNotFoundError(t *testing.T) {
 	require.EqualError(t, err, "subnet with ID 234 not found")
 }
 
+// Test creation of an error which indicates that libdhcp_subnet_cmds was not configured.
+func TestNoSubnetCmdsHookError(t *testing.T) {
+	err := NewNoSubnetCmdsHookError()
+	require.EqualError(t, err, "libdhcp_subnet_cmds hook library not configured for some of the daemons")
+}
+
 // Test creation of an error which indicates a problem with locking
 // configuration.
 func TestLockError(t *testing.T) {

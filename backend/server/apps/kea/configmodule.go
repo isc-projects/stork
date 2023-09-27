@@ -457,6 +457,11 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 	// updates.
 	var daemonIDs []int64
 	for _, ls := range subnet.LocalSubnets {
+		if ls.Daemon.KeaDaemon.Config != nil {
+			if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
+				return ctx, pkgerrors.WithStack(config.NewNoSubnetCmdsHookError())
+			}
+		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)
 	}
 	// Try to lock configurations.
@@ -483,6 +488,16 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	if len(subnet.LocalSubnets) == 0 {
 		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
 	}
+	// Retrieve existing subnet from the context. We may need it for sending
+	// the subnet4-del or subnet6-del commands.
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	if err != nil {
+		return ctx, err
+	}
+	existingSubnet := recipe.SubnetBeforeUpdate
+	if existingSubnet == nil {
+		return ctx, pkgerrors.New("internal server error: subnet instance cannot be nil when committing subnet update")
+	}
 	var commands []ConfigCommand
 	// Update the subnet instances.
 	for _, ls := range subnet.LocalSubnets {
@@ -491,6 +506,13 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		}
 		if ls.Daemon.App == nil {
 			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+		}
+		// Check if this is a new association.
+		existingAssociation := false
+		for _, exls := range existingSubnet.LocalSubnets {
+			if exls.DaemonID == ls.DaemonID {
+				existingAssociation = true
+			}
 		}
 		// Convert the updated subnet information to Kea subnet.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -505,7 +527,11 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			updateArguments["subnet4"] = []*keaconfig.Subnet4{
 				subnet4,
 			}
-			appCommand.Command = keactrl.NewCommand("subnet4-update", []string{ls.Daemon.Name}, updateArguments)
+			if existingAssociation {
+				appCommand.Command = keactrl.NewCommand("subnet4-update", []string{ls.Daemon.Name}, updateArguments)
+			} else {
+				appCommand.Command = keactrl.NewCommand("subnet4-add", []string{ls.Daemon.Name}, updateArguments)
+			}
 		default:
 			subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
 			if err != nil {
@@ -514,15 +540,46 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			updateArguments["subnet6"] = []*keaconfig.Subnet6{
 				subnet6,
 			}
-			appCommand.Command = keactrl.NewCommand("subnet6-update", []string{ls.Daemon.Name}, updateArguments)
+			if existingAssociation {
+				appCommand.Command = keactrl.NewCommand("subnet6-update", []string{ls.Daemon.Name}, updateArguments)
+			} else {
+				appCommand.Command = keactrl.NewCommand("subnet6-add", []string{ls.Daemon.Name}, updateArguments)
+			}
 		}
 		appCommand.App = ls.Daemon.App
 		commands = append(commands, appCommand)
 	}
+	// Identify the daemons which no longer exist in the updated subnet.
+	// Remove the subnet from these daemons.
+	var removedLocalSubnets []*dbmodel.LocalSubnet
+	for i, exls := range existingSubnet.LocalSubnets {
+		removedLocalSubnet := existingSubnet.LocalSubnets[i]
+		for _, ls := range subnet.LocalSubnets {
+			if exls.DaemonID == ls.DaemonID {
+				// Daemon still exists. Do not remove.
+				removedLocalSubnet = nil
+				break
+			}
+		}
+		if removedLocalSubnet != nil {
+			appCommand := ConfigCommand{}
+			deleteArguments := make(map[string]any)
+			deleteArguments["id"] = removedLocalSubnet.LocalSubnetID
+			switch subnet.GetFamily() {
+			case 4:
+				appCommand.Command = keactrl.NewCommand("subnet4-del", []string{removedLocalSubnet.Daemon.Name}, deleteArguments)
+			default:
+				appCommand.Command = keactrl.NewCommand("subnet6-del", []string{removedLocalSubnet.Daemon.Name}, deleteArguments)
+			}
+			appCommand.App = removedLocalSubnet.Daemon.App
+			commands = append(commands, appCommand)
+			removedLocalSubnets = append(removedLocalSubnets, removedLocalSubnet)
+		}
+	}
 
 	// Create the commands to write the updated configuration to files. The subnet
 	// changes won't persist across the servers' restarts otherwise.
-	for _, ls := range subnet.LocalSubnets {
+	for _, ls := range append(subnet.LocalSubnets, removedLocalSubnets...) {
 		commands = append(commands, ConfigCommand{
 			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
 			App:     ls.Daemon.App,
@@ -530,10 +587,6 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	}
 
 	// Store the data in the existing recipe.
-	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
-	if err != nil {
-		return ctx, err
-	}
 	recipe.SubnetAfterUpdate = subnet
 	recipe.Commands = commands
 	return config.SetRecipeForUpdate(ctx, 0, recipe)

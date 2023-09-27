@@ -970,8 +970,9 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 	cctx, err = r.ConfigManager.GetKeaModule().BeginSubnetUpdate(cctx, params.SubnetID)
 	if err != nil {
 		var (
-			subnetNotFound *config.SubnetNotFoundError
-			lock           *config.LockError
+			subnetNotFound     *config.SubnetNotFoundError
+			lock               *config.LockError
+			hooksNotConfigured *config.NoSubnetCmdsHookError
 		)
 		switch {
 		case errors.As(err, &subnetNotFound):
@@ -987,6 +988,14 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 			msg := fmt.Sprintf("Unable to edit the subnet with ID %d because it may be currently edited by another user", params.SubnetID)
 			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusLocked).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		case errors.As(err, &hooksNotConfigured):
+			// Lack of the libdhcp_subnet_cmds hook.
+			msg := "Unable to update subnet configuration because some daemons lack libdhcp_subnet_cmds hook library"
+			log.Error(msg)
+			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp

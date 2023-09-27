@@ -1444,6 +1444,11 @@ func TestBeginSubnetUpdate(t *testing.T) {
 						}
 					]
 				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
 			]
 		}
 	}`
@@ -1547,6 +1552,27 @@ func TestApplySubnetUpdate(t *testing.T) {
 					},
 				},
 			},
+			{
+				DaemonID: 3,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.10",
+						UpperBound: "192.0.2.100",
+					},
+				},
+			},
 		},
 	}
 
@@ -1616,6 +1642,27 @@ func TestApplySubnetUpdate(t *testing.T) {
 					},
 				},
 			},
+			{
+				DaemonID: 4,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.100",
+						UpperBound: "192.0.2.200",
+					},
+				},
+			},
 		},
 	}
 	ctx, err = module.ApplySubnetUpdate(ctx, subnet)
@@ -1635,9 +1682,9 @@ func TestApplySubnetUpdate(t *testing.T) {
 	require.NotNil(t, update.Recipe)
 	require.NotNil(t, update.Recipe.SubnetBeforeUpdate)
 
-	// There should be two commands ready to send.
+	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 4)
+	require.Len(t, commands, 8)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -1665,6 +1712,36 @@ func TestApplySubnetUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
+		case i == 2:
+			require.JSONEq(t,
+				`{
+					"command": "subnet4-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"subnet4": [
+							{
+								"id": 0,
+								"subnet": "192.0.2.0/24",
+								"pools": [
+									{
+										"pool": "192.0.2.100-192.0.2.200"
+									}
+								]
+							}
+						]
+					}
+				}`,
+				marshalled)
+		case i == 3:
+			require.JSONEq(t,
+				`{
+					"command": "subnet4-del",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"id": 0
+					}
+				}`,
+				marshalled)
 		default:
 			require.JSONEq(t,
 				`{
@@ -1675,8 +1752,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 		}
 
 		// Verify they are associated with appropriate apps.
-		app := commands[i].App
-		require.Equal(t, app, subnet.LocalSubnets[i%2].Daemon.App)
+		require.NotNil(t, commands[i].App)
 	}
 }
 

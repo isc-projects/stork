@@ -2578,6 +2578,77 @@ func TestUpdateSubnetBeginNonExistingSubnetID(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 }
 
+// Test that an error is returned when it is attempted to begin new
+// transaction when subnet_cmds hook was not configured.
+func TestUpdateSubnetBeginNoSubnetCmdsHook(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"subnet4": [
+				{
+					"id": 1,
+					"subnet": "192.0.2.0/24"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: int64(1),
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateSubnetBeginDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
 // Test error cases for submitting subnet update.
 func TestUpdateSubnetSubmitError(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
