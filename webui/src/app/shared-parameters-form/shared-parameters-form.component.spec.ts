@@ -72,18 +72,24 @@ describe('SharedParametersFormComponent', () => {
     it('should display the form with the parameters', () => {
         ;(component.servers = ['server 1', 'server 2']),
             (component.formGroup = new FormGroup<SubnetForm>({
-                allocator: new SharedParameterFormGroup<string>(
+                ddnsOverrideClientUpdate: new SharedParameterFormGroup(
                     {
-                        type: 'string',
-                        values: ['iterative', 'random', 'flq'],
+                        type: 'boolean',
                     },
-                    [new FormControl<string>('iterative'), new FormControl<string>(null)]
+                    [new FormControl<boolean>(true), new FormControl<boolean>(true)]
                 ),
                 cacheMaxAge: new SharedParameterFormGroup(
                     {
                         type: 'number',
                     },
                     [new FormControl(1000), new FormControl(2000)]
+                ),
+                allocator: new SharedParameterFormGroup<string>(
+                    {
+                        type: 'string',
+                        values: ['iterative', 'random', 'flq'],
+                    },
+                    [new FormControl<string>('iterative'), new FormControl<string>(null)]
                 ),
                 cacheThreshold: new SharedParameterFormGroup(
                     {
@@ -101,12 +107,6 @@ describe('SharedParametersFormComponent', () => {
                     },
                     [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
                 ),
-                ddnsOverrideClientUpdate: new SharedParameterFormGroup(
-                    {
-                        type: 'boolean',
-                    },
-                    [new FormControl<boolean>(true), new FormControl<boolean>(true)]
-                ),
                 requireClientClasses: new SharedParameterFormGroup(
                     {
                         type: 'client-classes',
@@ -115,6 +115,16 @@ describe('SharedParametersFormComponent', () => {
                 ),
             }))
         fixture.detectChanges()
+
+        // Make sure the keys are sorted.
+        expect(component.parameterNames).toEqual([
+            'allocator',
+            'cacheMaxAge',
+            'cacheThreshold',
+            'ddnsGeneratedPrefix',
+            'ddnsOverrideClientUpdate',
+            'requireClientClasses',
+        ])
 
         let allRows = fixture.debugElement.queryAll(By.css('tr'))
         expect(allRows.length).toBe(7)

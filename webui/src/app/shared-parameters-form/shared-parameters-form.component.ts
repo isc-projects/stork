@@ -52,7 +52,7 @@ export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractC
         for (let key of Object.keys(this.formGroup?.controls)) {
             names.push(key)
         }
-        return names
+        return names.sort()
     }
 
     /**
