@@ -68,7 +68,7 @@ describe('SubnetSetFormService', () => {
                 cacheThreshold: 0.5,
                 cacheMaxAge: 2000,
                 clientClass: 'bar',
-                requireClientClasses: ['foo'],
+                requireClientClasses: ['foo', 'bar'],
                 ddnsGeneratedPrefix: 'prefix2',
                 ddnsOverrideClientUpdate: false,
                 ddnsOverrideNoUpdate: false,
@@ -153,10 +153,10 @@ describe('SubnetSetFormService', () => {
         expect(fg.data.max).toBeFalsy()
         expect(fg.data.fractionDigits).toBeFalsy()
         expect(fg.data.values).toBeFalsy()
-        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
+        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
         expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['foo', 'bar'])
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo'])
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo', 'bar'])
 
         fg = form.get('ddnsGeneratedPrefix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
