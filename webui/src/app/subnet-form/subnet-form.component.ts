@@ -396,7 +396,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
 
         if (this.subnetId) {
-            // todo: this component does not allow for editing subnet pools or relay
+            // TODO: this component does not allow for editing subnet pools or relay
             // addresses. Thus, we have to copy the original pools and relay values
             // to the converted subnet. It will be removed when the form is updated
             // to support specifying these values.
