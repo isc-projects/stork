@@ -1,8 +1,8 @@
 * 330 [bug] slawek
 
-    Fixed the problem with missing issues count in a header of the
-    configuration review panel while the number of issues was zero. It was
-    causing to produce a confusing message that some issues were found.
+    Fixed the problem of missing issues count in the configuration review panel
+    header when the number of issues was zero. It resulted in a confusing
+    message suggesting that some issues were found.
     (Gitlab #1131, #1141)
 
 * 329 [build] slawek
