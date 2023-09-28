@@ -1,5 +1,5 @@
 <div class="flex align-items-center">
-    <span class="{{ floatingPlaceholder ? 'p-float-label' : '' }}">
+    <span [class]="{ 'p-float-label': floatingPlaceholder }">
         <p-chips
             ngDefaultControl
             inputId="{{ inputId }}"
