@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/database/maintenance"
+
 	// TODO: document why it is blank imported.
 	_ "isc.org/stork/server/database/migrations"
 )
@@ -116,12 +117,19 @@ func CurrentVersion(db *PgDB) (int64, error) {
 }
 
 // Prepares new database for the Stork server. This function must be called with
-// a pointer to the database connection using database admin credentials (typically
-// postgres user and postgres database). The dbName and userName denote the new
-// database name and the new user name created. The force flag indicates whether
-// or not the function should drop an existing database and/or user before
-// re-creating them.
-func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (err error) {
+// the maintenance (admin) database credentials (typically postgres user and
+// postgres database). The dbName and userName denote the new database name and
+// the new user name created. The force flag indicates whether or not the
+// function should drop an existing database and/or user before re-creating them.
+// The function grants all necessary privileges to the user and creates the
+// pgcrypto extension.
+func CreateDatabase(settings DatabaseSettings, dbName, userName, password string, force bool) (err error) {
+	db, err := NewPgDBConn(&settings)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
 	if force {
 		// Drop an existing database if it exists.
 		if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
@@ -136,6 +144,18 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	} else if !isCreated {
 		log.Infof("Database '%s' already exists", dbName)
 	}
+
+	// Close the current connection. We will have to connect to the
+	// newly created database instead to create the pgcrypto extension.
+	db.Close()
+
+	// Re-use all admin credentials but connect to the new database.
+	settings.DBName = dbName
+	db, err = NewPgDBConn(&settings)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
 	// Other things can be done in a transaction.
 	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
@@ -185,6 +205,13 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 				return
 			}
 		}
+
+		// Try to create the pgcrypto extension.
+		err = CreatePgCryptoExtension(db)
+		if err != nil {
+			return
+		}
+
 		return nil
 	})
 	return err

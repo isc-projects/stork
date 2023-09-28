@@ -78,37 +78,17 @@ func runDBCreate(context *cli.Context) {
 		log.WithError(err).Fatal("Invalid database settings")
 	}
 
-	db, err := dbops.NewPgDBConn(settings)
-	if err != nil {
-		log.WithError(err).Fatal("Unexpected error")
-	}
-
 	// Try to create the database and the user with access using
 	// specified password.
-	err = dbops.CreateDatabase(db, flags.DBName, flags.User, flags.Password, context.Bool("force"))
-	// Close the current connection. We will have to connect to the
-	// newly created database instead to create the pgcrypto extension.
-	db.Close()
+	err = dbops.CreateDatabase(
+		*settings,
+		flags.DBName,
+		flags.User,
+		flags.Password,
+		context.Bool("force"),
+	)
 	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	// Re-use all admin credentials but connect to the new database.
-	settings, err = flags.ConvertToDatabaseSettingsWithMaintenanceCredentials()
-	if err != nil {
-		log.WithError(err).Fatal("Invalid maintenance database settings")
-	}
-
-	db, err = dbops.NewPgDBConn(settings)
-	if err != nil {
-		log.WithError(err).Fatal("Unexpected error")
-	}
-	defer db.Close()
-
-	// Try to create the pgcrypto extension.
-	err = dbops.CreatePgCryptoExtension(db)
-	if err != nil {
-		log.WithError(err).Fatal("Cannot create the database extension")
+		log.WithError(err).Fatal("Could not create the database and the user")
 	}
 
 	// Database setup successful.
