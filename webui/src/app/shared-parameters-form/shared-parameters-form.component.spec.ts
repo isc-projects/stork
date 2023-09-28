@@ -70,50 +70,50 @@ describe('SharedParametersFormComponent', () => {
     })
 
     it('should display the form with the parameters', () => {
-        ;(component.servers = ['server 1', 'server 2']),
-            (component.formGroup = new FormGroup<SubnetForm>({
-                ddnsOverrideClientUpdate: new SharedParameterFormGroup(
-                    {
-                        type: 'boolean',
-                    },
-                    [new FormControl<boolean>(true), new FormControl<boolean>(true)]
-                ),
-                cacheMaxAge: new SharedParameterFormGroup(
-                    {
-                        type: 'number',
-                    },
-                    [new FormControl(1000), new FormControl(2000)]
-                ),
-                allocator: new SharedParameterFormGroup<string>(
-                    {
-                        type: 'string',
-                        values: ['iterative', 'random', 'flq'],
-                    },
-                    [new FormControl<string>('iterative'), new FormControl<string>(null)]
-                ),
-                cacheThreshold: new SharedParameterFormGroup(
-                    {
-                        type: 'number',
-                        min: 0,
-                        max: 1,
-                        fractionDigits: 2,
-                    },
-                    [new FormControl(0.25), new FormControl(0.5)]
-                ),
-                ddnsGeneratedPrefix: new SharedParameterFormGroup(
-                    {
-                        type: 'string',
-                        invalidText: 'Please specify a valid prefix.',
-                    },
-                    [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
-                ),
-                requireClientClasses: new SharedParameterFormGroup(
-                    {
-                        type: 'client-classes',
-                    },
-                    [new FormControl(['foo', 'bar']), new FormControl(['foo', 'bar', 'auf'])]
-                ),
-            }))
+        component.servers = ['server 1', 'server 2']
+        component.formGroup = new FormGroup<SubnetForm>({
+            ddnsOverrideClientUpdate: new SharedParameterFormGroup(
+                {
+                    type: 'boolean',
+                },
+                [new FormControl<boolean>(true), new FormControl<boolean>(true)]
+            ),
+            cacheMaxAge: new SharedParameterFormGroup(
+                {
+                    type: 'number',
+                },
+                [new FormControl(1000), new FormControl(2000)]
+            ),
+            allocator: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['iterative', 'random', 'flq'],
+                },
+                [new FormControl<string>('iterative'), new FormControl<string>(null)]
+            ),
+            cacheThreshold: new SharedParameterFormGroup(
+                {
+                    type: 'number',
+                    min: 0,
+                    max: 1,
+                    fractionDigits: 2,
+                },
+                [new FormControl(0.25), new FormControl(0.5)]
+            ),
+            ddnsGeneratedPrefix: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
+            ),
+            requireClientClasses: new SharedParameterFormGroup(
+                {
+                    type: 'client-classes',
+                },
+                [new FormControl(['foo', 'bar']), new FormControl(['foo', 'bar', 'auf'])]
+            ),
+        })
         fixture.detectChanges()
 
         // Make sure the keys are sorted.
@@ -237,16 +237,16 @@ describe('SharedParametersFormComponent', () => {
     })
 
     it('should clear selected value', () => {
-        ;(component.servers = ['server 1', 'server 2']),
-            (component.formGroup = new FormGroup<SubnetForm>({
-                ddnsGeneratedPrefix: new SharedParameterFormGroup(
-                    {
-                        type: 'string',
-                        invalidText: 'Please specify a valid prefix.',
-                    },
-                    [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
-                ),
-            }))
+        component.servers = ['server 1', 'server 2']
+        component.formGroup = new FormGroup<SubnetForm>({
+            ddnsGeneratedPrefix: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
+            ),
+        })
         fixture.detectChanges()
 
         let clearBtns = fixture.debugElement.queryAll(By.css('[label=Clear]'))
@@ -263,16 +263,16 @@ describe('SharedParametersFormComponent', () => {
     })
 
     it('should unlock parameter for edit for different servers', () => {
-        ;(component.servers = ['server 1', 'server 2']),
-            (component.formGroup = new FormGroup<SubnetForm>({
-                ddnsGeneratedPrefix: new SharedParameterFormGroup(
-                    {
-                        type: 'string',
-                        invalidText: 'Please specify a valid prefix.',
-                    },
-                    [new FormControl('myhost', StorkValidators.fqdn), new FormControl('myhost', StorkValidators.fqdn)]
-                ),
-            }))
+        component.servers = ['server 1', 'server 2']
+        component.formGroup = new FormGroup<SubnetForm>({
+            ddnsGeneratedPrefix: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                [new FormControl('myhost', StorkValidators.fqdn), new FormControl('myhost', StorkValidators.fqdn)]
+            ),
+        })
         fixture.detectChanges()
 
         let tags = fixture.debugElement.queryAll(By.css('p-tag'))
@@ -288,16 +288,16 @@ describe('SharedParametersFormComponent', () => {
     })
 
     it('should validate a string value', () => {
-        ;(component.servers = ['server 1']),
-            (component.formGroup = new FormGroup<SubnetForm>({
-                ddnsGeneratedPrefix: new SharedParameterFormGroup(
-                    {
-                        type: 'string',
-                        invalidText: 'Please specify a valid prefix.',
-                    },
-                    [new FormControl('myhost', StorkValidators.fqdn)]
-                ),
-            }))
+        component.servers = ['server 1']
+        component.formGroup = new FormGroup<SubnetForm>({
+            ddnsGeneratedPrefix: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                [new FormControl('myhost', StorkValidators.fqdn)]
+            ),
+        })
         fixture.detectChanges()
 
         let parameterControls = component.getParameterFormControls('ddnsGeneratedPrefix')
@@ -317,7 +317,8 @@ describe('SharedParametersFormComponent', () => {
     })
 
     it('should display that there are no parameters', () => {
-        ;(component.servers = ['server 1']), (component.formGroup = new FormGroup<SubnetForm>({}))
+        component.servers = ['server 1']
+        component.formGroup = new FormGroup<SubnetForm>({})
         fixture.detectChanges()
 
         expect(fixture.nativeElement.innerText).toContain('No parameters configured.')
