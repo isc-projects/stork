@@ -1,3 +1,8 @@
+* 335 [func] marcin
+
+    Implemented a form for updating selected subnet parameters.
+    (Gitlab #957, #958)
+
 * 334 [bug] slawek
 
     Fixed the minor filtration issues on hosts, subnets and shared networks
