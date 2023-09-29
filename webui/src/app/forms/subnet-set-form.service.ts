@@ -5,7 +5,7 @@ import { KeaConfigSubnetDerivedParameters, LocalSubnet, Subnet } from '../backen
 import { StorkValidators } from '../validators'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { IPType } from '../iptype'
-import { hasDifferentLocalSubnetOptions } from '../subnets'
+import { hasDifferentSubnetLevelOptions } from '../subnets'
 
 /**
  * A type of the subnet form for editing Kea-specific parameters using
@@ -118,7 +118,7 @@ export class SubnetSetFormService {
                 subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
             ),
             options: new FormGroup({
-                unlocked: new FormControl(hasDifferentLocalSubnetOptions(subnet)),
+                unlocked: new FormControl(hasDifferentSubnetLevelOptions(subnet)),
                 data: new UntypedFormArray(
                     subnet.localSubnets?.map((ls) =>
                         this.optionService.convertOptionsToForm(

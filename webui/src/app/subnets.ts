@@ -274,10 +274,9 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
  * inheritance levels (i.e., subnet, shared network and global).
  *
  * @param subnet subnet instance.
- * @param subnetLevelOnly restricts the check to the subnet-level options only.
  * @returns true if there are differences in DHCP options, false otherwise.
  */
-export function hasDifferentLocalSubnetOptions(subnet: Subnet, subnetLevelOnly: boolean = false): boolean {
+export function hasDifferentLocalSubnetOptions(subnet: Subnet): boolean {
     return (
         !!(subnet.localSubnets?.length > 0) &&
         subnet.localSubnets
@@ -286,12 +285,30 @@ export function hasDifferentLocalSubnetOptions(subnet: Subnet, subnetLevelOnly: 
                 (ls) =>
                     ls.keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash !==
                         subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash ||
-                    (!subnetLevelOnly &&
-                        (ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash !==
-                            subnet.localSubnets[0].keaConfigSubnetParameters?.sharedNetworkLevelParameters
-                                ?.optionsHash ||
-                            ls.keaConfigSubnetParameters?.globalParameters?.optionsHash !==
-                                subnet.localSubnets[0].keaConfigSubnetParameters?.globalParameters?.optionsHash))
+                    ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash !==
+                        subnet.localSubnets[0].keaConfigSubnetParameters?.sharedNetworkLevelParameters?.optionsHash ||
+                    ls.keaConfigSubnetParameters?.globalParameters?.optionsHash !==
+                        subnet.localSubnets[0].keaConfigSubnetParameters?.globalParameters?.optionsHash
+            )
+    )
+}
+
+/**
+ * Utility function checking if there are differences between subnet-level
+ * DHCP options in the subnet.
+ *
+ * @param subnet subnet instance.
+ * @returns true if there are differences in DHCP options, false otherwise.
+ */
+export function hasDifferentSubnetLevelOptions(subnet: Subnet) {
+    return (
+        !!(subnet.localSubnets?.length > 0) &&
+        subnet.localSubnets
+            .slice(1)
+            .some(
+                (ls) =>
+                    ls.keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash !==
+                    subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash
             )
     )
 }

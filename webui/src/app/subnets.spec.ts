@@ -12,6 +12,7 @@ import {
     hasDifferentLocalSubnetOptions,
     extractUniqueSharedNetworkPools,
     hasDifferentLocalSharedNetworkOptions,
+    hasDifferentSubnetLevelOptions,
 } from './subnets'
 
 describe('subnets', () => {
@@ -555,6 +556,7 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
 
     it('detects different options for servers for the null hash', () => {
@@ -590,6 +592,7 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
 
     it('detects different options for servers for the null parameters', () => {
@@ -623,6 +626,7 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
     it('detects different options for servers for non-existing parameters', () => {
         const subnet = {
@@ -654,6 +658,7 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
 
     it('detects the same options for servers', () => {
@@ -689,6 +694,7 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeFalse()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
 
     it('detects the same options for servers for null hashes', () => {
@@ -724,6 +730,43 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeFalse()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
+    })
+
+    it('detects different subnet level options', () => {
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        sharedNetworkLevelParameters: {
+                            optionsHash: '234',
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
+        expect(hasDifferentSubnetLevelOptions(subnet)).toBeTrue()
     })
 
     it('extracts unique pools from a shared network', () => {
