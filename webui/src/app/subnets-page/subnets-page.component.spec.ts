@@ -10,7 +10,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject, of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -54,6 +54,7 @@ describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
+    let messageService: MessageService
     let router: Router
     let route: ActivatedRoute
     let paramMap: any
@@ -62,21 +63,7 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [
-                DHCPService,
-                UsersService,
-                MessageService,
-                SettingsService,
-                /*                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(new MockParamMap()),
-                    },
-                }, */
-                //                RouterTestingModule,
-            ],
+            providers: [DHCPService, UsersService, MessageService, SettingsService],
             imports: [
                 FormsModule,
                 DropdownModule,
@@ -93,7 +80,6 @@ describe('SubnetsPageComponent', () => {
                         component: SubnetsPageComponent,
                     },
                 ]),
-                //                RouterTestingModule,
                 HttpClientTestingModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
@@ -138,6 +124,7 @@ describe('SubnetsPageComponent', () => {
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
+        messageService = TestBed.inject(MessageService)
         router = TestBed.inject(Router)
     }))
 
@@ -250,8 +237,10 @@ describe('SubnetsPageComponent', () => {
         ]
         spyOn(dhcpService, 'getSubnets').and.returnValues(
             // The subnets are fetched twice before the unit test starts.
+            // Some tests call the getSubnets more than once.
             of(fakeResponses[0]),
             of(fakeResponses[0]),
+            of(fakeResponses[1]),
             of(fakeResponses[1])
         )
 
@@ -613,5 +602,66 @@ describe('SubnetsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
+    })
+
+    it('should show error message when transaction canceling fails', async () => {
+        component.loadSubnets({})
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const updateSubnetBeginResp: any = {
+            id: 123,
+            subnet: {
+                id: 5,
+                subnet: '192.0.2.0/24',
+                localSubnets: [
+                    {
+                        id: 123,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        pools: [],
+                        keaConfigSubnetParameters: {
+                            subnetLevelParameters: {
+                                allocator: 'random',
+                                options: [],
+                                optionsHash: '',
+                            },
+                        },
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
+        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(messageService, 'add')
+
+        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        component.onSubnetEditBegin({ id: 5 })
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
+
+        component.onSubnetFormCancel(5)
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
     })
 })
