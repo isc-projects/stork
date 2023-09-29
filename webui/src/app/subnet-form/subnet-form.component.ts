@@ -246,9 +246,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param index server index in the {@link servers} array.
      */
     onOptionAdd(index: number): void {
-        ;((this.form.group.get('options.data') as UntypedFormArray).at(index) as UntypedFormArray).push(
-            createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
-        )
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4))
     }
 
     /**
@@ -317,7 +315,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
 
         // Handle the daemons selection change for the DHCP options.
-        let data = this.form.group.get('options.data') as UntypedFormArray
+        let data = this.getOptionsData()
         if (data?.controls?.length > 0) {
             const unlocked = this.form.group.get('options')?.get('unlocked') as UntypedFormControl
             if (selectedDaemons.length < this.servers.length) {
@@ -489,7 +487,19 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     private resetOptionsArray() {
         this.form.group.get('options.unlocked').setValue(false)
-        ;(this.form.group.get('options.data') as UntypedFormArray).clear()
-        ;(this.form.group.get('options.data') as UntypedFormArray).push(new UntypedFormArray([]))
+        this.getOptionsData().clear()
+        this.getOptionsData().push(new UntypedFormArray([]))
+    }
+
+    /**
+     * Returns options data for all servers or for a specified server.
+     *
+     * @param index optional index of the server.
+     * @returns An array of options data for all servers or for a single server.
+     */
+    private getOptionsData(index?: number): UntypedFormArray {
+        return index === undefined
+            ? (this.form.group.get('options.data') as UntypedFormArray)
+            : (this.getOptionsData().at(index) as UntypedFormArray)
     }
 }
