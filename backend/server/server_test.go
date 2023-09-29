@@ -204,9 +204,13 @@ func TestBootstrap(t *testing.T) {
 		dbmodel.NewDaemonConfigCheckerPreference(daemons[0].ID, "out_of_pool_reservation", false),
 	}, nil)
 
+	// Temporary hook directory.
+	tmpDir, _ := os.MkdirTemp("", "stork-hook-dir-*")
+	defer os.RemoveAll(tmpDir)
+
 	// Initializes CMD.
 	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{"stork-server"}
+	os.Args = []string{"stork-server", "--hook-directory", tmpDir}
 
 	server, _, _ := NewStorkServer()
 

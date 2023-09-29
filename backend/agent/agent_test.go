@@ -125,11 +125,10 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 
 // Check if NewStorkAgent can be invoked and sets SA members.
 func TestNewStorkAgent(t *testing.T) {
-	teardown, _ := GenerateSelfSignedCerts()
-	defer teardown()
 	fam := &FakeAppMonitor{}
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient, _ := NewHTTPClient(false)
+	httpClient, teardown, _ := newHTTPClientWithCerts(false)
+	defer teardown()
 	sa := NewStorkAgent(settings, fam, httpClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)

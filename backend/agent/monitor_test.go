@@ -160,7 +160,8 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	hm := NewHookManager()
 	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	httpClient, _ := NewHTTPClient(false)
+	httpClient, teardown, _ := newHTTPClientWithCerts(false)
+	defer teardown()
 	sa := NewStorkAgent(settings, am, httpClient, hm)
 	am.detectApps(sa)
 }
@@ -287,7 +288,8 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Empty(t, ctrlPoint.Key)
 	}
 
-	httpClient, _ := NewHTTPClient(false)
+	httpClient, teardown, _ := newHTTPClientWithCerts(false)
+	defer teardown()
 
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
@@ -456,7 +458,8 @@ func TestDetectConfiguredDaemons(t *testing.T) {
 	configPath, clean := makeKeaConfFile()
 	defer clean()
 
-	httpClient, _ := NewHTTPClient(false)
+	httpClient, teardown, _ := newHTTPClientWithCerts(false)
+	defer teardown()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
@@ -483,7 +486,8 @@ func TestDetectConfiguredSingleDaemon(t *testing.T) {
 		}
 	} }`)
 
-	httpClient, _ := NewHTTPClient(false)
+	httpClient, teardown, _ := newHTTPClientWithCerts(false)
+	defer teardown()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
