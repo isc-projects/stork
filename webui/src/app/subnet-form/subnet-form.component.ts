@@ -267,7 +267,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
-        const selectedDaemons = this.form.group.get('selectedDaemons').value
+        const selectedDaemons = this.form.group.get('selectedDaemons').value ?? []
         if (this.form.updateFormForSelectedDaemons(selectedDaemons, this.savedUpdateSubnetBeginData.subnet)) {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
@@ -288,7 +288,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             if (selectedDaemons.length < this.servers.length) {
                 // We have removed a daemon from a list. Let's remove the
                 // controls pertaining to the removed daemon.
-                if (values?.length > selectedDaemons?.length) {
+                if (values?.length > selectedDaemons.length) {
                     // If we have the index of the removed daemon let's remove the
                     // controls appropriate for this daemon. This will preserve the
                     // values specified for any other daemons. Otherwise, let's remove
