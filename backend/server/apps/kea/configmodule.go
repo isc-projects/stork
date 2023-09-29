@@ -457,10 +457,11 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 	// updates.
 	var daemonIDs []int64
 	for _, ls := range subnet.LocalSubnets {
-		if ls.Daemon.KeaDaemon.Config != nil {
-			if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
-				return ctx, pkgerrors.WithStack(config.NewNoSubnetCmdsHookError())
-			}
+		if ls.Daemon.KeaDaemon.Config == nil {
+			return ctx, pkgerrors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+		}
+		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
+			return ctx, pkgerrors.WithStack(config.NewNoSubnetCmdsHookError())
 		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)
 	}
