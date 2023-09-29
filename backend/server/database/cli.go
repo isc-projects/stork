@@ -314,17 +314,6 @@ func (s *DatabaseCLIFlagsWithMaintenance) ConvertToMaintenanceDatabaseSettings()
 	return settings, nil
 }
 
-// Returns the database settings needed to connect to the standard database
-// using the maintenance credentials. It is needed to install extensions.
-func (s *DatabaseCLIFlagsWithMaintenance) ConvertToDatabaseSettingsWithMaintenanceCredentials() (*DatabaseSettings, error) {
-	settings, err := s.ConvertToMaintenanceDatabaseSettings()
-	if err != nil {
-		return nil, err
-	}
-	settings.DBName = s.DBName
-	return settings, nil
-}
-
 // Returns the CLI flag definitions as objects. This function is dedicated to
 // avoiding parsing the struct tags outside the module.
 func (s *DatabaseCLIFlagsWithMaintenance) ConvertToCLIFlagDefinitions() []*CLIFlagDefinition {

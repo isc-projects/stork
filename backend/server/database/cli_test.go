@@ -478,45 +478,6 @@ func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.
 	require.Empty(t, cliFlags.MaintenancePassword)
 }
 
-// Test that the CLI flags that contains the maintenance credentials are
-// converted to the standard database settings with a maintenance user properly.
-func TestConvertDatabaseCLIFlagsToSettingsWithMaintenanceCredentials(t *testing.T) {
-	// Arrange
-	cliFlags := &DatabaseCLIFlagsWithMaintenance{
-		DatabaseCLIFlags: DatabaseCLIFlags{
-			DBName:      "dbname",
-			User:        "user",
-			Password:    "password",
-			Host:        "host",
-			Port:        42,
-			SSLMode:     "sslmode",
-			SSLCert:     "sslcert",
-			SSLKey:      "sslkey",
-			SSLRootCert: "sslrootcert",
-			TraceSQL:    "run",
-		},
-		MaintenanceDBName:   "maintenance-dbname",
-		MaintenanceUser:     "maintenance-user",
-		MaintenancePassword: "maintenance-password",
-	}
-
-	// Act
-	settings, err := cliFlags.ConvertToDatabaseSettingsWithMaintenanceCredentials()
-
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, "dbname", settings.DBName)
-	require.EqualValues(t, "maintenance-user", settings.User)
-	require.EqualValues(t, "maintenance-password", settings.Password)
-	require.EqualValues(t, "host", settings.Host)
-	require.EqualValues(t, 42, settings.Port)
-	require.EqualValues(t, "sslmode", settings.SSLMode)
-	require.EqualValues(t, "sslcert", settings.SSLCert)
-	require.EqualValues(t, "sslkey", settings.SSLKey)
-	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
-	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
-}
-
 // Test that the field iteration is performed properly.
 func TestIterateOverFields(t *testing.T) {
 	// Arrange
