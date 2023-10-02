@@ -2,6 +2,7 @@ package storkutil
 
 import (
 	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -13,7 +14,9 @@ import (
 // Test that loading a missing environment file causes an error.
 func TestLoadMissingEnvironmentFile(t *testing.T) {
 	// Arrange & Act
-	data, err := loadEnvironmentFile("/not/existing/file")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	data, err := loadEnvironmentFile(path.Join(sb.BasePath, "not-exists.env"))
 
 	// Assert
 	require.Error(t, err)

@@ -1,10 +1,12 @@
 package storkutil
 
 import (
+	"path"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 )
 
 // Test that the listing function finds the expected paths.
@@ -24,7 +26,9 @@ func TestListFilePaths(t *testing.T) {
 // exist.
 func TestListFilePathsForInvalidDirectory(t *testing.T) {
 	// Arrange
-	directory := "/non/exist/directory"
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	directory := path.Join(sb.BasePath, "non-exist-directory")
 
 	// Act
 	paths, err := ListFilePaths(directory, false)

@@ -293,7 +293,7 @@ func TestRegisterNegative(t *testing.T) {
 	require.False(t, res)
 
 	// bad folder for certs
-	KeyPEMFile = "/non/existing/dir/key.pem"
+	KeyPEMFile = path.Join(tmpDir, "/non/existing/dir/key.pem")
 	httpClient, err = NewHTTPClient(false)
 	require.NoError(t, err)
 	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)
@@ -301,7 +301,7 @@ func TestRegisterNegative(t *testing.T) {
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem") // Restore proper value.
 
 	// bad folder for agent token
-	AgentTokenFile = "/non/existing/dir/agent-token.txt"
+	AgentTokenFile = path.Join(tmpDir, "/non/existing/dir/agent-token.txt")
 	httpClient, err = NewHTTPClient(false)
 	require.NoError(t, err)
 	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)

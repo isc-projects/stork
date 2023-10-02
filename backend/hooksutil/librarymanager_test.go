@@ -2,12 +2,14 @@ package hooksutil
 
 import (
 	"fmt"
+	"path"
 	"plugin"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
+	"isc.org/stork/testutil"
 )
 
 // Plugin mock.
@@ -113,7 +115,9 @@ func validGetVersion(program, version string) hooks.HookGetVersionFunction {
 // Test that the library constructor returns an error for an unknown file.
 func TestNewLibraryManagerReturnErrorForInvalidPath(t *testing.T) {
 	// Arrange & Act
-	library, err := NewLibraryManager("/non/exist/file")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	library, err := NewLibraryManager(path.Join(sb.BasePath, "non-exist-file"))
 
 	// Assert
 	require.Nil(t, library)

@@ -182,6 +182,8 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
 	metadataMock := NewMockAuthenticationMetadata(ctrl)
 	metadataMock.EXPECT().GetID().Return("mock")
@@ -203,7 +205,10 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	hookManager.RegisterCalloutCarriers(carrierMocks)
 
 	// Act
-	err := prepareAuthenticationIcons(hookManager, "/non/existing/directory")
+	err := prepareAuthenticationIcons(
+		hookManager,
+		path.Join(sb.BasePath, "non-existing-directory"),
+	)
 
 	// Assert
 	require.ErrorContains(t, err, "cannot open the icon file to write")

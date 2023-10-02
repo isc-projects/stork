@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -59,11 +60,13 @@ func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
 	cleanup := RememberPaths()
 	defer cleanup()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
-	KeyPEMFile = "/not/exists/path"
-	CertPEMFile = "/not/exists/path"
-	RootCAFile = "/not/exists/path"
-	AgentTokenFile = "/not/exists/path"
+	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
+	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
+	RootCAFile = path.Join(sb.BasePath, "rootCA-not-exists.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
 
 	client, err := NewHTTPClient(false)
 	require.NotNil(t, client)
@@ -164,7 +167,10 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	restorePaths := RememberPaths()
 	defer restorePaths()
-	CredentialsFile = path.Join("/path/that/not/exists.json")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		headerContent := r.Header.Get("Authorization")
@@ -268,8 +274,10 @@ func TestHasAuthenticationCredentialsMissingFile(t *testing.T) {
 	// Arrange
 	restorePaths := RememberPaths()
 	defer restorePaths()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
-	CredentialsFile = "/not/exist/file.json"
+	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
 
 	// Act
 	client, cleanup, err := newHTTPClientWithCerts(false)

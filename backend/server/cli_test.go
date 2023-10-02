@@ -2,6 +2,7 @@ package server
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -216,8 +217,12 @@ func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
 // Test that the no error is returned if the hook directory doesn't exist.
 func TestCollectHookCLIFlagsForMissingDirectory(t *testing.T) {
 	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 	parser := NewCLIParser()
-	hookSettings := &HookDirectorySettings{"/non/exists/directory"}
+	hookSettings := &HookDirectorySettings{
+		path.Join(sb.BasePath, "non-exists-directory"),
+	}
 
 	// Act
 	flags, err := parser.collectHookCLIFlags(hookSettings)

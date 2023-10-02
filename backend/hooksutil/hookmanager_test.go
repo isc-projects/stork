@@ -2,12 +2,14 @@ package hooksutil
 
 import (
 	"io"
+	"path"
 	"reflect"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/hooks"
+	"isc.org/stork/testutil"
 )
 
 // Test that the hook manager is constructed properly.
@@ -42,10 +44,16 @@ func TestNewHookManagerNoSupportedTypes(t *testing.T) {
 // Test that register method returns an error if the directory doesn't exist.
 func TestRegisterHooksFromDirectoryReturnErrorForInvalidPath(t *testing.T) {
 	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 	hookManager := NewHookManager(nil)
 
 	// Act
-	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir", map[string]hooks.HookSettings{})
+	err := hookManager.RegisterHooksFromDirectory(
+		"foo",
+		path.Join(sb.BasePath, "not-exists-directory"),
+		map[string]hooks.HookSettings{},
+	)
 
 	// Assert
 	require.Error(t, err)

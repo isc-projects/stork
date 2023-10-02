@@ -2,10 +2,12 @@ package agent
 
 import (
 	"os"
+	"path"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -240,10 +242,13 @@ func TestCertStoreIsEmpty(t *testing.T) {
 	// Arrange
 	restore := RememberPaths()
 	defer restore()
-	KeyPEMFile = "/file/not/exists"
-	RootCAFile = "/file/not/exists"
-	CertPEMFile = "/file/not/exists"
-	AgentTokenFile = "/file/not/exists"
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
+	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
+	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
 
 	store := NewCertStoreDefault()
 
@@ -263,10 +268,13 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 
 	restore := RememberPaths()
 	defer restore()
-	KeyPEMFile = "/file/not/exists"
-	RootCAFile = "/file/not/exists"
-	CertPEMFile = "/file/not/exists"
-	AgentTokenFile = "/file/not/exists"
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
+	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
+	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
 
 	pathPointers := map[string]*string{
 		"key":     &KeyPEMFile,

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"path"
 	reflect "reflect"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/agent/forwardtokeaoverhttpcallouts"
+	"isc.org/stork/testutil"
 )
 
 // Carrier mock interface for mockgen.
@@ -34,10 +36,16 @@ func TestNewHookManager(t *testing.T) {
 // directory doesn't exist.
 func TestHookManagerFromDirectoryReturnErrorOnInvalidDirectory(t *testing.T) {
 	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 	hookManager := NewHookManager()
 
 	// Arrange & Act
-	err := hookManager.RegisterHooksFromDirectory("foo", "/non/exist/dir", map[string]hooks.HookSettings{})
+	err := hookManager.RegisterHooksFromDirectory(
+		"foo",
+		path.Join(sb.BasePath, "not-exists-directory"),
+		map[string]hooks.HookSettings{},
+	)
 
 	// Assert
 	require.Error(t, err)

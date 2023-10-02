@@ -1,6 +1,7 @@
 package hooksutil
 
 import (
+	"path"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -8,6 +9,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork"
 	"isc.org/stork/hooks"
+	"isc.org/stork/testutil"
 )
 
 //go:generate mockgen -package=hooksutil -destination=hooklookupmock_test.go isc.org/stork/hooksutil HookLookup
@@ -45,8 +47,14 @@ func TestWalkCompatiblePluginLibrariesReturnsErrorOnIncompatibleLibrary(t *testi
 // directory doesn't exist.
 func TestLoadAllHooksReturnErrorForInvalidDirectory(t *testing.T) {
 	// Arrange & Act
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 	walker := NewHookWalker()
-	calloutCarriers, err := walker.LoadAllHooks("", "/non/exist/directory", map[string]hooks.HookSettings{})
+	calloutCarriers, err := walker.LoadAllHooks(
+		"",
+		path.Join(sb.BasePath, "non-exist-directory"),
+		map[string]hooks.HookSettings{},
+	)
 
 	// Assert
 	require.Nil(t, calloutCarriers)
@@ -280,9 +288,16 @@ func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 // Test that the function to extract the prototype of all hooks returns an
 // error if the  directory doesn't exist.
 func TestCollectCLIFlagsReturnErrorForInvalidDirectory(t *testing.T) {
-	// Arrange & Act
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 	walker := NewHookWalker()
-	data, err := walker.CollectCLIFlags("", "/non/exist/directory")
+
+	// Act
+	data, err := walker.CollectCLIFlags(
+		"",
+		path.Join(sb.BasePath, "non-exist-directory"),
+	)
 
 	// Assert
 	require.Nil(t, data)

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -385,11 +386,13 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 	// Assert
 	require.NotNil(t, executor)
 
-	path, err := executor.LookPath("ls")
-	require.NotNil(t, path)
+	lsPath, err := executor.LookPath("ls")
+	require.NotNil(t, lsPath)
 	require.Nil(t, err)
-	require.True(t, executor.IsFileExist(path))
-	require.False(t, executor.IsFileExist("/file/not/exists"))
+	require.True(t, executor.IsFileExist(lsPath))
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	require.False(t, executor.IsFileExist(path.Join(sb.BasePath, "not-exists")))
 }
 
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set
@@ -498,7 +501,9 @@ func TestRegularFileIsNotSocket(t *testing.T) {
 // Test that non-existing file is not recognized as a socket.
 func TestNonExistingFileIsNotSocket(t *testing.T) {
 	// Arrange
-	fileName := "/not/exists/path"
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	fileName := path.Join(sb.BasePath, "not-exists")
 
 	// Act & Assert
 	require.False(t, IsSocket(fileName))
