@@ -1,7 +1,7 @@
 * 331 [build] slawek
 
     Fixed the security vulnerabilities reported by the Github Dependabot and
-    updated dependencies including the Angular, PrimeNG, GoSwagger,
+    updated dependencies including the Go 1.21, Angular 16, PrimeNG, GoSwagger,
     OpenAPI Generator and several Python and Ruby packages.
     (Gitlab #1142)
 
