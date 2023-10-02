@@ -19,12 +19,11 @@ export interface SubnetWithUniquePools extends Subnet {
 /**
  * Get total number of addresses in a subnet.
  * It is taken from DHCPv4 or DHCPv6 stats respectively.
- * In DHCPv6 if total is -1 in stats then max safe int is returned.
  */
 export function getTotalAddresses(subnet: Subnet | SharedNetwork): number | bigint | null {
     // DHCPv4 or DHCPv6 stats
     if (subnet.stats == null) {
-        return BigInt(0)
+        return null
     }
 
     const stats = subnet.stats as Record<string, number | bigint>
@@ -43,11 +42,11 @@ export function getTotalAddresses(subnet: Subnet | SharedNetwork): number | bigi
 export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | bigint | null {
     // DHCPv4 or DHCPv6 stats
     if (subnet.stats == null) {
-        return BigInt(0)
+        return null
     }
 
     const stats = subnet.stats as Record<string, number | bigint>
-    if ('total-addresses' in stats) {
+    if ('assigned-addresses' in stats) {
         return subnet.stats['assigned-addresses']
     } else {
         return subnet.stats['assigned-nas']
@@ -56,12 +55,12 @@ export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | b
 
 /**
  * Get a BigInt value of statistic with the given name. If the statistic is
- * missing or subnet leaks the statistics, returns zero. If the value is not
- * numeric, returns null.
+ * missing, subnet leaks the statistics, or the value is not numeric, returns
+ * null.
  */
 export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string): bigint | null {
     if (subnet.stats == null || !subnet.stats.hasOwnProperty(name)) {
-        return BigInt(0)
+        return null
     }
     let value = subnet.stats[name]
     switch (typeof value) {

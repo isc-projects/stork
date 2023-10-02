@@ -1,10 +1,10 @@
-<div class="mb-5" *ngIf="network?.stats">
+<div class="mb-5" *ngIf="hasStats || hasUtilization">
     <div *ngIf="title" class="flex justify-content-center font-bold">{{ title }}</div>
-    <div class="flex justify-content-center">{{ isPD ? 'Prefix' : 'Address' }} Utilization ({{ utilization }}%)</div>
-    <div class="flex justify-content-center mb-3">
+    <div *ngIf="hasUtilization" class="flex justify-content-center">{{ isPD ? 'Prefix' : 'Address' }} Utilization ({{ utilization }}%)</div>
+    <div class="flex justify-content-center mb-3" *ngIf="!!data">
         <p-chart type="pie" [data]="data"></p-chart>
     </div>
-    <div class="flex justify-content-center">
+    <div class="flex justify-content-center" *ngIf="hasStats">
         <table>
             <tr>
                 <td class="whitespace-no-wrap">Total {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>

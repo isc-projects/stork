@@ -106,6 +106,9 @@ describe('UtilizationStatsChartComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
+        expect(component.hasStats).toBeTrue()
+        expect(component.hasUtilization).toBeTrue()
+
         expect(component.utilization).toBe(50)
         expect(component.total).toBe(BigInt(1000))
         expect(component.assigned).toBe(BigInt(500))
@@ -130,24 +133,18 @@ describe('UtilizationStatsChartComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
+        expect(component.hasStats).toBeFalse()
+        expect(component.hasUtilization).toBeTrue()
+
         expect(component.utilization).toBe(90)
-        expect(component.total).toBe(BigInt(0))
-        expect(component.assigned).toBe(BigInt(0))
-        expect(component.declined).toBe(BigInt(0))
+        expect(component.total).toBeNull()
+        expect(component.assigned).toBeNull()
+        expect(component.declined).toBe(0n)
 
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (90%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(4)
-
-        expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
-        expect(stats[0].nativeElement.innerText).toContain('0')
-        expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
-        expect(stats[1].nativeElement.innerText).toContain('0')
-        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('0')
-        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
-        expect(stats[3].nativeElement.innerText).toContain('0')
+        expect(stats.length).toBe(0)
     })
 
     it('should use prefix utilization when other stats are not available', () => {
@@ -159,19 +156,17 @@ describe('UtilizationStatsChartComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
+        expect(component.hasStats).toBeFalse()
+        expect(component.hasUtilization).toBeTrue()
+
         expect(component.utilization).toBe(100)
-        expect(component.total).toBe(BigInt(0))
-        expect(component.assigned).toBe(BigInt(0))
+        expect(component.total).toBeNull()
+        expect(component.assigned).toBeNull()
 
         expect(fixture.debugElement.nativeElement.innerText).toContain('Prefix Utilization (100%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(2)
-
-        expect(stats[0].nativeElement.innerText).toContain('Total Prefixes')
-        expect(stats[0].nativeElement.innerText).toContain('0')
-        expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
-        expect(stats[1].nativeElement.innerText).toContain('0')
+        expect(stats.length).toBe(0)
     })
 
     it('should not fall over when no stats are available', () => {
@@ -182,18 +177,16 @@ describe('UtilizationStatsChartComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        expect(component.utilization).toBe(0)
-        expect(component.total).toBe(BigInt(0))
-        expect(component.assigned).toBe(BigInt(0))
+        expect(component.hasStats).toBeFalse()
+        expect(component.hasUtilization).toBeFalse()
 
-        expect(fixture.debugElement.nativeElement.innerText).toContain('Prefix Utilization (0%)')
+        expect(component.utilization).toBeNull()
+        expect(component.total).toBeNull()
+        expect(component.assigned).toBeNull()
+
+        expect(fixture.debugElement.nativeElement.innerText).not.toContain('Prefix Utilization (0%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(2)
-
-        expect(stats[0].nativeElement.innerText).toContain('Total Prefixes')
-        expect(stats[0].nativeElement.innerText).toContain('0')
-        expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
-        expect(stats[1].nativeElement.innerText).toContain('0')
+        expect(stats.length).toBe(0)
     })
 })

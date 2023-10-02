@@ -13,6 +13,7 @@ import {
     extractUniqueSharedNetworkPools,
     hasDifferentLocalSharedNetworkOptions,
     hasDifferentSubnetLevelOptions,
+    getStatisticValue,
 } from './subnets'
 
 describe('subnets', () => {
@@ -1127,5 +1128,40 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
+    })
+
+    it('should extract the total addresses', () => {
+        // Missing stats.
+        expect(getTotalAddresses({})).toBeNull()
+        // Empty stats.
+        expect(getTotalAddresses({ stats: {} })).toBeUndefined()
+        // IPv4 stats.
+        expect(getTotalAddresses({ stats: { 'total-addresses': 42 } })).toBe(42)
+        // IPv6 stats.
+        expect(getTotalAddresses({ stats: { 'total-nas': 42 } })).toBe(42)
+    })
+
+    it('should extract the assigned addresses', () => {
+        // Missing stats.
+        expect(getAssignedAddresses({})).toBeNull()
+        // Empty stats.
+        expect(getAssignedAddresses({ stats: {} })).toBeUndefined()
+        // IPv4 stats.
+        expect(getAssignedAddresses({ stats: { 'assigned-addresses': 42 } })).toBe(42)
+        // IPv6 stats.
+        expect(getAssignedAddresses({ stats: { 'assigned-nas': 42 } })).toBe(42)
+    })
+
+    it('should extract statistic by name', () => {
+        // Missing stats.
+        expect(getStatisticValue({}, 'foo')).toBeNull()
+        // Empty stats.
+        expect(getStatisticValue({ stats: {} }, 'foo')).toBeNull()
+        // Big int value.
+        expect(getStatisticValue({ stats: { foo: BigInt(42) } }, 'foo')).toBe(42n)
+        // Numeric value.
+        expect(getStatisticValue({ stats: { foo: 42 } }, 'foo')).toBe(42n)
+        // String value.
+        expect(getStatisticValue({ stats: { foo: '42' } }, 'foo')).toBeNull()
     })
 })

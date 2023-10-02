@@ -38,34 +38,27 @@ export class UtilizationStatsChartComponent implements OnInit {
     /**
      * Pie chart data initialized during the component initialization.
      */
-    data: any
+    data: { labels: string[]; datasets: any[]} = null
 
     /**
      * Total number of leases fetched from the statistics.
      */
-    total: bigint | number
+    total: bigint | number = null
 
     /**
      * Number of assigned leases fetched from the statistics.
      */
-    assigned: bigint | number
-
-    /**
-     * Number of used leases.
-     *
-     * It is calculated by subtracting declined from assigned addresses.
-     */
-    used: bigint | number
+    assigned: bigint | number = null
 
     /**
      * Number of declined leases fetched from the statistics.
      */
-    declined: bigint | number
+    declined: bigint | number = null
 
     /**
      * Address or delegated prefix utilization fetched from the statistics.
      */
-    utilization: number
+    utilization: number = null
 
     /**
      * A component lifecycle hook invoked on initialization.
@@ -74,39 +67,45 @@ export class UtilizationStatsChartComponent implements OnInit {
      * conveyed in a subnet, local subnet or a shared network.
      */
     ngOnInit() {
-        if (this.network?.stats) {
-            const documentStyle = getComputedStyle(document.documentElement)
+        if (!this.network) {
+            return
+        }
 
-            // Fetch the statistics.
-            const { totalName, assignedName, declinedName } = this.getStatisticNames()
+        const { totalName, assignedName, declinedName } = this.getStatisticNames()
 
-            this.total = getStatisticValue(this.network, totalName)
-            this.assigned = getStatisticValue(this.network, assignedName)
-            this.declined = getStatisticValue(this.network, declinedName)
-            this.used = this.assigned - this.declined
+        this.total = getStatisticValue(this.network, totalName)
+        this.assigned = getStatisticValue(this.network, assignedName)
+        // The declined statistics is optional. It is missing for delegated prefixes.
+        this.declined = getStatisticValue(this.network, declinedName) ?? 0n
 
-            if (this.isPD && 'pdUtilization' in this.network) {
-                this.utilization = clamp(this.network['pdUtilization'], 0, 100)
-            } else if (!this.isPD && 'addrUtilization' in this.network) {
-                this.utilization = clamp(this.network['addrUtilization'], 0, 100)
-            } else {
-                this.utilization = 0
-            }
+        // Fetch the utilization.
+        if (this.isPD && 'pdUtilization' in this.network) {
+            this.utilization = clamp(this.network['pdUtilization'], 0, 100)
+        } else if (!this.isPD && 'addrUtilization' in this.network) {
+            this.utilization = clamp(this.network['addrUtilization'], 0, 100)
+        } else {
+            this.utilization = null
+        }
 
-            // Start preparing the dataset for a chart. Each chart has at least two types
-            // of data (i.e., free leases and assigned leases).
-            let dataset = {
-                data: [],
-                backgroundColor: [
-                    documentStyle.getPropertyValue('--blue-500'),
-                    documentStyle.getPropertyValue('--yellow-500'),
-                ],
-                hoverBackgroundColor: [
-                    documentStyle.getPropertyValue('--blue-400'),
-                    documentStyle.getPropertyValue('--yellow-400'),
-                ],
-            }
+        // Start preparing the dataset for a chart. Each chart has at least two types
+        // of data (i.e., free leases and assigned leases).
+        const documentStyle = getComputedStyle(document.documentElement)
 
+        const dataset = {
+            data: [],
+            backgroundColor: [
+                documentStyle.getPropertyValue('--blue-500'),
+                documentStyle.getPropertyValue('--yellow-500'),
+            ],
+            hoverBackgroundColor: [
+                documentStyle.getPropertyValue('--blue-400'),
+                documentStyle.getPropertyValue('--yellow-400'),
+            ],
+        }
+
+        let hasValidStats = false
+
+        if (this.hasStats) {
             // The chart cannot handle the big integers. Typically, the statistics fit
             // into the 64-bit integers, so this is not a big deal. Let's try to convert
             // the statistics to 64-bit integers.
@@ -119,34 +118,48 @@ export class UtilizationStatsChartComponent implements OnInit {
             // in this case. Also, if the assigned and declined counters are too high to fit into
             // 64-bits or they don't make any sense we'd rather use the percentages.
             if (
-                !total64 ||
-                assigned64 == null ||
-                declined64 == null ||
-                total64 - assigned64 < 0 ||
-                assigned64 - declined64 < 0
+                total64 &&
+                assigned64 != null &&
+                declined64 != null &&
+                total64 - assigned64 >= 0 &&
+                assigned64 - declined64 >= 0
             ) {
-                dataset.data = [100 - this.utilization, this.utilization]
+                hasValidStats = true
+
+                // The total numbers are correct, so we can present them on the chart.
+                dataset.data = [total64 - assigned64, assigned64 - declined64]
                 this.data = {
-                    labels: ['% free', '% used'],
+                    labels: ['free', 'used'],
                     datasets: [dataset],
                 }
-                return
-            }
+                // Only addresses can be declined, so we don't include this statistic for
+                // prefix delegation.
+                if (!this.isPD) {
+                    this.data.labels.push('declined')
+                    dataset.data.push(declined64)
+                    dataset.backgroundColor.push(documentStyle.getPropertyValue('--red-500'))
+                    dataset.hoverBackgroundColor.push(documentStyle.getPropertyValue('--red-400'))
+                }
 
-            // The total numbers are correct, so we can present them on the chart.
-            dataset.data = [total64 - assigned64, assigned64 - declined64]
+                // Calculate the utilization from the statistics if it is missing.
+                if (!this.hasUtilization) {
+                    this.utilization = clamp(
+                        (assigned64 / total64) * 100,
+                        0,
+                        100,
+                    )
+                }
+            }
+        }
+
+        // If the stats are invalid or missing, we fallback to the utilization.
+        if (!hasValidStats && this.hasUtilization) {
+            dataset.data = [100 - this.utilization, this.utilization]
             this.data = {
-                labels: ['free', 'used'],
+                labels: ['% free', '% used'],
                 datasets: [dataset],
             }
-            // Only addresses can be declined, so we don't include this statistic for
-            // prefix delegation.
-            if (!this.isPD) {
-                this.data.labels.push('declined')
-                dataset.data.push(declined64)
-                dataset.backgroundColor.push(documentStyle.getPropertyValue('--red-500'))
-                dataset.hoverBackgroundColor.push(documentStyle.getPropertyValue('--red-400'))
-            }
+            return
         }
     }
 
@@ -158,6 +171,27 @@ export class UtilizationStatsChartComponent implements OnInit {
      */
     get isPD(): boolean {
         return this.leaseType === 'pd'
+    }
+
+    /**
+     * Convenience function checking if the provided network has statistics.
+     */
+    get hasStats(): boolean {
+        return this.total != null && this.assigned != null
+    }
+
+    /**
+     * Convenience function checking if the provided network has utilization.
+     */
+    get hasUtilization(): boolean {
+        return this.utilization != null
+    }
+
+    /**
+     * It is calculated by subtracting declined from assigned addresses.
+     */
+    get used(): bigint | number  {
+        return (this.assigned as bigint) - (this.declined as bigint)
     }
 
     /**

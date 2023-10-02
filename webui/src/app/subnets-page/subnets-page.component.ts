@@ -371,42 +371,28 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Get total number of addresses in a subnet.
      */
     getTotalAddresses(subnet: Subnet) {
-        if (subnet.stats) {
-            return getTotalAddresses(subnet)
-        } else {
-            return '?'
-        }
+        return getTotalAddresses(subnet)
     }
 
     /**
      * Get assigned number of addresses in a subnet.
      */
     getAssignedAddresses(subnet: Subnet) {
-        if (subnet.stats) {
-            return getAssignedAddresses(subnet)
-        } else {
-            return '?'
-        }
+        return getAssignedAddresses(subnet)
     }
 
     /**
      * Get total number of delegated prefixes in a subnet.
      */
     getTotalDelegatedPrefixes(subnet: Subnet) {
-        if (subnet.subnet.includes('.')) {
-            return null
-        }
-        return subnet.stats?.['total-pds'] ?? '?'
+        return subnet.stats?.['total-pds']
     }
 
     /**
      * Get assigned number of delegated prefixes in a subnet.
      */
     getAssignedDelegatedPrefixes(subnet: Subnet) {
-        if (subnet.subnet.includes('.')) {
-            return null
-        }
-        return subnet.stats?.['assigned-pds'] ?? '?'
+        return subnet.stats?.['assigned-pds']
     }
 
     /**
