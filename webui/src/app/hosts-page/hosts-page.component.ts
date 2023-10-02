@@ -21,7 +21,11 @@ export enum HostTabType {
     Host,
 }
 
-interface QueryMapFilter {
+/**
+ * Specifies the filter parameters for fetching hosts that may be specified
+ * in the URL query parameters.
+ */
+interface QueryParamsFilter {
     text: string
     appId: number
     subnetId: number
@@ -125,7 +129,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
 
     // filters
     filterText = ''
-    queryParams: QueryMapFilter = {
+    queryParams: QueryParamsFilter = {
         text: null,
         appId: null,
         subnetId: null,
@@ -588,7 +592,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams<QueryMapFilter>(
+            const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
                 this.filterText,
                 ['appId', 'subnetId', 'keaSubnetId'],
                 ['global']

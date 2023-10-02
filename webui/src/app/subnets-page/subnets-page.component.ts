@@ -19,6 +19,10 @@ import { filter, map, take } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 
+/**
+ * Specifies the filter parameters for fetching subnets that may be specified
+ * in the URL query parameters.
+ */
 interface QueryParamsFilter {
     text: string
     dhcpVersion: '4' | '6'
