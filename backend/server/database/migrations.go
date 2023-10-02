@@ -123,7 +123,7 @@ func CurrentVersion(db *PgDB) (int64, error) {
 // function should drop an existing database and/or user before re-creating them.
 // The function grants all necessary privileges to the user and creates the
 // pgcrypto extension.
-func CreateDatabase(settings DatabaseSettings, dbName, userName, password string, force bool) (err error) {
+func CreateDatabase(settings DatabaseSettings, dbName, userName, password string, force bool) error {
 	db, err := NewPgDBConn(&settings)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func CreateDatabase(settings DatabaseSettings, dbName, userName, password string
 	if force {
 		// Drop an existing database if it exists.
 		if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
-			return
+			return err
 		}
 	}
 	// Re-create the database. Note that the database creation cannot
@@ -164,18 +164,18 @@ func CreateDatabase(settings DatabaseSettings, dbName, userName, password string
 		// Check if the user already exists.
 		hasUser, err = maintenance.HasUser(tx, userName)
 		if err != nil {
-			return
+			return err
 		}
 
 		if hasUser && force {
 			// Revoke the privileges first.
 			if err = maintenance.RevokeAllPrivilegesOnSchemaFromUser(tx, "public", userName); err != nil {
-				return
+				return err
 			}
 
 			// Drop an existing user.
 			if err = maintenance.DropUserIfExists(tx, userName); err != nil {
-				return
+				return err
 			}
 
 			hasUser = false
@@ -185,31 +185,31 @@ func CreateDatabase(settings DatabaseSettings, dbName, userName, password string
 		if hasUser {
 			log.Infof("User '%s' already exists", userName)
 		} else if err = maintenance.CreateUser(tx, userName); err != nil {
-			return
+			return err
 		}
 
 		// Grant the user full control over the database.
 		if err = maintenance.GrantAllPrivilegesOnDatabaseToUser(tx, dbName, userName); err != nil {
-			return
+			return err
 		}
 
 		// Grant the user full control over the schema public. It is necessary for
 		// some modern Postgres installations.
 		if err = maintenance.GrantAllPrivilegesOnSchemaToUser(tx, "public", userName); err != nil {
-			return
+			return err
 		}
 
 		// If the password has been generated assign it to the user.
 		if password != "" {
 			if err = maintenance.AlterUserPassword(tx, userName, password); err != nil {
-				return
+				return err
 			}
 		}
 
 		// Try to create the pgcrypto extension.
 		err = CreatePgCryptoExtension(db)
 		if err != nil {
-			return
+			return err
 		}
 
 		return nil
