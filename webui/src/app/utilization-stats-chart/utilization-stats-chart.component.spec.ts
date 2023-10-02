@@ -38,7 +38,7 @@ describe('UtilizationStatsChartComponent', () => {
                 'declined-addresses': 11,
             },
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.utilization).toBe(48)
@@ -71,7 +71,7 @@ describe('UtilizationStatsChartComponent', () => {
                 'declined-nas': 100,
             },
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.utilization).toBe(90)
@@ -103,7 +103,7 @@ describe('UtilizationStatsChartComponent', () => {
                 'assigned-pds': 500,
             },
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.hasStats).toBeTrue()
@@ -130,7 +130,7 @@ describe('UtilizationStatsChartComponent', () => {
             addrUtilization: 90,
             stats: {},
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.hasStats).toBeFalse()
@@ -153,7 +153,7 @@ describe('UtilizationStatsChartComponent', () => {
             pdUtilization: 100,
             stats: {},
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.hasStats).toBeFalse()
@@ -174,7 +174,7 @@ describe('UtilizationStatsChartComponent', () => {
         component.network = {
             stats: {},
         }
-        component.ngOnInit()
+
         fixture.detectChanges()
 
         expect(component.hasStats).toBeFalse()

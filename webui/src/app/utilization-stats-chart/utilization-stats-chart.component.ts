@@ -19,26 +19,11 @@ import { LocalSubnet } from '../backend'
     templateUrl: './utilization-stats-chart.component.html',
     styleUrls: ['./utilization-stats-chart.component.sass'],
 })
-export class UtilizationStatsChartComponent implements OnInit {
-    /**
-     * Optional chart title displayed at the top.
-     */
-    @Input() title: string
-
-    /**
-     * An instance of a subnet or a shared network holding statistics.
-     */
-    @Input() network: LocalSubnet | Subnet | SharedNetwork
-
-    /**
-     * Lease type for which the statistics should be shown.
-     */
-    @Input() leaseType: 'na' | 'pd'
-
+export class UtilizationStatsChartComponent {
     /**
      * Pie chart data initialized during the component initialization.
      */
-    data: { labels: string[]; datasets: any[]} = null
+    data: { labels: string[]; datasets: any[] } = null
 
     /**
      * Total number of leases fetched from the statistics.
@@ -61,28 +46,44 @@ export class UtilizationStatsChartComponent implements OnInit {
     utilization: number = null
 
     /**
-     * A component lifecycle hook invoked on initialization.
+     * Optional chart title displayed at the top.
+     */
+    @Input() title: string
+
+    /**
+     * Lease type for which the statistics should be shown.
+     */
+    @Input() leaseType: 'na' | 'pd'
+
+    /**
+     * An instance of a subnet or a shared network holding statistics.
      *
      * It prepares the data to be displayed in a chart using the statistics
      * conveyed in a subnet, local subnet or a shared network.
      */
-    ngOnInit() {
-        if (!this.network) {
+    @Input() set network(network: LocalSubnet | Subnet | SharedNetwork) {
+        this.total = null
+        this.assigned = null
+        this.declined = null
+        this.data = null
+        this.utilization = null
+
+        if (!network) {
             return
         }
 
-        const { totalName, assignedName, declinedName } = this.getStatisticNames()
+        const { totalName, assignedName, declinedName } = this.getStatisticNames(network)
 
-        this.total = getStatisticValue(this.network, totalName)
-        this.assigned = getStatisticValue(this.network, assignedName)
+        this.total = getStatisticValue(network, totalName)
+        this.assigned = getStatisticValue(network, assignedName)
         // The declined statistics is optional. It is missing for delegated prefixes.
-        this.declined = getStatisticValue(this.network, declinedName) ?? 0n
+        this.declined = getStatisticValue(network, declinedName) ?? 0n
 
-        // Fetch the utilization.
-        if (this.isPD && 'pdUtilization' in this.network) {
-            this.utilization = clamp(this.network['pdUtilization'], 0, 100)
-        } else if (!this.isPD && 'addrUtilization' in this.network) {
-            this.utilization = clamp(this.network['addrUtilization'], 0, 100)
+        // Extract the utilization.
+        if (this.isPD && 'pdUtilization' in network) {
+            this.utilization = clamp(network['pdUtilization'], 0, 100)
+        } else if (!this.isPD && 'addrUtilization' in network) {
+            this.utilization = clamp(network['addrUtilization'], 0, 100)
         } else {
             this.utilization = null
         }
@@ -143,11 +144,7 @@ export class UtilizationStatsChartComponent implements OnInit {
 
                 // Calculate the utilization from the statistics if it is missing.
                 if (!this.hasUtilization) {
-                    this.utilization = clamp(
-                        (assigned64 / total64) * 100,
-                        0,
-                        100,
-                    )
+                    this.utilization = clamp((assigned64 / total64) * 100, 0, 100)
                 }
             }
         }
@@ -190,7 +187,7 @@ export class UtilizationStatsChartComponent implements OnInit {
     /**
      * It is calculated by subtracting declined from assigned addresses.
      */
-    get used(): bigint | number  {
+    get used(): bigint | number {
         return (this.assigned as bigint) - (this.declined as bigint)
     }
 
@@ -221,7 +218,11 @@ export class UtilizationStatsChartComponent implements OnInit {
      *
      * @returns The statistics names for the given lease type.
      */
-    private getStatisticNames(): { totalName: string; assignedName: string; declinedName: string } {
+    private getStatisticNames(network: { stats?: object }): {
+        totalName: string
+        assignedName: string
+        declinedName: string
+    } {
         if (this.isPD) {
             return {
                 totalName: 'total-pds',
@@ -237,12 +238,12 @@ export class UtilizationStatsChartComponent implements OnInit {
             declinedName: 'declined-nas',
         }
 
-        if (this.network.stats == null || Object.keys(this.network.stats).length == 0) {
+        if (network.stats == null || Object.keys(network.stats).length == 0) {
             // Empty statistics.
             return naNames
         }
 
-        if (Object.keys(this.network.stats).some((k) => k.endsWith('-nas'))) {
+        if (Object.keys(network.stats).some((k) => k.endsWith('-nas'))) {
             // NAs statistics.
             return naNames
         }
