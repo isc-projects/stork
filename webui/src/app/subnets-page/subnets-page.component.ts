@@ -613,8 +613,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         // been sent.
         const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
         if (index >= 0) {
-            this.openedTabs[index].submitted = true
-            this.closeTabByIndex(index)
+            this.tabs[index].icon = ''
+            this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
         }
     }
 

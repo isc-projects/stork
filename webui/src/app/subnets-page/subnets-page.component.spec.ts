@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
-import { SubnetsPageComponent } from './subnets-page.component'
+import { SubnetTabType, SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
@@ -395,7 +395,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
     })
 
-    it('should close subnet edit tab when form is submitted', async () => {
+    it('should close subnet form when form is submitted', async () => {
         component.loadSubnets({})
         await fixture.whenStable()
         fixture.detectChanges()
@@ -457,8 +457,11 @@ describe('SubnetsPageComponent', () => {
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
         await fixture.whenStable()
-        expect(component.tabs.length).toBe(1)
-        expect(component.activeTabIndex).toBe(0)
+        expect(component.tabs.length).toBe(2)
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+
+        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
 
         expect(dhcpService.updateSubnetDelete).not.toHaveBeenCalled()
     })
