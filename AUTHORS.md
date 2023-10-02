@@ -3,8 +3,8 @@
 
 Primary developers:
 
-- Marcin Siodelski (regular maintainer, database, server, agent, UI, config management, Kea)
-- Sławek Figiel (regular maintainer, server, agent, UI, hooks, LDAP, system tests,
+- Marcin Siodelski (primary developer, database, server, agent, UI, config management, Kea)
+- Sławek Figiel (primary developer, database, server, agent, UI, hooks, LDAP, system tests,
                  registration, config migration, prometheus)
 
 Active developers:
@@ -24,7 +24,7 @@ Former developers:
 
 - Thomas Markwalder (Kea)
 - Matthijs Mekking (BIND 9, Prometheus)
-- Michał Nowikowski (server, agent, UI, Prometheus, release engineering)
+- Michał Nowikowski (primary developer, server, agent, UI, Prometheus, release engineering)
 
 We have received the following contributions:
 
