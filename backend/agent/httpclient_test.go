@@ -25,12 +25,13 @@ func TestNewHTTPClient(t *testing.T) {
 	require.NotNil(t, client)
 	require.Nil(t, client.credentials)
 	require.NotNil(t, client.client)
-	require.NotNil(t, client.transport)
-	require.NotNil(t, client.transport.TLSClientConfig)
-	require.NotNil(t, client.transport.TLSNextProto)
-	require.Nil(t, client.transport.TLSClientConfig.RootCAs)
-	require.Nil(t, client.transport.TLSClientConfig.Certificates)
-	require.False(t, client.transport.TLSClientConfig.InsecureSkipVerify)
+	transport := client.getTransport()
+	require.NotNil(t, transport)
+	require.NotNil(t, transport.TLSClientConfig)
+	require.NotNil(t, transport.TLSNextProto)
+	require.Nil(t, transport.TLSClientConfig.RootCAs)
+	require.Nil(t, transport.TLSClientConfig.Certificates)
+	require.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 }
 
 // Check that HTTP client can load the GRPC TLS credentials if available.

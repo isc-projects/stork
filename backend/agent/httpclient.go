@@ -20,8 +20,14 @@ var CredentialsFile = "/etc/stork/agent-credentials.json" //nolint:gochecknoglob
 // HTTPClient is a normal http client.
 type HTTPClient struct {
 	client      *http.Client
-	transport   *http.Transport
 	credentials *CredentialsStore
+}
+
+// Returns the reference to the http.Transport object of the underlying
+// http.Client. The changes performed on the transport object will be
+// reflected in the client.
+func (c *HTTPClient) getTransport() *http.Transport {
+	return c.client.Transport.(*http.Transport)
 }
 
 // Creates a client to contact with Kea Control Agent or named statistics-channel.
@@ -51,7 +57,6 @@ func NewHTTPClient() *HTTPClient {
 		client: &http.Client{
 			Transport: transport,
 		},
-		transport:   transport,
 		credentials: nil,
 	}
 }
@@ -59,7 +64,7 @@ func NewHTTPClient() *HTTPClient {
 // If true then it doesn't verify the server credentials
 // over HTTPS. It may be useful when Kea uses a self-signed certificate.
 func (c *HTTPClient) SetSkipTLSVerification(skipTLSVerification bool) {
-	c.transport.TLSClientConfig.InsecureSkipVerify = skipTLSVerification
+	c.getTransport().TLSClientConfig.InsecureSkipVerify = skipTLSVerification
 }
 
 // Loads the TLS certificates from a file. The certificates will be attached
@@ -93,8 +98,9 @@ func (c *HTTPClient) LoadGRPCCertificates() (bool, error) {
 		return false, errors.WithMessage(err, "cannot read the TLS root CA")
 	}
 
-	c.transport.TLSClientConfig.Certificates = []tls.Certificate{*tlsCert}
-	c.transport.TLSClientConfig.RootCAs = tlsRootCA
+	transport := c.getTransport()
+	transport.TLSClientConfig.Certificates = []tls.Certificate{*tlsCert}
+	transport.TLSClientConfig.RootCAs = tlsRootCA
 	return true, nil
 }
 
