@@ -629,6 +629,7 @@ describe('subnets', () => {
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
         expect(hasDifferentSubnetLevelOptions(subnet)).toBeFalse()
     })
+
     it('detects different options for servers for non-existing parameters', () => {
         const subnet = {
             subnet: '192.0.2.0/24',
@@ -1046,6 +1047,7 @@ describe('subnets', () => {
         }
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
+
     it('detects different shared network options for servers for non-existing parameters', () => {
         const sharedNetwork = {
             name: 'foo',
