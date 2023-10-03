@@ -1,6 +1,7 @@
 * 334 [bug] slawek
 
-    Fixed the minor filtration issues on hosts and shared networks pages.
+    Fixed the minor filtration issues on hosts, subnets and shared networks
+    pages.
     (Gitlab #1140)
 
 * 333 [func] slawek
