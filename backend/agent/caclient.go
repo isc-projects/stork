@@ -31,7 +31,7 @@ func NewHTTPClient() *HTTPClient {
 		transport = defaultTransport.Clone()
 	} else {
 		// The gomock library uses own implementation of the RoundTripper.
-		// It should never happen on production.
+		// It should never happen in production.
 		log.Warn("Could not clone default transport, using empty")
 	}
 
