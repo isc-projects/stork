@@ -34,7 +34,7 @@ import (
 type StorkAgent struct {
 	Settings   *cli.Context
 	AppMonitor AppMonitor
-	// To communicate with named statistics-channel.
+	// General-purpose HTTP client. If doesn't use any app-specific features.
 	GeneralHTTPClient *HTTPClient
 	// To communicate with Kea Control Agent.
 	// It may contain the HTTP credentials.
