@@ -1,6 +1,6 @@
 * 333 [func] slawek
 
-    Added a support for BIND 9 running in the chroot mode.
+    Added support for BIND 9 running in the chroot mode.
     (Gitlab #974)
 
 * 332 [func] slawek
