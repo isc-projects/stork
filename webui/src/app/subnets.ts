@@ -55,7 +55,7 @@ export function getAssignedAddresses(subnet: Subnet | SharedNetwork): number | b
 
 /**
  * Get a BigInt value of statistic with the given name. If the statistic is
- * missing, subnet leaks the statistics, or the value is not numeric, returns
+ * missing, subnet lacks the statistics, or the value is not numeric, returns
  * null.
  */
 export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string): bigint | null {
