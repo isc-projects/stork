@@ -59,7 +59,7 @@ interface EditableParameterSpec<T> {
  */
 export class SharedParameterFormGroup<
     TDataType,
-    TControl extends { [K in keyof TControl]: AbstractControl<any> } = any
+    TControl extends { [K in keyof TControl]: AbstractControl<any> } = any,
 > extends LinkedFormGroup<EditableParameterSpec<TDataType>, SharedParameterForm> {
     /**
      * Constructor.

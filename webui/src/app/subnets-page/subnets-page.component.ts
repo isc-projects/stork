@@ -50,7 +50,10 @@ export class SubnetTab {
      * @param tabType subnet tab type.
      * @param subnet subnet information displayed in the tab.
      */
-    constructor(public tabType: SubnetTabType, public subnet?: Subnet) {
+    constructor(
+        public tabType: SubnetTabType,
+        public subnet?: Subnet
+    ) {
         this.setSubnetTabType(tabType)
     }
 

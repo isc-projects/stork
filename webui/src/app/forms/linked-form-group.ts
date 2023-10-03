@@ -16,7 +16,7 @@ import { AbstractControl, AbstractControlOptions, AsyncValidatorFn, FormGroup, V
  */
 export class LinkedFormGroup<
     LinkedData,
-    TControl extends { [K in keyof TControl]: AbstractControl<any> } = any
+    TControl extends { [K in keyof TControl]: AbstractControl<any> } = any,
 > extends FormGroup<TControl> {
     /**
      * Custom data associated with the form group.
