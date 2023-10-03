@@ -613,8 +613,36 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         // been sent.
         const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
         if (index >= 0) {
-            this.tabs[index].icon = ''
-            this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+            this.dhcpApi
+                .getSubnet(this.openedTabs[index].subnet.id)
+                .pipe(
+                    map((subnet) => {
+                        if (subnet) {
+                            parseSubnetsStatisticValues([subnet])
+                            subnet = extractUniqueSubnetPools([subnet])[0]
+                        }
+                        return subnet
+                    })
+                )
+                .toPromise()
+                .then((subnet) => {
+                    this.openedTabs[index].subnet = subnet
+                    const existingIndex = this.subnets.findIndex((s) => s.id === subnet.id)
+                    if (existingIndex >= 0) {
+                        this.subnets[existingIndex] = subnet
+                    }
+                })
+                .catch((error) => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot load updated subnet',
+                        detail: getErrorMessage(error),
+                    })
+                })
+                .finally(() => {
+                    this.tabs[index].icon = ''
+                    this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+                })
         }
     }
 
