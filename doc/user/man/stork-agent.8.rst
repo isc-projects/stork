@@ -62,7 +62,7 @@ Stork server flags:
    Specifies the TCP port to listen on for incoming Stork server connections. The default is 8080. ``[$STORK_AGENT_PORT]``
 
 ``--skip-tls-cert-verification=``
-   Indicates that TLS certificate verification should be skipped when the Stork agent connects to Kea over TLS and Kea uses self-signed certificates. The default is ``false``. ``[$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]``
+   Indicates that TLS certificate verification should be skipped when the Stork agent makes HTTP calls over TLS. The default is ``false``. ``[$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]``
 
 Prometheus Kea Exporter flags:
 

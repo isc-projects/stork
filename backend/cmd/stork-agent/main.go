@@ -300,7 +300,7 @@ func setupApp(reload bool) *cli.App {
 			&cli.BoolFlag{
 				Name:    "skip-tls-cert-verification",
 				Value:   false,
-				Usage:   "Skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates",
+				Usage:   "Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS",
 				EnvVars: []string{"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"},
 			},
 			// Registration related settings
