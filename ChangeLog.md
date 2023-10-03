@@ -1,7 +1,8 @@
 * 337 [bug] slawek
 
-    Fixed attaching the self-signed TLS credentials to the request sent from
-    agent to server that caused rejections due to TLS verification error.
+    The agent no longer includes the TLS credentials in the requests sent to
+    the server. Including them caused TLS verification errors during agent
+    re-registration.
     (Gitlab #1154)
 
 * 336 [bug] slawek
