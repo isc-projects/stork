@@ -1,3 +1,9 @@
+* 339 [build] marcin
+
+    Downgraded PrimeNG to avoid the bug with dynamic tab menu. See PrimeNG
+    issue #13609.
+    (Gitlab #1176)
+
 * 338 [func] slawek
 
     Support for a new hook naming convention. The server-specific hooks should
