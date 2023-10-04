@@ -4,7 +4,7 @@ import { UtilizationStatsChartComponent } from './utilization-stats-chart.compon
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TooltipModule } from 'primeng/tooltip'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 
 export default {
     title: 'App/UtilizationStatsChart',
@@ -12,7 +12,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [ChartModule, TooltipModule],
-            declarations: [HumanCountComponent, HumanCountPipe, NumberPipe],
+            declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe],
             providers: [],
         }),
     ],

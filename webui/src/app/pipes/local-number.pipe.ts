@@ -4,9 +4,9 @@ import { Pipe, PipeTransform } from '@angular/core'
  * Custom implementation of the Angular's Decimal Pipe that supports BigInt.
  */
 @Pipe({
-    name: 'number',
+    name: 'localNumber',
 })
-export class NumberPipe implements PipeTransform {
+export class LocalNumberPipe implements PipeTransform {
     /**
      * Formats the number using a given locale. If the value is string,
      * it'll be converted to number. Returns null for null value or invalid

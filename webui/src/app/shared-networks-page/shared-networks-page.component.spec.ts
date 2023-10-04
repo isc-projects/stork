@@ -19,7 +19,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { HttpEvent } from '@angular/common/http'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { MessageService } from 'primeng/api'
@@ -74,7 +74,7 @@ describe('SharedNetworksPageComponent', () => {
                 HelpTipComponent,
                 HumanCountComponent,
                 HumanCountPipe,
-                NumberPipe,
+                LocalNumberPipe,
                 DelegatedPrefixBarComponent,
                 PlaceholderPipe,
                 SharedNetworksPageComponent,

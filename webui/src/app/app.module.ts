@@ -108,7 +108,7 @@ import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form/dh
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { DelegatedPrefixBarComponent } from './delegated-prefix-bar/delegated-prefix-bar.component'
 import { HumanCountComponent } from './human-count/human-count.component'
-import { NumberPipe } from './pipes/number.pipe'
+import { LocalNumberPipe } from './pipes/local-number.pipe'
 import { HumanCountPipe } from './pipes/human-count.pipe'
 import { LocaltimePipe } from './pipes/localtime.pipe'
 import { SurroundPipe } from './pipes/surround.pipe'
@@ -186,7 +186,7 @@ export function cfgFactory() {
         DelegatedPrefixBarComponent,
         HumanCountPipe,
         HumanCountComponent,
-        NumberPipe,
+        LocalNumberPipe,
         SurroundPipe,
         AccessPointKeyComponent,
         PlaceholderPipe,

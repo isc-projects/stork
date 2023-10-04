@@ -24,7 +24,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { IPType } from '../iptype'
@@ -45,7 +45,7 @@ describe('SharedNetworkTabComponent', () => {
                 HelpTipComponent,
                 HumanCountComponent,
                 HumanCountPipe,
-                NumberPipe,
+                LocalNumberPipe,
                 PlaceholderPipe,
                 SharedNetworkTabComponent,
                 SubnetBarComponent,

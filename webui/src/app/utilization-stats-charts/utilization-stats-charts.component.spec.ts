@@ -8,7 +8,7 @@ import { ChartModule } from 'primeng/chart'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
@@ -22,7 +22,7 @@ describe('UtilizationStatsChartsComponent', () => {
             declarations: [
                 HumanCountComponent,
                 HumanCountPipe,
-                NumberPipe,
+                LocalNumberPipe,
                 PlaceholderPipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,

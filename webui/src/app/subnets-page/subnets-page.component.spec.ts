@@ -19,7 +19,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { RouterTestingModule } from '@angular/router/testing'
 import { MessageModule } from 'primeng/message'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
@@ -110,7 +110,7 @@ describe('SubnetsPageComponent', () => {
                 DelegatedPrefixBarComponent,
                 HumanCountComponent,
                 HumanCountPipe,
-                NumberPipe,
+                LocalNumberPipe,
                 EntityLinkComponent,
                 AddressPoolBarComponent,
                 SubnetTabComponent,

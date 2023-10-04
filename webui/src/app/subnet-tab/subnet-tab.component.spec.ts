@@ -6,7 +6,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TooltipModule } from 'primeng/tooltip'
-import { NumberPipe } from '../pipes/number.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { FieldsetModule } from 'primeng/fieldset'
 import { DividerModule } from 'primeng/divider'
 import { TableModule } from 'primeng/table'
@@ -58,7 +58,7 @@ describe('SubnetTabComponent', () => {
                 HelpTipComponent,
                 HumanCountComponent,
                 HumanCountPipe,
-                NumberPipe,
+                LocalNumberPipe,
                 PlaceholderPipe,
                 SubnetTabComponent,
                 UtilizationStatsChartComponent,
