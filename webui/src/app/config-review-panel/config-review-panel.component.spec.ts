@@ -482,7 +482,7 @@ describe('ConfigReviewPanelComponent', () => {
         let pickerElement = fixture.debugElement.query(By.directive(ConfigCheckerPreferenceUpdaterComponent))
         expect(pickerElement).toBeNull()
 
-        buttonElement.triggerEventHandler('click', null)
+        buttonElement.triggerEventHandler('click', new Event('click'))
         fixture.detectChanges()
 
         // The checker picker should be presented.
