@@ -204,9 +204,6 @@ func TestGetState(t *testing.T) {
 	defer teardown()
 
 	// Prepare credentials file.
-	// Recreate Stork agent.
-	sa, ctx, teardown = setupAgentTest()
-	defer teardown()
 	restorePaths := RememberPaths()
 	defer restorePaths()
 	sb := testutil.NewSandbox()
