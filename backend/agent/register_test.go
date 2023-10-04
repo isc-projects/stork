@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/pki"
+	"isc.org/stork/testutil"
 )
 
 // Check if registration works in basic situation.
@@ -258,18 +259,17 @@ func TestRegisterBadServer(t *testing.T) {
 // Check Register response to bad arguments or how it behaves in bad environment.
 func TestRegisterNegative(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	KeyPEMFile = path.Join(sb.BasePath, "certs/key.pem")
+	CertPEMFile = path.Join(sb.BasePath, "certs/cert.pem")
+	RootCAFile = path.Join(sb.BasePath, "certs/ca.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt")
 
 	// bad server URL
 	res := Register("12:3", "serverToken", "1.2.3.4", "8080", false, false, NewHTTPClient())
@@ -288,19 +288,16 @@ func TestRegisterNegative(t *testing.T) {
 	require.False(t, res)
 
 	// bad folder for certs
-	KeyPEMFile = "/non/existing/dir/key.pem"
-	httpClient := NewHTTPClient()
-	require.NoError(t, err)
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)
+	KeyPEMFile = path.Join(sb.BasePath, "non-existing-dir/key.pem")
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient())
 	require.False(t, res)
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem") // Restore proper value.
+	KeyPEMFile = path.Join(sb.BasePath, "certs/key.pem") // Restore proper value.
 
 	// bad folder for agent token
-	AgentTokenFile = "/non/existing/dir/agent-token.txt"
-	require.NoError(t, err)
-	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, httpClient)
+	AgentTokenFile = path.Join(sb.BasePath, "non-existing-dir/agent-token.txt")
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient())
 	require.False(t, res)
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt") // restore proper value
+	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt") // restore proper value
 
 	// not running agent on 54444 port
 	res = Register("http://localhost:54333", "serverToken", "localhost", "54444", false, false, NewHTTPClient())

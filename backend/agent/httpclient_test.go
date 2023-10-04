@@ -308,8 +308,10 @@ func TestLoadCredentialsCredentialsMissingFile(t *testing.T) {
 	// Arrange
 	restorePaths := RememberPaths()
 	defer restorePaths()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
-	CredentialsFile = "/not/exist/file.json"
+	CredentialsFile = path.Join(sb.BasePath, "/not/exist/file.json")
 
 	client := NewHTTPClient()
 
