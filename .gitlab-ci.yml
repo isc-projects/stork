@@ -23,11 +23,19 @@ variables:
   LC_ALL: C.UTF-8
   LANG: C.UTF-8
 
+  # The hooks are specified as the git submodules. It allows us to pin the
+  # specific commit to release. It is beneficial as the hook development may
+  # not be in sync with the main project development.
+  # The hooks are not needed in the most of CI tasks, so the repositories are
+  # not cloned by default.
+  GIT_SUBMODULE_STRATEGY: none
+
 # stages order
 stages:
   - checks
   - system_tests
   - build
+  - hooks
   - deploy
 
 ### build jobs ###
@@ -497,6 +505,21 @@ system_testing:
       - tests/system/test-results/**/*.log
     expire_in: 1 week
     when: always
+
+### hooks ###
+build_hooks:
+  stage: hooks
+  when: manual
+  needs:
+    - build_backend
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  script:
+    - rake build:hooks
+  artifacts:
+    paths:
+      - hooks/*.so
+    expire_in: 1 week
 
 ### upload release notes and tarball to repo.isc.org ###
 
