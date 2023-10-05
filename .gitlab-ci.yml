@@ -536,113 +536,113 @@ build_hooks:
       - hooks/*.so
     expire_in: 1 hour
 
-  build_hooks_debs_amd64:
-    extends: .base_build_debian
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.deb ./
-    artifacts:
-      paths:
-        - isc-stork-*.deb
-      expire_in: 1 hour
-      
-  build_hooks_debs_arm64:
-    extends: .base_build_debian_arm
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.deb ./
-    artifacts:
-      paths:
-        - isc-stork-*.deb
-      expire_in: 1 hour
+build_hooks_debs_amd64:
+  extends: .base_build_debian
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
+    
+build_hooks_debs_arm64:
+  extends: .base_build_debian_arm
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
 
-  build_hooks_rpms_amd64:
-    extends: .base_build_ubi
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.rpm ./
-    artifacts:
-      paths:
-        - isc-stork-*.rpm
-      expire_in: 1 hour
+build_hooks_rpms_amd64:
+  extends: .base_build_ubi
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
 
-  build_hooks_rpms_arm64:
-    extends: .base_build_ubi_arm
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.rpm ./
-    artifacts:
-      paths:
-        - isc-stork-*.rpm
-      expire_in: 1 hour
+build_hooks_rpms_arm64:
+  extends: .base_build_ubi_arm
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
 
-  build_hooks_apks_amd64:
-    extends: .base_build_alpine
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.apk ./
-    artifacts:
-      paths:
-        - isc-stork-*.apk
-      expire_in: 1 hour
+build_hooks_apks_amd64:
+  extends: .base_build_alpine
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.apk ./
+  artifacts:
+    paths:
+      - isc-stork-*.apk
+    expire_in: 1 hour
 
-  build_hooks_apks_arm64:
-    extends: .base_build_alpine_arm
-    stage: hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    needs:
-      - build_hooks
-    script:
-      - rake hook:build_pkg
-      - cp dist/hook-pkgs/*.apk ./
-    artifacts:
-      paths:
-        - isc-stork-*.apk
-      expire_in: 1 hour
+build_hooks_apks_arm64:
+  extends: .base_build_alpine_arm
+  stage: hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  needs:
+    - build_hooks
+  script:
+    - rake hook:build_pkg
+    - cp dist/hook-pkgs/*.apk ./
+  artifacts:
+    paths:
+      - isc-stork-*.apk
+    expire_in: 1 hour
 
-  packages_hooks:
-    stage: hooks
-    rules:
-      - when: on_success
-    needs:
-      - build_hooks_debs_amd64
-      - build_hooks_debs_arm64
-      - build_hooks_rpms_amd64
-      - build_hooks_rpms_arm64
-      - build_hooks_apks_amd64
-      - build_hooks_apks_arm64
-    script:
-      - ":"
-    artifacts:
-      paths:
-        - isc-stork-*
-      expire_in: 1 week
+packages_hooks:
+  stage: hooks
+  rules:
+    - when: on_success
+  needs:
+    - build_hooks_debs_amd64
+    - build_hooks_debs_arm64
+    - build_hooks_rpms_amd64
+    - build_hooks_rpms_arm64
+    - build_hooks_apks_amd64
+    - build_hooks_apks_arm64
+  script:
+    - ":"
+  artifacts:
+    paths:
+      - isc-stork-*
+    expire_in: 1 week
 
 ### upload release notes and tarball to repo.isc.org ###
 
