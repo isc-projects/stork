@@ -116,6 +116,42 @@ stages:
     - aarch64
     - linux
 
+.base_build_alpine:
+  stage: checks
+  rules:
+    - when: always
+  cache:
+    key: $CI_PROJECT_NAME-alpine-$CI_COMMIT_REF_SLUG
+    paths:
+      - webui/node_modules/
+      - tools/
+    fallback_keys:
+      - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
+  tags:
+    - linux
+    - amd64
+    - ssd
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    - rake prepare:dist
+    - rake prepare:deps
+
+.base_build_alpine_arm:
+  extends: .base_build_alpine
+  cache:
+    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/
+      - webui/node_modules/
+      - /root/.cache/go-build
+    fallback_keys:
+      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
+  tags:
+    - aarch64
+    - linux
+
 lint_backend:
   extends: .base_build_debian
   script:
@@ -283,26 +319,7 @@ build_rpms_arm64:
     expire_in: 1 hour
 
 build_apks_amd64:
-  stage: checks
-  rules:
-    - when: always
-  cache:
-    key: $CI_PROJECT_NAME-alpine-$CI_COMMIT_REF_SLUG
-    paths:
-      - webui/node_modules/
-      - tools/
-    fallback_keys:
-      - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:2
-  tags:
-    - linux
-    - amd64
-    - ssd
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - rake prepare:dist
-    - rake prepare:deps
+  extends: .base_build_alpine
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -313,18 +330,16 @@ build_apks_amd64:
     expire_in: 1 hour
 
 build_apks_arm64:
-  extends: build_apks_amd64
-  cache:
-    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
+  extends: .base_build_alpine_arm
+  script:
+    - rake build:agent_pkg
+    - rake build:server_pkg
+    - cp dist/pkgs/*.apk ./
+  artifacts:
     paths:
-      - webui/node_modules/
-      - tools/
-    fallback_keys:
-      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
-  tags:
-    - aarch64
-    - linux
-
+      - isc-stork-*.apk
+    expire_in: 1 hour
+  
 packages:
   stage: checks
   rules:
@@ -519,7 +534,115 @@ build_hooks:
   artifacts:
     paths:
       - hooks/*.so
-    expire_in: 1 week
+    expire_in: 1 hour
+
+  build_hooks_debs_amd64:
+    extends: .base_build_debian
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.deb ./
+    artifacts:
+      paths:
+        - isc-stork-*.deb
+      expire_in: 1 hour
+      
+  build_hooks_debs_arm64:
+    extends: .base_build_debian_arm
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.deb ./
+    artifacts:
+      paths:
+        - isc-stork-*.deb
+      expire_in: 1 hour
+
+  build_hooks_rpms_amd64:
+    extends: .base_build_ubi
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.rpm ./
+    artifacts:
+      paths:
+        - isc-stork-*.rpm
+      expire_in: 1 hour
+
+  build_hooks_rpms_arm64:
+    extends: .base_build_ubi_arm
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.rpm ./
+    artifacts:
+      paths:
+        - isc-stork-*.rpm
+      expire_in: 1 hour
+
+  build_hooks_apks_amd64:
+    extends: .base_build_alpine
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.apk ./
+    artifacts:
+      paths:
+        - isc-stork-*.apk
+      expire_in: 1 hour
+
+  build_hooks_apks_arm64:
+    extends: .base_build_alpine_arm
+    stage: hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    needs:
+      - build_hooks
+    script:
+      - rake hook:build_pkg
+      - cp dist/hook-pkgs/*.apk ./
+    artifacts:
+      paths:
+        - isc-stork-*.apk
+      expire_in: 1 hour
+
+  packages_hooks:
+    stage: hooks
+    rules:
+      - when: on_success
+    needs:
+      - build_hooks_debs_amd64
+      - build_hooks_debs_arm64
+      - build_hooks_rpms_amd64
+      - build_hooks_rpms_arm64
+      - build_hooks_apks_amd64
+      - build_hooks_apks_arm64
+    script:
+      - ":"
+    artifacts:
+      paths:
+        - isc-stork-*
+      expire_in: 1 week
 
 ### upload release notes and tarball to repo.isc.org ###
 
