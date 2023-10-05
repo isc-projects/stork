@@ -296,6 +296,19 @@ namespace :hook do
         ENV["REL"] = package_rel
         Rake::Task["utils:list_package_deps"].invoke
     end
+
+    desc "Fetches the hook repositories"
+    task :prepare => [GIT] do
+        # Initialize the hook submodules.
+        sh GIT, "submodule", "update", "--init", "--recursive"
+    end
+
+    desc "Updates the submodule references to the latest commit in the hook
+        repositories"
+    task :update => [GIT] do
+        # Update the hook submodules.
+        sh GIT, "submodule", "update", "--remote", "--recursive"
+    end
 end
 
 namespace :run do
