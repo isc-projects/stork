@@ -770,29 +770,30 @@ upload_packages:
     - ssd
   needs:
     - packages
+  variables:
+    REPO: stork
+    COMPONENTS: isc-stork-server,isc-stork-agent
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-    - rake release:packages:upload REPO=stork
+    - rake release:packages:upload
+
+upload_packages_hooks:
+  extends: upload_packages
+  needs:
+    - packages_hooks
+  variables:
+    REPO: stork-hooks
+    COMPONENTS: isc-stork-server-hook,isc-stork-agent-hook
 
 upload_test_packages:
-  stage: deploy
-  rules:
-    - when: manual
-  allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
-  tags:
-    - linux
-    - docker
-    - amd64
-    - ssd
-  needs:
-    - packages
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-  script:
-    - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-    - rake release:packages:upload REPO=stork-testing
+  extends: upload_packages
+  variables:
+    REPO: stork-testing
+
+upload_test_packages_hooks:
+  extends: upload_packages_hooks
+  variables:
+    REPO: stork-hooks-testing

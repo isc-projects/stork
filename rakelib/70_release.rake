@@ -134,27 +134,33 @@ namespace :release do
     namespace :packages do
         desc 'Upload packages to Cloudsmith
             CS_API_KEY - the Cloudsmith API key - required
+            COMPONENTS - the filename component - required
             REPO - the Cloudsmith repository - required'
         task :upload => [CLOUDSMITH] do
             key = ENV["CS_API_KEY"]
             repo = ENV["REPO"]
+            components = ENV["COMPONENTS"]
             if key.nil?
                 fail "You need to provide the CS_API_KEY variable"
             elsif repo.nil?
                 fail "You need to provide the REPO variable"
+            elsif components.nil?
+                fail "You need to provide the COMPONENT variable"
             end
+
             sh CLOUDSMITH, "check", "service"
             sh CLOUDSMITH, "whoami", "-k", "#{key}"
             for package_type in ['deb', 'rpm'] do
-                for component in ['isc-stork-agent', 'isc-stork-server'] do
+                for component in components.split(",") do
+                    component = component.strip
                     pattern = component + '*\.' + package_type
                     files = Dir.glob(pattern)
                     if files.nil? || files.length == 0
                         fail 'ERROR: could not find any files matching ' + pattern
-                    elsif files.length > 1
-                      fail 'ERROR: expected a single file, found multiple files matching ' + pattern + ': ' + files.join(' ')
                     end
-                    sh CLOUDSMITH, "upload", package_type, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/any-distro/any-version", files[0]
+                    files.each do |file|
+                        sh CLOUDSMITH, "upload", package_type, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/any-distro/any-version", file
+                    end
                 end
             end
         end
