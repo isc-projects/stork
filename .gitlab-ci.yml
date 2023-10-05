@@ -181,7 +181,7 @@ build_backend:
     paths:
       - backend/cmd/stork-agent/stork-agent
       - backend/cmd/stork-server/stork-server
-      - backend/cmd/stork-db-migrate/stork-db-migrate
+      - backend/cmd/stork-tool/stork-tool
 
 danger:
   extends: .base_build_debian
