@@ -536,19 +536,19 @@ build_hooks:
       - hooks/*.so
     expire_in: 1 hour
 
-  unittest_hooks:
-    stage: hooks
-    rules:
-      # Run the unit tests on master or on demand.
-      - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-        when: always
-      - when: manual
-    needs:
-      - build_hooks
-    variables:
-      GIT_SUBMODULE_STRATEGY: normal
-    script:
-      - rake hook:unittest
+unittest_hooks:
+  stage: hooks
+  rules:
+    # Run the unit tests on master or on demand.
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: always
+    - when: manual
+  needs:
+    - build_hooks
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  script:
+    - rake hook:unittest
 
 build_hooks_debs_amd64:
   extends: .base_build_debian
