@@ -544,6 +544,8 @@ unittest_hooks:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   allow_failure: true
+  needs:
+    - unittest_backend
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -552,6 +554,7 @@ unittest_hooks:
 tarball_hooks:
   stage: hooks
   when: manual
+  needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
