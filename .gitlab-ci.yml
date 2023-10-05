@@ -536,6 +536,20 @@ build_hooks:
       - hooks/*.so
     expire_in: 1 hour
 
+  unittest_hooks:
+    stage: hooks
+    rules:
+      # Run the unit tests on master or on demand.
+      - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+        when: always
+      - when: manual
+    needs:
+      - build_hooks
+    variables:
+      GIT_SUBMODULE_STRATEGY: normal
+    script:
+      - rake hook:unittest
+
 build_hooks_debs_amd64:
   extends: .base_build_debian
   stage: hooks
@@ -545,6 +559,7 @@ build_hooks_debs_amd64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.deb ./
@@ -562,6 +577,7 @@ build_hooks_debs_arm64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.deb ./
@@ -579,6 +595,7 @@ build_hooks_rpms_amd64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -596,6 +613,7 @@ build_hooks_rpms_arm64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -613,6 +631,7 @@ build_hooks_apks_amd64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -630,6 +649,7 @@ build_hooks_apks_arm64:
     - when: on_success
   needs:
     - build_hooks
+    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./

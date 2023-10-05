@@ -217,6 +217,22 @@ namespace :hook do
         end
     end
 
+    desc "Run the unit tests for all hooks."
+    task :unittest => [GO] do
+        forEachHook do |dir_name|
+            # Check if the unit test task exists.
+            stdout, _ = Open3.capture2 "rake", "-D", "^unittest$"
+            if stdout.nil? || stdout.strip.empty?
+                puts "Skipping #{dir_name} - no unit tests."
+                next
+            end
+
+            # Run the unit tests.
+            puts "Running unit tests for #{dir_name}..."
+            sh "rake", "unittest"
+        end
+    end
+
     desc "Remap the dependency path to the Stork core. It specifies the source
         of the core dependency - remote repository or local directory. The
         remote repository may be fetched by tag or commit hash.
