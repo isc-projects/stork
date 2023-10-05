@@ -305,7 +305,7 @@ namespace :hook do
 
     desc "Updates the submodule references to the latest commit in the hook
         repositories"
-    task :update => [GIT] do
+    task :sync => [GIT] do
         # Update the hook submodules.
         sh GIT, "submodule", "update", "--remote", "--recursive"
     end
