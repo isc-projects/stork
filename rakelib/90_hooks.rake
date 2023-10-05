@@ -14,6 +14,10 @@ DEFAULT_HOOK_DIRECTORY = File.expand_path default_hook_directory_rel
 
 CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
 
+pkg_directory = "dist/hook-pkgs"
+directory pkg_directory
+
+CLEAN.append pkg_directory
 
 #################
 ### Functions ###
@@ -151,6 +155,39 @@ namespace :hook do
                 # Back the changes in Go mod files.
                 puts "Reverting remap operation..."
                 sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
+            end
+        end
+    end
+
+    desc "Build all hooks and create packages. Remap hooks to use the current codebase.
+        DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
+    task :build_pkg => [:build, GO, FPM, pkg_directory] do
+        hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
+        pkg_type = get_pkg_type()
+
+        FileList[File.join(hook_directory, "*.so")].each do |hook_path|
+            hook_filename = File.basename(hook_path)
+            components = hook_filename.split("-", 3)
+            if components.length != 3 || components[0] != "stork" || !hook_filename.end_with?(".so")
+                fail "Invalid hook name: #{hook_filename}. It must follow the pattern: stork-<application>-<name>.so"
+            end
+
+            kind = components[1]
+            hook_name = components[2].chomp(".so")
+
+            Dir.chdir(pkg_directory) do
+                sh FPM,
+                    "-s", "dir",
+                    "-C", hook_directory,
+                    "-n", "isc-stork-#{kind}-hook-#{hook_name}",
+                    "-t", pkg_type,
+                    "-a", get_arch(),
+                    "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
+                    "--license", "MPL 2.0",
+                    "--url", "https://gitlab.isc.org/isc-projects/stork/",
+                    "--vendor", "Internet Systems Consortium, Inc.",
+                    "#{hook_filename}=/var/lib/stork-#{kind}/hooks/#{hook_filename}"
             end
         end
     end
