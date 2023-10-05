@@ -538,7 +538,12 @@ build_hooks:
 
 unittest_hooks:
   stage: hooks
-  when: manual
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: always
+  allow_failure: true
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
