@@ -109,7 +109,7 @@ namespace :release do
 
 
     namespace :tarball do
-        desc 'Upload tarball and release notes to given host and path
+        desc 'Upload tarball(s) and release notes to given host and path
             HOST - the SSH host - required
             TARGET - the target path for tarball file - required'
         task :upload => [SSH, SCP] do
@@ -124,7 +124,7 @@ namespace :release do
             path = "#{target}/#{STORK_VERSION}"
             sh SSH, "-4", host, "--", "mkdir", "-p", path
             sh SCP, "-4", "-p",
-                       "./stork-#{STORK_VERSION}.tar.gz",
+                       "./stork*-#{STORK_VERSION}.tar.gz",
                        "./Stork-#{STORK_VERSION}-ReleaseNotes.txt",
                        "#{host}:#{path}"
             sh SSH, "-4", host, "--", "chmod", "-R", "g+w", path
