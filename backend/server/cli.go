@@ -322,6 +322,10 @@ func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings
 	// We suppose it will be a rare case, so we just return an error.
 	groupNamespaces := make(map[string]any)
 	for _, group := range parser.Groups() {
+		if group.Namespace == "" {
+			// Non-hook group. Skip.
+			continue
+		}
 		_, exist := groupNamespaces[group.Namespace]
 		if exist {
 			return nil, errors.Errorf("There are two hooks that refer to the same namespace: %s", group.Namespace)
