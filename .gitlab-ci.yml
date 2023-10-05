@@ -538,15 +538,23 @@ build_hooks:
 
 unittest_hooks:
   stage: hooks
-  rules:
-    # Run the unit tests on master or on demand.
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: manual
-    - when: manual
+  when: manual
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
     - rake hook:unittest
+
+tarball_hooks:
+  stage: hooks
+  when: manual
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
+  script:
+    - rake hook:tarball
+  artifacts:
+    paths:
+      - stork-*-hook-*.tar.gz
+    expire_in: 1 week
 
 build_hooks_debs_amd64:
   extends: .base_build_debian

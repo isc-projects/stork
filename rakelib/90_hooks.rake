@@ -309,6 +309,18 @@ namespace :hook do
         # Update the hook submodules.
         sh GIT, "submodule", "update", "--remote", "--recursive"
     end
+
+    desc "Prepare release tarball with Stork hook sources"
+    task :tarball => [GIT] do
+        root_abs = File.expand_path "."
+
+        forEachHook do |dir_name, project_path|
+            sh GIT, "archive",
+                "--prefix", "#{dir_name}-#{STORK_VERSION}/",
+                "-o", File.join(root_abs, "#{dir_name}-#{STORK_VERSION}.tar.gz"),
+                "HEAD"
+        end
+    end
 end
 
 namespace :run do
