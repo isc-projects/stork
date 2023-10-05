@@ -1,3 +1,9 @@
+* 338 [func] slawek
+
+    Support for a new hook naming convention. Their filename may now contain
+    the application-specific prefix.
+    (Gitlab #1180)
+
 * 337 [bug] slawek
 
     The agent no longer includes the TLS credentials in the requests sent to
