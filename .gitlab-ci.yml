@@ -716,6 +716,11 @@ upload_to_repo:
     paths:
       - Stork-*-ReleaseNotes.txt
 
+upload_to_repo_hooks:
+  extends: upload_to_repo
+  needs:
+    - tarball_hooks
+
 ### demo deploy jobs ###
 
 deploy_demo:
