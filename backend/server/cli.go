@@ -251,12 +251,17 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 //   - Contains none lower cases, dots or spaces
 //   - Dashes are replaced with underscored
 func getHookNamespaces(hookName string) (flagNamespace, envNamespace string) {
+	// Trim the app-specific prefix for simplicity.
+	hookName, _ = strings.CutPrefix(hookName, "stork-server-")
+
+	// Replace all invalid characters with dashes.
 	hookName = strings.ReplaceAll(hookName, " ", "-")
 	hookName = strings.ReplaceAll(hookName, ".", "-")
 
 	flagNamespace = strings.ReplaceAll(hookName, "_", "-")
 	flagNamespace = strings.ToLower(flagNamespace)
 
+	// Prepend the common prefix for environment variables.
 	envNamespace = "STORK_SERVER_HOOK_" + strings.ReplaceAll(hookName, "-", "_")
 	envNamespace = strings.ToUpper(envNamespace)
 	return
@@ -306,6 +311,22 @@ func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings
 		flagNamespace, envNamespace := getHookNamespaces(hookName)
 		group.EnvNamespace = envNamespace
 		group.Namespace = flagNamespace
+	}
+
+	// Check if there are no two groups with the same namespace.
+	// It may happen if the one of the hooks has the expected common prefix,
+	// but another one doesn't. For example, if we have two hooks named:
+	//   - stork-server-ldap
+	//   - ldap
+	// Both of them will have the same namespace: ldap.
+	// We suppose it will be a rare case, so we just return an error.
+	groupNamespaces := make(map[string]any)
+	for _, group := range parser.Groups() {
+		_, exist := groupNamespaces[group.Namespace]
+		if exist {
+			return nil, errors.Errorf("There are two hooks that refer to the same namespace: %s", group.Namespace)
+		}
+		groupNamespaces[group.Namespace] = nil
 	}
 
 	// Do args parsing.

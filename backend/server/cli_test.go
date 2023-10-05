@@ -157,6 +157,7 @@ func TestHookNamespaces(t *testing.T) {
 		"FOO",
 		"fOo",
 		"FoO",
+		"stork-server-foo",
 	}
 	expectedFlagNamespaces := []string{
 		"foo",
@@ -169,6 +170,7 @@ func TestHookNamespaces(t *testing.T) {
 		"foo",
 		"foo",
 		"foo",
+		"foo",
 	}
 	expectedEnvironmentNamespaces := []string{
 		"STORK_SERVER_HOOK_FOO",
@@ -178,6 +180,7 @@ func TestHookNamespaces(t *testing.T) {
 		"STORK_SERVER_HOOK_FOO_!@#",
 		"STORK_SERVER_HOOK_FOO_BAR",
 		"STORK_SERVER_HOOK_FOO_BAR",
+		"STORK_SERVER_HOOK_FOO",
 		"STORK_SERVER_HOOK_FOO",
 		"STORK_SERVER_HOOK_FOO",
 		"STORK_SERVER_HOOK_FOO",
@@ -288,4 +291,33 @@ func TestParseHookSettingsFromCLI(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, settings.HooksSettings, "baz")
 	require.Equal(t, "fooBar", settings.HooksSettings["baz"].(*hookSettings).FooBar)
+}
+
+// Test that an error is returned if the two hooks are solved to the same
+// namespace.
+func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
+	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"program-name",
+		"--baz.foo-bar", "fooBar",
+	}
+
+	type hookSettings struct {
+		FooBar string `long:"foo-bar" env:"FOO_BAR"`
+	}
+
+	hookFlags := map[string]hooks.HookSettings{
+		"baz":              &hookSettings{},
+		"stork-server-baz": &hookSettings{},
+	}
+
+	parser := NewCLIParser()
+
+	// Act
+	settings, err := parser.parseSettings(hookFlags)
+
+	// Assert
+	require.ErrorContains(t, err, "There are two hooks that refer to the same namespace")
+	require.Nil(t, settings)
 }
