@@ -541,6 +541,8 @@ build_hooks_debs_amd64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
@@ -556,6 +558,8 @@ build_hooks_debs_arm64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
@@ -571,6 +575,8 @@ build_hooks_rpms_amd64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
@@ -586,6 +592,8 @@ build_hooks_rpms_arm64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
@@ -601,6 +609,8 @@ build_hooks_apks_amd64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
@@ -616,6 +626,8 @@ build_hooks_apks_arm64:
   stage: hooks
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  rules:
+    - when: on_success
   needs:
     - build_hooks
   script:
