@@ -11,15 +11,15 @@
   // Apply the below changes only if the hamburger menu is not used.
   &:not(.p-menubar-mobile-active)
     .p-menuitem
-      .p-menuitem-text
+      .p-menuitem-text,.p-submenu-icon
         // Use white text for better contrast on the blue background.
         color: white !important
       &:hover
-        .p-menuitem-text
+        .p-menuitem-text,.p-submenu-icon
           // On hover the background is white, so use black text.
           color: black !important
       &.p-menuitem-active
-        .p-menuitem-text
+        .p-menuitem-text,.p-submenu-icon
           // If the menu is open, the background is white, so use black text.
           color: black !important
 
