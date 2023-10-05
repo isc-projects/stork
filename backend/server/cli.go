@@ -328,7 +328,13 @@ func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings
 		}
 		_, exist := groupNamespaces[group.Namespace]
 		if exist {
-			return nil, errors.Errorf("There are two hooks that refer to the same namespace: %s", group.Namespace)
+			return nil, errors.Errorf(
+				"There are two hooks using the same configuration namespace "+
+					"in the CLI flags: '%s'. The hook libraries for the "+
+					"Stork server should use the following naming pattern, "+
+					"e.g. 'stork-server-%s.so' instead of just '%s.so'",
+				group.Namespace, group.Namespace, group.Namespace,
+			)
 		}
 		groupNamespaces[group.Namespace] = nil
 	}

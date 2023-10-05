@@ -318,6 +318,6 @@ func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
 	settings, err := parser.parseSettings(hookFlags)
 
 	// Assert
-	require.ErrorContains(t, err, "There are two hooks that refer to the same namespace")
+	require.ErrorContains(t, err, "two hooks using the same configuration namespace")
 	require.Nil(t, settings)
 }

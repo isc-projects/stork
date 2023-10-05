@@ -1,7 +1,7 @@
 * 338 [func] slawek
 
-    Support for a new hook naming convention. Their filename may now contain
-    the application-specific prefix.
+    Support for a new hook naming convention. The server-specific hooks should
+    use the "stork-server-" prefix (e.g., stork-server-ldap.so).
     (Gitlab #1180)
 
 * 337 [bug] slawek
