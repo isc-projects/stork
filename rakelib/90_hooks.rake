@@ -2,9 +2,12 @@
 # The file contains tasks to write and build the Stork hook libraries
 # (GO plugins)
 
-#############
-### Files ###
-#############
+#########################
+### Constants & Files ###
+#########################
+
+MAIN_MODULE = "isc.org/stork"
+MAIN_MODULE_DIRECTORY_ABS = File.expand_path "backend"
 
 default_hook_directory_rel = "hooks"
 DEFAULT_HOOK_DIRECTORY = File.expand_path default_hook_directory_rel
@@ -62,6 +65,20 @@ def forEachHook(&block)
     end
 end
 
+# Remaps the go.mod file in the current working directory to use the local
+# Stork core codebase.
+def remap_core_local()
+    require 'pathname'
+    main_directory_abs_obj = Pathname.new(MAIN_MODULE_DIRECTORY_ABS)
+    module_directory_abs_obj = Pathname.new(".").realdirpath
+    module_directory_rel_obj = main_directory_abs_obj.relative_path_from module_directory_abs_obj
+
+    target = module_directory_rel_obj.to_s
+
+    sh GO, "mod", "edit", "-replace", "#{MAIN_MODULE}=#{target}"
+    sh GO, "mod", "tidy"
+end
+
 #############
 ### Tasks ###
 #############
@@ -83,8 +100,8 @@ namespace :hook do
         destination = File.expand_path(File.join(hook_directory, module_directory_name))
 
         require 'pathname'
-        main_module = "isc.org/stork@v0.0.0"
-        main_module_directory_abs = Pathname.new('backend').realdirpath
+        main_module = "#{MAIN_MODULE}@v0.0.0"
+        main_module_directory_abs = Pathname.new(MAIN_MODULE_DIRECTORY_ABS)
         module_directory_abs = Pathname.new(destination)
         module_directory_rel = main_module_directory_abs.relative_path_from module_directory_abs
 
@@ -104,7 +121,7 @@ namespace :hook do
     desc "Build all hooks. Remap hooks to use the current codebase.
         DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
-    task :build => [GO, :remap_core] do
+    task :build => [GO] do
         require 'tmpdir'
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
@@ -118,11 +135,17 @@ namespace :hook do
         forEachHook do |dir_name, project_path|
             # Make a backup of the original mod files
             Dir.mktmpdir do |temp|
+                # Preserve the original mod files.
                 sh "cp", *mod_files, temp
 
+                # Remap the core dependency to the local directory.
+                remap_core_local()
+
+                # Compile the hook.
                 puts "Building #{dir_name}..."
                 sh "rake", "build"
 
+                # Collect the compiled hook.
                 sh "cp", *FileList[File.join(project_path, "build/*.so")], hook_directory
 
                 # Back the changes in Go mod files.
@@ -165,8 +188,6 @@ namespace :hook do
         TAG - use the given tag from the remote repository, if specified but empty use the current version as tag - optional
         If no COMMIT or TAG are specified then it remaps to use the local project."
     task :remap_core => [GO] do
-        main_module = "isc.org/stork"
-        main_module_directory_abs = File.expand_path "backend"
         remote_url = "gitlab.isc.org/isc-projects/stork/backend"
         core_commit, _ = Open3.capture2 "git", "rev-parse", "HEAD"
 
@@ -195,15 +216,11 @@ namespace :hook do
                 target = "#{remote_url}@#{tag}"
             else
                 puts "Remap to use the local directory"
-                require 'pathname'
-                main_directory_abs_obj = Pathname.new(main_module_directory_abs)
-                module_directory_abs_obj = Pathname.new(".").realdirpath
-                module_directory_rel_obj = main_directory_abs_obj.relative_path_from module_directory_abs_obj
-
-                target = module_directory_rel_obj.to_s
+                remap_core_local()
+                next
             end
 
-            sh GO, "mod", "edit", "-replace", "#{main_module}=#{target}"
+            sh GO, "mod", "edit", "-replace", "#{MAIN_MODULE}=#{target}"
             sh GO, "mod", "tidy"
         end
     end

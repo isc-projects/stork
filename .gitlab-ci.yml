@@ -515,7 +515,7 @@ build_hooks:
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
-    - rake build:hooks
+    - rake hook:build
   artifacts:
     paths:
       - hooks/*.so
