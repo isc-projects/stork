@@ -1,3 +1,9 @@
+* 341 [build] slawek
+
+    Added Rake and CI tasks to build, test, package, and upload the Stork
+    hooks.
+    (Gitlab #1178)
+
 * 340 [build] slawek
 
     Removed all file system paths from the Stork binaries to allow the use of
