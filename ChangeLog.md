@@ -1,3 +1,9 @@
+* 340 [build] slawek
+
+    Removed all file system paths from the Stork binaries to allow the use of
+    hooks compiled with another GOPATH than used in our CI.
+    (Gitlab #1182)
+
 * 339 [build] marcin
 
     Downgraded PrimeNG to avoid the bug with dynamic tab menu. See PrimeNG
