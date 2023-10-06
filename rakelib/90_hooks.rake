@@ -149,8 +149,15 @@ namespace :hook do
                 puts "Building #{dir_name}..."
                 sh "rake", "build"
 
-                # Collect the compiled hook.
-                sh "cp", *FileList[File.join(project_path, "build/*.so")], hook_directory
+                # Collect and rename the compiled hook.
+                compiled_binaries = FileList[File.join(project_path, "build/*.so")]
+                if compiled_binaries.length == 0
+                    fail "No compiled hook found in #{project_path}/build"
+                elsif compiled_binaries.length > 1
+                    fail "Multiple compiled hooks found in #{project_path}/build"
+                end
+
+                sh "cp", compiled_binaries[0], File.join(hook_directory, "#{dir_name}.so")
 
                 # Back the changes in Go mod files.
                 puts "Reverting remap operation..."
