@@ -561,7 +561,7 @@ tarball_hooks:
     - rake hook:tarball
   artifacts:
     paths:
-      - stork-*-hook-*.tar.gz
+      - stork-*-*.tar.gz
     expire_in: 1 week
 
 build_hooks_debs_amd64:
