@@ -144,7 +144,7 @@ AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
 file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-agent") do
         with_custom_go_os_and_arch do
-            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+            sh GO, "build", "-trimpath", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
         end
     end
     sh "touch", "-c", AGENT_BINARY_FILE
@@ -157,7 +157,7 @@ SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-server") do
         with_custom_go_os_and_arch do
-            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+            sh GO, "build", "-trimpath", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
         end
     end
     sh "touch", "-c", SERVER_BINARY_FILE
@@ -170,7 +170,7 @@ TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     Dir.chdir("backend/cmd/stork-tool") do
         with_custom_go_os_and_arch do
-            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+            sh GO, "build", "-trimpath", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
         end
     end
     sh "touch", "-c", TOOL_BINARY_FILE
