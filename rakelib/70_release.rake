@@ -124,7 +124,7 @@ namespace :release do
             path = "#{target}/#{STORK_VERSION}"
             sh SSH, "-4", host, "--", "mkdir", "-p", path
             sh SCP, "-4", "-p",
-                       "./stork*-#{STORK_VERSION}.tar.gz",
+                       *FileList["./stork*-#{STORK_VERSION}.tar.gz"],
                        "./Stork-#{STORK_VERSION}-ReleaseNotes.txt",
                        "#{host}:#{path}"
             sh SSH, "-4", host, "--", "chmod", "-R", "g+w", path
