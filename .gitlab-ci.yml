@@ -790,7 +790,6 @@ upload_packages_hooks:
   needs:
     - packages_hooks
   variables:
-    REPO: stork-hooks
     COMPONENTS: isc-stork-server-hook,isc-stork-agent-hook
 
 upload_test_packages:
@@ -801,4 +800,4 @@ upload_test_packages:
 upload_test_packages_hooks:
   extends: upload_packages_hooks
   variables:
-    REPO: stork-hooks-testing
+    REPO: stork-testing
