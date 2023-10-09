@@ -706,7 +706,6 @@ upload_to_repo:
   script:
     - eval $(ssh-agent -s)
     - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
-    - mkdir -p ~/.ssh
     - ssh-keyscan -4 repo.isc.org >> ~/.ssh/known_hosts
     - rake release:notes
     - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
