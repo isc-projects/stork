@@ -339,7 +339,7 @@ build_apks_arm64:
     paths:
       - isc-stork-*.apk
     expire_in: 1 hour
-  
+
 packages:
   stage: checks
   rules:
@@ -581,7 +581,7 @@ build_hooks_debs_amd64:
     paths:
       - isc-stork-*.deb
     expire_in: 1 hour
-    
+
 build_hooks_debs_arm64:
   extends: .base_build_debian_arm
   stage: hooks
@@ -706,7 +706,7 @@ upload_to_repo:
   script:
     - eval $(ssh-agent -s)
     - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
-    - mkdir ~/.ssh
+    - mkdir -p ~/.ssh
     - ssh-keyscan -4 repo.isc.org >> ~/.ssh/known_hosts
     - rake release:notes
     - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
