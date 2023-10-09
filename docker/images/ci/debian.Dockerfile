@@ -22,6 +22,7 @@ RUN apt-get update \
         ruby-dev=1:3.1* \
         postgresql-client=15+* \
         software-properties-common=0.99.* \
+        ssh=1:9.* \
         unzip=6.* \
         wget=1.21.* \
         chromium=117.* \
