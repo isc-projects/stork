@@ -145,7 +145,7 @@ namespace :release do
             elsif repo.nil?
                 fail "You need to provide the REPO variable"
             elsif components.nil?
-                fail "You need to provide the COMPONENT variable"
+                fail "You need to provide the COMPONENTS variable"
             end
 
             sh CLOUDSMITH, "check", "service"
