@@ -1,3 +1,5 @@
+Stork 1.13.0 released on 2023-10-11.
+
 * 341 [build] slawek
 
     Added Rake and CI tasks to build, test, package, and upload the Stork
