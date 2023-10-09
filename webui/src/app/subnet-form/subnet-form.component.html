@@ -1,6 +1,6 @@
 <ng-container *ngIf="!form.initError; else showInitError">
     <ng-container *ngIf="loaded; else showSpinner" [formGroup]="form.group">
-        <p-fieldset legend="Subnet">
+        <p-fieldset legend="Subnet" styleClass="mt-4">
             <span class="p-float-label mt-4 mb-2">
                 <input id="subnet" pInputText formControlName="subnet" class="w-full" />
                 <label for="subnet">Subnet</label>
