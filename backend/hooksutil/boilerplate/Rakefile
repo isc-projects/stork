@@ -6,8 +6,11 @@ task :build do
         flags.append "-gcflags", "all=-N -l"
     end
 
-    hook_name = File.basename(Dir.getwd) + ".so"
-    hook_name = hook_name.delete_prefix "stork-hook-"
+    # TODO: Specify the hook name.
+    # It should fallow convention: stork-<application>-<hook_name>
+    # E.g.: stork-agent-foo or stork-server-bar.
+    hook_name = "SPECIFY_ME"
+    hook_name = hook_name + ".so"
     
     build_dir = "build"
     sh "mkdir", "-p", build_dir
