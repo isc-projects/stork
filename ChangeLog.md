@@ -1,16 +1,10 @@
 Stork 1.13.0 released on 2023-10-11.
 
-* 341 [build] slawek
+* 340 [build] slawek
 
     Added Rake and CI tasks to build, test, package, and upload the Stork
     hooks.
     (Gitlab #1178)
-
-* 340 [build] slawek
-
-    Removed all file system paths from the Stork binaries to allow the use of
-    hooks compiled with another GOPATH than used in our CI.
-    (Gitlab #1182)
 
 * 339 [build] marcin
 
