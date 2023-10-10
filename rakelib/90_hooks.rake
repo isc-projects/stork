@@ -319,10 +319,13 @@ namespace :hook do
         root_abs = File.expand_path "."
 
         forEachHook do |dir_name, project_path|
-            sh GIT, "archive",
-                "--prefix", "#{dir_name}-#{STORK_VERSION}/",
-                "-o", File.join(root_abs, "#{dir_name}-#{STORK_VERSION}.tar.gz"),
-                "HEAD"
+            # The cwd in the forEachHook block is set to src/ subdirectory.
+            Dir.chdir("..") do
+                sh GIT, "archive",
+                    "--prefix", "#{dir_name}-#{STORK_VERSION}/",
+                    "-o", File.join(root_abs, "#{dir_name}-#{STORK_VERSION}.tar.gz"),
+                    "HEAD"
+            end
         end
     end
 end
