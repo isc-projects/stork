@@ -1,3 +1,9 @@
+* 341 [build] slawek
+
+    Fixed the cross-compilation problem for 32-bit ARM architectures caused by
+    invalid architecture labels.
+    (Gitlab #1169)
+
 Stork 1.13.0 released on 2023-10-11.
 
 * 340 [build] slawek
