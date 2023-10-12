@@ -20,8 +20,23 @@ STORK_VERSION = stork_version
 
 def get_arch()
     arch = ENV["STORK_GOARCH"] || ARCH
-    if !ENV["STORK_GOARM"].nil?
-        arch = "#{arch}-armv#{ENV["STORK_GOARM"]}"
+    arm_version_raw = ENV["STORK_GOARM"]
+    if !arm_version_raw.nil?
+        arm_version = arm_version_raw.to_i
+        # The above architecture suffixes were not tested on BSD systems.
+        # They may not be suitable for this operating system family.
+        case arm_version
+        when 0
+            fail "STORK_GOARM must be a number, got: #{arm_version_raw}"
+        when 5
+            arch = "armel"
+        when 6..7
+            arch = "armhf"
+        when 8
+            puts "STORK_GOARCH is ignored for 64-bit ARM (armv8)"
+        else
+            fail "Unsupported STORK_GOARM value: #{arm_version_raw}"
+        end
     end
     arch
 end
