@@ -3,7 +3,7 @@ from xmlrpc.client import ServerProxy
 
 def get_services(machines):
     data = {"items": [], "total": 0}
-    for machine in machines:
+    for machine in machines["items"]:
         address = machine["address"]
         server = ServerProxy(f"http://{address}:9001/RPC2")
         try:
@@ -17,8 +17,6 @@ def get_services(machines):
             data["items"].append(srv)
 
     data["total"] = len(data["items"])
-
-    # app.services = data
 
     return data
 

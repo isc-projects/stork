@@ -23,7 +23,7 @@ def get_subnets():
     response = session.get(url)
     data = response.json()
 
-    if not data:
+    if data is None or data["items"] is None:
         return {"items": [], "total": 0}
 
     for subnet in data["items"]:
@@ -43,7 +43,7 @@ def get_applications():
     response = session.get(url)
     data = response.json()
 
-    if not data:
+    if data is None or data["items"] is None:
         return {"items": [], "total": 0}
 
     for srv in data["items"]:
