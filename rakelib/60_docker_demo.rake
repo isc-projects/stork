@@ -2,7 +2,7 @@
 # Run the demo containers in Docker
 
 namespace :demo do
-    all_compose_files = FileList["docker/docker-compose*.yaml"]
+    ALL_COMPOSE_FILES = FileList["docker/docker-compose*.yaml"]
 
     # Produces the arguments for docker-compose.
     # Parameters:
@@ -43,7 +43,7 @@ namespace :demo do
         additional_services = []
         
         if server_mode == "host"
-            if !check_hosts_and_print_hint(all_compose_files)
+            if !check_hosts_and_print_hint(ALL_COMPOSE_FILES)
                 fail "Update the /etc/hosts file"
             end
             host_server_address = "http://host.docker.internal:8080"
@@ -51,7 +51,12 @@ namespace :demo do
                 host_server_address = "http://172.24.0.1:8080"
             end
             ENV["STORK_SERVER_URL"] = host_server_address
-            up_opts += ["--scale", "server=0", "--scale", "webui=0"]
+            if services.empty? || services.include?("server")
+                up_opts.append "--scale", "server=0"
+            end
+            if services.empty? || services.include?("webui")
+                up_opts.append "--scale", "webui=0"
+            end
         elsif server_mode == "with-ui"
             if !services.empty?
                 additional_services.append "webui"
@@ -60,9 +65,16 @@ namespace :demo do
             if !services.empty?
                 additional_services.append "server"
             end
-            up_opts += ["--scale", "webui=0"]
+            if services.empty? || services.include?("webui")
+                up_opts.append "--scale", "webui=0"
+            end
         elsif server_mode == "no-server"
-            up_opts += ["--scale", "server=0", "--scale", "webui=0"]
+            if services.empty? || services.include?("server")
+                up_opts.append "--scale", "server=0"
+            end
+            if services.empty? || services.include?("webui")
+                up_opts.append "--scale", "webui=0"
+            end
             # Prevents the Stork Agent from the registration
             ENV["STORK_SERVER_URL"] = ""
         elsif server_mode == "default" || server_mode == nil
@@ -197,7 +209,7 @@ namespace :demo do
 
     desc 'Checks the /etc/hosts file content'
     task :check_etchosts do
-        check_hosts_and_print_hint(all_compose_files)
+        check_hosts_and_print_hint(ALL_COMPOSE_FILES)
     end
 
     desc 'Print logs of a given service
