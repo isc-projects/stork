@@ -9,7 +9,7 @@ var app = new Vue({
     data: {
         menuIndex: 'manager',
         subnets: subnets,
-        servers: servers,
+        applications: applications,
         services: services
     },
     created: function () {
