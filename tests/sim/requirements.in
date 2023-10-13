@@ -1,8 +1,1 @@
-Flask<=2.0.3
-requests==2.27.1
-# Backward compatibility for Ubuntu 18.04
-itsdangerous==2.0.1
-markupsafe==2.0.1
-jinja2 <= 3.0.3
-click<=8.0.4
-werkzeug<=2.0.3
+-r ../../rakelib/init_deps/flask.in

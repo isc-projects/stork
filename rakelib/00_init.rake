@@ -747,6 +747,9 @@ SCP = require_manual_install_on("scp", any_system)
 CLOUDSMITH = require_manual_install_on("cloudsmith", any_system)
 ETAGS_CTAGS = require_manual_install_on("etags.ctags", any_system)
 CLANGPLUSPLUS = require_manual_install_on("clang++", openbsd_system)
+FLAMETHROWER = require_manual_install_on("flame", any_system)
+DIG = require_manual_install_on("dig", any_system)
+PERFDHCP = require_manual_install_on("perfdhcp", any_system)
 
 # Docker plugins
 DOCKER_COMPOSE = docker_plugin("docker-compose", "compose")
@@ -1091,6 +1094,15 @@ file BLACK => [PYLINT] do
     sh "touch", "-c", BLACK
     sh BLACK, "--version"
 end
+
+flask_requirements_file = File.expand_path("init_deps/flask.txt", __dir__)
+FLASK = File.join(python_tools_dir, "bin", "flask")
+file FLASK => [PIP] do
+    sh PIP, "install", "-r", flask_requirements_file
+    sh "touch", "-c", FLASK
+    sh FLASK, "--version"
+end
+add_hash_guard(FLASK, flask_requirements_file)
 
 #############
 ### Tasks ###

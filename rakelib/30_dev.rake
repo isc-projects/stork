@@ -15,24 +15,8 @@ CLEAN.append "webui/documentation.json"
 
 python_requirement_files = [
     "doc/src/requirements.in",
-    "rakelib/init_deps/pytest.in",
-    "rakelib/init_deps/sphinx.in",
-    "rakelib/init_deps/pylinters.in",
-    # The out-of-date simulator base image blocks the updating of the Python
-    # dependencies.
-    # TODO: Update simulator.Dockerfile and uncomment this file.
-    # "tests/sim/requirements.in",
-]
-
-#################
-### Simulator ###
-#################
-
-flask_requirements_file = "tests/sim/requirements.txt"
-flask = File.expand_path("tools/python/bin/flask")
-file flask => [PIP, flask_requirements_file] do
-    sh PIP, "install", "-r", flask_requirements_file
-end
+    "tests/sim/requirements.in",
+] + FileList["rakelib/init_deps/*.in"]
 
 #############
 ### Tasks ###
@@ -312,7 +296,7 @@ end
 
 namespace :run do
     desc 'Run simulator'
-    task :sim => [flask] do
+    task :sim => [FLASK, FLAMETHROWER, DIG, PERFDHCP] do
         ENV["STORK_SERVER_URL"] = "http://localhost:8080"
         ENV["FLASK_ENV"] = "development"
         ENV["FLASK_APP"] = "sim.py"
@@ -320,7 +304,7 @@ namespace :run do
         ENV["LANG"] = "C.UTF-8"
 
         Dir.chdir('tests/sim') do
-            sh flask, "run", "--host", "0.0.0.0", "--port", "5005"
+            sh FLASK, "run", "--host", "0.0.0.0", "--port", "5005"
         end
     end
 
@@ -448,7 +432,7 @@ namespace :lint do
 
     namespace :python do
         desc 'Runs pylint, python linter tool'
-        task :pylint => [PYLINT, PYTEST, flask, OPEN_API_GENERATOR_PYTHON_DIR] do
+        task :pylint => [PYLINT, PYTEST, FLASK, OPEN_API_GENERATOR_PYTHON_DIR] do
             python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
             python_files = python_files.split("\n").map{ |string| string.strip }
             puts "Running pylint:"
@@ -692,7 +676,7 @@ namespace :gen do
     desc 'Regenerate Python requirements file'
     task :python_requirements => [PIP_COMPILE] do
         python_requirement_files.each do |r|
-            sh PIP_COMPILE, "--resolver", "backtracking", r
+            sh PIP_COMPILE, "--strip-extras", r
         end
     end
 
