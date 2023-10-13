@@ -3,30 +3,20 @@ ARG KEA_REPO=public/isc/kea-2-4
 ARG KEA_VERSION=2.4.0-isc20230630120747
 
 FROM debian:12.1-slim AS base
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        # Install curl.
-        curl \
-        ca-certificates \
-        gnupg \
-        apt-transport-https \
-    # Cleanup.
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Stage to compile Flamethrower.
 # Flamethrower doesn't compile on Debian 12.1, so we use Debian 11 instead.
 FROM debian:bullseye-slim AS flamethrower-builder
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++ \
-        cmake \
-        make \
-        libldns-dev \
-        libnghttp2-dev \
-        libuv1-dev \
-        libgnutls28-dev \
-        pkgconf \
+        g++=4:10.2.* \
+        cmake=3.18.* \
+        make=4.* \
+        libldns-dev=1.7.* \
+        libnghttp2-dev=1.43.* \
+        libuv1-dev=1.40.* \
+        libgnutls28-dev=3.7.* \
+        pkgconf=1.7.* \
     # Cleanup.
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -55,11 +45,11 @@ FROM base AS simulator-builder
 WORKDIR /app
 # Install Python dependencies.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel \
-        python3-venv \
+        python3=3.11.* \
+        python3-pip=23.* \
+        python3-setuptools=66.* \
+        python3-wheel=0.38.* \
+        python3-venv=3.11.* \
     # Cleanup.
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
@@ -80,21 +70,28 @@ FROM base AS runner
 ARG KEA_REPO
 ARG KEA_VERSION
 RUN \
+    # Install curl.
+    apt-get update && apt-get install -y --no-install-recommends \
+        # Install curl.
+        curl=7.* \
+        ca-certificates=20230311 \
+        gnupg=2.2.* \
+        apt-transport-https=2.6.* \
     # Configure the ISC repository.
-    curl -1sLf "https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh" | bash \
+    && curl -1sLf "https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh" | bash \
     # Install runtime dependencies.
     && apt-get update && apt-get install -y --no-install-recommends \
         # Flamethrower dependencies.
-        libldns3 \
-        libuv1 \
-        nghttp2 \
+        libldns3=1.8.* \
+        libuv1=1.44.* \
+        nghttp2=1.52.* \
         # Dig dependencies.
-        dnsutils \
+        dnsutils=1:9.18.* \
         # Kea Perfdhcp dependencies.
         isc-kea-perfdhcp=${KEA_VERSION} \
         # Simulator dependencies.
-        python3 \
-        python3-venv \
+        python3=3.11.* \
+        python3-venv=3.11.* \
     # Cleanup.
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
