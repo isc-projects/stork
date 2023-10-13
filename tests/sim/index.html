@@ -7,10 +7,10 @@
   <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.6/lib/theme-chalk/index.css">
   <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
   <script src="https://unpkg.com/element-ui@2.15.6/lib/umd/locale/en.js"></script>
+  <script src="./index.js" defer></script>
 </head>
 <body>
     <div id="app">
-
         <el-menu :default-active="menuIndex" class="el-menu-demo" mode="horizontal" @select="menuSelect">
             <el-menu-item index="manager">Services Manager</el-menu-item>
             <el-menu-item index="dhcp">DHCP Traffic</el-menu-item>
@@ -108,92 +108,16 @@
             </el-table-column>
             <el-table-column label="Query" min-width="4em">
                 <template slot-scope="scope">
-                    <el-button type="success" v-on:click="queryServer(scope.$index)">Dig</el-button>
+                    <el-button type="success" v-on:click="query(scope.$index)">Dig</el-button>
                 </template>
             </el-table-column>
             <el-table-column label="Stream" min-width="4em">
                 <template slot-scope="scope">
-                    <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="perfServer(scope.$index, 'start')">Start</el-button>
-                    <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="perfServer(scope.$index, 'stop')">Stop</el-button>
+                    <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="perf(scope.$index, 'start')">Start</el-button>
+                    <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="perf(scope.$index, 'stop')">Stop</el-button>
                 </template>
             </el-table-column>
         </el-table>
-
     </div>
-
-    <script>
-        ELEMENT.locale(ELEMENT.lang.en)
-
-        var subnets = []
-        var servers = []
-        var services = []
-        var app = new Vue({
-            el: '#app',
-            data: {
-                menuIndex: 'manager',
-                subnets: subnets,
-                servers: servers,
-                services: services
-            },
-            created: function () {
-                axios.get('/subnets').then(function (response) {
-                    this.subnets.push(...response.data.items)
-                })
-                axios.get('/servers').then(function (response) {
-                    this.servers.push(...response.data.items)
-                })
-                axios.get('/services').then(function (response) {
-                    this.services.push(...response.data.items)
-                })
-            },
-            methods: {
-                menuSelect: function(key, keyPath) {
-                    this.menuIndex = key;
-                },
-                updateSubnet: function (idx, state) {
-                    var sn = this.subnets[idx]
-                    var data = {state: state,
-                                rate: sn.rate,
-                                clients: sn.clients}
-                    axios.put('/subnets/' + idx, data).then(function (response) {
-                        this.subnets.length = 0;
-                        this.subnets.push(...response.data.items);
-                    })
-                },
-                queryServer: function (idx) {
-                    var srv = this.servers[idx]
-                    var data = {attempts: srv.attempts,
-                                qname: srv.qname,
-                                qtype: srv.qtype,
-                                transport: srv.transport}
-                    axios.put('/query/' + idx, data).then(function (response) {
-                        this.servers.length = 0;
-                        this.servers.push(...response.data.items);
-                    })
-                },
-                perfServer: function (idx, state) {
-                    var srv = this.servers[idx]
-                    var data = {state: state,
-                                attempts: srv.attempts,
-                                qname: srv.qname,
-                                qtype: srv.qtype,
-                                transport: srv.transport}
-                    axios.put('/perf/' + idx, data).then(function (response) {
-                        this.servers.length = 0;
-                        this.servers.push(...response.data.items);
-                    })
-                },
-                updateService: function (idx, operation) {
-                    var sn = this.subnets[idx]
-                    var data = {operation: operation}
-                    axios.put('/services/' + idx, data).then(function (response) {
-                        this.services.length = 0;
-                        this.services.push(...response.data.items);
-                    })
-                }
-            }
-        })
-
-    </script>
 </body>
 </html>
