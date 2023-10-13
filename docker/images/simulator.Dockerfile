@@ -37,8 +37,8 @@ RUN \
     # Copy the binary to the /app directory.
     && cp flame /app/flame \
     # Cleanup.
-    && cd / \
     && rm -rf /src
+WORKDIR /app
 
 # Stage to build the simulator.
 FROM base AS simulator-builder
