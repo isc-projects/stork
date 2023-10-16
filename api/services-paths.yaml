@@ -309,7 +309,7 @@
         - $ref: '#/parameters/filterTextParam'
         - name: app
           in: query
-          description: Limit returned list of apps, possible values 'bind' or 'kea'.
+          description: Limit returned list of apps, possible values 'bind9' or 'kea'.
           type: string
       responses:
         200:
