@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY tests/sim/requirements.txt .
 RUN \
     # Activate the virtual environment.
-    . venv/bin/activate \
+    source venv/bin/activate \
     # Install the simulator dependencies.
     && pip3 install --no-cache-dir -r requirements.txt
 # Copy rest of the simulator source code.
@@ -98,11 +98,11 @@ RUN \
 # Copy the Flamethrower binary from the builder stage.
 COPY --from=flamethrower-builder /app/flame /usr/local/bin/flame
 # Copy the simulator source code and virtual environment from the builder stage.
-WORKDIR /sim
-COPY --from=simulator-builder /app /sim
+WORKDIR /app
+COPY --from=simulator-builder /app /app
 # Start the simulator.
 ENV FLASK_ENV=development
 ENV FLASK_APP=sim.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-CMD ["/sim/venv/bin/python3", "-m", "flask", "run", "--host", "0.0.0.0" ]
+CMD ["/app/venv/bin/python3", "-m", "flask", "run", "--host", "0.0.0.0" ]
