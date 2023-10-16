@@ -31,15 +31,15 @@ def _refresh_subnets():
     app.subnets = subnets
 
 
-def _refresh_applications():
-    '''Fetches list of applications from Stork server and extends them with
-    fields related to generating traffic. Stores the applications in the app
+def _refresh_bind9_applications():
+    '''Fetches list of BIND 9 applications from Stork server and extends them with
+    fields related to generating traffic. Stores the BIND 9 applications in the app
     object.'''
-    app.applications = {"items": [], "total": 0}
-    applications = server.get_applications()
+    app.bind9_applications = {"items": [], "total": 0}
+    bind9_applications = server.get_bind9_applications()
 
-    # Add the simulator-specific fields to the applications.
-    for application in applications["items"]:
+    # Add the simulator-specific fields to the BIND 9 applications.
+    for application in bind9_applications["items"]:
         if application["type"] == "bind9":
             application["clients"] = 1
             application["rate"] = 1
@@ -48,7 +48,7 @@ def _refresh_applications():
             application["transport"] = "udp"
             application["proc"] = None
             application["state"] = "stop"
-    app.applications = applications
+    app.bind9_applications = bind9_applications
 
 
 def _refresh_services():
@@ -104,7 +104,7 @@ def init():
 def main():
     """Runs the simulator."""
     _refresh_subnets()
-    _refresh_applications()
+    _refresh_bind9_applications()
 
 
 # Creates the Flask application and runs the simulator.
@@ -170,17 +170,17 @@ def put_subnet_params(index):
 
 
 @app.route("/applications")
-def get_applications():
-    """Servers list HTTP handler."""
-    _refresh_applications()
-    return serialize_applications(app.applications)
+def get_bind9_applications():
+    """BIND 9 application list HTTP handler."""
+    _refresh_bind9_applications()
+    return serialize_applications(app.bind9_applications)
 
 
 @app.route("/query/<int:index>", methods=["PUT"])
-def put_query_params(index):
+def put_dig_params(index):
     """Sends DNS query to a server with the given index."""
     data = json.loads(request.data)
-    application = app.applications["items"][index]
+    application = app.bind9_applications["items"][index]
 
     if "qname" in data:
         application["qname"] = data["qname"]
@@ -199,14 +199,14 @@ def put_query_params(index):
 
     traffic.run_dig(application)
 
-    return serialize_applications(app.applications)
+    return serialize_applications(app.bind9_applications)
 
 
 @app.route("/perf/<int:index>", methods=["PUT"])
-def put_perf_params(index):
+def put_flamethrower_params(index):
     """Starts generating DNS traffic to a server with the given index."""
     data = json.loads(request.data)
-    application = app.applications["items"][index]
+    application = app.bind9_applications["items"][index]
 
     if "qname" in data:
         application["qname"] = data["qname"]
@@ -236,11 +236,11 @@ def put_perf_params(index):
 
         # start dnsperf if requested
         if application["state"] == "stop" and data["state"] == "start":
-            application["proc"] = traffic.start_flamethrower(server)
+            application["proc"] = traffic.start_flamethrower(application)
 
         application["state"] = data["state"]
 
-    return serialize_applications(app.applications)
+    return serialize_applications(app.bind9_applications)
 
 
 @app.route("/services")
