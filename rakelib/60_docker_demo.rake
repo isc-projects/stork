@@ -195,6 +195,11 @@ namespace :demo do
         task :webui => [DOCKER_COMPOSE] do
             docker_up_services("webui", "webui-apache")
         end
+
+        desc 'Build and run Grafana and Prometheus containers'
+        task :grafana => [DOCKER_COMPOSE] do
+            docker_up_services("grafana")
+        end
     end
     
     desc 'Down all containers and remove all volumes'
