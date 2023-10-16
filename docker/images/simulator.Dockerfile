@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY tests/sim/requirements.txt .
 RUN \
     # Activate the virtual environment.
-    source venv/bin/activate \
+    . venv/bin/activate \
     # Install the simulator dependencies.
     && pip3 install --no-cache-dir -r requirements.txt
 # Copy rest of the simulator source code.
