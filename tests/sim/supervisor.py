@@ -26,9 +26,7 @@ class SupervisorRPC:
 
 def _create_supervisor_rpc_client(address: str) -> SupervisorRPC:
     server = ServerProxy(f"http://{address}:9001/RPC2")
-    if not hasattr(server, "supervisor"):
-        raise ConnectionError("SupervisorD RPC endpoint is not available")
-    return server
+    return server.supervisor
 
 
 def get_services(machines):
