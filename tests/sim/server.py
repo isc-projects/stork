@@ -39,11 +39,11 @@ def get_subnets():
     return data
 
 
-def get_applications():
-    '''Fetches the list of applications from Stork server.'''
+def get_bind9_applications():
+    '''Fetches the list of BIND 9 applications from Stork server.'''
     session = _login_session()
 
-    url = f"{STORK_SERVER_URL}/api/apps/"
+    url = f"{STORK_SERVER_URL}/api/apps?app=bind9"
     response = session.get(url)
     data = response.json()
 
