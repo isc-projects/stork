@@ -1,12 +1,11 @@
 """
-The DHCP and DNS traffic simulator for the demo environment.
-It isn't actively maintained.
+The main simulator project file.
+It defines the Flask application and the main function.
 """
 
 import json
 
 from flask import Flask, request
-from flask.logging import create_logger
 
 import server
 import supervisor
@@ -16,16 +15,47 @@ app: Flask = None
 
 
 def _refresh_subnets():
+    '''Fetches list of subnets from Stork server and extends them with fields
+    related to generating traffic. Stores the subnets in the app object.'''
+    app.subnets = {"items": [], "total": 0}
     subnets = server.get_subnets()
+
+    # Add the simulator-specific fields to the subnets.
+    for subnet in subnets["items"]:
+        subnet["rate"] = 1
+        subnet["clients"] = 1000
+        subnet["state"] = "stop"
+        subnet["proc"] = None
+        if "sharedNetwork" not in subnet:
+            subnet["sharedNetwork"] = ""
     app.subnets = subnets
 
 
 def _refresh_applications():
+    '''Fetches list of applications from Stork server and extends them with
+    fields related to generating traffic. Stores the applications in the app
+    object.'''
+    app.applications = {"items": [], "total": 0}
     applications = server.get_applications()
+
+    # Add the simulator-specific fields to the applications.
+    for application in applications["items"]:
+        if application["type"] == "bind9":
+            application["clients"] = 1
+            application["rate"] = 1
+            application["qname"] = "example.com"
+            application["qtype"] = "A"
+            application["transport"] = "udp"
+            application["proc"] = None
+            application["state"] = "stop"
     app.applications = applications
 
 
 def _refresh_services():
+    '''Fetches list of machines from Stork server and executes remote procedure
+    call to extract list of services managed by SupervisorD. Stores the list of
+    services in the app object.'''
+    app.services = {"items": [], "total": 0}
     machines = server.get_machines()
     services = supervisor.get_services(machines)
     app.services = services
@@ -68,8 +98,7 @@ def serialize_applications(applications):
 def init():
     """Creates Flask application and logger."""
     app_instance = Flask(__name__, static_url_path="", static_folder="")
-    log_instance = create_logger(app_instance)
-    return app_instance, log_instance
+    return app_instance
 
 
 def main():
@@ -78,7 +107,8 @@ def main():
     _refresh_applications()
 
 
-app, log = init()
+# Creates the Flask application and runs the simulator.
+app = init()
 main()
 
 

@@ -1,11 +1,21 @@
+'''
+This module provides a simple interface to the Stork server for use in the
+simulator.
+TODO: Replace it with OpenAPI client generated from the Stork server API.
+'''
 import os
 import requests
 
 
+# The Stork server URL. The default value is suitable for the demo environment.
+# The environment variable should be set to localhost if the server is running
+# on the same host as the simulator.
 STORK_SERVER_URL = os.environ.get("STORK_SERVER_URL", "http://server:8080")
 
 
 def _login_session():
+    '''Log-in to Stork server as admin with default credentials. Return a
+    session object.'''
     session = requests.Session()
     credentials = {
         "authenticationMethodId": "internal",
@@ -17,6 +27,7 @@ def _login_session():
 
 
 def get_subnets():
+    '''Fetches the list of subnets from Stork server.'''
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/subnets?start=0&limit=100"
@@ -25,18 +36,11 @@ def get_subnets():
 
     if data is None or data["items"] is None:
         return {"items": [], "total": 0}
-
-    for subnet in data["items"]:
-        subnet["rate"] = 1
-        subnet["clients"] = 1000
-        subnet["state"] = "stop"
-        subnet["proc"] = None
-        if "sharedNetwork" not in subnet:
-            subnet["sharedNetwork"] = ""
     return data
 
 
 def get_applications():
+    '''Fetches the list of applications from Stork server.'''
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/apps/"
@@ -45,22 +49,11 @@ def get_applications():
 
     if data is None or data["items"] is None:
         return {"items": [], "total": 0}
-
-    for srv in data["items"]:
-        if srv["type"] == "bind9":
-            srv["clients"] = 1
-            srv["rate"] = 1
-            srv["qname"] = "example.com"
-            srv["qtype"] = "A"
-            srv["transport"] = "udp"
-            srv["proc"] = None
-            srv["state"] = "stop"
     return data
 
 
 def get_machines():
-    # app.services = {"items": [], "total": 0}
-
+    '''Fetches the list of machines from Stork server.'''
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/machines?start=0&limit=100"

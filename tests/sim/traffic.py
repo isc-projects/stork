@@ -1,20 +1,35 @@
-import logging as log
+'''
+This file contains functions that generate DHCP and DNS traffic.
+'''
+import re
 import subprocess
 import sys
 import shlex
 
 
+# Pattern that matches the client classes in the subnets defined in the demo
+# Kea configurations.
+# Example of valid client class: client-class-01-01.
+# The first number is the subnet index to use: 00, 01 (IPv4 and IPv6),
+# 02 (IPv4 only).
+# The numbers are used as first bytes of the MAC or DUID address.
+_client_class_pattern = re.compile(r"client-class-(\d{2})-(\d{2})")
+
+
 def start_perfdhcp(subnet):
     """Generates traffic for a given network."""
-    log.info("SUBNET %s", subnet)
     rate, clients = subnet["rate"], subnet["clients"]
-    client_class = subnet["clientClass"]
-    mac_prefix = client_class[6:].replace("-", ":")
-    mac_prefix_bytes = mac_prefix.split(":")
+
+    client_class_bytes = ["00", "00"]
+    if "clientClass" in subnet:
+        client_class = subnet["clientClass"]
+        m = _client_class_pattern.match(client_class)
+        if m is not None:
+            client_class_bytes = m.groups()[1:]
 
     if "." in subnet["subnet"]:
-        # ip4
-        kea_addr = f"172.1{mac_prefix_bytes[0]}.0.100"
+        # IPv4
+        kea_addr = f"172.1{client_class_bytes[0]}.0.100"
         cmd = [
             "/usr/sbin/perfdhcp",
             "-4",
@@ -23,11 +38,11 @@ def start_perfdhcp(subnet):
             "-R",
             str(clients),
             "-b",
-            f"mac={mac_prefix}:00:00:00:00",
+            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00",
             kea_addr,
         ]
     else:
-        # ip6
+        # IPv6
         cmd = [
             "/usr/sbin/perfdhcp",
             "-6",
@@ -38,11 +53,8 @@ def start_perfdhcp(subnet):
             "-l",
             "eth1",
             "-b",
-            "duid=000000000000",
-            "-b",
-            f"mac={mac_prefix}:00:00:00:00",
+            f"duid={client_class_bytes[0]}{client_class_bytes[1]}00000000"
         ]
-    print("exec: %s" % cmd, file=sys.stderr)
     return subprocess.Popen(cmd)
 
 
@@ -76,5 +88,4 @@ def start_flamethrower(server):
     # on transport (-P) with qname (-r) and qtype (-T)
     cmd = f"flame -q 1 -c {clients} -d {rate} -P {transport} -r {qname} -T {qtype} {address}"
     args = shlex.split(cmd)
-    print(f"exec: {cmd}", file=sys.stderr)
     return subprocess.Popen(args)

@@ -1,16 +1,47 @@
+'''
+This module is used to perform remote procedure calls to the SupervisorD daemon
+running in the demo containers.
+'''
+import typing
 from xmlrpc.client import ServerProxy
 
 
+class SupervisorRPC:
+    '''Typing for SupervisorD RPC interface.'''
+    # pylint: disable=invalid-name
+    def getAllProcessInfo(self) -> typing.Sequence:
+        '''Returns all services managed by SupervisorD.'''
+        raise TypeError("It is only typing stub")
+
+    # pylint: disable=invalid-name
+    def startProcess(self, name: str) -> bool:
+        '''Starts a given SupervisorD service.'''
+        raise TypeError("It is only typing stub")
+
+    # pylint: disable=invalid-name
+    def stopProcess(self, name: str) -> bool:
+        '''Stops a given SupervisorD service.'''
+        raise TypeError("It is only typing stub")
+
+
+def _create_supervisor_rpc_client(address: str) -> SupervisorRPC:
+    server = ServerProxy(f"http://{address}:9001/RPC2")
+    if not hasattr(server, "supervisor"):
+        raise ConnectionError("SupervisorD RPC endpoint is not available")
+    return server
+
+
 def get_services(machines):
+    '''Fetches the list of services managed by SupervisorD daemons running on
+    the given machines.'''
     data = {"items": [], "total": 0}
     for machine in machines["items"]:
         address = machine["address"]
-        server = ServerProxy(f"http://{address}:9001/RPC2")
+        rpc_client = _create_supervisor_rpc_client(address)
+
         try:
-            services = (
-                server.supervisor.getAllProcessInfo()
-            )  # pylint: disable=no-member
-        except Exception:
+            services = rpc_client.getAllProcessInfo()
+        except Exception:  # pylint: disable=broad-except
             continue
         for srv in services:
             srv["machine"] = address
@@ -21,11 +52,15 @@ def get_services(machines):
     return data
 
 
-def stop_service(service):
-    server = ServerProxy(f'http://{service["machine"]}:9001/RPC2')
-    server.supervisor.stopProcess(service["name"])  # pylint: disable=no-member
-
-
 def start_service(service):
-    server = ServerProxy(f'http://{service["machine"]}:9001/RPC2')
-    server.supervisor.startProcess(service["name"])  # pylint: disable=no-member
+    '''Starts a given service managed by SupervisorD.'''
+    address = service["machine"]
+    rpc_client = _create_supervisor_rpc_client(address)
+    rpc_client.startProcess(service["name"])
+
+
+def stop_service(service):
+    '''Stops a given service managed by SupervisorD.'''
+    address = service["machine"]
+    rpc_client = _create_supervisor_rpc_client(address)
+    rpc_client.stopProcess(service["name"])
