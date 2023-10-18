@@ -1,6 +1,6 @@
-'''
+"""
 This file contains functions that generate DHCP and DNS traffic.
-'''
+"""
 import re
 import subprocess
 import sys
@@ -27,7 +27,9 @@ def start_perfdhcp(subnet):
     client_class = subnet["clientClass"]
     m = _client_class_pattern.match(client_class)
     if m is None:
-        raise ValueError(f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}")
+        raise ValueError(
+            f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}"
+        )
     client_class_bytes = m.groups()
 
     if "." in subnet["subnet"]:
@@ -58,7 +60,7 @@ def start_perfdhcp(subnet):
             "-b",
             "duid=000000000000",
             "-b",
-            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00"
+            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00",
         ]
     return subprocess.Popen(cmd)
 

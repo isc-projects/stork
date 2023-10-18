@@ -14,7 +14,7 @@ import server
 import supervisor
 import traffic
 
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=LOGLEVEL)
 
 
@@ -23,8 +23,8 @@ log: logging.Logger = None
 
 
 def _refresh_subnets():
-    '''Fetches list of subnets from Stork server and extends them with fields
-    related to generating traffic. Stores the subnets in the app object.'''
+    """Fetches list of subnets from Stork server and extends them with fields
+    related to generating traffic. Stores the subnets in the app object."""
     app.subnets = {"items": [], "total": 0}
     subnets = server.get_subnets()
 
@@ -40,9 +40,9 @@ def _refresh_subnets():
 
 
 def _refresh_bind9_applications():
-    '''Fetches list of BIND 9 applications from Stork server and extends them with
+    """Fetches list of BIND 9 applications from Stork server and extends them with
     fields related to generating traffic. Stores the BIND 9 applications in the app
-    object.'''
+    object."""
     app.bind9_applications = {"items": [], "total": 0}
     bind9_applications = server.get_bind9_applications()
 
@@ -60,9 +60,9 @@ def _refresh_bind9_applications():
 
 
 def _refresh_services():
-    '''Fetches list of machines from Stork server and executes remote procedure
+    """Fetches list of machines from Stork server and executes remote procedure
     call to extract list of services managed by SupervisorD. Stores the list of
-    services in the app object.'''
+    services in the app object."""
     app.services = {"items": [], "total": 0}
     machines = server.get_machines()
     services = supervisor.get_services(machines)
@@ -167,7 +167,9 @@ def put_subnet_params(index):
                         related_subnet["sharedNetwork"] == subnet["sharedNetwork"]
                         and related_subnet["state"] == "start"
                     ):
-                        log.info("Stopping perfdhcp for subnet %s", related_subnet["subnet"])
+                        log.info(
+                            "Stopping perfdhcp for subnet %s", related_subnet["subnet"]
+                        )
                         related_subnet["proc"].terminate()
                         related_subnet["proc"].wait()
                         related_subnet["proc"] = None

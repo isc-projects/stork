@@ -1,26 +1,27 @@
-'''
+"""
 This module is used to perform remote procedure calls to the SupervisorD daemon
 running in the demo containers.
-'''
+"""
 import typing
 from xmlrpc.client import ServerProxy
 
 
 class SupervisorRPC:
-    '''Typing for SupervisorD RPC interface.'''
+    """Typing for SupervisorD RPC interface."""
+
     # pylint: disable=invalid-name
     def getAllProcessInfo(self) -> typing.Sequence:
-        '''Returns all services managed by SupervisorD.'''
+        """Returns all services managed by SupervisorD."""
         raise TypeError("It is only typing stub")
 
     # pylint: disable=invalid-name
     def startProcess(self, name: str) -> bool:
-        '''Starts a given SupervisorD service.'''
+        """Starts a given SupervisorD service."""
         raise TypeError("It is only typing stub")
 
     # pylint: disable=invalid-name
     def stopProcess(self, name: str) -> bool:
-        '''Stops a given SupervisorD service.'''
+        """Stops a given SupervisorD service."""
         raise TypeError("It is only typing stub")
 
 
@@ -30,8 +31,8 @@ def _create_supervisor_rpc_client(address: str) -> SupervisorRPC:
 
 
 def get_services(machines):
-    '''Fetches the list of services managed by SupervisorD daemons running on
-    the given machines.'''
+    """Fetches the list of services managed by SupervisorD daemons running on
+    the given machines."""
     data = {"items": [], "total": 0}
     for machine in machines["items"]:
         address = machine["address"]
@@ -51,14 +52,14 @@ def get_services(machines):
 
 
 def start_service(service):
-    '''Starts a given service managed by SupervisorD.'''
+    """Starts a given service managed by SupervisorD."""
     address = service["machine"]
     rpc_client = _create_supervisor_rpc_client(address)
     rpc_client.startProcess(service["name"])
 
 
 def stop_service(service):
-    '''Stops a given service managed by SupervisorD.'''
+    """Stops a given service managed by SupervisorD."""
     address = service["machine"]
     rpc_client = _create_supervisor_rpc_client(address)
     rpc_client.stopProcess(service["name"])

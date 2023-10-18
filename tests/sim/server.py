@@ -1,8 +1,8 @@
-'''
+"""
 This module provides a simple interface to the Stork server for use in the
 simulator.
 TODO: Replace it with OpenAPI client generated from the Stork server API.
-'''
+"""
 import os
 import requests
 
@@ -14,8 +14,8 @@ STORK_SERVER_URL = os.environ.get("STORK_SERVER_URL", "http://server:8080")
 
 
 def _login_session():
-    '''Log-in to Stork server as admin with default credentials. Return a
-    session object.'''
+    """Log-in to Stork server as admin with default credentials. Return a
+    session object."""
     session = requests.Session()
     credentials = {
         "authenticationMethodId": "internal",
@@ -27,7 +27,7 @@ def _login_session():
 
 
 def get_subnets():
-    '''Fetches the list of subnets from Stork server.'''
+    """Fetches the list of subnets from Stork server."""
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/subnets?start=0&limit=100"
@@ -40,7 +40,7 @@ def get_subnets():
 
 
 def get_bind9_applications():
-    '''Fetches the list of BIND 9 applications from Stork server.'''
+    """Fetches the list of BIND 9 applications from Stork server."""
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/apps?app=bind9"
@@ -53,7 +53,7 @@ def get_bind9_applications():
 
 
 def get_machines():
-    '''Fetches the list of machines from Stork server.'''
+    """Fetches the list of machines from Stork server."""
     session = _login_session()
 
     url = f"{STORK_SERVER_URL}/api/machines?start=0&limit=100"
