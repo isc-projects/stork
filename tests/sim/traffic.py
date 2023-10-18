@@ -12,7 +12,7 @@ import shlex
 # Example of valid client class: client-class-01-01.
 # The first number is the subnet index to use: 00, 01 (IPv4 and IPv6),
 # 02 (IPv4 only).
-# The numbers are used as first bytes of the MAC or DUID address.
+# The numbers are used as first bytes of the MAC address.
 _client_class_pattern = re.compile(r"class-(\d{2})-(\d{2})")
 
 
