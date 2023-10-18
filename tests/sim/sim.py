@@ -3,15 +3,23 @@ The main simulator project file.
 It defines the Flask application and the main function.
 """
 
+import os
 import json
+import logging
 
 from flask import Flask, request
+from flask.logging import create_logger
 
 import server
 import supervisor
 import traffic
 
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+logging.basicConfig(level=LOGLEVEL)
+
+
 app: Flask = None
+log: logging.Logger = None
 
 
 def _refresh_subnets():
@@ -98,7 +106,8 @@ def serialize_applications(applications):
 def init():
     """Creates Flask application and logger."""
     app_instance = Flask(__name__, static_url_path="", static_folder="")
-    return app_instance
+    logger_instance = create_logger(app_instance)
+    return app_instance, logger_instance
 
 
 def main():
@@ -108,7 +117,7 @@ def main():
 
 
 # Creates the Flask application and runs the simulator.
-app = init()
+app, log = init()
 main()
 
 
@@ -144,6 +153,7 @@ def put_subnet_params(index):
             and data["state"] == "stop"
             and subnet["proc"] is not None
         ):
+            log.info("Stopping perfdhcp for subnet %s", subnet["subnet"])
             subnet["proc"].terminate()
             subnet["proc"].wait()
             subnet["proc"] = None
@@ -157,12 +167,14 @@ def put_subnet_params(index):
                         related_subnet["sharedNetwork"] == subnet["sharedNetwork"]
                         and related_subnet["state"] == "start"
                     ):
+                        log.info("Stopping perfdhcp for subnet %s", related_subnet["subnet"])
                         related_subnet["proc"].terminate()
                         related_subnet["proc"].wait()
                         related_subnet["proc"] = None
                         related_subnet["state"] = "stop"
 
             subnet["proc"] = traffic.start_perfdhcp(subnet)
+            log.info("Started perfdhcp for subnet %s", subnet["subnet"])
 
         subnet["state"] = data["state"]
 
@@ -198,6 +210,7 @@ def put_dig_params(index):
         application["rate"] = data["rate"]
 
     traffic.run_dig(application)
+    log.info("Sent DNS query to %s", application["machine"]["address"])
 
     return serialize_applications(app.bind9_applications)
 
@@ -230,6 +243,7 @@ def put_flamethrower_params(index):
             and data["state"] == "stop"
             and application["proc"] is not None
         ):
+            log.info("Stopping flamethrower for %s", application["machine"]["address"])
             application["proc"].terminate()
             application["proc"].wait()
             application["proc"] = None
@@ -237,6 +251,7 @@ def put_flamethrower_params(index):
         # start dnsperf if requested
         if application["state"] == "stop" and data["state"] == "start":
             application["proc"] = traffic.start_flamethrower(application)
+            log.info("Started flamethrower for %s", application["machine"]["address"])
 
         application["state"] = data["state"]
 
