@@ -89,12 +89,16 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.100
+        priority: 1000
       subnet-00:
         ipv4_address: 172.100.0.100
+        priority: 500
       subnet-01:
         ipv4_address: 172.101.0.100
+        priority: 400
       subnet-02:
         ipv4_address: 172.102.0.100
+        priority: 300
     expose:
       - "8888" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -144,10 +148,13 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.106
+        priority: 1000
       subnet6-00:
         ipv6_address: 3000:db8:1::100
+        priority: 500
       subnet6-01:
         ipv6_address: 3001:db8:1::100
+        priority: 400
     expose:
       - "8887" # stork server to agent
       - "9547" # kea_exporter for prometheus
@@ -354,16 +361,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.200
+        priority: 1000
       subnet-00:
         ipv4_address: 172.100.0.200
+        priority: 500
       subnet-01:
         ipv4_address: 172.101.0.200
+        priority: 400
       subnet-02:
         ipv4_address: 172.102.0.200
+        priority: 300
       subnet6-00:
         ipv6_address: 3000:db8:1::200
+        priority: 500
       subnet6-01:
         ipv6_address: 3001:db8:1::200
+        priority: 400
     ports:
       - "5000:5000"
     environment:
