@@ -10,29 +10,29 @@ charset-normalizer==2.0.12
     # via requests
 click==8.0.4
     # via
-    #   -r tests/sim/requirements.in
+    #   -r requirements.in
     #   flask
 flask==2.0.3
-    # via -r tests/sim/requirements.in
+    # via -r requirements.in
 idna==3.4
     # via requests
 itsdangerous==2.0.1
     # via
-    #   -r tests/sim/requirements.in
+    #   -r requirements.in
     #   flask
 jinja2==3.0.3
     # via
-    #   -r tests/sim/requirements.in
+    #   -r requirements.in
     #   flask
 markupsafe==2.0.1
     # via
-    #   -r tests/sim/requirements.in
+    #   -r requirements.in
     #   jinja2
 requests==2.27.1
-    # via -r tests/sim/requirements.in
-urllib3==1.26.15
+    # via -r requirements.in
+urllib3==1.26.18
     # via requests
 werkzeug==2.0.3
     # via
-    #   -r tests/sim/requirements.in
+    #   -r requirements.in
     #   flask
