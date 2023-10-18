@@ -13,19 +13,22 @@ import shlex
 # The first number is the subnet index to use: 00, 01 (IPv4 and IPv6),
 # 02 (IPv4 only).
 # The numbers are used as first bytes of the MAC or DUID address.
-_client_class_pattern = re.compile(r"client-class-(\d{2})-(\d{2})")
+_client_class_pattern = re.compile(r"class-(\d{2})-(\d{2})")
 
 
 def start_perfdhcp(subnet):
     """Generates traffic for a given network."""
     rate, clients = subnet["rate"], subnet["clients"]
 
-    client_class_bytes = ["00", "00"]
-    if "clientClass" in subnet:
-        client_class = subnet["clientClass"]
-        m = _client_class_pattern.match(client_class)
-        if m is not None:
-            client_class_bytes = m.groups()[1:]
+    client_class_bytes = None
+    if "clientClass" not in subnet:
+        raise ValueError(f"Missing client class for subnet: {subnet['subnet']}")
+
+    client_class = subnet["clientClass"]
+    m = _client_class_pattern.match(client_class)
+    if m is None:
+        raise ValueError(f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}")
+    client_class_bytes = m.groups()
 
     if "." in subnet["subnet"]:
         # IPv4
@@ -53,7 +56,9 @@ def start_perfdhcp(subnet):
             "-l",
             "eth1",
             "-b",
-            f"duid={client_class_bytes[0]}{client_class_bytes[1]}00000000"
+            "duid=000000000000",
+            "-b",
+            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00"
         ]
     return subprocess.Popen(cmd)
 
