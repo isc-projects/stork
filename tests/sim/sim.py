@@ -114,6 +114,7 @@ def main():
     """Runs the simulator."""
     _refresh_subnets()
     _refresh_bind9_applications()
+    _refresh_services()
 
 
 # Creates the Flask application and runs the simulator.
