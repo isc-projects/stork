@@ -2,7 +2,7 @@
 # Run the demo containers in Docker
 
 namespace :demo do
-    ALL_COMPOSE_FILES = FileList["docker/docker-compose*.yaml"]
+    ALL_DEMO_COMPOSE_FILES = FileList["docker/docker-compose*.yaml"]
 
     # Produces the arguments for docker-compose.
     # Parameters:
@@ -43,7 +43,7 @@ namespace :demo do
         additional_services = []
         
         if server_mode == "host"
-            if !check_hosts_and_print_hint(ALL_COMPOSE_FILES)
+            if !check_hosts_and_print_hint(ALL_DEMO_COMPOSE_FILES)
                 fail "Update the /etc/hosts file"
             end
             host_server_address = "http://host.docker.internal:8080"
@@ -214,7 +214,7 @@ namespace :demo do
 
     desc 'Checks the /etc/hosts file content'
     task :check_etchosts do
-        check_hosts_and_print_hint(ALL_COMPOSE_FILES)
+        check_hosts_and_print_hint(ALL_DEMO_COMPOSE_FILES)
     end
 
     desc 'Print logs of a given service
