@@ -111,10 +111,18 @@ Hook structure
 
 Stork hook is a Go plugin that contains fallowing symbols:
 
-- ``Load`` function that accepts no arguments (yet?) and returns the callout
-  carrier or error.
-- ``Version`` function that accepts no arguments and returns the target 
+- ``Load`` function that accepts a settings object as an argument and returns
+  the callout carrier or error. The settings object is created by the
+  ``CreateCLIFlags`` function and its members are set by the CLI handler of the
+  application. If the ``CreateCLIFlags`` is not defined, then the settings
+  object is ``nil``.
+- ``GetVersion`` function that accepts no arguments and returns the target 
   application name and version string.
+- ``CreateCLIFlags`` function that accepts no arguments and return a settings
+  object. The object must define the CLI flags in its members' tags, following
+  the [jessevdk/go-flags](https://github.com/jessevdk/go-flags) library
+  requirements.
+
 
 The callout object must implement the ``io.Closer`` interface and should
 implement one or more callout interfaces.
@@ -341,7 +349,7 @@ Steps to implement hook
 
     .. code-block:: go
 
-        func Version() (string, string) {
+        func GetVersion() (string, string) {
             return hooks.AgentName, hooks.CurrentVersion
         }
 
@@ -349,7 +357,7 @@ Steps to implement hook
 
     .. code-block:: go
 
-        func Load() (hooks.CalloutCarrier, error) {
+        func Load(any) (hooks.CalloutCarrier, error) {
             return &callouts{}, nil
         }
 
