@@ -95,6 +95,10 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 		// 	// CertFingerprint from Machine db record)
 		// 	return &advancedtls.VerificationResults{}, nil
 		// },
+		// https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet#Rule_-_Only_Support_Strong_Protocols
+		// Only Stork server is allowed to connect to Stork agent over GRPC
+		// and it always uses TLS 1.3.
+		MinVersion: tls.VersionTLS13,
 	}
 	creds, err := advancedtls.NewClientCreds(options)
 	if err != nil {
