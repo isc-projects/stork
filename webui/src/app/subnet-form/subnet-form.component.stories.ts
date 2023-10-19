@@ -1,6 +1,6 @@
 import { Story, Meta, moduleMetadata } from '@storybook/angular'
 import { SubnetFormComponent } from './subnet-form.component'
-import { toastDecorator } from '../utils.stories'
+import { toastDecorator } from '../utils-stories'
 import { FieldsetModule } from 'primeng/fieldset'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { HttpClientModule } from '@angular/common/http'
