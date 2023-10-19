@@ -128,6 +128,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		// Only Stork server is allowed to connect to Stork agent over GRPC
 		// and it always uses TLS 1.3.
 		MinVersion: tls.VersionTLS13,
+		MaxVersion: tls.VersionTLS13,
 	}
 	creds, err := advancedtls.NewServerCreds(options)
 	if err != nil {
