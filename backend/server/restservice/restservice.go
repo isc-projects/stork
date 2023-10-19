@@ -218,9 +218,6 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 
 	// Inspired by https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go
 	httpServer.TLSConfig = &tls.Config{
-		// Causes servers to use Go's default cipher suite preferences,
-		// which are tuned to avoid attacks. Does nothing on clients.
-		PreferServerCipherSuites: true,
 		// Only use curves which have assembly implementations
 		// https://github.com/golang/go/tree/master/src/crypto/elliptic
 		CurvePreferences: []tls.CurveID{tls.CurveP256},
