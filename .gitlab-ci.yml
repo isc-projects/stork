@@ -421,6 +421,36 @@ install_debs_amd64:
   needs:
     - build_debs_amd64
 
+install_debs_amd64_ubuntu_lts:
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - amd64
+  stage: build
+  image: ubuntu:20.04
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  variables:
+    ARCH: amd64
+  script:
+    - "dpkg -i isc-stork-*${ARCH}.deb"
+    - "stork-agent --version"
+    - "stork-server --version"
+    - "stork-tool --version"
+    - "dpkg -i isc-stork-*${ARCH}.deb"
+    - "stork-agent --version"
+    - "stork-server --version"
+    - "stork-tool --version"
+    - "man stork-agent > /dev/null"
+    - "man stork-server > /dev/null"
+    - "man stork-tool > /dev/null"
+    - "dpkg -r isc-stork-agent"
+    - "dpkg -r isc-stork-server"
+  needs:
+    - build_debs_amd64
+
 install_debs_arm64:
   extends: install_debs_amd64
   tags:
