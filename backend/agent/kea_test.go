@@ -192,6 +192,115 @@ func TestKeaAllowedLogs(t *testing.T) {
 	require.Len(t, paths, 3)
 }
 
+// Test the function which extracts the list of log files from the Kea
+// application by sending the request to the Kea Control Agent and the
+// daemons behind it. This test variant uses output-options alias for
+// logger configuration.
+func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
+
+	// The first config-get command should go to the Kea Control Agent.
+	// The logs should be extracted from there and the subsequent config-get
+	// commands should be sent to the daemons with which the CA is configured
+	// to communicate.
+	defer gock.Off()
+	caResponseJSON := `[{
+        "result": 0,
+        "arguments": {
+            "Control-agent": {
+                "control-sockets": {
+                    "dhcp4": {
+                        "socket-name": "/tmp/dhcp4.sock"
+                    },
+                    "dhcp6": {
+                        "socket-name": "/tmp/dhcp6.sock"
+                    }
+                },
+                "loggers": [
+                    {
+                        "output-options": [
+                            {
+                                "output": "/tmp/kea-ctrl-agent.log"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }]`
+	caResponse := make([]map[string]interface{}, 1)
+	err := json.Unmarshal([]byte(caResponseJSON), &caResponse)
+	require.NoError(t, err)
+	gock.New("https://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]string{"command": "config-get"}).
+		Post("/").
+		Reply(200).
+		JSON(caResponse)
+
+	dhcpResponsesJSON := `[
+        {
+            "result": 0,
+            "arguments": {
+                "Dhcp4": {
+                    "loggers": [
+                        {
+                            "output-options": [
+                                {
+                                    "output": "/tmp/kea-dhcp4.log"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "result": 0,
+            "arguments": {
+                "Dhcp6": {
+                    "loggers": [
+                        {
+                            "output-options": [
+                                {
+                                    "output": "/tmp/kea-dhcp6.log"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    ]`
+	dhcpResponses := make([]map[string]interface{}, 2)
+	err = json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
+	require.NoError(t, err)
+
+	// The config-get command sent to the daemons behind CA should return
+	// configurations of the DHCPv4 and DHCPv6 daemons.
+	gock.New("https://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
+		Post("/").
+		Reply(200).
+		JSON(dhcpResponses)
+
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, true),
+		},
+		HTTPClient: httpClient,
+	}
+	paths, err := ka.DetectAllowedLogs()
+	require.NoError(t, err)
+
+	// We should have three log files recorded from the returned configurations.
+	// One from CA, one from DHCPv4 and one from DHCPv6.
+	require.Len(t, paths, 3)
+}
+
 // This test verifies that an error is returned when the number of responses
 // from the Kea daemons is lower than the number of services specified in the
 // command.

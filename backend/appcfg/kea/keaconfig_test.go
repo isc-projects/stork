@@ -336,14 +336,14 @@ func TestGetLoggers(t *testing.T) {
 	require.Len(t, loggers, 2)
 
 	require.Equal(t, "kea-dhcp4", loggers[0].Name)
-	require.Len(t, loggers[0].OutputOptions, 1)
-	require.Equal(t, "stdout", loggers[0].OutputOptions[0].Output)
+	require.Len(t, loggers[0].GetAllOutputOptions(), 1)
+	require.Equal(t, "stdout", loggers[0].GetAllOutputOptions()[0].Output)
 	require.Equal(t, "WARN", loggers[0].Severity)
 	require.Zero(t, loggers[0].DebugLevel)
 
 	require.Equal(t, "kea-dhcp4.bad-packets", loggers[1].Name)
-	require.Len(t, loggers[1].OutputOptions, 1)
-	require.Equal(t, "/tmp/badpackets.log", loggers[1].OutputOptions[0].Output)
+	require.Len(t, loggers[1].GetAllOutputOptions(), 1)
+	require.Equal(t, "/tmp/badpackets.log", loggers[1].GetAllOutputOptions()[0].Output)
 	require.Equal(t, "DEBUG", loggers[1].Severity)
 	require.Equal(t, 99, loggers[1].DebugLevel)
 }

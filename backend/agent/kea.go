@@ -87,7 +87,7 @@ func collectKeaAllowedLogs(response *keactrl.Response) []string {
 	// Go over returned loggers and collect those found in the returned configuration.
 	var paths []string
 	for _, l := range loggers {
-		for _, o := range l.OutputOptions {
+		for _, o := range l.GetAllOutputOptions() {
 			if o.Output != "stdout" && o.Output != "stderr" && !strings.HasPrefix(o.Output, "syslog") {
 				paths = append(paths, o.Output)
 			}

@@ -340,7 +340,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 // can comprise multiple output options. Therefore, this function may return multiple
 // targets, each corresponding to a single output option.
 func NewLogTargetsFromKea(logger keaconfig.Logger) (targets []*LogTarget) {
-	for _, opt := range logger.OutputOptions {
+	for _, opt := range logger.GetAllOutputOptions() {
 		target := &LogTarget{
 			Name:     logger.Name,
 			Severity: strings.ToLower(logger.Severity),
