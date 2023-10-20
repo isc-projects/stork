@@ -49,9 +49,9 @@ describe('SubnetSetFormService', () => {
                 t1Percent: 0.45,
                 t2Percent: 0.65,
                 calculateTeeTimes: true,
-                validLifetime: 1000,
-                minValidLifetime: 1000,
-                maxValidLifetime: 1000,
+                validLifetime: 1001,
+                minValidLifetime: 999,
+                maxValidLifetime: 1002,
                 allocator: 'flq',
                 authoritative: true,
                 bootFileName: 'file1',
@@ -83,8 +83,8 @@ describe('SubnetSetFormService', () => {
                 hostnameCharSet: '[^A-Za-z.-]',
                 hostnameCharReplacement: 'y',
                 preferredLifetime: 2000,
-                minPreferredLifetime: 2000,
-                maxPreferredLifetime: 2000,
+                minPreferredLifetime: 1999,
+                maxPreferredLifetime: 2001,
                 reservationsGlobal: false,
                 reservationsInSubnet: false,
                 reservationsOutOfPool: false,
@@ -93,9 +93,9 @@ describe('SubnetSetFormService', () => {
                 t1Percent: 0.55,
                 t2Percent: 0.75,
                 calculateTeeTimes: false,
-                validLifetime: 2000,
-                minValidLifetime: 2000,
-                maxValidLifetime: 2000,
+                validLifetime: 2001,
+                minValidLifetime: 2001,
+                maxValidLifetime: 2001,
                 allocator: 'random',
                 authoritative: false,
                 bootFileName: 'file2',
@@ -448,8 +448,8 @@ describe('SubnetSetFormService', () => {
         expect(fg.data.values).toBeFalsy()
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
-        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(1000)
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2000)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(1001)
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2001)
 
         fg = form.get('minValidLifetime') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
@@ -460,8 +460,8 @@ describe('SubnetSetFormService', () => {
         expect(fg.data.values).toBeFalsy()
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
-        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(1000)
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2000)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(999)
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2001)
 
         fg = form.get('maxValidLifetime') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
@@ -472,8 +472,8 @@ describe('SubnetSetFormService', () => {
         expect(fg.data.values).toBeFalsy()
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
-        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(1000)
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2000)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(1002)
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(2001)
 
         fg = form.get('allocator') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()

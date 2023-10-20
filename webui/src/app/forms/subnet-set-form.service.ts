@@ -300,7 +300,7 @@ export class SubnetSetFormService {
                 {
                     type: 'number',
                 },
-                parameters.map((params) => new FormControl<number>(params.preferredLifetime))
+                parameters.map((params) => new FormControl<number>(params.validLifetime))
             ),
             minValidLifetime: new SharedParameterFormGroup<number>(
                 {
