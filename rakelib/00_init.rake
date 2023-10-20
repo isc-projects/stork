@@ -453,11 +453,11 @@ def docker_plugin(standalone_exe, command_name)
 end
 
 # The prerequisites of the given task can be suppressed by setting the
-# SUPRESS_PREREQUISITES environment variable to "true". It should be helpful
+# SUPPRESS_PREREQUISITES environment variable to "true". It should be helpful
 # to run tasks that direct prerequisites exist (for example, they were built
 # in another environment), but the nested ones do not.
 def allow_suppress_prerequisites(task_name)
-    if ENV["SUPRESS_PREREQUISITES"] == "true"
+    if ENV["SUPPRESS_PREREQUISITES"] == "true"
         puts "Suppressing prerequisites for #{task_name}"
         Rake::Task[task_name].clear_prerequisites()
     end
