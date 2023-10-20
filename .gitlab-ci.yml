@@ -304,7 +304,7 @@ build_debs_amd64_legacy:
     - runner-manager
     - amd64
   image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
-  dependencies:
+  needs:
     - build_debs_amd64
   script:
     - rake rebuild:agent_pkg
