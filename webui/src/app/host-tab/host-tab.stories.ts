@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { HttpClientModule } from '@angular/common/http'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -22,11 +22,15 @@ import { HostTabComponent } from '../host-tab/host-tab.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { importProvidersFrom } from '@angular/core'
 
 export default {
     title: 'App/HostTab',
     component: HostTabComponent,
     decorators: [
+        applicationConfig({
+            providers: [importProvidersFrom(HttpClientModule)],
+        }),
         moduleMetadata({
             imports: [
                 ChipModule,

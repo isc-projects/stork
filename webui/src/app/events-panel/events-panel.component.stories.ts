@@ -1,6 +1,6 @@
 import { HttpClientModule } from '@angular/common/http'
 import { RouterModule } from '@angular/router'
-import { Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { PaginatorModule } from 'primeng/paginator'
 import { Events, EventsService, ServicesService, UsersService } from '../backend'
@@ -12,13 +12,22 @@ import { action } from '@storybook/addon-actions'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ButtonModule } from 'primeng/button'
+import { importProvidersFrom } from '@angular/core'
 
 export default {
     title: 'App/EventsPanel',
     component: EventsPanelComponent,
     decorators: [
+        applicationConfig({
+            providers: [
+                EventsService,
+                UsersService,
+                ServicesService,
+                MessageService,
+                importProvidersFrom(HttpClientModule),
+            ],
+        }),
         moduleMetadata({
-            providers: [EventsService, UsersService, ServicesService, MessageService],
             imports: [HttpClientModule, PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule],
             declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
         }),

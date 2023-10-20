@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
@@ -14,6 +14,9 @@ export default {
     title: 'App/DhcpOptionSetView',
     component: DhcpOptionSetViewComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [
                 CheckboxModule,
@@ -26,7 +29,6 @@ export default {
                 TreeModule,
             ],
             declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
-            providers: [],
         }),
     ],
 } as Meta

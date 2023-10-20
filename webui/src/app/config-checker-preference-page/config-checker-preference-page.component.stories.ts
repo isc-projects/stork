@@ -1,6 +1,6 @@
 import { HttpClientModule } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -16,6 +16,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { RouterTestingModule } from '@angular/router/testing'
 import { ButtonModule } from 'primeng/button'
+import { importProvidersFrom } from '@angular/core'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -48,6 +49,9 @@ export default {
     title: 'App/ConfigCheckerPreferencePage',
     component: ConfigCheckerPreferencePageComponent,
     decorators: [
+        applicationConfig({
+            providers: [MessageService, ServicesService, importProvidersFrom(HttpClientModule)],
+        }),
         moduleMetadata({
             imports: [
                 TableModule,
@@ -67,7 +71,6 @@ export default {
                 ConfigCheckerPreferenceUpdaterComponent,
                 BreadcrumbsComponent,
             ],
-            providers: [MessageService, ServicesService],
         }),
         toastDecorator,
     ],

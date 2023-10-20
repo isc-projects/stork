@@ -1,5 +1,5 @@
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
@@ -21,6 +21,7 @@ import { toastDecorator } from '../utils-stories'
 import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
+import { importProvidersFrom } from '@angular/core'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -53,6 +54,9 @@ export default {
     title: 'App/ConfigReviewPanel',
     component: ConfigReviewPanelComponent,
     decorators: [
+        applicationConfig({
+            providers: [MessageService, ServicesService, importProvidersFrom(HttpClientModule)],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -76,7 +80,6 @@ export default {
                 LocaltimePipe,
                 HelpTipComponent,
             ],
-            providers: [ServicesService, MessageService],
         }),
         toastDecorator,
     ],

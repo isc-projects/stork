@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
@@ -11,6 +11,9 @@ export default {
     title: 'App/CascadedParametersBoard',
     component: CascadedParametersBoardComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
             declarations: [CascadedParametersBoardComponent, PlaceholderPipe],

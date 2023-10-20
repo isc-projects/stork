@@ -1,4 +1,4 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular'
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
@@ -11,11 +11,15 @@ import { ToastModule } from 'primeng/toast'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
+import { importProvidersFrom } from '@angular/core'
 
 export default {
     title: 'App/LoginScreen',
     component: LoginScreenComponent,
     decorators: [
+        applicationConfig({
+            providers: [GeneralService, UsersService, MessageService, importProvidersFrom(HttpClientModule)],
+        }),
         moduleMetadata({
             imports: [
                 ReactiveFormsModule,
@@ -28,7 +32,6 @@ export default {
                 ToastModule,
             ],
             declarations: [LoginScreenComponent],
-            providers: [GeneralService, UsersService, MessageService],
         }),
         toastDecorator,
     ],

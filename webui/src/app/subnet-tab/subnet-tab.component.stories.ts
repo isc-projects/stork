@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { ChartModule } from 'primeng/chart'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -31,6 +31,9 @@ export default {
     title: 'App/SubnetTab',
     component: SubnetTabComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -61,7 +64,6 @@ export default {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],
-            providers: [],
         }),
     ],
 } as Meta
@@ -87,7 +89,11 @@ Subnet4.args = {
             {
                 id: 1,
                 appName: 'foo@192.0.2.1',
-                pools: ['192.0.2.1-192.0.2.100'],
+                pools: [
+                    {
+                        pool: '192.0.2.1-192.0.2.100',
+                    },
+                ],
                 keaConfigSubnetParameters: {
                     subnetLevelParameters: {
                         cacheThreshold: 0.25,
@@ -274,7 +280,11 @@ Subnet4.args = {
             {
                 id: 1,
                 appName: 'foo@192.0.2.2',
-                pools: ['192.0.2.1-192.0.2.100'],
+                pools: [
+                    {
+                        pool: '192.0.2.1-192.0.2.100',
+                    },
+                ],
                 keaConfigSubnetParameters: {
                     subnetLevelParameters: {
                         cacheThreshold: 0.25,
@@ -480,7 +490,11 @@ Subnet4NoPoolsInOneServer.args = {
             {
                 id: 2,
                 appName: 'bar@192.0.2.2',
-                pools: ['192.0.2.10-192.0.2.20'],
+                pools: [
+                    {
+                        pool: '192.0.2.10-192.0.2.20',
+                    },
+                ],
             },
         ],
     },
@@ -501,7 +515,11 @@ Subnet6Address.args = {
         localSubnets: [
             {
                 appName: 'foo@2001:db8:1::1',
-                pools: ['2001:db8:1::2-2001:db8:1::786'],
+                pools: [
+                    {
+                        pool: '2001:db8:1::2-2001:db8:1::786',
+                    },
+                ],
             },
         ],
     },
@@ -552,7 +570,11 @@ Subnet6AddressPrefix.args = {
             {
                 id: 1,
                 appName: 'foo@2001:db8:1::1',
-                pools: ['2001:db8:1::2-2001:db8:1::768'],
+                pools: [
+                    {
+                        pool: '2001:db8:1::2-2001:db8:1::768',
+                    },
+                ],
                 prefixDelegationPools: [
                     {
                         prefix: '3000::',
@@ -583,7 +605,11 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
             {
                 id: 1,
                 appName: 'foo@2001:db8:1::1',
-                pools: ['2001:db8:1::2-2001:db8:1::768'],
+                pools: [
+                    {
+                        pool: '2001:db8:1::2-2001:db8:1::768',
+                    },
+                ],
                 prefixDelegationPools: [
                     {
                         prefix: '3000::',
@@ -601,7 +627,11 @@ Subnet6DifferentPoolsOnDifferentServers.args = {
             {
                 id: 2,
                 appName: 'bar@2001:db8:2::5',
-                pools: ['2001:db8:1::2-2001:db8:1::768'],
+                pools: [
+                    {
+                        pool: '2001:db8:1::2-2001:db8:1::768',
+                    },
+                ],
                 prefixDelegationPools: [
                     {
                         prefix: '3000::',

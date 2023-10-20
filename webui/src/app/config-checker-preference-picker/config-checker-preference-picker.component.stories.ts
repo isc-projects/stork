@@ -1,6 +1,6 @@
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { ConfigChecker } from '../backend'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
@@ -13,6 +13,9 @@ export default {
     title: 'App/ConfigCheckerPreferencePicker',
     component: ConfigCheckerPreferencePickerComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [TableModule, ChipModule, OverlayPanelModule, BrowserAnimationsModule, ButtonModule],
             declarations: [ConfigCheckerPreferencePickerComponent, HelpTipComponent],

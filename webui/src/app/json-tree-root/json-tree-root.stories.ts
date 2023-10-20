@@ -1,21 +1,20 @@
 import { JsonTreeRootComponent } from './json-tree-root.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { Router, RouterModule } from '@angular/router'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { UsersService } from '../backend'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
+import { importProvidersFrom } from '@angular/core'
 
 export default {
     title: 'App/JSON-Tree-Root',
     component: JsonTreeRootComponent,
     subcomponents: [JsonTreeComponent],
     decorators: [
-        moduleMetadata({
-            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
-            declarations: [JsonTreeRootComponent, JsonTreeComponent],
+        applicationConfig({
             providers: [
                 MessageService,
                 UsersService,
@@ -25,7 +24,12 @@ export default {
                         navigate: () => {},
                     },
                 },
+                importProvidersFrom(HttpClientTestingModule),
             ],
+        }),
+        moduleMetadata({
+            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
+            declarations: [JsonTreeRootComponent, JsonTreeComponent],
         }),
     ],
     argTypes: {

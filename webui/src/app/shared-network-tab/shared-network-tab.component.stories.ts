@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
 import { ChartModule } from 'primeng/chart'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -32,6 +32,9 @@ export default {
     title: 'App/SharedNetworkTab',
     component: SharedNetworkTabComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -63,7 +66,6 @@ export default {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],
-            providers: [],
         }),
     ],
 } as Meta

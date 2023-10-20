@@ -1,7 +1,7 @@
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { CheckboxModule } from 'primeng/checkbox'
@@ -14,6 +14,9 @@ export default {
     title: 'App/DhcpClientClassSetForm',
     component: DhcpClientClassSetFormComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,

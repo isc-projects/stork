@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { ChartModule } from 'primeng/chart'
 import { UtilizationStatsChartComponent } from './utilization-stats-chart.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
@@ -10,10 +10,12 @@ export default {
     title: 'App/UtilizationStatsChart',
     component: UtilizationStatsChartComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [ChartModule, TooltipModule],
             declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe],
-            providers: [],
         }),
     ],
 } as Meta

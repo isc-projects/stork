@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story } from '@storybook/angular'
+import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
@@ -27,7 +27,17 @@ interface SubnetForm {
 export default {
     title: 'App/SharedParametersForm',
     component: SharedParametersFormComponent,
+    argTypes: {
+        formGroup: {
+            table: {
+                disable: true,
+            },
+        },
+    },
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -44,16 +54,8 @@ export default {
                 ReactiveFormsModule,
             ],
             declarations: [SharedParametersFormComponent, DhcpClientClassSetFormComponent],
-            providers: [],
         }),
     ],
-    argTypes: {
-        formGroup: {
-            table: {
-                disable: true,
-            },
-        },
-    },
 } as Meta
 
 const Template: Story<SharedParametersFormComponent<SubnetForm>> = (

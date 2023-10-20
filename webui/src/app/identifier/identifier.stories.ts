@@ -1,6 +1,6 @@
 import { IdentifierComponent } from './identifier.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
@@ -9,6 +9,9 @@ export default {
     title: 'App/Identifier',
     component: IdentifierComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [FormsModule, ToggleButtonModule, NoopAnimationsModule],
         }),

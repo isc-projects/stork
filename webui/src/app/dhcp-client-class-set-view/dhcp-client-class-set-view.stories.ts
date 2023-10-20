@@ -1,6 +1,6 @@
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { ChipModule } from 'primeng/chip'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
@@ -11,9 +11,11 @@ export default {
     title: 'App/DhcpClientClassSetView',
     component: DhcpClientClassSetViewComponent,
     decorators: [
+        applicationConfig({
+            providers: [MessageService],
+        }),
         moduleMetadata({
             imports: [ChipModule, NoopAnimationsModule, ToastModule],
-            providers: [MessageService],
         }),
         toastDecorator,
     ],

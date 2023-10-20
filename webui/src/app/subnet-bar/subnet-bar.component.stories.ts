@@ -1,4 +1,4 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular'
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { SubnetBarComponent } from './subnet-bar.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { Subnet } from '../backend'
@@ -9,6 +9,9 @@ export default {
     title: 'App/SubnetBar',
     component: SubnetBarComponent,
     decorators: [
+        applicationConfig({
+            providers: [],
+        }),
         moduleMetadata({
             imports: [RouterTestingModule, TooltipModule],
             declarations: [EntityLinkComponent],

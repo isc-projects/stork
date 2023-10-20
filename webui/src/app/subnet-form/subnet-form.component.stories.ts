@@ -1,9 +1,8 @@
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { SubnetFormComponent } from './subnet-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FieldsetModule } from 'primeng/fieldset'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { HttpClientModule } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
@@ -29,6 +28,8 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
+import { HttpClientModule } from '@angular/common/http'
+import { importProvidersFrom } from '@angular/core'
 
 let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
     id: 123,
@@ -288,6 +289,9 @@ export default {
     title: 'App/SubnetForm',
     component: SubnetFormComponent,
     decorators: [
+        applicationConfig({
+            providers: [MessageService, importProvidersFrom(HttpClientModule)],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -321,7 +325,6 @@ export default {
                 SharedParametersFormComponent,
                 SubnetFormComponent,
             ],
-            providers: [MessageService],
         }),
         toastDecorator,
     ],
