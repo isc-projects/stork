@@ -192,7 +192,7 @@
                     <td *ngIf="h.subnetId; else globalSubnetBlock">
                         <app-entity-link
                             entity="subnet"
-                            showEntityName="false"
+                            [showEntityName]="false"
                             [attrs]="{ id: h.subnetId, subnet: h.subnetPrefix }"
                         ></app-entity-link>
                     </td>
