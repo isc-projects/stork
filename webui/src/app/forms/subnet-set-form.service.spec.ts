@@ -46,8 +46,8 @@ describe('SubnetSetFormService', () => {
                 reservationsOutOfPool: true,
                 renewTimer: 500,
                 rebindTimer: 1000,
-                t1Percent: 45,
-                t2Percent: 65,
+                t1Percent: 0.45,
+                t2Percent: 0.65,
                 calculateTeeTimes: true,
                 validLifetime: 1000,
                 minValidLifetime: 1000,
@@ -90,8 +90,8 @@ describe('SubnetSetFormService', () => {
                 reservationsOutOfPool: false,
                 renewTimer: 1500,
                 rebindTimer: 2500,
-                t1Percent: 55,
-                t2Percent: 75,
+                t1Percent: 0.55,
+                t2Percent: 0.75,
                 calculateTeeTimes: false,
                 validLifetime: 2000,
                 minValidLifetime: 2000,
@@ -406,25 +406,25 @@ describe('SubnetSetFormService', () => {
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('number')
         expect(fg.data.min).toBe(0)
-        expect(fg.data.max).toBe(100)
-        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.max).toBe(1)
+        expect(fg.data.fractionDigits).toBe(2)
         expect(fg.data.values).toBeFalsy()
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
-        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(45)
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(55)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(0.45)
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(0.55)
 
         fg = form.get('t2Percent') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('number')
         expect(fg.data.min).toBe(0)
-        expect(fg.data.max).toBe(100)
-        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.max).toBe(1)
+        expect(fg.data.fractionDigits).toBe(2)
         expect(fg.data.values).toBeFalsy()
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
-        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(65)
-        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(75)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe(0.65)
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe(0.75)
 
         fg = form.get('calculateTeeTimes') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()

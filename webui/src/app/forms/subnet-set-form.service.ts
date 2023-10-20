@@ -276,7 +276,8 @@ export class SubnetSetFormService {
                 {
                     type: 'number',
                     min: 0,
-                    max: 100,
+                    max: 1,
+                    fractionDigits: 2,
                 },
                 parameters.map((params) => new FormControl<number>(params.t1Percent))
             ),
@@ -284,7 +285,8 @@ export class SubnetSetFormService {
                 {
                     type: 'number',
                     min: 0,
-                    max: 100,
+                    max: 1,
+                    fractionDigits: 2,
                 },
                 parameters.map((params) => new FormControl<number>(params.t2Percent))
             ),
