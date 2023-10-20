@@ -1,0 +1,5 @@
+* [bug] marcin
+
+    The agent recognizes a new alias output-options introduced in Kea 2.5
+    logger configuration.
+    (Gitlab #1198)
