@@ -452,6 +452,17 @@ def docker_plugin(standalone_exe, command_name)
     return plugin_task
 end
 
+# The prerequisites of the given task can be suppressed by setting the
+# SUPRESS_PREREQUISITES environment variable to "true". It should be helpful
+# to run tasks that direct prerequisites exist (for example, they were built
+# in another environment), but the nested ones do not.
+def allow_suppress_prerequisites(task_name)
+    if ENV["SUPRESS_PREREQUISITES"] == "true"
+        puts "Suppressing prerequisites for #{task_name}"
+        Rake::Task[task_name].clear_prerequisites()
+    end
+end
+
 # Fetches the file from the network. You should add the WGET to the
 # prerequisites of the task that uses this function.
 # The file is saved in the target location.
