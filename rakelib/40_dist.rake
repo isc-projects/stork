@@ -164,7 +164,6 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
     end
     sh "touch", AGENT_PACKAGE_STUB_FILE
 end
-allow_suppress_prerequisites(AGENT_PACKAGE_STUB_FILE)
 
 ##############
 ### Server ###
@@ -278,7 +277,6 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
     end
     sh "touch", SERVER_PACKAGE_STUB_FILE
 end
-allow_suppress_prerequisites(SERVER_PACKAGE_STUB_FILE)
 
 #############
 ### Tasks ###

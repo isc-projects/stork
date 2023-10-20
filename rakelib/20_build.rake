@@ -178,6 +178,7 @@ file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 add_go_os_arch_guard(AGENT_BINARY_FILE)
+allow_suppress_prerequisites(AGENT_BINARY_FILE)
 CLEAN.append AGENT_BINARY_FILE
 
 SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
@@ -191,6 +192,7 @@ file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 add_go_os_arch_guard(SERVER_BINARY_FILE)
+allow_suppress_prerequisites(SERVER_BINARY_FILE)
 CLEAN.append SERVER_BINARY_FILE
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
@@ -204,6 +206,7 @@ file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     puts "Stork Tool build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
 add_go_os_arch_guard(TOOL_BINARY_FILE)
+allow_suppress_prerequisites(TOOL_BINARY_FILE)
 CLEAN.append TOOL_BINARY_FILE
 
 #############
@@ -335,6 +338,9 @@ namespace :rebuild do
         sh "touch", "-c", "webui"
         Rake::Task["build:ui"].invoke()
     end
+
+    desc "Rebuild backend"
+    task :backend => ["rebuild:server", "rebuild:agent", "rebuild:tool"]
 end
 
 ## Run

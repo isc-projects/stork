@@ -229,6 +229,24 @@ build_backend:
   script:
     - rake build:backend
   artifacts:
+    untracked: true
+    expire_in: 1 hour
+
+build_backend_legacy:
+  stage: checks
+  rules:
+    - when: always
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - amd64
+  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+  needs:
+    - build_backend
+  script:
+    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
+  artifacts:
     name: "backend"
     expire_in: 1 week
     paths:
@@ -284,31 +302,12 @@ tarball:
 build_debs_amd64:
   extends: .base_build_debian
   stage: checks
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    # - cp dist/pkgs/*.deb ./
-  artifacts:
-    # paths:
-    #   - isc-stork-*.deb
-    untracked: true
-    expire_in: 1 hour
-
-build_debs_amd64_legacy:
-  stage: checks
-  rules:
-    - when: always
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
   needs:
-    - build_debs_amd64
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy
   script:
-    - rake rebuild:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake rebuild:server_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.deb ./
   artifacts:
     paths:
@@ -378,7 +377,7 @@ packages:
   rules:
     - when: on_success
   needs:
-    - build_debs_amd64_legacy
+    - build_debs_amd64
     - build_debs_arm64
     - build_rpms_amd64
     - build_rpms_arm64
@@ -420,7 +419,7 @@ install_debs_amd64:
     - "dpkg -r isc-stork-agent"
     - "dpkg -r isc-stork-server"
   needs:
-    - build_debs_amd64_legacy
+    - build_debs_amd64
 
 install_debs_arm64:
   extends: install_debs_amd64
