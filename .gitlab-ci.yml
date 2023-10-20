@@ -307,7 +307,7 @@ build_debs_amd64_legacy:
   needs:
     - build_debs_amd64
   script:
-    - rake rebuild:agent_pkg
+    - rake rebuild:agent_pkg --trace
     - rake rebuild:server_pkg
     - cp dist/pkgs/*.deb ./
   artifacts:
