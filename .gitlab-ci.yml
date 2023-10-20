@@ -287,6 +287,28 @@ build_debs_amd64:
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
+    # - cp dist/pkgs/*.deb ./
+  artifacts:
+    # paths:
+    #   - isc-stork-*.deb
+    untracked: true
+    expire_in: 1 hour
+
+build_debs_amd64_legacy:
+  stage: checks
+  rules:
+    - when: always
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - amd64
+  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+  dependencies:
+    - build_debs_amd64
+  script:
+    - rake rebuild:agent_pkg
+    - rake rebuild:server_pkg
     - cp dist/pkgs/*.deb ./
   artifacts:
     paths:
@@ -356,7 +378,7 @@ packages:
   rules:
     - when: on_success
   needs:
-    - build_debs_amd64
+    - build_debs_amd64_legacy
     - build_debs_arm64
     - build_rpms_amd64
     - build_rpms_arm64
@@ -398,7 +420,7 @@ install_debs_amd64:
     - "dpkg -r isc-stork-agent"
     - "dpkg -r isc-stork-server"
   needs:
-    - build_debs_amd64
+    - build_debs_amd64_legacy
 
 install_debs_arm64:
   extends: install_debs_amd64
