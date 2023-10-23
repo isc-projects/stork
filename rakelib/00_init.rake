@@ -452,6 +452,17 @@ def docker_plugin(standalone_exe, command_name)
     return plugin_task
 end
 
+# The given prerequisites can be suppressed by setting the
+# SUPPRESS_PREREQUISITES environment variable to "true". It should be helpful
+# to run tasks that direct prerequisites exist (for example, they were built
+# in another environment), but the nested ones do not.
+def suppressable_prerequisites(prerequisites)
+    if ENV["SUPPRESS_PREREQUISITES"] == "true"
+        return []
+    end
+    return prerequisites
+end
+
 # Fetches the file from the network. You should add the WGET to the
 # prerequisites of the task that uses this function.
 # The file is saved in the target location.
