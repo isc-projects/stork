@@ -235,7 +235,7 @@ build_backend:
 build_backend_legacy:
   stage: checks
   rules:
-    - when: always
+    - when: on_success
   tags:
     - linux
     - aws
