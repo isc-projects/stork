@@ -9,6 +9,7 @@ import {
     getBaseApiPath,
     datetimeToLocal,
     uncamelCase,
+    getSeverityByIndex,
 } from './utils'
 
 describe('utils', () => {
@@ -276,5 +277,13 @@ describe('utils', () => {
         expect(uncamelCase('anotherParameter')).toBe('Another Parameter')
         expect(uncamelCase('_withUnderscore')).toBe('With Underscore')
         expect(uncamelCase('  ')).toBe('  ')
+    })
+
+    it('should return severity by index', () => {
+        expect(getSeverityByIndex(0)).toBe('success')
+        expect(getSeverityByIndex(1)).toBe('warning')
+        expect(getSeverityByIndex(2)).toBe('danger')
+        expect(getSeverityByIndex(3)).toBe('info')
+        expect(getSeverityByIndex(4)).toBe('info')
     })
 })

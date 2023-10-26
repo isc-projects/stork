@@ -30,6 +30,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
 import { HttpClientModule } from '@angular/common/http'
 import { importProvidersFrom } from '@angular/core'
+import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
+import { AccordionModule } from 'primeng/accordion'
 
 let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
     id: 123,
@@ -50,9 +52,26 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
                         keaConfigPoolParameters: {
                             clientClass: 'foo',
                             requireClientClasses: ['foo', 'bar'],
-                            options: [],
+                            options: [
+                                {
+                                    alwaysSend: true,
+                                    code: 5,
+                                    encapsulate: '',
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.10'],
+                                        },
+                                    ],
+                                    options: [],
+                                    universe: 4,
+                                },
+                            ],
                             optionsHash: '',
                         },
+                    },
+                    {
+                        pool: '192.0.2.200-192.0.2.250',
                     },
                 ],
                 keaConfigSubnetParameters: {
@@ -290,10 +309,15 @@ export default {
     component: SubnetFormComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, importProvidersFrom(HttpClientModule)],
+            providers: [
+                MessageService,
+                importProvidersFrom(HttpClientModule),
+                importProvidersFrom(NoopAnimationsModule),
+            ],
         }),
         moduleMetadata({
             imports: [
+                AccordionModule,
                 ButtonModule,
                 CheckboxModule,
                 ChipsModule,
@@ -305,7 +329,6 @@ export default {
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
-                NoopAnimationsModule,
                 TableModule,
                 TagModule,
                 TriStateCheckboxModule,
@@ -317,6 +340,7 @@ export default {
                 ToastModule,
             ],
             declarations: [
+                AddressPoolFormComponent,
                 DhcpClientClassSetFormComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,

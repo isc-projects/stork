@@ -72,6 +72,139 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv6Prefix()(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
     })
 
+    it('validates if an address is in the IPv4 subnet', () => {
+        // Skip validation when controls have no meaningful value.
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control(null))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 192.0.2.0/24.',
+        })
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control(65))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 192.0.2.0/24.',
+        })
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control(''))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 192.0.2.0/24.',
+        })
+        // Valid address belongs to the subnet.
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control('192.0.2.100'))).toBeFalsy()
+        // Outside of a subnet.
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control('192.0.3.100'))).toEqual({
+            ipInSubnet: '192.0.3.100 does not belong to subnet 192.0.2.0/24.',
+        })
+        // Wrong family.
+        expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control('2001:db8:1::10'))).toEqual({
+            ipInSubnet: '2001:db8:1::10 is not a valid IPv4 address.',
+        })
+        // Invalid subnet.
+        expect(StorkValidators.ipInSubnet('192.0.2.0')(formBuilder.control('192.0.2.1'))).toEqual({
+            ipInSubnet: '192.0.2.0 is not a valid subnet prefix.',
+        })
+        expect(StorkValidators.ipInSubnet('/24')(formBuilder.control('192.0.2.1'))).toEqual({
+            ipInSubnet: '/24 is not a valid subnet prefix.',
+        })
+    })
+
+    it('validates if an address is in the IPv6 subnet', () => {
+        // Skip validation when controls have no meaningful value.
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control(null))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 2001:db8:1::/64.',
+        })
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control(65))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 2001:db8:1::/64.',
+        })
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control(''))).toEqual({
+            ipInSubnet: 'Please specify an IP address belonging to 2001:db8:1::/64.',
+        })
+        // Valid address belongs to the subnet.
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control('2001:db8:1::3:ff00'))).toBeFalsy()
+        // Outside of a subnet.
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control('2001:db8:2::3:ff00'))).toEqual({
+            ipInSubnet: '2001:db8:2::3:ff00 does not belong to subnet 2001:db8:1::/64.',
+        })
+        // Wrong family.
+        expect(StorkValidators.ipInSubnet('2001:db8:1::/64')(formBuilder.control('192.0.2.1'))).toEqual({
+            ipInSubnet: '192.0.2.1 is not a valid IPv6 address.',
+        })
+        // Invalid subnet.
+        expect(StorkValidators.ipInSubnet('/')(formBuilder.control('192.0.2.1'))).toEqual({
+            ipInSubnet: '/ is not a valid subnet prefix.',
+        })
+    })
+
+    it('validates IPv4 address range', () => {
+        let fg = formBuilder.group({
+            start: formBuilder.control('192.0.2.1'),
+            end: formBuilder.control('192.0.2.5'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toBeFalsy()
+        expect(fg.valid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('192.0.2.5'),
+            end: formBuilder.control('192.0.2.5'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toBeFalsy()
+        expect(fg.valid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('192.0.2.5'),
+            end: formBuilder.control('192.0.2.1'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toEqual({
+            addressBounds:
+                'Invalid address pool boundaries. Make sure that the first address is equal or lower than the last address.',
+        })
+        expect(fg.get('start').invalid).toBeTrue()
+        expect(fg.get('end').invalid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('192.0.2.1'),
+            end: formBuilder.control('192.0.2.'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toEqual({
+            addressBounds:
+                'Invalid address pool boundaries. Make sure that the first address is equal or lower than the last address.',
+        })
+        expect(fg.get('start').invalid).toBeTrue()
+        expect(fg.get('end').invalid).toBeTrue()
+    })
+
+    it('validates IPv6 address range', () => {
+        let fg = formBuilder.group({
+            start: formBuilder.control('2001:db8:1::'),
+            end: formBuilder.control('2001:db8:2::ffff'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toBeFalsy()
+        expect(fg.valid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('2001:db8:1::'),
+            end: formBuilder.control('2001:db8:1::'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toBeFalsy()
+        expect(fg.valid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('2001:db8:2::ffff'),
+            end: formBuilder.control('2001:db8:1::'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toEqual({
+            addressBounds:
+                'Invalid address pool boundaries. Make sure that the first address is equal or lower than the last address.',
+        })
+        expect(fg.get('start').invalid).toBeTrue()
+        expect(fg.get('end').invalid).toBeTrue()
+
+        fg = formBuilder.group({
+            start: formBuilder.control('2001:db8:1::'),
+            end: formBuilder.control('2001:db8:x::'),
+        })
+        expect(StorkValidators.ipRangeBounds(fg)).toEqual({
+            addressBounds:
+                'Invalid address pool boundaries. Make sure that the first address is equal or lower than the last address.',
+        })
+        expect(fg.get('start').invalid).toBeTrue()
+        expect(fg.get('end').invalid).toBeTrue()
+    })
+
     it('validates full fqdn', () => {
         expect(StorkValidators.fullFqdn(formBuilder.control('a..bc.'))).toBeTruthy()
         expect(StorkValidators.fullFqdn(formBuilder.control('a.b.'))).toBeTruthy()

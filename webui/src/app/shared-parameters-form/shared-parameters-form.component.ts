@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 import { AbstractControl, FormArray, FormGroup, UntypedFormGroup } from '@angular/forms'
-import { uncamelCase } from '../utils'
+import { getSeverityByIndex, uncamelCase } from '../utils'
 
 /**
  * A component providing a form for editing configuration parameters.
@@ -95,16 +95,7 @@ export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractC
      * server.
      */
     getServerTagSeverity(index: number): string {
-        switch (index) {
-            case 0:
-                return 'success'
-            case 1:
-                return 'warning'
-            case 2:
-                return 'danger'
-            default:
-                return 'info'
-        }
+        return getSeverityByIndex(index)
     }
 
     /**

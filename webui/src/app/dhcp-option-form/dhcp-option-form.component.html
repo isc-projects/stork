@@ -1,7 +1,7 @@
 <div [formGroup]="formGroup" class="flex flex-column">
     <div class="flex flex-column">
         <div class="flex">
-            <div *ngIf="topLevel; else showSuboptionInput">
+            <div *ngIf="topLevel; else showSuboptionInput" class="flex align-items-center">
                 <span class="p-float-label">
                     <p-dropdown
                         inputId="{{ codeInputId }}"
@@ -22,7 +22,7 @@
                 </span>
             </div>
             <ng-template #showSuboptionInput>
-                <div>
+                <div class="flex align-items-center">
                     <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
@@ -39,42 +39,47 @@
                     </span>
                 </div>
             </ng-template>
-            <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
-                <ng-container *ngIf="optionDef.array">
-                    <div *ngIf="optionDef.optionType === 'record'">
-                        This option carries the records of the following fields:
-                        <ul>
-                            <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
-                        </ul>
-                        These records can be repeated, forming an array of records. By default, the option has only one
-                        record, but additional records can be defined as necessary by adding suitable option fields.
+            <div class="flex align-items-center">
+                <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
+                    <ng-container *ngIf="optionDef.array">
+                        <div *ngIf="optionDef.optionType === 'record'">
+                            This option carries the records of the following fields:
+                            <ul>
+                                <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
+                            </ul>
+                            These records can be repeated, forming an array of records. By default, the option has only
+                            one record, but additional records can be defined as necessary by adding suitable option
+                            fields.
+                        </div>
+                        <div *ngIf="optionDef.optionType !== 'record'">
+                            This option can comprise an array of the
+                            <span class="font-semibold">{{ optionDef.optionType }}</span>
+                            option fields. By default, it has only one option field, but more fields of the same type
+                            can be added as necessary.
+                        </div>
+                    </ng-container>
+                    <ng-container *ngIf="!optionDef.array">
+                        <div *ngIf="optionDef.optionType === 'empty'">
+                            This option carries no option fields (is empty).
+                        </div>
+                        <div *ngIf="optionDef.optionType === 'record'">
+                            This option carries a single record of the following fields:
+                            <ul>
+                                <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
+                            </ul>
+                        </div>
+                        <div *ngIf="optionDef.optionType !== 'record' && optionDef.optionType !== 'empty'">
+                            This option comprises a single <span class="font-semibold">{{ optionDef.optionType }}</span>
+                            option field.
+                        </div>
+                    </ng-container>
+                    <div *ngIf="optionDef.encapsulate.length > 0" class="mt-3">
+                        It encapsulates the suboptions with the following codes:
+                        {{ getStandardDhcpOptionDefCodes().join(', ') || '(none)' }}.
                     </div>
-                    <div *ngIf="optionDef.optionType !== 'record'">
-                        This option can comprise an array of the
-                        <span class="font-semibold">{{ optionDef.optionType }}</span>
-                        option fields. By default, it has only one option field, but more fields of the same type can be
-                        added as necessary.
-                    </div>
-                </ng-container>
-                <ng-container *ngIf="!optionDef.array">
-                    <div *ngIf="optionDef.optionType === 'empty'">This option carries no option fields (is empty).</div>
-                    <div *ngIf="optionDef.optionType === 'record'">
-                        This option carries a single record of the following fields:
-                        <ul>
-                            <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
-                        </ul>
-                    </div>
-                    <div *ngIf="optionDef.optionType !== 'record' && optionDef.optionType !== 'empty'">
-                        This option comprises a single <span class="font-semibold">{{ optionDef.optionType }}</span>
-                        option field.
-                    </div>
-                </ng-container>
-                <div *ngIf="optionDef.encapsulate.length > 0" class="mt-3">
-                    It encapsulates the suboptions with the following codes:
-                    {{ getStandardDhcpOptionDefCodes().join(', ') || '(none)' }}.
-                </div>
-                <div *ngIf="!optionDef.encapsulate" class="mt-3">It carries no suboptions.</div>
-            </app-help-tip>
+                    <div *ngIf="!optionDef.encapsulate" class="mt-3">It carries no suboptions.</div>
+                </app-help-tip>
+            </div>
         </div>
         <div class="flex mt-1 align-items-center">
             <div

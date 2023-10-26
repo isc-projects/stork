@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing'
 
-import { KeaSubnetParametersForm, SubnetForm, SubnetSetFormService } from './subnet-set-form.service'
-import { KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
+import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
+import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Pool, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'
@@ -16,6 +16,402 @@ describe('SubnetSetFormService', () => {
 
     it('should be created', () => {
         expect(service).toBeTruthy()
+    })
+
+    it('should convert Kea pool parameters to a form group', () => {
+        const parameters: KeaConfigPoolParameters[] = [
+            {
+                clientClass: 'foo',
+                requireClientClasses: ['foo', 'bar'],
+            },
+            {
+                clientClass: 'bar',
+                requireClientClasses: ['foo', 'bar'],
+            },
+        ]
+        const form = service.convertKeaPoolParametersToForm(parameters)
+        let fg = form.get('clientClass') as SharedParameterFormGroup<any>
+        expect(fg).toBeTruthy()
+        expect(fg.data.type).toBe('string')
+        expect(fg.data.min).toBeFalsy()
+        expect(fg.data.max).toBeFalsy()
+        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.values).toBeFalsy()
+        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
+        expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe('foo')
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe('bar')
+
+        fg = form.get('requireClientClasses') as SharedParameterFormGroup<any>
+        expect(fg).toBeTruthy()
+        expect(fg.data.type).toBe('client-classes')
+        expect(fg.data.min).toBeFalsy()
+        expect(fg.data.max).toBeFalsy()
+        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.values).toBeFalsy()
+        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+        expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['foo', 'bar'])
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo', 'bar'])
+    })
+
+    it('should convert address pool data to a form', () => {
+        const subnet: Subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.1'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '123',
+                            },
+                        },
+                        {
+                            pool: '192.0.2.20-192.0.2.30',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                        {
+                            pool: '192.0.2.40-192.0.2.50',
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
+                                requireClientClasses: ['faz'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.3'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '345',
+                            },
+                        },
+                    ],
+                },
+                {
+                    daemonId: 2,
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            pool: '192.0.2.20-192.0.2.30',
+                            keaConfigPoolParameters: {
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+        const formArray = service.convertAddressPoolsToForm(subnet)
+        expect(formArray.length).toBe(3)
+        expect(formArray.get('0.range.start')?.value).toBe('192.0.2.1')
+        expect(formArray.get('0.range.end')?.value).toBe('192.0.2.10')
+
+        let params = formArray.get('0.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(params.get('clientClass.values.0')?.value).toBe('foo')
+        expect(params.get('clientClass.values.1')?.value).toBe('foo')
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('requireClientClasses.values.1')?.value).toEqual(['foo', 'bar'])
+
+        let options = formArray.get('0.options.data') as UntypedFormArray
+        expect(options.length).toBe(2)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.1')
+        expect((options.get('1') as UntypedFormArray).length).toBe(0)
+
+        let selectedDaemons = formArray.get('0.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1, 2])
+
+        expect(formArray.get('1.range.start')?.value).toBe('192.0.2.20')
+        expect(formArray.get('1.range.end')?.value).toBe('192.0.2.30')
+
+        params = formArray.get('1.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeTrue()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(params.get('clientClass.values.0')?.value).toBe('foo')
+        expect(params.get('clientClass.values.1')?.value).toBeFalsy()
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeTrue()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('requireClientClasses.values.1')?.value).toEqual([])
+
+        options = formArray.get('1.options.data') as UntypedFormArray
+        expect(options.length).toBe(2)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.2')
+        expect(options.get('1.0.optionFields.0.control')?.value).toBe('192.0.2.2')
+
+        selectedDaemons = formArray.get('1.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1, 2])
+
+        expect(formArray.get('2.range.start')?.value).toBe('192.0.2.40')
+        expect(formArray.get('2.range.end')?.value).toBe('192.0.2.50')
+
+        params = formArray.get('2.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(1)
+        expect(params.get('clientClass.values.0')?.value).toBe('bar')
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['faz'])
+
+        options = formArray.get('2.options.data') as UntypedFormArray
+        expect(options.length).toBe(1)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.3')
+
+        selectedDaemons = formArray.get('2.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1])
+    })
+
+    it('should convert form to address pool data', () => {
+        const subnet: Subnet = {
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.1'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '123',
+                            },
+                        },
+                        {
+                            pool: '192.0.2.20-192.0.2.30',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                        {
+                            pool: '192.0.2.40-192.0.2.50',
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
+                                requireClientClasses: ['faz'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.3'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '345',
+                            },
+                        },
+                    ],
+                },
+                {
+                    daemonId: 2,
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            pool: '192.0.2.20-192.0.2.30',
+                            keaConfigPoolParameters: {
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+        const formArray = service.convertAddressPoolsToForm(subnet)
+
+        let pools = service.convertFormToAddressPools(subnet.localSubnets[0], formArray)
+        expect(pools.length).toBe(3)
+        expect(pools[0].pool).toBe('192.0.2.1-192.0.2.10')
+        expect(pools[0].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[0].keaConfigPoolParameters.options[0].code).toBe(5)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.1')
+        expect(pools[1].pool).toBe('192.0.2.20-192.0.2.30')
+        expect(pools[1].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[1].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(5)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
+        expect(pools[2].pool).toBe('192.0.2.40-192.0.2.50')
+        expect(pools[2].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[2].keaConfigPoolParameters.clientClass).toBe('bar')
+        expect(pools[2].keaConfigPoolParameters.requireClientClasses).toEqual(['faz'])
+        expect(pools[2].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[2].keaConfigPoolParameters.options[0].code).toBe(5)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.3')
+
+        pools = service.convertFormToAddressPools(subnet.localSubnets[1], formArray)
+        expect(pools.length).toBe(2)
+        expect(pools[0].pool).toBe('192.0.2.1-192.0.2.10')
+        expect(pools[0].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.options).toEqual([])
+        expect(pools[1].pool).toBe('192.0.2.20-192.0.2.30')
+        expect(pools[1].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[1].keaConfigPoolParameters.clientClass).toBeFalsy()
+        expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual([])
+        expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(5)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
+    })
+
+    it('should create a default form for pool parameters', () => {
+        let form = service.createDefaultKeaPoolParametersForm()
+        expect(Object.keys(form.controls).length).toBe(2)
+
+        for (const key of Object.keys(form.controls)) {
+            let control = form.get(key) as SharedParameterFormGroup<any>
+            expect(control).toBeTruthy()
+            expect(control.controls?.unlocked?.value).toBeFalse()
+            expect(control.controls?.values?.value.length).toBe(1)
+        }
     })
 
     it('should convert Kea IPv4 subnet parameters to a form group', () => {
@@ -109,7 +505,7 @@ describe('SubnetSetFormService', () => {
                 storeExtendedInfo: false,
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('cacheThreshold') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('number')
@@ -616,7 +1012,7 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'foo.example.org.',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv6, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, parameters)
         let fg = form.get('fourOverSixInterface') as SharedParameterFormGroup<any>
         expect(fg).toBeFalsy()
 
@@ -699,7 +1095,7 @@ describe('SubnetSetFormService', () => {
                 ddnsGeneratedPrefix: '-invalid.prefix',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('ddnsGeneratedPrefix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -711,7 +1107,7 @@ describe('SubnetSetFormService', () => {
                 ddnsQualifyingSuffix: '123',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('ddnsQualifyingSuffix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -723,7 +1119,7 @@ describe('SubnetSetFormService', () => {
                 fourOverSixSubnet: '2001:db8:1::',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('fourOverSixSubnet') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -735,7 +1131,7 @@ describe('SubnetSetFormService', () => {
                 nextServer: '1.1.2.',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('nextServer') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -747,14 +1143,14 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'abc..foo',
             },
         ]
-        let form = service.convertKeaParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
         let fg = form.get('serverHostname') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
     })
 
     it('should create a default form for an IPv4 subnet', () => {
-        let form = service.createDefaultKeaParametersForm(IPType.IPv4)
+        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4)
         expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
@@ -766,7 +1162,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default form for an IPv6 subnet', () => {
-        let form = service.createDefaultKeaParametersForm(IPType.IPv6)
+        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6)
         expect(Object.keys(form.controls).length).toBe(35)
 
         for (const key of Object.keys(form.controls)) {
@@ -783,6 +1179,18 @@ describe('SubnetSetFormService', () => {
             localSubnets: [
                 {
                     daemonId: 1,
+                    pools: [
+                        {
+                            pool: '192.0.2.1-192.0.2.10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            pool: '192.0.2.20-192.0.2.30',
+                        },
+                    ],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'random',
@@ -811,6 +1219,29 @@ describe('SubnetSetFormService', () => {
         expect(formGroup.get('subnet')?.value).toBe('192.0.2.0/24')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
 
+        const pools = formGroup.get('pools') as UntypedFormArray
+        expect(pools.length).toBe(2)
+        expect(pools.get('0.range.start')?.value).toBe('192.0.2.1')
+        expect(pools.get('0.range.end')?.value).toBe('192.0.2.10')
+        expect(pools.get('1.range.start')?.value).toBe('192.0.2.20')
+        expect(pools.get('1.range.end')?.value).toBe('192.0.2.30')
+
+        let poolParameters = pools.get('0.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(1)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBe('foo')
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+
+        poolParameters = pools.get('1.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(1)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBeFalsy()
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
+
         const options = formGroup.get('options.data') as UntypedFormArray
         expect(options.length).toBe(1)
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.1')
@@ -830,6 +1261,21 @@ describe('SubnetSetFormService', () => {
             localSubnets: [
                 {
                     daemonId: 1,
+                    pools: [
+                        {
+                            pool: '2001:db8:1::1-2001:db8:1::10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            pool: '2001:db8:1::20-2001:db8:1::30',
+                        },
+                        {
+                            pool: '2001:db8:1::40-2001:db8:1::50',
+                        },
+                    ],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             pdAllocator: 'random',
@@ -854,6 +1300,20 @@ describe('SubnetSetFormService', () => {
                 },
                 {
                     daemonId: 2,
+                    pools: [
+                        {
+                            pool: '2001:db8:1::1-2001:db8:1::10',
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
+                            },
+                        },
+                        {
+                            pool: '2001:db8:1::20-2001:db8:1::30',
+                            keaConfigPoolParameters: {
+                                requireClientClasses: ['foo'],
+                            },
+                        },
+                    ],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             pdAllocator: 'flq',
@@ -881,6 +1341,43 @@ describe('SubnetSetFormService', () => {
         const formGroup = service.convertSubnetToForm(IPType.IPv6, subnet)
         expect(formGroup.get('subnet')?.value).toBe('2001:db8:1::/64')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
+
+        const pools = formGroup.get('pools') as UntypedFormArray
+        expect(pools.length).toBe(3)
+        expect(pools.get('0.range.start')?.value).toBe('2001:db8:1::1')
+        expect(pools.get('0.range.end')?.value).toBe('2001:db8:1::10')
+        expect(pools.get('1.range.start')?.value).toBe('2001:db8:1::20')
+        expect(pools.get('1.range.end')?.value).toBe('2001:db8:1::30')
+        expect(pools.get('2.range.start')?.value).toBe('2001:db8:1::40')
+        expect(pools.get('2.range.end')?.value).toBe('2001:db8:1::50')
+
+        let poolParameters = pools.get('0.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBe('foo')
+        expect(poolParameters.get('clientClass.values.1')?.value).toBe('bar')
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual([])
+
+        poolParameters = pools.get('1.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBeFalsy()
+        expect(poolParameters.get('clientClass.values.1')?.value).toBeFalsy()
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
+        expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual(['foo'])
+
+        poolParameters = pools.get('2.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(1)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBeFalsy()
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
 
         expect(formGroup.get('options.unlocked')?.value).toBeTrue()
 
@@ -917,7 +1414,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should convert a form to Kea parameters', () => {
-        const params = service.convertFormToKeaParameters(
+        const params = service.convertFormToKeaSubnetParameters(
             new FormGroup<KeaSubnetParametersForm>({
                 cacheThreshold: new SharedParameterFormGroup<number>(
                     {

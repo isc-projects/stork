@@ -1,15 +1,22 @@
-:host ::ng-deep .shared-parameters-table .p-datatable-tbody tr td
+:host ::ng-deep .shared-parameters-table .p-datatable-tbody tr
+    &:last-child
+        td
+            border-bottom: none
+    td
+        border-top: none
+        border-left: none
+        border-right: none
+        border-bottom: 1px solid #c8c8c8
+        vertical-align: top
+        padding-top: 1rem
+        padding-bottom: 1rem
+
+:host ::ng-deep .shared-parameters-table .p-datatable-thead tr th
     border-top: none
     border-left: none
     border-right: none
     border-bottom: 1px solid #c8c8c8
-    vertical-align: top
-
-:host ::ng-deep .shared-parameters-table .p-datatable-thead tr th
-    border-top: 1px solid #c8c8c8
-    border-left: none
-    border-right: none
-    border-bottom: 1px solid #c8c8c8
+    background-color: #fff
 
     &:first-child
         width: 20%

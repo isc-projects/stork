@@ -26,7 +26,6 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { MockParamMap } from '../utils'
 import { SubnetTabComponent } from '../subnet-tab/subnet-tab.component'
 import { FieldsetModule } from 'primeng/fieldset'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
@@ -49,6 +48,8 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { AccordionModule } from 'primeng/accordion'
+import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -65,6 +66,7 @@ describe('SubnetsPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [DHCPService, UsersService, MessageService, SettingsService],
             imports: [
+                AccordionModule,
                 FormsModule,
                 DropdownModule,
                 TableModule,
@@ -103,6 +105,7 @@ describe('SubnetsPageComponent', () => {
                 ToastModule,
             ],
             declarations: [
+                AddressPoolFormComponent,
                 SubnetsPageComponent,
                 SubnetBarComponent,
                 BreadcrumbsComponent,
@@ -142,7 +145,11 @@ describe('SubnetsPageComponent', () => {
                                 id: 1,
                                 machineAddress: 'localhost',
                                 machineHostname: 'lv-pc',
-                                pools: ['1.0.0.4-1.0.255.254'],
+                                pools: [
+                                    {
+                                        pool: '1.0.0.4-1.0.255.254',
+                                    },
+                                ],
                             },
                             {
                                 appId: 28,
@@ -154,7 +161,11 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
-                                pools: ['1.0.0.4-1.0.255.254'],
+                                pools: [
+                                    {
+                                        pool: '1.0.0.4-1.0.255.254',
+                                    },
+                                ],
                             },
                         ],
                         stats: {
@@ -176,7 +187,11 @@ describe('SubnetsPageComponent', () => {
                                 appName: 'kea@localhost',
                                 machineAddress: 'localhost',
                                 machineHostname: 'lv-pc',
-                                pools: ['1.1.0.4-1.1.255.254'],
+                                pools: [
+                                    {
+                                        pool: '1.1.0.4-1.1.255.254',
+                                    },
+                                ],
                             },
                         ],
                         statsCollectedAt: null,
@@ -225,7 +240,11 @@ describe('SubnetsPageComponent', () => {
                                 id: 2,
                                 machineAddress: 'host',
                                 machineHostname: 'lv-pc2',
-                                pools: ['1.0.0.4-1.0.255.254'],
+                                pools: [
+                                    {
+                                        pool: '1.0.0.4-1.0.255.254',
+                                    },
+                                ],
                             },
                         ],
                         statsCollectedAt: '1970-01-01T12:00:00.0Z',

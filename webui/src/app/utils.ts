@@ -1,8 +1,6 @@
 import * as moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { Bind9Daemon, KeaDaemon } from './backend'
-import { Observable, Subject } from 'rxjs'
-import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 
 /**
  * Formats the date-like object as local date-time string.
@@ -530,4 +528,28 @@ export function uncamelCase(key: string): string {
     text = text.replace(/^ip/g, 'IP')
     text = text.charAt(0).toUpperCase() + text.slice(1)
     return text
+}
+
+/**
+ * Returns severity as text for an index.
+ *
+ * It is useful in cases when there are several managed servers indexed
+ * with numbers. To visually distinguish the servers we sometimes use
+ * tags that are colored using severity.
+ *
+ * @param index an index.
+ * @returns `success` for 0, `warning` for 1, `danger` for 2, and 'info'
+ * for any other.
+ */
+export function getSeverityByIndex(index: number): string {
+    switch (index) {
+        case 0:
+            return 'success'
+        case 1:
+            return 'warning'
+        case 2:
+            return 'danger'
+        default:
+            return 'info'
+    }
 }

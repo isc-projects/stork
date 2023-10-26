@@ -1,0 +1,87 @@
+<div [formGroup]="formGroup">
+    <p-fieldset legend="Address Range" styleClass="mt-4">
+        <div class="flex mt-4 mb-2" formGroupName="range">
+            <div class="flex align-items-center p-float-label">
+                <input id="pool-start" pInputText formControlName="start" />
+                <label for="pool-start">First Address</label>
+            </div>
+            <div class="flex align-items-center">&nbsp; : &nbsp;</div>
+            <div class="flex align-items-center p-float-label">
+                <input id="pool-end" pInputText formControlName="end" />
+                <label for="pool-end">Last Address</label>
+            </div>
+        </div>
+        <small
+            *ngIf="
+                formGroup.get('range.start').invalid &&
+                (formGroup.get('range.start').dirty || formGroup.get('range.start').touched) &&
+                formGroup.get('range.start').hasError('ipInSubnet')
+            "
+            class="p-error block"
+            >{{ formGroup.get('range.start').errors.ipInSubnet }}
+        </small>
+        <small
+            *ngIf="
+                formGroup.get('range.end').invalid &&
+                (formGroup.get('range.end').dirty || formGroup.get('range.end').touched) &&
+                formGroup.get('range.end').hasError('ipInSubnet')
+            "
+            class="p-error block"
+            >{{ formGroup.get('range.end').errors.ipInSubnet }}
+        </small>
+        <small
+            *ngIf="
+                formGroup.get('range').invalid &&
+                (formGroup.get('range').dirty || formGroup.get('range').touched) &&
+                formGroup.get('range').hasError('addressBounds')
+            "
+            class="p-error block"
+            >{{ formGroup.get('range').errors.addressBounds }}
+        </small>
+    </p-fieldset>
+    <p-fieldset legend="Assignments" styleClass="mt-4">
+        <div class="mt-4">
+            <span class="p-float-label mt-4 mb-2">
+                <p-multiSelect
+                    inputId="pool-servers-select"
+                    optionLabel="label"
+                    optionValue="id"
+                    [options]="selectableDaemons"
+                    formControlName="selectedDaemons"
+                    display="chip"
+                    [showToggleAll]="false"
+                    styleClass="w-full"
+                    (onChange)="onDaemonsChange($event)"
+                >
+                </p-multiSelect>
+                <label for="pool-servers-select">DHCP Servers</label>
+            </span>
+        </div>
+    </p-fieldset>
+    <p-fieldset legend="Pool DHCP Parameters" styleClass="mt-4">
+        <app-shared-parameters-form [servers]="servers" [formGroup]="formGroup.get('parameters')">
+        </app-shared-parameters-form>
+    </p-fieldset>
+    <p-fieldset [formGroup]="formGroup.get('options')" legend="Pool DHCP Options" styleClass="mt-4 mb-4">
+        <div class="flex mt-2 pb-4">
+            <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+            <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
+        </div>
+        <ng-container *ngFor="let optionSet of formGroup.get('options.data')?.controls; let i = index">
+            <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3 host-form-abs-width">
+                <div *ngIf="formGroup.get('options.unlocked')?.value" class="pb-5">
+                    <p-divider *ngIf="formGroup.get('options.data')?.length > 1" align="center">
+                        <p-tag [severity]="getServerTagSeverity(i)">
+                            {{ servers[i] }}
+                        </p-tag>
+                    </p-divider>
+                </div>
+                <app-dhcp-option-set-form
+                    [v6]="v6"
+                    [formArray]="optionSet"
+                    (optionAdd)="onOptionAdd(i)"
+                ></app-dhcp-option-set-form>
+            </div>
+        </ng-container>
+    </p-fieldset>
+</div>

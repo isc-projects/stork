@@ -1,11 +1,46 @@
 import { Injectable } from '@angular/core'
-import { FormControl, FormGroup, UntypedFormArray, UntypedFormGroup, Validators } from '@angular/forms'
+import {
+    AbstractControl,
+    FormArray,
+    FormControl,
+    FormGroup,
+    UntypedFormArray,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators,
+} from '@angular/forms'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { KeaConfigSubnetDerivedParameters, LocalSubnet, Subnet } from '../backend'
+import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, LocalSubnet, Pool, Subnet } from '../backend'
 import { StorkValidators } from '../validators'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { IPType } from '../iptype'
-import { hasDifferentSubnetLevelOptions } from '../subnets'
+import { extractUniqueSubnetPools, hasDifferentLocalPoolOptions, hasDifferentSubnetLevelOptions } from '../subnets'
+import { AddressRange } from '../address-range'
+import { GenericFormService } from './generic-form.service'
+
+/**
+ * An interface to a {@link LocalSubnet}, {@link LocalPool} etc.
+ */
+interface LocalDaemonData {
+    daemonId?: number
+}
+
+/**
+ * A type of a form holding DHCP options.
+ */
+export interface OptionsForm {
+    unlocked: FormControl<boolean>
+    data: UntypedFormArray
+}
+
+/**
+ * A type of the form for editing Kea-specific pool parameters using
+ * the {@link SharedParametersForm} component.
+ */
+export interface KeaPoolParametersForm {
+    clientClass?: SharedParameterFormGroup<string>
+    requireClientClasses?: SharedParameterFormGroup<string[]>
+}
 
 /**
  * A type of the subnet form for editing Kea-specific parameters using
@@ -56,9 +91,46 @@ export interface KeaSubnetParametersForm {
     storeExtendedInfo?: SharedParameterFormGroup<boolean>
 }
 
-export interface OptionsForm {
-    unlocked: FormControl<boolean>
-    data: UntypedFormArray
+/**
+ * A form group for editing pool address range.
+ */
+export interface AddressRangeForm {
+    /**
+     * Lower pool boundary.
+     */
+    start?: FormControl<string>
+
+    /**
+     * Upper pool boundary.
+     */
+    end?: FormControl<string>
+}
+
+/**
+ * A form for editing an address pool.
+ */
+export interface AddressPoolForm {
+    /**
+     * Pool address range.
+     */
+    range?: FormGroup<AddressRangeForm>
+
+    /**
+     * Kea-specific parameters for a pool.
+     */
+    parameters?: FormGroup<KeaPoolParametersForm>
+
+    /**
+     * DHCP options in an address pool.
+     */
+    options?: FormGroup<OptionsForm>
+
+    /**
+     * Daemon IDs selected with a multi-select component.
+     *
+     * Selected daemons are associated with the pool.
+     */
+    selectedDaemons?: FormControl<number[]>
 }
 
 /**
@@ -68,7 +140,12 @@ export interface SubnetForm {
     /**
      * Subnet prefix.
      */
-    subnet: FormControl<string>
+    subnet?: FormControl<string>
+
+    /**
+     * An array of the address pools.
+     */
+    pools?: FormArray<FormGroup<AddressPoolForm>>
 
     /**
      * Kea-specific parameters for a subnet.
@@ -85,7 +162,7 @@ export interface SubnetForm {
      *
      * Selected daemons are associated with the subnet.
      */
-    selectedDaemons: FormControl<number[]>
+    selectedDaemons?: FormControl<number[]>
 }
 
 /**
@@ -99,41 +176,97 @@ export class SubnetSetFormService {
     /**
      * Empty constructor.
      *
+     * @param genericFormService a generic form service used to clone controls.
      * @param optionService a service for manipulating DHCP options.
      */
-    constructor(public optionService: DhcpOptionSetFormService) {}
+    constructor(
+        private genericFormService: GenericFormService,
+        private optionService: DhcpOptionSetFormService
+    ) {}
 
     /**
-     * Converts subnet data to a form.
+     * Extract the index from the array by matching the daemon id.
      *
-     * @param ipType universe (i.e., IPv4 or IPv6 subnet)
-     * @param subnet subnet data.
-     * @returns A form created for a subnet.
+     * @param localData A {@link LocalSubnet} or {@link LocalPool} etc.
+     * @param selectedDaemons an array with identifiers of the selected daemons.
+     * @returns An index in the array.
      */
-    convertSubnetToForm(ipType: IPType, subnet: Subnet): FormGroup<SubnetForm> {
-        let formGroup = new FormGroup<SubnetForm>({
-            subnet: new FormControl({ value: subnet.subnet, disabled: true }),
-            parameters: this.convertKeaParametersToForm(
-                ipType,
-                subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
+    private getDaemonIndex(localData: LocalDaemonData, selectedDaemons: number[]) {
+        return selectedDaemons.findIndex((sd) => sd === localData.daemonId)
+    }
+
+    /**
+     * Generic function converting a form to Kea-specific parameters.
+     *
+     * It can be used for different parameter sets, e.g. subnet-specific parameters,
+     * pool-specific parameters etc.
+     *
+     * @typeParam FormType a type of the form holding the parameters.
+     * @typeParam ParamsType a type of the parameter set returned by this function.
+     * @param form a form group holding the parameters set by the {@link SharedParametersForm}
+     * component.
+     * @returns An array of the parameter sets.
+     */
+    private convertFormToKeaParameters<
+        FormType extends { [K in keyof FormType]: AbstractControl<any, any> },
+        ParamsType extends { [K in keyof ParamsType]: ParamsType[K] },
+    >(form: FormGroup<FormType>): ParamsType[] {
+        const params: ParamsType[] = []
+        // Iterate over all parameters.
+        for (let key in form.controls) {
+            const unlocked = form.get(key).get('unlocked')?.value
+            // Get the values of the parameter for different servers.
+            const values = form.get(key).get('values') as UntypedFormArray
+            // For each server-specific value of the parameter.
+            for (let i = 0; i < values?.length; i++) {
+                // If we haven't added the parameter set for the current index let's add one.
+                if (params.length <= i) {
+                    params.push({} as ParamsType)
+                }
+                // If the parameter is unlocked, there should be a value dedicated
+                // for each server. Otherwise, we add the first (common) value.
+                if (values.at(!!unlocked ? i : 0).value != null) {
+                    params[i][key] = values.at(!!unlocked ? i : 0).value
+                }
+            }
+        }
+        return params
+    }
+
+    /**
+     * Convert Kea pool parameters to a form.
+     *
+     * @param parameters Kea-specific pool parameters.
+     * @returns Created form group instance.
+     */
+    convertKeaPoolParametersToForm(parameters: KeaConfigPoolParameters[]): FormGroup<KeaPoolParametersForm> {
+        let form: KeaPoolParametersForm = {
+            clientClass: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                },
+                parameters?.map((params) => new FormControl<string>(params?.clientClass ?? null))
             ),
-            options: new FormGroup({
-                unlocked: new FormControl(hasDifferentSubnetLevelOptions(subnet)),
-                data: new UntypedFormArray(
-                    subnet.localSubnets?.map((ls) =>
-                        this.optionService.convertOptionsToForm(
-                            ipType,
-                            ls.keaConfigSubnetParameters.subnetLevelParameters.options
-                        )
-                    ) || []
-                ),
-            }),
-            selectedDaemons: new FormControl<number[]>(
-                subnet.localSubnets?.map((ls) => ls.daemonId) || [],
-                Validators.required
+            requireClientClasses: new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'client-classes',
+                },
+                parameters?.map((params) => new FormControl<string[]>(params?.requireClientClasses ?? []))
             ),
-        })
+        }
+        let formGroup = new FormGroup<KeaPoolParametersForm>(form)
         return formGroup
+    }
+
+    /**
+     * Creates a default parameters form for an empty pool.
+     *
+     * @param ipType subnet universe (IPv4 or IPv6).
+     * @returns A default form group for a subnet.
+     */
+    createDefaultKeaPoolParametersForm(): UntypedFormGroup {
+        let parameters: KeaConfigPoolParameters[] = [{}]
+        return this.convertKeaPoolParametersToForm(parameters)
     }
 
     /**
@@ -146,7 +279,7 @@ export class SubnetSetFormService {
      * @param parameters Kea-specific subnet parameters.
      * @returns Created form group instance.
      */
-    convertKeaParametersToForm(
+    convertKeaSubnetParametersToForm(
         ipType: IPType,
         parameters: KeaConfigSubnetDerivedParameters[]
     ): FormGroup<KeaSubnetParametersForm> {
@@ -436,6 +569,159 @@ export class SubnetSetFormService {
     }
 
     /**
+     * Converts a form holding DHCP parameters to a set of parameters assignable
+     * to a subnet instance.
+     *
+     * @param form a form holding DHCP parameters for a subnet.
+     * @returns An array of parameter sets for different servers.
+     */
+    convertFormToKeaSubnetParameters(form: FormGroup<KeaSubnetParametersForm>): KeaConfigSubnetDerivedParameters[] {
+        return this.convertFormToKeaParameters(form)
+    }
+
+    /**
+     * Creates a default parameters form for an empty subnet.
+     *
+     * @param ipType subnet universe (IPv4 or IPv6).
+     * @returns A default form group for a subnet.
+     */
+    createDefaultKeaSubnetParametersForm(ipType: IPType): UntypedFormGroup {
+        let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
+        return this.convertKeaSubnetParametersToForm(ipType, parameters)
+    }
+
+    /**
+     * Converts a set of address pools in a subnet to a form.
+     *
+     * @param subnet a subnet instance holding the converted pools.
+     * @returns An array of form groups representing address pools.
+     */
+    convertAddressPoolsToForm(subnet: Subnet): FormArray<FormGroup<AddressPoolForm>> {
+        const formArray = new FormArray<FormGroup<AddressPoolForm>>([])
+        // A subnet can be associated with many servers. Each server may contain
+        // the same or different address pools. Some of the pools may overlap.
+        // This call extracts the pools and combines those that are the same for
+        // different servers. It makes it easier to later convert the extracted pools
+        // to a form.
+        const subnetWithUniquePools = extractUniqueSubnetPools(subnet)
+        if (subnetWithUniquePools.length === 0) {
+            return formArray
+        }
+        // Iterate over the extracted pools and convert them to a form.
+        for (const pool of subnetWithUniquePools[0]?.pools) {
+            // Attempt to validate and convert the pool range specified
+            // as a string to an address range. It may throw.
+            const addressRange = AddressRange.fromStringRange(pool.pool)
+            formArray.push(
+                new FormGroup<AddressPoolForm>({
+                    range: new FormGroup<AddressRangeForm>(
+                        {
+                            start: new FormControl(addressRange.getFirst(), StorkValidators.ipInSubnet(subnet.subnet)),
+                            end: new FormControl(addressRange.getLast(), StorkValidators.ipInSubnet(subnet.subnet)),
+                        },
+                        StorkValidators.ipRangeBounds
+                    ),
+                    // Local pools contain Kea-specific pool parameters for different servers.
+                    // Extract them from the local pools and pass as an array to the conversion
+                    // function.
+                    parameters: this.convertKeaPoolParametersToForm(
+                        pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
+                    ),
+                    // Convert the options to a form.
+                    options: new FormGroup({
+                        unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
+                        data: new UntypedFormArray(
+                            pool.localPools?.map((lp) =>
+                                this.optionService.convertOptionsToForm(
+                                    subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
+                                    lp.keaConfigPoolParameters?.options
+                                )
+                            ) || []
+                        ),
+                    }),
+                    selectedDaemons: new FormControl<number[]>(
+                        pool.localPools?.map((lp) => lp.daemonId) || [],
+                        Validators.required
+                    ),
+                })
+            )
+        }
+        return formArray
+    }
+
+    /**
+     * Converts a form holding pool data to a pool instance.
+     *
+     * @param localData an interface pointing to a local subnet, pool or shared
+     * network for which the data should be converted.
+     * @param form form a form comprising pool data.
+     * @returns A pool instance converted from the form.
+     */
+    convertFormToAddressPools(localData: LocalDaemonData, form: FormArray<FormGroup<AddressPoolForm>>): Pool[] {
+        const pools: Pool[] = []
+        for (let poolCtrl of form.controls) {
+            const selectedDaemons = poolCtrl.get('selectedDaemons')?.value
+            const index = this.getDaemonIndex(localData, selectedDaemons)
+            if (index < 0) {
+                continue
+            }
+            const range = `${poolCtrl.get('range.start').value}-${poolCtrl.get('range.end').value}`
+            const params = this.convertFormToKeaParameters(poolCtrl.get('parameters') as FormGroup<AddressPoolForm>)
+            const options = poolCtrl.get('options') as UntypedFormGroup
+            const pool: Pool = {
+                pool: range,
+                keaConfigPoolParameters: params.length > index ? params[index] : null,
+            }
+            const data = options.get('data') as UntypedFormArray
+            if (data?.length > index) {
+                if (!pool.keaConfigPoolParameters) {
+                    pool.keaConfigPoolParameters = {}
+                }
+                pool.keaConfigPoolParameters.options = this.optionService.convertFormToOptions(
+                    range.includes(':') ? IPType.IPv6 : IPType.IPv4,
+                    data.at(!!options.get('unlocked')?.value ? index : 0) as UntypedFormArray
+                )
+            }
+            pools.push(pool)
+        }
+        return pools
+    }
+
+    /**
+     * Converts subnet data to a form.
+     *
+     * @param ipType universe (i.e., IPv4 or IPv6 subnet)
+     * @param subnet subnet data.
+     * @returns A form created for a subnet.
+     */
+    convertSubnetToForm(ipType: IPType, subnet: Subnet): FormGroup<SubnetForm> {
+        let formGroup = new FormGroup<SubnetForm>({
+            subnet: new FormControl({ value: subnet.subnet, disabled: true }),
+            pools: this.convertAddressPoolsToForm(subnet),
+            parameters: this.convertKeaSubnetParametersToForm(
+                ipType,
+                subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
+            ),
+            options: new FormGroup({
+                unlocked: new FormControl(hasDifferentSubnetLevelOptions(subnet)),
+                data: new UntypedFormArray(
+                    subnet.localSubnets?.map((ls) =>
+                        this.optionService.convertOptionsToForm(
+                            ipType,
+                            ls.keaConfigSubnetParameters.subnetLevelParameters.options
+                        )
+                    ) || []
+                ),
+            }),
+            selectedDaemons: new FormControl<number[]>(
+                subnet.localSubnets?.map((ls) => ls.daemonId) || [],
+                Validators.required
+            ),
+        })
+        return formGroup
+    }
+
+    /**
      * Converts a form holding subnet data to a subnet instance.
      *
      * It currently only converts the simple DHCP parameters and options. It
@@ -456,7 +742,9 @@ export class SubnetSetFormService {
                 }) || [],
         }
         // Convert the simple DHCP parameters and options.
-        const params = this.convertFormToKeaParameters(form.get('parameters') as FormGroup<KeaSubnetParametersForm>)
+        const params = this.convertFormToKeaSubnetParameters(
+            form.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        )
         const options = form.get('options') as UntypedFormGroup
         for (let i = 0; i < subnet.localSubnets.length; i++) {
             subnet.localSubnets[i].keaConfigSubnetParameters = {
@@ -467,6 +755,10 @@ export class SubnetSetFormService {
                     subnetLevelParameters: params[i],
                 }
             }
+            subnet.localSubnets[i].pools = this.convertFormToAddressPools(
+                subnet.localSubnets[i],
+                form.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+            )
             const data = options.get('data') as UntypedFormArray
             if (data?.length > i) {
                 subnet.localSubnets[i].keaConfigSubnetParameters.subnetLevelParameters.options =
@@ -479,39 +771,87 @@ export class SubnetSetFormService {
         return subnet
     }
 
-    /**
-     * Converts a form holding DHCP parameters to a set of parameters assignable
-     * to a subnet instance.
-     *
-     * @param form a form holding DHCP parameters for a subnet.
-     * @returns An array of parameter sets for different servers.
-     */
-    convertFormToKeaParameters(form: FormGroup<KeaSubnetParametersForm>): KeaConfigSubnetDerivedParameters[] {
-        const params: KeaConfigSubnetDerivedParameters[] = []
+    adjustFormForSelectedDaemons(
+        formGroup: FormGroup<SubnetForm | AddressPoolForm>,
+        toggledDaemonIndex: number,
+        prevSelectedDaemonsNum: number
+    ): void {
+        // If the number of daemons hasn't changed, there is nothing more to do.
+        const selectedDaemons = formGroup.get('selectedDaemons').value ?? []
+        if (prevSelectedDaemonsNum === selectedDaemons.length) {
+            return
+        }
 
-        for (let key in form.controls) {
-            const unlocked = form.get(key).get('unlocked')?.value
-            const values = form.get(key).get('values') as UntypedFormArray
-            for (let i = 0; i < values.length; i++) {
-                if (params.length <= i) {
-                    params.push({})
+        const pools = formGroup.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        if (pools) {
+            for (const pool of pools.controls) {
+                pool.get('selectedDaemons').setValue(
+                    pool.get('selectedDaemons').value.filter((sd) => selectedDaemons.find((found) => found === sd))
+                )
+            }
+        }
+
+        // Get form controls pertaining to the servers before the selection change.
+        const parameters = formGroup.get('parameters') as FormGroup<KeaSubnetParametersForm | KeaPoolParametersForm>
+
+        // Iterate over the controls holding the configuration parameters.
+        for (const key of Object.keys(parameters?.controls)) {
+            const values = parameters.get(key).get('values') as UntypedFormArray
+            const unlocked = parameters.get(key).get('unlocked') as UntypedFormControl
+            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+                // We have removed a daemon from a list. Let's remove the
+                // controls pertaining to the removed daemon.
+                if (values?.length > selectedDaemons.length) {
+                    // If we have the index of the removed daemon let's remove the
+                    // controls appropriate for this daemon. This will preserve the
+                    // values specified for any other daemons. Otherwise, let's remove
+                    // the last control.
+                    if (toggledDaemonIndex >= 0 && toggledDaemonIndex < values.controls.length && unlocked?.value) {
+                        values.controls.splice(toggledDaemonIndex, 1)
+                    } else {
+                        values.controls.splice(selectedDaemons.length)
+                    }
                 }
-                if (values.at(!!unlocked ? i : 0).value != null) {
-                    params[i][key] = values.at(!!unlocked ? i : 0).value
+                // Clear the unlock flag when there is only one server left.
+                if (values?.length < 2) {
+                    unlocked?.setValue(false)
+                    unlocked?.disable()
+                }
+            } else {
+                // If we have added a new server we should populate some values
+                // for this server. Let's use the values associated with the first
+                // server. We should have at least one server at this point but
+                // let's double check.
+                if (values?.length > 0) {
+                    values.push(this.genericFormService.cloneControl(values.at(0)))
+                    unlocked?.enable()
                 }
             }
         }
-        return params
-    }
 
-    /**
-     * Creates a default form for an empty subnet.
-     *
-     * @param ipType subnet universe (IPv4 or IPv6).
-     * @returns A default form group for a subnet.
-     */
-    createDefaultKeaParametersForm(ipType: IPType): UntypedFormGroup {
-        let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
-        return this.convertKeaParametersToForm(ipType, parameters)
+        // Handle the daemons selection change for the DHCP options.
+        const data = formGroup.get('options.data') as UntypedFormArray
+        if (data?.controls?.length > 0) {
+            const unlocked = formGroup.get('options')?.get('unlocked') as UntypedFormControl
+            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+                // If we have the index of the removed daemon let's remove the
+                // controls appropriate for this daemon. This will preserve the
+                // values specified for any other daemons. Otherwise, let's remove
+                // the last control.
+                if (toggledDaemonIndex >= 0 && toggledDaemonIndex < data.controls.length && unlocked.value) {
+                    data.controls.splice(toggledDaemonIndex, 1)
+                } else {
+                    data.controls.splice(selectedDaemons.length)
+                }
+                // Clear the unlock flag when there is only one server left.
+                if (data.controls.length < 2) {
+                    unlocked?.setValue(false)
+                    unlocked?.disable()
+                }
+            } else {
+                data.push(this.optionService.cloneControl(data.controls[0]))
+                unlocked?.enable()
+            }
+        }
     }
 }

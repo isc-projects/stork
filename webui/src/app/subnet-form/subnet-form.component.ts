@@ -1,14 +1,16 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core'
-import { DHCPService, Subnet, UpdateHostBeginResponse, UpdateSubnetBeginResponse } from '../backend'
-import { getErrorMessage } from '../utils'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
+import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
+import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
 import { FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
-import { KeaSubnetParametersForm, SubnetForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
+import { AddressPoolForm, KeaSubnetParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { SubnetFormState } from '../forms/subnet-form'
 import { GenericFormService } from '../forms/generic-form.service'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
+import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
+import { SelectableDaemon } from '../forms/selectable-daemon'
 
 /**
  * A component providing a form for editing and adding a subnet.
@@ -19,6 +21,8 @@ import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
     styleUrls: ['./subnet-form.component.sass'],
 })
 export class SubnetFormComponent implements OnInit, OnDestroy {
+    @ViewChildren(AddressPoolFormComponent) addressPoolComponents!: QueryList<AddressPoolFormComponent>
+
     /**
      * Form state instance.
      *
@@ -190,7 +194,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
             subnet
         )
-        this.handleDaemonsChange(-1)
+        this.handleDaemonsChange()
     }
 
     /**
@@ -218,6 +222,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Returns the current subnet prefix.
+     */
+    get subnet(): string {
+        return this.form.group.get('subnet')?.value || ''
+    }
+
+    /**
      * Returns severity of a tag associating a form control with a server.
      *
      * @param index server index in the {@link servers} array.
@@ -226,16 +237,19 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * server.
      */
     getServerTagSeverity(index: number): string {
-        switch (index) {
-            case 0:
-                return 'success'
-            case 1:
-                return 'warning'
-            case 2:
-                return 'danger'
-            default:
-                return 'info'
-        }
+        return getSeverityByIndex(index)
+    }
+
+    /**
+     * Returns a string representation of a pool range.
+     *
+     * It is used in the headers of the accordion components showing the pools.
+     *
+     * @param pool a form group holding the pool data.
+     * @returns A string representation of the pool range.
+     */
+    getPoolHeader(pool: FormGroup<AddressPoolForm>): string {
+        return `${pool.get('range.start').value}-${pool.get('range.end').value}`
     }
 
     /**
@@ -250,6 +264,16 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Returns a list of selected daemons.
+     *
+     * @returns A list of selected daemons.
+     */
+    getSelectedDaemons(): SelectableDaemon[] {
+        const selectedDaemons = this.form.group.get('selectedDaemons').value ?? []
+        return selectedDaemons.map((sd) => this.form.allDaemons.find((d) => d.id === sd))
+    }
+
+    /**
      * Adjusts the form state based on the selected daemons.
      *
      * Servers selection affecs the form contents. When none are selected, the
@@ -258,10 +282,16 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * form update because the parts of the form related to that server must be
      * removed.
      *
-     * @param toggledDaemonIndex an index of the removed daemon in the controls
-     * array or a negative value if the index could not be found.
+     * @param toggledDaemonId optional id of the removed daemon in the controls.
      */
-    private handleDaemonsChange(toggledDaemonIndex: number): void {
+    private handleDaemonsChange(toggledDaemonId?: number): void {
+        const toggledDaemonIndex = toggledDaemonId
+            ? this.form.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
+            : -1
+        this.subnetSetFormService.adjustFormForSelectedDaemons(this.form.group, toggledDaemonIndex, this.servers.length)
+        this.addressPoolComponents.forEach((acp) => acp.handleDaemonsChange(toggledDaemonId))
+        this.addressPoolComponents.forEach((acp) => (acp.selectableDaemons = this.getSelectedDaemons()))
+
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
@@ -271,72 +301,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.resetOptionsArray()
             this.resetParametersArray()
             return
-        }
-        // If the number of daemons hasn't changed, there is nothing more to do.
-        if (this.servers.length === selectedDaemons.length) {
-            return
-        }
-        // Get form controls pertaining to the servers before the selection change.
-        const parameters = this.form.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
-
-        // Iterate over the controls holding the configuration parameters.
-        for (const key of Object.keys(parameters?.controls)) {
-            const values = parameters.get(key).get('values') as UntypedFormArray
-            const unlocked = parameters.get(key).get('unlocked') as UntypedFormControl
-            if (selectedDaemons.length < this.servers.length) {
-                // We have removed a daemon from a list. Let's remove the
-                // controls pertaining to the removed daemon.
-                if (values?.length > selectedDaemons.length) {
-                    // If we have the index of the removed daemon let's remove the
-                    // controls appropriate for this daemon. This will preserve the
-                    // values specified for any other daemons. Otherwise, let's remove
-                    // the last control.
-                    if (toggledDaemonIndex >= 0 && toggledDaemonIndex < values.controls.length && unlocked?.value) {
-                        values.controls.splice(toggledDaemonIndex, 1)
-                    } else {
-                        values.controls.splice(selectedDaemons.length)
-                    }
-                }
-                // Clear the unlock flag when there is only one server left.
-                if (values?.length < 2) {
-                    unlocked?.setValue(false)
-                    unlocked?.disable()
-                }
-            } else {
-                // If we have added a new server we should populate some values
-                // for this server. Let's use the values associated with the first
-                // server. We should have at least one server at this point but
-                // let's double check.
-                if (values?.length > 0) {
-                    values.push(this.genericFormService.cloneControl(values.at(0)))
-                    unlocked?.enable()
-                }
-            }
-        }
-
-        // Handle the daemons selection change for the DHCP options.
-        let data = this.getOptionsData()
-        if (data?.controls?.length > 0) {
-            const unlocked = this.form.group.get('options')?.get('unlocked') as UntypedFormControl
-            if (selectedDaemons.length < this.servers.length) {
-                // If we have the index of the removed daemon let's remove the
-                // controls appropriate for this daemon. This will preserve the
-                // values specified for any other daemons. Otherwise, let's remove
-                // the last control.
-                if (toggledDaemonIndex >= 0 && toggledDaemonIndex < data.controls.length && unlocked.value) {
-                    data.controls.splice(toggledDaemonIndex, 1)
-                } else {
-                    data.controls.splice(selectedDaemons.length)
-                }
-                // Clear the unlock flag when there is only one server left.
-                if (data.controls.length < 2) {
-                    unlocked?.setValue(false)
-                    unlocked?.disable()
-                }
-            } else {
-                data.push(this.optionsFormService.cloneControl(data.controls[0]))
-                unlocked?.enable()
-            }
         }
         // If the number of selected daemons has changed we must update selected servers list.
         this.servers = selectedDaemons.map((sd) => this.form.getDaemonById(sd)?.label)
@@ -348,8 +312,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * Adjusts the form state based on the selected daemons.
      */
     onDaemonsChange(event): void {
-        const toggledDaemonIndex = this.form.filteredDaemons.findIndex((fd) => fd.id === event.itemValue)
-        this.handleDaemonsChange(toggledDaemonIndex)
+        this.handleDaemonsChange(event.itemValue)
     }
 
     /**
@@ -419,9 +382,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                         ls.keaConfigSubnetParameters.subnetLevelParameters.relay =
                             originalLocalSubnet.keaConfigSubnetParameters.subnetLevelParameters.relay
                     }
-                    if (originalLocalSubnet.pools) {
-                        ls.pools = originalLocalSubnet.pools
-                    }
                     if (originalLocalSubnet.prefixDelegationPools) {
                         ls.prefixDelegationPools = originalLocalSubnet.prefixDelegationPools
                     }
@@ -476,7 +436,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
         this.form.group.setControl(
             'parameters',
-            this.subnetSetFormService.createDefaultKeaParametersForm(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
+            this.subnetSetFormService.createDefaultKeaSubnetParametersForm(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
         )
     }
 

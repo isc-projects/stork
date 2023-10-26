@@ -7,7 +7,7 @@ import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { DropdownModule } from 'primeng/dropdown'
 import { FieldsetModule } from 'primeng/fieldset'
-import { FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
+import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
@@ -23,7 +23,7 @@ import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
-import { KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
+import { AddressPoolForm, KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -32,6 +32,8 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
 import { MessagesModule } from 'primeng/messages'
+import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
+import { AccordionModule } from 'primeng/accordion'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -314,6 +316,7 @@ describe('SubnetFormComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
+                AccordionModule,
                 ButtonModule,
                 CheckboxModule,
                 ChipsModule,
@@ -337,6 +340,7 @@ describe('SubnetFormComponent', () => {
                 ToastModule,
             ],
             declarations: [
+                AddressPoolFormComponent,
                 DhcpClientClassSetFormComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
@@ -397,7 +401,6 @@ describe('SubnetFormComponent', () => {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
                                 options: [],
-                                optionsHash: '',
                             },
                         },
                     ],
@@ -435,7 +438,6 @@ describe('SubnetFormComponent', () => {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
                                 options: [],
-                                optionsHash: '',
                             },
                         },
                     ],
@@ -513,7 +515,6 @@ describe('SubnetFormComponent', () => {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
                                 options: [],
-                                optionsHash: '',
                             },
                         },
                     ],
@@ -554,7 +555,6 @@ describe('SubnetFormComponent', () => {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
                                 options: [],
-                                optionsHash: '',
                             },
                         },
                     ],
@@ -605,10 +605,16 @@ describe('SubnetFormComponent', () => {
         // We cannot use contains() function here because it returns false for
         // disabled controls.
         expect(component.form?.group?.get('subnet')).toBeTruthy()
+        expect(component.form?.group?.get('pools')).toBeTruthy()
         expect(component.form?.group?.contains('parameters')).toBeTrue()
         expect(component.form?.group?.contains('options')).toBeTrue()
 
         expect(component.form?.group?.get('subnet').value).toBe('192.0.2.0/24')
+
+        const pools = component.form?.group?.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools?.length).toBe(1)
+        expect(pools.get('0.range.start')?.value).toBe('192.0.2.10')
+        expect(pools.get('0.range.end')?.value).toBe('192.0.2.100')
 
         const parameters = component.form?.group?.get('parameters') as FormGroup<KeaSubnetParametersForm>
         expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
@@ -620,6 +626,21 @@ describe('SubnetFormComponent', () => {
         expect(data?.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(5)
         expect(data.get('1.0.optionCode')?.value).toBe(5)
+    }))
+
+    it('should present the pool in accordion', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        component.subnetId = 123
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
+        expect(poolsPanel).toBeTruthy()
+
+        const poolPanel = poolsPanel.query(By.css('p-accordion'))
+        expect(poolsPanel).toBeTruthy()
+        expect(poolPanel.nativeElement.innerText).toContain('192.0.2.10-192.0.2.100')
     }))
 
     it('should return correct server tag severity', () => {
@@ -635,12 +656,20 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
+        expect(component.addressPoolComponents.length).toBe(1)
+        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
         component.form.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
         fixture.detectChanges()
+
+        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(1)
+        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(1)
+        expect(component.addressPoolComponents.get(0).selectableDaemons[0].id).toBe(2)
 
         const options = component.form.group.get('options.data') as UntypedFormArray
         expect(options.length).toBe(1)
@@ -660,12 +689,19 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 234
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
+        expect(component.addressPoolComponents.length).toBe(1)
+        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
         component.form.group.get('selectedDaemons').setValue([3, 4, 5])
         component.onDaemonsChange({
             itemValue: 5,
         })
         fixture.detectChanges()
+
+        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(5)
+        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(3)
 
         const options = component.form.group.get('options.data') as UntypedFormArray
         expect(options.length).toBe(3)
