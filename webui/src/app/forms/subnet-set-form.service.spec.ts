@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing'
 
-import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
+import {
+    AddressPoolForm,
+    KeaPoolParametersForm,
+    KeaSubnetParametersForm,
+    SubnetSetFormService,
+} from './subnet-set-form.service'
 import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Pool, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
@@ -412,6 +417,16 @@ describe('SubnetSetFormService', () => {
             expect(control.controls?.unlocked?.value).toBeFalse()
             expect(control.controls?.values?.value.length).toBe(1)
         }
+    })
+
+    it('should create a default form for an address pool', () => {
+        const form = service.createDefaultAddressPoolForm('192.0.2.0/24')
+        expect(form.get('range.start')?.value).toBe('')
+        expect(form.get('range.end')?.value).toBe('')
+        const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
+        expect(parameters).toBeTruthy()
+        expect(Object.keys(parameters.controls).length).toBe(2)
+        expect(form.get('options')).toBeTruthy()
     })
 
     it('should convert Kea IPv4 subnet parameters to a form group', () => {

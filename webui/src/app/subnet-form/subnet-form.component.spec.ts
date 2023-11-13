@@ -658,6 +658,14 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
+        // Expand the tab.
+        const tab = fixture.debugElement.query(By.css('p-accordionTab'))
+        expect(tab).toBeTruthy()
+        const link = tab.query(By.css('a'))
+        expect(link).toBeTruthy()
+        link.nativeElement.click()
+        fixture.detectChanges()
+
         expect(component.addressPoolComponents.length).toBe(1)
         spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
@@ -689,6 +697,14 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 234
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
+        // Expand the tab.
+        const tab = fixture.debugElement.query(By.css('p-accordionTab'))
+        expect(tab).toBeTruthy()
+        const link = tab.query(By.css('a'))
+        expect(link).toBeTruthy()
+        link.nativeElement.click()
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.length).toBe(1)
@@ -747,6 +763,41 @@ describe('SubnetFormComponent', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(2)
         expect(parameters.get('allocator.values.0')?.value).toBe('random')
         expect(parameters.get('allocator.values.1')?.value).toBe('iterative')
+    }))
+
+    it('should add and remove the pool', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.onAddressPoolAdd()
+        fixture.detectChanges()
+
+        const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
+        expect(poolsPanel).toBeTruthy()
+
+        // Expand the tab.
+        const tabs = fixture.debugElement.queryAll(By.css('p-accordionTab'))
+        expect(tabs.length).toBe(2)
+        const link = tabs[1].query(By.css('a'))
+        expect(link).toBeTruthy()
+        link.nativeElement.click()
+        fixture.detectChanges()
+
+        expect(tabs[1].nativeElement.innerText).toContain('New Pool')
+        const poolDeleteBtn = tabs[1].query(By.css('[label="Delete Pool"]'))
+        expect(poolDeleteBtn).toBeTruthy()
+
+        let pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools?.length).toBe(2)
+
+        spyOn(messageService, 'add').and.callThrough()
+        component.onAddressPoolDelete(1)
+        pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools?.length).toBe(1)
+        expect(messageService.add).toHaveBeenCalled()
     }))
 
     it('should emit cancel event', () => {

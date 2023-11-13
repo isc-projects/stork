@@ -11,7 +11,7 @@
                     (form.group.get('subnet').dirty || form.group.get('subnet').touched)
                 "
                 class="p-error block"
-                >At least one server must be selected.
+                >A subnet prefix is required.
             </small>
         </p-fieldset>
         <p-fieldset legend="Assignments" styleClass="mt-4">
@@ -43,15 +43,48 @@
         </p-fieldset>
         <p-fieldset legend="Pools" styleClass="mt-4">
             <p-accordion>
-                <p-accordionTab *ngFor="let pool of form.group.get('pools')?.controls" [header]="getPoolHeader(pool)">
-                    <app-address-pool-form
-                        [subnet]="subnet"
-                        [formGroup]="pool"
-                        [selectableDaemons]="getSelectedDaemons()"
-                    >
-                    </app-address-pool-form>
+                <p-accordionTab *ngFor="let pool of form.group.get('pools')?.controls; let i = index">
+                    <ng-template pTemplate="header">
+                        <div class="flex align-items-center">
+                            <span class="vertical-align-middle">{{ getPoolHeader(i)[0] }}</span>
+                            <span
+                                *ngIf="pool.invalid && (pool.dirty || pool.touched)"
+                                class="ml-2 pi pi-exclamation-triangle"
+                                [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
+                            ></span>
+                        </div>
+                    </ng-template>
+                    <ng-template pTemplate="content">
+                        <app-address-pool-form
+                            [subnet]="subnet"
+                            [formGroup]="pool"
+                            [selectableDaemons]="getSelectedDaemons()"
+                        >
+                        </app-address-pool-form>
+                        <div class="flex justify-content-start mt-4 mb-4">
+                            <div class="flex align-items-center">
+                                <p-button
+                                    styleClass="p-button-sm p-button-danger"
+                                    icon="pi pi-times"
+                                    label="Delete Pool"
+                                    (click)="onAddressPoolDelete(i)"
+                                ></p-button>
+                            </div>
+                        </div>
+                    </ng-template>
                 </p-accordionTab>
             </p-accordion>
+            <div class="flex justify-content-start">
+                <div class="flex align-items-center">
+                    <p-button
+                        styleClass="p-button-sm ml-0 mt-4"
+                        icon="fa-solid fa-plus"
+                        label="Add Pool"
+                        severity="warning"
+                        (click)="onAddressPoolAdd()"
+                    ></p-button>
+                </div>
+            </div>
         </p-fieldset>
         <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
             <app-shared-parameters-form [servers]="servers" [formGroup]="form.group.get('parameters')">

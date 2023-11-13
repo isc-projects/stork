@@ -56,19 +56,27 @@
                 </p-multiSelect>
                 <label for="pool-servers-select">DHCP Servers</label>
             </span>
+            <small
+                *ngIf="
+                    formGroup.get('selectedDaemons').invalid &&
+                    (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
+                "
+                class="p-error block"
+                >At least one server must be selected.
+            </small>
         </div>
     </p-fieldset>
     <p-fieldset legend="Pool DHCP Parameters" styleClass="mt-4">
         <app-shared-parameters-form [servers]="servers" [formGroup]="formGroup.get('parameters')">
         </app-shared-parameters-form>
     </p-fieldset>
-    <p-fieldset [formGroup]="formGroup.get('options')" legend="Pool DHCP Options" styleClass="mt-4 mb-4">
+    <p-fieldset [formGroup]="formGroup.get('options')" legend="Pool DHCP Options" styleClass="mt-4">
         <div class="flex mt-2 pb-4">
             <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
             <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
         </div>
         <ng-container *ngFor="let optionSet of formGroup.get('options.data')?.controls; let i = index">
-            <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3 host-form-abs-width">
+            <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3">
                 <div *ngIf="formGroup.get('options.unlocked')?.value" class="pb-5">
                     <p-divider *ngIf="formGroup.get('options.data')?.length > 1" align="center">
                         <p-tag [severity]="getServerTagSeverity(i)">

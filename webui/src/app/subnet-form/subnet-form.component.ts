@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, V
 import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
-import { FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
+import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
 import { AddressPoolForm, KeaSubnetParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
@@ -245,11 +245,15 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * It is used in the headers of the accordion components showing the pools.
      *
-     * @param pool a form group holding the pool data.
-     * @returns A string representation of the pool range.
+     * @param index a pool index.
+     * @returns A string representation of the pool range and a boolean flag
+     * indicating if the pool has a range specified.
      */
-    getPoolHeader(pool: FormGroup<AddressPoolForm>): string {
-        return `${pool.get('range.start').value}-${pool.get('range.end').value}`
+    getPoolHeader(index: number): [string, boolean] {
+        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        return pools?.at(index).get('range.start')?.value && pools.at(index)?.get('range.end')?.value
+            ? [`${pools.at(index).get('range.start').value}-${pools.at(index).get('range.end').value}`, true]
+            : ['New Pool', false]
     }
 
     /**
@@ -313,6 +317,38 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onDaemonsChange(event): void {
         this.handleDaemonsChange(event.itemValue)
+    }
+
+    /**
+     * A callback invoked when new address pool is added.
+     *
+     * It extends the form to hold the new pool information.
+     */
+    onAddressPoolAdd(): void {
+        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        pools?.push(this.subnetSetFormService.createDefaultAddressPoolForm(this.subnet))
+    }
+
+    /**
+     * A callback invoked when an address pool is deleted.
+     *
+     * Besides deleting the pool it also notifies the user that the pool has
+     * been deleted using the message service.
+     *
+     * @param index pool index.
+     */
+    onAddressPoolDelete(index: number): void {
+        const [poolHeader, specified] = this.getPoolHeader(index)
+        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        if (pools?.length > index) {
+            pools.removeAt(index)
+            this.messageService.add({
+                severity: 'info',
+                summary: specified ? `Pool ${poolHeader} deleted from the form` : `Pool deleted from the form`,
+                detail: 'You can restore the original pools using the Revert Changes button below.',
+                life: 10000,
+            })
+        }
     }
 
     /**

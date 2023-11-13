@@ -270,6 +270,31 @@ export class SubnetSetFormService {
     }
 
     /**
+     * Creates a default form for an address pool.
+     *
+     * @param subnet subnet prefix.
+     * @returns A default form group for an address pool.
+     */
+    createDefaultAddressPoolForm(subnet: string): FormGroup<AddressPoolForm> {
+        let formGroup = new FormGroup<AddressPoolForm>({
+            range: new FormGroup<AddressRangeForm>(
+                {
+                    start: new FormControl('', StorkValidators.ipInSubnet(subnet)),
+                    end: new FormControl('', StorkValidators.ipInSubnet(subnet)),
+                },
+                StorkValidators.ipRangeBounds
+            ),
+            parameters: this.createDefaultKeaPoolParametersForm(),
+            options: new FormGroup({
+                unlocked: new FormControl(false),
+                data: new UntypedFormArray([]),
+            }),
+            selectedDaemons: new FormControl([], Validators.required),
+        })
+        return formGroup
+    }
+
+    /**
      * Converts Kea subnet parameters to a form.
      *
      * The created form is used in the {@link SharedParametersForm} for editing
@@ -771,6 +796,18 @@ export class SubnetSetFormService {
         return subnet
     }
 
+    /**
+     * Adjusts the form to the new daemons selection.
+     *
+     * This function is invoked when a user selected or unselected daemons
+     * associated with a subnet or a pool. New form controls are added when
+     * new daemons are selected. Existing form controls are removed when the
+     * daemons are unselected.
+     *
+     * @param formGroup form group holding the subnet or pool data.
+     * @param toggledDaemonIndex index of the selected or unselected daemon.
+     * @param prevSelectedDaemonsNum a number of previously selected daemons.
+     */
     adjustFormForSelectedDaemons(
         formGroup: FormGroup<SubnetForm | AddressPoolForm>,
         toggledDaemonIndex: number,

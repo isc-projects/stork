@@ -5,5 +5,23 @@
     margin-top: 2px
     margin-bottom: 2px
 
-:host ::ng-deep .p-accordion .p-accordion-tab-active .p-toggleable-content
-    overflow: visible
+:host ::ng-deep .p-accordion
+    .p-accordion-tab .p-accordion-header
+        .p-accordion-header-link
+            text-decoration: none
+
+        &:not(.p-disabled).p-highlight:hover .p-accordion-header-link
+            background: #dbdbdb
+            border-color: #dbdbdb
+            color: var(--text-color)
+            text-decoration: none
+
+    .p-accordion-tab-active
+        .p-toggleable-content
+            overflow: visible
+
+        .p-accordion-header .p-accordion-header-link
+            background: #f4f4f4
+            border-color: var(--surface-border)
+            color: var(--text-color)
+            text-decoration: none
