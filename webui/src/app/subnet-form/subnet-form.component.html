@@ -48,7 +48,10 @@
                         <div class="flex align-items-center">
                             <span class="vertical-align-middle">{{ getPoolHeader(i)[0] }}</span>
                             <span
-                                *ngIf="pool.invalid && (pool.dirty || pool.touched)"
+                                *ngIf="
+                                    pool.invalid &&
+                                    (pool.dirty || pool.touched || pool.get('range')?.hasError('ipRangeOverlaps'))
+                                "
                                 class="ml-2 pi pi-exclamation-triangle"
                                 [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
                             ></span>

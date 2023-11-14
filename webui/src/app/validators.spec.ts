@@ -1,5 +1,6 @@
-import { UntypedFormBuilder } from '@angular/forms'
+import { FormArray, FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms'
 import { StorkValidators } from './validators'
+import { AddressPoolForm, AddressRangeForm } from './forms/subnet-set-form.service'
 
 describe('StorkValidators', () => {
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
@@ -203,6 +204,112 @@ describe('StorkValidators', () => {
         })
         expect(fg.get('start').invalid).toBeTrue()
         expect(fg.get('end').invalid).toBeTrue()
+    })
+
+    it('detects overlaps in the IPv4 address ranges', () => {
+        let fa = new FormArray([
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.50'),
+                    end: new FormControl('192.0.2.60'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.5'),
+                    end: new FormControl('192.0.2.15'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.49'),
+                    end: new FormControl('192.0.2.51'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.100'),
+                    end: new FormControl('192.0.2.115'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.88'),
+                    end: new FormControl('192.0.2.100'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
+
+        // Range 0 overlaps with range 2.
+        expect(fa.at(0).invalid).toBeTrue()
+        // Range 1 does not overlap.
+        expect(fa.at(1).invalid).toBeFalse()
+        // Range 2 overlaps with range 0.
+        expect(fa.at(2).invalid).toBeTrue()
+        // Range 3 overlaps with range 4.
+        expect(fa.at(3).invalid).toBeTrue()
+        // Range 4 overlaps with range 3.
+        expect(fa.at(4).invalid).toBeTrue()
+
+        // Correct the ranges.
+        fa.get('2.range.end')?.setValue('192.0.2.49')
+        fa.get('3.range.start')?.setValue('192.0.2.101')
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('detects overlaps in the IPv6 address ranges', () => {
+        let fa = new FormArray([
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::100'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::1'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:100::cafe'),
+                    end: new FormControl('2001:db8:300::cafe'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:99::'),
+                    end: new FormControl('2001:db8:100::ffff'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8::'),
+                    end: new FormControl('2001:db8::ffff'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
+
+        // Range 0 overlaps with range 1.
+        expect(fa.at(0).invalid).toBeTrue()
+        // Range 1 overlaps with range 0.
+        expect(fa.at(1).invalid).toBeTrue()
+        // Range 2 overlaps with range 3.
+        expect(fa.at(2).invalid).toBeTrue()
+        // Range 3 overlaps with range 2.
+        expect(fa.at(3).invalid).toBeTrue()
+        // Range 4 does not overlap.
+        expect(fa.at(4).invalid).toBeFalse()
+
+        // Correct the ranges.
+        fa.get('0.range.start')?.setValue('2001:db8:1::2')
+        fa.get('2.range.end')?.setValue('2001:db8:100::aaaa')
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
     })
 
     it('validates full fqdn', () => {

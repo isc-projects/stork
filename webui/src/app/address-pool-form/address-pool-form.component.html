@@ -38,6 +38,11 @@
             class="p-error block"
             >{{ formGroup.get('range').errors.addressBounds }}
         </small>
+        <small
+            *ngIf="formGroup.get('range').invalid && formGroup.get('range').hasError('ipRangeOverlaps')"
+            class="p-error block"
+            >{{ formGroup.get('range').errors.ipRangeOverlaps }}
+        </small>
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="mt-4">

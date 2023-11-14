@@ -1,6 +1,6 @@
-import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
+import { AbstractControl, FormArray, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
 import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
-import { AddressRangeForm } from './forms/subnet-set-form.service'
+import { AddressPoolForm, AddressRangeForm } from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
 
 /**
@@ -184,6 +184,84 @@ export class StorkValidators {
             fg.get('end').updateValueAndValidity()
         }
         return null
+    }
+
+    /**
+     * A validator checking if the are overlaps between address ranges.
+     *
+     * It sets errors for each overlapping range in the array.
+     *
+     * @param control a form array holding address ranges.
+     * @returns validation errors or null if the ranges do not overlap.
+     */
+    static ipRangeOverlaps(control: AbstractControl): ValidationErrors | null {
+        const fa = control as FormArray<FormGroup<AddressPoolForm>>
+        if (!fa) {
+            return { ipRangeOverlaps: 'Invalid form array type.' }
+        }
+        // Go over the current pools and collect the address ranges sorted.
+        // Each element of the sorted list contains an address range and a
+        // pointer to the form group holding the range. The ranges are sorted
+        // by the lower range boundaries. Invalid ranges are removed by the
+        // filter function.
+        interface RangeData {
+            addressRange: AddressRange
+            ctl: AbstractControl
+            failedOnThisPass: boolean
+        }
+        const ranges: RangeData[] = fa.controls
+            .map((ctl) => {
+                try {
+                    return {
+                        addressRange: AddressRange.fromStringBounds(
+                            ctl.get('range.start')?.value,
+                            ctl.get('range.end')?.value
+                        ),
+                        ctl: ctl.get('range'),
+                        failedOnThisPass: false,
+                    }
+                } catch (err) {
+                    return null
+                }
+            })
+            .filter((range) => range)
+            .sort((range1, range2) => {
+                return range1.addressRange.first.isLessThan(range2.addressRange.first)
+                    ? -1
+                    : range1.addressRange.first.isGreaterThan(range2.addressRange.first)
+                    ? 1
+                    : 0
+            })
+        let result: ValidationErrors | null = null
+        if (ranges.length > 0) {
+            // Now that we have the ranges sorted by the lower boundaries we have to make sure
+            // that the upper boundaries of each range are lower than the start of the next range.
+            for (let i = 0; i < ranges.length - 1; i++) {
+                if (ranges[i].addressRange.last.isGreaterThanOrEquals(ranges[i + 1].addressRange.first)) {
+                    result = {
+                        ipRangeOverlaps: `Address range ${ranges[i].addressRange.getFirst()}-${ranges[
+                            i
+                        ].addressRange.getLast()} overlaps with ${ranges[i + 1].addressRange.getFirst()}-${ranges[
+                            i + 1
+                        ].addressRange.getLast()}.`,
+                    }
+                    // The two ranges overlap. Set the error in the respective form groups.
+                    ranges.slice(i, i + 2).forEach((range) => {
+                        range.ctl.setErrors(result)
+                        range.failedOnThisPass = true
+                    })
+                } else {
+                    // The ranges do not overlap. Clear the errors.
+                    ranges.slice(i, i + 2).forEach((range) => {
+                        if (!range.failedOnThisPass && range.ctl.hasError('ipRangeOverlaps')) {
+                            delete range.ctl.errors['ipRangeOverlaps']
+                            range.ctl.updateValueAndValidity()
+                        }
+                    })
+                }
+            }
+        }
+        return result
     }
 
     /**
