@@ -2,13 +2,13 @@
     <p-fieldset legend="Address Range" styleClass="mt-4">
         <div class="flex mt-4 mb-2" formGroupName="range">
             <div class="flex align-items-center p-float-label">
-                <input id="pool-start" pInputText formControlName="start" />
-                <label for="pool-start">First Address</label>
+                <input [id]="uuids.poolStart" pInputText formControlName="start" />
+                <label [for]="uuids.poolStart">First Address</label>
             </div>
             <div class="flex align-items-center">&nbsp; : &nbsp;</div>
             <div class="flex align-items-center p-float-label">
-                <input id="pool-end" pInputText formControlName="end" />
-                <label for="pool-end">Last Address</label>
+                <input [id]="uuids.poolEnd" pInputText formControlName="end" />
+                <label [for]="uuids.poolEnd">Last Address</label>
             </div>
         </div>
         <small
@@ -48,7 +48,7 @@
         <div class="mt-4">
             <span class="p-float-label mt-4 mb-2">
                 <p-multiSelect
-                    inputId="pool-servers-select"
+                    [inputId]="uuids.selectedDaemons"
                     optionLabel="label"
                     optionValue="id"
                     [options]="selectableDaemons"
@@ -59,7 +59,7 @@
                     (onChange)="onDaemonsChange($event)"
                 >
                 </p-multiSelect>
-                <label for="pool-servers-select">DHCP Servers</label>
+                <label [for]="uuids.selectedDaemons">DHCP Servers</label>
             </span>
             <small
                 *ngIf="

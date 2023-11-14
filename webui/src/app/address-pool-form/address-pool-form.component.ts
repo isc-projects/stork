@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { v4 as uuidv4 } from 'uuid'
 import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
@@ -34,6 +35,15 @@ export class AddressPoolFormComponent implements OnInit {
      * An array of server names associated with the address pool.
      */
     servers: string[] = []
+
+    /**
+     * UUIDS used as unique element identifiers.
+     */
+    uuids = {
+        poolStart: uuidv4(),
+        poolEnd: uuidv4(),
+        selectedDaemons: uuidv4(),
+    }
 
     /**
      * Constructor.
