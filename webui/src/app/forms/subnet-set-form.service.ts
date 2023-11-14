@@ -287,7 +287,7 @@ export class SubnetSetFormService {
             parameters: this.createDefaultKeaPoolParametersForm(),
             options: new FormGroup({
                 unlocked: new FormControl(false),
-                data: new UntypedFormArray([]),
+                data: new UntypedFormArray([new UntypedFormArray([])]),
             }),
             selectedDaemons: new FormControl([], Validators.required),
         })
