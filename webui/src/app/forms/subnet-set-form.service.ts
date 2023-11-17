@@ -10,7 +10,14 @@ import {
     Validators,
 } from '@angular/forms'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, LocalSubnet, Pool, Subnet } from '../backend'
+import {
+    DelegatedPrefixPool,
+    KeaConfigPoolParameters,
+    KeaConfigSubnetDerivedParameters,
+    LocalSubnet,
+    Pool,
+    Subnet,
+} from '../backend'
 import { StorkValidators } from '../validators'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { IPType } from '../iptype'
@@ -134,6 +141,53 @@ export interface AddressPoolForm {
 }
 
 /**
+ * A form for editing a prefix delegation pool.
+ */
+export interface PrefixForm {
+    /**
+     * A prefix in a CIDR notation.
+     */
+    prefix?: FormControl<string>
+
+    /**
+     * A delegated prefix length.
+     */
+    delegatedLength?: FormControl<number>
+
+    /**
+     * An excluded prefix in a CIDR notation.
+     */
+    excludedPrefix?: FormControl<string>
+}
+
+/**
+ * A form for editing a delegated prefix pool.
+ */
+export interface PrefixPoolForm {
+    /**
+     * Delegated and excluded prefixes.
+     */
+    prefixes?: FormGroup<PrefixForm>
+
+    /**
+     * Kea-specific parameters for a pool.
+     */
+    parameters?: FormGroup<KeaPoolParametersForm>
+
+    /**
+     * DHCP options in the pool.
+     */
+    options?: FormGroup<OptionsForm>
+
+    /**
+     * Daemon IDs selected with a multi-select component.
+     *
+     * Selected daemons are associated with the pool.
+     */
+    selectedDaemons?: FormControl<number[]>
+}
+
+/**
  * An interface describing the form for editing a subnet.
  */
 export interface SubnetForm {
@@ -146,6 +200,11 @@ export interface SubnetForm {
      * An array of the address pools.
      */
     pools?: FormArray<FormGroup<AddressPoolForm>>
+
+    /**
+     * An array of the delegated prefix pools.
+     */
+    prefixPools?: FormArray<FormGroup<PrefixPoolForm>>
 
     /**
      * Kea-specific parameters for a subnet.
@@ -283,6 +342,32 @@ export class SubnetSetFormService {
                     end: new FormControl('', StorkValidators.ipInSubnet(subnet)),
                 },
                 StorkValidators.ipRangeBounds
+            ),
+            parameters: this.createDefaultKeaPoolParametersForm(),
+            options: new FormGroup({
+                unlocked: new FormControl(false),
+                data: new UntypedFormArray([new UntypedFormArray([])]),
+            }),
+            selectedDaemons: new FormControl([], Validators.required),
+        })
+        return formGroup
+    }
+
+    /**
+     * Creates a default form for a prefix pool.
+     *
+     * @param subnet subnet prefix.
+     * @returns A default form group for a prefix pool.
+     */
+    createDefaultPrefixPoolForm(subnet: string): FormGroup<PrefixPoolForm> {
+        let formGroup = new FormGroup<PrefixPoolForm>({
+            prefixes: new FormGroup<PrefixForm>(
+                {
+                    prefix: new FormControl('', StorkValidators.ipv6Prefix),
+                    delegatedLength: new FormControl(null, Validators.required),
+                    excludedPrefix: new FormControl('', StorkValidators.ipv6Prefix),
+                },
+                StorkValidators.ipv6ExcludedPrefix
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
             options: new FormGroup({
@@ -695,7 +780,7 @@ export class SubnetSetFormService {
             const options = poolCtrl.get('options') as UntypedFormGroup
             const pool: Pool = {
                 pool: range,
-                keaConfigPoolParameters: params.length > index ? params[index] : null,
+                keaConfigPoolParameters: params?.length > index ? params[index] : null,
             }
             const data = options.get('data') as UntypedFormArray
             if (data?.length > index) {
@@ -704,6 +789,113 @@ export class SubnetSetFormService {
                 }
                 pool.keaConfigPoolParameters.options = this.optionService.convertFormToOptions(
                     range.includes(':') ? IPType.IPv6 : IPType.IPv4,
+                    data.at(!!options.get('unlocked')?.value ? index : 0) as UntypedFormArray
+                )
+            }
+            pools.push(pool)
+        }
+        return pools
+    }
+
+    /**
+     * Converts a set of delegated prefix pools in a subnet to a form.
+     *
+     * @param subnet a subnet instance holding the converted pools.
+     * @returns An array of form groups representing the pools.
+     */
+    convertPrefixPoolsToForm(subnet: Subnet): FormArray<FormGroup<PrefixPoolForm>> {
+        const formArray = new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps)
+        // A subnet can be associated with many servers. Each server may contain
+        // the same or different prefix pools. Some of the pools may overlap.
+        // This call extracts the pools and combines those that are the same for
+        // different servers. It makes it easier to later convert the extracted pools
+        // to a form.
+        const subnetWithUniquePools = extractUniqueSubnetPools(subnet)
+        if (subnetWithUniquePools.length === 0) {
+            return formArray
+        }
+        // Iterate over the extracted pools and convert them to a form.
+        for (const pool of subnetWithUniquePools[0]?.prefixDelegationPools) {
+            formArray.push(
+                new FormGroup<PrefixPoolForm>({
+                    prefixes: new FormGroup<PrefixForm>(
+                        {
+                            prefix: new FormControl(
+                                pool.prefix,
+                                Validators.compose([Validators.required, StorkValidators.ipv6Prefix])
+                            ),
+                            delegatedLength: new FormControl(pool.delegatedLength, Validators.required),
+                            excludedPrefix: new FormControl(pool.excludedPrefix, StorkValidators.ipv6Prefix),
+                        },
+                        Validators.compose([
+                            StorkValidators.ipv6PrefixDelegatedLength,
+                            StorkValidators.ipv6ExcludedPrefixDelegatedLength,
+                            StorkValidators.ipv6ExcludedPrefix,
+                        ])
+                    ),
+                    // Local pools contain Kea-specific pool parameters for different servers.
+                    // Extract them from the local pools and pass as an array to the conversion
+                    // function.
+                    parameters: this.convertKeaPoolParametersToForm(
+                        pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
+                    ),
+                    // Convert the options to a form.
+                    options: new FormGroup({
+                        unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
+                        data: new UntypedFormArray(
+                            pool.localPools?.map((lp) =>
+                                this.optionService.convertOptionsToForm(
+                                    subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
+                                    lp.keaConfigPoolParameters?.options
+                                )
+                            ) || []
+                        ),
+                    }),
+                    selectedDaemons: new FormControl<number[]>(
+                        pool.localPools?.map((lp) => lp.daemonId) || [],
+                        Validators.required
+                    ),
+                })
+            )
+        }
+        return formArray
+    }
+
+    /**
+     * Converts a form holding delegated prefix pool data to a pool instance.
+     *
+     * @param localData an interface pointing to a local subnet, pool or shared
+     * network for which the data should be converted.
+     * @param form form a form comprising pool data.
+     * @returns A pool instance converted from the form.
+     */
+    convertFormToPrefixPools(
+        localData: LocalDaemonData,
+        form: FormArray<FormGroup<PrefixPoolForm>>
+    ): DelegatedPrefixPool[] {
+        const pools: DelegatedPrefixPool[] = []
+        for (let poolCtrl of form.controls) {
+            const selectedDaemons = poolCtrl.get('selectedDaemons')?.value
+            const index = this.getDaemonIndex(localData, selectedDaemons)
+            if (index < 0) {
+                continue
+            }
+            const prefix = poolCtrl.get('prefixes.prefix').value
+            const params = this.convertFormToKeaParameters(poolCtrl.get('parameters') as FormGroup<PrefixPoolForm>)
+            const options = poolCtrl.get('options') as UntypedFormGroup
+            const pool: DelegatedPrefixPool = {
+                prefix: prefix || null,
+                delegatedLength: poolCtrl.get('prefixes.delegatedLength').value || null,
+                excludedPrefix: poolCtrl.get('prefixes.excludedPrefix').value || null,
+                keaConfigPoolParameters: params?.length > index ? params[index] : null,
+            }
+            const data = options.get('data') as UntypedFormArray
+            if (data?.length > index) {
+                if (!pool.keaConfigPoolParameters) {
+                    pool.keaConfigPoolParameters = {}
+                }
+                pool.keaConfigPoolParameters.options = this.optionService.convertFormToOptions(
+                    prefix?.includes(':') ? IPType.IPv6 : IPType.IPv4,
                     data.at(!!options.get('unlocked')?.value ? index : 0) as UntypedFormArray
                 )
             }
@@ -723,6 +915,7 @@ export class SubnetSetFormService {
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             pools: this.convertAddressPoolsToForm(subnet),
+            prefixPools: this.convertPrefixPoolsToForm(subnet),
             parameters: this.convertKeaSubnetParametersToForm(
                 ipType,
                 subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
@@ -784,6 +977,10 @@ export class SubnetSetFormService {
                 subnet.localSubnets[i],
                 form.get('pools') as FormArray<FormGroup<AddressPoolForm>>
             )
+            subnet.localSubnets[i].prefixDelegationPools = this.convertFormToPrefixPools(
+                subnet.localSubnets[i],
+                form.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+            )
             const data = options.get('data') as UntypedFormArray
             if (data?.length > i) {
                 subnet.localSubnets[i].keaConfigSubnetParameters.subnetLevelParameters.options =
@@ -822,6 +1019,15 @@ export class SubnetSetFormService {
         const pools = formGroup.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         if (pools) {
             for (const pool of pools.controls) {
+                pool.get('selectedDaemons').setValue(
+                    pool.get('selectedDaemons').value.filter((sd) => selectedDaemons.find((found) => found === sd))
+                )
+            }
+        }
+
+        const prefixPools = formGroup.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        if (prefixPools) {
+            for (const pool of prefixPools.controls) {
                 pool.get('selectedDaemons').setValue(
                     pool.get('selectedDaemons').value.filter((sd) => selectedDaemons.find((found) => found === sd))
                 )

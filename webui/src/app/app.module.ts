@@ -124,6 +124,7 @@ import { SharedNetworkTabComponent } from './shared-network-tab/shared-network-t
 import { SharedParametersFormComponent } from './shared-parameters-form/shared-parameters-form.component'
 import { SubnetFormComponent } from './subnet-form/subnet-form.component'
 import { AddressPoolFormComponent } from './address-pool-form/address-pool-form.component'
+import { PrefixPoolFormComponent } from './prefix-pool-form/prefix-pool-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -201,6 +202,7 @@ export function cfgFactory() {
         SharedParametersFormComponent,
         SubnetFormComponent,
         AddressPoolFormComponent,
+        PrefixPoolFormComponent,
     ],
     imports: [
         BrowserModule,

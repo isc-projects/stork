@@ -407,6 +407,386 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
     })
 
+    it('should convert prefix pool data to a form', () => {
+        const subnet: Subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::1'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '123',
+                            },
+                        },
+                        {
+                            prefix: '3001::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                        {
+                            prefix: '3002::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
+                                requireClientClasses: ['faz'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::3'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '345',
+                            },
+                        },
+                    ],
+                },
+                {
+                    daemonId: 2,
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            prefix: '3001::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+        const formArray = service.convertPrefixPoolsToForm(subnet)
+        expect(formArray.length).toBe(3)
+        expect(formArray.get('0.prefixes.prefix')?.value).toBe('3000::/16')
+        expect(formArray.get('0.prefixes.delegatedLength')?.value).toBe(112)
+        expect(formArray.get('0.prefixes.excludedPrefix')?.value).toBe('3000::ee00/120')
+
+        let params = formArray.get('0.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(params.get('clientClass.values.0')?.value).toBe('foo')
+        expect(params.get('clientClass.values.1')?.value).toBe('foo')
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('requireClientClasses.values.1')?.value).toEqual(['foo', 'bar'])
+
+        let options = formArray.get('0.options.data') as UntypedFormArray
+        expect(options.length).toBe(2)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::1')
+        expect((options.get('1') as UntypedFormArray).length).toBe(0)
+
+        let selectedDaemons = formArray.get('0.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1, 2])
+
+        expect(formArray.get('1.prefixes.prefix')?.value).toBe('3001::/16')
+        expect(formArray.get('1.prefixes.delegatedLength')?.value).toBe(112)
+        expect(formArray.get('1.prefixes.excludedPrefix')?.value).toBeFalsy()
+
+        params = formArray.get('1.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeTrue()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(params.get('clientClass.values.0')?.value).toBe('foo')
+        expect(params.get('clientClass.values.1')?.value).toBeFalsy()
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeTrue()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('requireClientClasses.values.1')?.value).toEqual([])
+
+        options = formArray.get('1.options.data') as UntypedFormArray
+        expect(options.length).toBe(2)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::2')
+        expect(options.get('1.0.optionFields.0.control')?.value).toBe('2001:db8:1::2')
+
+        selectedDaemons = formArray.get('1.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1, 2])
+
+        expect(formArray.get('2.prefixes.prefix')?.value).toBe('3002::/16')
+        expect(formArray.get('2.prefixes.delegatedLength')?.value).toBe(112)
+        expect(formArray.get('2.prefixes.excludedPrefix')?.value).toBeFalsy()
+
+        params = formArray.get('2.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(params.get('clientClass.unlocked')?.value).toBeFalse()
+        expect((params.get('clientClass.values') as UntypedFormArray).length)?.toBe(1)
+        expect(params.get('clientClass.values.0')?.value).toBe('bar')
+        expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(params.get('requireClientClasses.values.0')?.value).toEqual(['faz'])
+
+        options = formArray.get('2.options.data') as UntypedFormArray
+        expect(options.length).toBe(1)
+        expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::3')
+
+        selectedDaemons = formArray.get('2.selectedDaemons') as FormControl<number[]>
+        expect(selectedDaemons?.value).toEqual([1])
+    })
+
+    it('should convert form to prefix pool data', () => {
+        const subnet: Subnet = {
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::1'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '123',
+                            },
+                        },
+                        {
+                            prefix: '3001::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                        {
+                            prefix: '3002::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
+                                requireClientClasses: ['faz'],
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::3'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '345',
+                            },
+                        },
+                    ],
+                },
+                {
+                    daemonId: 2,
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: ['foo', 'bar'],
+                            },
+                        },
+                        {
+                            prefix: '3001::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 23,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv6-address',
+                                                values: ['2001:db8:1::2'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '234',
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+        const formArray = service.convertPrefixPoolsToForm(subnet)
+
+        let pools = service.convertFormToPrefixPools(subnet.localSubnets[0], formArray)
+        expect(pools.length).toBe(3)
+        expect(pools[0].prefix).toBe('3000::/16')
+        expect(pools[0].delegatedLength).toBe(112)
+        expect(pools[0].excludedPrefix).toBe('3000::ee00/120')
+        expect(pools[0].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[0].keaConfigPoolParameters.options[0].code).toBe(23)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv6-address')
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::1')
+        expect(pools[1].prefix).toBe('3001::/16')
+        expect(pools[1].delegatedLength).toBe(112)
+        expect(pools[1].excludedPrefix).toBeFalsy()
+        expect(pools[1].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[1].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(23)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv6-address')
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::2')
+        expect(pools[2].prefix).toBe('3002::/16')
+        expect(pools[2].delegatedLength).toBe(112)
+        expect(pools[2].excludedPrefix).toBeFalsy()
+        expect(pools[2].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[2].keaConfigPoolParameters.clientClass).toBe('bar')
+        expect(pools[2].keaConfigPoolParameters.requireClientClasses).toEqual(['faz'])
+        expect(pools[2].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[2].keaConfigPoolParameters.options[0].code).toBe(23)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv6-address')
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::3')
+
+        pools = service.convertFormToPrefixPools(subnet.localSubnets[1], formArray)
+        expect(pools.length).toBe(2)
+        expect(pools[0].prefix).toBe('3000::/16')
+        expect(pools[0].delegatedLength).toBe(112)
+        expect(pools[0].excludedPrefix).toBe('3000::ee00/120')
+        expect(pools[0].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
+        expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.options).toEqual([])
+        expect(pools[1].prefix).toBe('3001::/16')
+        expect(pools[1].delegatedLength).toBe(112)
+        expect(pools[1].excludedPrefix).toBeFalsy()
+        expect(pools[1].keaConfigPoolParameters).toBeTruthy()
+        expect(pools[1].keaConfigPoolParameters.clientClass).toBeFalsy()
+        expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual([])
+        expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
+        expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(23)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv6-address')
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
+        expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::2')
+    })
+
     it('should create a default form for pool parameters', () => {
         let form = service.createDefaultKeaPoolParametersForm()
         expect(Object.keys(form.controls).length).toBe(2)
@@ -423,6 +803,17 @@ describe('SubnetSetFormService', () => {
         const form = service.createDefaultAddressPoolForm('192.0.2.0/24')
         expect(form.get('range.start')?.value).toBe('')
         expect(form.get('range.end')?.value).toBe('')
+        const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
+        expect(parameters).toBeTruthy()
+        expect(Object.keys(parameters.controls).length).toBe(2)
+        expect(form.get('options')).toBeTruthy()
+    })
+
+    it('should create a default form for a prefix pool', () => {
+        const form = service.createDefaultPrefixPoolForm('2001:db8:1::/64')
+        expect(form.get('prefixes.prefix')?.value).toBe('')
+        expect(form.get('prefixes.delegatedLength')?.value).toBe(null)
+        expect(form.get('prefixes.excludedPrefix')?.value).toBe('')
         const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
         expect(parameters).toBeTruthy()
         expect(Object.keys(parameters.controls).length).toBe(2)
@@ -1291,6 +1682,17 @@ describe('SubnetSetFormService', () => {
                             pool: '2001:db8:1::40-2001:db8:1::50',
                         },
                     ],
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'baz',
+                                requireClientClasses: ['foo'],
+                            },
+                        },
+                    ],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             pdAllocator: 'random',
@@ -1325,6 +1727,17 @@ describe('SubnetSetFormService', () => {
                         {
                             pool: '2001:db8:1::20-2001:db8:1::30',
                             keaConfigPoolParameters: {
+                                requireClientClasses: ['foo'],
+                            },
+                        },
+                    ],
+                    prefixDelegationPools: [
+                        {
+                            prefix: '3000::/16',
+                            delegatedLength: 112,
+                            excludedPrefix: '3000::ee00/120',
+                            keaConfigPoolParameters: {
+                                clientClass: 'bar',
                                 requireClientClasses: ['foo'],
                             },
                         },
@@ -1393,6 +1806,22 @@ describe('SubnetSetFormService', () => {
         expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
+
+        const prefixPools = formGroup.get('prefixPools') as UntypedFormArray
+        expect(prefixPools.length).toBe(1)
+        expect(prefixPools.get('0.prefixes.prefix')?.value).toBe('3000::/16')
+        expect(prefixPools.get('0.prefixes.delegatedLength')?.value).toBe(112)
+        expect(prefixPools.get('0.prefixes.excludedPrefix')?.value).toBe('3000::ee00/120')
+
+        poolParameters = prefixPools.get('0.parameters') as FormGroup<KeaPoolParametersForm>
+        expect(poolParameters.get('clientClass.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('clientClass.values') as UntypedFormArray).length)?.toBe(2)
+        expect(poolParameters.get('clientClass.values.0')?.value).toBe('baz')
+        expect(poolParameters.get('clientClass.values.1')?.value).toBe('bar')
+        expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo'])
+        expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual(['foo'])
 
         expect(formGroup.get('options.unlocked')?.value).toBeTrue()
 

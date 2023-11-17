@@ -32,6 +32,7 @@ import { HttpClientModule } from '@angular/common/http'
 import { importProvidersFrom } from '@angular/core'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
+import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 
 let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
     id: 123,
@@ -201,6 +202,13 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
                         },
                     },
                 ],
+                prefixDelegationPools: [
+                    {
+                        prefix: '3000:1::/16',
+                        delegatedLength: 64,
+                        excludedPrefix: null,
+                    },
+                ],
                 keaConfigSubnetParameters: {
                     subnetLevelParameters: {
                         allocator: 'random',
@@ -239,6 +247,13 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
                             options: [],
                             optionsHash: '',
                         },
+                    },
+                ],
+                prefixDelegationPools: [
+                    {
+                        prefix: '3000:1::/16',
+                        delegatedLength: 64,
+                        excludedPrefix: null,
                     },
                 ],
                 keaConfigSubnetParameters: {
@@ -346,6 +361,7 @@ export default {
                 DhcpOptionSetFormComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
+                PrefixPoolFormComponent,
                 SharedParametersFormComponent,
                 SubnetFormComponent,
             ],

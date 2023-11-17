@@ -7,7 +7,7 @@ import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { DropdownModule } from 'primeng/dropdown'
 import { FieldsetModule } from 'primeng/fieldset'
-import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
+import { Form, FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
@@ -23,7 +23,7 @@ import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
-import { AddressPoolForm, KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
+import { AddressPoolForm, KeaSubnetParametersForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -34,6 +34,7 @@ import { By } from '@angular/platform-browser'
 import { MessagesModule } from 'primeng/messages'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
+import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -65,6 +66,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'random',
@@ -108,6 +110,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'iterative',
@@ -202,6 +205,11 @@ describe('SubnetFormComponent', () => {
                         {
                             prefix: '3000::/48',
                             delegatedLength: 64,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: [],
+                                options: [],
+                            },
                         },
                     ],
                     keaConfigSubnetParameters: {
@@ -248,6 +256,11 @@ describe('SubnetFormComponent', () => {
                         {
                             prefix: '3000::/48',
                             delegatedLength: 64,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: [],
+                                options: [],
+                            },
                         },
                     ],
                     keaConfigSubnetParameters: {
@@ -346,6 +359,7 @@ describe('SubnetFormComponent', () => {
                 DhcpOptionSetFormComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
+                PrefixPoolFormComponent,
                 SharedParametersFormComponent,
                 SubnetFormComponent,
             ],
@@ -404,6 +418,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'random',
@@ -441,6 +456,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'iterative',
@@ -522,6 +538,12 @@ describe('SubnetFormComponent', () => {
                         {
                             prefix: '3000::/48',
                             delegatedLength: 64,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: [],
+                                options: [],
+                            },
                         },
                     ],
                     keaConfigSubnetParameters: {
@@ -562,6 +584,12 @@ describe('SubnetFormComponent', () => {
                         {
                             prefix: '3000::/48',
                             delegatedLength: 64,
+                            excludedPrefix: null,
+                            keaConfigPoolParameters: {
+                                clientClass: 'foo',
+                                requireClientClasses: [],
+                                options: [],
+                            },
                         },
                     ],
                     keaConfigSubnetParameters: {
@@ -597,7 +625,7 @@ describe('SubnetFormComponent', () => {
         expect(messageService.add).toHaveBeenCalled()
     }))
 
-    it('should initialize the form controls for a subnet', fakeAsync(() => {
+    it('should initialize the form controls for an IPv4 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
@@ -628,6 +656,60 @@ describe('SubnetFormComponent', () => {
         expect(data.get('1.0.optionCode')?.value).toBe(5)
     }))
 
+    it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        // We cannot use contains() function here because it returns false for
+        // disabled controls.
+        expect(component.form?.group?.get('subnet')).toBeTruthy()
+        expect(component.form?.group?.get('pools')).toBeTruthy()
+        expect(component.form?.group?.contains('parameters')).toBeTrue()
+        expect(component.form?.group?.contains('options')).toBeTrue()
+
+        expect(component.form?.group?.get('subnet').value).toBe('2001:db8:1::/64')
+
+        const pools = component.form?.group?.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools?.length).toBe(1)
+        expect(pools.get('0.range.start')?.value).toBe('2001:db8:1::10')
+        expect(pools.get('0.range.end')?.value).toBe('2001:db8:1::100')
+
+        const prefixPools = component.form?.group?.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        expect(prefixPools?.length).toBe(1)
+        expect(prefixPools.get('0.prefixes.prefix')?.value).toBe('3000::/48')
+        expect(prefixPools.get('0.prefixes.delegatedLength')?.value).toBe(64)
+
+        const parameters = component.form?.group?.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
+        expect(parameters.get('allocator.values')?.value).toEqual(['random', null])
+
+        const options = component.form?.group?.get('options')
+        expect(options.get('unlocked')?.value).toBeFalse()
+        const data = options.get('data') as UntypedFormArray
+        expect(data?.length).toBe(2)
+        expect(data.get('0.0.optionCode')?.value).toBe(23)
+        expect(data.get('1.0.optionCode')?.value).toBe(23)
+    }))
+
+    it('should return a valid pool header', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        expect(component.getPoolHeader(0)).toEqual(['2001:db8:1::10-2001:db8:1::100', true])
+        expect(component.getPoolHeader(1)).toEqual(['New Pool', false])
+    }))
+
+    it('should return a valid prefix pool header', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        expect(component.getPrefixPoolHeader(0)).toEqual(['3000::/48', true])
+        expect(component.getPrefixPoolHeader(1)).toEqual(['New Pool', false])
+    }))
+
     it('should present the pool in accordion', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
         component.subnetId = 123
@@ -641,6 +723,21 @@ describe('SubnetFormComponent', () => {
         const poolPanel = poolsPanel.query(By.css('p-accordion'))
         expect(poolsPanel).toBeTruthy()
         expect(poolPanel.nativeElement.innerText).toContain('192.0.2.10-192.0.2.100')
+    }))
+
+    it('should present the prefix pool in accordion', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
+        expect(poolsPanel).toBeTruthy()
+
+        const poolPanel = poolsPanel.query(By.css('p-accordion'))
+        expect(poolsPanel).toBeTruthy()
+        expect(poolPanel.nativeElement.innerText).toContain('3000::/48')
     }))
 
     it('should return correct server tag severity', () => {
@@ -779,7 +876,7 @@ describe('SubnetFormComponent', () => {
         expect(poolsPanel).toBeTruthy()
 
         // Expand the tab.
-        const tabs = fixture.debugElement.queryAll(By.css('p-accordionTab'))
+        const tabs = poolsPanel.queryAll(By.css('p-accordionTab'))
         expect(tabs.length).toBe(2)
         const link = tabs[1].query(By.css('a'))
         expect(link).toBeTruthy()
@@ -796,6 +893,41 @@ describe('SubnetFormComponent', () => {
         spyOn(messageService, 'add').and.callThrough()
         component.onAddressPoolDelete(1)
         pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools?.length).toBe(1)
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should add and remove the prefix pool', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        component.subnetId = 234
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.onPrefixPoolAdd()
+        fixture.detectChanges()
+
+        const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
+        expect(poolsPanel).toBeTruthy()
+
+        // Expand the tab.
+        const tabs = poolsPanel.queryAll(By.css('p-accordionTab'))
+        expect(tabs.length).toBe(2)
+        const link = tabs[1].query(By.css('a'))
+        expect(link).toBeTruthy()
+        link.nativeElement.click()
+        fixture.detectChanges()
+
+        expect(tabs[1].nativeElement.innerText).toContain('New Pool')
+        const poolDeleteBtn = tabs[1].query(By.css('[label="Delete Pool"]'))
+        expect(poolDeleteBtn).toBeTruthy()
+
+        let pools = component.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        expect(pools?.length).toBe(2)
+
+        spyOn(messageService, 'add').and.callThrough()
+        component.onPrefixPoolDelete(1)
+        pools = component.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         expect(pools?.length).toBe(1)
         expect(messageService.add).toHaveBeenCalled()
     }))

@@ -1,6 +1,6 @@
 import { AbstractControl, FormArray, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
-import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
-import { AddressPoolForm, AddressRangeForm } from './forms/subnet-set-form.service'
+import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, IPv6Prefix, Validator } from 'ip-num'
+import { AddressPoolForm, AddressRangeForm, PrefixForm, PrefixPoolForm } from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
 
 /**
@@ -101,6 +101,48 @@ export class StorkValidators {
     }
 
     /**
+     * A validator checking if the excluded prefix is valid.
+     *
+     * Follows sanity checks in the RFC6603, section 4.2. It skips
+     * the validation if the prefix or excluded prefix are not in
+     * the CIDR format or are not specified. Validity of the CIDR
+     * format should be performed by other validators.
+     *
+     * @param prefix a prefix holding the excluded prefix.
+     * @returns validator function.
+     */
+    static ipv6ExcludedPrefix(control: AbstractControl): ValidationErrors | null {
+        const fg = control as FormGroup<PrefixForm>
+        if (!fg) {
+            return { ipv6ExcludedPrefix: 'Invalid form group type.' }
+        }
+        try {
+            const prefix = fg.get('prefix').value as string
+            const excludedPrefix = fg.get('excludedPrefix').value as string
+            const prefixCidr = IPv6CidrRange.fromCidr(prefix)
+            const excludedPrefixCidr = IPv6CidrRange.fromCidr(excludedPrefix)
+            // The excluded prefix must be smaller than the prefix.
+            if (prefixCidr.getSize() <= excludedPrefixCidr.getSize()) {
+                return {
+                    ipv6ExcludedPrefix: `${control.value} excluded prefix is length must be greater than the ${prefix} prefix length.`,
+                }
+            }
+            // See RFC6603, section 4.2.
+            if (
+                prefixCidr.getFirst().getValue() >> (BigInt(128) - prefixCidr.getPrefix().getValue()) !=
+                excludedPrefixCidr.getFirst().getValue() >> (BigInt(128) - prefixCidr.getPrefix().getValue())
+            ) {
+                return {
+                    ipv6ExcludedPrefix: `${excludedPrefix} excluded prefix is not within the ${prefix} prefix.`,
+                }
+            }
+        } catch (err) {
+            return null
+        }
+        return null
+    }
+
+    /**
      * A validator checking if a specified IP address is in the subnet.
      *
      * @param subnet a subnet string in the CIDR format.
@@ -144,6 +186,19 @@ export class StorkValidators {
     }
 
     /**
+     * Selectively removes a control error.
+     *
+     * @param control form control for which the error should be removed.
+     * @param errorKey error key/name.
+     */
+    private static clearControlError(control: AbstractControl, errorKey: string): void {
+        if (control.hasError(errorKey)) {
+            delete control.errors[errorKey]
+            control.updateValueAndValidity()
+        }
+    }
+
+    /**
      * A validator checking if an address range boundaries are correct.
      *
      * The start address must be lower or equal the end address.
@@ -175,14 +230,8 @@ export class StorkValidators {
                     'Invalid address pool boundaries. Make sure that the first address is equal or lower than the last address.',
             }
         }
-        if (fg.get('start').hasError('addressBounds')) {
-            delete fg.get('start').errors['addressBounds']
-            fg.get('start').updateValueAndValidity()
-        }
-        if (fg.get('end').hasError('addressBounds')) {
-            delete fg.get('end').errors['addressBounds']
-            fg.get('end').updateValueAndValidity()
-        }
+        StorkValidators.clearControlError(fg.get('start'), 'addressBounds')
+        StorkValidators.clearControlError(fg.get('end'), 'addressBounds')
         return null
     }
 
@@ -221,6 +270,7 @@ export class StorkValidators {
                         failedOnThisPass: false,
                     }
                 } catch (err) {
+                    StorkValidators.clearControlError(ctl.get('range'), 'ipRangeOverlaps')
                     return null
                 }
             })
@@ -233,7 +283,10 @@ export class StorkValidators {
                     : 0
             })
         let result: ValidationErrors | null = null
-        if (ranges.length > 0) {
+        // If there is only one range there is no overlap.
+        if (ranges.length === 1) {
+            StorkValidators.clearControlError(ranges[0].ctl, 'ipRangeOverlaps')
+        } else {
             // Now that we have the ranges sorted by the lower boundaries we have to make sure
             // that the upper boundaries of each range are lower than the start of the next range.
             for (let i = 0; i < ranges.length - 1; i++) {
@@ -253,13 +306,146 @@ export class StorkValidators {
                 } else {
                     // The ranges do not overlap. Clear the errors.
                     ranges.slice(i, i + 2).forEach((range) => {
-                        if (!range.failedOnThisPass && range.ctl.hasError('ipRangeOverlaps')) {
-                            delete range.ctl.errors['ipRangeOverlaps']
-                            range.ctl.updateValueAndValidity()
+                        if (!range.failedOnThisPass) {
+                            StorkValidators.clearControlError(range.ctl, 'ipRangeOverlaps')
                         }
                     })
                 }
             }
+        }
+        return result
+    }
+
+    /**
+     * A validator checking if the are overlaps between prefixes.
+     *
+     * It sets errors for each overlapping prefix in the array.
+     *
+     * @param control a form array holding prefixes.
+     * @returns validation errors or null if the prefixes do not overlap.
+     */
+    static ipv6PrefixOverlaps(control: AbstractControl): ValidationErrors | null {
+        const fa = control as FormArray<FormGroup<PrefixPoolForm>>
+        if (!fa) {
+            return { ipv6PrefixOverlaps: 'Invalid form array type.' }
+        }
+        // Go over the current pools and collect the address ranges sorted.
+        // Each element of the sorted list contains an address range and a
+        // pointer to the form group holding the range. Invalid ranges are
+        // removed by the
+        // filter function.
+        interface PrefixData {
+            original: string
+            prefix: IPv6CidrRange
+            ctl: AbstractControl
+            failedOnThisPass: boolean
+        }
+        const prefixes: PrefixData[] = fa.controls
+            .map((ctl) => {
+                try {
+                    return {
+                        original: ctl.get('prefixes.prefix')?.value as string,
+                        prefix: IPv6CidrRange.fromCidr(ctl.get('prefixes.prefix')?.value as string),
+                        ctl: ctl.get('prefixes'),
+                        failedOnThisPass: false,
+                    }
+                } catch (err) {
+                    StorkValidators.clearControlError(ctl.get('prefixes'), 'ipv6PrefixOverlaps')
+                    return null
+                }
+            })
+            .filter((prefix) => prefix)
+            .sort((prefix1, prefix2) => {
+                return prefix1.prefix.getFirst().isLessThan(prefix2.prefix.getFirst())
+                    ? -1
+                    : prefix1.prefix.getFirst().isGreaterThan(prefix2.prefix.getFirst())
+                    ? 1
+                    : 0
+            })
+
+        let result: ValidationErrors | null = null
+        // If there is only one prefix, there is no overlap.
+        if (prefixes.length === 1) {
+            StorkValidators.clearControlError(prefixes[0].ctl, 'ipv6PrefixOverlaps')
+        } else {
+            for (let i = 0; i < prefixes.length - 1; i++) {
+                if (prefixes[i].prefix.getLast().isGreaterThanOrEquals(prefixes[i + 1].prefix.getFirst())) {
+                    result = {
+                        ipv6PrefixOverlaps: `Prefix ${prefixes[i].original} overlaps with with ${
+                            prefixes[i + 1].original
+                        }.`,
+                    }
+                    // The two prefixes overlap. Set the error in the respective form groups.
+                    prefixes.slice(i, i + 2).forEach((prefix) => {
+                        prefix.ctl.setErrors(result)
+                        prefix.failedOnThisPass = true
+                    })
+                } else {
+                    // The prefixes do not overlap. Clear the errors.
+                    prefixes.slice(i, i + 2).forEach((prefix) => {
+                        if (!prefix.failedOnThisPass) {
+                            StorkValidators.clearControlError(prefix.ctl, 'ipv6PrefixOverlaps')
+                        }
+                    })
+                }
+            }
+        }
+        return result
+    }
+
+    /**
+     * A validator checking if a delegated prefix is smaller than the prefix.
+     *
+     * @param control form group instance holding prefix data.
+     * @returns validation errors when the delegated length is lower or equal
+     * the prefix length, null otherwise.
+     */
+    static ipv6PrefixDelegatedLength(control: AbstractControl): ValidationErrors | null {
+        const fg = control as FormGroup<PrefixPoolForm>
+        if (!fg) {
+            return { addressBounds: `Invalid form group type.` }
+        }
+        let result: ValidationErrors | null = null
+        try {
+            const prefix = fg.get('prefix').value as string
+            const delegatedLength = fg.get('delegatedLength').value as number
+            const prefixCidr = IPv6CidrRange.fromCidr(prefix)
+            if (delegatedLength && prefixCidr.getPrefix().getValue() >= delegatedLength) {
+                result = {
+                    ipv6PrefixDelegatedLength: `Delegated prefix length must be greater than the ${prefix} prefix length.`,
+                }
+            }
+        } catch (err) {
+            return null
+        }
+        return result
+    }
+
+    /**
+     * A validator checking if a delegated prefix is larger than the excluded prefix.
+     *
+     * @param control form group instance holding prefix data.
+     * @returns validation errors when the delegated length is greater or equal
+     * the excluded prefix length, null otherwise.
+     */
+    static ipv6ExcludedPrefixDelegatedLength(control: AbstractControl): ValidationErrors | null {
+        const fg = control as FormGroup<PrefixPoolForm>
+        if (!fg) {
+            return { addressBounds: `Invalid form group type.` }
+        }
+        let result: ValidationErrors | null = null
+        try {
+            const prefix = fg.get('excludedPrefix').value as string
+            const delegatedLength = fg.get('delegatedLength').value as number
+            const prefixCidr = IPv6CidrRange.fromCidr(prefix)
+            if (delegatedLength && prefixCidr.getPrefix().getValue() <= delegatedLength) {
+                result = {
+                    ipv6ExcludedPrefixDelegatedLength: `Delegated prefix length must be lower than the ${prefix} excluded prefix length.`,
+                }
+            }
+        } catch (err) {
+            // This validator does not check invalid prefixes.
+            return null
         }
         return result
     }

@@ -200,6 +200,9 @@ describe('subnets', () => {
                             {
                                 prefix: '3003::/64',
                                 delegatedLength: 80,
+                                keaConfigPoolParameters: {
+                                    clientClass: 'bar',
+                                },
                             },
                         ],
                     },
@@ -237,6 +240,9 @@ describe('subnets', () => {
                             {
                                 prefix: '3003::/64',
                                 delegatedLength: 80,
+                                keaConfigPoolParameters: {
+                                    clientClass: 'baz',
+                                },
                             },
                         ],
                     },
@@ -279,10 +285,27 @@ describe('subnets', () => {
         expect(convertedSubnets[0].pools[4].localPools[0].appName).toBe('bar')
 
         expect(convertedSubnets[0].prefixDelegationPools[0].prefix).toBe('3001::/64')
+        expect(convertedSubnets[0].prefixDelegationPools[0].localPools?.length).toBe(1)
+        expect(convertedSubnets[0].prefixDelegationPools[0].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].prefixDelegationPools[1].prefix).toBe('3001::/64')
+        expect(convertedSubnets[0].prefixDelegationPools[1].localPools?.length).toBe(1)
+        expect(convertedSubnets[0].prefixDelegationPools[1].localPools[0].daemonId).toBe(2)
         expect(convertedSubnets[0].prefixDelegationPools[2].prefix).toBe('3002::/64')
+        expect(convertedSubnets[0].prefixDelegationPools[2].localPools?.length).toBe(1)
+        expect(convertedSubnets[0].prefixDelegationPools[2].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].prefixDelegationPools[3].prefix).toBe('3002::/64')
+        expect(convertedSubnets[0].prefixDelegationPools[3].localPools?.length).toBe(1)
+        expect(convertedSubnets[0].prefixDelegationPools[3].localPools[0].daemonId).toBe(2)
         expect(convertedSubnets[0].prefixDelegationPools[4].prefix).toBe('3003::/64')
+        expect(convertedSubnets[0].prefixDelegationPools[4].localPools?.length).toBe(2)
+        expect(convertedSubnets[0].prefixDelegationPools[4].localPools[0].daemonId).toBe(1)
+        expect(convertedSubnets[0].prefixDelegationPools[4].localPools[1].daemonId).toBe(2)
+        expect(convertedSubnets[0].prefixDelegationPools[4].localPools[0].keaConfigPoolParameters?.clientClass).toBe(
+            'bar'
+        )
+        expect(convertedSubnets[0].prefixDelegationPools[4].localPools[1].keaConfigPoolParameters?.clientClass).toBe(
+            'baz'
+        )
     })
 
     it('extracts unique pools for several subnets', () => {

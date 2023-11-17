@@ -89,6 +89,54 @@
                 </div>
             </div>
         </p-fieldset>
+        <p-fieldset *ngIf="subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
+            <p-accordion>
+                <p-accordionTab *ngFor="let pool of form.group.get('prefixPools')?.controls; let i = index">
+                    <ng-template pTemplate="header">
+                        <div class="flex align-items-center">
+                            <span class="vertical-align-middle">{{ getPrefixPoolHeader(i)[0] }}</span>
+                            <span
+                                *ngIf="
+                                    pool.invalid &&
+                                    (pool.dirty || pool.touched || pool.get('prefixes')?.hasError('ipv6PrefixOverlaps'))
+                                "
+                                class="ml-2 pi pi-exclamation-triangle"
+                                [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
+                            ></span>
+                        </div>
+                    </ng-template>
+                    <ng-template pTemplate="content">
+                        <app-prefix-pool-form
+                            [subnet]="subnet"
+                            [formGroup]="pool"
+                            [selectableDaemons]="getSelectedDaemons()"
+                        >
+                        </app-prefix-pool-form>
+                        <div class="flex justify-content-start mt-4 mb-4">
+                            <div class="flex align-items-center">
+                                <p-button
+                                    styleClass="p-button-sm p-button-danger"
+                                    icon="pi pi-times"
+                                    label="Delete Pool"
+                                    (click)="onPrefixPoolDelete(i)"
+                                ></p-button>
+                            </div>
+                        </div>
+                    </ng-template>
+                </p-accordionTab>
+            </p-accordion>
+            <div class="flex justify-content-start">
+                <div class="flex align-items-center">
+                    <p-button
+                        styleClass="p-button-sm ml-0 mt-4"
+                        icon="fa-solid fa-plus"
+                        label="Add Pool"
+                        severity="warning"
+                        (click)="onPrefixPoolAdd()"
+                    ></p-button>
+                </div>
+            </div>
+        </p-fieldset>
         <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
             <app-shared-parameters-form [servers]="servers" [formGroup]="form.group.get('parameters')">
             </app-shared-parameters-form>

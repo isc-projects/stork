@@ -1,6 +1,6 @@
 import { FormArray, FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms'
 import { StorkValidators } from './validators'
-import { AddressPoolForm, AddressRangeForm } from './forms/subnet-set-form.service'
+import { AddressPoolForm, AddressRangeForm, PrefixForm, PrefixPoolForm } from './forms/subnet-set-form.service'
 
 describe('StorkValidators', () => {
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
@@ -259,6 +259,58 @@ describe('StorkValidators', () => {
         expect(fa.invalid).toBeFalse()
     })
 
+    it('clears detected overlaps for a single IPv6 range', () => {
+        let fa = new FormArray([
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::100'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::1'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+
+        // Remove the second prefix.
+        fa.removeAt(1)
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('clears detected overlaps when IPv6 range gets invalid', () => {
+        let fa = new FormArray([
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::100'),
+                }),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('2001:db8:1::1'),
+                    end: new FormControl('2001:db8:1::1'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+
+        // Invalidate one of the ranges.
+        fa.get('0.range.start').setValue('invalid')
+        expect(StorkValidators.ipRangeOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
     it('detects overlaps in the IPv6 address ranges', () => {
         let fa = new FormArray([
             new FormGroup<AddressPoolForm>({
@@ -310,6 +362,207 @@ describe('StorkValidators', () => {
         fa.get('2.range.end')?.setValue('2001:db8:100::aaaa')
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeFalsy()
         expect(fa.invalid).toBeFalse()
+    })
+
+    it('clears detected overlaps for a single IPv6 prefix', () => {
+        let fa = new FormArray([
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::/64'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::ff00/120'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+
+        // Remove the second prefix.
+        fa.removeAt(1)
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('clears detected overlaps when an IPv6 prefix gets invalid', () => {
+        let fa = new FormArray([
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::/64'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::ff00/120'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+
+        // Invalidate the prefix value.
+        fa.get('0.prefixes.prefix').setValue('invalid')
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('detects overlaps between the IPv6 prefixes', () => {
+        let fa = new FormArray([
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::/64'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::ff00/120'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('3000::/48'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('3000::/64'),
+                }),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:2::/64'),
+                }),
+            }),
+        ])
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
+
+        // Range 0 overlaps with range 1.
+        expect(fa.at(0).invalid).toBeTrue()
+        // Range 1 overlaps with range 0.
+        expect(fa.at(1).invalid).toBeTrue()
+        // Range 2 overlaps with range 3.
+        expect(fa.at(2).invalid).toBeTrue()
+        // Range 3 overlaps with range 2.
+        expect(fa.at(3).invalid).toBeTrue()
+        // Range 4 does not overlap.
+        expect(fa.at(4).invalid).toBeFalse()
+
+        // Correct the prefixes.
+        fa.get('0.prefixes.prefix')?.setValue('2001:db8:1::ee00/120')
+        fa.get('2.prefixes.prefix')?.setValue('3001::/48')
+        expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('validates excluded prefix being in the prefix', () => {
+        // Valid excluded prefix.
+        let fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(57),
+            excludedPrefix: formBuilder.control('2001:db8:dead:beef::01/60'),
+        })
+        expect(StorkValidators.ipv6ExcludedPrefix(fg)).toBeFalsy()
+        // This validator ignores invalid values.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('invalid'),
+            delegatedLength: formBuilder.control(57),
+            excludedPrefix: formBuilder.control('2001:db8:dead:beef::01/60'),
+        })
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(57),
+            excludedPrefix: formBuilder.control('invalid'),
+        })
+        expect(StorkValidators.ipv6ExcludedPrefix(fg)).toBeFalsy()
+        //  Non-matching prefixes.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:cafe::/56'),
+            delegatedLength: formBuilder.control(57),
+            excludedPrefix: formBuilder.control('2001:db8:dead:beef::01/64'),
+        })
+        // Excluded prefix must be smaller
+        expect(StorkValidators.ipv6ExcludedPrefix(fg)).toBeTruthy()
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:cafe::/56'),
+            delegatedLength: formBuilder.control(57),
+            excludedPrefix: formBuilder.control('2001:db8:dead:beef::01/56'),
+        })
+        expect(StorkValidators.ipv6ExcludedPrefix(fg)).toBeTruthy()
+    })
+
+    it('validates delegated prefix length for prefix length', () => {
+        // Valid delegated prefix length.
+        let fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(57),
+        })
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
+        // Invalid prefix is not validated here.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('invalid'),
+            delegatedLength: formBuilder.control(57),
+        })
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
+        // Invalid delegated length is not validated here.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('3000::/16'),
+            delegatedLength: formBuilder.control(null),
+        })
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
+        // Delegated prefix length must be greater.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(56),
+        })
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeTruthy()
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/64'),
+            delegatedLength: formBuilder.control(48),
+        })
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeTruthy()
+    })
+
+    it('validates delegated prefix length for excluded prefix length', () => {
+        // Valid delegated prefix length.
+        let fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(64),
+            excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
+        })
+        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeFalsy()
+        // Invalid prefix is not validated here.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(64),
+            excludedPrefix: 'invalid',
+        })
+        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeFalsy()
+        // Invalid delegated length is not validated here.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('3000::/16'),
+            delegatedLength: formBuilder.control(null),
+            excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
+        })
+        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeFalsy()
+        // Delegated prefix length must be lower.
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(80),
+            excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
+        })
+        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeTruthy()
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/64'),
+            delegatedLength: formBuilder.control(96),
+            excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
+        })
+        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeTruthy()
     })
 
     it('validates full fqdn', () => {

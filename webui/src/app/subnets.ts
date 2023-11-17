@@ -1,12 +1,26 @@
 import { DelegatedPrefixPool, KeaConfigPoolParameters, LocalSubnet, Pool, SharedNetwork, Subnet } from './backend'
 
+/**
+ * Association of the pool with a daemon and daemon-specific pool
+ * parameters.
+ */
 export interface LocalPool {
     daemonId?: number
     appName?: string
     keaConfigPoolParameters?: KeaConfigPoolParameters
 }
 
+/**
+ * A shared address pool with daemon-specific data sets.
+ */
 export interface PoolWithLocalPools extends Pool {
+    localPools?: LocalPool[]
+}
+
+/**
+ * A shared delegated prefix pool with daemon-specific data sets.
+ */
+export interface DelegatedPrefixPoolWithLocalPools extends DelegatedPrefixPool {
     localPools?: LocalPool[]
 }
 
@@ -23,7 +37,7 @@ export interface SharedNetworkWithUniquePools extends SharedNetwork {
  */
 export interface SubnetWithUniquePools extends Subnet {
     pools?: Array<PoolWithLocalPools>
-    prefixDelegationPools?: Array<DelegatedPrefixPool>
+    prefixDelegationPools?: Array<DelegatedPrefixPoolWithLocalPools>
 }
 
 /**
@@ -146,7 +160,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[] | Subnet): SubnetWith
     let convertedSubnets: SubnetWithUniquePools[] = []
     for (const subnet of Array.isArray(subnets) ? subnets : [subnets]) {
         let pools: Array<PoolWithLocalPools> = []
-        let prefixDelegationPools: Array<DelegatedPrefixPool> = []
+        let prefixDelegationPools: Array<DelegatedPrefixPoolWithLocalPools> = []
         let convertedSubnet: SubnetWithUniquePools = subnet
         convertedSubnets.push(convertedSubnet)
         if (subnet.localSubnets) {
@@ -171,16 +185,25 @@ export function extractUniqueSubnetPools(subnets: Subnet[] | Subnet): SubnetWith
                 }
                 if (ls.prefixDelegationPools) {
                     for (const pdPool of ls.prefixDelegationPools) {
-                        // Add the pool only if the identical pool doesn't exist yet.
-                        if (
-                            !prefixDelegationPools.some(
-                                (p) =>
-                                    p.prefix === pdPool.prefix &&
-                                    p.delegatedLength === pdPool.delegatedLength &&
-                                    p.excludedPrefix === pdPool.excludedPrefix
+                        const lp: LocalPool = {
+                            daemonId: ls.daemonId,
+                            appName: ls.appName,
+                            keaConfigPoolParameters: pdPool.keaConfigPoolParameters,
+                        }
+                        const existing = prefixDelegationPools.find((p) => {
+                            return (
+                                p.prefix === pdPool.prefix &&
+                                p.delegatedLength === pdPool.delegatedLength &&
+                                p.excludedPrefix === pdPool.excludedPrefix
                             )
-                        ) {
-                            prefixDelegationPools.push(pdPool)
+                        })
+                        // Add the pool only if the identical pool doesn't exist yet.
+                        if (existing) {
+                            existing.localPools.push(lp)
+                        } else {
+                            let p: DelegatedPrefixPoolWithLocalPools = pdPool
+                            p.localPools = [lp]
+                            prefixDelegationPools.push(p)
                         }
                     }
                 }
@@ -285,7 +308,7 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
  * @param pool pool instance.
  * @returns true if there are differences in DHCP options, false otherwise.
  */
-export function hasDifferentLocalPoolOptions(pool: PoolWithLocalPools): boolean {
+export function hasDifferentLocalPoolOptions(pool: PoolWithLocalPools | DelegatedPrefixPoolWithLocalPools): boolean {
     return (
         !!(pool.localPools?.length > 0) &&
         pool.localPools

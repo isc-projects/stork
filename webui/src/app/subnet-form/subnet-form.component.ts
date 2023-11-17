@@ -1,9 +1,24 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    Query,
+    QueryList,
+    ViewChildren,
+} from '@angular/core'
 import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
 import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
-import { AddressPoolForm, KeaSubnetParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
+import {
+    AddressPoolForm,
+    KeaSubnetParametersForm,
+    PrefixPoolForm,
+    SubnetSetFormService,
+} from '../forms/subnet-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { SubnetFormState } from '../forms/subnet-form'
@@ -11,6 +26,7 @@ import { GenericFormService } from '../forms/generic-form.service'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { SelectableDaemon } from '../forms/selectable-daemon'
+import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 
 /**
  * A component providing a form for editing and adding a subnet.
@@ -22,6 +38,8 @@ import { SelectableDaemon } from '../forms/selectable-daemon'
 })
 export class SubnetFormComponent implements OnInit, OnDestroy {
     @ViewChildren(AddressPoolFormComponent) addressPoolComponents!: QueryList<AddressPoolFormComponent>
+
+    @ViewChildren(PrefixPoolFormComponent) prefixPoolComponents!: QueryList<PrefixPoolFormComponent>
 
     /**
      * Form state instance.
@@ -251,8 +269,22 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     getPoolHeader(index: number): [string, boolean] {
         const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        return pools?.at(index).get('range.start')?.value && pools.at(index)?.get('range.end')?.value
-            ? [`${pools.at(index).get('range.start').value}-${pools.at(index).get('range.end').value}`, true]
+        return pools?.at(index)?.get('range.start')?.value && pools.at(index)?.get('range.end')?.value
+            ? [`${pools.at(index)?.get('range.start').value}-${pools.at(index).get('range.end').value}`, true]
+            : ['New Pool', false]
+    }
+
+    /**
+     * Returns a string representation of a delegated prefix pool prefix.
+     *
+     * @param index a pool index.
+     * @returns A string representation of the pool prefix and a boolean flag
+     * indicating if the pool has the prefix specified.
+     */
+    getPrefixPoolHeader(index: number): [string, boolean] {
+        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        return pools?.at(index)?.get('prefixes.prefix')?.value
+            ? [`${pools.at(index)?.get('prefixes.prefix').value}`, true]
             : ['New Pool', false]
     }
 
@@ -293,8 +325,14 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             ? this.form.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
             : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(this.form.group, toggledDaemonIndex, this.servers.length)
-        this.addressPoolComponents.forEach((acp) => acp.handleDaemonsChange(toggledDaemonId))
-        this.addressPoolComponents.forEach((acp) => (acp.selectableDaemons = this.getSelectedDaemons()))
+        this.addressPoolComponents.forEach((apc) => {
+            apc.handleDaemonsChange(toggledDaemonId)
+            apc.selectableDaemons = this.getSelectedDaemons()
+        })
+        this.prefixPoolComponents.forEach((ppc) => {
+            ppc.handleDaemonsChange(toggledDaemonId)
+            ppc.selectableDaemons = this.getSelectedDaemons()
+        })
 
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
@@ -352,6 +390,38 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * A callback invoked when new prefix pool is added.
+     *
+     * It extends the form to hold the new pool information.
+     */
+    onPrefixPoolAdd(): void {
+        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        pools?.push(this.subnetSetFormService.createDefaultPrefixPoolForm(this.subnet))
+    }
+
+    /**
+     * A callback invoked when an address pool is deleted.
+     *
+     * Besides deleting the pool it also notifies the user that the pool has
+     * been deleted using the message service.
+     *
+     * @param index pool index.
+     */
+    onPrefixPoolDelete(index: number): void {
+        const [poolHeader, specified] = this.getPrefixPoolHeader(index)
+        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        if (pools?.length > index) {
+            pools.removeAt(index)
+            this.messageService.add({
+                severity: 'info',
+                summary: specified ? `Pool ${poolHeader} deleted from the form` : `Pool deleted from the form`,
+                detail: 'You can restore the original pools using the Revert Changes button below.',
+                life: 10000,
+            })
+        }
+    }
+
+    /**
      * A function called when user clicks the button to revert subnet changes.
      */
     onRevert(): void {
@@ -383,6 +453,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         try {
             subnet = this.subnetSetFormService.convertFormToSubnet(this.form.group)
         } catch (err) {
+            console.info(err)
             this.messageService.add({
                 severity: 'error',
                 summary: 'Cannot commit the subnet',
@@ -417,9 +488,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     ) {
                         ls.keaConfigSubnetParameters.subnetLevelParameters.relay =
                             originalLocalSubnet.keaConfigSubnetParameters.subnetLevelParameters.relay
-                    }
-                    if (originalLocalSubnet.prefixDelegationPools) {
-                        ls.prefixDelegationPools = originalLocalSubnet.prefixDelegationPools
                     }
                 }
             }

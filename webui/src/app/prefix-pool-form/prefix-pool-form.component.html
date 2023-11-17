@@ -1,30 +1,52 @@
 <div [formGroup]="formGroup">
-    <p-fieldset legend="Address Range" styleClass="mt-4">
-        <div class="flex mt-4 mb-2" formGroupName="range">
+    <p-fieldset legend="Prefix" styleClass="mt-4">
+        <div class="flex mt-4 mb-2" formGroupName="prefixes">
             <div class="flex align-items-center p-float-label">
-                <input [id]="uuids.poolStart" pInputText formControlName="start" />
-                <label [for]="uuids.poolStart">First Address</label>
+                <input [id]="uuids.prefix" pInputText formControlName="prefix" />
+                <label [for]="uuids.prefix">Pool Prefix</label>
             </div>
-            <div class="flex align-items-center">&nbsp; : &nbsp;</div>
-            <div class="flex align-items-center p-float-label">
-                <input [id]="uuids.poolEnd" pInputText formControlName="end" />
-                <label [for]="uuids.poolEnd">Last Address</label>
+            <div class="flex align-items-center p-float-label ml-2">
+                <p-inputNumber
+                    ngDefaultControl
+                    [inputId]="uuids.delegatedLength"
+                    inputStyleClass="delegated-length-input"
+                    formControlName="delegatedLength"
+                    min="1"
+                    max="128"
+                >
+                </p-inputNumber>
+                <label [for]="uuids.delegatedLength">Delegated Length</label>
+            </div>
+            <div class="flex align-items-center p-float-label ml-2">
+                <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" />
+                <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
             </div>
         </div>
-        <ng-container *ngFor="let control of ['start', 'end']">
+        <ng-container *ngFor="let control of ['prefix', 'excludedPrefix']">
             <small
                 *ngIf="
-                    formGroup.get('range').get(control).invalid &&
-                    (formGroup.get('range').get(control).dirty || formGroup.get('range').get(control).touched) &&
-                    formGroup.get('range').get(control).hasError('ipInSubnet')
+                    formGroup.get('prefixes')?.get(control)?.invalid &&
+                    (formGroup.get('prefixes').get(control).dirty || formGroup.get('prefixes').get(control).touched) &&
+                    formGroup.get('prefixes').get(control).hasError('ipv6')
                 "
                 class="p-error block"
-                >{{ formGroup.get('range').get(control).errors.ipInSubnet }}
+                >{{ formGroup.get('prefixes').get(control).errors.ipv6 }}
             </small>
         </ng-container>
-        <ng-container *ngFor="let err of ['addressBounds', 'ipRangeOverlaps']">
-            <small *ngIf="formGroup.get('range').invalid && formGroup.get('range').hasError(err)" class="p-error block"
-                >{{ formGroup.get('range').errors[err] }}
+        <ng-container
+            *ngFor="
+                let err of [
+                    'ipv6PrefixDelegatedLength',
+                    'ipv6ExcludedPrefix',
+                    'ipv6ExcludedPrefixDelegatedLength',
+                    'ipv6PrefixOverlaps'
+                ]
+            "
+        >
+            <small
+                *ngIf="formGroup.get('prefixes').invalid && formGroup.get('prefixes').hasError(err)"
+                class="p-error block"
+                >{{ formGroup.get('prefixes').errors[err] }}
             </small>
         </ng-container>
     </p-fieldset>
@@ -74,7 +96,7 @@
                     </p-divider>
                 </div>
                 <app-dhcp-option-set-form
-                    [v6]="v6"
+                    [v6]="true"
                     [formArray]="optionSet"
                     (optionAdd)="onOptionAdd(i)"
                 ></app-dhcp-option-set-form>
