@@ -367,7 +367,11 @@ export class SubnetSetFormService {
                     delegatedLength: new FormControl(null, Validators.required),
                     excludedPrefix: new FormControl('', StorkValidators.ipv6Prefix),
                 },
-                StorkValidators.ipv6ExcludedPrefix
+                Validators.compose([
+                    StorkValidators.ipv6PrefixDelegatedLength,
+                    StorkValidators.ipv6ExcludedPrefixDelegatedLength,
+                    StorkValidators.ipv6ExcludedPrefix,
+                ])
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
             options: new FormGroup({
@@ -609,7 +613,7 @@ export class SubnetSetFormService {
                         type: 'string',
                     },
                     parameters.map(
-                        (params) => new FormControl<string>(params.fourOverSixSubnet, StorkValidators.ipv6Prefix())
+                        (params) => new FormControl<string>(params.fourOverSixSubnet, StorkValidators.ipv6Prefix)
                     )
                 )
                 form.bootFileName = new SharedParameterFormGroup<string>(

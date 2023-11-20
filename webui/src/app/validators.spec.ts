@@ -62,15 +62,15 @@ describe('StorkValidators', () => {
 
     it('validates IPv6 prefix', () => {
         // Partial prefix is not valid.
-        expect(StorkValidators.ipv6Prefix()(formBuilder.control('2001::'))).toBeTruthy()
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('2001::'))).toBeTruthy()
         // Dots are not valid.
-        expect(StorkValidators.ipv6Prefix()(formBuilder.control('3000../64'))).toBeTruthy()
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('3000../64'))).toBeTruthy()
         // No colons at the end.
-        expect(StorkValidators.ipv6Prefix()(formBuilder.control('3001:123/64'))).toBeTruthy()
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('3001:123/64'))).toBeTruthy()
         // IPv4 prefix is not valid.
-        expect(StorkValidators.ipv6Prefix()(formBuilder.control('192.0.2.0/24'))).toBeTruthy()
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('192.0.2.0/24'))).toBeTruthy()
         // Valid prefix.
-        expect(StorkValidators.ipv6Prefix()(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
     })
 
     it('validates if an address is in the IPv4 subnet', () => {

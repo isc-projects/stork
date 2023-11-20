@@ -67,10 +67,10 @@ describe('PrefixPoolFormComponent', () => {
                 {
                     prefix: new FormControl(
                         '2001:db8:1::/64',
-                        Validators.compose([Validators.required, StorkValidators.ipv6Prefix()])
+                        Validators.compose([Validators.required, StorkValidators.ipv6Prefix])
                     ),
                     delegatedLength: new FormControl(80, Validators.required),
-                    excludedPrefix: new FormControl('', StorkValidators.ipv6Prefix()),
+                    excludedPrefix: new FormControl('', StorkValidators.ipv6Prefix),
                 },
                 Validators.compose([
                     StorkValidators.ipv6PrefixDelegatedLength,

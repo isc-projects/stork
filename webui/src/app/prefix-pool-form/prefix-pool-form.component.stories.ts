@@ -76,18 +76,18 @@ const Template: Story<PrefixPoolFormComponent> = (args: PrefixPoolFormComponent)
     props: args,
 })
 
-export const AddressPool6 = Template.bind({})
-AddressPool6.args = {
+export const PrefixPool = Template.bind({})
+PrefixPool.args = {
     subnet: '2001:db8:1::/64',
     formGroup: new FormGroup<PrefixPoolForm>({
         prefixes: new FormGroup<PrefixForm>(
             {
                 prefix: new FormControl(
                     '2001:db8:1::/64',
-                    Validators.compose([Validators.required, StorkValidators.ipv6Prefix()])
+                    Validators.compose([Validators.required, StorkValidators.ipv6Prefix])
                 ),
                 delegatedLength: new FormControl(96, Validators.required),
-                excludedPrefix: new FormControl('2001:db8:1:0:1:1::/98', StorkValidators.ipv6Prefix()),
+                excludedPrefix: new FormControl('2001:db8:1:0:1:1::/98', StorkValidators.ipv6Prefix),
             },
             Validators.compose([
                 StorkValidators.ipv6PrefixDelegatedLength,

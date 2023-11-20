@@ -1,5 +1,5 @@
 import { AbstractControl, FormArray, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
-import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, IPv6Prefix, Validator } from 'ip-num'
+import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
 import { AddressPoolForm, AddressRangeForm, PrefixForm, PrefixPoolForm } from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
 
@@ -85,19 +85,17 @@ export class StorkValidators {
     /**
      * A validator checking if an input is a valid IPv6 prefix (including length).
      *
-     * @returns validator function.
+     * @returns validation errors if the prefix is invalid or null otherwise.
      */
-    static ipv6Prefix(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
-                return null
-            }
-            let ipv6 = control.value
-            if (!ipv6.includes('/') || !Validator.isValidIPv6CidrNotation(ipv6)[0]) {
-                return { ipv6: `${ipv6} is not a valid IPv6 prefix.` }
-            }
+    static ipv6Prefix(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
             return null
         }
+        let ipv6 = control.value
+        if (!ipv6.includes('/') || !Validator.isValidIPv6CidrNotation(ipv6)[0]) {
+            return { ipv6: `${ipv6} is not a valid IPv6 prefix.` }
+        }
+        return null
     }
 
     /**
@@ -109,7 +107,8 @@ export class StorkValidators {
      * format should be performed by other validators.
      *
      * @param prefix a prefix holding the excluded prefix.
-     * @returns validator function.
+     * @returns validation errors if the excluded prefix is invalid
+     * or null otherwise.
      */
     static ipv6ExcludedPrefix(control: AbstractControl): ValidationErrors | null {
         const fg = control as FormGroup<PrefixForm>
