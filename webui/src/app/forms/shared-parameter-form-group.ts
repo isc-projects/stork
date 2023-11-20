@@ -76,12 +76,13 @@ export class SharedParameterFormGroup<
         asyncValidator?: AsyncValidatorFn | AsyncValidatorFn[]
     ) {
         let fgControls = {
-            unlocked: new FormControl(
-                !!(
+            unlocked: new FormControl({
+                value: !!(
                     controls?.length > 1 &&
                     controls.some((c) => JSON.stringify(c.value) != JSON.stringify(controls[0].value))
-                )
-            ),
+                ),
+                disabled: controls.length <= 1,
+            }),
             values: new FormArray(controls),
         }
         super(data, fgControls, validatorOrOpts, asyncValidator)

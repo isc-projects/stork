@@ -345,7 +345,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
             options: new FormGroup({
-                unlocked: new FormControl(false),
+                unlocked: new FormControl({ value: false, disabled: true }),
                 data: new UntypedFormArray([new UntypedFormArray([])]),
             }),
             selectedDaemons: new FormControl([], Validators.required),
@@ -371,7 +371,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
             options: new FormGroup({
-                unlocked: new FormControl(false),
+                unlocked: new FormControl({ value: false, disabled: true }),
                 data: new UntypedFormArray([new UntypedFormArray([])]),
             }),
             selectedDaemons: new FormControl([], Validators.required),
@@ -1049,7 +1049,7 @@ export class SubnetSetFormService {
                     // controls appropriate for this daemon. This will preserve the
                     // values specified for any other daemons. Otherwise, let's remove
                     // the last control.
-                    if (toggledDaemonIndex >= 0 && toggledDaemonIndex < values.controls.length && unlocked?.value) {
+                    if (toggledDaemonIndex >= 0 && toggledDaemonIndex < values.controls.length) {
                         values.controls.splice(toggledDaemonIndex, 1)
                     } else {
                         values.controls.splice(selectedDaemons.length)
@@ -1065,7 +1065,7 @@ export class SubnetSetFormService {
                 // for this server. Let's use the values associated with the first
                 // server. We should have at least one server at this point but
                 // let's double check.
-                if (values?.length > 0) {
+                if (values?.length > 0 && values.length < selectedDaemons.length) {
                     values.push(this.genericFormService.cloneControl(values.at(0)))
                     unlocked?.enable()
                 }
@@ -1092,8 +1092,10 @@ export class SubnetSetFormService {
                     unlocked?.disable()
                 }
             } else {
-                data.push(this.optionService.cloneControl(data.controls[0]))
-                unlocked?.enable()
+                if (data.controls.length > 0 && data.controls.length < selectedDaemons.length) {
+                    data.push(this.optionService.cloneControl(data.controls[0]))
+                    unlocked?.enable()
+                }
             }
         }
     }
