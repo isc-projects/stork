@@ -33,10 +33,17 @@
         <div class="col-6">
             <p-fieldset legend="Intervals">
                 <div *ngFor="let setting of intervalSettings" class="w-full">
-                    <label class="block mt-2">
-                        {{ setting.title }} (in seconds):
-                        <input type="number" [formControlName]="setting.formControlName" class="w-full" />
-                    </label>
+                    <div class="flex align-items-end">
+                        <div class="w-full">
+                            <label class="block mt-2">
+                                {{ setting.title }} (in seconds):
+                                <input type="number" [formControlName]="setting.formControlName" class="w-full" />
+                            </label>
+                        </div>
+                        <div>
+                            <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                        </div>
+                    </div>
                     <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
                     <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">It must not be negative.</div>
                 </div>
@@ -46,10 +53,22 @@
         <div class="col-6">
             <p-fieldset legend="Grafana & Prometheus">
                 <div *ngFor="let setting of urlSettings" class="w-full">
-                    <label class="block mt-2">
-                        {{ setting.title }}
-                        <input type="url" [formControlName]="setting.formControlName" class="w-full" id="grafanaUrl" />
-                    </label>
+                    <div class="flex align-items-end">
+                        <div class="w-full">
+                            <label class="block mt-2">
+                                {{ setting.title }}
+                                <input
+                                    type="url"
+                                    [formControlName]="setting.formControlName"
+                                    class="w-full"
+                                    id="grafanaUrl"
+                                />
+                            </label>
+                        </div>
+                        <div>
+                            <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                        </div>
+                    </div>
                 </div>
             </p-fieldset>
         </div>

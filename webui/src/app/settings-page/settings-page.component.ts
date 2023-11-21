@@ -27,6 +27,7 @@ interface SettingsForm {
 interface SettingsItem {
     title: string
     formControlName: string
+    help: string
 }
 
 /**
@@ -54,26 +55,32 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'Apps State Puller Interval',
             formControlName: 'appsStatePullerInterval',
+            help: 'This puller refreshes the states of the apps running on the monitored machines.',
         },
         {
             title: 'BIND 9 Statistics Puller Interval',
             formControlName: 'bind9StatsPullerInterval',
+            help: 'This puller refreshes statistics from the BIND 9 servers.',
         },
         {
             title: 'Kea Hosts Puller Interval',
             formControlName: 'keaHostsPullerInterval',
+            help: 'This puller fetches the host reservations from the Kea servers.',
         },
         {
             title: 'Kea Statistics Puller Interval',
             formControlName: 'keaStatsPullerInterval',
+            help: 'This puller refreshes statistics from the Kea servers',
         },
         {
             title: 'Kea Status Puller Interval',
             formControlName: 'keaStatusPullerInterval',
+            help: 'This puller fetches high availability status from the Kea servers.',
         },
         {
             title: 'Metrics Collector Interval',
             formControlName: 'metricsCollectorInterval',
+            help: 'This collector refreshes the metrics exposed by the Stork server, such as the number of monitored machines, address utilization statistics etc.',
         },
     ]
 
@@ -86,10 +93,12 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'URL to Grafana',
             formControlName: 'grafanaUrl',
+            help: 'Specifies a Grafana instance URL. It is optional.',
         },
         {
             title: 'URL to Prometheus',
             formControlName: 'prometheusUrl',
+            help: 'Specifies a Prometheus instance URL. It is optional.',
         },
     ]
 
