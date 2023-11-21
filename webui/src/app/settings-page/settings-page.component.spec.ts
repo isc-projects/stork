@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -17,23 +17,28 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ActivatedRoute, Router } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
+import { DividerModule } from 'primeng/divider'
+import { of, throwError } from 'rxjs'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
     let fixture: ComponentFixture<SettingsPageComponent>
+    let settingsApi: SettingsService
+    let messageService: MessageService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                BrowserAnimationsModule,
-                FieldsetModule,
-                HttpClientTestingModule,
-                MessagesModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                BrowserAnimationsModule,
+                DividerModule,
+                FieldsetModule,
+                FormsModule,
+                HttpClientTestingModule,
+                ReactiveFormsModule,
+                MessagesModule,
                 NoopAnimationsModule,
+                OverlayPanelModule,
                 RouterTestingModule,
             ],
             declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
@@ -51,16 +56,13 @@ describe('SettingsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(SettingsPageComponent)
         component = fixture.componentInstance
+        settingsApi = fixture.debugElement.injector.get(SettingsService)
+        messageService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
     it('should create', () => {
         expect(component).toBeTruthy()
-    })
-
-    it('has help information about intervals configuration', () => {
-        const intervalsConfigMsg = fixture.debugElement.query(By.css('#intervals-config-msg'))
-        expect(intervalsConfigMsg).toBeTruthy()
     })
 
     it('should have breadcrumbs', () => {
@@ -72,4 +74,88 @@ describe('SettingsPageComponent', () => {
         expect(breadcrumbsComponent.items[0].label).toEqual('Configuration')
         expect(breadcrumbsComponent.items[1].label).toEqual('Settings')
     })
+
+    it('should contain the help tip', () => {
+        const helptipElement = fixture.debugElement.query(By.directive(HelpTipComponent))
+        expect(helptipElement).not.toBeNull()
+        const helptipComponent = helptipElement.componentInstance as HelpTipComponent
+        expect(helptipComponent).not.toBeNull()
+        expect(helptipComponent.title).toBe('this page')
+    })
+
+    it('should init the form', fakeAsync(() => {
+        const settings: any = {
+                bind9StatsPullerInterval: 29,
+                grafanaUrl: 'http://localhost:1234',
+                keaHostsPullerInterval: 30,
+                keaStatsPullerInterval: 31,
+                keaStatusPullerInterval: 32,
+                appsStatePullerInterval: 33,
+                prometheusUrl: 'http://notlocalhost:2222',
+                metricsCollectorInterval: 1000,
+            }
+        spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(settingsApi.getSettings).toHaveBeenCalled()
+        expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(29)
+        expect(component.settingsForm.get('grafanaUrl')?.value).toBe('http://localhost:1234')
+        expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
+        expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
+        expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
+        expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
+    }))
+
+    it('should display error message upon getting the settings', fakeAsync(() => {
+        spyOn(settingsApi, 'getSettings').and.returnValue(throwError({ status: 404}))
+        spyOn(messageService, 'add').and.callThrough()
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should submit the form', fakeAsync(() => {
+        const settings: any = {
+            bind9StatsPullerInterval: 29,
+            grafanaUrl: 'http://localhost:1234',
+            keaHostsPullerInterval: 30,
+            keaStatsPullerInterval: 31,
+            keaStatusPullerInterval: 32,
+            prometheusUrl: 'http://notlocalhost:2222',
+        }
+        spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
+        spyOn(settingsApi, 'updateSettings').and.callThrough()
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.saveSettings()
+        expect(settingsApi.updateSettings).toHaveBeenCalledWith(settings)
+    }))
+
+    it('should validate the form', fakeAsync(() => {
+        const settings: any = {
+            bind9StatsPullerInterval: null,
+            keaHostsPullerInterval: null,
+            keaStatsPullerInterval: null,
+            keaStatusPullerInterval: null,
+        }
+        spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
+        spyOn(settingsApi, 'updateSettings').and.callThrough()
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        // Iteratively correct the values.
+        for (const key of Object.keys(settings)) {
+            expect(component.settingsForm.invalid).toBeTrue()
+            component.settingsForm.get(key)?.setValue(20)
+        }
+        // The form should eventually be valid.
+        expect(component.settingsForm.invalid).toBeFalse()
+    }))
 })

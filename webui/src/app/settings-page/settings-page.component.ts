@@ -1,58 +1,124 @@
 import { Component, OnInit } from '@angular/core'
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
 
 import { SettingsService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
 
+/**
+ * An interface specifying the form controls for the server settings.
+ */
+interface SettingsForm {
+    bind9StatsPullerInterval: FormControl<number>
+    keaHostsPullerInterval: FormControl<number>
+    keaStatsPullerInterval: FormControl<number>
+    keaStatusPullerInterval: FormControl<number>
+    grafanaUrl: FormControl<string>
+    prometheusUrl: FormControl<string>
+}
+
+/**
+ * An interface holding information required to render a single
+ * form control.
+ */
+interface SettingsItem {
+    title: string
+    formControlName: string
+}
+
+/**
+ * A component providing a form to specify server settings.
+ */
 @Component({
     selector: 'app-settings-page',
     templateUrl: './settings-page.component.html',
     styleUrls: ['./settings-page.component.sass'],
 })
 export class SettingsPageComponent implements OnInit {
+    /**
+     * A path specified in the breadcrumbs.
+     */
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Settings' }]
 
-    public settingsForm: UntypedFormGroup
+    /**
+     * A list of interval settings to specify in the form.
+     *
+     * A numeric input form control is created for each setting in this
+     * array. The value is validated with the required and min validators.
+     * The expected value must be non-negative.
+     */
+    intervalSettings: SettingsItem[] = [
+        {
+            title: 'BIND 9 Statistics Puller Interval',
+            formControlName: 'bind9StatsPullerInterval',
+        },
+        {
+            title: 'Kea Hosts Puller Interval',
+            formControlName: 'keaHostsPullerInterval',
+        },
+        {
+            title: 'Kea Statistics Puller Interval',
+            formControlName: 'keaStatsPullerInterval',
+        },
+        {
+            title: 'Kea Status Puller Interval',
+            formControlName: 'keaStatusPullerInterval',
+        },
+    ]
 
+    /**
+     * A list of URL settings to specify in the form.
+     *
+     * An URL input form control is created for each setting in this array.
+     */
+    urlSettings: SettingsItem[] = [
+        {
+            title: 'URL to Grafana',
+            formControlName: 'grafanaUrl',
+        },
+        {
+            title: 'URL to Prometheus',
+            formControlName: 'prometheusUrl',
+        },
+    ]
+
+    /**
+     * A form holding the settings.
+     */
+    settingsForm: FormGroup<SettingsForm>
+
+    /**
+     * Constructor.
+     *
+     * @param fb form builder instance.
+     * @param settingsApi a service for communicating with the server.
+     * @param msgSrv a message service.
+     */
     constructor(
-        private fb: UntypedFormBuilder,
+        private fb: FormBuilder,
         private settingsApi: SettingsService,
         private msgSrv: MessageService
     ) {
         this.settingsForm = this.fb.group({
-            bind9_stats_puller_interval: ['', [Validators.required, Validators.min(0)]],
-            grafana_url: [''],
-            kea_hosts_puller_interval: ['', [Validators.required, Validators.min(0)]],
-            kea_stats_puller_interval: ['', [Validators.required, Validators.min(0)]],
-            kea_status_puller_interval: ['', [Validators.required, Validators.min(0)]],
-            prometheus_url: [''],
+            bind9StatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            keaHostsPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            grafanaUrl: [''],
+            prometheusUrl: [''],
         })
     }
 
+    /**
+     * A component lifecycle hook invoked upon the component initialization.
+     *
+     * It gathers the current settings from the server and initializes them
+     * in the form.
+     */
     ngOnInit() {
         this.settingsApi.getSettings().subscribe(
             (data) => {
-                const numericSettings = [
-                    'bind9_stats_puller_interval',
-                    'kea_hosts_puller_interval',
-                    'kea_stats_puller_interval',
-                    'kea_status_puller_interval',
-                ]
-                const stringSettings = ['grafana_url', 'prometheus_url']
-
-                for (const s of numericSettings) {
-                    if (data[s] === undefined) {
-                        data[s] = 0
-                    }
-                }
-                for (const s of stringSettings) {
-                    if (data[s] === undefined) {
-                        data[s] = ''
-                    }
-                }
-
                 this.settingsForm.patchValue(data)
             },
             (err) => {
@@ -68,7 +134,7 @@ export class SettingsPageComponent implements OnInit {
     }
 
     /**
-     * Saves the current values of the settings on the backend side.
+     * Saves the current values of the settings in the backend.
      */
     saveSettings() {
         if (!this.settingsForm.valid) {
@@ -99,12 +165,12 @@ export class SettingsPageComponent implements OnInit {
     /**
      * Indicates if the given form field has assigned error with the
      * specific name.
+     *
+     * @param name control name.
+     * @param errType error type name.
+     * @returns A boolean value indicating if the control has the error.
      */
-    hasError(name: string, errType: string) {
-        const setting = this.settingsForm.get(name)
-        if (setting.errors && setting.errors[errType]) {
-            return true
-        }
-        return false
+    hasError(name: string, errType: string): boolean {
+        return this.settingsForm.get(name)?.hasError(errType)
     }
 }

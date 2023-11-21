@@ -1,21 +1,21 @@
   Settings:
     type: object
     properties:
-      bind9_stats_puller_interval:
+      bind9StatsPullerInterval:
         type: integer
-      grafana_url:
+      grafanaUrl:
         type: string
-      kea_hosts_puller_interval:
+      keaHostsPullerInterval:
         type: integer
-      kea_stats_puller_interval:
+      keaStatsPullerInterval:
         type: integer
-      kea_status_puller_interval:
+      keaStatusPullerInterval:
         type: integer
-      apps_state_puller_interval:
+      appsStatePullerInterval:
         type: integer
-      prometheus_url:
+      prometheusUrl:
         type: string
-      metrics_collector_interval:
+      metricsCollectorInterval:
         type: integer
 
   Puller:

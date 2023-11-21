@@ -1,118 +1,57 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>This page displays Stork settings.</p>
+        <div class="flex align-items-top">
+            <div class="pi pi-info-circle p-message-icon"></div>
+            <div class="ml-2">To add or remove machines go to <a routerLink="/machines/all">machines page</a></div>
+            .
+        </div>
+        <p-divider></p-divider>
+        <div class="flex align-items-top mt-2">
+            <div class="pi pi-info-circle p-message-icon"></div>
+            <div class="ml-2" id="intervals-config-msg">
+                <p class="mt-0">
+                    Using the settings in the Intervals section it is possible to configure the intervals at which the
+                    Stork server fetches various types of information from the monitored machines and applications. Each
+                    configured value designates a time period between completion of the previous attempt to fetch some
+                    type of information from the machines and the beginning of the next attempt to fetch new
+                    information.
+                </p>
+                <p class="mb-0">
+                    For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes 5 seconds to pull
+                    the hosts information, the time period between the beginnings of the two consecutive attempts to
+                    pull the hosts information will be equal to 15 seconds. The pull time varies between deployments and
+                    depends on the amount of information pulled, network congestion and other factors. The setting
+                    specified here guarantees that there is a constant idle time between any two attempts.
+                </p>
+            </div>
+        </div>
     </div>
 </app-breadcrumbs>
 
-<!-- left panel with settings -->
 <form [formGroup]="settingsForm">
     <div class="grid">
         <div class="col-6">
             <p-fieldset legend="Intervals">
-                <label style="display: block">
-                    BIND 9 Statistics Puller Interval (in seconds):<br />
-                    <input
-                        type="number"
-                        formControlName="bind9_stats_puller_interval"
-                        id="bind9-stats-puller-interval"
-                        style="width: 100%"
-                    />
-                </label>
-                <div *ngIf="hasError('bind9_stats_puller_interval', 'required')" style="color: red">
-                    This is required.
+                <div *ngFor="let setting of intervalSettings" class="w-full">
+                    <label class="block mt-2">
+                        {{ setting.title }} (in seconds):
+                        <input type="number" [formControlName]="setting.formControlName" class="w-full" />
+                    </label>
+                    <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
+                    <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">It must not be negative.</div>
                 </div>
-                <div *ngIf="hasError('bind9_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
-
-                <label style="display: block; margin-top: 1em">
-                    Kea Statistics Puller Interval (in seconds):<br />
-                    <input
-                        type="number"
-                        formControlName="kea_stats_puller_interval"
-                        id="kea-stats-puller-interval"
-                        style="width: 100%"
-                    />
-                </label>
-                <div *ngIf="hasError('kea_stats_puller_interval', 'required')" style="color: red">
-                    This is required.
-                </div>
-                <div *ngIf="hasError('kea_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
-
-                <label style="display: block; margin-top: 1em">
-                    Kea Hosts Puller Interval (in seconds):<br />
-                    <input
-                        type="number"
-                        formControlName="kea_hosts_puller_interval"
-                        id="kea-hosts-puller-interval"
-                        style="width: 100%"
-                    />
-                </label>
-                <div *ngIf="hasError('kea_hosts_puller_interval', 'required')" style="color: red">
-                    This is required.
-                </div>
-                <div *ngIf="hasError('kea_hosts_puller_interval', 'min')" style="color: red">It must be > 0.</div>
-
-                <label style="display: block; margin-top: 1em">
-                    Kea Status Puller Interval (in seconds):<br />
-                    <input
-                        type="number"
-                        formControlName="kea_status_puller_interval"
-                        id="kea-status-puller-interval"
-                        style="width: 100%"
-                    />
-                </label>
-                <div *ngIf="hasError('kea_status_puller_interval', 'required')" style="color: red">
-                    This is required.
-                </div>
-                <div *ngIf="hasError('kea_status_puller_interval', 'min')" style="color: red">It must be > 0.</div>
-            </p-fieldset>
-
-            <p-fieldset legend="Grafana & Prometheus" [style]="{ 'margin-top': '12px' }">
-                <label style="display: block">
-                    URL to Grafana:<br />
-                    <input type="url" formControlName="grafana_url" style="width: 100%" id="grafana_url" />
-                </label>
-
-                <label style="display: block; margin-top: 1em">
-                    URL to Prometheus:<br />
-                    <input type="url" formControlName="prometheus_url" style="width: 100%" id="prometheus_url" />
-                </label>
             </p-fieldset>
         </div>
 
-        <div class="col-4">
-            <p-messages severity="info">
-                <ng-template pTemplate>
-                    <div>
-                        <span class="pi pi-info-circle p-message-icon"></span>
-                        To add or remove machines go to <a routerLink="/machines/all">machines page</a>.
-                    </div>
-                </ng-template>
-            </p-messages>
-
-            <p-messages severity="info">
-                <ng-template pTemplate>
-                    <div style="display: flex">
-                        <div class="pi pi-info-circle p-message-icon"></div>
-                        <div style="margin-left: 1em" id="intervals-config-msg">
-                            <p style="margin-top: 0">
-                                Using the settings in the Intervals section it is possible to configure the intervals at
-                                which the Stork server fetches various types of information from the monitored machines
-                                and applications. Each configured value designates a time period between completion of
-                                the previous attempt to fetch some type of information from the machines and the
-                                beginning of the next attempt to fetch new information.
-                            </p>
-                            <p style="margin-bottom: 0">
-                                For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes 5
-                                seconds to pull the hosts information, the time period between the beginnings of the two
-                                consecutive attempts to pull the hosts information will be equal to 15 seconds. The pull
-                                time varies between deployments and depends on the amount of information pulled, network
-                                congestion and other factors. The setting specified here guarantees that there is a
-                                constant idle time between any two attempts.
-                            </p>
-                        </div>
-                    </div>
-                </ng-template>
-            </p-messages>
+        <div class="col-6">
+            <p-fieldset legend="Grafana & Prometheus">
+                <div *ngFor="let setting of urlSettings" class="w-full">
+                    <label class="block mt-2">
+                        {{ setting.title }}
+                        <input type="url" [formControlName]="setting.formControlName" class="w-full" id="grafanaUrl" />
+                    </label>
+                </div>
+            </p-fieldset>
         </div>
     </div>
 </form>
@@ -120,12 +59,11 @@
 <button
     pButton
     type="button"
+    [disabled]="settingsForm.invalid"
     label="Save Settings"
     id="save-settings-button"
     (click)="saveSettings()"
-    style="margin: 10px 0 0 4px"
+    class="mt-2 ml-1"
 ></button>
 
-<span *ngIf="settingsForm.invalid" style="color: red; margin-left: 20px">
-    There are some issues in the form values.
-</span>
+<span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues in the form values. </span>
