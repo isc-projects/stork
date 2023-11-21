@@ -85,31 +85,33 @@ describe('SettingsPageComponent', () => {
 
     it('should init the form', fakeAsync(() => {
         const settings: any = {
-                bind9StatsPullerInterval: 29,
-                grafanaUrl: 'http://localhost:1234',
-                keaHostsPullerInterval: 30,
-                keaStatsPullerInterval: 31,
-                keaStatusPullerInterval: 32,
-                appsStatePullerInterval: 33,
-                prometheusUrl: 'http://notlocalhost:2222',
-                metricsCollectorInterval: 1000,
-            }
+            appsStatePullerInterval: 28,
+            bind9StatsPullerInterval: 29,
+            grafanaUrl: 'http://localhost:1234',
+            keaHostsPullerInterval: 30,
+            keaStatsPullerInterval: 31,
+            keaStatusPullerInterval: 32,
+            prometheusUrl: 'http://notlocalhost:2222',
+            metricsCollectorInterval: 33,
+        }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
         expect(settingsApi.getSettings).toHaveBeenCalled()
+        expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(28)
         expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(29)
         expect(component.settingsForm.get('grafanaUrl')?.value).toBe('http://localhost:1234')
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
+        expect(component.settingsForm.get('metricsCollectorInterval')?.value).toBe(33)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
     }))
 
     it('should display error message upon getting the settings', fakeAsync(() => {
-        spyOn(settingsApi, 'getSettings').and.returnValue(throwError({ status: 404}))
+        spyOn(settingsApi, 'getSettings').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add').and.callThrough()
         component.ngOnInit()
         tick()
@@ -120,11 +122,13 @@ describe('SettingsPageComponent', () => {
 
     it('should submit the form', fakeAsync(() => {
         const settings: any = {
+            appsStatePullerInterval: 28,
             bind9StatsPullerInterval: 29,
             grafanaUrl: 'http://localhost:1234',
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
+            metricsCollectorInterval: 33,
             prometheusUrl: 'http://notlocalhost:2222',
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
@@ -139,10 +143,12 @@ describe('SettingsPageComponent', () => {
 
     it('should validate the form', fakeAsync(() => {
         const settings: any = {
+            appsStatePullerInterval: null,
             bind9StatsPullerInterval: null,
             keaHostsPullerInterval: null,
             keaStatsPullerInterval: null,
             keaStatusPullerInterval: null,
+            metricsCollectorInterval: null,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()

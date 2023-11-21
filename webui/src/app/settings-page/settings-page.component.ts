@@ -10,10 +10,12 @@ import { getErrorMessage } from '../utils'
  * An interface specifying the form controls for the server settings.
  */
 interface SettingsForm {
+    appsStatePullerInterval: FormControl<number>
     bind9StatsPullerInterval: FormControl<number>
     keaHostsPullerInterval: FormControl<number>
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
+    metricsCollectorInterval: FormControl<number>
     grafanaUrl: FormControl<string>
     prometheusUrl: FormControl<string>
 }
@@ -50,6 +52,10 @@ export class SettingsPageComponent implements OnInit {
      */
     intervalSettings: SettingsItem[] = [
         {
+            title: 'Apps State Puller Interval',
+            formControlName: 'appsStatePullerInterval',
+        },
+        {
             title: 'BIND 9 Statistics Puller Interval',
             formControlName: 'bind9StatsPullerInterval',
         },
@@ -64,6 +70,10 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'Kea Status Puller Interval',
             formControlName: 'keaStatusPullerInterval',
+        },
+        {
+            title: 'Metrics Collector Interval',
+            formControlName: 'metricsCollectorInterval',
         },
     ]
 
@@ -101,10 +111,12 @@ export class SettingsPageComponent implements OnInit {
         private msgSrv: MessageService
     ) {
         this.settingsForm = this.fb.group({
+            appsStatePullerInterval: [0, [Validators.required, Validators.min(0)]],
             bind9StatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaHostsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            metricsCollectorInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
             prometheusUrl: [''],
         })
