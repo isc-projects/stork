@@ -18,6 +18,8 @@ Synopsis
 
 :program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**--prometheus-kea-exporter-interval=**] [**-h**]
 
+:program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**]
+
 Description
 ~~~~~~~~~~~
 
@@ -89,7 +91,7 @@ Prometheus BIND 9 Exporter flags:
 ``--prometheus-bind9-exporter-interval=``
    Specifies how often the agent collects statistics from BIND 9, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]``
 
-Stork logs on INFO level by default. Other levels can be configured using the
+Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
@@ -100,6 +102,25 @@ enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` o
 The highest priority always have the command line flags. The parameters from the
 environment file take precedence over the environment variables if the
 ``--use-env-file`` flag is used.
+
+Registration
+~~~~~~~~~~~~
+
+The ``register`` command runs the agent registration using a specified server token and exits.
+After the successful registration, run the agent normally. The ``register`` command takes the
+following arguments:
+
+``-u|--server-url=``
+   Specifies a URL of the Stork Server receiving the registration request. ``[$STORK_AGENT_SERVER_URL]``
+
+``-t|--server-token=``
+   Specifies the access token used by the Stork server to allow registration of the Stork agents. ``[$STORK_AGENT_SERVER_TOKEN]``
+
+``-a|--agent-host=``
+   Specifies an IP address or DNS name the host where the agent is running. The specified value must include a port number, e.g.: 10.11.12.13:8080. ``[$STORK_AGENT_HOST]``
+
+``-h|--help``
+   Returns register command's parameters.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
