@@ -315,7 +315,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				}
 				convertedOptions = append(convertedOptions, *convertedOption)
 			}
-			localSubnet.KeaConfigSubnetParameters.GlobalParameters.OptionsHash = storkutil.Fnv128(convertedOptions)
+			localSubnet.KeaConfigSubnetParameters.GlobalParameters.OptionsHash = keaconfig.NewHasher().Hash(convertedOptions)
 			localSubnet.KeaConfigSubnetParameters.GlobalParameters.Options = r.unflattenDHCPOptions(convertedOptions, "", 0)
 		}
 		subnet.LocalSubnets = append(subnet.LocalSubnets, localSubnet)
@@ -334,6 +334,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 		ClientClass:     restSubnet.ClientClass,
 		SharedNetworkID: restSubnet.SharedNetworkID,
 	}
+	hasher := keaconfig.NewHasher()
 	// Convert local subnet containing associations of the subnet with daemons.
 	for _, ls := range restSubnet.LocalSubnets {
 		localSubnet := &dbmodel.LocalSubnet{
@@ -358,7 +359,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					return nil, err
 				}
 				if len(pool.DHCPOptionSet) > 0 {
-					pool.DHCPOptionSetHash = storkutil.Fnv128(pool.DHCPOptionSet)
+					pool.DHCPOptionSetHash = hasher.Hash(pool.DHCPOptionSet)
 				}
 			}
 			localSubnet.AddressPools = append(localSubnet.AddressPools, *pool)
@@ -382,7 +383,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					return nil, err
 				}
 				if len(pool.DHCPOptionSet) > 0 {
-					pool.DHCPOptionSetHash = storkutil.Fnv128(pool.DHCPOptionSet)
+					pool.DHCPOptionSetHash = hasher.Hash(pool.DHCPOptionSet)
 				}
 			}
 			localSubnet.PrefixPools = append(localSubnet.PrefixPools, *pool)
@@ -464,7 +465,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 				return nil, err
 			}
 			if len(localSubnet.DHCPOptionSet) > 0 {
-				localSubnet.DHCPOptionSetHash = storkutil.Fnv128(localSubnet.DHCPOptionSet)
+				localSubnet.DHCPOptionSetHash = hasher.Hash(localSubnet.DHCPOptionSet)
 			}
 		}
 		subnet.SetLocalSubnet(localSubnet)
@@ -728,7 +729,7 @@ func (r *RestAPI) sharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *models.Shar
 				}
 				convertedOptions = append(convertedOptions, *convertedOption)
 			}
-			localSharedNetwork.KeaConfigSharedNetworkParameters.GlobalParameters.OptionsHash = storkutil.Fnv128(convertedOptions)
+			localSharedNetwork.KeaConfigSharedNetworkParameters.GlobalParameters.OptionsHash = keaconfig.NewHasher().Hash(convertedOptions)
 			localSharedNetwork.KeaConfigSharedNetworkParameters.GlobalParameters.Options = r.unflattenDHCPOptions(convertedOptions, "", 0)
 		}
 		sharedNetwork.LocalSharedNetworks = append(sharedNetwork.LocalSharedNetworks, localSharedNetwork)

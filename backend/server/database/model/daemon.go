@@ -10,8 +10,8 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
-	storkutil "isc.org/stork/util"
 )
 
 // Valid daemon names.
@@ -540,7 +540,7 @@ func (d *Daemon) SetConfigFromJSON(config string) error {
 			return err
 		}
 
-		return d.SetConfigWithHash(parsedConfig, storkutil.Fnv128(config))
+		return d.SetConfigWithHash(parsedConfig, keaconfig.NewHasher().Hash(config))
 	}
 	return nil
 }

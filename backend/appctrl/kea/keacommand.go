@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	storkutil "isc.org/stork/util"
+	keaconfig "isc.org/stork/appcfg/kea"
 )
 
 // See "src/lib/cc/command_interpreter.h" in the Kea repository for details.
@@ -92,7 +92,7 @@ type hasher struct {
 
 // Custom unmarshaller hashing arguments string with FNV128 hashing function.
 func (v *hasherValue) UnmarshalJSON(b []byte) error {
-	*v = hasherValue(storkutil.Fnv128(string(b)))
+	*v = hasherValue(keaconfig.NewHasher().Hash(b))
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
@@ -127,7 +128,7 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			return nil, err
 		}
 		if len(localHost.DHCPOptionSet) > 0 {
-			localHost.DHCPOptionSetHash = storkutil.Fnv128(localHost.DHCPOptionSet)
+			localHost.DHCPOptionSetHash = keaconfig.NewHasher().Hash(localHost.DHCPOptionSet)
 		}
 		host.SetLocalHost(&localHost)
 	}

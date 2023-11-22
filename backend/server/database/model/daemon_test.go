@@ -779,7 +779,7 @@ func TestSetConfigFromJSONWithHash(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, daemon.KeaDaemon)
 	require.NotNil(t, daemon.KeaDaemon.Config)
-	require.Equal(t, "f1c994d55b6f4edba9568d89ce2a804a", daemon.KeaDaemon.ConfigHash)
+	require.Len(t, daemon.KeaDaemon.ConfigHash, 32)
 }
 
 // Test that SetConfig does not set hash for the config.

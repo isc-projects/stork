@@ -12,7 +12,6 @@ import (
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 const (
@@ -492,7 +491,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 		}
 
 		// Hash the returned hosts and remember the hash in the iterator.
-		hash := storkutil.Fnv128(hosts)
+		hash := keaconfig.NewHasher().Hash(hosts)
 		iterator.trace.addResponse(hash, iterator.subnetIndex, hosts)
 
 		// We return one chunk of hosts for one subnet. So let's get out

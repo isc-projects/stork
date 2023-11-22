@@ -8,10 +8,12 @@ import (
 )
 
 // Convenience function creating FNV128 hash from an input value.
-func Fnv128(input any) string {
+func Fnv128(input ...any) string {
 	h := fnv.New128()
 	// Ignore errors because they are never returned in this case.
-	_, _ = h.Write([]byte(fmt.Sprintf("%+v", input)))
+	for _, i := range input {
+		_, _ = h.Write([]byte(fmt.Sprintf("%+v", i)))
+	}
 	bs := h.Sum(nil)
 	return fmt.Sprintf("%x", bs)
 }

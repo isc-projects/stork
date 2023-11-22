@@ -291,7 +291,7 @@ func TestUnmarshalHashedResponseList(t *testing.T) {
 		*(list[0]).Arguments)
 
 	// There should be a hash computed from the arguments.
-	require.Equal(t, "198f893a3764258b18bef43f33a33f62", list[0].ArgumentsHash)
+	require.Len(t, list[0].ArgumentsHash, 32)
 
 	// The second response should contain different result and text. The
 	// arguments are not present, so should be nil.

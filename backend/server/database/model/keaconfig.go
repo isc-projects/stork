@@ -157,6 +157,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 	if keaSubnet.GetSubnetParameters().ClientClass != nil {
 		convertedSubnet.ClientClass = *keaSubnet.GetSubnetParameters().ClientClass
 	}
+	hasher := keaconfig.NewHasher()
 	for _, p := range keaSubnet.GetPools() {
 		pool := p
 		lb, ub, err := pool.GetBoundaries()
@@ -172,7 +173,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 				return nil, err
 			}
 			addressPool.DHCPOptionSet = append(addressPool.DHCPOptionSet, *option)
-			addressPool.DHCPOptionSetHash = storkutil.Fnv128(addressPool.DHCPOptionSet)
+			addressPool.DHCPOptionSetHash = hasher.Hash(addressPool.DHCPOptionSet)
 		}
 		convertedSubnet.LocalSubnets[0].AddressPools = append(convertedSubnet.LocalSubnets[0].AddressPools, *addressPool)
 	}
@@ -192,7 +193,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 				return nil, err
 			}
 			prefixPool.DHCPOptionSet = append(prefixPool.DHCPOptionSet, *option)
-			prefixPool.DHCPOptionSetHash = storkutil.Fnv128(prefixPool.DHCPOptionSet)
+			prefixPool.DHCPOptionSetHash = hasher.Hash(prefixPool.DHCPOptionSet)
 		}
 		convertedSubnet.LocalSubnets[0].PrefixPools = append(convertedSubnet.LocalSubnets[0].PrefixPools, *prefixPool)
 	}
@@ -209,7 +210,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 			return nil, err
 		}
 		convertedSubnet.LocalSubnets[0].DHCPOptionSet = append(convertedSubnet.LocalSubnets[0].DHCPOptionSet, *option)
-		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = storkutil.Fnv128(convertedSubnet.LocalSubnets[0].DHCPOptionSet)
+		convertedSubnet.LocalSubnets[0].DHCPOptionSetHash = hasher.Hash(convertedSubnet.LocalSubnets[0].DHCPOptionSet)
 	}
 	return convertedSubnet, nil
 }
@@ -242,7 +243,7 @@ func NewSharedNetworkFromKea(sharedNetwork keaconfig.SharedNetwork, family int, 
 			return nil, err
 		}
 		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet = append(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet, *option)
-		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = storkutil.Fnv128(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet)
+		newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSetHash = keaconfig.NewHasher().Hash(newSharedNetwork.LocalSharedNetworks[0].DHCPOptionSet)
 	}
 	return newSharedNetwork, nil
 }
@@ -330,7 +331,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 			return nil, err
 		}
 		lh.DHCPOptionSet = append(lh.DHCPOptionSet, *hostOption)
-		lh.DHCPOptionSetHash = storkutil.Fnv128(lh.DHCPOptionSet)
+		lh.DHCPOptionSetHash = keaconfig.NewHasher().Hash(lh.DHCPOptionSet)
 	}
 	host.LocalHosts = append(host.LocalHosts, lh)
 	return &host, nil
