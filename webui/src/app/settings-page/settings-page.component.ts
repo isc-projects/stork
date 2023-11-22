@@ -175,8 +175,8 @@ export class SettingsPageComponent implements OnInit {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Cannot get settings',
-                    detail: 'Error getting settings: ' + msg,
+                    summary: 'Cannot save settings',
+                    detail: 'Error saving settings: ' + msg,
                     life: 10000,
                 })
             }
