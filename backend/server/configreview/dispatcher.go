@@ -19,7 +19,27 @@ import (
 // the server is started. Typically, it should be bumped when
 // an implementation of any checker was modified but the
 // dispatch groups were not changed.
-const enforceDispatchSeq = 1
+const enforceDispatchSeq int64 = 1
+
+var _ storkutil.Hasher = (*hasher)(nil)
+
+// Hasher used by the dispatcher.
+type hasher struct {
+	// Sequence number copied from the enforceDispatchSeq.
+	seq int64
+}
+
+// Creates new hasher instance.
+func newHasher() *hasher {
+	return &hasher{
+		seq: enforceDispatchSeq,
+	}
+}
+
+// Hashing function.
+func (h hasher) Hash(input any) string {
+	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", h.seq, input))
+}
 
 // Callback function invoked when configuration review is completed
 // for a daemon. The first argument holds an ID of a daemon for
@@ -293,8 +313,8 @@ type dispatcherImpl struct {
 	cancelDispatch context.CancelFunc
 	// A map holding information about currently scheduled reviews.
 	state map[int64]bool
-	// Current value of the enforceDispatchSeq.
-	enforceSeq int
+	// Hasher instance
+	hasher storkutil.Hasher
 	// Checker controller manages the state of configuration checkers.
 	checkerController checkerController
 }
@@ -690,7 +710,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 		dispatchCtx:       ctx,
 		cancelDispatch:    cancel,
 		state:             make(map[int64]bool),
-		enforceSeq:        enforceDispatchSeq,
+		hasher:            newHasher(),
 		checkerController: newCheckerController(),
 	}
 	return dispatcher
@@ -825,7 +845,7 @@ func (d *dispatcherImpl) GetCheckersMetadata(daemon *dbmodel.Daemon) ([]*Checker
 // In this case, bump up the enforceDispatchSeq constant value to enforce
 // generation of a new signature and new config reviews.
 func (d *dispatcherImpl) GetSignature() string {
-	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", d.enforceSeq, d.groups))
+	return d.hasher.Hash(d.groups)
 }
 
 // Returns true if a given checker is registered to execute on a specific daemon.

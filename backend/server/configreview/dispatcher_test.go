@@ -12,6 +12,14 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Test hasher.
+type testHasher struct{}
+
+// Test hashing function returning predictable value.
+func (h testHasher) Hash(input any) string {
+	return "test"
+}
+
 // Tests creating new dispatcher instance.
 func TestNewDispatcher(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -769,11 +777,10 @@ func TestGetSignature(t *testing.T) {
 	require.Equal(t, signatures[5], signatures[7])
 	require.NotEqual(t, signatures[6], signatures[7])
 
-	// Ensure that bumping up the sequence number also affects
-	// the signature.
-	dispatcher.enforceSeq++
+	// Ensure that the hasher affects the signature.
+	dispatcher.hasher = &testHasher{}
 	signatures[8] = dispatcher.GetSignature()
-	require.NotEqual(t, signatures[8], signatures[7])
+	require.Equal(t, "test", signatures[8])
 }
 
 // Test that the dispatch group selector is serialized to string properly.
