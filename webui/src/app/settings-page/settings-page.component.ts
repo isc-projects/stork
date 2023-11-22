@@ -80,7 +80,7 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'Metrics Collector Interval',
             formControlName: 'metricsCollectorInterval',
-            help: 'This collector refreshes the metrics exposed by the Stork server, such as the number of monitored machines, address utilization statistics etc.',
+            help: 'This collector refreshes the metrics exposed by the Stork server to Prometheus, such as the number of monitored machines, address utilization statistics etc.',
         },
     ]
 
