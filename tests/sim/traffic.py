@@ -20,17 +20,16 @@ def start_perfdhcp(subnet):
     """Generates traffic for a given network."""
     rate, clients = subnet["rate"], subnet["clients"]
 
-    client_class_bytes = None
-    if "clientClass" not in subnet:
-        raise ValueError(f"Missing client class for subnet: {subnet['subnet']}")
+    client_class_bytes = ("00", "00")
 
-    client_class = subnet["clientClass"]
-    m = _client_class_pattern.match(client_class)
-    if m is None:
-        raise ValueError(
-            f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}"
-        )
-    client_class_bytes = m.groups()
+    if "clientClass" in subnet:
+        client_class = subnet["clientClass"]
+        m = _client_class_pattern.match(client_class)
+        if m is None:
+            raise ValueError(
+                f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}"
+            )
+        client_class_bytes = m.groups()
 
     if "." in subnet["subnet"]:
         # IPv4
