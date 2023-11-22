@@ -28,61 +28,79 @@
     </div>
 </app-breadcrumbs>
 
-<form [formGroup]="settingsForm">
-    <div class="grid">
-        <div class="col-6">
-            <p-fieldset legend="Intervals">
-                <div *ngFor="let setting of intervalSettings" class="w-full">
-                    <div class="flex align-items-end">
-                        <div class="w-full">
-                            <label class="block mt-2">
-                                {{ setting.title }} (in seconds):
-                                <input type="number" [formControlName]="setting.formControlName" class="w-full" />
-                            </label>
+<ng-container [ngSwitch]="formState">
+    <ng-container *ngSwitchCase="'success'">
+        <form [formGroup]="settingsForm">
+            <div class="grid">
+                <div class="col-6">
+                    <p-fieldset legend="Intervals">
+                        <div *ngFor="let setting of intervalSettings" class="w-full">
+                            <div class="flex align-items-end">
+                                <div class="w-full">
+                                    <label class="block mt-2">
+                                        {{ setting.title }} (in seconds):
+                                        <input
+                                            type="number"
+                                            [formControlName]="setting.formControlName"
+                                            class="w-full"
+                                        />
+                                    </label>
+                                </div>
+                                <div>
+                                    <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                                </div>
+                            </div>
+                            <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">
+                                It is required.
+                            </div>
+                            <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">
+                                It must not be negative.
+                            </div>
                         </div>
-                        <div>
-                            <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
-                        </div>
-                    </div>
-                    <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
-                    <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">It must not be negative.</div>
+                    </p-fieldset>
                 </div>
-            </p-fieldset>
-        </div>
 
-        <div class="col-6">
-            <p-fieldset legend="Grafana & Prometheus">
-                <div *ngFor="let setting of urlSettings" class="w-full">
-                    <div class="flex align-items-end">
-                        <div class="w-full">
-                            <label class="block mt-2">
-                                {{ setting.title }}
-                                <input
-                                    type="url"
-                                    [formControlName]="setting.formControlName"
-                                    class="w-full"
-                                    id="grafanaUrl"
-                                />
-                            </label>
+                <div class="col-6">
+                    <p-fieldset legend="Grafana & Prometheus">
+                        <div *ngFor="let setting of urlSettings" class="w-full">
+                            <div class="flex align-items-end">
+                                <div class="w-full">
+                                    <label class="block mt-2">
+                                        {{ setting.title }}
+                                        <input
+                                            type="url"
+                                            [formControlName]="setting.formControlName"
+                                            class="w-full"
+                                            id="grafanaUrl"
+                                        />
+                                    </label>
+                                </div>
+                                <div>
+                                    <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
-                        </div>
-                    </div>
+                    </p-fieldset>
                 </div>
-            </p-fieldset>
-        </div>
-    </div>
-</form>
+            </div>
+        </form>
 
-<button
-    pButton
-    type="button"
-    [disabled]="settingsForm.invalid"
-    label="Save Settings"
-    id="save-settings-button"
-    (click)="saveSettings()"
-    class="mt-2 ml-1"
-></button>
+        <button
+            pButton
+            type="button"
+            [disabled]="settingsForm.invalid"
+            label="Save Settings"
+            id="save-settings-button"
+            (click)="saveSettings()"
+            class="mt-2 ml-1"
+        ></button>
 
-<span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues in the form values. </span>
+        <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues in the form values. </span>
+    </ng-container>
+    <ng-container *ngSwitchCase="'fail'">
+        <button pButton type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-2 ml-1"></button>
+    </ng-container>
+    <ng-container *ngSwitchDefault>
+        <p-progressSpinner></p-progressSpinner>
+    </ng-container>
+</ng-container>

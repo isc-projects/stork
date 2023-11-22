@@ -17,6 +17,7 @@ import { Settings } from '../backend/model/settings'
 import { HttpClientModule } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -50,6 +51,7 @@ export default {
                 FormsModule,
                 MessagesModule,
                 OverlayPanelModule,
+                ProgressSpinnerModule,
                 ReactiveFormsModule,
                 RouterTestingModule,
                 ToastModule,
@@ -64,7 +66,7 @@ export default {
                 url: 'http://localhost/api/settings',
                 method: 'GET',
                 status: 200,
-                delay: 0,
+                delay: 1000,
                 response: mockGetSettingsResponse,
             },
             {

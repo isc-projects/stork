@@ -15,10 +15,11 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { DividerModule } from 'primeng/divider'
 import { of, throwError } from 'rxjs'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -39,6 +40,7 @@ describe('SettingsPageComponent', () => {
                 MessagesModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
+                ProgressSpinnerModule,
                 RouterTestingModule,
             ],
             declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
@@ -117,7 +119,17 @@ describe('SettingsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(messageService.add).toHaveBeenCalled()
+        // Error message should have been displayed and the retry button should be displayed.
+        expect(messageService.add).toHaveBeenCalledTimes(1)
+        const retryBtn = fixture.debugElement.query(By.css('[label=Retry]'))
+        expect(retryBtn).not.toBeNull()
+
+        // Simulate retrying.
+        component.retry()
+        tick()
+        fixture.detectChanges()
+
+        expect(messageService.add).toHaveBeenCalledTimes(2)
     }))
 
     it('should submit the form', fakeAsync(() => {

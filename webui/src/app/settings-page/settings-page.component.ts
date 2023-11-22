@@ -108,6 +108,13 @@ export class SettingsPageComponent implements OnInit {
     settingsForm: FormGroup<SettingsForm>
 
     /**
+     * A union defining form state.
+     *
+     * It controls what is rendered.
+     */
+    formState: 'loading' | 'fail' | 'success'
+
+    /**
      * Constructor.
      *
      * @param fb form builder instance.
@@ -132,17 +139,18 @@ export class SettingsPageComponent implements OnInit {
     }
 
     /**
-     * A component lifecycle hook invoked upon the component initialization.
-     *
-     * It gathers the current settings from the server and initializes them
+     * Gathers the current settings from the server and initializes them
      * in the form.
      */
-    ngOnInit() {
+    private getSettings(): void {
+        this.formState = 'loading'
         this.settingsApi.getSettings().subscribe(
             (data) => {
                 this.settingsForm.patchValue(data)
+                this.formState = 'success'
             },
             (err) => {
+                this.formState = 'fail'
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -155,9 +163,26 @@ export class SettingsPageComponent implements OnInit {
     }
 
     /**
+     * A component lifecycle hook invoked upon the component initialization.
+     *
+     * It gathers the current settings from the server and initializes them
+     * in the form.
+     */
+    ngOnInit() {
+        this.getSettings()
+    }
+
+    /**
+     * Retries gathering the settings after failure.
+     */
+    retry(): void {
+        this.getSettings()
+    }
+
+    /**
      * Saves the current values of the settings in the backend.
      */
-    saveSettings() {
+    saveSettings(): void {
         if (!this.settingsForm.valid) {
             return
         }
