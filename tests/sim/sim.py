@@ -80,6 +80,7 @@ def serialize_subnets(subnets):
                 "rate": subnet["rate"],
                 "clients": subnet["clients"],
                 "state": subnet["state"],
+                "clientClass": subnet.get("clientClass")
             }
         )
     return json.dumps(data)
