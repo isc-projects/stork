@@ -817,6 +817,30 @@ there are three types of triggers:
 
 The selectors and triggers are not configurable by a user.
 
+Refreshing Kea Configurations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork pullers periodically check Kea configurations against the local copies
+stored in the Stork database. These local copies are only updated when Stork
+detects any mismatch. This approach works fine in most cases and eliminates
+the overhead of unnecessarily updating the local database. However, there are
+possible scenarios when the mismatch between the configurations is not detected,
+but it is still desired to fetch and repopulate the configurations from the Kea
+servers to Stork.
+
+There are many internal operations in Stork occuring when the configuration change
+has been detected (e.g., populating host reservations, log viewer initialization,
+configuration reviews, and many others). Refreshing the configurations from Kea
+triggers all these tasks. It may possibly correct some data integrity issues that
+may sometimes occur due to software bugs, network errors, or any other reason.
+
+To schedule refreshing the configuration from the Kea servers, navigate to
+``Services`` and then ``Kea Apps``. Click on ``Refresh Kea Configs`` button.
+The pullers will fetch and populate the updated configuration data, but depending
+on the configured puller intervals, it will take some time. Ensure the pullers
+are not disabled on the ``Settings`` page; otherwise, the configurations will
+never refresh.
+
 Dashboard
 =========
 
