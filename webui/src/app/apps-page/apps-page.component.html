@@ -1,3 +1,4 @@
+<p-confirmDialog styleClass="w-4" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
         <p>This page displays a list of {{ getAppsLabel() }}.</p>
@@ -39,15 +40,24 @@
             <!-- </span> -->
         </div>
 
-        <div style="display: flex">
-            <button
-                type="button"
-                pButton
-                id="apps-refresh-button"
-                label="Refresh"
-                icon="pi pi-refresh"
-                (click)="refreshAppsList(appsTable)"
-            ></button>
+        <div class="flex align-items-center">
+            <div>
+                <p-button
+                    id="apps-refresh-button"
+                    label="Refresh"
+                    icon="pi pi-refresh"
+                    (click)="refreshAppsList(appsTable)"
+                ></p-button>
+            </div>
+            <div *ngIf="appType === 'kea'" class="ml-2">
+                <p-button
+                    id="apps-refresh-button"
+                    label="Refresh Kea Configs"
+                    icon="pi pi-file-import"
+                    styleClass="p-button-danger"
+                    (click)="onRefreshKeaConfigs($event)"
+                ></p-button>
+            </div>
         </div>
     </div>
 

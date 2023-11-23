@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { AppsPageComponent } from './apps-page.component'
 import { TabMenuModule } from 'primeng/tabmenu'
@@ -9,16 +9,15 @@ import { TableModule } from 'primeng/table'
 import { Bind9AppTabComponent } from '../bind9-app-tab/bind9-app-tab.component'
 import { KeaAppTabComponent } from '../kea-app-tab/kea-app-tab.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { TabPanel, TabViewModule } from 'primeng/tabview'
+import { TabViewModule } from 'primeng/tabview'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { PanelModule } from 'primeng/panel'
 import { MessageModule } from 'primeng/message'
-import { ActivatedRoute, Router, RouterModule, convertToParamMap } from '@angular/router'
+import { RouterModule } from '@angular/router'
 import { ServicesService } from '../backend'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { of } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -26,6 +25,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
+import { throwError } from 'rxjs'
 
 class App {
     id: number
@@ -35,10 +36,12 @@ class App {
 describe('AppsPageComponent', () => {
     let component: AppsPageComponent
     let fixture: ComponentFixture<AppsPageComponent>
+    let api: ServicesService
+    let msgSrv: MessageService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [ServicesService, MessageService],
+            providers: [ConfirmationService, ServicesService, MessageService],
             imports: [
                 HttpClientTestingModule,
                 TabMenuModule,
@@ -55,6 +58,7 @@ describe('AppsPageComponent', () => {
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 ProgressSpinnerModule,
+                ConfirmDialogModule,
             ],
             declarations: [
                 AppsPageComponent,
@@ -72,6 +76,8 @@ describe('AppsPageComponent', () => {
         fixture = TestBed.createComponent(AppsPageComponent)
         component = fixture.componentInstance
         component.appType = 'bind9'
+        api = fixture.debugElement.injector.get(ServicesService)
+        msgSrv = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
@@ -129,4 +135,45 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
         expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
     })
+
+    it('should refresh conifgurations from Kea', fakeAsync(() => {
+        component.onRefreshKeaConfigs(null)
+        fixture.detectChanges()
+
+        const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
+        expect(dialog).not.toBeNull()
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
+
+        // Simulate an error so we can also test that the error message is shown.
+        spyOn(api, 'deleteKeaDaemonConfigHashes').and.returnValue(throwError({ status: 404 }))
+        spyOn(msgSrv, 'add')
+        const confirmDialog = dialog.componentInstance as ConfirmDialog
+        expect(confirmDialog).not.toBeNull()
+        confirmDialog.accept()
+        tick()
+        fixture.detectChanges()
+
+        expect(api.deleteKeaDaemonConfigHashes).toHaveBeenCalled()
+        expect(msgSrv.add).toHaveBeenCalled()
+    }))
+
+    it('should cancel refreshing conifgurations from Kea', fakeAsync(() => {
+        component.onRefreshKeaConfigs(null)
+        fixture.detectChanges()
+
+        const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
+        expect(dialog).not.toBeNull()
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
+
+        spyOn(api, 'deleteKeaDaemonConfigHashes')
+        spyOn(msgSrv, 'add')
+        const confirmDialog = dialog.componentInstance as ConfirmDialog
+        expect(confirmDialog).not.toBeNull()
+        confirmDialog.reject()
+        tick()
+        fixture.detectChanges()
+
+        expect(api.deleteKeaDaemonConfigHashes).not.toHaveBeenCalled()
+        expect(msgSrv.add).not.toHaveBeenCalled()
+    }))
 })

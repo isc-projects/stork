@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { BehaviorSubject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem } from 'primeng/api'
+import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
 import { daemonStatusErred, getErrorMessage } from '../utils'
 import { ServicesService } from '../backend/api/api'
@@ -77,7 +77,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private servicesApi: ServicesService,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        private confirmService: ConfirmationService
     ) {}
 
     ngOnDestroy(): void {
@@ -342,5 +343,41 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         if (this.activeTabIdx > 0) {
             this.tabs[this.activeTabIdx].label = event
         }
+    }
+
+    /**
+     * Sends a request to the server to clear Kea config hashes.
+     *
+     * Clearing the config hashes causes the server to fetch and update
+     * Kea configurations in the Stork database.
+     *
+     * @param event event triggered on button click.
+     */
+    onRefreshKeaConfigs(event): void {
+        this.confirmService.confirm({
+            message:
+                'This operation instructs the server to fetch the configurations from all Kea servers' +
+                ' and update them in the Stork database. Use it when you suspect that the configuration' +
+                ' information diverged between Kea and Stork. This operation should be harmless and typically' +
+                ' it only causes some additional overhead to populate the fetched data. Populating the data ' +
+                ' can take some time depending on the puller intervals settings and Kea servers availability.',
+            header: 'Refresh Kea Configs',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Continue',
+            rejectLabel: 'Cancel',
+            accept: () => {
+                // User confirmed. Clear the hashes in the server.
+                this.servicesApi
+                    .deleteKeaDaemonConfigHashes()
+                    .toPromise()
+                    .catch((err) => {
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Cannot reset configurations',
+                            detail: 'Resetting Kea configurations failed',
+                        })
+                    })
+            },
+        })
     }
 }
