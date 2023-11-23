@@ -912,6 +912,7 @@ func TestDaemonTagMissingMachineID(t *testing.T) {
 	require.Nil(t, daemon.GetMachineID())
 }
 
+// Tests that Kea daemon config hashes can be wiped.
 func TestDeleteKeaDaemonConfigHashes(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
