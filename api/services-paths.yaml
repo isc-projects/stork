@@ -715,3 +715,22 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /daemons/kea/config-hashes:
+    delete:
+      summary: Delete config hashes for the Kea daemons.
+      description: >-
+        Deleting the config hashes effectively causes the Stork server to fetch
+        and update the Kea configurations in the Stork server's database. This can
+        be useful when the Kea configurations had been updated but it was unnoticed
+        by the Stork server due to a bug or some unexpected event.
+      operationId: deleteKeaDaemonConfigHashes
+      tags:
+        - Services
+      responses:
+        200:
+          description: Config hashes for the Kea daemons have been deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

@@ -43,7 +43,7 @@ func (server *KeaServer) Configure(config string) error {
 	if err != nil {
 		return err
 	}
-	d.KeaDaemon.Config, err = dbmodel.NewKeaConfigFromJSON(config)
+	err = d.SetConfigFromJSON(config)
 	if err != nil {
 		return err
 	}

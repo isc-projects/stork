@@ -457,6 +457,15 @@ func UpdateDaemon(dbi dbops.DBI, daemon *Daemon) error {
 	return updateDaemon(dbi.(*pg.Tx), daemon)
 }
 
+// Deletes the config hash values for all Kea daemons.
+func DeleteKeaDaemonConfigHashes(dbi dbops.DBI) error {
+	_, err := dbi.Exec("UPDATE kea_daemon SET config_hash = NULL")
+	if err != nil {
+		return pkgerrors.Wrapf(err, "problem deleting Kea config hashes")
+	}
+	return nil
+}
+
 // This is a hook to go-pg that is called just after reading rows from database.
 // It reconverts KeaDaemon's configuration from json string maps to the
 // expected structure in GO.

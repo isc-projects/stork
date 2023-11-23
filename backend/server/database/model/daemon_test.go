@@ -911,3 +911,53 @@ func TestDaemonTagMissingMachineID(t *testing.T) {
 	// Act & Assert
 	require.Nil(t, daemon.GetMachineID())
 }
+
+func TestDeleteKeaDaemonConfigHashes(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			{
+				Name: DaemonNameDHCPv4,
+				KeaDaemon: &KeaDaemon{
+					ConfigHash: "1234",
+				},
+			},
+			{
+				Name: DaemonNameDHCPv6,
+				KeaDaemon: &KeaDaemon{
+					ConfigHash: "2345",
+				},
+			},
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 2)
+	require.NotZero(t, app.Daemons[0].ID)
+	require.NotZero(t, app.Daemons[1].ID)
+
+	err = DeleteKeaDaemonConfigHashes(db)
+	require.NoError(t, err)
+
+	daemons, err := GetKeaDHCPDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+
+	require.Equal(t, "", daemons[0].KeaDaemon.ConfigHash)
+	require.Equal(t, "", daemons[1].KeaDaemon.ConfigHash)
+}

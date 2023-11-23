@@ -10,6 +10,7 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
@@ -1376,4 +1377,63 @@ func TestPutDaemonConfigCheckerPreferencesForMissingDaemon(t *testing.T) {
 	daemonID := int64(1)
 	preferences, _ := dbmodel.GetCheckerPreferences(db, daemonID)
 	require.Empty(t, preferences)
+}
+
+// Test resetting Kea daemons' config hashes.
+func TestDeleteKeaConfigHashes(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	kea, err := dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+	require.NotNil(t, kea)
+
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+	require.NotNil(t, dhcp4)
+	dhcp6, err := kea.NewKeaDHCPv6Server()
+	require.NoError(t, err)
+	require.NotNil(t, dhcp6)
+
+	require.NoError(t, dhcp4.Configure(`{ "Dhcp4": { } }`))
+	require.NoError(t, dhcp6.Configure(`{ "Dhcp4": { } }`))
+
+	daemons, err := dbmodel.GetKeaDHCPDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+	require.NotEmpty(t, daemons[0].KeaDaemon.ConfigHash)
+	require.NotEmpty(t, daemons[1].KeaDaemon.ConfigHash)
+
+	ctx := context.Background()
+	params := services.DeleteKeaDaemonConfigHashesParams{}
+	rsp := rapi.DeleteKeaDaemonConfigHashes(ctx, params)
+	require.IsType(t, &services.DeleteKeaDaemonConfigHashesOK{}, rsp)
+
+	daemons, err = dbmodel.GetKeaDHCPDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+	require.Empty(t, daemons[0].KeaDaemon.ConfigHash)
+	require.Empty(t, daemons[1].KeaDaemon.ConfigHash)
+}
+
+// Test that internal server error is returned when the database goes
+// away during resetting the Kea config hashes.
+func TestDeleteKeaConfigHashesError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	// Close the database. It should result in an error trying to reset the hashes.
+	teardown()
+
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(dbSettings, db, fd)
+
+	ctx := context.Background()
+	params := services.DeleteKeaDaemonConfigHashesParams{}
+	rsp := rapi.DeleteKeaDaemonConfigHashes(ctx, params)
+	require.IsType(t, &services.DeleteKeaDaemonConfigHashesDefault{}, rsp)
+	defaultRsp := rsp.(*services.DeleteKeaDaemonConfigHashesDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 }

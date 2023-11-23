@@ -451,3 +451,19 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 	rsp := services.NewGetDaemonConfigCheckersOK().WithPayload(payload)
 	return rsp
 }
+
+// Deletes the Kea daemon config hashes effectively causing the Stork server
+// to fetch and update Kea configurations in the Stork server's database.
+func (r *RestAPI) DeleteKeaDaemonConfigHashes(ctx context.Context, params services.DeleteKeaDaemonConfigHashesParams) middleware.Responder {
+	err := dbmodel.DeleteKeaDaemonConfigHashes(r.DB)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot reset Kea configurations"
+		rsp := services.NewDeleteKeaDaemonConfigHashesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := services.NewDeleteKeaDaemonConfigHashesOK()
+	return rsp
+}
