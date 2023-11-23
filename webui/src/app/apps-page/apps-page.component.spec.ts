@@ -26,7 +26,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
-import { throwError } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
 class App {
     id: number
@@ -136,7 +136,28 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
     })
 
-    it('should refresh conifgurations from Kea', fakeAsync(() => {
+    it('should refresh configurations from Kea', fakeAsync(() => {
+        component.onRefreshKeaConfigs(null)
+        fixture.detectChanges()
+
+        const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
+        expect(dialog).not.toBeNull()
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
+
+        const success: any = {}
+        spyOn(api, 'deleteKeaDaemonConfigHashes').and.returnValue(of(success))
+        spyOn(msgSrv, 'add')
+        const confirmDialog = dialog.componentInstance as ConfirmDialog
+        expect(confirmDialog).not.toBeNull()
+        confirmDialog.accept()
+        tick()
+        fixture.detectChanges()
+
+        expect(api.deleteKeaDaemonConfigHashes).toHaveBeenCalled()
+        expect(msgSrv.add).toHaveBeenCalled()
+    }))
+
+    it('should report an error while refreshing configurations from Kea', fakeAsync(() => {
         component.onRefreshKeaConfigs(null)
         fixture.detectChanges()
 

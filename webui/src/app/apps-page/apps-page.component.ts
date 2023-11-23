@@ -370,11 +370,24 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 this.servicesApi
                     .deleteKeaDaemonConfigHashes()
                     .toPromise()
-                    .catch((err) => {
+                    .then(() => {
+                        this.msgSrv.add({
+                            severity: 'success',
+                            summary: 'Request to refresh sent',
+                            detail:
+                                'Successfully sent the request to the server to refresh' +
+                                ' Kea configurations in Stork server. It may take a while' +
+                                ' before it takes effect.',
+                        })
+                    })
+                    .catch(() => {
                         this.msgSrv.add({
                             severity: 'error',
-                            summary: 'Cannot reset configurations',
-                            detail: 'Resetting Kea configurations failed',
+                            summary: 'Request to refresh failed',
+                            detail:
+                                'The request to refresh Kea configurations in Stork failed' +
+                                ' due to an internal server error. You can try again to see' +
+                                ' if the error goes away.',
                         })
                     })
             },
