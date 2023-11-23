@@ -4,6 +4,37 @@
 # This file is responsible for building (compiling)
 # the binaries and other artifacts (docs, bundles).
 
+# Returns the conventional architecture name based on the target architecture
+# of the Golang binaries. The architecture is specified by the STORK_GOARCH and
+# (optionally) STORK_GOARM environment variables. If they are not set, the
+# current architecture is used.
+#
+# Note that if the 32-bit ARM version is provided in the STORK_GOARM variable,
+# the architecture from the STORK_GOARCH or the current architecture is not
+# validated to be 32-bit.
+def get_target_go_arch()
+    arch = ENV["STORK_GOARCH"] || ARCH
+    arm_version_raw = ENV["STORK_GOARM"]
+    if !arm_version_raw.nil?
+        arm_version = arm_version_raw.to_i
+        # The above architecture suffixes were not tested on BSD systems.
+        # They may not be suitable for this operating system family.
+        case arm_version
+        when 0
+            fail "STORK_GOARM must be a number, got: #{arm_version_raw}"
+        when 5
+            arch = "armel"
+        when 6..7
+            arch = "armhf"
+        when 8
+            puts "STORK_GOARM is ignored for 64-bit ARM (armv8)"
+        else
+            fail "Unsupported STORK_GOARM value: #{arm_version_raw}"
+        end
+    end
+    arch
+end
+
 # Defines the operating system and architecture combination guard for a file
 # task. This guard allows file tasks to depend on the os and architecture used
 # to build the Go binaries.
@@ -15,12 +46,8 @@
 # If it is not set, it is not used. It does not affect to `arm64`.
 # The function accepts a task to be guarded.
 def add_go_os_arch_guard(task_name)
-    arch = ENV["STORK_GOARCH"] || ARCH
+    arch = get_target_go_arch()
 
-    if !ENV["STORK_GOARM"].nil?
-        arch = "#{arch}-armv#{ENV["STORK_GOARM"]}"
-    end
-    
     os = ENV["STORK_GOOS"]
     if os.nil?
         case OS

@@ -186,7 +186,7 @@ namespace :hook do
                     "-C", hook_directory,
                     "-n", "isc-stork-#{kind}-hook-#{hook_name}",
                     "-t", pkg_type,
-                    "-a", get_arch(),
+                    "-a", get_target_go_arch(),
                     "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
                     "--license", "MPL 2.0",
                     "--url", "https://gitlab.isc.org/isc-projects/stork/",
