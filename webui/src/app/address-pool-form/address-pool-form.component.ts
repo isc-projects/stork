@@ -181,8 +181,6 @@ export class AddressPoolFormComponent implements OnInit {
      * @param index server index in the {@link servers} array.
      */
     onOptionAdd(index: number): void {
-        this.getOptionsData(index).push(
-            createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4)
-        )
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4))
     }
 }

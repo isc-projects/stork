@@ -105,12 +105,12 @@ export interface AddressRangeForm {
     /**
      * Lower pool boundary.
      */
-    start?: FormControl<string>
+    start: FormControl<string>
 
     /**
      * Upper pool boundary.
      */
-    end?: FormControl<string>
+    end: FormControl<string>
 }
 
 /**
@@ -120,24 +120,24 @@ export interface AddressPoolForm {
     /**
      * Pool address range.
      */
-    range?: FormGroup<AddressRangeForm>
+    range: FormGroup<AddressRangeForm>
 
     /**
      * Kea-specific parameters for a pool.
      */
-    parameters?: FormGroup<KeaPoolParametersForm>
+    parameters: FormGroup<KeaPoolParametersForm>
 
     /**
      * DHCP options in an address pool.
      */
-    options?: FormGroup<OptionsForm>
+    options: FormGroup<OptionsForm>
 
     /**
      * Daemon IDs selected with a multi-select component.
      *
      * Selected daemons are associated with the pool.
      */
-    selectedDaemons?: FormControl<number[]>
+    selectedDaemons: FormControl<number[]>
 }
 
 /**
@@ -147,17 +147,17 @@ export interface PrefixForm {
     /**
      * A prefix in a CIDR notation.
      */
-    prefix?: FormControl<string>
+    prefix: FormControl<string>
 
     /**
      * A delegated prefix length.
      */
-    delegatedLength?: FormControl<number>
+    delegatedLength: FormControl<number>
 
     /**
      * An excluded prefix in a CIDR notation.
      */
-    excludedPrefix?: FormControl<string>
+    excludedPrefix: FormControl<string>
 }
 
 /**
@@ -167,24 +167,24 @@ export interface PrefixPoolForm {
     /**
      * Delegated and excluded prefixes.
      */
-    prefixes?: FormGroup<PrefixForm>
+    prefixes: FormGroup<PrefixForm>
 
     /**
      * Kea-specific parameters for a pool.
      */
-    parameters?: FormGroup<KeaPoolParametersForm>
+    parameters: FormGroup<KeaPoolParametersForm>
 
     /**
      * DHCP options in the pool.
      */
-    options?: FormGroup<OptionsForm>
+    options: FormGroup<OptionsForm>
 
     /**
      * Daemon IDs selected with a multi-select component.
      *
      * Selected daemons are associated with the pool.
      */
-    selectedDaemons?: FormControl<number[]>
+    selectedDaemons: FormControl<number[]>
 }
 
 /**
@@ -194,34 +194,34 @@ export interface SubnetForm {
     /**
      * Subnet prefix.
      */
-    subnet?: FormControl<string>
+    subnet: FormControl<string>
 
     /**
      * An array of the address pools.
      */
-    pools?: FormArray<FormGroup<AddressPoolForm>>
+    pools: FormArray<FormGroup<AddressPoolForm>>
 
     /**
      * An array of the delegated prefix pools.
      */
-    prefixPools?: FormArray<FormGroup<PrefixPoolForm>>
+    prefixPools: FormArray<FormGroup<PrefixPoolForm>>
 
     /**
      * Kea-specific parameters for a subnet.
      */
-    parameters?: FormGroup<KeaSubnetParametersForm>
+    parameters: FormGroup<KeaSubnetParametersForm>
 
     /**
      * DHCP options in a subnet.
      */
-    options?: FormGroup<OptionsForm>
+    options: FormGroup<OptionsForm>
 
     /**
      * Daemon IDs selected with a multi-select component.
      *
      * Selected daemons are associated with the subnet.
      */
-    selectedDaemons?: FormControl<number[]>
+    selectedDaemons: FormControl<number[]>
 }
 
 /**
@@ -1010,7 +1010,7 @@ export class SubnetSetFormService {
      * @param prevSelectedDaemonsNum a number of previously selected daemons.
      */
     adjustFormForSelectedDaemons(
-        formGroup: FormGroup<SubnetForm | AddressPoolForm>,
+        formGroup: UntypedFormGroup,
         toggledDaemonIndex: number,
         prevSelectedDaemonsNum: number
     ): void {

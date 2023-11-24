@@ -1,6 +1,12 @@
 import { FormArray, FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms'
 import { StorkValidators } from './validators'
-import { AddressPoolForm, AddressRangeForm, PrefixForm, PrefixPoolForm } from './forms/subnet-set-form.service'
+import {
+    AddressPoolForm,
+    AddressRangeForm,
+    KeaPoolParametersForm,
+    PrefixForm,
+    PrefixPoolForm,
+} from './forms/subnet-set-form.service'
 
 describe('StorkValidators', () => {
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
@@ -213,30 +219,60 @@ describe('StorkValidators', () => {
                     start: new FormControl('192.0.2.50'),
                     end: new FormControl('192.0.2.60'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('192.0.2.5'),
                     end: new FormControl('192.0.2.15'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('192.0.2.49'),
                     end: new FormControl('192.0.2.51'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('192.0.2.100'),
                     end: new FormControl('192.0.2.115'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('192.0.2.88'),
                     end: new FormControl('192.0.2.100'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -266,12 +302,24 @@ describe('StorkValidators', () => {
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::100'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::1'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -292,12 +340,24 @@ describe('StorkValidators', () => {
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::100'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::1'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -318,30 +378,60 @@ describe('StorkValidators', () => {
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::100'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8:1::1'),
                     end: new FormControl('2001:db8:1::1'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8:100::cafe'),
                     end: new FormControl('2001:db8:300::cafe'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8:99::'),
                     end: new FormControl('2001:db8:100::ffff'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
                     start: new FormControl('2001:db8::'),
                     end: new FormControl('2001:db8::ffff'),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -369,12 +459,28 @@ describe('StorkValidators', () => {
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::ff00/120'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
@@ -393,12 +499,28 @@ describe('StorkValidators', () => {
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::ff00/120'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
@@ -417,27 +539,67 @@ describe('StorkValidators', () => {
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:1::ff00/120'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('3000::/48'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('3000::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
                     prefix: new FormControl('2001:db8:2::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
                 }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
