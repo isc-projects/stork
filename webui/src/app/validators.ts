@@ -135,7 +135,7 @@ export class StorkValidators {
                     ipv6ExcludedPrefix: `${excludedPrefix} excluded prefix is not within the ${prefix} prefix.`,
                 }
             }
-        } catch (err) {
+        } catch (_) {
             return null
         }
         return null
@@ -156,25 +156,26 @@ export class StorkValidators {
             if (split.length != 2) {
                 return { ipInSubnet: `${subnet} is not a valid subnet prefix.` }
             }
-            if (Validator.isValidIPv4String(split[0])[0]) {
+            const prefix = split[0]
+            if (Validator.isValidIPv4String(prefix)[0]) {
                 try {
                     const range = IPv4CidrRange.fromCidr(subnet)
                     const ipv4 = IPv4.fromDecimalDottedString(control.value)
                     if (range.getFirst().isGreaterThan(ipv4) || range.getLast().isLessThan(ipv4)) {
                         return { ipInSubnet: `${control.value} does not belong to subnet ${subnet}.` }
                     }
-                } catch (err) {
+                } catch (_) {
                     return { ipInSubnet: `${control.value} is not a valid IPv4 address.` }
                 }
                 return null
-            } else if (Validator.isValidIPv6String(split[0])[0]) {
+            } else if (Validator.isValidIPv6String(prefix)[0]) {
                 try {
                     const range = IPv6CidrRange.fromCidr(subnet)
                     const ipv6 = IPv6.fromString(control.value)
                     if (range.getFirst().isGreaterThan(ipv6) || range.getLast().isLessThan(ipv6)) {
                         return { ipInSubnet: `${control.value} does not belong to subnet ${subnet}.` }
                     }
-                } catch (err) {
+                } catch (_) {
                     return { ipInSubnet: `${control.value} is not a valid IPv6 address.` }
                 }
             } else {
@@ -215,7 +216,7 @@ export class StorkValidators {
             if (start && end) {
                 AddressRange.fromStringBounds(start, end)
             }
-        } catch (err) {
+        } catch (_) {
             if (fg.get('start').valid) {
                 fg.get('start').setErrors({ addressBounds: true })
                 fg.get('end').markAsDirty()
@@ -254,7 +255,7 @@ export class StorkValidators {
         // filter function.
         interface RangeData {
             addressRange: AddressRange
-            ctl: AbstractControl
+            control: AbstractControl
             failedOnThisPass: boolean
         }
         const ranges: RangeData[] = fa.controls
@@ -265,10 +266,10 @@ export class StorkValidators {
                             ctl.get('range.start')?.value,
                             ctl.get('range.end')?.value
                         ),
-                        ctl: ctl.get('range'),
+                        control: ctl.get('range'),
                         failedOnThisPass: false,
                     }
-                } catch (err) {
+                } catch (_) {
                     StorkValidators.clearControlError(ctl.get('range'), 'ipRangeOverlaps')
                     return null
                 }
@@ -284,7 +285,7 @@ export class StorkValidators {
         let result: ValidationErrors | null = null
         // If there is only one range there is no overlap.
         if (ranges.length === 1) {
-            StorkValidators.clearControlError(ranges[0].ctl, 'ipRangeOverlaps')
+            StorkValidators.clearControlError(ranges[0].control, 'ipRangeOverlaps')
         } else {
             // Now that we have the ranges sorted by the lower boundaries we have to make sure
             // that the upper boundaries of each range are lower than the start of the next range.
@@ -299,14 +300,14 @@ export class StorkValidators {
                     }
                     // The two ranges overlap. Set the error in the respective form groups.
                     ranges.slice(i, i + 2).forEach((range) => {
-                        range.ctl.setErrors(result)
+                        range.control.setErrors(result)
                         range.failedOnThisPass = true
                     })
                 } else {
                     // The ranges do not overlap. Clear the errors.
                     ranges.slice(i, i + 2).forEach((range) => {
                         if (!range.failedOnThisPass) {
-                            StorkValidators.clearControlError(range.ctl, 'ipRangeOverlaps')
+                            StorkValidators.clearControlError(range.control, 'ipRangeOverlaps')
                         }
                     })
                 }
@@ -336,7 +337,7 @@ export class StorkValidators {
         interface PrefixData {
             original: string
             prefix: IPv6CidrRange
-            ctl: AbstractControl
+            control: AbstractControl
             failedOnThisPass: boolean
         }
         const prefixes: PrefixData[] = fa.controls
@@ -345,10 +346,10 @@ export class StorkValidators {
                     return {
                         original: ctl.get('prefixes.prefix')?.value as string,
                         prefix: IPv6CidrRange.fromCidr(ctl.get('prefixes.prefix')?.value as string),
-                        ctl: ctl.get('prefixes'),
+                        control: ctl.get('prefixes'),
                         failedOnThisPass: false,
                     }
-                } catch (err) {
+                } catch (_) {
                     StorkValidators.clearControlError(ctl.get('prefixes'), 'ipv6PrefixOverlaps')
                     return null
                 }
@@ -365,7 +366,7 @@ export class StorkValidators {
         let result: ValidationErrors | null = null
         // If there is only one prefix, there is no overlap.
         if (prefixes.length === 1) {
-            StorkValidators.clearControlError(prefixes[0].ctl, 'ipv6PrefixOverlaps')
+            StorkValidators.clearControlError(prefixes[0].control, 'ipv6PrefixOverlaps')
         } else {
             for (let i = 0; i < prefixes.length - 1; i++) {
                 if (prefixes[i].prefix.getLast().isGreaterThanOrEquals(prefixes[i + 1].prefix.getFirst())) {
@@ -376,14 +377,14 @@ export class StorkValidators {
                     }
                     // The two prefixes overlap. Set the error in the respective form groups.
                     prefixes.slice(i, i + 2).forEach((prefix) => {
-                        prefix.ctl.setErrors(result)
+                        prefix.control.setErrors(result)
                         prefix.failedOnThisPass = true
                     })
                 } else {
                     // The prefixes do not overlap. Clear the errors.
                     prefixes.slice(i, i + 2).forEach((prefix) => {
                         if (!prefix.failedOnThisPass) {
-                            StorkValidators.clearControlError(prefix.ctl, 'ipv6PrefixOverlaps')
+                            StorkValidators.clearControlError(prefix.control, 'ipv6PrefixOverlaps')
                         }
                     })
                 }
@@ -414,7 +415,7 @@ export class StorkValidators {
                     ipv6PrefixDelegatedLength: `Delegated prefix length must be greater than the ${prefix} prefix length.`,
                 }
             }
-        } catch (err) {
+        } catch (_) {
             return null
         }
         return result
@@ -442,7 +443,7 @@ export class StorkValidators {
                     ipv6ExcludedPrefixDelegatedLength: `Delegated prefix length must be lower than the ${prefix} excluded prefix length.`,
                 }
             }
-        } catch (err) {
+        } catch (_) {
             // This validator does not check invalid prefixes.
             return null
         }
