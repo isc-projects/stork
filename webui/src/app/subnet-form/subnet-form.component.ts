@@ -453,7 +453,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         try {
             subnet = this.subnetSetFormService.convertFormToSubnet(this.form.group)
         } catch (err) {
-            console.info(err)
             this.messageService.add({
                 severity: 'error',
                 summary: 'Cannot commit the subnet',
