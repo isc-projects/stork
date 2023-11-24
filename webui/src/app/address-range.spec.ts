@@ -10,6 +10,12 @@ describe('AddressRange', () => {
         expect(range.getLast()).toBe('192.0.2.10')
     })
 
+    it('should parse an IPv4 address range without spaces', () => {
+        const range = AddressRange.fromStringRange('192.0.2.1-192.0.2.10')
+        expect(range.getFirst()).toBe('192.0.2.1')
+        expect(range.getLast()).toBe('192.0.2.10')
+    })
+
     it('should parse an IPv4 address range boundaries', () => {
         const range = AddressRange.fromStringBounds('192.0.2.1', '192.0.2.10')
         expect(range.getFirst()).toBe('192.0.2.1')
