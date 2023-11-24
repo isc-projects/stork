@@ -37,7 +37,7 @@ export class AddressRange {
             throw Error(`invalid IP addresses in the ${ipRangeFirst}-${ipRangeLast} range`)
         }
         // They should both have the same family.
-        if ((isIPv4(first) && !isIPv4(last)) || (!isIPv4(first) && isIPv4(last))) {
+        if (isIPv4(first) != isIPv4(last)) {
             throw Error(`inconsistent IP address family in the ${ipRangeFirst}-${ipRangeLast} range`)
         }
         if (first.isGreaterThan(last)) {
