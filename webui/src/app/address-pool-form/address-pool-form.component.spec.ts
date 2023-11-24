@@ -145,7 +145,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should reduce the form for unselected server', () => {
-        component.formGroup.get('selectedDaemons')?.setValue([2])
+        component.formGroup.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
@@ -158,21 +158,24 @@ describe('AddressPoolFormComponent', () => {
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')
 
         const clientClass = component.formGroup.get('parameters.clientClass.values') as UntypedFormArray
-        expect(clientClass?.length).toBe(1)
+        expect(clientClass).toBeTruthy()
+        expect(clientClass.length).toBe(1)
         expect(clientClass.get('0').value).toBe('bar')
 
         const requireClientClasses = component.formGroup.get(
             'parameters.requireClientClasses.values'
         ) as UntypedFormArray
-        expect(requireClientClasses?.length).toBe(1)
+        expect(requireClientClasses).toBeTruthy()
+        expect(requireClientClasses.length).toBe(1)
         expect(requireClientClasses.get('0').value).toEqual(['foo', 'bar', 'auf'])
 
         const options = component.formGroup.get('options.data') as UntypedFormArray
+        expect(options).toBeTruthy()
         expect(options.get('0.0.optionCode')?.value).toBe(6)
     })
 
     it('should extend the form for newly selected server', () => {
-        component.formGroup.get('selectedDaemons')?.setValue([1, 2, 3])
+        component.formGroup.get('selectedDaemons').setValue([1, 2, 3])
         component.onDaemonsChange({
             itemValue: 3,
         })
@@ -187,7 +190,8 @@ describe('AddressPoolFormComponent', () => {
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')
 
         const clientClass = component.formGroup.get('parameters.clientClass.values') as UntypedFormArray
-        expect(clientClass?.length).toBe(3)
+        expect(clientClass).toBeTruthy()
+        expect(clientClass.length).toBe(3)
         expect(clientClass.get('0').value).toBe('foo')
         expect(clientClass.get('1').value).toBe('bar')
         expect(clientClass.get('2').value).toBe('foo')
@@ -195,19 +199,21 @@ describe('AddressPoolFormComponent', () => {
         const requireClientClasses = component.formGroup.get(
             'parameters.requireClientClasses.values'
         ) as UntypedFormArray
-        expect(requireClientClasses?.length).toBe(3)
+        expect(requireClientClasses).toBeTruthy()
+        expect(requireClientClasses.length).toBe(3)
         expect(requireClientClasses.get('0').value).toEqual(['foo', 'bar'])
         expect(requireClientClasses.get('1').value).toEqual(['foo', 'bar', 'auf'])
         expect(requireClientClasses.get('2').value).toEqual(['foo', 'bar'])
 
         const options = component.formGroup.get('options.data') as UntypedFormArray
+        expect(options).toBeTruthy()
         expect(options.get('0.0.optionCode')?.value).toBe(5)
         expect(options.get('1.0.optionCode')?.value).toBe(6)
         expect(options.get('2.0.optionCode')?.value).toBe(5)
     })
 
     it('should reset a form when all servers are unselected', () => {
-        component.formGroup.get('selectedDaemons')?.setValue([])
+        component.formGroup.get('selectedDaemons').setValue([])
         component.onDaemonsChange({
             itemValue: 2,
         })
@@ -219,16 +225,19 @@ describe('AddressPoolFormComponent', () => {
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')
 
         const clientClass = component.formGroup.get('parameters.clientClass.values') as UntypedFormArray
-        expect(clientClass?.length).toBe(1)
+        expect(clientClass).toBeTruthy()
+        expect(clientClass.length).toBe(1)
         expect(clientClass.get('0').value).toBeFalsy()
 
         const requireClientClasses = component.formGroup.get(
             'parameters.requireClientClasses.values'
         ) as UntypedFormArray
-        expect(requireClientClasses?.length).toBe(1)
+        expect(requireClientClasses).toBeTruthy()
+        expect(requireClientClasses.length).toBe(1)
         expect(requireClientClasses.get('0').value).toEqual([])
 
         const options = component.formGroup.get('options.data') as UntypedFormArray
+        expect(options).toBeTruthy()
         expect(options.length).toBe(1)
         expect((options.get('0') as UntypedFormArray)?.length).toBe(0)
     })

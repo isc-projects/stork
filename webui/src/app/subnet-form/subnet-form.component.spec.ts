@@ -632,26 +632,32 @@ describe('SubnetFormComponent', () => {
         tick()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
-        expect(component.form?.group?.get('subnet')).toBeTruthy()
-        expect(component.form?.group?.get('pools')).toBeTruthy()
-        expect(component.form?.group?.contains('parameters')).toBeTrue()
-        expect(component.form?.group?.contains('options')).toBeTrue()
+        expect(component.form).toBeTruthy()
+        expect(component.form.group).toBeTruthy()
+        expect(component.form.group.get('subnet')).toBeTruthy()
+        expect(component.form.group.get('pools')).toBeTruthy()
+        expect(component.form.group.contains('parameters')).toBeTrue()
+        expect(component.form.group.contains('options')).toBeTrue()
 
-        expect(component.form?.group?.get('subnet').value).toBe('192.0.2.0/24')
+        expect(component.form.group.get('subnet').value).toBe('192.0.2.0/24')
 
-        const pools = component.form?.group?.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools?.length).toBe(1)
+        const pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
         expect(pools.get('0.range.start')?.value).toBe('192.0.2.10')
         expect(pools.get('0.range.end')?.value).toBe('192.0.2.100')
 
-        const parameters = component.form?.group?.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        const parameters = component.form.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters).toBeTruthy()
         expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
         expect(parameters.get('allocator.values')?.value).toEqual(['random', 'iterative'])
 
-        const options = component.form?.group?.get('options')
+        const options = component.form.group.get('options')
+        expect(options).toBeTruthy()
         expect(options.get('unlocked')?.value).toBeTrue()
         const data = options.get('data') as UntypedFormArray
-        expect(data?.length).toBe(2)
+        expect(data).toBeTruthy()
+        expect(data.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(5)
         expect(data.get('1.0.optionCode')?.value).toBe(5)
     }))
@@ -663,28 +669,34 @@ describe('SubnetFormComponent', () => {
         tick()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
-        expect(component.form?.group?.get('subnet')).toBeTruthy()
-        expect(component.form?.group?.get('pools')).toBeTruthy()
-        expect(component.form?.group?.contains('parameters')).toBeTrue()
-        expect(component.form?.group?.contains('options')).toBeTrue()
+        expect(component.form).toBeTruthy()
+        expect(component.form.group).toBeTruthy()
+        expect(component.form.group.get('subnet')).toBeTruthy()
+        expect(component.form.group.get('pools')).toBeTruthy()
+        expect(component.form.group.contains('parameters')).toBeTrue()
+        expect(component.form.group.contains('options')).toBeTrue()
 
-        expect(component.form?.group?.get('subnet').value).toBe('2001:db8:1::/64')
+        expect(component.form.group.get('subnet').value).toBe('2001:db8:1::/64')
 
-        const pools = component.form?.group?.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools?.length).toBe(1)
+        const pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
         expect(pools.get('0.range.start')?.value).toBe('2001:db8:1::10')
         expect(pools.get('0.range.end')?.value).toBe('2001:db8:1::100')
 
-        const prefixPools = component.form?.group?.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        expect(prefixPools?.length).toBe(1)
+        const prefixPools = component.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        expect(prefixPools).toBeTruthy()
+        expect(prefixPools.length).toBe(1)
         expect(prefixPools.get('0.prefixes.prefix')?.value).toBe('3000::/48')
         expect(prefixPools.get('0.prefixes.delegatedLength')?.value).toBe(64)
 
-        const parameters = component.form?.group?.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        const parameters = component.form.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters).toBeTruthy()
         expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
         expect(parameters.get('allocator.values')?.value).toEqual(['random', null])
 
-        const options = component.form?.group?.get('options')
+        const options = component.form.group.get('options')
+        expect(options).toBeTruthy()
         expect(options.get('unlocked')?.value).toBeFalse()
         const data = options.get('data') as UntypedFormArray
         expect(data?.length).toBe(2)
@@ -777,6 +789,7 @@ describe('SubnetFormComponent', () => {
         expect(component.addressPoolComponents.get(0).selectableDaemons[0].id).toBe(2)
 
         const options = component.form.group.get('options.data') as UntypedFormArray
+        expect(options).toBeTruthy()
         expect(options.length).toBe(1)
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.2')
 
@@ -888,12 +901,14 @@ describe('SubnetFormComponent', () => {
         expect(poolDeleteBtn).toBeTruthy()
 
         let pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools?.length).toBe(2)
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(2)
 
         spyOn(messageService, 'add').and.callThrough()
         component.onAddressPoolDelete(1)
         pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools?.length).toBe(1)
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
         expect(messageService.add).toHaveBeenCalled()
     }))
 
@@ -923,12 +938,14 @@ describe('SubnetFormComponent', () => {
         expect(poolDeleteBtn).toBeTruthy()
 
         let pools = component.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        expect(pools?.length).toBe(2)
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(2)
 
         spyOn(messageService, 'add').and.callThrough()
         component.onPrefixPoolDelete(1)
         pools = component.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        expect(pools?.length).toBe(1)
+        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
         expect(messageService.add).toHaveBeenCalled()
     }))
 
