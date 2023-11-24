@@ -70,7 +70,7 @@ export class AddressPoolFormComponent implements OnInit {
      * @returns true if the subnet belongs to an IPv6 subnet, false otherwise.
      */
     get v6(): boolean {
-        return this.subnet.includes(':') ? true : false
+        return this.subnet.includes(':')
     }
 
     /**
