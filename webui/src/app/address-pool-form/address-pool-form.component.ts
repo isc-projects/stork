@@ -182,7 +182,7 @@ export class AddressPoolFormComponent implements OnInit {
      */
     onOptionAdd(index: number): void {
         this.getOptionsData(index).push(
-            createDefaultDhcpOptionFormGroup(this.subnet.includes(':') ? IPType.IPv6 : IPType.IPv4)
+            createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4)
         )
     }
 }
