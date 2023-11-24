@@ -378,6 +378,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                                 'Successfully sent the request to the server to refresh' +
                                 ' Kea configurations in Stork server. It may take a while' +
                                 ' before it takes effect.',
+                            life: 10000,
                         })
                     })
                     .catch(() => {
@@ -388,6 +389,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                                 'The request to refresh Kea configurations in Stork failed' +
                                 ' due to an internal server error. You can try again to see' +
                                 ' if the error goes away.',
+                            life: 10000,
                         })
                     })
             },
