@@ -1,3 +1,4 @@
+import { AddressRange } from './address-range'
 import { DelegatedPrefixPool, KeaConfigPoolParameters, LocalSubnet, Pool, SharedNetwork, Subnet } from './backend'
 
 /**
@@ -209,7 +210,21 @@ export function extractUniqueSubnetPools(subnets: Subnet[] | Subnet): SubnetWith
                 }
             }
         }
-        convertedSubnet.pools = pools.sort()
+        convertedSubnet.pools = pools.sort((a, b) => {
+            try {
+                const range1 = AddressRange.fromStringRange(a.pool)
+                const range2 = AddressRange.fromStringRange(b.pool)
+                if (range1.first.isLessThan(range2.first)) {
+                    return -1
+                } else if (range1.first.isGreaterThan(range2.first)) {
+                    return 1
+                }
+            } catch (_) {
+                // Parsing error is very unlikely but we have to handle it.
+                return 1
+            }
+            return 0
+        })
         convertedSubnet.prefixDelegationPools = prefixDelegationPools.sort((a, b) => a.prefix.localeCompare(b.prefix))
     }
     return convertedSubnets

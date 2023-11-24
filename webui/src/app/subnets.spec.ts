@@ -177,16 +177,23 @@ describe('subnets', () => {
                                 },
                             },
                             {
-                                pool: '3000::10-3000::15',
+                                pool: '3000::40-3000::65',
                             },
                             {
                                 pool: '3000::20-3000::35',
                             },
                             {
-                                pool: '3000::40-3000::65',
+                                pool: '3000::10-3000::15',
                             },
                         ],
                         prefixDelegationPools: [
+                            {
+                                prefix: '3003::/64',
+                                delegatedLength: 80,
+                                keaConfigPoolParameters: {
+                                    clientClass: 'bar',
+                                },
+                            },
                             {
                                 prefix: '3001::/64',
                                 delegatedLength: 80,
@@ -196,13 +203,6 @@ describe('subnets', () => {
                                 prefix: '3002::/64',
                                 delegatedLength: 80,
                                 excludedPrefix: '3002::/96',
-                            },
-                            {
-                                prefix: '3003::/64',
-                                delegatedLength: 80,
-                                keaConfigPoolParameters: {
-                                    clientClass: 'bar',
-                                },
                             },
                         ],
                     },
@@ -217,10 +217,10 @@ describe('subnets', () => {
                                 },
                             },
                             {
-                                pool: '3000::10-3000::15',
+                                pool: '3000::20-3000::35',
                             },
                             {
-                                pool: '3000::20-3000::35',
+                                pool: '3000::10-3000::15',
                             },
                             {
                                 pool: '3000::70-3000::85',
