@@ -115,7 +115,7 @@ export class AddressPoolFormComponent implements OnInit {
                 this.servers.length
             )
         }
-        // If the number of selected daemons has changed we must update selected servers list.
+        // If the number of selected daemons has changed, we must update the selected servers list.
         this.servers = selectedDaemons.map((sd) => this.selectableDaemons.find((d) => d.id === sd)?.label)
     }
 
