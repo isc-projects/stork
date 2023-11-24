@@ -60,7 +60,9 @@ export class AddressPoolFormComponent implements OnInit {
     ngOnInit(): void {
         const selectedDaemons = this.formGroup.get('selectedDaemons').value ?? []
         if (selectedDaemons.length > 0) {
-            this.servers = selectedDaemons.map((sd) => this.selectableDaemons.find((d) => d.id === sd)?.label)
+            this.servers = selectedDaemons.map(
+                (sd) => this.selectableDaemons.find((d) => d.id === sd)?.label ?? 'unknown'
+            )
         }
     }
 
@@ -116,7 +118,7 @@ export class AddressPoolFormComponent implements OnInit {
             )
         }
         // If the number of selected daemons has changed, we must update the selected servers list.
-        this.servers = selectedDaemons.map((sd) => this.selectableDaemons.find((d) => d.id === sd)?.label)
+        this.servers = selectedDaemons.map((sd) => this.selectableDaemons.find((d) => d.id === sd)?.label ?? 'unknown')
     }
 
     /**
