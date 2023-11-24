@@ -346,14 +346,14 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Sends a request to the server to clear Kea config hashes.
+     * Sends a request to the server to re-synchronize Kea configs.
      *
      * Clearing the config hashes causes the server to fetch and update
      * Kea configurations in the Stork database.
      *
      * @param event event triggered on button click.
      */
-    onRefreshKeaConfigs(event): void {
+    onSyncKeaConfigs(event): void {
         this.confirmService.confirm({
             message:
                 'This operation instructs the server to fetch the configurations from all Kea servers' +
@@ -361,7 +361,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 ' information diverged between Kea and Stork. This operation should be harmless and typically' +
                 ' it only causes some additional overhead to populate the fetched data. Populating the data ' +
                 ' can take some time depending on the puller intervals settings and Kea servers availability.',
-            header: 'Refresh Kea Configs',
+            header: 'Resynchronize Kea Configs',
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: 'Continue',
             rejectLabel: 'Cancel',
@@ -373,9 +373,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     .then(() => {
                         this.msgSrv.add({
                             severity: 'success',
-                            summary: 'Request to refresh sent',
+                            summary: 'Request to resynchronize sent',
                             detail:
-                                'Successfully sent the request to the server to refresh' +
+                                'Successfully sent the request to the server to resynchronize' +
                                 ' Kea configurations in Stork server. It may take a while' +
                                 ' before it takes effect.',
                             life: 10000,
@@ -384,9 +384,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     .catch(() => {
                         this.msgSrv.add({
                             severity: 'error',
-                            summary: 'Request to refresh failed',
+                            summary: 'Request to resynchronize failed',
                             detail:
-                                'The request to refresh Kea configurations in Stork failed' +
+                                'The request to resynchronize Kea configurations in Stork failed' +
                                 ' due to an internal server error. You can try again to see' +
                                 ' if the error goes away.',
                             life: 10000,

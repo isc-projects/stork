@@ -51,11 +51,11 @@
             </div>
             <div *ngIf="appType === 'kea'" class="ml-2">
                 <p-button
-                    id="apps-refresh-button"
-                    label="Refresh Kea Configs"
+                    id="sync-kea-configs-button"
+                    label="Resynchronize Kea Configs"
                     icon="pi pi-file-import"
                     styleClass="p-button-warning"
-                    (click)="onRefreshKeaConfigs($event)"
+                    (click)="onSyncKeaConfigs($event)"
                 ></p-button>
             </div>
         </div>

@@ -136,8 +136,8 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
     })
 
-    it('should refresh configurations from Kea', fakeAsync(() => {
-        component.onRefreshKeaConfigs(null)
+    it('should request synchronization configurations from Kea', fakeAsync(() => {
+        component.onSyncKeaConfigs(null)
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
@@ -157,8 +157,8 @@ describe('AppsPageComponent', () => {
         expect(msgSrv.add).toHaveBeenCalled()
     }))
 
-    it('should report an error while refreshing configurations from Kea', fakeAsync(() => {
-        component.onRefreshKeaConfigs(null)
+    it('should report an error while requesting synchronization configurations from Kea', fakeAsync(() => {
+        component.onSyncKeaConfigs(null)
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
@@ -178,8 +178,8 @@ describe('AppsPageComponent', () => {
         expect(msgSrv.add).toHaveBeenCalled()
     }))
 
-    it('should cancel refreshing conifgurations from Kea', fakeAsync(() => {
-        component.onRefreshKeaConfigs(null)
+    it('should cancel synchronizing conifgurations from Kea', fakeAsync(() => {
+        component.onSyncKeaConfigs(null)
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
