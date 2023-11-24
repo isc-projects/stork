@@ -276,11 +276,12 @@ export class StorkValidators {
             })
             .filter((range) => range)
             .sort((range1, range2) => {
-                return range1.addressRange.first.isLessThan(range2.addressRange.first)
-                    ? -1
-                    : range1.addressRange.first.isGreaterThan(range2.addressRange.first)
-                    ? 1
-                    : 0
+                if (range1.addressRange.first.isLessThan(range2.addressRange.first)) {
+                    return -1
+                } else if (range1.addressRange.first.isGreaterThan(range2.addressRange.first)) {
+                    return 1
+                }
+                return 0
             })
         let result: ValidationErrors | null = null
         // If there is only one range there is no overlap.
@@ -356,11 +357,12 @@ export class StorkValidators {
             })
             .filter((prefix) => prefix)
             .sort((prefix1, prefix2) => {
-                return prefix1.prefix.getFirst().isLessThan(prefix2.prefix.getFirst())
-                    ? -1
-                    : prefix1.prefix.getFirst().isGreaterThan(prefix2.prefix.getFirst())
-                    ? 1
-                    : 0
+                if (prefix1.prefix.getFirst().isLessThan(prefix2.prefix.getFirst())) {
+                    return -1
+                } else if (prefix1.prefix.getFirst().isGreaterThan(prefix2.prefix.getFirst())) {
+                    return 1
+                }
+                return 0
             })
 
         let result: ValidationErrors | null = null
