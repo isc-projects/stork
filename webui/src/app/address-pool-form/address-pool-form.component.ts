@@ -168,7 +168,7 @@ export class AddressPoolFormComponent implements OnInit {
      * @returns An array of options data for all servers or for a single server.
      */
     private getOptionsData(index?: number): UntypedFormArray {
-        return index === undefined
+        return index == null
             ? (this.formGroup.get('options.data') as UntypedFormArray)
             : (this.getOptionsData().at(index) as UntypedFormArray)
     }
