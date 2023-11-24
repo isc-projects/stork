@@ -316,7 +316,7 @@ export class StorkValidators {
     }
 
     /**
-     * A validator checking if the are overlaps between prefixes.
+     * A validator checking if there are overlaps between prefixes.
      *
      * It sets errors for each overlapping prefix in the array.
      *
