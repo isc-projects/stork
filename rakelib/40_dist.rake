@@ -18,17 +18,6 @@ text.each_line do |line|
 end
 STORK_VERSION = stork_version
 
-# The given prerequisites can be suppressed by setting the
-# SUPPRESS_PREREQUISITES environment variable to "true". It should be helpful
-# to run tasks that direct prerequisites exist (for example, they were built
-# in another environment), but the nested ones do not.
-def suppressable_prerequisites(*prerequisites)
-    if ENV["SUPPRESS_PREREQUISITES"] == "true"
-        return []
-    end
-    return prerequisites
-end
-
 def get_pkg_type()
     # Read environment variable
     if !ENV["PKG_TYPE"].nil?
@@ -100,7 +89,7 @@ sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file =
 agent_dist_bin_dir = File.join("dist/agent", default_os_binary_directory)
 directory agent_dist_bin_dir
 agent_dist_bin_file = File.join(agent_dist_bin_dir, "stork-agent")
-file agent_dist_bin_file => [agent_dist_bin_dir] + suppressable_prerequisites(AGENT_BINARY_FILE) do
+file agent_dist_bin_file => [agent_dist_bin_dir, AGENT_BINARY_FILE] do
     sh "cp", "-a", AGENT_BINARY_FILE, agent_dist_bin_file
 end
 
@@ -183,11 +172,11 @@ end
 server_dist_bin_dir = File.join("dist/server", default_os_binary_directory)
 directory server_dist_bin_dir
 server_dist_bin_file = File.join(server_dist_bin_dir, "stork-server")
-file server_dist_bin_file => [server_dist_bin_dir] + suppressable_prerequisites(SERVER_BINARY_FILE) do
+file server_dist_bin_file => [server_dist_bin_dir, SERVER_BINARY_FILE] do
     sh "cp", "-a", SERVER_BINARY_FILE, server_dist_bin_file
 end
 tool_dist_bin_file = File.join(server_dist_bin_dir, "stork-tool")
-file tool_dist_bin_file => [server_dist_bin_dir] + suppressable_prerequisites(TOOL_BINARY_FILE) do
+file tool_dist_bin_file => [server_dist_bin_dir, TOOL_BINARY_FILE] do
     sh "cp", "-a", TOOL_BINARY_FILE, tool_dist_bin_file
 end
 
