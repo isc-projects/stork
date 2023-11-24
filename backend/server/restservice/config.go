@@ -457,8 +457,8 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 func (r *RestAPI) DeleteKeaDaemonConfigHashes(ctx context.Context, params services.DeleteKeaDaemonConfigHashesParams) middleware.Responder {
 	err := dbmodel.DeleteKeaDaemonConfigHashes(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot reset Kea configurations"
+		log.WithError(err).Error(msg)
 		rsp := services.NewDeleteKeaDaemonConfigHashesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
