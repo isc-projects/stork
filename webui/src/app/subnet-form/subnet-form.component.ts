@@ -269,9 +269,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     getPoolHeader(index: number): [string, boolean] {
         const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        return pools?.at(index)?.get('range.start')?.value && pools.at(index)?.get('range.end')?.value
-            ? [`${pools.at(index)?.get('range.start').value}-${pools.at(index).get('range.end').value}`, true]
-            : ['New Pool', false]
+        const rangeStart = pools?.at(index)?.get('range.start')?.value
+        const rangeEnd = pools?.at(index)?.get('range.end')?.value
+        return rangeStart && rangeEnd ? [`${rangeStart}-${rangeEnd}`, true] : ['New Pool', false]
     }
 
     /**
