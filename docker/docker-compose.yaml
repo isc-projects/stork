@@ -87,6 +87,8 @@ services:
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
+      # Using priority to ensure predictable assignment of interface names.
+      # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.100
         priority: 1000
@@ -146,6 +148,8 @@ services:
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
     hostname: agent-kea6
     networks:
+      # Using priority to ensure predictable assignment of interface names.
+      # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.106
         priority: 1000
@@ -359,6 +363,8 @@ services:
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
+      # Using priority to ensure predictable assignment of interface names.
+      # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.200
         priority: 1000
