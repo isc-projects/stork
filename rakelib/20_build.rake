@@ -85,6 +85,17 @@ def with_custom_go_os_and_arch(&block)
     ENV["GOARM"] = nil
 end
 
+# The prerequisites of the given task can be suppressed by setting the
+# SUPPRESS_PREREQUISITES environment variable to "true". It should be helpful
+# to run tasks that direct prerequisites exist (for example, they were built
+# in another environment), but the nested ones do not.
+def allow_suppress_prerequisites(task_name)
+    if ENV["SUPPRESS_PREREQUISITES"] == "true"
+        puts "Suppressing prerequisites for #{task_name}"
+        Rake::Task[task_name].clear_prerequisites()
+    end
+end
+
 #####################
 ### Documentation ###
 #####################
