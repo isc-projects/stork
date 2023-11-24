@@ -6,9 +6,7 @@ import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform
 import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-
 import { MessagesModule } from 'primeng/messages'
-
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -130,6 +128,9 @@ describe('SettingsPageComponent', () => {
         fixture.detectChanges()
 
         expect(messageService.add).toHaveBeenCalledTimes(2)
+        expect(fixture.debugElement.nativeElement.innerText).toContain(
+            'Fetching current settings from the server failed.'
+        )
     }))
 
     it('should submit the form', fakeAsync(() => {

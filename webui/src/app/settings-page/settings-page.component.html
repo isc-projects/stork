@@ -98,7 +98,8 @@
         <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues in the form values. </span>
     </ng-container>
     <ng-container *ngSwitchCase="'fail'">
-        <button pButton type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-2 ml-1"></button>
+        <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>
+        <button pButton type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-4"></button>
     </ng-container>
     <ng-container *ngSwitchDefault>
         <p-progressSpinner></p-progressSpinner>

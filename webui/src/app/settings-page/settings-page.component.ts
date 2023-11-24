@@ -217,6 +217,6 @@ export class SettingsPageComponent implements OnInit {
      * @returns A boolean value indicating if the control has the error.
      */
     hasError(name: string, errType: string): boolean {
-        return this.settingsForm.get(name)?.hasError(errType)
+        return !!this.settingsForm.get(name)?.hasError(errType)
     }
 }
