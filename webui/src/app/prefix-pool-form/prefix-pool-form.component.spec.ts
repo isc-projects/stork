@@ -300,7 +300,7 @@ describe('PrefixPoolFormComponent', () => {
         const smalls = panels[0].queryAll(By.css('small'))
         expect(smalls.length).toBe(1)
         expect(smalls[0].nativeElement.innerText).toContain(
-            'Delegated prefix length must be greater than the 2001:db8:cafe::/56 prefix length.'
+            'Delegated prefix length must be greater or equal the 2001:db8:cafe::/56 prefix length.'
         )
     })
 

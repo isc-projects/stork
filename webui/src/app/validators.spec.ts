@@ -664,6 +664,12 @@ describe('StorkValidators', () => {
             prefix: formBuilder.control('2001:db8:dead:beef::/56'),
             delegatedLength: formBuilder.control(57),
         })
+        // Equal prefix length and delegated length is fine too.
+        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
+        fg = formBuilder.group({
+            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
+            delegatedLength: formBuilder.control(56),
+        })
         expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
         // Invalid prefix is not validated here.
         fg = formBuilder.group({
@@ -678,11 +684,6 @@ describe('StorkValidators', () => {
         })
         expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeFalsy()
         // Delegated prefix length must be greater.
-        fg = formBuilder.group({
-            prefix: formBuilder.control('2001:db8:dead:beef::/56'),
-            delegatedLength: formBuilder.control(56),
-        })
-        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeTruthy()
         fg = formBuilder.group({
             prefix: formBuilder.control('2001:db8:dead:beef::/64'),
             delegatedLength: formBuilder.control(48),

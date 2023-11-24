@@ -412,9 +412,9 @@ export class StorkValidators {
             const prefix = fg.get('prefix').value as string
             const delegatedLength = fg.get('delegatedLength').value as number
             const prefixCidr = IPv6CidrRange.fromCidr(prefix)
-            if (delegatedLength && prefixCidr.getPrefix().getValue() >= delegatedLength) {
+            if (delegatedLength && prefixCidr.getPrefix().getValue() > delegatedLength) {
                 result = {
-                    ipv6PrefixDelegatedLength: `Delegated prefix length must be greater than the ${prefix} prefix length.`,
+                    ipv6PrefixDelegatedLength: `Delegated prefix length must be greater or equal the ${prefix} prefix length.`,
                 }
             }
         } catch (_) {
