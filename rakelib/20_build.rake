@@ -317,19 +317,19 @@ namespace :rebuild do
 
     desc "Rebuild Stork Server from sources"
     task :server do
-        sh "touch", "-c", "backend/cmd/stork-server"
+        sh "rm", "-f", SERVER_BINARY_FILE
         Rake::Task["build:server"].invoke()
     end
 
     desc "Rebuild Stork Agent from sources"
     task :agent do
-        sh "touch", "-c", "backend/cmd/stork-agent"
+        sh "rm", "-f", AGENT_BINARY_FILE
         Rake::Task["build:agent"].invoke()
     end
 
     desc "Rebuild Stork Tool from sources"
     task :tool do
-        sh "touch", "-c", "backend/cmd/stork-tool"
+        sh "rm", "-f", TOOL_BINARY_FILE
         Rake::Task["build:tool"].invoke()
     end
 
