@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 
 	"isc.org/stork"
 	storkutil "isc.org/stork/util"
@@ -61,7 +60,9 @@ type PromBind9ExporterStats struct {
 // references to app monitor, HTTP client, HTTP server, and mappings
 // between BIND 9 stats names to prometheus stats.
 type PromBind9Exporter struct {
-	Settings *cli.Context
+	Host     string
+	Port     int64
+	Interval int64
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -79,9 +80,11 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
+func NewPromBind9Exporter(host string, port int64, interval int64, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
-		Settings:   settings,
+		Host:       host,
+		Port:       port,
+		Interval:   interval,
 		AppMonitor: appMonitor,
 		HTTPClient: httpClient,
 		Registry:   prometheus.NewRegistry(),
@@ -820,10 +823,10 @@ func (pbe *PromBind9Exporter) Start() {
 	pbe.Registry.MustRegister(pbe.procExporter)
 
 	// set address for listening from config
-	addrPort := net.JoinHostPort(pbe.Settings.String("prometheus-bind9-exporter-address"), strconv.Itoa(pbe.Settings.Int("prometheus-bind9-exporter-port")))
+	addrPort := net.JoinHostPort(pbe.Host, strconv.Itoa(int(pbe.Port)))
 	pbe.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Settings.Int("prometheus-bind9-exporter-interval"))
+	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Interval)
 
 	// start HTTP server for metrics
 	go func() {

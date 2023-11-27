@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"path"
 	"sync"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 
 	"isc.org/stork/testutil"
 )
@@ -18,9 +16,8 @@ import (
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
-	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -157,9 +154,8 @@ func TestReadKeaConfigOk(t *testing.T) {
 func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	hm := NewHookManager()
-	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
 	am.detectApps(sa)
 }
 
@@ -182,9 +178,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-
-	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
-	sa := NewStorkAgent(settings, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }

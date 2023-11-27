@@ -140,6 +140,21 @@ func SetupLoggingLevel() {
 	}
 }
 
+// Parses the CLI boolean flag value. It returns true if the value is
+// "true", "1", "t", (case insensitive). Otherwise, It returns false if the
+// value is "false", "0", "f", (case insensitive). Otherwise, it returns an
+// error.
+func ParseBoolFlag(value string) (bool, error) {
+	switch strings.ToLower(value) {
+	case "true", "1", "t":
+		return true, nil
+	case "false", "0", "f":
+		return false, nil
+	default:
+		return false, errors.Errorf("invalid boolean value: '%s', allowed: [true, 1, false, 0]", value)
+	}
+}
+
 // Configures the main application logger. Additionally, it converts the
 // values of the console color-related environment variables.
 func SetupLogging() {
@@ -147,12 +162,19 @@ func SetupLogging() {
 	// convention.
 	variables := []string{"CLICOLOR_FORCE", "CLICOLOR"}
 	for _, variable := range variables {
-		if value, ok := os.LookupEnv(variable); ok {
-			if strings.ToLower(value) == "true" {
-				os.Setenv(variable, "1")
-			} else if strings.ToLower(value) == "false" {
-				os.Setenv(variable, "0")
-			}
+		value, ok := os.LookupEnv(variable)
+		if !ok {
+			continue
+		}
+		boolValue, err := ParseBoolFlag(value)
+		if err != nil {
+			continue
+		}
+
+		if boolValue {
+			os.Setenv(variable, "1")
+		} else {
+			os.Setenv(variable, "0")
 		}
 	}
 

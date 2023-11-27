@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/security/advancedtls"
 	"gopkg.in/h2non/gock.v1"
 
@@ -108,10 +106,9 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 // Check if NewStorkAgent can be invoked and sets SA members.
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
-	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	generalHTTPClient := NewHTTPClient()
 	keaHTTPClient := NewHTTPClient()
-	sa := NewStorkAgent(settings, fam, generalHTTPClient, keaHTTPClient, NewHookManager())
+	sa := NewStorkAgent("foo", 42, fam, generalHTTPClient, keaHTTPClient, NewHookManager())
 	require.NotNil(t, sa.AppMonitor)
 	require.Equal(t, generalHTTPClient, sa.GeneralHTTPClient)
 	require.Equal(t, keaHTTPClient, sa.KeaHTTPClient)
@@ -748,12 +745,8 @@ func TestHostAndPortParams(t *testing.T) {
 	// Arrange
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
-
-	flags := flag.NewFlagSet("test", 0)
-	flags.String("host", "127.0.0.1", "usage")
-	flags.Int("port", 9876, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	sa.Settings = settings
+	sa.Host = "127.0.0.1"
+	sa.Port = 9876
 
 	// We shut down the server before starting. It causes the serve
 	// call fails and doesn't block the execution.

@@ -410,7 +410,7 @@ func TestLoggingLevel(t *testing.T) {
 		{env: "WARN", lv: log.WarnLevel},
 		{env: "ERROR", lv: log.ErrorLevel},
 
-		// negative: if set to empty, garbase or unset at all, use the default (info)
+		// negative: if set to empty, garbage or unset at all, use the default (info)
 		{env: "", lv: log.InfoLevel},
 		{env: "Garbage", lv: log.InfoLevel},
 		{env: "-", lv: log.InfoLevel},
@@ -525,4 +525,88 @@ func TestNullifyEmptyString(t *testing.T) {
 	// nil is also legal as an input parameter and is returned as is.
 	out = NullifyEmptyString(nil)
 	require.Nil(t, out)
+}
+
+// Test that the boolean flag is parsed properly.
+func TestParseBoolFlag(t *testing.T) {
+	t.Run("true", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("true")
+
+		// Assert
+		require.NoError(t, err)
+		require.True(t, value)
+	})
+
+	t.Run("TRUE", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("TRUE")
+
+		// Assert
+		require.NoError(t, err)
+		require.True(t, value)
+	})
+
+	t.Run("1", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("1")
+
+		// Assert
+		require.NoError(t, err)
+		require.True(t, value)
+	})
+
+	t.Run("false", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("false")
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, value)
+	})
+
+	t.Run("FALSE", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("FALSE")
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, value)
+	})
+
+	t.Run("0", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("0")
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, value)
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("unknown")
+
+		// Assert
+		require.Error(t, err)
+		require.False(t, value)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("")
+
+		// Assert
+		require.Error(t, err)
+		require.False(t, value)
+	})
+
+	t.Run("2", func(t *testing.T) {
+		// Arrange & Act
+		value, err := ParseBoolFlag("2")
+
+		// Assert
+		require.Error(t, err)
+		require.False(t, value)
+	})
 }

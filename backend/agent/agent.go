@@ -18,7 +18,6 @@ import (
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/security/advancedtls"
 
@@ -32,7 +31,8 @@ import (
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Settings   *cli.Context
+	Host       string
+	Port       int64
 	AppMonitor AppMonitor
 	// General-purpose HTTP client. It doesn't use any app-specific features.
 	GeneralHTTPClient *HTTPClient
@@ -51,11 +51,12 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
+func NewStorkAgent(host string, port int64, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Settings:          settings,
+		Host:              host,
+		Port:              port,
 		AppMonitor:        appMonitor,
 		GeneralHTTPClient: httpClient,
 		KeaHTTPClient:     keaHTTPClient,
@@ -408,7 +409,7 @@ func (sa *StorkAgent) Serve() error {
 	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
-	addr := net.JoinHostPort(sa.Settings.String("host"), strconv.Itoa(sa.Settings.Int("port")))
+	addr := net.JoinHostPort(sa.Host, strconv.Itoa(int(sa.Port)))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to listen on: %s", addr)

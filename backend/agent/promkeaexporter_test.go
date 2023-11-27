@@ -2,7 +2,6 @@ package agent
 
 import (
 	"encoding/json"
-	"flag"
 	"io"
 	"testing"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 	"gopkg.in/h2non/gock.v1"
 )
 
@@ -35,9 +33,8 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
-	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 42, 24, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)
@@ -71,14 +68,8 @@ func TestPromKeaExporterStart(t *testing.T) {
 		}]`)
 
 	fam := newFakeMonitorWithDefaults()
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -273,15 +264,9 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 		}]`)
 
 	fam := newFakeMonitorWithDefaults()
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -453,20 +438,9 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	flags.Bool("prometheus-kea-exporter-per-subnet-stats", true, "usage")
-
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
-
 	// Act
-	settings.Set("prometheus-kea-exporter-per-subnet-stats", "false")
-
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, false, fam, httpClient)
 	defer pke.Shutdown()
 	gock.InterceptClient(pke.HTTPClient.client)
 	pke.Start()
@@ -511,15 +485,9 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 		}}]`)
 
 	fam := newFakeMonitorWithDefaults()
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -577,15 +545,8 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 		ConfiguredDaemons: []string{"dhcp6"},
 	})
 
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
-
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -623,15 +584,8 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	flags := flag.NewFlagSet("test", 0)
-	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
-	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	settings := cli.NewContext(nil, flags, nil)
-	settings.Set("prometheus-kea-exporter-port", "1234")
-	settings.Set("prometheus-kea-exporter-interval", "1")
-
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter(settings, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)

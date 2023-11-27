@@ -19,7 +19,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 
 	storkutil "isc.org/stork/util"
 )
@@ -320,7 +319,11 @@ func (l *lazySubnetNameLookup) setFamily(family int8) {
 // controlling elements like ticker, and mappings between kea stats
 // names to prometheus stats.
 type PromKeaExporter struct {
-	Settings *cli.Context
+	Host     string
+	Port     int64
+	Interval int64
+
+	EnablePerSubnetStats bool
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -343,18 +346,21 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
+func NewPromKeaExporter(host string, port int64, interval int64, enablePerSubnetStats bool, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
 	pke := &PromKeaExporter{
-		Settings:       settings,
-		AppMonitor:     appMonitor,
-		HTTPClient:     httpClient,
-		DoneCollector:  make(chan bool),
-		Wg:             &sync.WaitGroup{},
-		Registry:       prometheus.NewRegistry(),
-		Adr4StatsMap:   nil,
-		Adr6StatsMap:   nil,
-		Global4StatMap: nil,
-		Global6StatMap: nil,
+		Host:                 host,
+		Port:                 port,
+		Interval:             interval,
+		EnablePerSubnetStats: enablePerSubnetStats,
+		AppMonitor:           appMonitor,
+		HTTPClient:           httpClient,
+		DoneCollector:        make(chan bool),
+		Wg:                   &sync.WaitGroup{},
+		Registry:             prometheus.NewRegistry(),
+		Adr4StatsMap:         nil,
+		Adr6StatsMap:         nil,
+		Global4StatMap:       nil,
+		Global6StatMap:       nil,
 		ignoredStats: map[string]bool{
 			// Stats estimated by summing sub-stats.
 			"pkt4-received": true,
@@ -513,8 +519,11 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor, httpClient
 	pke.PktStatsMap = pktStatsMap
 
 	// Collecting per subnet stats is enabled by default. It can be explicitly disabled.
-	enablePerSubnetStatsFlag := "prometheus-kea-exporter-per-subnet-stats"
-	if !settings.IsSet(enablePerSubnetStatsFlag) || settings.Bool(enablePerSubnetStatsFlag) {
+	if pke.EnablePerSubnetStats {
+		log.Info(
+			"Per-subnet statistics are enabled. You may consider turning it" +
+				" off if you observe the performance problems for Kea" +
+				" deployments with many subnets.")
 		// addresses dhcp4
 		adr4StatsMap := make(map[string]*prometheus.GaugeVec)
 		adr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
@@ -613,6 +622,11 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor, httpClient
 
 		pke.Adr4StatsMap = adr4StatsMap
 		pke.Adr6StatsMap = adr6StatsMap
+	} else {
+		log.Info(
+			"Per-subnet statistics are disabled. You may consider turning it" +
+				" on if you want to collect more detailed statistics for each" +
+				" subnet.")
 	}
 
 	// prepare http handler
@@ -632,11 +646,11 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor, httpClient
 // and http server for exposing them to Prometheus.
 func (pke *PromKeaExporter) Start() {
 	// set address for listening from config
-	addrPort := net.JoinHostPort(pke.Settings.String("prometheus-kea-exporter-address"), strconv.Itoa(pke.Settings.Int("prometheus-kea-exporter-port")))
+	addrPort := net.JoinHostPort(pke.Host, strconv.Itoa(int(pke.Port)))
 	pke.HTTPServer.Addr = addrPort
 
 	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %d seconds",
-		addrPort, pke.Settings.Int("prometheus-kea-exporter-interval"))
+		addrPort, pke.Interval)
 
 	// start http server for metrics
 	go func() {
@@ -647,7 +661,7 @@ func (pke *PromKeaExporter) Start() {
 	}()
 
 	// set ticker time for collecting loop from config
-	pke.Ticker = time.NewTicker(time.Duration(pke.Settings.Int("prometheus-kea-exporter-interval")) * time.Second)
+	pke.Ticker = time.NewTicker(time.Duration(pke.Interval) * time.Second)
 
 	// start collecting loop as goroutine and increment WaitGroup (which is used later
 	// for stopping this goroutine)

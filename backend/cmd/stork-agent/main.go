@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 	"isc.org/stork"
 	"isc.org/stork/agent"
 	"isc.org/stork/hooks"
@@ -38,23 +38,14 @@ func (e *ctrlcError) Error() string {
 
 // Helper function that starts agent, apps monitor and prometheus exports
 // if they are enabled.
-func runAgent(settings *cli.Context, reload bool) error {
+func runAgent(settings *generalSettings, reload bool) error {
 	if !reload {
 		// We need to print this statement only after we check if the only purpose is to print a version.
 		log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 	}
 
 	// Read the hook libraries.
-	hookDirectory := settings.Path("hook-directory")
-	if !settings.IsSet("hook-directory") {
-		// Default hook directory is used. Try to create it if it doesn't exist.
-		err := os.MkdirAll(hookDirectory, 0o700)
-		if err != nil {
-			log.WithError(err).
-				WithField("path", hookDirectory).
-				Warning("Could not create the default hook directory")
-		}
-	}
+	hookDirectory := settings.HookDirectory
 	hookManager := agent.NewHookManager()
 	// TODO: There is missing support for configuring agent hooks because the
 	// agent uses a different library to handle CLI/environment variables than
@@ -69,28 +60,28 @@ func runAgent(settings *cli.Context, reload bool) error {
 		if errors.Is(err, os.ErrNotExist) {
 			log.
 				WithError(err).
-				Warnf("The hook directory: '%s' doesn't exist", settings.Path("hook-directory"))
+				Warnf("The hook directory: '%s' doesn't exist", hookDirectory)
 		} else {
 			log.
 				WithError(err).
-				Fatal("Problem with loading hook libraries")
+				Warn("Problem with loading hook libraries")
 		}
 	}
 
-	skipTLSCertVerification := settings.Bool("skip-tls-cert-verification")
+	skipTLSCertVerification := settings.SkipTLSCertVerification
 	// Prepare the general HTTP client. It has no HTTP credentials or TLS
 	// certificates.
 	httpClient := agent.NewHTTPClient()
 	httpClient.SetSkipTLSVerification(skipTLSCertVerification)
 
 	// Try registering the agent in the server using the agent token.
-	if settings.String("server-url") != "" {
-		portStr := strconv.FormatInt(settings.Int64("port"), 10)
+	if settings.ServerURL != "" {
+		portStr := strconv.FormatInt(settings.Port, 10)
 		if err != nil {
 			log.WithError(err).Fatal("Could not initialize the HTTP client")
 		}
 
-		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true, httpClient) {
+		if !agent.Register(settings.ServerURL, "", settings.Host, portStr, false, true, httpClient) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
@@ -124,11 +115,29 @@ func runAgent(settings *cli.Context, reload bool) error {
 	}
 
 	// Prepare agent gRPC handler
-	storkAgent := agent.NewStorkAgent(settings, appMonitor, httpClient, keaHTTPClient, hookManager)
+	storkAgent := agent.NewStorkAgent(settings.Host, settings.Port, appMonitor, httpClient, keaHTTPClient, hookManager)
+
+	prometheusKeaExporterPerSubnetStats, err := storkutil.ParseBoolFlag(settings.PrometheusKeaExporterPerSubnetStats)
+	if err != nil {
+		return errors.WithMessage(err, "wrong value of the --prometheus-kea-exporter-per-subnet-stats flag")
+	}
 
 	// Prepare Prometheus exporters.
-	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor, keaHTTPClient)
-	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor, httpClient)
+	promKeaExporter := agent.NewPromKeaExporter(
+		settings.PrometheusKeaExporterAddress,
+		settings.PrometheusKeaExporterPort,
+		settings.PrometheusKeaExporterInterval,
+		prometheusKeaExporterPerSubnetStats,
+		appMonitor,
+		keaHTTPClient,
+	)
+	promBind9Exporter := agent.NewPromBind9Exporter(
+		settings.PrometheusBind9ExporterAddress,
+		settings.PrometheusBind9ExporterPort,
+		settings.PrometheusBind9ExporterInterval,
+		appMonitor,
+		httpClient,
+	)
 
 	err = storkAgent.Setup()
 	if err != nil {
@@ -139,7 +148,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 	appMonitor.Start(storkAgent)
 
 	// Only start the exporters if they're enabled.
-	if !settings.Bool("listen-stork-only") {
+	if !settings.ListenStorkOnly {
 		promKeaExporter.Start()
 		defer promKeaExporter.Shutdown()
 
@@ -148,7 +157,7 @@ func runAgent(settings *cli.Context, reload bool) error {
 	}
 
 	// Only start the agent service if it's enabled.
-	if !settings.Bool("listen-prometheus-only") {
+	if !settings.ListenPrometheusOnly {
 		go func() {
 			if err := storkAgent.Serve(); err != nil {
 				log.Fatalf("Failed to serve the Stork Agent: %+v", err)
@@ -176,12 +185,12 @@ func runAgent(settings *cli.Context, reload bool) error {
 }
 
 // Helper function that checks command line options and runs registration.
-func runRegister(cfg *cli.Context) {
+func runRegister(settings *registerSettings) {
 	agentAddr := ""
 	agentPort := ""
 	var err error
-	if cfg.String("agent-host") != "" {
-		agentAddr, agentPort, err = net.SplitHostPort(cfg.String("agent-host"))
+	if settings.AgentHost != "" {
+		agentAddr, agentPort, err = net.SplitHostPort(settings.AgentHost)
 		if err != nil {
 			log.Fatalf("Problem parsing agent host: %s\n", err)
 		}
@@ -198,217 +207,182 @@ func runRegister(cfg *cli.Context) {
 
 	// run Register
 	httpClient := agent.NewHTTPClient()
-	httpClient.SetSkipTLSVerification(cfg.Bool("skip-tls-cert-verification"))
+	httpClient.SetSkipTLSVerification(settings.SkipTLSCertVerification)
 
-	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false, httpClient) {
+	if agent.Register(settings.ServerURL, settings.ServerToken, agentAddr, agentPort, true, false, httpClient) {
 		log.Println("Registration completed successfully")
 	} else {
 		log.Fatalf("Registration failed")
 	}
 }
 
-// Prepare urfave cli app with all flags and commands defined.
-func setupApp(reload bool) *cli.App {
-	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Println(c.App.Version)
+// Read environment file settings. It's parsed before the main settings.
+type environmentFileSettings struct {
+	EnvFile    string `long:"env-file" description:"Environment file location; applicable only if the use-env-file is provided" default:"/etc/stork/server.env"`
+	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
+}
+
+// General Stork Agent settings. They are used when no command is specified.
+type generalSettings struct {
+	environmentFileSettings
+	Version                             bool   `short:"v" long:"version" description:"Show software version"`
+	Host                                string `long:"host" description:"The IP or hostname to listen on for incoming Stork Server connections" default:"0.0.0.0" env:"STORK_AGENT_HOST"`
+	Port                                int64  `long:"port" description:"The TCP port to listen on for incoming Stork Server connections" default:"8080" env:"STORK_AGENT_PORT"`
+	ListenPrometheusOnly                bool   `long:"listen-prometheus-only" description:"Listen for Prometheus requests only, but not for commands from the Stork Server" env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
+	ListenStorkOnly                     bool   `long:"listen-stork-only" description:"Listen for commands from the Stork Server only, but not for Prometheus requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
+	PrometheusKeaExporterAddress        string `long:"prometheus-kea-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
+	PrometheusKeaExporterPort           int64  `long:"prometheus-kea-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
+	PrometheusKeaExporterInterval       int64  `long:"prometheus-kea-exporter-interval" description:"How often the Stork Agent collects stats from Kea, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
+	PrometheusKeaExporterPerSubnetStats string `long:"prometheus-kea-exporter-per-subnet-stats" description:"Enable or disable collecting per-subnet stats from Kea" optional:"true" optional-value:"true" default:"true" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"`
+	PrometheusBind9ExporterAddress      string `long:"prometheus-bind9-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
+	PrometheusBind9ExporterPort         int64  `long:"prometheus-bind9-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
+	PrometheusBind9ExporterInterval     int64  `long:"prometheus-bind9-exporter-interval" description:"How often the Stork Agent collects stats from BIND 9, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
+	SkipTLSCertVerification             bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
+	ServerURL                           string `long:"server-url" description:"The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)" env:"STORK_AGENT_SERVER_URL"`
+	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/var/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
+	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_BIND9_CONFIG"`
+}
+
+// Register command settings.
+type registerSettings struct {
+	environmentFileSettings
+	// It is true if the register command was specified. Otherwise, it is false.
+	commandSpecified        bool
+	SkipTLSCertVerification bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
+	ServerURL               string `short:"u" long:"server-url" description:"URL of Stork Server" env:"STORK_AGENT_SERVER_URL"`
+	ServerToken             string `short:"t" long:"server-token" description:"Access token from Stork Server" env:"STORK_AGENT_SERVER_TOKEN"`
+	AgentHost               string `short:"a" long:"agent-host" description:"IP address or DNS name with port of current agent host, e.g.: 10.11.12.13:8080" env:"STORK_AGENT_HOST"`
+}
+
+var _ flags.Commander = (*registerSettings)(nil)
+
+// Implements the tools/golang/gopath/pkg/mod/github.com/jessevdk/go-flags@v1.5.0/command.go Commander interface.
+// It is an only way to recognize which command was specified.
+func (s *registerSettings) Execute(_ []string) error {
+	s.commandSpecified = true
+	return nil
+}
+
+// Parses the command line arguments. Returns the general settings if no command
+// is specified, the register settings if the register command is specified,
+// or an error if the arguments are invalid, the command is unknown, or the
+// help is requested.
+func parseArgs() (*generalSettings, *registerSettings, error) {
+	shortGeneralDescription := "Stork Agent"
+	longGeneralDescription := `This component is required on each machine to be monitored by the Stork Server
+
+Stork logs on INFO level by default. Other levels can be configured using the
+STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
+
+	// Parse environment file settings.
+	envFileSettings := &environmentFileSettings{}
+	parser := flags.NewParser(envFileSettings, flags.IgnoreUnknown)
+	parser.ShortDescription = shortGeneralDescription
+	parser.LongDescription = longGeneralDescription
+
+	if _, err := parser.Parse(); err != nil {
+		err = errors.Wrap(err, "invalid CLI argument")
+		return nil, nil, err
 	}
 
-	cli.HelpFlag = &cli.BoolFlag{
-		Name:    "help",
-		Aliases: []string{"h"},
-		Usage:   "Show help",
+	// Load environment variables from the environment file.
+	if envFileSettings.UseEnvFile {
+		err := storkutil.LoadEnvironmentFileToSetter(
+			envFileSettings.EnvFile,
+			storkutil.NewProcessEnvironmentVariableSetter(),
+		)
+		if err != nil {
+			err = errors.WithMessagef(err, "invalid environment file: '%s'", envFileSettings.EnvFile)
+			return nil, nil, err
+		}
+
+		// Reconfigures logging using new environment variables.
+		storkutil.SetupLogging()
 	}
 
-	cli.VersionFlag = &cli.BoolFlag{
-		Name:    "version",
-		Aliases: []string{"v"},
-		Usage:   "Print the version",
-	}
+	// Prepare main parser.
+	generalSettings := &generalSettings{}
+	registerSettings := &registerSettings{}
 
-	app := &cli.App{
-		Name:     "Stork Agent",
-		Usage:    "This component is required on each machine to be monitored by the Stork Server",
-		Version:  stork.Version,
-		HelpName: "stork-agent",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "host",
-				Value:   "0.0.0.0",
-				Usage:   "The IP or hostname to listen on for incoming Stork Server connections",
-				EnvVars: []string{"STORK_AGENT_HOST"},
-			},
-			&cli.IntFlag{
-				Name:    "port",
-				Value:   8080,
-				Usage:   "The TCP port to listen on for incoming Stork Server connections",
-				EnvVars: []string{"STORK_AGENT_PORT"},
-			},
-			&cli.BoolFlag{
-				Name:    "listen-prometheus-only",
-				Usage:   "Listen for Prometheus requests only, but not for commands from the Stork Server",
-				EnvVars: []string{"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"},
-			},
-			&cli.BoolFlag{
-				Name:    "listen-stork-only",
-				Usage:   "Listen for commands from the Stork Server only, but not for Prometheus requests",
-				EnvVars: []string{"STORK_AGENT_LISTEN_STORK_ONLY"},
-			},
-			// Prometheus Kea exporter settings
-			&cli.StringFlag{
-				Name:    "prometheus-kea-exporter-address",
-				Value:   "0.0.0.0",
-				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"},
-			},
-			&cli.IntFlag{
-				Name:    "prometheus-kea-exporter-port",
-				Value:   9547,
-				Usage:   "The port to listen on for incoming Prometheus connections",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"},
-			},
-			&cli.IntFlag{
-				Name:    "prometheus-kea-exporter-interval",
-				Value:   10,
-				Usage:   "How often the Stork Agent collects stats from Kea, in seconds",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"},
-			},
-			&cli.BoolFlag{
-				Name:    "prometheus-kea-exporter-per-subnet-stats",
-				Value:   true,
-				Usage:   "Enable or disable collecting per-subnet stats from Kea",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"},
-			},
-			// Prometheus Bind 9 exporter settings
-			&cli.StringFlag{
-				Name:    "prometheus-bind9-exporter-address",
-				Value:   "0.0.0.0",
-				Usage:   "The IP or hostname to listen on for incoming Prometheus connections",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"},
-			},
-			&cli.IntFlag{
-				Name:    "prometheus-bind9-exporter-port",
-				Value:   9119,
-				Usage:   "The port to listen on for incoming Prometheus connections",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"},
-			},
-			&cli.IntFlag{
-				Name:    "prometheus-bind9-exporter-interval",
-				Value:   10,
-				Usage:   "How often the Stork Agent collects stats from BIND 9, in seconds",
-				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"},
-			},
-			&cli.BoolFlag{
-				Name:    "skip-tls-cert-verification",
-				Value:   false,
-				Usage:   "Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS",
-				EnvVars: []string{"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"},
-			},
-			// Registration related settings
-			&cli.StringFlag{
-				Name:    "server-url",
-				Usage:   "The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)",
-				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
-			},
-			&cli.PathFlag{
-				Name:    "hook-directory",
-				Usage:   "The path to the hook directory",
-				EnvVars: []string{"STORK_AGENT_HOOK_DIRECTORY"},
-				Value:   "/var/lib/stork-agent/hooks",
-			},
-			&cli.BoolFlag{
-				Name:  "use-env-file",
-				Usage: "Read the environment variables from the environment file",
-				Value: false,
-			},
-			&cli.StringFlag{
-				Name:  "env-file",
-				Usage: "Environment file location; applicable only if the use-env-file is provided",
-				Value: "/etc/stork/agent.env",
-			},
-			// Those two parameters are read directly from the environment variable. They're listed here only for
-			// the help.
-			&cli.StringFlag{
-				Name:    "bind9-path",
-				Usage:   "Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon.",
-				Value:   "",
-				EnvVars: []string{"STORK_BIND9_CONFIG"},
-			},
-			&cli.StringFlag{
-				Name:    "",
-				Usage:   "Logging level can be specified using env variable only. Allowed values: are DEBUG, INFO, WARN, ERROR",
-				Value:   "INFO",
-				EnvVars: []string{"STORK_LOG_LEVEL"},
-			},
-		},
-		Before: func(c *cli.Context) error {
-			if c.Bool("use-env-file") {
-				err := storkutil.LoadEnvironmentFileToSetter(
-					c.Path("env-file"),
-					// Loads environment variables into context.
-					c,
-					// Loads environment variables into process.
-					storkutil.NewProcessEnvironmentVariableSetter(),
-				)
-				if err != nil {
-					err = errors.WithMessagef(err, "the '%s' environment file is invalid", c.String("env-file"))
-					return err
-				}
+	parser = flags.NewParser(generalSettings, flags.Default)
+	parser.ShortDescription = shortGeneralDescription
+	parser.LongDescription = longGeneralDescription
 
-				// Reconfigures logging using new environment variables.
-				storkutil.SetupLogging()
-			} else if c.IsSet("env-file") {
-				log.Warning("The environment file is provided but it is not used because the '--use-env-file' flag is not set")
-			}
-			return nil
-		},
-		Action: func(c *cli.Context) error {
-			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
-				log.Errorf("Registration in Stork Server cannot be made because agent host address is not provided")
-				log.Fatalf("Use --host option or the STORK_AGENT_HOST environment variable")
-			}
-
-			err := runAgent(c, reload)
-			return err
-		},
-		Commands: []*cli.Command{
-			{
-				Name:      "register",
-				Usage:     "Register this machine in the Stork Server indicated by <server-url>",
-				UsageText: "stork-agent register [options]",
-				Description: `Register the current agent in the Stork Server using provided server URL.
+	parser.SubcommandsOptional = true
+	_, err := parser.AddCommand(
+		"register",
+		"Register this machine in the Stork Server indicated by <server-url>",
+		`Register the current agent in the Stork Server using provided server URL.
 
 If server access token is provided using --server-token, then the agent is automatically
 authorized (server-token-based registration). Otherwise, the agent requires explicit
 authorization in the server using either the UI or the ReST API (agent-token-based registration).`,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "server-url",
-						Usage:   "URL of Stork Server",
-						Aliases: []string{"u"},
-						EnvVars: []string{"STORK_AGENT_SERVER_URL"},
-					},
-					&cli.StringFlag{
-						Name:    "server-token",
-						Usage:   "Access token from Stork Server",
-						Aliases: []string{"t"},
-						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
-					},
-					&cli.StringFlag{
-						Name:    "agent-host",
-						Usage:   "IP address or DNS name with port of current agent host, e.g.: 10.11.12.13:8080",
-						Aliases: []string{"a"},
-						EnvVars: []string{"STORK_AGENT_HOST"},
-					},
-				},
-				Action: func(c *cli.Context) error {
-					runRegister(c)
-					return nil
-				},
-			},
-		},
+		registerSettings,
+	)
+	if err != nil {
+		err = errors.Wrap(err, "invalid CLI 'register' command")
+		return nil, nil, err
 	}
 
-	return app
+	// Parse command line arguments.
+	_, err = parser.Parse()
+	if err != nil {
+		err = errors.Wrap(err, "invalid CLI argument")
+		return nil, nil, err
+	}
+
+	if registerSettings.commandSpecified {
+		generalSettings = nil
+	} else {
+		registerSettings = nil
+	}
+
+	return generalSettings, registerSettings, nil
+}
+
+// Check if a given error is a request to display the help.
+func isHelpRequest(err error) bool {
+	var flagsError *flags.Error
+	if errors.As(err, &flagsError) {
+		if flagsError.Type == flags.ErrHelp {
+			return true
+		}
+	}
+	return false
+}
+
+// Parses the command line arguments and runs the specific Stork Agent command.
+func runApp(reload bool) error {
+	generalSettings, registerSettings, err := parseArgs()
+	if err != nil {
+		if isHelpRequest(err) {
+			return nil
+		}
+		return err
+	}
+
+	if generalSettings != nil {
+		if generalSettings.Version {
+			fmt.Println(stork.Version)
+			return nil
+		}
+
+		if generalSettings.ServerURL != "" && generalSettings.Host == "0.0.0.0" {
+			log.Errorf("Registration in Stork Server cannot be made because agent host address is not provided")
+			log.Fatalf("Use --host option or the STORK_AGENT_HOST environment variable")
+			return nil
+		}
+
+		return runAgent(generalSettings, reload)
+	}
+
+	if registerSettings != nil {
+		runRegister(registerSettings)
+		return nil
+	}
+
+	log.Fatalf("Unknown command specified")
+	return nil
 }
 
 // Main stork-agent function.
@@ -416,8 +390,7 @@ func main() {
 	reload := false
 	for {
 		storkutil.SetupLogging()
-		app := setupApp(reload)
-		err := app.Run(os.Args)
+		err := runApp(reload)
 		switch {
 		case err == nil:
 			return
