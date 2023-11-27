@@ -142,6 +142,42 @@ func TestRegistrationParams(t *testing.T) {
 	require.Contains(t, string(stdout), "127.4.5.6")
 }
 
+// Check if stork-agent uses --agent-host parameter from the environment file.
+func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
+	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
+	defer testutil.CreateEnvironmentRestorePoint()()
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+		STORK_AGENT_HOST=127.4.5.6
+	`)
+
+	os.Args = []string{
+		"agent-program",
+		"--use-env-file",
+		"--env-file", envPath,
+		"register",
+	}
+
+	// The Stork Agent exists using a log.Fatal for these parameters.
+	// We replace the standard error handler with a dumb one to prevent
+	// interrupting the unit tests.
+	defer func() {
+		logrus.StandardLogger().ExitFunc = nil
+	}()
+	logrus.StandardLogger().ExitFunc = func(int) {
+		// No exit
+	}
+
+	// Act
+	stdout, _, _ := testutil.CaptureOutput(main)
+
+	require.Contains(t, string(stdout), "127.4.5.6")
+	require.NotContains(t, string(stdout), "cannot set 'STORK_AGENT_HOST=127.4.5.6' environment variable")
+}
+
 // Test that the SIGHUP error text is correct.
 func TestSighupError(t *testing.T) {
 	err := &sighupError{}

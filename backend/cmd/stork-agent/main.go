@@ -430,6 +430,7 @@ func main() {
 		default:
 			// Error occurred.
 			log.Fatal(err)
+			return
 		}
 	}
 }
