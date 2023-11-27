@@ -1370,6 +1370,52 @@ The agent uses the returned machine ID to verify that the registration was succe
 
     Agent registration
 
+Build with legacy GLIBC version
+-------------------------------
+
+We guarantee that the Stork is compatible with Ubuntu 18.04 and 20.04. They are
+built with GLIBC 2.31. The newer Ubuntu versions use GLIBC 2.32 or higher.
+
+The GLIBC library is a C-standard library. It is installed by default in the
+operating system because many system components depend on it. It causes the
+upgrade or downgrade of this library to be very problematic or impossible.
+
+An additional complication is not all operating systems use the standard GLIB
+distribution. There is an alternative implementation - `musl-libc` - that is
+preferred by the operating systems focused on the installation size (e.g.,
+Alpine Linux).
+
+The Go binaries compiled with CGO_ENABLED=1 (default) depends on the GLIBC
+library installed in the operating system. Disabling CGO causes using a custom
+DNS resolving method (internals of the `net` package), a custom system user
+profile fetching (internals of the `os/user` package), and blocks loading
+plugins. So, it is mandatory in the Stork development.
+
+The older GLIBC versions can be compiled from sources, and the Go compiler can
+be configured to use it. Building GLIBC is a time- and CPU-consuming process.
+Additionally, the C linker depends on the GLIBC library, so it must also be
+compiled from the sources. We decided not to use this method because it would
+significantly increase the build time of Stork and overcomplicate the build
+system.
+
+Our idea to build Stork binaries with support for the old GLIBC version is to
+compile them on the old Ubuntu system. It introduces a new problem because the
+Stork build system is no longer compatible with old Ubuntu versions (and we
+don't want it to be). Fortunately, the core Go build kit doesn't depend on the
+operating system components.
+The solution is to compile the binaries on the standard (modern) Ubuntu system
+first. It causes the installation of all toolkits and generates all
+intermediate files (e.g., OpenAPI clients and DHCP option definitions). Next,
+we move the whole Stork directory to the old Ubuntu system and rebuild the Go
+binaries. We introduced a new build switch to turn off checking all
+prerequisites of the Go binaries. It ensures no other files will be touched or
+reinstalled. So, we expect just the Go files to be recompiled with the older
+GLIBC version. Then, we move the Go binaries back to the modern Ubuntu system
+and continue the build process.
+
+The above flow was implemented on the CI only. It is not a part of the standard
+build system (the Rake tasks). It was specified only for the DEB package and
+AMD64 architecture.
 
 Generated Code for DHCP Option Definitions
 ==========================================
