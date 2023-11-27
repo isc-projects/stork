@@ -7,7 +7,7 @@ import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { DropdownModule } from 'primeng/dropdown'
 import { FieldsetModule } from 'primeng/fieldset'
-import { Form, FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
+import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
@@ -35,6 +35,7 @@ import { MessagesModule } from 'primeng/messages'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -354,6 +355,7 @@ describe('SubnetFormComponent', () => {
             ],
             declarations: [
                 AddressPoolFormComponent,
+                ArrayValueSetFormComponent,
                 DhcpClientClassSetFormComponent,
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,

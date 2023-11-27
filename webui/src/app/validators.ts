@@ -46,37 +46,46 @@ export class StorkValidators {
     }
 
     /**
-     * A validator checking if an input is a valid IPv4 address.
+     * A validator checking if an input is a valid IPv4 address or an array of
+     * IPv4 addresses.
      *
      * @returns validator function.
      */
     static ipv4(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
-            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
-                return null
+            let values: string[] = []
+            if (control.value && typeof control.value === 'string') {
+                values.push(control.value)
+            } else if (Array.isArray(control.value)) {
+                values = control.value
             }
-            let ipv4 = control.value
-            if (!Validator.isValidIPv4String(ipv4)[0]) {
-                return { ipv4: `${ipv4} is not a valid IPv4 address.` }
+            for (const ipv4 of values) {
+                if (ipv4 && !Validator.isValidIPv4String(ipv4)[0]) {
+                    return { ipv4: `${ipv4} is not a valid IPv4 address.` }
+                }
             }
             return null
         }
     }
 
     /**
-     * A validator checking if an input is a valid IPv6 address or a prefix
-     * without the length.
+     * A validator checking if an input is a valid IPv6 address, a prefix
+     * without the length or an array of them.
      *
      * @returns validator function.
      */
     static ipv6(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
-            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
-                return null
+            let values: string[] = []
+            if (control.value && typeof control.value === 'string') {
+                values.push(control.value)
+            } else if (Array.isArray(control.value)) {
+                values = control.value
             }
-            let ipv6 = control.value
-            if (!Validator.isValidIPv6String(ipv6)[0]) {
-                return { ipv6: `${ipv6} is not a valid IPv6 address.` }
+            for (const ipv6 of values) {
+                if (ipv6 && !Validator.isValidIPv6String(ipv6)[0]) {
+                    return { ipv6: `${ipv6} is not a valid IPv6 address.` }
+                }
             }
             return null
         }

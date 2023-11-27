@@ -53,6 +53,17 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv4()(formBuilder.control('192.0.2.1'))).toBeFalsy()
     })
 
+    it('validates IPv4 addresses array', () => {
+        // Partial address is not valid.
+        expect(StorkValidators.ipv4()(formBuilder.control(['10.0.', '10.1.1.1']))).toBeTruthy()
+        // Prefix is not valid.
+        expect(StorkValidators.ipv4()(formBuilder.control(['8.8.8.8', '10.0.0.0/24']))).toBeTruthy()
+        // IPv6 address is not valid.
+        expect(StorkValidators.ipv4()(formBuilder.control(['2001:db8:1::1', '8.8.8.8']))).toBeTruthy()
+        // Valid addresses.
+        expect(StorkValidators.ipv4()(formBuilder.control(['192.0.2.1', '192.0.2.2']))).toBeFalsy()
+    })
+
     it('validates IPv6 address', () => {
         // Partial address is not valid.
         expect(StorkValidators.ipv6()(formBuilder.control('2001'))).toBeTruthy()
@@ -60,10 +71,21 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv6()(formBuilder.control('3000..'))).toBeTruthy()
         // No colons at the end.
         expect(StorkValidators.ipv6()(formBuilder.control('3001:123'))).toBeTruthy()
-        // Ipv6 address is not valid.
+        // IPv4 address is not valid.
         expect(StorkValidators.ipv6()(formBuilder.control('192.0.2.1'))).toBeTruthy()
         // Valid address.
         expect(StorkValidators.ipv6()(formBuilder.control('3000:1:2::3'))).toBeFalsy()
+    })
+
+    it('validates IPv6 addresses array', () => {
+        // Partial address is not valid.
+        expect(StorkValidators.ipv6()(formBuilder.control(['2001', '2001:db8:1::']))).toBeTruthy()
+        // Dots are not valid.
+        expect(StorkValidators.ipv6()(formBuilder.control(['2001:db8:1::1', '3000..']))).toBeTruthy()
+        // IPv4 address is not valid.
+        expect(StorkValidators.ipv6()(formBuilder.control(['192.0.2.1', '2001:db8:1::1']))).toBeTruthy()
+        // Valid addresses.
+        expect(StorkValidators.ipv6()(formBuilder.control(['3000:1:2::3', '2001:db8:1::1']))).toBeFalsy()
     })
 
     it('validates IPv6 prefix', () => {

@@ -471,24 +471,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             for (let ls of subnet.localSubnets) {
                 const originalLocalSubnet =
                     originalSubnet.localSubnets.find((ols) => ols.daemonId === ls.daemonId) || subnet.localSubnets[0]
-                if (originalLocalSubnet) {
-                    ls.id = originalLocalSubnet.id
-                    if (
-                        !ls.keaConfigSubnetParameters?.subnetLevelParameters &&
-                        originalLocalSubnet.keaConfigSubnetParameters?.subnetLevelParameters
-                    ) {
-                        ls.keaConfigSubnetParameters = {
-                            subnetLevelParameters: {},
-                        }
-                    }
-                    if (
-                        ls.keaConfigSubnetParameters?.subnetLevelParameters &&
-                        originalLocalSubnet.keaConfigSubnetParameters?.subnetLevelParameters?.relay
-                    ) {
-                        ls.keaConfigSubnetParameters.subnetLevelParameters.relay =
-                            originalLocalSubnet.keaConfigSubnetParameters.subnetLevelParameters.relay
-                    }
-                }
+                ls.id = originalLocalSubnet?.id
             }
             subnet.id = this.subnetId
             this.dhcpApi

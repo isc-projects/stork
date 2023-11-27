@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
@@ -23,6 +23,7 @@ import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -34,6 +35,7 @@ interface SubnetForm {
     ddnsGeneratedPrefix?: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate?: SharedParameterFormGroup<boolean>
     requireClientClasses?: SharedParameterFormGroup<string[]>
+    relayAddresses?: SharedParameterFormGroup<string[]>
 }
 
 describe('SharedParametersFormComponent', () => {
@@ -42,7 +44,7 @@ describe('SharedParametersFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DhcpClientClassSetFormComponent, SharedParametersFormComponent],
+            declarations: [ArrayValueSetFormComponent, DhcpClientClassSetFormComponent, SharedParametersFormComponent],
             imports: [
                 ButtonModule,
                 CheckboxModule,
@@ -113,6 +115,16 @@ describe('SharedParametersFormComponent', () => {
                 },
                 [new FormControl(['foo', 'bar']), new FormControl(['foo', 'bar', 'auf'])]
             ),
+            relayAddresses: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    isArray: true,
+                },
+                [
+                    new FormControl(['192.0.2.1', '192.0.2.2'], StorkValidators.ipv4),
+                    new FormControl(['192.0.2.1', '192.0.2.2', '192.0.2.3']),
+                ]
+            ),
         })
         fixture.detectChanges()
 
@@ -123,11 +135,12 @@ describe('SharedParametersFormComponent', () => {
             'cacheThreshold',
             'ddnsGeneratedPrefix',
             'ddnsOverrideClientUpdate',
+            'relayAddresses',
             'requireClientClasses',
         ])
 
         let allRows = fixture.debugElement.queryAll(By.css('tr'))
-        expect(allRows.length).toBe(7)
+        expect(allRows.length).toBe(8)
 
         // Validate the table header.
         let cells = allRows[0].queryAll(By.css('th'))
@@ -218,8 +231,25 @@ describe('SharedParametersFormComponent', () => {
         checkbox = cells[2].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
 
-        // Require Client Classes.
+        // Relay
         cells = allRows[6].queryAll(By.css('td'))
+        expect(cells.length).toBe(3)
+        expect(cells[0].nativeElement.innerText).toBe('Relay Addresses')
+        controls = cells[1].queryAll(By.css('app-array-value-set-form'))
+        expect(controls.length).toBe(2)
+        tags = cells[1].queryAll(By.css('p-tag'))
+        expect(tags.length).toBe(2)
+        expect(tags[0].nativeElement.innerText).toBe('server 1')
+        expect(tags[1].nativeElement.innerText).toBe('server 2')
+        btns = cells[1].queryAll(By.css('[label=Clear]'))
+        expect(btns.length).toBe(2)
+        expect(btns[0].nativeElement.innerText).toBe('Clear')
+        expect(btns[1].nativeElement.innerText).toBe('Clear')
+        checkbox = cells[2].query(By.css('p-checkbox'))
+        expect(checkbox).toBeTruthy()
+
+        // Require Client Classes.
+        cells = allRows[7].queryAll(By.css('td'))
         expect(cells.length).toBe(3)
         expect(cells[0].nativeElement.innerText).toBe('Require Client Classes')
         controls = cells[1].queryAll(By.css('app-dhcp-client-class-set-form'))

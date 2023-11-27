@@ -2,7 +2,7 @@ import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angul
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ChipsModule } from 'primeng/chips'
@@ -14,6 +14,7 @@ import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { CheckboxModule } from 'primeng/checkbox'
 import { StorkValidators } from '../validators'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 
 interface SubnetForm {
     allocator: SharedParameterFormGroup<string>
@@ -22,6 +23,7 @@ interface SubnetForm {
     ddnsGeneratedPrefix: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate: SharedParameterFormGroup<boolean>
     requireClientClasses: SharedParameterFormGroup<string[]>
+    relayAddresses: SharedParameterFormGroup<string[]>
 }
 
 export default {
@@ -53,7 +55,7 @@ export default {
                 OverlayPanelModule,
                 ReactiveFormsModule,
             ],
-            declarations: [SharedParametersFormComponent, DhcpClientClassSetFormComponent],
+            declarations: [ArrayValueSetFormComponent, DhcpClientClassSetFormComponent, SharedParametersFormComponent],
         }),
     ],
 } as Meta
@@ -103,6 +105,16 @@ VariousParameters.args = {
                 type: 'boolean',
             },
             [new FormControl<boolean>(true), new FormControl<boolean>(true)]
+        ),
+        relayAddresses: new SharedParameterFormGroup(
+            {
+                type: 'string',
+                isArray: true,
+            },
+            [
+                new FormControl<string[]>(['192.0.2.1', '192.0.2.2', '192.0.2.3'], StorkValidators.ipv4()),
+                new FormControl<string[]>(['192.0.2.1', '192.0.2.2'], StorkValidators.ipv4()),
+            ]
         ),
         requireClientClasses: new SharedParameterFormGroup(
             {

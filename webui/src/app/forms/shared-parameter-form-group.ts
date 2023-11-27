@@ -37,6 +37,7 @@ interface SharedParameterForm {
 interface EditableParameterSpec<T> {
     type: string
     values?: T[]
+    isArray?: boolean
     min?: number
     max?: number
     fractionDigits?: number

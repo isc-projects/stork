@@ -96,6 +96,7 @@ export interface KeaSubnetParametersForm {
     rapidCommit?: SharedParameterFormGroup<boolean>
     serverHostname?: SharedParameterFormGroup<string>
     storeExtendedInfo?: SharedParameterFormGroup<boolean>
+    relayAddresses?: SharedParameterFormGroup<string[]>
 }
 
 /**
@@ -592,6 +593,23 @@ export class SubnetSetFormService {
                 },
                 parameters.map((params) => new FormControl<boolean>(params.storeExtendedInfo))
             ),
+            relayAddresses: new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'string',
+                    isArray: true,
+                    invalidText:
+                        ipType === IPType.IPv4
+                            ? 'Please specify valid IPv4 addresses.'
+                            : 'Please specify valid IPv6 addresses.',
+                },
+                parameters.map(
+                    (params) =>
+                        new FormControl<string[]>(
+                            params.relay?.ipAddresses,
+                            ipType === IPType.IPv4 ? StorkValidators.ipv4() : StorkValidators.ipv6()
+                        )
+                )
+            ),
         }
         // DHCPv4 parameters.
         switch (ipType) {
@@ -690,7 +708,19 @@ export class SubnetSetFormService {
      * @returns An array of parameter sets for different servers.
      */
     convertFormToKeaSubnetParameters(form: FormGroup<KeaSubnetParametersForm>): KeaConfigSubnetDerivedParameters[] {
-        return this.convertFormToKeaParameters(form)
+        const convertedParameters = this.convertFormToKeaParameters<
+            KeaSubnetParametersForm,
+            KeaConfigSubnetDerivedParameters
+        >(form)
+        for (let parameters of convertedParameters) {
+            if ('relayAddresses' in parameters) {
+                parameters.relay = {
+                    ipAddresses: parameters.relayAddresses as string[],
+                }
+                delete parameters['relayAddresses']
+            }
+        }
+        return convertedParameters
     }
 
     /**

@@ -45,7 +45,14 @@
                             >
                             </p-dropdown>
                             <ng-template #noValuesCase>
-                                <input pInputText [formControlName]="index" class="full-width" />
+                                <app-array-value-set-form
+                                    *ngIf="controls.data?.isArray; else noArrayCase"
+                                    [classFormControl]="control"
+                                >
+                                </app-array-value-set-form>
+                                <ng-template #noArrayCase>
+                                    <input pInputText [formControlName]="index" class="full-width" />
+                                </ng-template>
                             </ng-template>
                         </ng-container>
                         <ng-container *ngSwitchCase="'boolean'">

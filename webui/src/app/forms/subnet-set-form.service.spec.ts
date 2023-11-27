@@ -1,11 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import {
-    AddressPoolForm,
-    KeaPoolParametersForm,
-    KeaSubnetParametersForm,
-    SubnetSetFormService,
-} from './subnet-set-form.service'
+import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
 import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Pool, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
@@ -865,6 +860,9 @@ describe('SubnetSetFormService', () => {
                 rapidCommit: true,
                 serverHostname: 'foo.example.org.',
                 storeExtendedInfo: true,
+                relay: {
+                    ipAddresses: ['192.0.2.1', '192.0.2.2', '192.0.2.3'],
+                },
             },
             {
                 cacheThreshold: 0.5,
@@ -909,6 +907,9 @@ describe('SubnetSetFormService', () => {
                 rapidCommit: false,
                 serverHostname: 'bar.example.org.',
                 storeExtendedInfo: false,
+                relay: {
+                    ipAddresses: ['192.0.2.1', '192.0.2.2', '192.0.2.3'],
+                },
             },
         ]
         let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
@@ -1557,7 +1558,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4)
-        expect(Object.keys(form.controls).length).toBe(37)
+        expect(Object.keys(form.controls).length).toBe(38)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1569,7 +1570,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default form for an IPv6 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6)
-        expect(Object.keys(form.controls).length).toBe(35)
+        expect(Object.keys(form.controls).length).toBe(36)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1882,18 +1883,29 @@ describe('SubnetSetFormService', () => {
                     },
                     [new FormControl<boolean>(true), new FormControl<boolean>(false), new FormControl<boolean>(false)]
                 ),
+                relayAddresses: new SharedParameterFormGroup<string[]>(
+                    {
+                        type: 'string',
+                    },
+                    [new FormControl<string[]>(['192.0.2.1', '192.0.2.2']), new FormControl<string[]>(['192.0.2.2'])]
+                ),
             })
         )
         expect(params.length).toBe(3)
         expect(params[0].cacheThreshold).toBe(0.5)
         expect(params[0].allocator).toBe('flq')
         expect(params[0].authoritative).toBeTrue()
+        expect(params[0].relay).toBeTruthy()
+        expect(params[0].relay.ipAddresses).toEqual(['192.0.2.1', '192.0.2.2'])
         expect(params[1].cacheThreshold).toBe(0.5)
         expect(params[1].allocator).toBe('random')
         expect(params[1].authoritative).toBeFalse()
+        expect(params[1].relay).toBeTruthy()
+        expect(params[1].relay.ipAddresses).toEqual(['192.0.2.2'])
         expect(params[2].cacheThreshold).toBeFalsy()
         expect(params[2].allocator).toBeFalsy()
         expect(params[2].authoritative).toBeFalse()
+        expect(params[2].relay).toBeFalsy()
     })
 
     it('should convert a form to subnet', () => {
