@@ -241,6 +241,8 @@ build_backend_legacy:
     - aws
     - runner-manager
     - amd64
+  # Use image based on Ubuntu 20.04. It is required to build the binaries with
+  # the older GLIBC version.
   image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
   needs:
     - build_backend
