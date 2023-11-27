@@ -1,0 +1,4 @@
+* [func] marcin
+
+    Extended subnet form for specifying relay addresses.
+    (Gitlab #1230)
