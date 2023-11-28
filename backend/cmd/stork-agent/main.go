@@ -65,7 +65,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 		} else {
 			log.
 				WithError(err).
-				Warn("Problem with loading hook libraries")
+				Fatal("Problem with loading hook libraries")
 		}
 	}
 
@@ -78,9 +78,6 @@ func runAgent(settings *generalSettings, reload bool) error {
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
 		portStr := strconv.FormatInt(int64(settings.Port), 10)
-		if err != nil {
-			log.WithError(err).Fatal("Could not initialize the HTTP client")
-		}
 
 		if !agent.Register(settings.ServerURL, "", settings.Host, portStr, false, true, httpClient) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
