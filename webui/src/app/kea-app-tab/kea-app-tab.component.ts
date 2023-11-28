@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { forkJoin, Observable, Subscription } from 'rxjs'
+import { prerelease, gte } from 'semver'
 
 import { MessageService } from 'primeng/api'
 
@@ -80,6 +81,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_class_cmds.so': 'class-cmds-class-commands',
         'libdhcp_ddns_tuning.so': 'ddns-tuning-ddns-tuning',
         'libdhcp_flex_id.so': 'flex-id-flexible-identifier-for-host-reservations',
+        'libdhcp_flex_option.so': 'flex-option-flexible-option-actions-for-option-value-settings',
         'libdhcp_gss_tsig.so': 'gss-tsig-sign-dns-updates-with-gss-tsig',
         'libdhcp_ha.so': 'ha-high-availability-outage-resilience-for-kea-servers',
         'libdhcp_host_cache.so': 'host-cache-host-cache-reservations-for-improved-performance',
@@ -91,11 +93,12 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_mysql_cb.so': 'mysql-cb-configuration-backend-for-mysql',
         'libdhcp_pgsql_cb.so': 'pgsql-cb-configuration-backend-for-postgresql',
         'libdhcp_radius.so': 'radius-radius-server-support',
-        'libdhcp_rbac.so': 'rbac-role-based-access-control',
+        'libca_rbac.so': 'rbac-role-based-access-control',
         'libdhcp_run_script.so': 'run-script-run-script-support-for-external-hook-scripts',
         'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
+        'libdhcp_ping_check.so': 'libdhcp-ping-check-so-ping-check',
     }
 
     /**
@@ -452,11 +455,22 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
     /**
      * Returns an anchor used in the Kea documentation specific to the given hook library.
      *
-     * @param hook_library basename of the hook library
+     * @param hookLibrary basename of the hook library
+     * @param keaVersion Kea version retrieved from the daemon
      *
-     * @returns anchor or empty string if the hook library is not recognized
+     * @returns anchor or undefined if the hook library is not recognized
      */
-    docAnchorFromHookLibrary(hook_library: string): string {
-        return this.anchorsByHook[hook_library]
+    docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string {
+        if (! this.anchorsByHook[hookLibrary]) {
+            // for Kea version >= 2.4 lookup is not needed, but it must be checked
+            // whether given hookLibrary exists
+            return undefined
+        }
+        let isPreRel = prerelease(keaVersion) !== null // will not be null for e.g. '2.5.4-git', will be null for '2.5.4'
+        let isNewVer = gte(keaVersion, '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs
+        let version = isPreRel ? 'latest' : 'kea-' + keaVersion
+        let anchorId = isNewVer ? 'std-ischooklib-' + hookLibrary : this.anchorsByHook[hookLibrary]
+
+        return version + '/arm/hooks.html#' + anchorId
     }
 }
