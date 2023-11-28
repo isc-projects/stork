@@ -192,7 +192,10 @@
                                                 </tr>
                                                 <tr>
                                                     <td style="width: 10rem; vertical-align: top">Version Ext</td>
-                                                    <td [innerHTML]="daemon.extendedVersion" class="word-break-all"></td>
+                                                    <td
+                                                        [innerHTML]="daemon.extendedVersion"
+                                                        class="word-break-all"
+                                                    ></td>
                                                 </tr>
                                                 <tr>
                                                     <td style="width: 10rem; vertical-align: top">Uptime</td>
@@ -225,7 +228,9 @@
                                                 <a
                                                     class="col-1"
                                                     *ngIf="docAnchorFromHookLibrary(basename(hook), daemon.version)"
-                                                    href="https://kea.readthedocs.io/en/{{ docAnchorFromHookLibrary(basename(hook), daemon.version) }}"
+                                                    href="https://kea.readthedocs.io/en/{{
+                                                        docAnchorFromHookLibrary(basename(hook), daemon.version)
+                                                    }}"
                                                     target="_blank"
                                                 >
                                                     [doc]

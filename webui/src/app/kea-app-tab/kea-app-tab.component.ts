@@ -461,7 +461,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @returns anchor or undefined if the hook library is not recognized
      */
     docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string {
-        if (! this.anchorsByHook[hookLibrary]) {
+        if (!this.anchorsByHook[hookLibrary]) {
             // for Kea version >= 2.4 lookup is not needed, but it must be checked
             // whether given hookLibrary exists
             return undefined

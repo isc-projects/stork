@@ -285,9 +285,15 @@ describe('KeaAppTabComponent', () => {
         expect(component.docAnchorFromHookLibrary('', '2.3.8')).toBeUndefined()
         expect(component.docAnchorFromHookLibrary('', '2.4.0')).toBeUndefined()
         expect(component.docAnchorFromHookLibrary('', '2.5.4-git')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.3.7')).toBe('kea-2.3.7/arm/hooks.html#user-chk-user-check')
-        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.4.0')).toBe('kea-2.4.0/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so')
-        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.5.4-git')).toBe('latest/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so')
+        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.3.7')).toBe(
+            'kea-2.3.7/arm/hooks.html#user-chk-user-check'
+        )
+        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.4.0')).toBe(
+            'kea-2.4.0/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so'
+        )
+        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.5.4-git')).toBe(
+            'latest/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so'
+        )
         expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.3.8')).toBeUndefined()
         expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.4.0')).toBeUndefined()
         expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.5.4-git')).toBeUndefined()
