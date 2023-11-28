@@ -60,9 +60,8 @@ type PromBind9ExporterStats struct {
 // references to app monitor, HTTP client, HTTP server, and mappings
 // between BIND 9 stats names to prometheus stats.
 type PromBind9Exporter struct {
-	Host     string
-	Port     int
-	Interval time.Duration
+	Host string
+	Port int
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -80,11 +79,10 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(host string, port int, interval time.Duration, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
+func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
 		Host:       host,
 		Port:       port,
-		Interval:   interval,
 		AppMonitor: appMonitor,
 		HTTPClient: httpClient,
 		Registry:   prometheus.NewRegistry(),
@@ -826,7 +824,7 @@ func (pbe *PromBind9Exporter) Start() {
 	addrPort := net.JoinHostPort(pbe.Host, strconv.Itoa(pbe.Port))
 	pbe.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %f seconds", addrPort, pbe.Interval.Seconds())
+	log.Printf("Prometheus BIND 9 Exporter listening on %s", addrPort)
 
 	// start HTTP server for metrics
 	go func() {

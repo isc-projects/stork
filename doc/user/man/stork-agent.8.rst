@@ -88,9 +88,6 @@ Prometheus BIND 9 Exporter flags:
 ``--prometheus-bind9-exporter-port=``
    Specifies the port on which the agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
 
-``--prometheus-bind9-exporter-interval=``
-   Specifies how often the agent collects statistics from BIND 9, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]``
-
 Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
 
