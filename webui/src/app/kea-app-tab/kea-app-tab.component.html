@@ -182,8 +182,8 @@
                             <!-- Overview -->
                             <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
-                                <div class="grid">
-                                    <div class="col-6">
+                                <div class="grid overflow-auto-col">
+                                    <div class="col-8">
                                         <p-fieldset legend="Daemon Information">
                                             <table style="width: 100%">
                                                 <tr>
@@ -192,7 +192,7 @@
                                                 </tr>
                                                 <tr>
                                                     <td style="width: 10rem; vertical-align: top">Version Ext</td>
-                                                    <td [innerHTML]="daemon.extendedVersion"></td>
+                                                    <td [innerHTML]="daemon.extendedVersion" class="word-break-all"></td>
                                                 </tr>
                                                 <tr>
                                                     <td style="width: 10rem; vertical-align: top">Uptime</td>
@@ -205,14 +205,14 @@
                                             </table>
                                         </p-fieldset>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-4">
                                         <p-fieldset id="hooks-fieldset" legend="Hooks">
                                             <div
                                                 class="grid grid-nogutter"
                                                 *ngFor="let hook of daemon.hooks; let i = index"
                                             >
                                                 <div class="col-1">{{ i + 1 }}.</div>
-                                                <div class="col-10 inline-block hook-path">
+                                                <div class="col-10 inline-block word-break-all">
                                                     <p-inplace closable="true" closeIcon="pi pi-chevron-left">
                                                         <ng-template pTemplate="display">
                                                             {{ basename(hook) }}
