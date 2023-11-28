@@ -32,7 +32,7 @@ import (
 // Global Stork Agent state.
 type StorkAgent struct {
 	Host       string
-	Port       int64
+	Port       int
 	AppMonitor AppMonitor
 	// General-purpose HTTP client. It doesn't use any app-specific features.
 	GeneralHTTPClient *HTTPClient
@@ -51,7 +51,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int64, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -409,7 +409,7 @@ func (sa *StorkAgent) Serve() error {
 	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
-	addr := net.JoinHostPort(sa.Host, strconv.Itoa(int(sa.Port)))
+	addr := net.JoinHostPort(sa.Host, strconv.Itoa(sa.Port))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to listen on: %s", addr)

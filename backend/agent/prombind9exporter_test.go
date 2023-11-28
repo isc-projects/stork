@@ -49,9 +49,12 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
 	httpClient := NewHTTPClient()
-	pbe := NewPromBind9Exporter("foo", 42, 24, fam, httpClient)
+	pbe := NewPromBind9Exporter("foo", 42, 24*time.Second, fam, httpClient)
 	defer pbe.Shutdown()
 
+	require.Equal(t, "foo", pbe.Host)
+	require.Equal(t, 42, pbe.Port)
+	require.Equal(t, 24*time.Second, pbe.Interval)
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 19)

@@ -320,8 +320,8 @@ func (l *lazySubnetNameLookup) setFamily(family int8) {
 // names to prometheus stats.
 type PromKeaExporter struct {
 	Host     string
-	Port     int64
-	Interval int64
+	Port     int
+	Interval time.Duration
 
 	EnablePerSubnetStats bool
 
@@ -346,7 +346,7 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(host string, port int64, interval int64, enablePerSubnetStats bool, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
+func NewPromKeaExporter(host string, port int, interval time.Duration, enablePerSubnetStats bool, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
 	pke := &PromKeaExporter{
 		Host:                 host,
 		Port:                 port,
@@ -646,11 +646,11 @@ func NewPromKeaExporter(host string, port int64, interval int64, enablePerSubnet
 // and http server for exposing them to Prometheus.
 func (pke *PromKeaExporter) Start() {
 	// set address for listening from config
-	addrPort := net.JoinHostPort(pke.Host, strconv.Itoa(int(pke.Port)))
+	addrPort := net.JoinHostPort(pke.Host, strconv.Itoa(pke.Port))
 	pke.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %d seconds",
-		addrPort, pke.Interval)
+	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %f seconds",
+		addrPort, pke.Interval.Seconds())
 
 	// start http server for metrics
 	go func() {
@@ -661,7 +661,7 @@ func (pke *PromKeaExporter) Start() {
 	}()
 
 	// set ticker time for collecting loop from config
-	pke.Ticker = time.NewTicker(time.Duration(pke.Interval) * time.Second)
+	pke.Ticker = time.NewTicker(pke.Interval)
 
 	// start collecting loop as goroutine and increment WaitGroup (which is used later
 	// for stopping this goroutine)

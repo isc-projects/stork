@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -76,7 +77,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
-		portStr := strconv.FormatInt(settings.Port, 10)
+		portStr := strconv.FormatInt(int64(settings.Port), 10)
 		if err != nil {
 			log.WithError(err).Fatal("Could not initialize the HTTP client")
 		}
@@ -126,7 +127,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 	promKeaExporter := agent.NewPromKeaExporter(
 		settings.PrometheusKeaExporterAddress,
 		settings.PrometheusKeaExporterPort,
-		settings.PrometheusKeaExporterInterval,
+		time.Duration(settings.PrometheusKeaExporterInterval)*time.Second,
 		prometheusKeaExporterPerSubnetStats,
 		appMonitor,
 		keaHTTPClient,
@@ -134,7 +135,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 	promBind9Exporter := agent.NewPromBind9Exporter(
 		settings.PrometheusBind9ExporterAddress,
 		settings.PrometheusBind9ExporterPort,
-		settings.PrometheusBind9ExporterInterval,
+		time.Duration(settings.PrometheusBind9ExporterInterval)*time.Second,
 		appMonitor,
 		httpClient,
 	)
@@ -227,16 +228,16 @@ type generalSettings struct {
 	environmentFileSettings
 	Version                             bool   `short:"v" long:"version" description:"Show software version"`
 	Host                                string `long:"host" description:"The IP or hostname to listen on for incoming Stork Server connections" default:"0.0.0.0" env:"STORK_AGENT_HOST"`
-	Port                                int64  `long:"port" description:"The TCP port to listen on for incoming Stork Server connections" default:"8080" env:"STORK_AGENT_PORT"`
+	Port                                int    `long:"port" description:"The TCP port to listen on for incoming Stork Server connections" default:"8080" env:"STORK_AGENT_PORT"`
 	ListenPrometheusOnly                bool   `long:"listen-prometheus-only" description:"Listen for Prometheus requests only, but not for commands from the Stork Server" env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
 	ListenStorkOnly                     bool   `long:"listen-stork-only" description:"Listen for commands from the Stork Server only, but not for Prometheus requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
 	PrometheusKeaExporterAddress        string `long:"prometheus-kea-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
-	PrometheusKeaExporterPort           int64  `long:"prometheus-kea-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
-	PrometheusKeaExporterInterval       int64  `long:"prometheus-kea-exporter-interval" description:"How often the Stork Agent collects stats from Kea, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
+	PrometheusKeaExporterPort           int    `long:"prometheus-kea-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
+	PrometheusKeaExporterInterval       int    `long:"prometheus-kea-exporter-interval" description:"How often the Stork Agent collects stats from Kea, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
 	PrometheusKeaExporterPerSubnetStats string `long:"prometheus-kea-exporter-per-subnet-stats" description:"Enable or disable collecting per-subnet stats from Kea" optional:"true" optional-value:"true" default:"true" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"`
 	PrometheusBind9ExporterAddress      string `long:"prometheus-bind9-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
-	PrometheusBind9ExporterPort         int64  `long:"prometheus-bind9-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
-	PrometheusBind9ExporterInterval     int64  `long:"prometheus-bind9-exporter-interval" description:"How often the Stork Agent collects stats from BIND 9, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
+	PrometheusBind9ExporterPort         int    `long:"prometheus-bind9-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
+	PrometheusBind9ExporterInterval     int    `long:"prometheus-bind9-exporter-interval" description:"How often the Stork Agent collects stats from BIND 9, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
 	SkipTLSCertVerification             bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
 	ServerURL                           string `long:"server-url" description:"The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)" env:"STORK_AGENT_SERVER_URL"`
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/var/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`

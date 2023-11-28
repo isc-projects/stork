@@ -34,12 +34,15 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 42, 24, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 42, 24*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)
 	require.NotNil(t, pke.HTTPServer)
 
+	require.Equal(t, "foo", pke.Host)
+	require.Equal(t, 42, pke.Port)
+	require.Equal(t, 24*time.Second, pke.Interval)
 	require.Len(t, pke.PktStatsMap, 31)
 	require.Len(t, pke.Adr4StatsMap, 6)
 	require.Len(t, pke.Adr6StatsMap, 9)
@@ -69,7 +72,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -266,7 +269,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -440,7 +443,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 
 	// Act
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, false, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, false, fam, httpClient)
 	defer pke.Shutdown()
 	gock.InterceptClient(pke.HTTPClient.client)
 	pke.Start()
@@ -487,7 +490,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -546,7 +549,7 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 	})
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -585,7 +588,7 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
