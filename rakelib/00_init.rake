@@ -500,7 +500,7 @@ end
 
 uname_arch=`uname -m`
 case uname_arch.rstrip
-    when "x86_64"
+    when "x86_64", "amd64"
         ARCH="amd64"
     when "aarch64_be", "aarch64", "armv8b", "armv8l"
         ARCH="arm64"
