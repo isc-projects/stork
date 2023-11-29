@@ -1400,9 +1400,9 @@ system.
 
 Our idea to build Stork binaries with the old GLIBC version support is to
 compile them on the old Ubuntu system. It introduces a new problem because the
-Stork build system is no longer compatible with old Ubuntu versions (and we
-don't want it to be). Fortunately, the core Go build kit doesn't depend on the
-operating system components.
+Stork build system is no longer compatible with old Ubuntu versions.
+Fortunately, the core Go build kit doesn't depend on the operating system
+components.
 The solution is to compile the binaries on the standard (modern) Ubuntu system
 first. It causes the installation of all toolkits and generates all
 intermediate files (e.g., OpenAPI clients and DHCP option definitions). Next,
