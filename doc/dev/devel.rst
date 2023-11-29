@@ -1415,7 +1415,17 @@ and continue the build process.
 
 The above flow was implemented in Stork CI only. It is not a part of the standard
 build system (the Rake tasks). It was specified only for the DEB package and
-AMD64 architecture.
+AMD64 architecture. 
+
+If you build Stork in your environment, remember the Go compiler uses the GLIBC
+library installed in the system, so the output binaries will only be compatible
+with operating systems with the same or newer GLIBC version. Please note that
+Stork requires modern versions of the third-party toolkits (i.e., Python and
+Ruby) that may not be available in the system repositories on the legacy
+operating systems. In this case, you need to install them from the official
+packages distributed by their maintainers. See
+`the documentation <https://gitlab.isc.org/isc-projects/stork/-/wikis/Install>`_
+for details.
 
 Generated Code for DHCP Option Definitions
 ==========================================
