@@ -1,0 +1,5 @@
+* [sec] marcin
+
+    Upgraded some UI and backend dependencies to remove critical
+    vulnerabilities for Stork 1.14.0.
+    (Gitlab #1233)
