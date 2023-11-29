@@ -16,6 +16,7 @@ Active developers:
 - Marcin Godzina (QA, release engineering)
 - Suzanne Goldlust (documentation)
 - Razvan Becheriu (database, server, UI)
+- Piotrek Zadroga (UI)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.

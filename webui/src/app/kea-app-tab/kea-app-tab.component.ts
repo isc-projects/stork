@@ -460,16 +460,16 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *
      * @returns anchor or undefined if the hook library is not recognized
      */
-    docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string {
+    docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string | undefined {
         if (!this.anchorsByHook[hookLibrary]) {
-            // for Kea version >= 2.4 lookup is not needed, but it must be checked
-            // whether given hookLibrary exists
+            // For Kea version >= 2.4 lookup is not needed, but it must be checked
+            // whether given hookLibrary exists.
             return undefined
         }
-        let isPreRel = prerelease(keaVersion) !== null // will not be null for e.g. '2.5.4-git', will be null for '2.5.4'
-        let isNewVer = gte(keaVersion, '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs
-        let version = isPreRel ? 'latest' : 'kea-' + keaVersion
-        let anchorId = isNewVer ? 'std-ischooklib-' + hookLibrary : this.anchorsByHook[hookLibrary]
+        const isPreRel = prerelease(keaVersion) != null // Will not be null for e.g. '2.5.4-git', will be null for '2.5.4'.
+        const isNewVer = gte(keaVersion, '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs.
+        const version = isPreRel ? 'latest' : 'kea-' + keaVersion
+        const anchorId = isNewVer ? 'std-ischooklib-' + hookLibrary : this.anchorsByHook[hookLibrary]
 
         return version + '/arm/hooks.html#' + anchorId
     }
