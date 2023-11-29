@@ -6,9 +6,9 @@ Hooks's Guide
 
 The hook is an additional file (plugin) that extends the standard Stork
 functionalities. It contains functions that are called during handling of
-various operations and can change the typical flow or run parallel. Independent
-developers may create the hooks and enhance the Stork applications with new,
-optional features.
+various operations and can change the typical flow or run in parallel.
+Independent developers may create the hooks and enhance the Stork applications
+with new, optional features.
 
 The basis of the Stork hook solution has been discussed in
 `this design <https://gitlab.isc.org/isc-projects/stork/-/wikis/designs/Hooks>`_.
@@ -21,7 +21,7 @@ files must be placed in the hook directory. The default location is
 ``/var/lib/stork-agent/hooks`` for Stork agent and
 ``/var/lib/stork-server/hooks`` for Stork server. You can change it using
 the ``--hook-directory`` CLI option or setting the
-``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_Server_HOOK_DIRECTORY`` environment
+``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_SERVER_HOOK_DIRECTORY`` environment
 variable.
 
 All the hooks must be compiled for the used Stork application (agent or server)
@@ -34,7 +34,7 @@ Glossary
 plugin
     Golang binary compiled with the ``plugin`` flag. It provides a variety of
     symbols (constants, interfaces, structs, variables, functions, objects) that
-    may be extracted in the runtime. The plugin dependencies are static-linked
+    may be extracted at runtime. The plugin dependencies are static-linked
     (built-in into the binary). If the plugin and the main application share the
     same dependency, then its version must be the same in both projects. They
     must be compiled using the same Golang version too. The plugin doesn't need
@@ -62,7 +62,7 @@ callout specification (interface)
     The interface that defines the callout(s) for a given hook point. The
     specification interface allows sharing of the callout signatures between
     the core application and the hooks. The single hook may implement one or
-    more specifications interfaces. All specifications interfaces supported by
+    more specification interfaces. All specification interfaces supported by
     the given application are implemented by the hook manager and registered in
     the hook executor.
 
@@ -92,7 +92,7 @@ callout point
     callouts from different hooks.
 
 hook executor
-    It is responsible for manage callout carrier instances and execute the
+    It is responsible for managing callout carrier instances and executing the
     callouts.
 
 hook manager
@@ -102,14 +102,14 @@ hook manager
     from the loaded hooks by calling specific methods of the hook executor.
 
 library manager
-    The wrapper for the library allows calling the standard hook functions. The
-    library manager instance may be created from any compatible plugin
-    (library).
+    The wrapper for the library that allows calling the standard hook
+    functions. The library manager instance may be created from any compatible
+    plugin (library).
 
 Hook structure
 ==============
 
-Stork hook is a Go plugin that contains fallowing symbols:
+Stork hook is a Go plugin that contains following symbols:
 
 - ``Load`` function that accepts a settings object as an argument and returns
   the callout carrier or error. The settings object is created by the
@@ -118,9 +118,9 @@ Stork hook is a Go plugin that contains fallowing symbols:
   object is ``nil``.
 - ``GetVersion`` function that accepts no arguments and returns the target 
   application name and version string.
-- ``CreateCLIFlags`` function that accepts no arguments and return a settings
+- ``CreateCLIFlags`` function that accepts no arguments and returns a settings
   object. The object must define the CLI flags in its members' tags, following
-  the [jessevdk/go-flags](https://github.com/jessevdk/go-flags) library
+  the `jessevdk/go-flags <https://github.com/jessevdk/go-flags>`_ library
   requirements.
 
 
@@ -138,7 +138,7 @@ Missing parts
 The hook support is still under development. The list of implemented and
 planned features is available on
 `the Wiki page
-<https://gitlab.isc.org/isc-projects/stork/-/wikis/Hook-To-Do-List_>`_
+<https://gitlab.isc.org/isc-projects/stork/-/wikis/Hook-To-Do-List>`_
 
 Initialization
 --------------
@@ -176,7 +176,7 @@ or
 
     $ rake build
 
-Golang requires that the plugins be built with the same flags as the core
+Golang requires the plugins to be built with the same flags as the core
 application. Stork doesn't use any custom flags, but it may be compiled in
 debug mode. The standard DLV flag set is used in this case:
 ``-gcflags "all=-N -l"``. The command to compile the plugins in debug mode is:
@@ -199,7 +199,7 @@ Lint & test
 -----------
 
 The default Rakefile contains the tasks for linting and unit testing the hook
-source code for a more straightforward start development.
+source code for a more straightforward start of development.
 
 .. code-block:: shell
 
@@ -227,7 +227,7 @@ hook should use updated core sources without committing the changes to the
 repository. A developer may achieve this behavior by specifying the relative
 path to the core dependency instead of the version string.
 
-Below presented three forms of defining dependencies for Stork hook:
+Below are presented three forms of defining dependencies for Stork hook:
 
 .. code-block:: go
 
@@ -238,7 +238,7 @@ Below presented three forms of defining dependencies for Stork hook:
 
     replace isc.org/stork => ../../backend
 
-Notice that the commit hash version has two forms. The first uses the complete
+Note that the commit hash version has two forms. The first uses the complete
 commit hash, and the second uses the short commit hash with the version tag and
 timestamp. The first form is converted to the second one during the ``go.mod``
 validation.
@@ -273,7 +273,7 @@ Size & dependencies
 -------------------
 
 The Go plugins, as all Go binaries, are static linked. It means that any used
-dependency will be built-in in into the output file. It is essential to define
+dependency will be built-in into the output file. It is essential to define
 the callout interfaces to minimize the number of dependencies. Primarily, we
 should avoid using external, third-party types in the callout point signatures.
 Another good practice is placing the callout interfaces in separate packages.

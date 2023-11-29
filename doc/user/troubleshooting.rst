@@ -192,6 +192,9 @@ This section describes the solutions for some common issues with the Stork agent
               This property is missing by default if you install Kea from the Debian/Ubuntu repository.
               To avoid this and similar problems, we recommend to use our official packages available on
               `CloudSmith <https://cloudsmith.io/~isc/repos>`_.
+
+--------------
+
 :Issue:       Stork agent doesn't start with the following error:
               ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
               ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
@@ -240,7 +243,7 @@ This section describes the solutions for some common issues with the Stork agent
 :Issue:       Stork agent doesn't start with the following error:
               ``Cannot start the Stork Agent: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
 :Solution:    Change the hook directory path.
-:Explanation: Directory is a file.
+:Explanation: File was found instead of directory under given hook directory path.
 
 ``stork-server``
 ================
@@ -350,4 +353,4 @@ This section describes the solutions for some common issues with the Stork serve
 :Issue:       Stork server doesn't start with the following error:
               ``Cannot start the Stork Server: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
 :Solution:    Change the hook directory path.
-:Explanation: Directory is a file.
+:Explanation: File was found instead of directory under given hook directory path.

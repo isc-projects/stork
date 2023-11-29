@@ -1059,9 +1059,9 @@ Installing the hooks
 
 The hook is an additional file (plugin) that extends the standard Stork
 functionalities. It contains functions that are called during handling of
-various operations and can change the typical flow or run parallel. Independent
-developers may create the hooks and enhance the Stork applications with new,
-optional features.
+various operations and can change the typical flow or run in parallel.
+Independent developers may create the hooks and enhance the Stork applications
+with new, optional features.
 
 The hook packages are distributed as RPM and DEB packages on Cloudsmith.
 
@@ -1070,14 +1070,14 @@ placed in the hook directory. The default location is
 ``/var/lib/stork-agent/hooks`` for Stork agent and
 ``/var/lib/stork-server/hooks`` for Stork server. You can change it using
 the ``--hook-directory`` CLI option or setting the
-``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_Server_HOOK_DIRECTORY`` environment
+``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_SERVER_HOOK_DIRECTORY`` environment
 variable.
 
 All the hooks must be compiled for the used Stork application (agent or server)
 and its exact version. If the hook directory contains non-hook files or
 out-of-date hooks, then Stork will not run.
 
-The hooks may provided own configuration options. The list of available options
+The hooks may provide own configuration options. The list of available options
 is listed in the output of the ``stork-agent --help`` and
 ``stork-server --help`` commands.
 
