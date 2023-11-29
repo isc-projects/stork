@@ -308,11 +308,11 @@ Other tools
 
 Stork provides more experimental tools to work with hooks.
 
-- ``rake hook:build`` - compiles all hooks from the repositories located in the
-    hook directory using the current Stork core codebase. The output hooks are
-    ready to use.
-- ``rake run:server_hooks`` - builds all hooks using the above command and
-    runs the Stork server.
+- ``rake hook:build`` compiles all hooks from the repositories located in the
+  hook directory using the current Stork core codebase. The output hooks are
+  ready to use.
+- ``rake run:server_hooks`` builds all hooks using the above command and
+  runs the Stork server.
 
 Steps to implement hook
 =======================
