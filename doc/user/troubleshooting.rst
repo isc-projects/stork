@@ -222,6 +222,9 @@ This section describes the solutions for some common issues with the Stork agent
 :Issue:       Stork agent doesn't start with the following error:
               ``Cannot start the Stork Agent: hook library dedicated for another program: Stork Server``
 :Solution:    Move the incompatible hooks to a separate directory.
+:Explanation: Stork agent requires the hook directory to contain only agent
+              hooks. The above error message indicates that the hook directory
+              contains hooks dedicated to the Stork server.
 
 --------------
 
@@ -332,6 +335,9 @@ This section describes the solutions for some common issues with the Stork serve
 :Issue:       Stork server doesn't start with the following error:
               ``Cannot start the Stork Server: hook library dedicated for another program: Stork Agent``
 :Solution:    Move the incompatible hooks to a separate directory.
+:Explanation: Stork server requires the hook directory to contain only server
+              hooks. The above error message indicates that the hook directory
+              contains hooks dedicated to the Stork agent.
 
 --------------
 
