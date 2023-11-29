@@ -193,8 +193,8 @@ This section describes the solutions for some common issues with the Stork agent
               To avoid this and similar problems, we recommend to use our official packages available on
               `CloudSmith <https://cloudsmith.io/~isc/repos>`_.
 :Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
-              ``Cannot start the Stork Agent: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+              ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
+              ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
 :Solution:    Remove the given file from the hook directory.
 :Explanation: The file under a given path is not valid Stork hook.
 
@@ -303,8 +303,8 @@ This section describes the solutions for some common issues with the Stork serve
 --------------
 
 :Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
-              ``Cannot start the Stork Server: plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+              ``Cannot start the Stork Server: failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
+              ``Cannot start the Stork Server: failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
 :Solution:    Remove the given file from the hook directory.
 :Explanation: The file under a given path is not valid Stork hook.
 

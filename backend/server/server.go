@@ -101,7 +101,11 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 				WithError(err).
 				Warnf("The hook directory: '%s' doesn't exist", ss.GeneralSettings.HookDirectory)
 		} else {
-			return err
+			return errors.WithMessagef(
+				err,
+				"failed to load hooks from directory: '%s'",
+				ss.GeneralSettings.HookDirectory,
+			)
 		}
 	}
 

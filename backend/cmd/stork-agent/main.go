@@ -63,6 +63,11 @@ func runAgent(settings *generalSettings, reload bool) error {
 				WithError(err).
 				Warnf("The hook directory: '%s' doesn't exist", hookDirectory)
 		} else {
+			err = errors.WithMessagef(
+				err,
+				"failed to load hooks from directory: '%s'",
+				hookDirectory,
+			)
 			log.
 				WithError(err).
 				Fatal("Problem with loading hook libraries")
