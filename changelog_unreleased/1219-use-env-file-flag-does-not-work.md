@@ -1,5 +1,6 @@
 * [bug] slawek
 
-    Fixed handling of the environment file in the Stork agent. Removed unused
-    CLI argument.
+    Fixed issues with specifying the environment file location with the
+    --use-env CLI flag. Removed unused --prometheus-bind9-exporter-interval CLI
+    flag.
     (Gitlab #1219)
