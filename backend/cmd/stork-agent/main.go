@@ -399,6 +399,9 @@ func main() {
 		default:
 			// Error occurred.
 			log.Fatal(err)
+			// The default exit handler of logrus is suppressed in unit tests
+			// to avoid interrupting the execution. So we need to explicitly
+			// return here.
 			return
 		}
 	}
