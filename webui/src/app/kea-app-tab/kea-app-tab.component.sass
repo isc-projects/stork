@@ -35,23 +35,21 @@
 
 // Remove padding from PrimeNG inplace elements so they don't overlap
 // with each other.
-:host ::ng-deep .word-break-all .p-inplace .p-inplace-display
+:host ::ng-deep .hook-path .p-inplace .p-inplace-display
   padding: 0
 
 // Align the closing button of a PrimeNG inplace element in the middle, instead
 // of at the default bottom, and make height and width equal to text size so
 // that it doesn't expand the enclosing div.
-:host ::ng-deep .word-break-all .p-button.p-button-icon-only
+:host ::ng-deep .hook-path .p-button.p-button-icon-only
   height: 1rem
   vertical-align: middle
   width: 1rem
 
-.word-break-all
-  // Allows breaking long lines of text (hook name, path or Kea Version Ext) on small
-  // screens to avoid overlapping on other UI blocks.
+// Allows breaking long lines of text (hook name, path or Kea Version Ext) on small
+// screens to avoid overlapping on other UI blocks.
+@mixin word-break-all
   word-break: break-all
 
-.overflow-auto-col.grid > .col, .overflow-auto-col.grid > [class*="col"]
-  // Enables a horizontal scrolling mechanism for x-overflowing boxes.
-  // This improves UX on smaller screens.
-  overflow-x: auto
+.hook-path, .word-break-all
+  @include word-break-all

@@ -182,7 +182,7 @@
                             <!-- Overview -->
                             <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
-                                <div class="grid overflow-auto-col">
+                                <div class="grid">
                                     <div class="col-8">
                                         <p-fieldset legend="Daemon Information">
                                             <table style="width: 100%">
@@ -215,7 +215,7 @@
                                                 *ngFor="let hook of daemon.hooks; let i = index"
                                             >
                                                 <div class="col-1">{{ i + 1 }}.</div>
-                                                <div class="col-10 inline-block word-break-all">
+                                                <div class="col-10 inline-block hook-path">
                                                     <p-inplace closable="true" closeIcon="pi pi-chevron-left">
                                                         <ng-template pTemplate="display">
                                                             {{ basename(hook) }}
