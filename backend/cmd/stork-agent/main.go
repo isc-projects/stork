@@ -267,7 +267,7 @@ func parseArgs() (*generalSettings, *registerSettings, error) {
 	shortGeneralDescription := "Stork Agent"
 	longGeneralDescription := `This component is required on each machine to be monitored by the Stork Server
 
-Stork logs on INFO level by default. Other levels can be configured using the
+Stork logs at INFO level by default. Other levels can be configured using the
 STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 
 	// Parse environment file settings.
