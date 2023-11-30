@@ -649,7 +649,7 @@ func (pke *PromKeaExporter) Start() {
 	addrPort := net.JoinHostPort(pke.Host, strconv.Itoa(pke.Port))
 	pke.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %f seconds",
+	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %.f seconds",
 		addrPort, pke.Interval.Seconds())
 
 	// start http server for metrics
