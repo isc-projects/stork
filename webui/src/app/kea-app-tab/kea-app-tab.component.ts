@@ -458,13 +458,13 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @param hookLibrary basename of the hook library
      * @param keaVersion Kea version retrieved from the daemon
      *
-     * @returns anchor or undefined if the hook library is not recognized
+     * @returns anchor or null if the hook library is not recognized
      */
-    docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string | undefined {
+    docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string | null {
         if (!this.anchorsByHook[hookLibrary]) {
             // For Kea version >= 2.4 lookup is not needed, but it must be checked
             // whether given hookLibrary exists.
-            return undefined
+            return null
         }
         const isPreRel = prerelease(keaVersion) != null // Will not be null for e.g. '2.5.4-git', will be null for '2.5.4'.
         const isNewVer = gte(keaVersion, '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs.

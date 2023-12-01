@@ -282,9 +282,9 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should know how to convert hook libraries to Kea documentation anchors', () => {
-        expect(component.docAnchorFromHookLibrary('', '2.3.8')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('', '2.4.0')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('', '2.5.4-git')).toBeUndefined()
+        expect(component.docAnchorFromHookLibrary('', '2.3.8')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('', '2.4.0')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('', '2.5.4-git')).toBeNull()
         expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.3.7')).toBe(
             'kea-2.3.7/arm/hooks.html#user-chk-user-check'
         )
@@ -294,12 +294,12 @@ describe('KeaAppTabComponent', () => {
         expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '2.5.4-git')).toBe(
             'latest/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so'
         )
-        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.3.8')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.4.0')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.5.4-git')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.3.7')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.4.0')).toBeUndefined()
-        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.5.4-git')).toBeUndefined()
+        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.3.8')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.4.0')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.5.4-git')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.3.7')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.4.0')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.5.4-git')).toBeNull()
     })
 
     it('should display an empty placeholder when no app is loaded', () => {
