@@ -98,7 +98,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
-        'libdhcp_ping_check.so': 'libdhcp-ping-check-so-ping-check',
+        'libdhcp_ping_check.so': 'ping-check-so-ping-check',
     }
 
     /**
