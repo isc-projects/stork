@@ -9,9 +9,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	"isc.org/stork/testutil"
 )
+
+//go:generate mockgen -source process.go -package=agent -destination=processmock_test.go isc.org/agent Process ProcessManager
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
@@ -151,12 +154,61 @@ func TestReadKeaConfigOk(t *testing.T) {
 	require.False(t, config.UseSecureProtocol())
 }
 
+// Test that the Kea and BIND 9 apps are detected properly.
 func TestDetectApps(t *testing.T) {
-	am := &appMonitor{}
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Prepare Kea config file.
+	keaConfPath, _ := sb.Write("kea-control-agent.conf", `{ "Control-agent": {
+		"http-host": "localhost",
+		"http-port": 45634
+	} }`)
+
+	// Prepare the command executor.
+	executor := newTestCommandExecutorDefault()
+
+	// Prepare process mocks.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	keaProcess := NewMockProcess(ctrl)
+	keaProcess.EXPECT().GetName().Return("kea-ctrl-agent", nil)
+	keaProcess.EXPECT().GetCmdline().Return(fmt.Sprintf(
+		"kea-ctrl-agent -c %s", keaConfPath,
+	), nil)
+	keaProcess.EXPECT().GetCwd().Return("/etc/kea", nil)
+	keaProcess.EXPECT().GetPid().Return(int32(1234))
+
+	bind9Process := NewMockProcess(ctrl)
+	bind9Process.EXPECT().GetName().Return("named", nil)
+	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().GetCwd().Return("/etc", nil)
+	bind9Process.EXPECT().GetPid().Return(int32(5678))
+
+	unknownProcess := NewMockProcess(ctrl)
+	unknownProcess.EXPECT().GetName().Return("unknown", nil)
+
+	processManager := NewMockProcessManager(ctrl)
+	processManager.EXPECT().ListProcesses().Return([]Process{
+		keaProcess, bind9Process, unknownProcess,
+	}, nil)
+
+	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	httpClient := NewHTTPClient()
 	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+
+	// Act
 	am.detectApps(sa)
+
+	// Assert
+	require.Len(t, am.apps, 2)
+	require.Equal(t, AppTypeKea, am.apps[0].GetBaseApp().Type)
+	require.EqualValues(t, 1234, am.apps[0].GetBaseApp().Pid)
+	require.Equal(t, AppTypeBind9, am.apps[1].GetBaseApp().Type)
+	require.EqualValues(t, 5678, am.apps[1].GetBaseApp().Pid)
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.

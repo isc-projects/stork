@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/process"
 	log "github.com/sirupsen/logrus"
 
 	storkutil "isc.org/stork/util"
@@ -64,10 +63,12 @@ type AppMonitor interface {
 }
 
 type appMonitor struct {
-	requests chan chan []App // input to app monitor, ie. channel for receiving requests
-	quit     chan bool       // channel for stopping app monitor
-	running  bool
-	wg       *sync.WaitGroup
+	requests       chan chan []App // input to app monitor, ie. channel for receiving requests
+	quit           chan bool       // channel for stopping app monitor
+	running        bool
+	wg             *sync.WaitGroup
+	commander      storkutil.CommandExecutor
+	processManager ProcessManager
 
 	apps []App // list of detected apps on the host
 }
@@ -82,9 +83,11 @@ const (
 // by a dedicated method Start(). Make sure you call Start() before using app monitor.
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
-		requests: make(chan chan []App),
-		quit:     make(chan bool),
-		wg:       &sync.WaitGroup{},
+		requests:       make(chan chan []App),
+		quit:           make(chan bool),
+		wg:             &sync.WaitGroup{},
+		commander:      storkutil.NewSystemCommandExecutor(),
+		processManager: NewProcessManager(),
 	}
 	return sm
 }
@@ -207,20 +210,25 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 	var apps []App
 
-	processes, _ := process.Processes()
+	processes, err := sm.processManager.ListProcesses()
+	if err != nil {
+		log.WithError(err).Error("Failed to get processes")
+		return
+	}
+
 	for _, p := range processes {
-		procName, _ := p.Name()
+		procName, _ := p.GetName()
 		cmdline := ""
 		cwd := ""
 		var err error
 
 		if procName == keaProcName || procName == namedProcName {
-			cmdline, err = p.Cmdline()
+			cmdline, err = p.GetCmdline()
 			if err != nil {
 				log.WithError(err).Warnf("Cannot get process command line")
 				continue
 			}
-			cwd, err = p.Cwd()
+			cwd, err = p.GetCwd()
 			if err != nil {
 				log.WithError(err).Warn("Cannot get process current working directory")
 				cwd = ""
@@ -233,7 +241,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			if m != nil {
 				keaApp := detectKeaApp(m, cwd, storkAgent.KeaHTTPClient)
 				if keaApp != nil {
-					keaApp.GetBaseApp().Pid = p.Pid
+					keaApp.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, keaApp)
 				}
 			}
@@ -244,10 +252,9 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			// detect bind9
 			m := bind9Pattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				cmdr := storkutil.NewSystemCommandExecutor()
-				bind9App := detectBind9App(m, cwd, cmdr)
+				bind9App := detectBind9App(m, cwd, sm.commander)
 				if bind9App != nil {
-					bind9App.GetBaseApp().Pid = p.Pid
+					bind9App.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, bind9App)
 				}
 			}

@@ -164,39 +164,44 @@ namespace :unittest do
                         next
                     end
 
-                    ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
-                                'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
-                                'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
-                                'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
-                                'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
-                                'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
+                    ignore_list = [
+                        'DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
+                        'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
+                        'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
+                        'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
+                        'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
+                        'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
 
-                                # The Output method of the "systemCommandExecutor" structure encapsulates the
-                                # "exec.Command" call to allow mocking of the system response in unit tests. The
-                                # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
-                                # method.
-                                'Output',
+                        # The Output method of the "systemCommandExecutor" structure encapsulates the
+                        # "exec.Command" call to allow mocking of the system response in unit tests. The
+                        # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
+                        # method.
+                        'Output',
 
-                                # We spent a lot of time to try test the main agent function. It is a problematic
-                                # function because it starts listening and blocks itself until receiving SIGINT.
-                                # Unfortunately, the signal handler isn't registered immediately after the function
-                                # begins but after a short period.
-                                # The unit tests for it were very unstable and time-depends. Additionally, the value
-                                # of these tests was relatively poor. This function shouldn't be executed by the unit
-                                # tests but rather by system tests.
-                                'runAgent',
+                        # We spent a lot of time to try test the main agent function. It is a problematic
+                        # function because it starts listening and blocks itself until receiving SIGINT.
+                        # Unfortunately, the signal handler isn't registered immediately after the function
+                        # begins but after a short period.
+                        # The unit tests for it were very unstable and time-depends. Additionally, the value
+                        # of these tests was relatively poor. This function shouldn't be executed by the unit
+                        # tests but rather by system tests.
+                        'runAgent',
 
-                                # this function requires interaction with user so it is hard to test
-                                'getAgentAddrAndPortFromUser',
+                        # this function requires interaction with user so it is hard to test
+                        'getAgentAddrAndPortFromUser',
 
-                                # this requires interacting with terminal
-                                'GetSecretInTerminal', 'IsRunningInTerminal',
+                        # this requires interacting with terminal
+                        'GetSecretInTerminal', 'IsRunningInTerminal',
 
-                                # Testing coverage should ignore testutil because we don't require writing
-                                # tests for testing code. They can still be written but we shouldn't fail
-                                # if they are not.
-                                'isc.org/stork/testutil',
-                                ]
+                        # Testing coverage should ignore testutil because we don't require writing
+                        # tests for testing code. They can still be written but we shouldn't fail
+                        # if they are not.
+                        'isc.org/stork/testutil',
+
+                        # This file contains the wrapper for the "gopsutil" package to allow mocking
+                        # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
+                        'isc.org/stork/agent/process.go'
+                    ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
                                         'ExportSecret'])
