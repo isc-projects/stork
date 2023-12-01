@@ -210,11 +210,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 	var apps []App
 
-	processes, err := sm.processManager.ListProcesses()
-	if err != nil {
-		log.WithError(err).Error("Failed to get processes")
-		return
-	}
+	processes, _ := sm.processManager.ListProcesses()
 
 	for _, p := range processes {
 		procName, _ := p.GetName()
