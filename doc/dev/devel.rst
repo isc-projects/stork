@@ -49,7 +49,8 @@ The content of the file should omit the entry number. The format is:
 
 .. code-block::
 
-    [* if the changes are backward incompatible] [category] [author]
+    [* optional asterisk, it doesn't affect anything]
+    [! if the changes are backward incompatible] [category] [author]
     [empty line]
         [multi-line description, indented]
         [GL issue number, indented]
@@ -67,7 +68,7 @@ Example:
 
 .. code-block::
 
-    * [build] slawek
+    [build] slawek
 
         Changed the convention of preparing the ChangeLog file to avoid merge
         request conflicts on this file.
