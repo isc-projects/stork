@@ -1,6 +1,0 @@
-* [bug] marcin
-
-    Corrected allowed ranges for T1 Percent and T2 Percent parameters in
-    the subnet edit form. Corrected initializing the Valid Lifetime
-    parameter value in the subnet form.
-    (Gitlab #1195)

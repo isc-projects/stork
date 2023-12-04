@@ -1,5 +1,0 @@
-* [func] marcin
-
-    Added a button to manually trigger updating Kea configurations in the
-    Stork database from the Kea servers.
-    (Gitlab #1206)

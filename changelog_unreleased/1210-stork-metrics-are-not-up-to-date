@@ -1,5 +1,0 @@
-* [func] marcin
-
-    Extended the settings page with the ability to specify custom apps
-    state puller and metrics collector intervals.
-    (Gitlab #1210)

@@ -1,7 +1,7 @@
 package stork
 
 // Stork product version. It's shared between server, agent, tool, and UI.
-const Version = "1.13.0"
+const Version = "1.14.0"
 
 // Build date of the binary. It's set during compilation.
 var BuildDate = "unset"

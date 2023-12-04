@@ -1,3 +1,101 @@
+Stork 1.14.0 released on 2023-12-06.
+
+* 357 [bug] piotrek
+
+    Corrected wrong anchors to Kea hooks ARM docs in 
+    Kea application page.
+    For Kea version >= 2.4 new std-ischooklib-* anchors are
+    used.
+    (Gitlab #915)
+
+* 356 [doc] slawek
+
+    Added the hook framework documentation.
+    (Gitlab #779)
+
+* 355 [bug] slawek
+
+    Restored compatibility of the Stork binaries with Ubuntu 18.04 and Ubuntu
+    20.04.
+    (Gitlab #1201)
+
+* 354 [sec] marcin
+
+    Upgraded some UI and backend dependencies to remove critical
+    vulnerabilities for Stork 1.14.0.
+    (Gitlab #1233)
+
+* 353 [bug] slawek
+
+    Fixed issues with specifying the environment file location with the
+    --use-env CLI flag. Removed unused --prometheus-bind9-exporter-interval CLI
+    flag.
+    (Gitlab #1219)
+
+* 352 [build] slawek
+
+    Enhanced the build system to recognize ARM64 architecture on the OpenBSD
+    operating system.
+    (Gitlab #1231)
+
+* 351 [sec] slawek
+
+    Disabled the TLS 1.0 and 1.1 protocols in the GRPC server of the Stork
+    agent. The Stork server communicates with the Stork agent over TLS 1.3 by
+    default.
+    (Gitlab #1197)
+
+* 350 [func] marcin
+
+    Extended subnet form for specifying relay addresses.
+    (Gitlab #1230)
+
+* 349 [build] slawek
+
+    Updated the simulator Python dependencies.
+    (Gitlab #1166)
+
+* 348 [func] marcin
+
+    Added a button to manually trigger updating Kea configurations in the
+    Stork database from the Kea servers.
+    (Gitlab #1206)
+
+* 347 [func] marcin
+
+    Enabled subnet form with the pool management.
+    (Gitlab #1208)
+
+* 346 [func] marcin
+
+    Extended the settings page with the ability to specify custom apps
+    state puller and metrics collector intervals.
+    (Gitlab #1210)
+
+* 345 [doc] marcin
+
+    Documented register command arguments in the stork-agent man file.
+    (Gitlab #1158)
+
+* 344 [bug] marcin
+
+    Corrected allowed ranges for T1 Percent and T2 Percent parameters in
+    the subnet edit form. Corrected initializing the Valid Lifetime
+    parameter value in the subnet form.
+    (Gitlab #1195)
+
+* 343 [bug] marcin
+
+    The agent recognizes a new alias output-options introduced in Kea 2.5
+    logger configuration.
+    (Gitlab #1198)
+
+* 342 [build] slawek
+
+    Changed the convention of preparing the ChangeLog file to avoid merge
+    request conflicts.
+    (Gitlab #1120)
+
 * 341 [build] slawek
 
     Fixed the cross-compilation problem for 32-bit ARM architectures caused by
