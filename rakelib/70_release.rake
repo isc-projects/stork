@@ -134,6 +134,13 @@ namespace :release do
             # Read the file content.
             entry_content = File.read(entry_file)
 
+            # Strip the leading asterisk from the beginning of the file.
+            entry_content.sub!(/^\s*\*/, '')
+
+            # Normalize the indentation to 4 spaces. Preserve the empty lines.
+            entry_content.gsub!(/^[ \t]*([^ \t])/, '    \1')
+            entry_content.gsub!(/^    $/, '')
+
             # Strip the whitespace from the beginning and the end of the file.
             entry_content.strip!
 
