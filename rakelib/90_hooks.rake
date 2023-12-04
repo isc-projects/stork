@@ -191,7 +191,9 @@ namespace :hook do
                     "--license", "MPL 2.0",
                     "--url", "https://gitlab.isc.org/isc-projects/stork/",
                     "--vendor", "Internet Systems Consortium, Inc.",
-                    "#{hook_filename}=/var/lib/stork-#{kind}/hooks/#{hook_filename}"
+                    "#{hook_filename}=/var/lib/stork-#{kind}/hooks/#{hook_filename}",
+                    # Enables the compatibility with the FIPS mode for RPM packages.
+                    "--rpm-digest", "sha256"
             end
         end
     end
