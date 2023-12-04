@@ -156,7 +156,9 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
             "--description", "ISC Stork Agent",
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc."
+            "--vendor", "Internet Systems Consortium, Inc.",
+            # Enables the compatibility with the FIPS mode for RPM packages.
+            "--rpm-digest", "sha256"
         if status != 0
             puts status, stdout, stderr
             fail
@@ -273,7 +275,9 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
             "--description", "ISC Stork Server",
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc."
+            "--vendor", "Internet Systems Consortium, Inc.",
+            # Enables the compatibility with the FIPS mode for RPM packages.
+            "--rpm-digest", "sha256"
     end
     sh "touch", SERVER_PACKAGE_STUB_FILE
 end
