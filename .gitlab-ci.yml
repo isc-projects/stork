@@ -622,6 +622,12 @@ build_hooks_legacy:
   image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
   needs:
     - build_hooks
+  # The submodules are not included in the artifacts even if the `untracked`
+  # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
+  # We clone the fresh copy of the submodules. As long as our hooks need only
+  # Golang to compile, it shouldn't be a problem.
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
   script:
     # The hook:build rebuilds the binaries every time.
     - rake hook:build
