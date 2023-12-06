@@ -606,6 +606,26 @@ build_hooks:
   script:
     - rake hook:build
   artifacts:
+    untracked: true
+    expire_in: 1 hour
+
+build_hooks_legacy:
+  stage: hooks
+  when: on_success
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - amd64
+  # Use image based on Ubuntu 20.04. It is required to build the binaries with
+  # the older GLIBC version.
+  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+  needs:
+    - build_hooks
+  script:
+    # The hook:build rebuilds the binaries every time.
+    - rake hook:build
+  artifacts:
     paths:
       - hooks/*.so
     expire_in: 1 hour
@@ -646,10 +666,11 @@ build_hooks_debs_amd64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
     - unittest_hooks
+    # Use the binaries compiled by the legacy image.
+    - build_hooks_legacy
   script:
-    - rake hook:build_pkg
+    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
   artifacts:
     paths:
