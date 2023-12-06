@@ -611,7 +611,8 @@ build_hooks:
 
 build_hooks_legacy:
   stage: hooks
-  when: on_success
+  rules:
+    - when: on_success
   tags:
     - linux
     - aws
