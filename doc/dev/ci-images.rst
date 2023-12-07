@@ -10,11 +10,16 @@ List of CI images
 
 Currently available images:
 
-- ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task
+- ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task.
+  Available for AMD64 and ARM64 architectures from the ``1`` tag.
 - ``redhat-ubi8.Dockerfile`` - RedHat-based image
+  Available for AMD64 and ARM64 architectures from the ``1`` tag.
 - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines
+  Available only for AMD64 architecture.
 - ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for the release purposes
+  Available only for AMD64 architecture.
 - ``alpine.Dockerfile`` - Alpine-based image
+  Available for AMD64 and ARM64 architectures.
 
 Removed images:
 
@@ -30,9 +35,9 @@ The image names are the file names of their Dockerfiles.
 
 **Tag: 3**
 
-    Introduced in the #1178 command to add the missing ``ssh`` dependency.
+    Introduced in the #1178 ticket to add the missing ``ssh`` dependency.
 
-    - debian:
+    - ``debian.Dockerfile``:
 
         - Added: ssh
 
@@ -44,38 +49,38 @@ The image names are the file names of their Dockerfiles.
     Ruby. Introduced more images to avoid installing dependencies in the CI
     pipelines completely.
 
-    - ubuntu-18-04:
+    - ``ubuntu-18-04.Dockerfile``:
 
-        - Replaced with "debian.Dockerfile"
+        - Replaced with ``debian.Dockerfile``
 
-    - debian:
+    - ``debian.Dockerfile``:
 
-        - Base: debian:12.1-slim
+        - Base: ``debian:12.1-slim``
         - Frozen all dependency versions
         - Updated to Python 3.11, OpenJDK 17, Postgres client 15, Chromium 117,
           build essentials 12
         - Added Ruby 3.1
 
-    - redhat-ubi8:
+    - ``redhat-ubi8.Dockerfile``:
 
-        - Base updated: redhat/ubi8:8.8
+        - Base updated: ``redhat/ubi8:8.8``
         - Updated to Python 3.11, OpenJDK 17
         - Added: GCC 8.5
-        - Set /tmp to be world-writable (+t byte)
+        - Set /tmp to be world-writable (``chmod +t``)
 
-    - compose:
+    - ``compose.Dockerfile``:
 
-        - Base: docker:24 (alpine)
+        - Base: ``docker:24`` (Alpine)
         - Added Python 3.11, OpenJDK 17, Rake 13, NodeJS 18.17, NPM 9, OpenSSL 3.1
 
-    - cloudsmith:
+    - ``cloudsmith.Dockerfile``:
 
-        - Base updated: ubuntu:22.04
+        - Base updated: ``ubuntu:22.04``
         - Updated to Cloudsmith CLI 1.1.1, Python 11 (not frozen), Rake 13
 
-    - alpine:
+    - ``alpine.Dockerfile``:
 
-        - Base: golang:1.21-alpine3.17
+        - Base: ``golang:1.21-alpine3.17``
         - Added Python 3.10, OpenJDK 17, Rake 13, Ruby 3.1, NodeJS 18, GCC 12, Protoc 3.21
 
 **Tag: 1**
@@ -85,19 +90,19 @@ The image names are the file names of their Dockerfiles.
     pipeline. It allowed the execution to speed up and limit the amount of
     transferred data.
 
-    - ubuntu-18-04:
+    - ``ubuntu-18-04.Dockerfile``:
 
-        - Base: ubuntu:18.04
+        - Base: ``ubuntu:18.04``
         - Added Python 3.8, man, make, Postgres client, wget, chromium
         - Removed Docker, fpm
         - Refactored to single RUN directive
 
-    - redhat-ubi8:
+    - ``redhat-ubi8.Dockerfile``:
 
-        - Base: redhat/ubi8:8.6
+        - Base: ``redhat/ubi8:8.6``
         - Added Python 3.8, man
 
-    - cloudsmith:
+    - ``cloudsmith.Dockerfile``:
 
         - No changes
 
@@ -108,14 +113,14 @@ The image names are the file names of their Dockerfiles.
     exact Dockerfile used to prepare the image available in the registry was never
     committed, and it is lost.
 
-    - ubuntu-18-04:
+    - ``ubuntu-18-04.Dockerfile``:
 
-        - Base ubuntu:18.04
+        - Base ``ubuntu:18.04``
 
-    - redhat-ubi8:
+    - ``redhat-ubi8.Dockerfile``:
 
-        - Base redhat/ubi8:8.6
+        - Base: ``redhat/ubi8:8.6``
 
-    - cloudsmith:
+    - ``cloudsmith.Dockerfile``:
 
-        - Base: ubuntu:18.04
+        - Base: ``ubuntu:18.04``
