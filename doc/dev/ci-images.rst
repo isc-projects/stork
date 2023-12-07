@@ -10,22 +10,36 @@ List of CI images
 
 Currently available images:
 
-- ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task.
-  Available for AMD64 and ARM64 architectures from the ``1`` tag.
-- ``redhat-ubi8.Dockerfile`` - RedHat-based image
-  Available for AMD64 and ARM64 architectures from the ``1`` tag.
-- ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines
-  Available only for AMD64 architecture.
-- ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for the release purposes
-  Available only for AMD64 architecture.
-- ``alpine.Dockerfile`` - Alpine-based image
-  Available for AMD64 and ARM64 architectures.
+    - ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task.
+    Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
+    registry as the ``ci-base`` image.
+    - ``redhat-ubi8.Dockerfile`` - RedHat-based image
+    Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
+    registry as the ``pkgs-redhat-ubi8`` image.
+    - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines
+    Available only for AMD64 architecture. Stored in the registry as the
+    ``pkgs-compose`` image.
+    - ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for the release purposes
+    Available only for AMD64 architecture. Stored in the registry as the
+    ``pkgs-cloudsmith`` image.
+    - ``alpine.Dockerfile`` - Alpine-based image. Available for AMD64 and ARM64
+    architectures. Stored in the registry as the ``pkgs-alpine`` image.
 
 Removed images:
 
-- ``ubuntu-18.04.Dockerfile`` - Ubuntu-based image. It was initially used as a
-  default base for CI task, but it was replaced with ``debian.Dockerfile``.
+    - ``ubuntu-18.04.Dockerfile`` - Ubuntu-based image. It was initially used as a
+    default base for CI task, but it was replaced with ``debian.Dockerfile``.
 
+Deprecated images:
+
+    The Dockerfiles for the images are missing but they are stored in the
+    registry. Intended for removal.
+
+    - ``ci-danger`` - Image for Danger CI tool. It was replaced with
+      ``debian.Dockerfile`` (``ci-base``) image.
+    - ``ci-postgresql`` - Image for PostgreSQL database. It was used to perform
+        the backend unit tests in the CI pipeline. It was replaced with the
+        official Postgres image (based on Alpine).
 
 Changelog
 =========
