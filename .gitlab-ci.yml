@@ -692,7 +692,8 @@ build_hooks_debs_arm64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
+    - job: build_hooks
+      artifacts: false
     - unittest_hooks
   script:
     - rake hook:build_pkg
@@ -710,7 +711,8 @@ build_hooks_rpms_amd64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
+    - job: build_hooks
+      artifacts: false
     - unittest_hooks
   script:
     - rake hook:build_pkg
@@ -728,7 +730,8 @@ build_hooks_rpms_arm64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
+    - job: build_hooks
+      artifacts: false
     - unittest_hooks
   script:
     - rake hook:build_pkg
@@ -746,7 +749,8 @@ build_hooks_apks_amd64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
+    - job: build_hooks
+      artifacts: false
     - unittest_hooks
   script:
     - rake hook:build_pkg
@@ -764,7 +768,8 @@ build_hooks_apks_arm64:
   rules:
     - when: on_success
   needs:
-    - build_hooks
+    - job: build_hooks
+      artifacts: false
     - unittest_hooks
   script:
     - rake hook:build_pkg
