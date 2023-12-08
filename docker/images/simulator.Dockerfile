@@ -89,6 +89,7 @@ RUN \
         dnsutils=1:9.18.* \
         # Kea Perfdhcp dependencies.
         isc-kea-perfdhcp=${KEA_VERSION} \
+        isc-kea-common=${KEA_VERSION} \
         # Simulator dependencies.
         python3=3.11.* \
         python3-venv=3.11.* \
