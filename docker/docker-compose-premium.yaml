@@ -10,11 +10,17 @@ services:
       args:
         KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-2-4-prv
         KEA_PREMIUM: "premium"
+    extra_hosts:
+      - "agent-kea-premium-one:172.24.0.103"
     image: registry.gitlab.isc.org/isc-private/stork/agent-kea-premium-one:latest
     hostname: agent-kea-premium-one
     networks:
       storknet:
         ipv4_address: 172.24.0.103
+        priority: 1000
+      subnet-03:
+        ipv4_address: 172.103.0.100
+        priority: 500
     expose:
       - "8881" # stork server to agent
     ports:

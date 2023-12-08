@@ -16,6 +16,7 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
+      - "agent-kea-premium-one:172.24.0.103"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet
@@ -360,6 +361,7 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
+      - "agent-kea-premium-one:172.24.0.103"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
@@ -377,6 +379,9 @@ services:
       subnet-02:
         ipv4_address: 172.102.0.200
         priority: 300
+      subnet-03:
+        ipv4_address: 172.103.0.200
+        priority: 200
       subnet6-00:
         ipv6_address: 3000:db8:1::200
         priority: 500
@@ -477,6 +482,10 @@ networks:
     ipam:
       config:
         - subnet: 172.102.0.0/24
+  subnet-03:
+    ipam:
+      config:
+        - subnet: 172.103.0.0/24
   subnet6-00:
     enable_ipv6: true
     ipam:
