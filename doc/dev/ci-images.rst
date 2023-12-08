@@ -69,6 +69,16 @@ To update the Docker CI images, follow these steps:
    ``TAG`` variable. Don't override existing tags (always keep the previous
    version around) and don't use the ``latest``  keyword, unless you really
    know what you're doing. Use incremented tags.
+   The tags should be consistent across all images. You should assign
+   the same tag to all images that are updated in the same ticket. It means
+   you should pick the higher tag number from the registry and increment it by
+   one.
+
+   For example: the registry contains two images A and B. The image A has the
+   tag ``2`` and the image B has the tag ``1`` (because there were no changes
+   in the last update). If you update the A and B images now, you should assign
+   the tag ``3`` to both of them.
+   
 3. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
 
     See below for the full list of the available commands.
@@ -133,7 +143,7 @@ The following Rake tasks are available:
 Changelog
 =========
 
-Below is the list of changes introduced in the CI images for particular tags.
+Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
 **Tag: 3**
