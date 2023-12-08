@@ -4,7 +4,13 @@
 CI images
 *********
 
-
+The GitLab CI in the Stork project is extensively use to test, build, and
+release for multiple operating systems and architectures. Each Gitlab CI
+pipeline runs a new Docker container. Stork has some big dependencies as Java,
+Python, and Ruby. It causes we cannot use the official Docker images shared by
+the Docker Hub or other registers. We needed to prepare our own images with
+all the dependencies installed. It allowed us to limit the amount of
+transferred data and speed up the execution of the CI pipelines.
 
 List of CI images
 =================
