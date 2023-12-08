@@ -6,6 +6,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -64,7 +65,9 @@ func NewCollector(db *pg.DB) (Collector, error) {
 
 // Creates standard Prometheus HTTP handler.
 func (c *prometheusCollector) GetHTTPHandler(next http.Handler) http.Handler {
-	return promhttp.HandlerFor(c.metrics.Registry, promhttp.HandlerOpts{})
+	return promhttp.HandlerFor(c.metrics.Registry, promhttp.HandlerOpts{
+		ErrorLog: logrus.StandardLogger(),
+	})
 }
 
 // Stops periodically collecting the metrics and unregisters
