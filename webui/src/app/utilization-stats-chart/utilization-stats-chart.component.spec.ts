@@ -31,7 +31,7 @@ describe('UtilizationStatsChartComponent', () => {
     it('should initialize all DHCPv4 address stats', () => {
         component.leaseType = 'na'
         component.network = {
-            addrUtilization: 48,
+            addrUtilization: 48.123,
             stats: {
                 'total-addresses': 256,
                 'assigned-addresses': 128,
@@ -41,7 +41,7 @@ describe('UtilizationStatsChartComponent', () => {
 
         fixture.detectChanges()
 
-        expect(component.utilization).toBe(48)
+        expect(component.utilization).toBe(48.123)
         expect(component.total).toBe(BigInt(256))
         expect(component.assigned).toBe(BigInt(128))
         expect(component.declined).toBe(BigInt(11))
@@ -97,10 +97,10 @@ describe('UtilizationStatsChartComponent', () => {
     it('should initialize all prefix stats', () => {
         component.leaseType = 'pd'
         component.network = {
-            pdUtilization: 50,
+            pdUtilization: 49.8,
             stats: {
                 'total-pds': 1000,
-                'assigned-pds': 500,
+                'assigned-pds': 498,
             },
         }
 
@@ -109,9 +109,9 @@ describe('UtilizationStatsChartComponent', () => {
         expect(component.hasStats).toBeTrue()
         expect(component.hasUtilization).toBeTrue()
 
-        expect(component.utilization).toBe(50)
+        expect(component.utilization).toBe(49.8)
         expect(component.total).toBe(BigInt(1000))
-        expect(component.assigned).toBe(BigInt(500))
+        expect(component.assigned).toBe(BigInt(498))
 
         expect(fixture.debugElement.nativeElement.innerText).toContain('Prefix Utilization (50%)')
 
@@ -121,7 +121,7 @@ describe('UtilizationStatsChartComponent', () => {
         expect(stats[0].nativeElement.innerText).toContain('Total Prefixes')
         expect(stats[0].nativeElement.innerText).toContain('1k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
-        expect(stats[1].nativeElement.innerText).toContain('500')
+        expect(stats[1].nativeElement.innerText).toContain('498')
     })
 
     it('should use address utilization when other stats are not available', () => {
