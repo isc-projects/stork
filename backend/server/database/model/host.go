@@ -449,7 +449,7 @@ type HostsByPageFilters struct {
 
 // This function exceeds the maximum cognitive complexity (> 65), but it is a
 // consequence of a number of filters, not the complexity of the function logic.
-func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilters, sortField string, sortDir SortDirEnum) ([]Host, int64, error) { //nolint: gocognit, gocyclo
+func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilters, sortField string, sortDir SortDirEnum) ([]Host, int64, error) { //nolint: gocyclo
 	hosts := []Host{}
 	q := dbi.Model(&hosts)
 
