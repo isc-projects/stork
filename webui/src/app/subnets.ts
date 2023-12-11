@@ -104,11 +104,19 @@ export function getStatisticValue(subnet: Subnet | SharedNetwork, name: string):
  * not supported by the OpenAPI specification.
  */
 export function parseSubnetStatisticValues(subnet: Subnet | SharedNetwork | LocalSubnet): void {
+    // Parse the nested statistics.
+    if ('subnets' in subnet) {
+        parseSubnetsStatisticValues(subnet.subnets)
+    }
+
+    if ('localSubnets' in subnet) {
+        parseSubnetsStatisticValues(subnet.localSubnets)
+    }
+
     // Parse the own statistics.
     if (subnet.stats == null) {
         return
     }
-
     for (const statName of Object.keys(subnet.stats)) {
         if (typeof subnet.stats[statName] !== 'string') {
             return
@@ -129,20 +137,7 @@ export function parseSubnetStatisticValues(subnet: Subnet | SharedNetwork | Loca
  * JSON parser converts them to double precision number. It causes losing precision.
  */
 export function parseSubnetsStatisticValues(subnets: Subnet[] | SharedNetwork[] | LocalSubnet[]): void {
-    if (!subnets) {
-        return
-    }
-    for (const subnet of subnets) {
-        // Parse the nested statistics.
-        if ('subnets' in subnet) {
-            parseSubnetsStatisticValues(subnet.subnets)
-        }
-        if ('localSubnets' in subnet) {
-            parseSubnetsStatisticValues(subnet.localSubnets)
-        }
-
-        parseSubnetStatisticValues(subnet)
-    }
+    subnets?.forEach((s: Subnet) => parseSubnetStatisticValues(s))
 }
 
 /**
@@ -302,11 +297,13 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
         if (subnet.localSubnets[i].prefixDelegationPools && subnet.localSubnets[0].prefixDelegationPools) {
             for (const pool of subnet.localSubnets[i].prefixDelegationPools) {
                 if (
-                    subnet.localSubnets[0].prefixDelegationPools.findIndex((p) => {
-                        p.prefix === pool.prefix &&
-                            p.delegatedLength === pool.delegatedLength &&
-                            p.excludedPrefix === pool.excludedPrefix
-                    }) < 0
+                    subnet.localSubnets[0].prefixDelegationPools.some((p) => {
+                        return (
+                            p.prefix != pool.prefix ||
+                            p.delegatedLength != pool.delegatedLength ||
+                            p.excludedPrefix != pool.excludedPrefix
+                        )
+                    })
                 ) {
                     return true
                 }

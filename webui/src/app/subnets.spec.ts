@@ -4,6 +4,7 @@ import { SharedNetwork, Subnet } from './backend'
 import {
     getTotalAddresses,
     getAssignedAddresses,
+    parseSubnetStatisticValues,
     parseSubnetsStatisticValues,
     extractUniqueSubnetPools,
     hasDifferentLocalSubnetPools,
@@ -71,6 +72,26 @@ describe('subnets', () => {
         expect(subnets6[0].stats['total-nas']).toBe(BigInt('4') as any)
         expect(subnets6[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
         expect(subnets6[0].stats['total-pds']).toBe(BigInt(0) as any)
+    })
+
+    it('parse stats from string to big int for single subnet', () => {
+        // Arrange
+        const subnet6 = {
+            subnet: '3000::0/24',
+            stats: {
+                'total-nas': '4',
+                'assigned-nas': '18446744073709551615',
+                'total-pds': '',
+            },
+        }
+
+        // Act
+        parseSubnetStatisticValues(subnet6)
+
+        // Assert
+        expect(subnet6.stats['total-nas']).toBe(BigInt('4') as any)
+        expect(subnet6.stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
+        expect(subnet6.stats['total-pds']).toBe(BigInt(0) as any)
     })
 
     it('parse stats from non-string to big int', () => {
@@ -383,6 +404,9 @@ describe('subnets', () => {
                         },
                         {
                             pool: '192.0.2.30-192.0.2.40',
+                        },
+                        {
+                            pool: '192.0.2.30-192.0.2.60',
                         },
                     ],
                 },
