@@ -33,20 +33,7 @@
 :host ::ng-deep .app-rename-spinner
   margin-left: 15px
 
-// Remove padding from PrimeNG inplace elements so they don't overlap
-// with each other.
-:host ::ng-deep .hook-path .p-inplace .p-inplace-display
-  padding: 0
-
-// Align the closing button of a PrimeNG inplace element in the middle, instead
-// of at the default bottom, and make height and width equal to text size so
-// that it doesn't expand the enclosing div.
-:host ::ng-deep .hook-path .p-button.p-button-icon-only
-  height: 1rem
-  vertical-align: middle
-  width: 1rem
-
 // Allows breaking long lines of text (hook name, path or Kea Version Ext) on small
 // screens to avoid overlapping on other UI blocks.
-.hook-path, .word-break-all
+.word-break-all
   word-break: break-all

@@ -117,13 +117,15 @@
 
                     <div class="grid" style="padding: 12px">
                         <!-- box with error message if there is communication issue or other problem with daemon -->
-                        <div *ngIf="daemon.statusErred" class="col-4">
+                        <div *ngIf="daemon.statusErred" class="col-12 xl:col-4">
                             <p-message severity="error" text="{{ daemonStatusErrorText(daemon) }}"></p-message>
                         </div>
-                        <div *ngIf="daemon.statusErred" class="col-8"><!-- fill horizontally all 12 cols --></div>
+                        <div *ngIf="daemon.statusErred" class="hidden xl:block xl:col-8">
+                            <!-- fill horizontally all 12 cols -->
+                        </div>
 
                         <!-- warning about not-active and not-monitored -->
-                        <div *ngIf="!daemon.active" class="col-4">
+                        <div *ngIf="!daemon.active" class="col-12 xl:col-4">
                             <p-messages *ngIf="!daemon.monitored && isNeverFetchedDaemon(daemon)" severity="warn">
                                 <ng-template pTemplate>
                                     <i class="pi pi-exclamation-triangle"></i>
@@ -176,14 +178,16 @@
                             >
                             </p-message>
                         </div>
-                        <div *ngIf="!daemon.active" class="col-8"><!-- fill horizontally all 12 cols --></div>
+                        <div *ngIf="!daemon.active" class="hidden xl:block xl:col-8">
+                            <!-- fill horizontally all 12 cols -->
+                        </div>
 
-                        <div class="col-7">
+                        <div class="col-12 xl:col-7">
                             <!-- Overview -->
                             <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
                                 <div class="grid">
-                                    <div class="col-6">
+                                    <div class="col-12 lg:col-7">
                                         <p-fieldset legend="Daemon Information">
                                             <table style="width: 100%">
                                                 <tr>
@@ -208,34 +212,43 @@
                                             </table>
                                         </p-fieldset>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 lg:col-5">
                                         <p-fieldset id="hooks-fieldset" legend="Hooks">
-                                            <div
-                                                class="grid grid-nogutter"
-                                                *ngFor="let hook of daemon.hooks; let i = index"
-                                            >
-                                                <div class="col-1">{{ i + 1 }}.</div>
-                                                <div class="col-10 inline-block hook-path">
-                                                    <p-inplace closable="true" closeIcon="pi pi-chevron-left">
-                                                        <ng-template pTemplate="display">
+                                            <ol style="padding-left: 1rem">
+                                                <li *ngFor="let hook of daemon.hooks" class="word-break-all">
+                                                    <div class="flex flex-wrap">
+                                                        <div
+                                                            class="flex flex-grow-1"
+                                                            pTooltip="Click to copy the hook path to the clipboard"
+                                                            (click)="copyHookPathToClipboard(hook)"
+                                                            appendTo="target"
+                                                            style="cursor: pointer"
+                                                        >
                                                             {{ basename(hook) }}
-                                                        </ng-template>
-                                                        <ng-template pTemplate="content">
-                                                            {{ hook }}
-                                                        </ng-template>
-                                                    </p-inplace>
-                                                </div>
-                                                <a
-                                                    class="col-1"
-                                                    *ngIf="docAnchorFromHookLibrary(basename(hook), daemon.version)"
-                                                    href="https://kea.readthedocs.io/en/{{
-                                                        docAnchorFromHookLibrary(basename(hook), daemon.version)
-                                                    }}"
-                                                    target="_blank"
-                                                >
-                                                    [doc]
-                                                </a>
-                                            </div>
+                                                        </div>
+                                                        <div class="flex flex-none">
+                                                            <a
+                                                                *ngIf="
+                                                                    docAnchorFromHookLibrary(
+                                                                        basename(hook),
+                                                                        daemon.version
+                                                                    )
+                                                                "
+                                                                href="https://kea.readthedocs.io/en/{{
+                                                                    docAnchorFromHookLibrary(
+                                                                        basename(hook),
+                                                                        daemon.version
+                                                                    )
+                                                                }}"
+                                                                target="_blank"
+                                                                style="word-break: keep-all"
+                                                            >
+                                                                [doc]
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ol>
                                             <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">No hooks</div>
                                         </p-fieldset>
                                     </div>
@@ -358,7 +371,7 @@
                         </div>
 
                         <!-- Events -->
-                        <div class="col-5">
+                        <div class="col-12 xl:col-5">
                             <h3>Events</h3>
                             <app-events-panel
                                 #eventsTable

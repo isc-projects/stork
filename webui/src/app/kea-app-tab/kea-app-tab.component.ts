@@ -473,4 +473,31 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
 
         return version + '/arm/hooks.html#' + anchorId
     }
+
+    /**
+     * Copies provided hook path to the clipboard using Clipboard API.
+     *
+     * @param hookPath path to the hook library
+     */
+    copyHookPathToClipboard(hookPath: string): void {
+        navigator.clipboard.writeText(hookPath).then(
+            () => {
+                // Copy hook path to the clipboard success.
+                this.msgService.add({
+                    severity: 'success',
+                    summary: 'Hook path copied',
+                    detail: 'Hook path ' + hookPath + ' was copied to the clipboard.',
+                })
+            },
+            () => {
+                // Copy hook path to the clipboard fail.
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Copy to clipboard failed',
+                    detail: 'Hook path ' + hookPath + ' copy to the clipboard failed.',
+                    life: 10000,
+                })
+            }
+        )
+    }
 }
