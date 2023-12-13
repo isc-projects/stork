@@ -14,19 +14,19 @@
     currentPageReportTemplate="{first} - {last} of {totalRecords}"
 >
     <ng-template pTemplate="header">
-        <div class="review-header">
-            <div id="review-summary-div" *ngIf="review" class="font-normal">
+        <div class="review-header flex-wrap sm:flex-nowrap">
+            <div id="review-summary-div" *ngIf="review" class="font-normal mt-2 sm:mt-0">
                 <span class="font-bold"> {{ totalIssues }}</span> issue{{ totalIssues !== 1 ? 's' : '' }} found in
                 {{ totalReports }} report{{ totalReports !== 1 ? 's' : '' }} at
                 <span class="font-bold">{{ review.createdAt | localtime }} </span>
             </div>
-            <div id="review-buttons">
+            <div id="review-buttons" class="flex-wrap sm:flex-nowrap flex-shrink-1 sm:flex-shrink-0">
                 <p-toggleButton
                     onLabel="Issues only"
                     offLabel="All reports"
                     onIcon="pi pi-filter"
                     offIcon="pi pi-filter-slash"
-                    styleClass="p-button-sm"
+                    styleClass="p-button-sm mb-2 sm:my-0"
                     [(ngModel)]="issuesOnly"
                     (onChange)="refreshDaemonConfigReports($event)"
                 ></p-toggleButton>
@@ -35,7 +35,7 @@
                     pButton
                     type="button"
                     label="Checkers"
-                    class="p-button-sm"
+                    class="p-button-sm mb-2 sm:my-0"
                     icon="fa fa-cog"
                     (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
                 ></button>
@@ -46,7 +46,7 @@
                     *ngIf="!refreshFailed; else refreshFailedElse"
                     type="button"
                     label="Run review"
-                    class="p-button-sm"
+                    class="p-button-sm mb-2 sm:my-0"
                     icon="fas fa-tasks"
                     [loading]="busy"
                     (click)="runReview()"
@@ -57,7 +57,7 @@
                         pButton
                         type="button"
                         label="Refresh reports"
-                        class="p-button-sm"
+                        class="p-button-sm mb-2 sm:my-0"
                         icon="pi pi-refresh"
                         [loading]="busy"
                         (click)="refreshDaemonConfigReports(null)"
