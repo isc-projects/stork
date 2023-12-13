@@ -677,7 +677,11 @@ describe('StorkValidators', () => {
             delegatedLength: formBuilder.control(57),
             excludedPrefix: formBuilder.control('2001:db8:dead:beef::01/56'),
         })
-        expect(StorkValidators.ipv6ExcludedPrefix(fg)).toBeTruthy()
+        const validationErrors = StorkValidators.ipv6ExcludedPrefix(fg)
+        expect(validationErrors).toBeTruthy()
+        expect(validationErrors.ipv6ExcludedPrefix).toBe(
+            '2001:db8:dead:beef::01/56 excluded prefix length must be greater than the 2001:db8:dead:cafe::/56 prefix length.'
+        )
     })
 
     it('validates delegated prefix length for prefix length', () => {
@@ -710,7 +714,11 @@ describe('StorkValidators', () => {
             prefix: formBuilder.control('2001:db8:dead:beef::/64'),
             delegatedLength: formBuilder.control(48),
         })
-        expect(StorkValidators.ipv6PrefixDelegatedLength(fg)).toBeTruthy()
+        const validationErrors = StorkValidators.ipv6PrefixDelegatedLength(fg)
+        expect(validationErrors).toBeTruthy()
+        expect(validationErrors.ipv6PrefixDelegatedLength).toBe(
+            'Delegated prefix length must be greater or equal the 2001:db8:dead:beef::/64 prefix length.'
+        )
     })
 
     it('validates delegated prefix length for excluded prefix length', () => {
@@ -741,13 +749,21 @@ describe('StorkValidators', () => {
             delegatedLength: formBuilder.control(80),
             excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
         })
-        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeTruthy()
+        let validationErrors = StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)
+        expect(validationErrors).toBeTruthy()
+        expect(validationErrors.ipv6ExcludedPrefixDelegatedLength).toBe(
+            'Delegated prefix length must be lower than the 2001:db8:dead:beef::0:0:0/80 excluded prefix length.'
+        )
         fg = formBuilder.group({
             prefix: formBuilder.control('2001:db8:dead:beef::/64'),
             delegatedLength: formBuilder.control(96),
             excludedPrefix: '2001:db8:dead:beef::0:0:0/80',
         })
-        expect(StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)).toBeTruthy()
+        validationErrors = StorkValidators.ipv6ExcludedPrefixDelegatedLength(fg)
+        expect(validationErrors).toBeTruthy()
+        expect(validationErrors.ipv6ExcludedPrefixDelegatedLength).toBe(
+            'Delegated prefix length must be lower than the 2001:db8:dead:beef::0:0:0/80 excluded prefix length.'
+        )
     })
 
     it('validates full fqdn', () => {

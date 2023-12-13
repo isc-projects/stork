@@ -132,7 +132,7 @@ export class StorkValidators {
             // The excluded prefix must be smaller than the prefix.
             if (prefixCidr.getSize() <= excludedPrefixCidr.getSize()) {
                 return {
-                    ipv6ExcludedPrefix: `${control.value} excluded prefix is length must be greater than the ${prefix} prefix length.`,
+                    ipv6ExcludedPrefix: `${excludedPrefix} excluded prefix length must be greater than the ${prefix} prefix length.`,
                 }
             }
             // See RFC6603, section 4.2.
