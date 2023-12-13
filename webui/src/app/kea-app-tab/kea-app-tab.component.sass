@@ -37,3 +37,10 @@
 // screens to avoid overlapping on other UI blocks.
 .word-break-all
   word-break: break-all
+
+// Custom style for divs displaying hook names.
+// It adds clickable UX (pointer cursor and hover effect).
+ol li div[pTooltip]
+  cursor: pointer
+  &:hover
+    background: #eaeaea
