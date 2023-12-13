@@ -333,23 +333,23 @@ describe('KeaAppTabComponent', () => {
         // Check content.
         const div = hooksFieldset.query(By.css('div'))
         expect(div).toBeTruthy()
-        const fieldsetContent = div.query(By.css('div.p-fieldset-content'))
+        const fieldsetContent = div.query(By.css('div.p-fieldset-content ol'))
         expect(fieldsetContent).toBeTruthy()
         const childNodes = fieldsetContent.nativeElement.childNodes
         expect(childNodes).toBeTruthy()
         expect(childNodes.length).toBeGreaterThanOrEqual(4)
         expect(childNodes[0]).toBeTruthy()
-        expect((childNodes[0] as HTMLElement).tagName).toBe('DIV')
-        expect(childNodes[0].innerText.replace(/\n/g, '')).toBe('1.libdhcp_cb_cmds.so[doc]')
+        expect((childNodes[0] as HTMLElement).tagName).toBe('LI')
+        expect(childNodes[0].innerText.replace(/\n/g, '')).toBe('libdhcp_cb_cmds.so[doc]')
         expect(childNodes[1]).toBeTruthy()
-        expect((childNodes[1] as HTMLElement).tagName).toBe('DIV')
-        expect(childNodes[1].innerText.replace(/\n/g, '')).toBe('2.libdhcp_custom.so')
+        expect((childNodes[1] as HTMLElement).tagName).toBe('LI')
+        expect(childNodes[1].innerText.replace(/\n/g, '')).toBe('libdhcp_custom.so')
         expect(childNodes[2]).toBeTruthy()
-        expect((childNodes[2] as HTMLElement).tagName).toBe('DIV')
-        expect(childNodes[2].innerText.replace(/\n/g, '')).toBe('3.libdhcp_fake.so')
+        expect((childNodes[2] as HTMLElement).tagName).toBe('LI')
+        expect(childNodes[2].innerText.replace(/\n/g, '')).toBe('libdhcp_fake.so')
         expect(childNodes[3]).toBeTruthy()
-        expect((childNodes[3] as HTMLElement).tagName).toBe('DIV')
-        expect(childNodes[3].innerText.replace(/\n/g, '')).toBe('4.libdhcp_lease_cmds.so[doc]')
+        expect((childNodes[3] as HTMLElement).tagName).toBe('LI')
+        expect(childNodes[3].innerText.replace(/\n/g, '')).toBe('libdhcp_lease_cmds.so[doc]')
 
         // There may be other children. Probably comments. Check that they are not divs which
         // ensures that no other hook libraries are displayed.
