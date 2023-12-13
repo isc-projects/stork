@@ -288,7 +288,7 @@ export function hasDifferentLocalSubnetPools(subnet: Subnet): boolean {
         // Check for different address pools.
         if (subnet.localSubnets[i].pools && subnet.localSubnets[0].pools) {
             for (const pool of subnet.localSubnets[i].pools) {
-                if (!subnet.localSubnets[0].pools.some((p) => p.pool === pool.pool)) {
+                if (subnet.localSubnets[0].pools.some((p) => p.pool != pool.pool)) {
                     return true
                 }
             }
