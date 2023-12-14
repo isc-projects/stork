@@ -63,7 +63,7 @@
 
                 <ng-template pTemplate="content">
                     <div style="background: #d9d9d9" class="flex flex-wrap px-2">
-                        <div class="mr-5 my-2 flex">
+                        <div class="mr-5 my-2 flex align-items-center">
                             <p-inputSwitch
                                 [ngModel]="daemon.monitored"
                                 (onChange)="changeMonitored(daemon)"
@@ -216,7 +216,7 @@
                                                 <li *ngFor="let hook of daemon.hooks" class="word-break-all">
                                                     <div class="flex flex-wrap">
                                                         <div
-                                                            class="flex flex-grow-1"
+                                                            class="flex flex-auto hook-name"
                                                             pTooltip="Click to copy the hook path to the clipboard"
                                                             (click)="copyHookPathToClipboard(hook)"
                                                             appendTo="target"
@@ -238,7 +238,6 @@
                                                                     )
                                                                 }}"
                                                                 target="_blank"
-                                                                style="word-break: keep-all"
                                                             >
                                                                 [doc]
                                                             </a>

@@ -40,7 +40,11 @@
 
 // Custom style for divs displaying hook names.
 // It adds clickable UX (pointer cursor and hover effect).
-ol li div[pTooltip]
+.hook-name
   cursor: pointer
   &:hover
     background: var(--surface-hover)
+
+// Overwrite default display: inline-block; rule to center-align the switch vertically.
+:host ::ng-deep .p-inputswitch
+  display: block
