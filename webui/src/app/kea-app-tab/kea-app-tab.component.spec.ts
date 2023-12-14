@@ -3,7 +3,6 @@ import { KeaAppTabComponent } from './kea-app-tab.component'
 import { ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
-import { InplaceModule } from 'primeng/inplace'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
@@ -122,7 +121,6 @@ describe('KeaAppTabComponent', () => {
                 PaginatorModule,
                 OverlayPanelModule,
                 ButtonModule,
-                InplaceModule,
                 FormsModule,
                 ToggleButtonModule,
                 DataViewModule,

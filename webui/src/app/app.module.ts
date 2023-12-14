@@ -24,7 +24,6 @@ import { MessageModule } from 'primeng/message'
 import { MessagesModule } from 'primeng/messages'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
-import { InplaceModule } from 'primeng/inplace'
 import { ChipModule } from 'primeng/chip'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { TooltipModule } from 'primeng/tooltip'
@@ -232,7 +231,6 @@ export function cfgFactory() {
         MessagesModule,
         TabMenuModule,
         MenuModule,
-        InplaceModule,
         ProgressSpinnerModule,
         TooltipModule,
         PasswordModule,
