@@ -263,7 +263,7 @@
                                 <h3>Data Storage</h3>
                                 <div class="grid">
                                     <ng-container *ngIf="daemon.files">
-                                        <div class="col-6">
+                                        <div class="col-12 lg:col-6">
                                             <p-fieldset id="data-storage-files-fieldset" legend="Files">
                                                 <table style="width: 100%">
                                                     <tr *ngFor="let file of daemon.files">
@@ -275,9 +275,8 @@
                                                 </table>
                                             </p-fieldset>
                                         </div>
-                                        <div class="col-6"></div>
                                     </ng-container>
-                                    <div *ngIf="daemon.backends" class="col-6">
+                                    <div *ngIf="daemon.backends" class="col-12 lg:col-6">
                                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                             <div *ngFor="let backend of daemon.backends">
                                                 <i style="color: grey" class="fa fa-database"></i>
