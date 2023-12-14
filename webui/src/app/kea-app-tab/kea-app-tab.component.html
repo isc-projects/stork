@@ -62,7 +62,7 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div style="background: #d9d9d9" class="flex flex-wrap px-1">
+                    <div style="background: #d9d9d9" class="flex flex-wrap px-2">
                         <div class="mr-5 my-2 flex">
                             <p-inputSwitch
                                 [ngModel]="daemon.monitored"
@@ -212,7 +212,7 @@
                                     </div>
                                     <div class="col-12 lg:col-5">
                                         <p-fieldset id="hooks-fieldset" legend="Hooks">
-                                            <ol style="padding-left: 1rem">
+                                            <ol class="pl-3">
                                                 <li *ngFor="let hook of daemon.hooks" class="word-break-all">
                                                     <div class="flex flex-wrap">
                                                         <div
