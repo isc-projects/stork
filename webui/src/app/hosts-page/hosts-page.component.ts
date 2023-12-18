@@ -521,6 +521,10 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         if (typeof event === 'undefined') {
             event = { first: 0, rows: 10 }
             if (this.hostsTable) {
+                if (params.text != null) {
+                    // When hosts are filtered, go by default to first page after filtering.
+                    this.hostsTable.first = 0
+                }
                 event = this.hostsTable.createLazyLoadMetadata()
             }
         }
