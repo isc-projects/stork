@@ -540,8 +540,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             )
             .toPromise()
             .then((data) => {
-                this.hosts = data.items == null ? [] : data.items
-                this.totalHosts = data.total == undefined ? 0 : data.total
+                this.hosts = data.items ?? []
+                this.totalHosts = data.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
