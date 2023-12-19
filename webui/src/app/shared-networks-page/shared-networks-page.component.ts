@@ -212,7 +212,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             .subscribe(
                 (data) => {
                     this.networks = data.items ? extractUniqueSharedNetworkPools(data.items) : null
-                    this.totalNetworks = data.total
+                    this.totalNetworks = data.total ?? 0
                 },
                 (error) => {
                     console.log(error)

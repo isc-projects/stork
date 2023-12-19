@@ -255,7 +255,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             )
             .toPromise()
             .then((data) => {
-                this.events = data
+                this.events.items = data.items ?? []
+                this.events.total = data.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)

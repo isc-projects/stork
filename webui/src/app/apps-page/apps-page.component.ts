@@ -230,8 +230,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             .getApps(event.first, event.rows, text, this.appType)
             .toPromise()
             .then((data) => {
-                this.apps = data.items
-                this.totalApps = data.total
+                this.apps = data.items ?? []
+                this.totalApps = data.total ?? 0
                 for (const s of this.apps) {
                     htmlizeExtVersion(s)
                     setDaemonStatusErred(s)

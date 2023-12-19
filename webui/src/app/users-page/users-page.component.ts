@@ -331,8 +331,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             .getUsers(event.first, event.rows, event.filters.text)
             .toPromise()
             .then((data) => {
-                this.users = data.items
-                this.totalUsers = data.total
+                this.users = data.items ?? []
+                this.totalUsers = data.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)

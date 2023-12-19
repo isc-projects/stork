@@ -256,7 +256,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
 
         this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
-            this.machines = data.items
+            this.machines = data.items ?? []
             const total = data.total || 0
             this.totalMachines = total
             if (this.showUnauthorized) {
