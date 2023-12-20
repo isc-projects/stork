@@ -1,9 +1,5 @@
 <div style="display: flex; justify-content: space-between">
-    <p-breadcrumb
-        [model]="items"
-        [home]="{ icon: 'pi pi-home', url: '/' }"
-        [style]="{ margin: '2px 0 0 -5px', border: 0 }"
-    ></p-breadcrumb>
+    <p-breadcrumb [model]="items" [home]="home"></p-breadcrumb>
 
     <app-help-tip title="this page" variant="big" width="30vw" id="this-page-help-button">
         <ng-content select="[page-help]"></ng-content>

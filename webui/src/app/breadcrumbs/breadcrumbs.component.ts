@@ -1,5 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core'
 import { Title } from '@angular/platform-browser'
+import { MenuItem } from 'primeng/api'
 
 @Component({
     selector: 'app-breadcrumbs',
@@ -8,10 +9,15 @@ import { Title } from '@angular/platform-browser'
 })
 export class BreadcrumbsComponent implements OnInit {
     @Input() items: any
+    home: MenuItem | undefined
 
     constructor(private titleService: Title) {}
 
     ngOnInit(): void {
+        this.home = {
+            icon: 'pi pi-home',
+            routerLink: '/',
+        }
         let title = ''
         for (const item of this.items) {
             title += item.label + ' / '
