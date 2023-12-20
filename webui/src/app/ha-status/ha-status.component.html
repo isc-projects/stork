@@ -1,7 +1,7 @@
 <div>
     <h3>High Availability</h3>
-    <div *ngIf="hasStatus()" style="width: 800px" class="grid">
-        <div class="col-6">
+    <div *ngIf="hasStatus()" class="grid">
+        <div class="col-12 lg:col-6">
             <app-ha-status-panel
                 panelTitle="Local server"
                 serverName="local"
@@ -10,7 +10,7 @@
                 [singleActiveServer]="!remoteServer()"
             ></app-ha-status-panel>
         </div>
-        <div class="col-6" *ngIf="remoteServer()">
+        <div class="col-12 lg:col-6" *ngIf="remoteServer()">
             <app-ha-status-panel
                 panelTitle="Remote server"
                 serverName="remote"
