@@ -11,7 +11,8 @@ export class BreadcrumbsComponent implements OnInit {
     @Input() items: any
     home: MenuItem = {
         icon: 'pi pi-home',
-        routerLink: '/',
+        url: '/',
+        target: '_self'
     }
 
     constructor(private titleService: Title) {}
