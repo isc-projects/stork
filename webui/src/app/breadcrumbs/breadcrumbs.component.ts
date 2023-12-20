@@ -9,15 +9,14 @@ import { MenuItem } from 'primeng/api'
 })
 export class BreadcrumbsComponent implements OnInit {
     @Input() items: any
-    home: MenuItem | undefined
+    home: MenuItem = {
+        icon: 'pi pi-home',
+        routerLink: '/',
+    }
 
     constructor(private titleService: Title) {}
 
     ngOnInit(): void {
-        this.home = {
-            icon: 'pi pi-home',
-            routerLink: '/',
-        }
         let title = ''
         for (const item of this.items) {
             title += item.label + ' / '
