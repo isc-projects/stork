@@ -98,6 +98,7 @@
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
     dataKey="id"
     paginatorDropdownAppendTo="body"
+    [first]="start"
 >
     <ng-template *ngIf="isTable" pTemplate="header">
         <tr>

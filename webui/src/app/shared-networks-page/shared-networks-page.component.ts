@@ -137,6 +137,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                     this.updateOurQueryParams(params)
                     let event = { first: 0, rows: 10 }
                     if (this.networksTable) {
+                        // When filtering is applied, go by default to first page after filtering.
+                        this.networksTable.first = 0
                         event = this.networksTable.createLazyLoadMetadata()
                     }
                     this.loadNetworks(event)

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnChanges, Input, OnDestroy } from '@angular/core'
 
-import { MessageService } from 'primeng/api'
+import { LazyLoadEvent, MessageService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
@@ -120,7 +120,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      * the server.
      */
     private applyFilter(): void {
-        this.refreshEvents(null)
+        const loadEvent: LazyLoadEvent = { first: 0, rows: this.limit }
+        this.refreshEvents(loadEvent)
         this.registerServerSentEvents()
 
         if (this.filter.appType) {
