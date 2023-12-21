@@ -12,7 +12,7 @@ export class BreadcrumbsComponent implements OnInit {
     home: MenuItem = {
         icon: 'pi pi-home',
         url: '/',
-        target: '_self'
+        target: '_self',
     }
 
     constructor(private titleService: Title) {}
