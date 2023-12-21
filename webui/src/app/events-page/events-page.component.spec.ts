@@ -15,6 +15,7 @@ import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -22,22 +23,7 @@ describe('EventsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [
-                EventsService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParams: {} },
-                    },
-                },
-                {
-                    provide: Router,
-                    useValue: {
-                        navigate: () => {},
-                    },
-                },
-                MessageService,
-            ],
+            providers: [EventsService, MessageService],
             declarations: [
                 BreadcrumbsComponent,
                 EventsPageComponent,
@@ -53,6 +39,7 @@ describe('EventsPageComponent', () => {
                 TableModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
+                RouterTestingModule,
             ],
         }).compileComponents()
     }))
