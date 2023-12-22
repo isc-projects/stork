@@ -9,6 +9,7 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	config "isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 var _ config.TransactionStateAccessor = (*config.TransactionState[ConfigRecipe])(nil)
@@ -585,6 +586,17 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
 			App:     ls.Daemon.App,
 		})
+		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
+		// subnet_cmds hook library. Therefore, for these versions we send the config-reload
+		// command to force the statistics update. There is no lighter command to force the
+		// statistics update unfortunately.
+		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
+		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommand("config-reload", []string{ls.Daemon.Name}, nil),
+				App:     ls.Daemon.App,
+			})
+		}
 	}
 
 	// Store the data in the existing recipe.

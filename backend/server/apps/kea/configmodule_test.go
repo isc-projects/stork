@@ -1534,7 +1534,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 			{
 				DaemonID: 2,
 				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
+					Name:    "dhcp4",
+					Version: "2.5.0",
 					App: &dbmodel.App{
 						AccessPoints: []*dbmodel.AccessPoint{
 							{
@@ -1555,7 +1556,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 			{
 				DaemonID: 3,
 				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
+					Name:    "dhcp4",
+					Version: "2.6.0",
 					App: &dbmodel.App{
 						AccessPoints: []*dbmodel.AccessPoint{
 							{
@@ -1624,7 +1626,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 			{
 				DaemonID: 2,
 				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
+					Name:    "dhcp4",
+					Version: "2.5.0",
 					App: &dbmodel.App{
 						AccessPoints: []*dbmodel.AccessPoint{
 							{
@@ -1645,7 +1648,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 			{
 				DaemonID: 4,
 				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
+					Name:    "dhcp4",
+					Version: "2.6.0",
 					App: &dbmodel.App{
 						AccessPoints: []*dbmodel.AccessPoint{
 							{
@@ -1684,7 +1688,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 8)
+	require.Len(t, commands, 9)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -1742,6 +1746,13 @@ func TestApplySubnetUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
+		case i == 6:
+			require.JSONEq(t,
+				`{
+					"command": "config-reload",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
 		default:
 			require.JSONEq(t,
 				`{
@@ -1750,7 +1761,6 @@ func TestApplySubnetUpdate(t *testing.T) {
 				}`,
 				marshalled)
 		}
-
 		// Verify they are associated with appropriate apps.
 		require.NotNil(t, commands[i].App)
 	}
