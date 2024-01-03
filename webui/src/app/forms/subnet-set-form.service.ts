@@ -46,6 +46,7 @@ export interface OptionsForm {
  */
 export interface KeaPoolParametersForm {
     clientClass?: SharedParameterFormGroup<string>
+    poolID?: SharedParameterFormGroup<number>
     requireClientClasses?: SharedParameterFormGroup<string[]>
 }
 
@@ -306,6 +307,13 @@ export class SubnetSetFormService {
                     type: 'string',
                 },
                 parameters?.map((params) => new FormControl<string>(params?.clientClass ?? null))
+            ),
+            poolID: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                    invalidText: 'Please specify non-overlapping numeric pool identifiers.',
+                },
+                parameters?.map((params) => new FormControl<number>(params?.poolID ?? null))
             ),
             requireClientClasses: new SharedParameterFormGroup<string[]>(
                 {
