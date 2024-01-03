@@ -277,6 +277,7 @@
                                         "space": "dhcp6"
                                     }
                                 ],
+                                "pool-id": 2,
                                 "prefix": "2001:db8:1::",
                                 "prefix-len": 48,
                                 "require-client-classes": ["bar"]
@@ -287,6 +288,7 @@
                                 "client-class": "phones_server1",
                                 "option-data": [],
                                 "pool": "2001:db8:0:1::/64",
+                                "pool-id": 7,
                                 "require-client-classes": [ "late" ]
                             },
                             {

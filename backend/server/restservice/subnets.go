@@ -53,6 +53,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			}
 			if poolDetails.KeaParameters != nil {
 				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
+					KeaConfigAssortedPoolParameters: models.KeaConfigAssortedPoolParameters{
+						PoolID: poolDetails.KeaParameters.PoolID,
+					},
 					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaParameters.ClientClass),
 						RequireClientClasses: poolDetails.KeaParameters.RequireClientClasses,
@@ -77,6 +80,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			localSubnet.PrefixDelegationPools = append(localSubnet.PrefixDelegationPools, pool)
 			if prefixPoolDetails.KeaParameters != nil {
 				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
+					KeaConfigAssortedPoolParameters: models.KeaConfigAssortedPoolParameters{
+						PoolID: prefixPoolDetails.KeaParameters.PoolID,
+					},
 					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaParameters.ClientClass),
 						RequireClientClasses: prefixPoolDetails.KeaParameters.RequireClientClasses,
@@ -352,6 +358,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaConfigPoolParameters.ClientClass),
 						RequireClientClasses: poolDetails.KeaConfigPoolParameters.RequireClientClasses,
 					},
+					PoolID: poolDetails.KeaConfigPoolParameters.PoolID,
 				}
 				// DHCP options.
 				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", poolDetails.KeaConfigPoolParameters.Options, 0)
@@ -376,6 +383,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaConfigPoolParameters.ClientClass),
 						RequireClientClasses: prefixPoolDetails.KeaConfigPoolParameters.RequireClientClasses,
 					},
+					PoolID: prefixPoolDetails.KeaConfigPoolParameters.PoolID,
 				}
 				// DHCP options.
 				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", prefixPoolDetails.KeaConfigPoolParameters.Options, 0)

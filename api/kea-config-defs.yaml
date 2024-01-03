@@ -221,8 +221,18 @@
       globalParameters:
         $ref: '#/definitions/KeaConfigSubnetDerivedParameters'
 
+  KeaConfigAssortedPoolParameters:
+    type: object
+    properties:
+      poolID:
+        type: number
+        format: int64
+        x-nullable: true
+
+
   KeaConfigPoolParameters:
     type: object
     allOf:
       - $ref: '#/definitions/KeaConfigClientClassParameters'
+      - $ref: '#/definitions/KeaConfigAssortedPoolParameters'
       - $ref: '#/definitions/DHCPOptions'

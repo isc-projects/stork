@@ -45,6 +45,7 @@ func TestGetCanonicalExcludedPrefixEmpty(t *testing.T) {
 // Test retrieving the pool parameters.
 func TestPrefixPoolGetParameters(t *testing.T) {
 	pool := PDPool{
+		PoolID: storkutil.Ptr(int64(2345)),
 		ClientClassParameters: ClientClassParameters{
 			ClientClass:          storkutil.Ptr("foo"),
 			RequireClientClasses: []string{"foo", "bar"},
@@ -57,6 +58,8 @@ func TestPrefixPoolGetParameters(t *testing.T) {
 	require.Len(t, params.RequireClientClasses, 2)
 	require.Equal(t, "foo", params.RequireClientClasses[0])
 	require.Equal(t, "bar", params.RequireClientClasses[1])
+	require.NotNil(t, params.PoolID)
+	require.EqualValues(t, 2345, *params.PoolID)
 }
 
 // Test that an empty set of parameters can be retrieved.
@@ -66,4 +69,5 @@ func TestPrefixPoolGetNoParameters(t *testing.T) {
 	require.NotNil(t, params)
 	require.Nil(t, params.ClientClass)
 	require.Empty(t, params.RequireClientClasses)
+	require.Nil(t, params.PoolID)
 }

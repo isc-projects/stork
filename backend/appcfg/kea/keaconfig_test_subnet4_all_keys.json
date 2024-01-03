@@ -1,0 +1,83 @@
+{
+    "4o6-interface": "eth1",
+    "4o6-interface-id": "ethx",
+    "4o6-subnet": "2001:db8:1:1::/64",
+    "allocator": "iterative",
+    "authoritative": false,
+    "boot-file-name": "/tmp/boot",
+    "client-class": "foobar",
+    "ddns-generated-prefix": "myhost",
+    "ddns-override-client-update": true,
+    "ddns-override-no-update": true,
+    "ddns-qualifying-suffix": "example.org",
+    "ddns-replace-client-name": "never",
+    "ddns-send-updates": true,
+    "ddns-update-on-renew": true,
+    "ddns-use-conflict-resolution": true,
+    "hostname-char-replacement": "x",
+    "hostname-char-set": "[^A-Za-z0-9.-]",
+    "id": 1,
+    "interface": "eth0",
+    "match-client-id": true,
+    "next-server": "0.0.0.0",
+    "store-extended-info": true,
+    "option-data": [
+        {
+            "always-send": true,
+            "code": 3,
+            "csv-format": true,
+            "data": "192.0.3.1",
+            "name": "routers",
+            "space": "dhcp4"
+        }
+    ],
+    "pools": [
+        {
+            "client-class": "phones_server1",
+            "option-data": [],
+            "pool": "192.1.0.1 - 192.1.0.200",
+            "pool-id": 7,
+            "require-client-classes": [ "late" ]
+        },
+        {
+            "client-class": "phones_server2",
+            "option-data": [],
+            "pool": "192.3.0.1 - 192.3.0.200",
+            "require-client-classes": []
+        }
+    ],
+    "rebind-timer": 40,
+    "relay": {
+        "ip-addresses": [
+            "192.168.56.1"
+        ]
+    },
+    "renew-timer": 30,
+    "reservations-global": true,
+    "reservations-in-subnet": true,
+    "reservations-out-of-pool": true,
+    "calculate-tee-times": true,
+    "t1-percent": 0.5,
+    "t2-percent": 0.75,
+    "cache-threshold": 0.25,
+    "cache-max-age": 1000,
+    "reservations": [
+        {
+            "circuit-id": "01:11:22:33:44:55:66",
+            "ip-address": "192.0.2.204",
+            "hostname": "foo.example.org",
+            "option-data": [
+                {
+                    "name": "vivso-suboptions",
+                    "data": "4491"
+                }
+            ]
+        }
+    ],
+    "require-client-classes": [ "late" ],
+    "server-hostname": "myhost.example.org",
+    "subnet": "192.0.0.0/8",
+    "valid-lifetime": 6000,
+    "min-valid-lifetime": 4000,
+    "max-valid-lifetime": 8000
+}

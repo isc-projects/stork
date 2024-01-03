@@ -1,6 +1,7 @@
 package keaconfig_test
 
 import (
+	_ "embed"
 	"encoding/json"
 	"testing"
 
@@ -13,207 +14,22 @@ import (
 
 //go:generate mockgen -package=keaconfig_test -destination=subnetmock_test.go isc.org/stork/appcfg/kea SubnetAccessor
 
+//go:embed keaconfig_test_subnet4_all_keys.json
+var AllKeysDHCPv4JSON []byte
+
+//go:embed keaconfig_test_subnet6_all_keys.json
+var AllKeysDHCPv6JSON []byte
+
 // Alias for the storkutil.Ptr function.
 func ptr[T any](value T) *T {
 	return storkutil.Ptr(value)
-}
-
-// Returns a JSON structure with all configurable IPv4 subnet parameters in Kea.
-// It has been initially created from the Kea's all-keys.json file and then
-// slightly modified.
-func getAllKeysSubnet4() string {
-	return `
-	{
-		"4o6-interface": "eth1",
-		"4o6-interface-id": "ethx",
-		"4o6-subnet": "2001:db8:1:1::/64",
-		"allocator": "iterative",
-		"authoritative": false,
-		"boot-file-name": "/tmp/boot",
-		"client-class": "foobar",
-		"ddns-generated-prefix": "myhost",
-		"ddns-override-client-update": true,
-		"ddns-override-no-update": true,
-		"ddns-qualifying-suffix": "example.org",
-		"ddns-replace-client-name": "never",
-		"ddns-send-updates": true,
-		"ddns-update-on-renew": true,
-		"ddns-use-conflict-resolution": true,
-		"hostname-char-replacement": "x",
-		"hostname-char-set": "[^A-Za-z0-9.-]",
-		"id": 1,
-		"interface": "eth0",
-		"match-client-id": true,
-		"next-server": "0.0.0.0",
-		"store-extended-info": true,
-		"option-data": [
-			{
-				"always-send": true,
-				"code": 3,
-				"csv-format": true,
-				"data": "192.0.3.1",
-				"name": "routers",
-				"space": "dhcp4"
-			}
-		],
-		"pools": [
-			{
-				"client-class": "phones_server1",
-				"option-data": [],
-				"pool": "192.1.0.1 - 192.1.0.200",
-				"require-client-classes": [ "late" ]
-			},
-			{
-				"client-class": "phones_server2",
-				"option-data": [],
-				"pool": "192.3.0.1 - 192.3.0.200",
-				"require-client-classes": []
-			}
-		],
-		"rebind-timer": 40,
-		"relay": {
-			"ip-addresses": [
-				"192.168.56.1"
-			]
-		},
-		"renew-timer": 30,
-		"reservations-global": true,
-		"reservations-in-subnet": true,
-		"reservations-out-of-pool": true,
-		"calculate-tee-times": true,
-		"t1-percent": 0.5,
-		"t2-percent": 0.75,
-		"cache-threshold": 0.25,
-		"cache-max-age": 1000,
-		"reservations": [
-			{
-				"circuit-id": "01:11:22:33:44:55:66",
-				"ip-address": "192.0.2.204",
-				"hostname": "foo.example.org",
-				"option-data": [
-					{
-						"name": "vivso-suboptions",
-						"data": "4491"
-					}
-				]
-			}
-		],
-		"require-client-classes": [ "late" ],
-		"server-hostname": "myhost.example.org",
-		"subnet": "192.0.0.0/8",
-		"valid-lifetime": 6000,
-		"min-valid-lifetime": 4000,
-		"max-valid-lifetime": 8000
-	}
-`
-}
-
-// Returns a JSON structure with all configurable IPv6 subnet parameters in Kea.
-// It has been initially created from the Kea's all-keys.json file and then
-// slightly modified.
-func getAllKeysSubnet6() string {
-	return `
-	{
-		"allocator": "iterative",
-		"pd-allocator": "iterative",
-		"client-class": "foobar",
-		"ddns-generated-prefix": "myhost",
-		"ddns-override-client-update": true,
-		"ddns-override-no-update": true,
-		"ddns-qualifying-suffix": "example.org",
-		"ddns-replace-client-name": "never",
-		"ddns-send-updates": true,
-		"ddns-update-on-renew": true,
-		"ddns-use-conflict-resolution": true,
-		"hostname-char-replacement": "x",
-		"hostname-char-set": "[^A-Za-z0-9.-]",
-		"id": 1,
-		"interface": "eth0",
-		"interface-id": "ethx",
-		"store-extended-info": true,
-		"option-data": [
-			{
-				"always-send": true,
-				"code": 7,
-				"csv-format": true,
-				"data": "15",
-				"name": "preference",
-				"space": "dhcp6"
-			}
-		],
-		"pd-pools": [
-			{
-				"client-class": "phones_server1",
-				"delegated-len": 64,
-				"excluded-prefix": "2001:db8:1::",
-				"excluded-prefix-len": 72,
-				"option-data": [],
-				"prefix": "2001:db8:1::",
-				"prefix-len": 48,
-				"require-client-classes": []
-			}
-		],
-		"pools": [
-			{
-				"client-class": "phones_server1",
-				"option-data": [],
-				"pool": "2001:db8:0:1::/64",
-				"require-client-classes": [ "late" ]
-			},
-			{
-				"client-class": "phones_server2",
-				"option-data": [],
-				"pool": "2001:db8:0:3::/64",
-				"require-client-classes": []
-			}
-		],
-		"preferred-lifetime": 2000,
-		"min-preferred-lifetime": 1500,
-		"max-preferred-lifetime": 2500,
-		"rapid-commit": true,
-		"rebind-timer": 40,
-		"relay": {
-			"ip-addresses": [
-				"2001:db8:0:f::1"
-			]
-		},
-		"renew-timer": 30,
-		"reservations-global": true,
-		"reservations-in-subnet": true,
-		"reservations-out-of-pool": true,
-		"calculate-tee-times": true,
-		"t1-percent": 0.5,
-		"t2-percent": 0.75,
-		"cache-threshold": 0.25,
-		"cache-max-age": 10,
-		"reservations": [
-			{
-				"duid": "01:02:03:04:05:06:07:08:09:0A",
-				"ip-addresses": [ "2001:db8:1:cafe::1" ],
-				"prefixes": [ "2001:db8:2:abcd::/64" ],
-				"hostname": "foo.example.com",
-				"option-data": [
-					{
-						"name": "vendor-opts",
-						"data": "4491"
-					}
-				]
-			}
-		],
-		"require-client-classes": [ "late" ],
-		"subnet": "2001:db8::/32",
-		"valid-lifetime": 6000,
-		"min-valid-lifetime": 4000,
-		"max-valid-lifetime": 8000
-	}
-`
 }
 
 // Test that Kea subnet configuration is properly decoded into the
 // keaconfig.Subnet4 structure.
 func TestDecodeAllKeysSubnet4(t *testing.T) {
 	params := keaconfig.Subnet4{}
-	err := json.Unmarshal([]byte(getAllKeysSubnet4()), &params)
+	err := json.Unmarshal(AllKeysDHCPv4JSON, &params)
 	require.NoError(t, err)
 
 	require.Equal(t, "eth1", *params.FourOverSixInterface)
@@ -247,6 +63,8 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.Len(t, params.GetPools(), 2)
 	require.Equal(t, "phones_server1", *params.GetPools()[0].ClientClass)
 	require.Empty(t, params.GetPools()[0].OptionData)
+	require.NotNil(t, params.GetPools()[0].PoolID)
+	require.EqualValues(t, 7, *params.GetPools()[0].PoolID)
 	require.Equal(t, "192.1.0.1-192.1.0.200", params.GetPools()[0].Pool)
 	require.Len(t, params.GetPools()[0].RequireClientClasses, 1)
 	require.Equal(t, "phones_server2", *params.GetPools()[1].ClientClass)
@@ -254,6 +72,7 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.Equal(t, "192.3.0.1-192.3.0.200", params.GetPools()[1].Pool)
 	require.Empty(t, params.GetPDPools())
 	require.Empty(t, params.GetPools()[1].RequireClientClasses)
+	require.Nil(t, params.GetPools()[1].PoolID)
 	require.EqualValues(t, 40, *params.RebindTimer)
 	require.Len(t, params.Relay.IPAddresses, 1)
 	require.Equal(t, "192.168.56.1", params.Relay.IPAddresses[0])
@@ -371,7 +190,7 @@ func TestGetUniverseSubnet6(t *testing.T) {
 // in the keaconfig.SubnetParameters union.
 func TestGetParametersSubnet4(t *testing.T) {
 	subnet4 := keaconfig.Subnet4{}
-	err := json.Unmarshal([]byte(getAllKeysSubnet4()), &subnet4)
+	err := json.Unmarshal(AllKeysDHCPv4JSON, &subnet4)
 	require.NoError(t, err)
 
 	params := *subnet4.GetSubnetParameters()
@@ -420,7 +239,7 @@ func TestGetParametersSubnet4(t *testing.T) {
 // keaconfig.Subnet6 structure.
 func TestDecodeAllKeysSubnet6(t *testing.T) {
 	params := keaconfig.Subnet6{}
-	err := json.Unmarshal([]byte(getAllKeysSubnet6()), &params)
+	err := json.Unmarshal(AllKeysDHCPv6JSON, &params)
 	require.NoError(t, err)
 
 	require.Equal(t, "iterative", *params.Allocator)
@@ -452,6 +271,8 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.Empty(t, params.GetPools()[0].OptionData)
 	require.Equal(t, "2001:db8:0:1::-2001:db8:0:1:ffff:ffff:ffff:ffff", params.GetPools()[0].Pool)
 	require.Len(t, params.GetPools()[0].RequireClientClasses, 1)
+	require.NotNil(t, params.GetPools()[0].PoolID)
+	require.EqualValues(t, 7, *params.GetPools()[0].PoolID)
 	require.Len(t, params.GetPDPools(), 1)
 	require.Equal(t, "phones_server1", *params.GetPDPools()[0].ClientClass)
 	require.EqualValues(t, 64, params.GetPDPools()[0].DelegatedLen)
@@ -461,6 +282,8 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.Equal(t, "2001:db8:1::", params.GetPDPools()[0].Prefix)
 	require.Equal(t, 48, params.GetPDPools()[0].PrefixLen)
 	require.Empty(t, params.GetPDPools()[0].RequireClientClasses)
+	require.NotNil(t, params.GetPDPools()[0].PoolID)
+	require.EqualValues(t, 2, *params.GetPDPools()[0].PoolID)
 	require.Equal(t, "phones_server2", *params.GetPools()[1].ClientClass)
 	require.Empty(t, params.GetPools()[1].OptionData)
 	require.Equal(t, "2001:db8:0:3::-2001:db8:0:3:ffff:ffff:ffff:ffff", params.GetPools()[1].Pool)
@@ -496,7 +319,7 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 // in the keaconfig.SubnetParameters union.
 func TestGetParametersSubnet6(t *testing.T) {
 	subnet6 := keaconfig.Subnet6{}
-	err := json.Unmarshal([]byte(getAllKeysSubnet6()), &subnet6)
+	err := json.Unmarshal(AllKeysDHCPv6JSON, &subnet6)
 	require.NoError(t, err)
 
 	params := *subnet6.GetSubnetParameters()
@@ -556,6 +379,7 @@ func TestCreateSubnet4(t *testing.T) {
 			ClientClass:          ptr("baz"),
 			RequireClientClasses: []string{"foo"},
 		},
+		PoolID: ptr[int64](7),
 	})
 	// Return DHCP options in the pool.
 	poolMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{
@@ -688,6 +512,8 @@ func TestCreateSubnet4(t *testing.T) {
 	require.Len(t, subnet4.GetPools()[0].OptionData, 1)
 	require.EqualValues(t, 6, subnet4.GetPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp4", subnet4.GetPools()[0].OptionData[0].Space)
+	require.NotNil(t, subnet4.GetPools()[0].PoolID)
+	require.EqualValues(t, 7, *subnet4.GetPools()[0].PoolID)
 	require.EqualValues(t, 300, *subnet4.RebindTimer)
 	require.Len(t, subnet4.Relay.IPAddresses, 1)
 	require.Equal(t, "10.0.0.1", subnet4.Relay.IPAddresses[0])
@@ -724,6 +550,7 @@ func TestCreateSubnet6(t *testing.T) {
 			ClientClass:          ptr("baz"),
 			RequireClientClasses: []string{"foo"},
 		},
+		PoolID: ptr[int64](7),
 	})
 	// Return DHCP options in the pool.
 	poolMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{
@@ -746,6 +573,7 @@ func TestCreateSubnet6(t *testing.T) {
 			ClientClass:          ptr("baz"),
 			RequireClientClasses: []string{"foo"},
 		},
+		PoolID: ptr[int64](2),
 	})
 	// Return DHCP options in the pool.
 	pdPoolMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{
@@ -871,6 +699,8 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Len(t, subnet6.GetPools()[0].OptionData, 1)
 	require.EqualValues(t, 6, subnet6.GetPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp6", subnet6.GetPools()[0].OptionData[0].Space)
+	require.NotNil(t, subnet6.GetPools()[0].PoolID)
+	require.EqualValues(t, 7, *subnet6.GetPools()[0].PoolID)
 	require.Len(t, subnet6.GetPDPools(), 1)
 	require.Equal(t, "3001::", subnet6.GetPDPools()[0].Prefix)
 	require.EqualValues(t, 16, subnet6.GetPDPools()[0].PrefixLen)
@@ -880,6 +710,8 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Len(t, subnet6.GetPDPools()[0].OptionData, 1)
 	require.EqualValues(t, 7, subnet6.GetPDPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp6", subnet6.GetPDPools()[0].OptionData[0].Space)
+	require.NotNil(t, subnet6.GetPDPools()[0].PoolID)
+	require.EqualValues(t, 2, *subnet6.GetPDPools()[0].PoolID)
 	require.Len(t, subnet6.RequireClientClasses, 1)
 	require.Equal(t, "foo", subnet6.RequireClientClasses[0])
 	require.EqualValues(t, 300, *subnet6.RebindTimer)

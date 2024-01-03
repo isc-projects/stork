@@ -1,0 +1,95 @@
+{
+    "allocator": "iterative",
+    "pd-allocator": "iterative",
+    "client-class": "foobar",
+    "ddns-generated-prefix": "myhost",
+    "ddns-override-client-update": true,
+    "ddns-override-no-update": true,
+    "ddns-qualifying-suffix": "example.org",
+    "ddns-replace-client-name": "never",
+    "ddns-send-updates": true,
+    "ddns-update-on-renew": true,
+    "ddns-use-conflict-resolution": true,
+    "hostname-char-replacement": "x",
+    "hostname-char-set": "[^A-Za-z0-9.-]",
+    "id": 1,
+    "interface": "eth0",
+    "interface-id": "ethx",
+    "store-extended-info": true,
+    "option-data": [
+        {
+            "always-send": true,
+            "code": 7,
+            "csv-format": true,
+            "data": "15",
+            "name": "preference",
+            "space": "dhcp6"
+        }
+    ],
+    "pd-pools": [
+        {
+            "client-class": "phones_server1",
+            "delegated-len": 64,
+            "excluded-prefix": "2001:db8:1::",
+            "excluded-prefix-len": 72,
+            "option-data": [],
+            "pool-id": 2,
+            "prefix": "2001:db8:1::",
+            "prefix-len": 48,
+            "require-client-classes": []
+        }
+    ],
+    "pools": [
+        {
+            "client-class": "phones_server1",
+            "option-data": [],
+            "pool": "2001:db8:0:1::/64",
+            "pool-id": 7,
+            "require-client-classes": [ "late" ]
+        },
+        {
+            "client-class": "phones_server2",
+            "option-data": [],
+            "pool": "2001:db8:0:3::/64",
+            "require-client-classes": []
+        }
+    ],
+    "preferred-lifetime": 2000,
+    "min-preferred-lifetime": 1500,
+    "max-preferred-lifetime": 2500,
+    "rapid-commit": true,
+    "rebind-timer": 40,
+    "relay": {
+        "ip-addresses": [
+            "2001:db8:0:f::1"
+        ]
+    },
+    "renew-timer": 30,
+    "reservations-global": true,
+    "reservations-in-subnet": true,
+    "reservations-out-of-pool": true,
+    "calculate-tee-times": true,
+    "t1-percent": 0.5,
+    "t2-percent": 0.75,
+    "cache-threshold": 0.25,
+    "cache-max-age": 10,
+    "reservations": [
+        {
+            "duid": "01:02:03:04:05:06:07:08:09:0A",
+            "ip-addresses": [ "2001:db8:1:cafe::1" ],
+            "prefixes": [ "2001:db8:2:abcd::/64" ],
+            "hostname": "foo.example.com",
+            "option-data": [
+                {
+                    "name": "vendor-opts",
+                    "data": "4491"
+                }
+            ]
+        }
+    ],
+    "require-client-classes": [ "late" ],
+    "subnet": "2001:db8::/32",
+    "valid-lifetime": 6000,
+    "min-valid-lifetime": 4000,
+    "max-valid-lifetime": 8000
+}

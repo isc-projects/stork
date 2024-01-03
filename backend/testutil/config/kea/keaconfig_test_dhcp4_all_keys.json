@@ -283,6 +283,7 @@
                                     }
                                 ],
                                 "pool": "192.1.0.1 - 192.1.0.200",
+                                "pool-id": 7,
                                 "require-client-classes": [ "late" ]
                             },
                             {
