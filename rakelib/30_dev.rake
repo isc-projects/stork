@@ -18,6 +18,21 @@ python_requirement_files = [
     "tests/sim/requirements.in",
 ] + FileList["rakelib/init_deps/*.in"]
 
+#################
+### Functions ###
+#################
+
+# Creates a temporary directory and removes it after the block execution.
+# Source: https://stackoverflow.com/a/8791484
+def in_tmpdir
+    require 'tmpdir'
+    path = File.expand_path "#{Dir.tmpdir}/#{Time.now.to_i}#{rand(1000)}/"
+    FileUtils.mkdir_p path
+    yield path
+ensure
+    FileUtils.rm_rf(path) if File.exists?(path)
+end
+
 #############
 ### Tasks ###
 #############
@@ -245,40 +260,91 @@ namespace :unittest do
         end
     end
 
-    desc 'Run backend unit tests (debug mode)
-        SCOPE - Scope of the tests - required
-        HEADLESS - Run in headless mode - default: false
-        See "db:migrate" task for the database-related parameters'
-    task :backend_debug => [DLV, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
-        if ENV["SCOPE"].nil?
-            fail "Scope argument is required"
+    namespace :backend do
+        desc 'Run backend unit tests (debug mode)
+            SCOPE - Scope of the tests - required
+            HEADLESS - Run in headless mode - default: false
+            See "db:migrate" task for the database-related parameters'
+        task :debug => [DLV, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
+            if ENV["SCOPE"].nil?
+                fail "Scope argument is required"
+            end
+
+            opts = []
+
+            if ENV["HEADLESS"] == "true"
+                opts = ["--headless", "-l", "0.0.0.0:45678"]
+            end
+
+            Dir.chdir('backend') do
+                sh DLV, *opts, "test", ENV["SCOPE"]
+            end
         end
 
-        opts = []
+        desc 'Show backend coverage of unit tests in web browser
+            See "db:migrate" task for the database-related parameters'
+        task :cov => [GO, "unittest:backend"] do
+            if !ENV["SCOPE"].nil?
+                fail "Environment variable SCOPE cannot be specified"
+            end
 
-        if ENV["HEADLESS"] == "true"
-            opts = ["--headless", "-l", "0.0.0.0:45678"]
+            if !ENV["TEST"].nil?
+                fail "Environment variable TEST cannot be specified"
+            end
+
+            puts "Warning: Coverage may not work under Chrome-like browsers; use Firefox if any problems occur."
+            Dir.chdir('backend') do
+                sh GO, "tool", "cover", "-html=coverage.out"
+            end
         end
 
-        Dir.chdir('backend') do
-            sh DLV, *opts, "test", ENV["SCOPE"]
-        end
-    end
+        desc 'Profile backend unit tests
+            SCOPE - Scope (package) of the tests. It may omit the `isc.org/stork` prefix. - required
+            TEST - Test name pattern to run - default: empty
+            KIND - Type of profile to generate - choice: cpu, mem, mutex, block; default: cpu
+            See "db:migrate" task for the database-related parameters'
+        task :profile => [GO, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
+            if ENV["TEST"].nil?
+                puts "You must specify the test name pattern to run because "+
+                    "profiling all tests at once is useless due to most calls "+
+                    "are made in the unit test framework itself."
+                puts "Example: rake unittest:backend:profile TEST=^TestFoo$"
+                fail "Environment variable TEST must be specified"
+            end
+            
+            kind = ENV["KIND"] || "cpu"
+            if !["cpu", "memory", "mutex", "block"].include? kind
+                fail "Invalid profile kind: #{kind}, must be one of: cpu, mem, mutex, block"
+            end
 
-    desc 'Show backend coverage of unit tests in web browser
-        See "db:migrate" task for the database-related parameters'
-    task :backend_cov => [GO, "unittest:backend"] do
-        if !ENV["SCOPE"].nil?
-            fail "Environment variable SCOPE cannot be specified"
-        end
+            if ENV["SCOPE"].nil?
+                puts "Scope argument is required. It must be set to the "+
+                    "package name of the test(s). It may omit the "+
+                    "`isc.org/stork` prefix."
+                puts "Example: rake unittest:backend:profile SCOPE=agent or "+
+                    "rake unittest:backend:profile SCOPE=isc.org/stork/agent"
+                fail "Environment variable SCOPE must be specified"
+            end
+            scope = ENV["SCOPE"]
+            if !scope.start_with? "isc.org/stork/"
+                scope = "isc.org/stork/#{scope}"
+            end
 
-        if !ENV["TEST"].nil?
-            fail "Environment variable TEST cannot be specified"
-        end
+            in_tmpdir do |tmpdir|
+                profile_path = File.join tmpdir, "profile_#{kind}.prof"
+                code_path = File.join tmpdir, "profile_#{kind}.test"
 
-        puts "Warning: Coverage may not work under Chrome-like browsers; use Firefox if any problems occur."
-        Dir.chdir('backend') do
-            sh GO, "tool", "cover", "-html=coverage.out"
+                # Generate profile file.
+                Dir.chdir('backend') do
+                    sh GO, "test",
+                        "-run", ENV["TEST"], scope,
+                        "--#{kind}profile", profile_path,
+                        "-o", code_path,
+                        "-count", "1"
+                end
+
+                sh GO, "tool", "pprof", "-http=:", code_path, profile_path
+            end
         end
     end
 end
