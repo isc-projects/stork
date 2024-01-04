@@ -216,13 +216,13 @@ sudo ./stork-install-agent.sh</textarea
 
         <div class="button-group">
             <button
-                *ngIf="showUnauthorized && selectedMachines.length > 0"
+                *ngIf="showUnauthorized && selectedMachines?.length > 0"
                 type="button"
                 pButton
                 label="Authorize selected"
                 id="authorize-selected-button"
                 icon="pi pi-lock"
-                (click)="authorizeSelectedMachines()"
+                (click)="authorizeSelectedMachines(machinesTable)"
             ></button>
             <button
                 type="button"

@@ -609,8 +609,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         return copyToClipboard(textEl)
     }
 
-    authorizeSelectedMachines() {
+    /**
+     * Authorizes machines stored in selectedMachines.
+     * @param table table where selected machines are to be authorized.
+     */
+    authorizeSelectedMachines(table) {
         console.log('authorizeSelectedMachines')
         console.log(this.selectedMachines)
+        for (const m of this.selectedMachines) {
+            this._changeMachineAuthorization(m, true, table)
+        }
     }
 }
