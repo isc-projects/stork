@@ -699,8 +699,9 @@ func (pke *PromKeaExporter) Start() {
 	// start http server for metrics
 	go func() {
 		err := pke.HTTPServer.ListenAndServe()
-		if err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("Problem serving Prometheus Kea Exporter: %s", err.Error())
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.WithError(err).
+				Error("Problem serving Prometheus Kea Exporter")
 		}
 	}()
 
