@@ -524,9 +524,9 @@ func runApp(reload bool) error {
 		}
 
 		if generalSettings.ServerURL != "" && generalSettings.Host == "0.0.0.0" {
-			log.Errorf("Registration in Stork Server cannot be made because agent host address is not provided")
-			log.Fatalf("Use --host option or the STORK_AGENT_HOST environment variable")
-			return nil
+			err := errors.New("registration in Stork Server cannot be made because agent host address is not provided")
+			log.WithError(err).Error("Use --host option or the STORK_AGENT_HOST environment variable")
+			return err
 		}
 
 		return runAgent(generalSettings, reload)
@@ -537,8 +537,7 @@ func runApp(reload bool) error {
 		return nil
 	}
 
-	log.Fatalf("Unknown command specified")
-	return nil
+	return errors.New("provided CLI arguments were unexpected")
 }
 
 // Main stork-agent function.
