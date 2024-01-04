@@ -337,7 +337,7 @@ export class StorkValidators {
                         }
                         comparedGroups.forEach((group) => {
                             // Mark an error for each compared group.
-                            group.values.at(group.unlocked ? k : 0).ctl.setErrors(result, { emitEvent: false })
+                            group.values.at(group.unlocked ? k : 0).ctl.setErrors(result)
                             // It prevents clearing the error within this function if the group has
                             // no conflict with another group.
                             group.values.at(group.unlocked ? k : 0).failedOnThisPass = true
@@ -439,7 +439,7 @@ export class StorkValidators {
                     }
                     // The two ranges overlap. Set the error in the respective form groups.
                     ranges.slice(i, i + 2).forEach((range) => {
-                        range.control.setErrors(result, { emitEvent: false })
+                        range.control.setErrors(result)
                         range.failedOnThisPass = true
                     })
                 } else {
