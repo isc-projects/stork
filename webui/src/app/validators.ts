@@ -1,7 +1,22 @@
-import { AbstractControl, FormArray, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms'
+import {
+    AbstractControl,
+    FormArray,
+    FormControl,
+    FormGroup,
+    ValidationErrors,
+    ValidatorFn,
+    Validators,
+} from '@angular/forms'
 import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
-import { AddressPoolForm, AddressRangeForm, PrefixForm, PrefixPoolForm } from './forms/subnet-set-form.service'
+import {
+    AddressPoolForm,
+    AddressRangeForm,
+    KeaPoolParametersForm,
+    PrefixForm,
+    PrefixPoolForm,
+} from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
+import { SharedParameterFormGroup } from './forms/shared-parameter-form-group'
 
 /**
  * A class with various static form validation functions.
@@ -245,6 +260,120 @@ export class StorkValidators {
     }
 
     /**
+     * A validator checking if the are overlaps between pool identifiers in
+     * different pools.
+     *
+     * It sets errors for each overlapping pool identifier in the array.
+     *
+     * @param control a form array holding address pools.
+     * @returns validation errors or null if the pool identifiers do not overlap.
+     */
+    static poolIDOverlaps(control: AbstractControl): ValidationErrors | null {
+        interface PoolParametersForm {
+            parameters: FormGroup<KeaPoolParametersForm>
+        }
+        const fa = control as FormArray<FormGroup<PoolParametersForm>>
+        if (!fa) {
+            return { poolIDOverlaps: 'Invalid form array type.' }
+        }
+        // Go over the pools and extract the poolID values. Group them into the structures
+        // that can be easily accessed by the validator.
+        interface ValueData {
+            ctl: FormControl<number>
+            failedOnThisPass: boolean
+        }
+        interface GroupData {
+            unlocked: boolean
+            values: ValueData[]
+        }
+        const groups: GroupData[] = fa.controls
+            .map((ctl) => {
+                const fg = ctl.get('parameters.poolID') as SharedParameterFormGroup<number>
+                if (!fg) {
+                    return null
+                }
+                let data = {
+                    unlocked: fg.get('unlocked')?.value,
+                    values: (fg.get('values') as FormArray<FormControl<number>>).controls.map((ctl) => {
+                        return {
+                            ctl: ctl,
+                            failedOnThisPass: false,
+                        }
+                    }),
+                }
+                return data
+            })
+            .filter((data) => {
+                // Filter out the groups that have no pool-id values. They are
+                // not in conflict with any pool-ids.
+                return !!data?.values.some((v) => v.ctl.value)
+            })
+
+        // If there is only one group there is no conflict and nothing more to do.
+        if (groups.length === 1) {
+            groups.at(0).values.forEach((value) => {
+                StorkValidators.clearControlError(value.ctl, 'poolIDOverlaps')
+            })
+            return null
+        }
+
+        let result: ValidationErrors | null = null
+        for (let i = 0; i < groups.length; i++) {
+            // Compare the values in this group with subsequent groups.
+            for (let j = i + 1; j < groups.length; j++) {
+                const comparedGroups = [groups.at(i), groups.at(j)]
+                // Compare the respective values between the groups.
+                for (let k = 0; k < Math.min(comparedGroups[0].values.length, comparedGroups[1].values.length); k++) {
+                    // Each group contains multiple values but if the values are locked we only take
+                    // into account the first value because it is common for all servers. Therefore
+                    // for the locked case we take the value at index 0. Otherwise we take k-th index.
+                    // If the values for a server in different groups are the same there is a conflict.
+                    if (
+                        comparedGroups.at(0).values.at(comparedGroups.at(0).unlocked ? k : 0).ctl.value ===
+                        comparedGroups.at(1).values.at(comparedGroups.at(1).unlocked ? k : 0).ctl.value
+                    ) {
+                        result = {
+                            poolIDOverlaps: `Pool ID overlaps with another pool ID.`,
+                        }
+                        comparedGroups.forEach((group) => {
+                            // Mark an error for each compared group.
+                            group.values.at(group.unlocked ? k : 0).ctl.setErrors(result, { emitEvent: false })
+                            // It prevents clearing the error within this function if the group has
+                            // no conflict with another group.
+                            group.values.at(group.unlocked ? k : 0).failedOnThisPass = true
+                            // If we use a common value for all servers, the errors for other
+                            // values in this group should be cleared.
+                            if (!group.unlocked) {
+                                group.values.slice(1)?.forEach((value) => {
+                                    StorkValidators.clearControlError(value.ctl, 'poolIDOverlaps')
+                                })
+                            }
+                        })
+                    } else {
+                        // There is no conflict between the groups so we should clear the errors
+                        // unless they have been reported in this function pass. It clears the
+                        // pre-existing errors from previous passes.
+                        comparedGroups.forEach((group) => {
+                            if (!group.values.at(group.unlocked ? k : 0).failedOnThisPass) {
+                                StorkValidators.clearControlError(
+                                    group.values.at(group.unlocked ? k : 0).ctl,
+                                    'poolIDOverlaps'
+                                )
+                            }
+                        })
+                    }
+                    // If both compared groups are locked we have done the full comparison
+                    // already because we only focus on first values in each group.
+                    if (comparedGroups.every((g) => !g.unlocked)) {
+                        break
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    /**
      * A validator checking if the are overlaps between address ranges.
      *
      * It sets errors for each overlapping range in the array.
@@ -310,7 +439,7 @@ export class StorkValidators {
                     }
                     // The two ranges overlap. Set the error in the respective form groups.
                     ranges.slice(i, i + 2).forEach((range) => {
-                        range.control.setErrors(result)
+                        range.control.setErrors(result, { emitEvent: false })
                         range.failedOnThisPass = true
                     })
                 } else {

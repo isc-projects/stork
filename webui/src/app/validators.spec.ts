@@ -7,6 +7,7 @@ import {
     PrefixForm,
     PrefixPoolForm,
 } from './forms/subnet-set-form.service'
+import { SharedParameterFormGroup } from './forms/shared-parameter-form-group'
 
 describe('StorkValidators', () => {
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
@@ -764,6 +765,151 @@ describe('StorkValidators', () => {
         expect(validationErrors.ipv6ExcludedPrefixDelegatedLength).toBe(
             'Delegated prefix length must be lower than the 2001:db8:dead:beef::0:0:0/80 excluded prefix length.'
         )
+    })
+
+    it('detects overlaps in the address pool identifiers', () => {
+        let fa = new FormArray([
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.50'),
+                    end: new FormControl('192.0.2.60'),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [new FormControl<number>(50)]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.61'),
+                    end: new FormControl('192.0.2.70'),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [
+                        new FormControl<number>(50),
+                        new FormControl<number>(60),
+                    ]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.71'),
+                    end: new FormControl('192.0.2.80'),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [
+                        new FormControl<number>(70),
+                        new FormControl<number>(60),
+                    ]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.81'),
+                    end: new FormControl('192.0.2.90'),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [
+                        new FormControl<number>(80),
+                        new FormControl<number>(80),
+                    ]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+            new FormGroup<AddressPoolForm>({
+                range: new FormGroup<AddressRangeForm>({
+                    start: new FormControl('192.0.2.91'),
+                    end: new FormControl('192.0.2.100'),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({}),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+        ])
+        expect(StorkValidators.poolIDOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+        expect(fa.at(2).invalid).toBeTrue()
+        expect(fa.at(3).invalid).toBeFalse()
+        expect(fa.at(4).invalid).toBeFalse()
+
+        // Correct the pool-ids.
+        fa.get('1.parameters.poolID.values.0')?.setValue(60)
+        fa.get('2.parameters.poolID.values.1')?.setValue(70)
+        expect(StorkValidators.poolIDOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
+    })
+
+    it('detects overlaps in the prefix pool identifiers', () => {
+        let fa = new FormArray([
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::/64'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [
+                        new FormControl<number>(80),
+                        new FormControl<number>(90),
+                    ]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+            new FormGroup<PrefixPoolForm>({
+                prefixes: new FormGroup<PrefixForm>({
+                    prefix: new FormControl('2001:db8:1::ff00/120'),
+                    delegatedLength: new FormControl(null),
+                    excludedPrefix: new FormControl(null),
+                }),
+                parameters: new FormGroup<KeaPoolParametersForm>({
+                    poolID: new SharedParameterFormGroup(null, [
+                        new FormControl<number>(90),
+                        new FormControl<number>(90),
+                    ]),
+                }),
+                options: new FormGroup({
+                    unlocked: new FormControl(false),
+                    data: new FormArray([]),
+                }),
+                selectedDaemons: new FormControl([]),
+            }),
+        ])
+        expect(StorkValidators.poolIDOverlaps(fa)).toBeTruthy()
+
+        expect(fa.at(0).invalid).toBeTrue()
+        expect(fa.at(1).invalid).toBeTrue()
+
+        // Correct the overlapping identifier.
+        fa.get('1.parameters.poolID.values.0')?.setValue(100)
+        expect(StorkValidators.poolIDOverlaps(fa)).toBeFalsy()
+        expect(fa.invalid).toBeFalse()
     })
 
     it('validates full fqdn', () => {

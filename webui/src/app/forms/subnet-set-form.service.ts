@@ -749,7 +749,10 @@ export class SubnetSetFormService {
      * @returns An array of form groups representing address pools.
      */
     convertAddressPoolsToForm(subnet: Subnet): FormArray<FormGroup<AddressPoolForm>> {
-        const formArray = new FormArray<FormGroup<AddressPoolForm>>([], StorkValidators.ipRangeOverlaps)
+        const formArray = new FormArray<FormGroup<AddressPoolForm>>([], {
+            validators: [StorkValidators.ipRangeOverlaps, StorkValidators.poolIDOverlaps],
+            updateOn: 'blur',
+        })
         // A subnet can be associated with many servers. Each server may contain
         // the same or different address pools. Some of the pools may overlap.
         // This call extracts the pools and combines those that are the same for
@@ -846,7 +849,10 @@ export class SubnetSetFormService {
      * @returns An array of form groups representing the pools.
      */
     convertPrefixPoolsToForm(subnet: Subnet): FormArray<FormGroup<PrefixPoolForm>> {
-        const formArray = new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps)
+        const formArray = new FormArray<FormGroup<PrefixPoolForm>>(
+            [],
+            [StorkValidators.ipv6PrefixOverlaps, StorkValidators.poolIDOverlaps]
+        )
         // A subnet can be associated with many servers. Each server may contain
         // the same or different prefix pools. Some of the pools may overlap.
         // This call extracts the pools and combines those that are the same for

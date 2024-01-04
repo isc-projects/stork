@@ -42,6 +42,8 @@ describe('FormProcessor', () => {
             }),
             formBuilder.control('aaa'),
         ])
+        formArray.get('0.foo').markAsTouched()
+
         let clonedArray = processor.cloneControl(formArray)
 
         expect(clonedArray).toBeTruthy()
@@ -55,6 +57,7 @@ describe('FormProcessor', () => {
         expect(clonedArray.at(0).get('foo').value).toBe('abc')
         expect(clonedArray.at(0).get('foo').hasValidator(validator1)).toBeTrue()
         expect(clonedArray.at(0).get('foo').hasAsyncValidator(validator2)).toBeTrue()
+        expect(clonedArray.at(0).get('foo').touched).toBeTrue()
 
         expect(clonedArray.at(0).get('bar')).toBeTruthy()
         expect(clonedArray.at(0).get('bar')).toBeInstanceOf(UntypedFormGroup)

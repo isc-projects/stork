@@ -65,6 +65,9 @@ export class FormProcessor {
         if (control.disabled) {
             newControl.disable({ emitEvent: false })
         }
+        if (control.touched) {
+            newControl.markAsTouched()
+        }
 
         return newControl
     }
