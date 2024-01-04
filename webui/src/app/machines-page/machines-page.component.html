@@ -214,7 +214,16 @@ sudo ./stork-install-agent.sh</textarea
             <!-- </span> -->
         </div>
 
-        <div style="display: flex; align-items: center">
+        <div class="button-group">
+            <button
+                *ngIf="showUnauthorized && selectedMachines.length > 0"
+                type="button"
+                pButton
+                label="Authorize selected"
+                id="authorize-selected-button"
+                icon="pi pi-lock"
+                (click)="authorizeSelectedMachines()"
+            ></button>
             <button
                 type="button"
                 pButton
@@ -228,7 +237,6 @@ sudo ./stork-install-agent.sh</textarea
                 pButton
                 label="How to Install Agent on New Machine"
                 icon="pi pi-download"
-                style="margin: 0 20px"
                 (click)="showAgentInstallationInstruction()"
                 id="show-agent-installation-instruction-button"
             ></button>
@@ -254,6 +262,9 @@ sudo ./stork-install-agent.sh</textarea
         [totalRecords]="totalMachines"
         [rowsPerPageOptions]="[10, 30, 100]"
         [showCurrentPageReport]="true"
+        [selectionPageOnly]="true"
+        [(selection)]="selectedMachines"
+        dataKey="id"
         stateStorage="session"
         stateKey="machines-table-session"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
@@ -340,6 +351,9 @@ sudo ./stork-install-agent.sh</textarea
                 <th style="width: 4rem">Action</th>
             </tr>
             <tr *ngIf="showUnauthorized">
+                <th style="width: 4rem">
+                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                </th>
                 <th style="width: 8rem">Hostname</th>
                 <th style="width: 10rem">
                     Location
@@ -395,6 +409,9 @@ sudo ./stork-install-agent.sh</textarea
                 </td>
             </tr>
             <tr class="alternate-list" *ngIf="showUnauthorized">
+                <td>
+                    <p-tableCheckbox [value]="m"></p-tableCheckbox>
+                </td>
                 <td>
                     <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                 </td>

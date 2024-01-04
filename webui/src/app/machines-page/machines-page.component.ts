@@ -34,6 +34,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     viewSelectionOptions: any[]
     showUnauthorized = false
     serverToken = ''
+    selectedMachines!: Machine[]
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
@@ -606,5 +607,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      */
     copyToClipboard(textEl) {
         return copyToClipboard(textEl)
+    }
+
+    authorizeSelectedMachines() {
+        console.log('authorizeSelectedMachines')
+        console.log(this.selectedMachines)
     }
 }
