@@ -18,6 +18,7 @@ import (
 	"isc.org/stork"
 	"isc.org/stork/agent"
 	"isc.org/stork/hooks"
+	"isc.org/stork/profiler"
 	storkutil "isc.org/stork/util"
 )
 
@@ -505,6 +506,9 @@ func isHelpRequest(err error) bool {
 
 // Parses the command line arguments and runs the specific Stork Agent command.
 func runApp(reload bool) error {
+	profilerShutdown := profiler.Start(6060)
+	defer profilerShutdown()
+
 	generalSettings, registerSettings, err := parseArgs()
 	if err != nil {
 		if isHelpRequest(err) {

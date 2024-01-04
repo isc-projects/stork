@@ -606,6 +606,40 @@ namespace :lint do
     end
 end
 
+namespace :profile do
+    desc 'Run profiling on running Stork agent
+        PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
+        DURATION - duration in seconds - default: 30
+    '
+    task :agent => [GO] do
+        profile_raw = ENV["PROFILE"] || "cpu"
+        profile = profile_raw
+        if profile == 'cpu'
+            profile = 'profile'
+        end
+
+        duration = ENV["DURATION"]
+        support_duration = ['allocs', 'block', 'mutex', 'profile']
+        if !duration.nil? && !support_duration.include?(profile)
+            fail "Duration is not supported for #{profile_raw} profile"
+        end
+
+        queryParams = []
+        if !duration.nil?
+            queryParams.append "seconds=#{duration}"
+        end
+
+        if support_duration.include? profile
+            expected_duration = duration || 30
+            puts "Please wait, it will take #{expected_duration} seconds..."
+        end
+
+        url = "http://localhost:6060/debug/pprof/#{profile}?#{queryParams.join('&')}"
+
+        puts "Profiling #{profile_raw}..."
+        sh GO, "tool", "pprof", "-http=:", url
+    end
+end
 
 namespace :audit do
     desc 'Check the UI security issues.
