@@ -286,7 +286,7 @@ export class StorkValidators {
             unlocked: boolean
             values: ValueData[]
         }
-        const groups: GroupData[] = fa.controls
+        const groups: Array<GroupData> = fa.controls
             .map((ctl) => {
                 const fg = ctl.get('parameters.poolID') as SharedParameterFormGroup<number>
                 if (!fg) {
@@ -311,7 +311,7 @@ export class StorkValidators {
 
         // If there is only one group there is no conflict and nothing more to do.
         if (groups.length === 1) {
-            groups.at(0).values.forEach((value) => {
+            groups[0].values.forEach((value) => {
                 StorkValidators.clearControlError(value.ctl, 'poolIDOverlaps')
             })
             return null
@@ -321,7 +321,7 @@ export class StorkValidators {
         for (let i = 0; i < groups.length; i++) {
             // Compare the values in this group with subsequent groups.
             for (let j = i + 1; j < groups.length; j++) {
-                const comparedGroups = [groups.at(i), groups.at(j)]
+                const comparedGroups = [groups[i], groups[j]]
                 // Compare the respective values between the groups.
                 for (let k = 0; k < Math.min(comparedGroups[0].values.length, comparedGroups[1].values.length); k++) {
                     // Each group contains multiple values but if the values are locked we only take
@@ -329,18 +329,18 @@ export class StorkValidators {
                     // for the locked case we take the value at index 0. Otherwise we take k-th index.
                     // If the values for a server in different groups are the same there is a conflict.
                     if (
-                        comparedGroups.at(0).values.at(comparedGroups.at(0).unlocked ? k : 0).ctl.value ===
-                        comparedGroups.at(1).values.at(comparedGroups.at(1).unlocked ? k : 0).ctl.value
+                        comparedGroups[0].values[comparedGroups[0].unlocked ? k : 0].ctl.value ===
+                        comparedGroups[1].values[comparedGroups[1].unlocked ? k : 0].ctl.value
                     ) {
                         result = {
                             poolIDOverlaps: `Pool ID overlaps with another pool ID.`,
                         }
                         comparedGroups.forEach((group) => {
                             // Mark an error for each compared group.
-                            group.values.at(group.unlocked ? k : 0).ctl.setErrors(result)
+                            group.values[group.unlocked ? k : 0].ctl.setErrors(result)
                             // It prevents clearing the error within this function if the group has
                             // no conflict with another group.
-                            group.values.at(group.unlocked ? k : 0).failedOnThisPass = true
+                            group.values[group.unlocked ? k : 0].failedOnThisPass = true
                             // If we use a common value for all servers, the errors for other
                             // values in this group should be cleared.
                             if (!group.unlocked) {
@@ -354,9 +354,9 @@ export class StorkValidators {
                         // unless they have been reported in this function pass. It clears the
                         // pre-existing errors from previous passes.
                         comparedGroups.forEach((group) => {
-                            if (!group.values.at(group.unlocked ? k : 0).failedOnThisPass) {
+                            if (!group.values[group.unlocked ? k : 0].failedOnThisPass) {
                                 StorkValidators.clearControlError(
-                                    group.values.at(group.unlocked ? k : 0).ctl,
+                                    group.values[group.unlocked ? k : 0].ctl,
                                     'poolIDOverlaps'
                                 )
                             }
