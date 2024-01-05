@@ -413,6 +413,9 @@ describe('subnets', () => {
                 {
                     pools: [
                         {
+                            pool: '192.0.2.10-192.0.2.40',
+                        },
+                        {
                             pool: '192.0.2.10-192.0.2.20',
                         },
                     ],
@@ -485,12 +488,20 @@ describe('subnets', () => {
                             prefix: '3000::',
                             delegatedLength: 64,
                         },
+                        {
+                            prefix: '3001::',
+                            delegatedLength: 64,
+                        },
                     ],
                 },
                 {
                     prefixDelegationPools: [
                         {
                             prefix: '3001::',
+                            delegatedLength: 64,
+                        },
+                        {
+                            prefix: '3002::',
                             delegatedLength: 64,
                         },
                     ],
@@ -603,7 +614,7 @@ describe('subnets', () => {
         }
         expect(hasAddressPools(subnet)).toBeTrue()
         expect(hasPrefixPools(subnet)).toBeTrue()
-        expect(hasDifferentLocalSubnetPools(subnet)).toBeTrue()
+        expect(hasDifferentLocalSubnetPools(subnet)).toBeFalse()
     })
 
     it('detects different options for servers', () => {
