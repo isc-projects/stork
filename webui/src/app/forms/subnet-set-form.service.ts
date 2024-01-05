@@ -311,6 +311,7 @@ export class SubnetSetFormService {
             poolID: new SharedParameterFormGroup<number>(
                 {
                     type: 'number',
+                    min: 1,
                     invalidText: 'Please specify non-overlapping numeric pool identifiers.',
                 },
                 parameters?.map((params) => new FormControl<number>(params?.poolID ?? null))
