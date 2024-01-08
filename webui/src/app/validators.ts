@@ -260,7 +260,7 @@ export class StorkValidators {
     }
 
     /**
-     * A validator checking if the are overlaps between pool identifiers in
+     * A validator checking if there are overlaps between pool identifiers in
      * different pools.
      *
      * It sets errors for each overlapping pool identifier in the array.
