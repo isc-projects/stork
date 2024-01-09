@@ -49,7 +49,6 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
     depends_on:
       - mariadb
-      - server
 
   agent-kea-premium-two:
     restart: always
@@ -93,4 +92,3 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
     depends_on:
       - mariadb
-      - server
