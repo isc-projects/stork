@@ -178,19 +178,44 @@ CLEAN.append "webui/.angular"
 ### Backend ###
 ###############
 
-AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
-file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
+# This rule is used to create the Stork agent file tasks. It allows to specify
+# build tags for the conditional compilation. The tags are specified in the
+# filename after the plus sign. For example, the filename "stork-agent+profiler"
+# will be compiled with the "profiler" build tag.
+rule(/^backend\/cmd\/stork-agent\/stork-agent[^.]*$/ => GO_AGENT_CODEBASE + [GO]) do |t|
+    filename = File.basename t.name
+    tags_match = filename.match(/\+(\w+)/)
+    tags = []
+    if !tags_match.nil?
+        tags = tags_match.captures
+        puts "Stork Agent build tags: #{tags}"
+    end
+
     Dir.chdir("backend/cmd/stork-agent") do
         with_custom_go_os_and_arch do
-            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+            sh GO, "build",
+                "-tags", tags.join(","),
+                "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
+                "-o", filename
         end
     end
-    sh "touch", "-c", AGENT_BINARY_FILE
+    sh "touch", "-c", t.name
     puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
+
+# The standard Stork agent file task. It is compiled without any custom build
+# tags. It is dedicated to release builds.
+AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
 add_go_os_arch_guard(AGENT_BINARY_FILE)
 allow_suppress_prerequisites(AGENT_BINARY_FILE)
 CLEAN.append AGENT_BINARY_FILE
+
+# The Stork agent file task compiled with the profiler that allows to profile
+# the agent on demand.
+AGENT_BINARY_FILE_WITH_PROFILER = "backend/cmd/stork-agent/stork-agent+profiler"
+add_go_os_arch_guard(AGENT_BINARY_FILE_WITH_PROFILER)
+allow_suppress_prerequisites(AGENT_BINARY_FILE_WITH_PROFILER)
+CLEAN.append AGENT_BINARY_FILE_WITH_PROFILER
 
 SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
@@ -371,7 +396,7 @@ namespace :run do
     desc "Run Stork Agent (release mode)
     PORT - agent port to use - default: 8888
     REGISTER - register in the localhost server - default: false"
-    task :agent => [AGENT_BINARY_FILE] do
+    task :agent => [AGENT_BINARY_FILE_WITH_PROFILER] do
         if ENV["PORT"].nil?
             ENV["PORT"] = "8888"
         end
@@ -385,7 +410,7 @@ namespace :run do
             opts.append "--listen-prometheus-only"
         end
 
-        sh AGENT_BINARY_FILE, *opts
+        sh AGENT_BINARY_FILE_WITH_PROFILER, *opts
     end
 end
 

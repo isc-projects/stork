@@ -211,17 +211,17 @@ go_common_codebase = FileList["backend/**/*"]
 
 GO_SERVER_CODEBASE = go_server_codebase
         .include(go_common_codebase)
-        .exclude("backend/cmd/stork-server/stork-server")
+        .exclude("backend/cmd/stork-server/stork-server*")
         .exclude("backend/**/*mock_test.go")
 
 GO_AGENT_CODEBASE = go_agent_codebase
         .include(go_common_codebase)
-        .exclude("backend/cmd/stork-agent/stork-agent")
+        .exclude("backend/cmd/stork-agent/stork-agent*")
         .exclude("backend/**/*mock_test.go")
 
 GO_TOOL_CODEBASE = go_tool_codebase
         .include(go_common_codebase)
-        .exclude("backend/cmd/stork-tool/stork-tool")
+        .exclude("backend/cmd/stork-tool/stork-tool*")
         .exclude("backend/**/*mock_test.go")
 
 CLEAN.append *FileList["backend/**/*mock_test.go"]

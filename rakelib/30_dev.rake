@@ -609,8 +609,7 @@ end
 namespace :profile do
     desc 'Run profiling on running Stork agent
         PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
-        DURATION - duration in seconds - default: 30
-    '
+        DURATION - duration in seconds - default: 30'
     task :agent => [GO] do
         profile_raw = ENV["PROFILE"] || "cpu"
         profile = profile_raw
