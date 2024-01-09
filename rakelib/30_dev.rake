@@ -633,7 +633,7 @@ namespace :profile do
             puts "Please wait, it will take #{expected_duration} seconds..."
         end
 
-        url = "http://localhost:6060/debug/pprof/#{profile}?#{queryParams.join('&')}"
+        url = "http://localhost:6061/debug/pprof/#{profile}?#{queryParams.join('&')}"
 
         puts "Profiling #{profile_raw}..."
         sh GO, "tool", "pprof", "-http=:", url
