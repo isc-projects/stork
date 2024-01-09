@@ -90,7 +90,7 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 
 	oldVersion, newVersion, err = migrations.Run(db, args...)
 	if err != nil {
-		return oldVersion, newVersion, errors.Wrapf(err, "problem migrating database")
+		return oldVersion, newVersion, errors.Wrapf(err, "problem migrating database, old: %d, new: %d", oldVersion, newVersion)
 	}
 	return oldVersion, newVersion, nil
 }
