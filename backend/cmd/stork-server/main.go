@@ -9,12 +9,17 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
+	"isc.org/stork/profiler"
 	"isc.org/stork/server"
 	storkutil "isc.org/stork/util"
 )
 
 // Main stork-server function.
 func main() {
+	// Start profiler.
+	profilerShutdown := profiler.Start(6060)
+	defer profilerShutdown()
+
 	// Both variables are used in cases when the server reloads as a result
 	// of receiving the SIGHUP signal. The password is saved to avoid prompting
 	// the user for the password again. The reload flag indicates whether we

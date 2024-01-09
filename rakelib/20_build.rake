@@ -194,8 +194,8 @@ rule(/^backend\/cmd\/stork-agent\/stork-agent[^.]*$/ => GO_AGENT_CODEBASE + [GO]
     Dir.chdir("backend/cmd/stork-agent") do
         with_custom_go_os_and_arch do
             sh GO, "build",
-                "-tags", tags.join(","),
                 "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
+                "-tags", tags.join(","),
                 "-o", filename
         end
     end
@@ -217,19 +217,44 @@ add_go_os_arch_guard(AGENT_BINARY_FILE_WITH_PROFILER)
 allow_suppress_prerequisites(AGENT_BINARY_FILE_WITH_PROFILER)
 CLEAN.append AGENT_BINARY_FILE_WITH_PROFILER
 
-SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
-file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
+# This rule is used to create the Stork server file tasks. It allows to specify
+# build tags for the conditional compilation. The tags are specified in the
+# filename after the plus sign. For example, the filename "stork-server+profiler"
+# will be compiled with the "profiler" build tag.
+rule(/^backend\/cmd\/stork-server\/stork-server[^.]*$/ => GO_SERVER_CODEBASE + [GO]) do |t|
+    filename = File.basename t.name
+    tags_match = filename.match(/\+(\w+)/)
+    tags = []
+    if !tags_match.nil?
+        tags = tags_match.captures
+        puts "Stork Server build tags: #{tags}"
+    end
+
     Dir.chdir("backend/cmd/stork-server") do
         with_custom_go_os_and_arch do
-            sh GO, "build", "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'"
+            sh GO, "build",
+                "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
+                "-tags", tags.join(","),
+                "-o", filename
         end
     end
-    sh "touch", "-c", SERVER_BINARY_FILE
+    sh "touch", "-c", t.name
     puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
 end
+
+# The standard Stork server file task. It is compiled without any custom build
+# tags. It is dedicated to release builds.
+SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 add_go_os_arch_guard(SERVER_BINARY_FILE)
 allow_suppress_prerequisites(SERVER_BINARY_FILE)
 CLEAN.append SERVER_BINARY_FILE
+
+# The Stork server file task compiled with the profiler that allows to profile
+# the agent on demand.
+SERVER_BINARY_FILE_WITH_PROFILER = "backend/cmd/stork-server/stork-server+profiler"
+add_go_os_arch_guard(SERVER_BINARY_FILE_WITH_PROFILER)
+allow_suppress_prerequisites(SERVER_BINARY_FILE_WITH_PROFILER)
+CLEAN.append SERVER_BINARY_FILE_WITH_PROFILER
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
@@ -389,8 +414,8 @@ namespace :run do
         UI_MODE - WebUI mode to use - choose: 'production', 'testing', 'none' or unspecify
         DB_TRACE - trace SQL queries - default: false
     "
-    task :server => [SERVER_BINARY_FILE, :pre_run_server] do
-        sh SERVER_BINARY_FILE
+    task :server => [SERVER_BINARY_FILE_WITH_PROFILER, :pre_run_server] do
+        sh SERVER_BINARY_FILE_WITH_PROFILER
     end
 
     desc "Run Stork Agent (release mode)

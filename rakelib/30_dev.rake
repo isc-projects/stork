@@ -607,25 +607,20 @@ namespace :lint do
 end
 
 namespace :profile do
-    desc 'Run profiling on running Stork agent
-        PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
-        DURATION - duration in seconds - default: 30'
-    task :agent => [GO] do
+    # Internal task to connect the profiler to a Go binary.
+    task :go_app, [:host, :port] => [GO] do |t, args|
+        # Profile
         profile_raw = ENV["PROFILE"] || "cpu"
         profile = profile_raw
         if profile == 'cpu'
             profile = 'profile'
         end
 
+        # Duration
         duration = ENV["DURATION"]
         support_duration = ['allocs', 'block', 'mutex', 'profile']
         if !duration.nil? && !support_duration.include?(profile)
             fail "Duration is not supported for #{profile_raw} profile"
-        end
-
-        queryParams = []
-        if !duration.nil?
-            queryParams.append "seconds=#{duration}"
         end
 
         if support_duration.include? profile
@@ -633,10 +628,43 @@ namespace :profile do
             puts "Please wait, it will take #{expected_duration} seconds..."
         end
 
-        url = "http://localhost:6061/debug/pprof/#{profile}?#{queryParams.join('&')}"
+        # Build URL
+        queryParams = []
+        if !duration.nil?
+            queryParams.append "seconds=#{duration}"
+        end
 
-        puts "Profiling #{profile_raw}..."
-        sh GO, "tool", "pprof", "-http=:", url
+        url = "http://#{args.host}:#{args.port}/debug/pprof/#{profile}?#{queryParams.join('&')}"
+
+        # Profiler options
+        opts = []
+        if !ENV["COMPARE"].nil?
+            opts.append "-diff_base", ENV["COMPARE"]
+        end
+        if !ENV["SUBSTACT"].nil?
+            opts.append "-base", ENV["SUBSTACT"]
+        end
+
+        puts "Profiling #{profile_raw} on #{args.host}:#{args.port}..."
+        sh GO, "tool", "pprof", *opts, "-http=:", url
+    end
+
+    desc 'Run profiling on running Stork agent
+        PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
+        DURATION - duration in seconds - default: 30
+        COMPARE - Path to base profile for comparison - optional
+        SUBSTACT - Path to base profile for substraction - optional'
+    task :agent => [GO] do
+        Rake::Task["profile:go_app"].invoke("localhost", "6061")
+    end
+
+    desc 'Run profiling on running Stork server
+        PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
+        DURATION - duration in seconds - default: 30
+        COMPARE - Path to base profile for comparison - optional
+        SUBSTACT - Path to base profile for substraction - optional'
+    task :server => [GO] do
+        Rake::Task["profile:go_app"].invoke("localhost", "6060")
     end
 end
 
