@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -840,24 +841,54 @@ func (r *RestAPI) GetSharedNetwork(ctx context.Context, params dhcp.GetSharedNet
 // subnet is created or updated. It fetches available DHCP daemons. It also
 // creates transaction context. If an error occurs, an http error code and
 // message are returned.
-func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*models.KeaDaemon, context.Context, int, string) {
+func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.SharedNetwork, []*models.SharedNetwork, []string, context.Context, int, string) {
 	// A list of Kea DHCP daemons will be needed in the user form,
 	// so the user can select which servers send the subnet to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
 		msg := "Problem with fetching Kea daemons from the database"
 		log.Error(err)
-		return nil, nil, http.StatusInternalServerError, msg
+		return nil, nil, nil, nil, nil, http.StatusInternalServerError, msg
+	}
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(r.DB, 0)
+	if err != nil {
+		msg := "Problem with fetching shared networks from the database"
+		log.WithError(err).Error(msg)
+		return nil, nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	// Convert daemons list to REST API format and extract their configured
 	// client classes.
 	respDaemons := []*models.KeaDaemon{}
+	respClientClasses := []string{}
+	clientClassesMap := make(map[string]bool)
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Filter the daemons with subnet_cmds hook library.
 			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); exists {
 				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
 			}
+			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
+			for _, c := range clientClasses {
+				clientClassesMap[c.Name] = true
+			}
+		}
+	}
+	// Turn the class map to a slice and sort it by a class name.
+	for c := range clientClassesMap {
+		respClientClasses = append(respClientClasses, c)
+	}
+	sort.Strings(respClientClasses)
+
+	// Append shared networks list.
+	respIPv4SharedNetworks := []*models.SharedNetwork{}
+	respIPv6SharedNetworks := []*models.SharedNetwork{}
+	for i := range sharedNetworks {
+		respSharedNetwork := r.sharedNetworkToRestAPI(&sharedNetworks[i])
+		switch respSharedNetwork.Universe {
+		case 4:
+			respIPv4SharedNetworks = append(respIPv4SharedNetworks, respSharedNetwork)
+		default:
+			respIPv6SharedNetworks = append(respIPv6SharedNetworks, respSharedNetwork)
 		}
 	}
 
@@ -866,7 +897,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 	if len(respDaemons) == 0 {
 		msg := "Unable to begin transaction for adding new subnet because there are no Kea servers with subnet_cmds hooks library available"
 		log.Error(msg)
-		return nil, nil, http.StatusBadRequest, msg
+		return nil, nil, nil, nil, nil, http.StatusBadRequest, msg
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
@@ -874,9 +905,9 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 	if err != nil {
 		msg := "Problem with creating transaction context"
 		log.WithError(err).Error(msg)
-		return nil, nil, http.StatusInternalServerError, msg
+		return nil, nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
-	return respDaemons, cctx, 0, ""
+	return respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, 0, ""
 }
 
 // Common function that implements the POST calls to apply and commit a new
@@ -922,6 +953,11 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 		log.WithError(err).Error(err)
 		return http.StatusNotFound, msg
 	}
+	if restSubnet.SharedNetwork != "" {
+		subnet.SharedNetwork = &dbmodel.SharedNetwork{
+			Name: restSubnet.SharedNetwork,
+		}
+	}
 	// Apply the subnet information (create Kea commands).
 	cctx, err = applyFunc(cctx, subnet)
 	if err != nil {
@@ -965,7 +1001,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transact
 func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubnetBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{
@@ -1036,9 +1072,12 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 
 	// Return transaction ID and daemons to the user.
 	contents := &models.UpdateSubnetBeginResponse{
-		ID:      cctxID,
-		Subnet:  r.convertSubnetToRestAPI(subnet),
-		Daemons: respDaemons,
+		ID:              cctxID,
+		Subnet:          r.convertSubnetToRestAPI(subnet),
+		Daemons:         respDaemons,
+		SharedNetworks4: respIPv4SharedNetworks,
+		SharedNetworks6: respIPv6SharedNetworks,
+		ClientClasses:   respClientClasses,
 	}
 	rsp := dhcp.NewUpdateSubnetBeginOK().WithPayload(contents)
 	return rsp

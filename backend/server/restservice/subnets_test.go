@@ -1717,6 +1717,14 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 
 	serverConfig := `{
 		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
 			"shared-networks": [
 				{
 					"name": "foo",
@@ -1735,6 +1743,10 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 							]
 						}
 					]
+				},
+				{
+					"name": "bar",
+					"subnet4": []
 				}
 			],
 			"hooks-libraries": [
@@ -1814,11 +1826,15 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
 	contents := okRsp.Payload
 
-	// Make sure the server returned transaction ID, subnet, daemons and client classes.
+	// Make sure the server returned transaction ID, subnet, daemons, shared networks and client classes.
 	transactionID := contents.ID
 	require.NotZero(t, transactionID)
 	require.NotNil(t, contents.Subnet)
+	require.Equal(t, "foo", contents.Subnet.SharedNetwork)
 	require.Len(t, contents.Daemons, 2)
+	require.Len(t, contents.SharedNetworks4, 2)
+	require.Empty(t, contents.SharedNetworks6)
+	require.Len(t, contents.ClientClasses, 2)
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{
 		SubnetLevelParameters: &models.KeaConfigSubnetDerivedParameters{
@@ -1905,6 +1921,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 			ID:              subnets[0].ID,
 			Subnet:          subnets[0].Prefix,
 			SharedNetworkID: subnets[0].SharedNetworkID,
+			SharedNetwork:   "foo",
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
@@ -2204,6 +2221,582 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	}
 }
 
+// Test the calls for moving a subnet to a different shared network.
+func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				},
+				{
+					"name": "bar",
+					"subnet4": []
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: subnets[0].ID,
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, subnet, daemons, shared networks and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Subnet)
+	require.Equal(t, "foo", contents.Subnet.SharedNetwork)
+	require.Len(t, contents.Daemons, 1)
+	require.Len(t, contents.SharedNetworks4, 2)
+	require.Empty(t, contents.SharedNetworks6)
+	require.Empty(t, contents.ClientClasses)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateSubnetSubmitParams{
+		ID: transactionID,
+		Subnet: &models.Subnet{
+			ID:              subnets[0].ID,
+			Subnet:          subnets[0].Prefix,
+			SharedNetworkID: contents.SharedNetworks4[1].ID,
+			SharedNetwork:   contents.SharedNetworks4[1].Name,
+			LocalSubnets: []*models.LocalSubnet{
+				{
+					ID:       1,
+					DaemonID: dbapps[0].Daemons[0].ID,
+					Pools: []*models.Pool{
+						{
+							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
+							KeaConfigPoolParameters: &models.KeaConfigPoolParameters{
+								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{},
+								DHCPOptions:                    models.DHCPOptions{},
+							},
+						},
+					},
+					KeaConfigSubnetParameters: &models.KeaConfigSubnetParameters{},
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateSubnetSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateSubnetSubmitOK{}, rsp2)
+
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0:
+			require.JSONEq(t,
+				`{
+				"command": "subnet4-update",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24",
+							"pools": [
+								{
+									"pool": "192.0.2.10-192.0.2.20"
+								}
+							]
+						}
+					]
+				}
+			}`,
+				c.Marshal())
+		case 1:
+			require.JSONEq(t,
+				`{
+					"command": "network4-subnet-del",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		case 2:
+			require.JSONEq(t,
+				`{
+					"command": "network4-subnet-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"name": "bar",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp4" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the updated subnet has been stored in the database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.NotNil(t, returnedSubnet.SharedNetwork)
+	require.Equal(t, "bar", returnedSubnet.SharedNetwork.Name)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+}
+
+// Test the calls for adding a subnet to a shared network.
+func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"subnet4": [
+				{
+					"id": 1,
+					"subnet": "192.0.2.0/24"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo"
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: subnets[0].ID,
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, subnet, daemons, shared networks and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Subnet)
+	require.Empty(t, contents.Subnet.SharedNetwork)
+	require.Len(t, contents.Daemons, 1)
+	require.Len(t, contents.SharedNetworks4, 1)
+	require.Empty(t, contents.SharedNetworks6)
+	require.Empty(t, contents.ClientClasses)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateSubnetSubmitParams{
+		ID: transactionID,
+		Subnet: &models.Subnet{
+			ID:              subnets[0].ID,
+			Subnet:          subnets[0].Prefix,
+			SharedNetworkID: contents.SharedNetworks4[0].ID,
+			SharedNetwork:   contents.SharedNetworks4[0].Name,
+			LocalSubnets: []*models.LocalSubnet{
+				{
+					ID:       1,
+					DaemonID: dbapps[0].Daemons[0].ID,
+					Pools: []*models.Pool{
+						{
+							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
+							KeaConfigPoolParameters: &models.KeaConfigPoolParameters{
+								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{},
+								DHCPOptions:                    models.DHCPOptions{},
+							},
+						},
+					},
+					KeaConfigSubnetParameters: &models.KeaConfigSubnetParameters{},
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateSubnetSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateSubnetSubmitOK{}, rsp2)
+
+	require.Len(t, fa.RecordedCommands, 3)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0:
+			require.JSONEq(t,
+				`{
+				"command": "subnet4-update",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24",
+							"pools": [
+								{
+									"pool": "192.0.2.10-192.0.2.20"
+								}
+							]
+						}
+					]
+				}
+			}`,
+				c.Marshal())
+		case 1:
+			require.JSONEq(t,
+				`{
+					"command": "network4-subnet-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp4" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the updated subnet has been stored in the database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.NotNil(t, returnedSubnet.SharedNetwork)
+	require.Equal(t, "foo", returnedSubnet.SharedNetwork.Name)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+}
+
+// Test the calls for removing a subnet from a shared network.
+func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: subnets[0].ID,
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, subnet, daemons, shared networks and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Subnet)
+	require.Equal(t, "foo", contents.Subnet.SharedNetwork)
+	require.Len(t, contents.Daemons, 1)
+	require.Len(t, contents.SharedNetworks4, 1)
+	require.Empty(t, contents.SharedNetworks6)
+	require.Empty(t, contents.ClientClasses)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateSubnetSubmitParams{
+		ID: transactionID,
+		Subnet: &models.Subnet{
+			ID:     subnets[0].ID,
+			Subnet: subnets[0].Prefix,
+			LocalSubnets: []*models.LocalSubnet{
+				{
+					ID:       1,
+					DaemonID: dbapps[0].Daemons[0].ID,
+					Pools: []*models.Pool{
+						{
+							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
+							KeaConfigPoolParameters: &models.KeaConfigPoolParameters{
+								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{},
+								DHCPOptions:                    models.DHCPOptions{},
+							},
+						},
+					},
+					KeaConfigSubnetParameters: &models.KeaConfigSubnetParameters{},
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateSubnetSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateSubnetSubmitOK{}, rsp2)
+
+	require.Len(t, fa.RecordedCommands, 3)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0:
+			require.JSONEq(t,
+				`{
+				"command": "subnet4-update",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24",
+							"pools": [
+								{
+									"pool": "192.0.2.10-192.0.2.20"
+								}
+							]
+						}
+					]
+				}
+			}`,
+				c.Marshal())
+		case 1:
+			require.JSONEq(t,
+				`{
+					"command": "network4-subnet-del",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp4" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the updated subnet has been stored in the database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.Nil(t, returnedSubnet.SharedNetwork)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+}
+
 // Test the calls for creating new transaction and updating a subnet.
 func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -2211,6 +2804,14 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 
 	serverConfig := `{
 		"Dhcp6": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
 			"shared-networks": [
 				{
 					"name": "foo",
@@ -2220,6 +2821,10 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 							"subnet": "2001:db8:1::/64"
 						}
 					]
+				},
+				{
+					"name": "bar",
+					"subnet6": []
 				}
 			],
 			"hooks-libraries": [
@@ -2262,7 +2867,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 
 	networks, err := dbmodel.GetAllSharedNetworks(db, 6)
 	require.NoError(t, err)
-	require.Len(t, networks, 1)
+	require.Len(t, networks, 2)
 
 	// Create fake agents receiving commands.
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -2308,6 +2913,9 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	require.NotZero(t, transactionID)
 	require.NotNil(t, contents.Subnet)
 	require.Len(t, contents.Daemons, 2)
+	require.Empty(t, contents.SharedNetworks4)
+	require.Len(t, contents.SharedNetworks6, 2)
+	require.Len(t, contents.ClientClasses, 2)
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{
 		SubnetLevelParameters: &models.KeaConfigSubnetDerivedParameters{
@@ -2330,6 +2938,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 			ID:              subnets[0].ID,
 			Subnet:          subnets[0].Prefix,
 			SharedNetworkID: subnets[0].SharedNetworkID,
+			SharedNetwork:   "foo",
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
@@ -2518,6 +3127,388 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 		require.Empty(t, ls.DHCPOptionSet)
 		require.Empty(t, ls.DHCPOptionSetHash)
 	}
+}
+
+// Test the calls for removing a subnet from a shared network.
+func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp6": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet6": [
+						{
+							"id": 1,
+							"subnet": "2001:db8:1::/64"
+						}
+					]
+				},
+				{
+					"name": "bar",
+					"subnet6": []
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	networks, err := dbmodel.GetAllSharedNetworks(db, 6)
+	require.NoError(t, err)
+	require.Len(t, networks, 2)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: subnets[0].ID,
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, subnet, daemons and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Subnet)
+	require.Len(t, contents.Daemons, 1)
+	require.Empty(t, contents.SharedNetworks4)
+	require.Len(t, contents.SharedNetworks6, 2)
+	require.Empty(t, contents.ClientClasses)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateSubnetSubmitParams{
+		ID: transactionID,
+		Subnet: &models.Subnet{
+			ID:     subnets[0].ID,
+			Subnet: subnets[0].Prefix,
+			LocalSubnets: []*models.LocalSubnet{
+				{
+					ID:       1,
+					DaemonID: dbapps[0].Daemons[0].ID,
+					PrefixDelegationPools: []*models.DelegatedPrefixPool{
+						{
+							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
+							DelegatedLength: storkutil.Ptr(int64(80)),
+						},
+					},
+					KeaConfigSubnetParameters: &models.KeaConfigSubnetParameters{},
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateSubnetSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateSubnetSubmitOK{}, rsp2)
+
+	// It should result in sending commands to two Kea servers. Each server
+	// receives the subnet6-update command.
+	require.Len(t, fa.RecordedCommands, 3)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0:
+			require.JSONEq(t,
+				`{
+				"command": "subnet6-update",
+				"service": [ "dhcp6" ],
+				"arguments": {
+					"subnet6": [
+						{
+							"id": 1,
+							"subnet": "2001:db8:1::/64",
+							"pd-pools": [
+								{
+									"prefix": "2001:db8:1::",
+									"prefix-len": 64,
+									"delegated-len": 80
+								}
+							]
+						}
+					]
+				}
+			}`,
+				c.Marshal())
+		case 1:
+			require.JSONEq(t,
+				`{
+					"command": "network6-subnet-del",
+					"service": [ "dhcp6" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp6" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the updated host has been stored in the database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.Nil(t, returnedSubnet.SharedNetwork)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+}
+
+// Test the calls for adding a subnet to a shared network.
+func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp6": {
+			"shared-networks": [
+				{
+					"name": "foo"
+				}
+			],
+			"subnet6": [
+				{
+					"id": 1,
+					"subnet": "2001:db8:1::/64"
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	networks, err := dbmodel.GetAllSharedNetworks(db, 6)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateSubnetBeginParams{
+		SubnetID: subnets[0].ID,
+	}
+	rsp := rapi.UpdateSubnetBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateSubnetBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, subnet, daemons and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Subnet)
+	require.Len(t, contents.Daemons, 1)
+	require.Empty(t, contents.SharedNetworks4)
+	require.Len(t, contents.SharedNetworks6, 1)
+	require.Empty(t, contents.ClientClasses)
+
+	// Submit transaction.
+	params2 := dhcp.UpdateSubnetSubmitParams{
+		ID: transactionID,
+		Subnet: &models.Subnet{
+			ID:              subnets[0].ID,
+			Subnet:          subnets[0].Prefix,
+			SharedNetworkID: contents.SharedNetworks6[0].ID,
+			SharedNetwork:   "foo",
+			LocalSubnets: []*models.LocalSubnet{
+				{
+					ID:       1,
+					DaemonID: dbapps[0].Daemons[0].ID,
+					PrefixDelegationPools: []*models.DelegatedPrefixPool{
+						{
+							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
+							DelegatedLength: storkutil.Ptr(int64(80)),
+						},
+					},
+					KeaConfigSubnetParameters: &models.KeaConfigSubnetParameters{},
+				},
+			},
+		},
+	}
+	rsp2 := rapi.UpdateSubnetSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateSubnetSubmitOK{}, rsp2)
+
+	require.Len(t, fa.RecordedCommands, 3)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0:
+			require.JSONEq(t,
+				`{
+					"command": "subnet6-update",
+					"service": [ "dhcp6" ],
+					"arguments": {
+						"subnet6": [
+							{
+								"id": 1,
+								"subnet": "2001:db8:1::/64",
+								"pd-pools": [
+									{
+										"prefix": "2001:db8:1::",
+										"prefix-len": 64,
+										"delegated-len": 80
+									}
+								]
+							}
+						]
+					}
+				}`,
+				c.Marshal())
+		case 1:
+			require.JSONEq(t,
+				`{
+					"command": "network6-subnet-add",
+					"service": [ "dhcp6" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp6" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the updated host has been stored in the database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.NotNil(t, returnedSubnet.SharedNetwork)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
 }
 
 // Test that an error is returned when it is attempted to begin new

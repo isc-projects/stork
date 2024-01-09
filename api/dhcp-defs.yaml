@@ -367,6 +367,18 @@
         type: array
         items:
           $ref: '#/definitions/KeaDaemon'
+      sharedNetworks4:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      SharedNetworks6:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      clientClasses:
+        type: array
+        items:
+          type: string
 
 # Shared Network
 

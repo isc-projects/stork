@@ -1498,6 +1498,8 @@ func TestBeginSubnetUpdate(t *testing.T) {
 	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
 	require.Equal(t, "subnet_update", state.Updates[0].Operation)
 	require.NotNil(t, state.Updates[0].Recipe.SubnetBeforeUpdate)
+	require.NotNil(t, state.Updates[0].Recipe.SubnetBeforeUpdate.SharedNetwork)
+	require.Equal(t, "foo", state.Updates[0].Recipe.SubnetBeforeUpdate.SharedNetwork.Name)
 	require.Equal(t, "192.0.2.0/24", state.Updates[0].Recipe.SubnetBeforeUpdate.Prefix)
 	require.Len(t, state.Updates[0].Recipe.SubnetBeforeUpdate.LocalSubnets, 2)
 }
