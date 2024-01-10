@@ -185,12 +185,14 @@
                         {{ sn.sharedNetwork }}
                     </td>
                     <td>
-                        <a
-                            *ngFor="let lsn of sn.localSubnets"
-                            routerLink="/apps/kea/{{ lsn.appId }}"
-                            style="display: block"
-                            >{{ lsn.appName }}</a
-                        >
+                        <div *ngFor="let lsn of sn.localSubnets">
+                            <a
+                                *ngFor="let lsn of sn.localSubnets"
+                                routerLink="/apps/kea/{{ lsn.appId }}"
+                                style="display: block"
+                                >{{ lsn.appName }}</a
+                            >
+                        </div>
                     </td>
                     <td>
                         <div class="grid" *ngIf="hasAssignedMultipleKeaSubnetIds(sn); else elseSingleKeaSubnetId">
