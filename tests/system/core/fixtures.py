@@ -440,17 +440,9 @@ def finish(request):
     function_name = request.function.__name__
 
     def collect_logs():
-        # Collect logs only for failed cases
-        # If the test fails due to non-assertion error then the call status is
-        # unavailable.
-        if hasattr(request.node, "rep_call") and not request.node.rep_call.failed:
-            return
-
+        # TODO: Collect counters only on demand.
         compose = create_docker_compose()
         service_names = compose.get_created_services()
-        # Collect logs only for docker-compose services
-        if len(service_names) == 0:
-            return
 
         # prepare test directory for logs, etc
         tests_dir = Path("test-results")
@@ -463,6 +455,23 @@ def finish(request):
         if test_dir.exists():
             shutil.rmtree(test_dir)
         test_dir.mkdir()
+
+        for service_name in service_names:
+            try:
+                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", test_dir.resolve() / "performance-report")
+            except FileNotFoundError:
+                # The container doesn't generate the performance report.
+                pass
+
+        # Collect logs only for failed cases
+        # If the test fails due to non-assertion error then the call status is
+        # unavailable.
+        if hasattr(request.node, "rep_call") and not request.node.rep_call.failed:
+            return
+
+        # Collect logs only for docker-compose services
+        if len(service_names) == 0:
+            return
 
         # Collect logs
         stdout, stderr = compose.logs()

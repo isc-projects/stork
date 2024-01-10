@@ -37,7 +37,7 @@ class ComposeServiceWrapper:
 
     def _download_file(self, source: str, target: str):
         """Downloads a file from the container to the host."""
-        self._compose.copy_from_service(self._service_name, source, target)
+        self._compose.copy_to_host(self._service_name, source, target)
 
     def is_operational(self):
         """Checks if the wrapped service is operational."""

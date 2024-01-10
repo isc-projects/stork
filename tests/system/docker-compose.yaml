@@ -142,6 +142,8 @@ services:
       - $PWD/docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
       - $PWD/docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - $PWD/tests/system/config/supervisor/profiler/profiler.conf:/etc/supervisor/conf.d/profiler.conf
+      - $PWD/tests/system/config/supervisor/profiler/supervisor-profiler.py:/usr/lib/supervisor-profiler.py
 
   agent-kea-many-subnets:
     extends: agent-kea

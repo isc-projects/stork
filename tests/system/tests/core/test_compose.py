@@ -455,7 +455,7 @@ def test_inspect_raw_calls_proper_command():
     assert result == '{ "format": "json" }'
 
 
-def test_copy_from_service_calls_proper_command():
+def test_copy_to_host_calls_proper_command():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
@@ -463,7 +463,7 @@ def test_copy_from_service_calls_proper_command():
     compose._call_command = mock
     base_cmd = compose.docker_compose_command()
     # Act
-    compose.copy_from_service("service", "/foo", "/bar")
+    compose.copy_to_host("service", "/foo", "/bar")
     # Assert
     mock.assert_called()
     cmd = mock.call_args.kwargs["cmd"]
@@ -472,20 +472,20 @@ def test_copy_from_service_calls_proper_command():
     assert cmd[-1] == "/bar"
 
 
-def test_copy_from_service_raises_exception_if_source_is_not_absolute():
+def test_copy_to_host_raises_exception_if_source_is_not_absolute():
     # Arrange
     compose = DockerCompose("project-dir")
     # Act & Assert
     with pytest.raises(ValueError):
-        compose.copy_from_service("service", "foo", "/bar")
+        compose.copy_to_host("service", "foo", "/bar")
 
 
-def test_copy_from_service_raises_exception_if_destination_is_not_absolute():
+def test_copy_to_host_raises_exception_if_destination_is_not_absolute():
     # Arrange
     compose = DockerCompose("project-dir")
     # Act & Assert
     with pytest.raises(ValueError):
-        compose.copy_from_service("service", "/foo", "bar")
+        compose.copy_to_host("service", "/foo", "bar")
 
 
 def test_port_calls_proper_command():

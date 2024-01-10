@@ -490,30 +490,37 @@ class DockerCompose:
             mapped_host = self._default_mapped_hostname
         return mapped_host, mapped_port
 
-    def copy_from_service(self, service_name, source, destination):
+    def copy_to_host(self, service_name, source, destination):
         """
-        Copies a file or directory from a service container to the host.
+        Copies a file from the container to the host.
 
         Parameters
         ----------
-        service_name: str
-            Name of the docker compose service
-        source: str
-            The path to the file or directory in the container
-        destination: str
-            The path to the destination on the host
+        service_name : str
+            Name of the docker-compose service
+        source : str
+            Path to the file in the container
+        destination : str
+            Path to the file on the host
         """
         if not os.path.isabs(source):
             raise ValueError("source must be an absolute path")
         if not os.path.isabs(destination):
             raise ValueError("destination must be an absolute path")
 
-        cp_cmd = self.docker_compose_command() + [
+        copy_cmd = self.docker_compose_command() + [
             "cp",
             f"{service_name}:{source}",
-            destination,
+            destination
         ]
-        self._call_command(cmd=cp_cmd)
+
+        status, _, stderr = self._call_command(cmd=copy_cmd, check=False, capture_output=True)
+        if status == 1:
+            not_found_expected_msg = f"Could not find the file {source} in container"
+            if not_found_expected_msg in stderr:
+                raise FileNotFoundError(not_found_expected_msg)
+        if status != 0:
+            raise SystemError(f"Failed to copy file from container: {stderr}")
 
     def get_service_ip_address(self, service_name, network_name, family):
         """
