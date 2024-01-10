@@ -177,6 +177,39 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             },
         },
     ],
+    sharedNetworks4: [
+        {
+            id: 1,
+            name: 'floor1',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                },
+            ],
+        },
+        {
+            id: 2,
+            name: 'floor2',
+            localSharedNetworks: [
+                {
+                    daemonId: 2,
+                },
+            ],
+        },
+        {
+            id: 3,
+            name: 'floor3',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                },
+                {
+                    daemonId: 2,
+                },
+            ],
+        },
+    ],
+    sharedNetworks6: [],
 }
 
 let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
@@ -316,6 +349,36 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
+        },
+    ],
+    sharedNetworks4: [],
+    sharedNetworks6: [
+        {
+            id: 1,
+            name: 'floor1',
+            localSharedNetworks: [
+                {
+                    daemonId: 3,
+                },
+            ],
+        },
+        {
+            id: 2,
+            name: 'floor2',
+            localSharedNetworks: [
+                {
+                    daemonId: 4,
+                },
+            ],
+        },
+        {
+            id: 3,
+            name: 'floor3',
+            localSharedNetworks: [
+                {
+                    daemonId: 5,
+                },
+            ],
         },
     ],
 }

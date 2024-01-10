@@ -56,26 +56,26 @@ export class SubnetTabComponent implements OnInit {
                     parameters:
                         this.subnet.sharedNetwork?.length > 0
                             ? [
-                                  ls.keaConfigSubnetParameters?.subnetLevelParameters,
-                                  ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters,
-                                  ls.keaConfigSubnetParameters?.globalParameters,
+                                  ls.keaConfigSubnetParameters?.subnetLevelParameters || {},
+                                  ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters || {},
+                                  ls.keaConfigSubnetParameters?.globalParameters || {},
                               ]
                             : [
-                                  ls.keaConfigSubnetParameters?.subnetLevelParameters,
-                                  ls.keaConfigSubnetParameters?.globalParameters,
+                                  ls.keaConfigSubnetParameters?.subnetLevelParameters || {},
+                                  ls.keaConfigSubnetParameters?.globalParameters || {},
                               ],
                 })
 
                 if (this.subnet.sharedNetwork?.length > 0) {
                     this.dhcpOptions.push([
-                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options,
-                        ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.options,
-                        ls.keaConfigSubnetParameters?.globalParameters?.options,
+                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options || [],
+                        ls.keaConfigSubnetParameters?.sharedNetworkLevelParameters?.options || [],
+                        ls.keaConfigSubnetParameters?.globalParameters?.options || [],
                     ])
                 } else {
                     this.dhcpOptions.push([
-                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options,
-                        ls.keaConfigSubnetParameters?.globalParameters?.options,
+                        ls.keaConfigSubnetParameters?.subnetLevelParameters?.options || [],
+                        ls.keaConfigSubnetParameters?.globalParameters?.options || [],
                     ])
                 }
             }

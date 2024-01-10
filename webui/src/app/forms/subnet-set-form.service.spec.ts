@@ -1625,6 +1625,7 @@ describe('SubnetSetFormService', () => {
     it('should convert IPv4 subnet data to a form', () => {
         const subnet: Subnet = {
             subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
             localSubnets: [
                 {
                     daemonId: 1,
@@ -1667,6 +1668,8 @@ describe('SubnetSetFormService', () => {
         const formGroup = service.convertSubnetToForm(IPType.IPv4, subnet)
         expect(formGroup.get('subnet')?.value).toBe('192.0.2.0/24')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
+
+        expect(formGroup.get('sharedNetwork')?.value).toBe(1)
 
         const pools = formGroup.get('pools') as UntypedFormArray
         expect(pools.length).toBe(2)
@@ -1813,6 +1816,8 @@ describe('SubnetSetFormService', () => {
         expect(formGroup.get('subnet')?.value).toBe('2001:db8:1::/64')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
 
+        expect(formGroup.get('sharedNetwork')?.value).toBeFalsy()
+
         const pools = formGroup.get('pools') as UntypedFormArray
         expect(pools.length).toBe(3)
         expect(pools.get('0.range.start')?.value).toBe('2001:db8:1::1')
@@ -1953,6 +1958,7 @@ describe('SubnetSetFormService', () => {
     it('should convert a form to subnet', () => {
         const subnet0: Subnet = {
             subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
             localSubnets: [
                 {
                     daemonId: 1,
@@ -1992,6 +1998,7 @@ describe('SubnetSetFormService', () => {
         const subnet1 = service.convertFormToSubnet(formGroup)
 
         expect(subnet1.subnet).toBe('192.0.2.0/24')
+        expect(subnet1.sharedNetworkId).toBe(1)
         expect(subnet1.localSubnets.length).toBe(2)
 
         expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.options?.length).toBe(1)

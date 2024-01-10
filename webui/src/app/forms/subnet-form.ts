@@ -1,8 +1,9 @@
-import { FormGroup, UntypedFormArray } from '@angular/forms'
-import { Subnet } from '../backend'
+import { FormGroup } from '@angular/forms'
+import { SharedNetwork, Subnet } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
-import { KeaSubnetParametersForm, SubnetForm } from './subnet-set-form.service'
+import { SubnetForm } from './subnet-set-form.service'
+import { SelectableSharedNetwork } from './selectable-shared-network'
 
 /**
  * Holds the state of the form created by the SubnetFormComponent.
@@ -57,6 +58,21 @@ export class SubnetFormState {
      * An array of client classes.
      */
     clientClasses: SelectableClientClass[]
+
+    /**
+     * All IPv4 shared networks received from the server.
+     */
+    allSharedNetworks4: SharedNetwork[]
+
+    /**
+     * All IPv6 shared networks received from the server.
+     */
+    allSharedNetworks6: SharedNetwork[]
+
+    /**
+     * An array of selectable shared networks.
+     */
+    selectableSharedNetworks: SelectableSharedNetwork[]
 
     /**
      * A flag set to true when DHCPv4 servers have been selected.
@@ -116,12 +132,28 @@ export class SubnetFormState {
         // Filter selectable other selectable servers based on the current selection.
         if (dhcpv4 || subnet?.subnet?.includes('.')) {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp4')
+            this.selectableSharedNetworks =
+                this.allSharedNetworks4
+                    ?.filter((sn) =>
+                        sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId))
+                    )
+                    .map((sn) => {
+                        return { name: sn.name, id: sn.id }
+                    }) || []
         } else if (this.dhcpv6 || subnet?.subnet?.includes(':')) {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp6')
+            this.selectableSharedNetworks =
+                this.allSharedNetworks6
+                    ?.filter((sn) =>
+                        sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId))
+                    )
+                    .map((sn) => {
+                        return { name: sn.name, id: sn.id }
+                    }) || []
         } else {
             this.filteredDaemons = this.allDaemons
+            this.selectableSharedNetworks = []
         }
-
         return breakingChange
     }
 }

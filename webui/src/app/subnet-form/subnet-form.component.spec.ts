@@ -48,6 +48,8 @@ describe('SubnetFormComponent', () => {
         subnet: {
             id: 123,
             subnet: '192.0.2.0/24',
+            sharedNetwork: 'floor3',
+            sharedNetworkId: 3,
             localSubnets: [
                 {
                     id: 123,
@@ -176,6 +178,39 @@ describe('SubnetFormComponent', () => {
                 },
             },
         ],
+        sharedNetworks4: [
+            {
+                id: 1,
+                name: 'floor1',
+                localSharedNetworks: [
+                    {
+                        daemonId: 1,
+                    },
+                ],
+            },
+            {
+                id: 2,
+                name: 'floor2',
+                localSharedNetworks: [
+                    {
+                        daemonId: 2,
+                    },
+                ],
+            },
+            {
+                id: 3,
+                name: 'floor3',
+                localSharedNetworks: [
+                    {
+                        daemonId: 1,
+                    },
+                    {
+                        daemonId: 2,
+                    },
+                ],
+            },
+        ],
+        sharedNetworks6: [],
     }
 
     let cannedResponseBeginSubnet6: any = {
@@ -325,6 +360,36 @@ describe('SubnetFormComponent', () => {
                 },
             },
         ],
+        sharedNetworks4: [],
+        sharedNetworks6: [
+            {
+                id: 1,
+                name: 'floor1',
+                localSharedNetworks: [
+                    {
+                        daemonId: 3,
+                    },
+                ],
+            },
+            {
+                id: 2,
+                name: 'floor2',
+                localSharedNetworks: [
+                    {
+                        daemonId: 4,
+                    },
+                ],
+            },
+            {
+                id: 3,
+                name: 'floor3',
+                localSharedNetworks: [
+                    {
+                        daemonId: 5,
+                    },
+                ],
+            },
+        ],
     }
 
     beforeEach(async () => {
@@ -406,6 +471,8 @@ describe('SubnetFormComponent', () => {
         const subnet = {
             id: 123,
             subnet: '192.0.2.0/24',
+            sharedNetworkId: 3,
+            sharedNetwork: 'floor3',
             localSubnets: [
                 {
                     id: 123,
@@ -522,6 +589,7 @@ describe('SubnetFormComponent', () => {
         const subnet = {
             id: 234,
             subnet: '2001:db8:1::/64',
+            sharedNetworkId: null,
             localSubnets: [
                 {
                     id: 234,
@@ -637,11 +705,13 @@ describe('SubnetFormComponent', () => {
         expect(component.form).toBeTruthy()
         expect(component.form.group).toBeTruthy()
         expect(component.form.group.get('subnet')).toBeTruthy()
+        expect(component.form.group.get('sharedNetwork')).toBeTruthy()
         expect(component.form.group.get('pools')).toBeTruthy()
         expect(component.form.group.contains('parameters')).toBeTrue()
         expect(component.form.group.contains('options')).toBeTrue()
 
         expect(component.form.group.get('subnet').value).toBe('192.0.2.0/24')
+        expect(component.form.group.get('sharedNetwork').value).toBe(3)
 
         const pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         expect(pools).toBeTruthy()
@@ -674,11 +744,13 @@ describe('SubnetFormComponent', () => {
         expect(component.form).toBeTruthy()
         expect(component.form.group).toBeTruthy()
         expect(component.form.group.get('subnet')).toBeTruthy()
+        expect(component.form.group.get('sharedNetwork')).toBeTruthy()
         expect(component.form.group.get('pools')).toBeTruthy()
         expect(component.form.group.contains('parameters')).toBeTrue()
         expect(component.form.group.contains('options')).toBeTrue()
 
         expect(component.form.group.get('subnet').value).toBe('2001:db8:1::/64')
+        expect(component.form.group.get('sharedNetwork').value).toBeFalsy()
 
         const pools = component.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         expect(pools).toBeTruthy()

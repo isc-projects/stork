@@ -199,6 +199,11 @@ export interface SubnetForm {
     subnet: FormControl<string>
 
     /**
+     * Association with a shared network.
+     */
+    sharedNetwork: FormControl<number>
+
+    /**
      * An array of the address pools.
      */
     pools: FormArray<FormGroup<AddressPoolForm>>
@@ -963,6 +968,7 @@ export class SubnetSetFormService {
     convertSubnetToForm(ipType: IPType, subnet: Subnet): FormGroup<SubnetForm> {
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
+            sharedNetwork: new FormControl(subnet.sharedNetworkId),
             pools: this.convertAddressPoolsToForm(subnet),
             prefixPools: this.convertPrefixPoolsToForm(subnet),
             parameters: this.convertKeaSubnetParametersToForm(
@@ -1000,6 +1006,7 @@ export class SubnetSetFormService {
     convertFormToSubnet(form: FormGroup<SubnetForm>): Subnet {
         let subnet: Subnet = {
             subnet: form.get('subnet')?.value,
+            sharedNetworkId: form.get('sharedNetwork')?.value,
             localSubnets:
                 form.get('selectedDaemons')?.value.map((sd) => {
                     let ls: LocalSubnet = {

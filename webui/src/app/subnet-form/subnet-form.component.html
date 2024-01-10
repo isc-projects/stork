@@ -13,6 +13,22 @@
                 class="p-error block"
                 >A subnet prefix is required.
             </small>
+
+            <span class="p-float-label mt-5 mb-2">
+                <p-dropdown
+                    inputId="shared-networks-select"
+                    emptyMessage="No shared networks found"
+                    formControlName="sharedNetwork"
+                    optionLabel="name"
+                    optionValue="id"
+                    [options]="form.selectableSharedNetworks"
+                    [showClear]="true"
+                    placeholder="not selected"
+                    styleClass="w-full"
+                >
+                </p-dropdown>
+                <label for="shared-network-select">Shared Network</label>
+            </span>
         </p-fieldset>
         <p-fieldset legend="Assignments" styleClass="mt-4">
             <div class="mt-4" [formGroup]="form.group">

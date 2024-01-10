@@ -1,18 +1,8 @@
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnDestroy,
-    OnInit,
-    Output,
-    Query,
-    QueryList,
-    ViewChildren,
-} from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
 import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
-import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
+import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import {
     AddressPoolForm,
     KeaSubnetParametersForm,
@@ -187,6 +177,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
         // Initially, list all daemons.
         this.form.filteredDaemons = this.form.allDaemons
+        this.form.allSharedNetworks4 = response.sharedNetworks4 || []
+        this.form.allSharedNetworks6 = response.sharedNetworks6 || []
         // Get the server names to be displayed next to the configuration parameters.
         this.servers = response.subnet.localSubnets.map((ls) => this.form.getDaemonById(ls.daemonId)?.label)
         // If we update an existing subnet the subnet information should be in the response.
@@ -452,6 +444,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         let subnet: Subnet
         try {
             subnet = this.subnetSetFormService.convertFormToSubnet(this.form.group)
+            if (subnet.sharedNetworkId) {
+                subnet.sharedNetwork = this.form.selectableSharedNetworks?.find(
+                    (sn) => subnet.sharedNetworkId === sn.id
+                )?.name
+            }
         } catch (err) {
             this.messageService.add({
                 severity: 'error',
@@ -463,10 +460,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
 
         if (this.subnetId) {
-            // TODO: this component does not allow for editing subnet pools or relay
-            // addresses. Thus, we have to copy the original pools and relay values
-            // to the converted subnet. It will be removed when the form is updated
-            // to support specifying these values.
             const originalSubnet = this.savedUpdateSubnetBeginData.subnet
             for (let ls of subnet.localSubnets) {
                 const originalLocalSubnet =
