@@ -1023,14 +1023,14 @@ PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
     sh PYTHON, "-m", "ensurepip", "-U", "--default-pip"
     sh "touch", "-c", PIP
-    sh PIP, "install", "wheel"
+    sh PIP, "install", "--prefer-binary", "wheel"
     sh PIP, "--version"
 end
 
 SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
 file SPHINX_BUILD => [PIP] do
-    sh PIP, "install", "-r", sphinx_requirements_file
+    sh PIP, "install", "--prefer-binary", "-r", sphinx_requirements_file
     sh "touch", "-c", SPHINX_BUILD
     sh SPHINX_BUILD, "--version"
 end
@@ -1039,7 +1039,7 @@ add_hash_guard(SPHINX_BUILD, sphinx_requirements_file)
 PYTEST = File.join(python_tools_dir, "bin", "pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
 file PYTEST => [PIP] do
-    sh PIP, "install", "-r", pytests_requirements_file
+    sh PIP, "install", "--prefer-binary", "-r", pytests_requirements_file
     sh "touch", "-c", PYTEST
     sh PYTEST, "--version"
 end
@@ -1056,7 +1056,7 @@ end
 
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
-    sh PIP, "install", "pip-tools==#{pip_tools_ver}"
+    sh PIP, "install", "--prefer-binary", "pip-tools==#{pip_tools_ver}"
     sh "touch", "-c", PIP_COMPILE
     sh PIP_COMPILE, "--version"
 end
@@ -1075,7 +1075,7 @@ end
 PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
 file PYLINT => [PIP] do
-    sh PIP, "install", "-r", python_linters_requirements_file
+    sh PIP, "install", "--prefer-binary", "-r", python_linters_requirements_file
     sh "touch", "-c", PYLINT
     sh PYLINT, "--version"
 end
@@ -1096,7 +1096,7 @@ end
 flask_requirements_file = File.expand_path("init_deps/flask.txt", __dir__)
 FLASK = File.join(python_tools_dir, "bin", "flask")
 file FLASK => [PIP] do
-    sh PIP, "install", "-r", flask_requirements_file
+    sh PIP, "install", "--prefer-binary", "-r", flask_requirements_file
     sh "touch", "-c", FLASK
     sh FLASK, "--version"
 end
