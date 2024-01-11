@@ -179,6 +179,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         this.form.filteredDaemons = this.form.allDaemons
         this.form.allSharedNetworks4 = response.sharedNetworks4 || []
         this.form.allSharedNetworks6 = response.sharedNetworks6 || []
+        this.form.clientClasses =
+            response.clientClasses?.map((c) => {
+                return { name: c }
+            }) || []
         // Get the server names to be displayed next to the configuration parameters.
         this.servers = response.subnet.localSubnets.map((ls) => this.form.getDaemonById(ls.daemonId)?.label)
         // If we update an existing subnet the subnet information should be in the response.

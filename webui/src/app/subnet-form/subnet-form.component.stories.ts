@@ -210,6 +210,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
         },
     ],
     sharedNetworks6: [],
+    clientClasses: ['foo', 'bar'],
 }
 
 let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
@@ -381,6 +382,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             ],
         },
     ],
+    clientClasses: ['foo', 'bar'],
 }
 
 export default {

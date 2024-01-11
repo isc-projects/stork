@@ -154,7 +154,11 @@
             </div>
         </p-fieldset>
         <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
-            <app-shared-parameters-form [servers]="servers" [formGroup]="form.group.get('parameters')">
+            <app-shared-parameters-form
+                [clientClasses]="form.clientClasses"
+                [servers]="servers"
+                [formGroup]="form.group.get('parameters')"
+            >
             </app-shared-parameters-form>
         </p-fieldset>
         <p-fieldset [formGroup]="form.group.get('options')" legend="DHCP Options" styleClass="mt-4">

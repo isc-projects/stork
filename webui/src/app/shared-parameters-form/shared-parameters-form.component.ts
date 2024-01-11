@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { AbstractControl, FormArray, FormGroup, UntypedFormGroup } from '@angular/forms'
 import { getSeverityByIndex, uncamelCase } from '../utils'
+import { SelectableClientClass } from '../forms/selectable-client-class'
 
 /**
  * A component providing a form for editing configuration parameters.
@@ -40,6 +41,11 @@ export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractC
      * Use the {@link SubnetSetForm} to instantiate the form.
      */
     @Input() formGroup: FormGroup<T> = null
+
+    /**
+     * A list of selectable client classes.
+     */
+    @Input() clientClasses: SelectableClientClass[]
 
     /**
      * Returns the names of all parameters in the form group.

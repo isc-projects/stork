@@ -24,6 +24,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -44,7 +45,12 @@ describe('SharedParametersFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ArrayValueSetFormComponent, DhcpClientClassSetFormComponent, SharedParametersFormComponent],
+            declarations: [
+                ArrayValueSetFormComponent,
+                DhcpClientClassSetFormComponent,
+                HelpTipComponent,
+                SharedParametersFormComponent,
+            ],
             imports: [
                 ButtonModule,
                 CheckboxModule,
@@ -264,6 +270,55 @@ describe('SharedParametersFormComponent', () => {
         expect(btns[1].nativeElement.innerText).toBe('Clear')
         checkbox = cells[2].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
+    })
+
+    it('should display use a list of selectable client classes', () => {
+        component.servers = ['server 1']
+        component.formGroup = new FormGroup<SubnetForm>({
+            requireClientClasses: new SharedParameterFormGroup(
+                {
+                    type: 'client-classes',
+                },
+                [new FormControl([])]
+            ),
+        })
+        component.clientClasses = [
+            {
+                name: 'foo',
+            },
+            {
+                name: 'bar',
+            },
+        ]
+        fixture.detectChanges()
+
+        let allRows = fixture.debugElement.queryAll(By.css('tr'))
+        expect(allRows.length).toBe(2)
+
+        // Validate the table header.
+        let cells = allRows[0].queryAll(By.css('th'))
+        expect(cells.length).toBe(3)
+        expect(cells[0].nativeElement.innerText).toBe('Parameter')
+        expect(cells[1].nativeElement.innerText).toBe('Value')
+        expect(cells[2].nativeElement.innerText).toBe('Unlock')
+
+        // Require Client Classes.
+        cells = allRows[1].queryAll(By.css('td'))
+        expect(cells.length).toBe(3)
+        expect(cells[0].nativeElement.innerText).toBe('Require Client Classes')
+        const controls = cells[1].queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(controls.length).toBe(1)
+
+        // Click the List button to list the classes.
+        const btns = cells[1].queryAll(By.css('[label=List]'))
+        expect(btns.length).toBe(1)
+        expect(btns[0].nativeElement.innerText).toBe('List')
+        btns[0].nativeElement.click()
+        fixture.detectChanges()
+
+        // The expanded list should contain the client classes.
+        expect(controls[0].nativeElement.innerText).toContain('foo')
+        expect(controls[0].nativeElement.innerText).toContain('bar')
     })
 
     it('should clear selected value', () => {
