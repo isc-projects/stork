@@ -620,5 +620,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         for (const m of this.selectedMachines) {
             this._changeMachineAuthorization(m, true, table)
         }
+        // Clear selection after.
+        this.selectedMachines = []
     }
 }
