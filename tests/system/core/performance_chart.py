@@ -103,7 +103,9 @@ def plot_reports(report_paths: List[str], output_path: str = None):
         shared_xaxes=True,
         vertical_spacing=0.04,
         x_title='Time (s)',
-        column_titles=["Performance metrics<br>"+"<br>".join(report_paths)+"<br>&nbsp;"]
+        column_titles=["Performance metrics<br>" +
+                       "<br>".join(str(p) for p in report_paths) +
+                       "<br>&nbsp;"]
     )
 
     # Choose color palette.
@@ -112,7 +114,8 @@ def plot_reports(report_paths: List[str], output_path: str = None):
     # Generate a chart for each counter.
     for cix, (_, counter_entries) in enumerate(counter_groups.items(), 1):
         # Generate a series for each service.
-        for six, (service_name, service_entries) in enumerate(group_by_service(counter_entries).items()):
+        service_groups = group_by_service(counter_entries)
+        for six, (service_name, service_entries) in enumerate(service_groups.items()):
             # Sort the entries by timestamp.
             service_entries.sort(key=lambda e: e.timestamp)
 
