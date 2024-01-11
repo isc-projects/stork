@@ -116,7 +116,7 @@ class PerformanceMetricsCollector:
             ppid = int(ppid)
             cpu = float(cpu)
             mem = float(mem)
-            rss = int(rss) / 1024.0  # RSS is in KB. Convert to bytes.
+            rss = int(rss) * 1024.0  # RSS is in KB. Convert to bytes.
             
             data[pid] = {
                 'ppid': ppid,
