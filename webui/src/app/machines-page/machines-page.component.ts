@@ -614,8 +614,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * @param table table where selected machines are to be authorized.
      */
     authorizeSelectedMachines(table) {
-        console.log('authorizeSelectedMachines')
-        console.log(this.selectedMachines)
+        // Calling _changeMachineAuthorization sequentially for all selected machines.
+        // Max expected count of selected machines is max machines per table page,
+        // which currently is 50.
         for (const m of this.selectedMachines) {
             this._changeMachineAuthorization(m, true, table)
         }
