@@ -8,7 +8,7 @@ from core.compose_factory import create_docker_compose
 from core import wrappers
 from core.utils import setup_logger
 from core import lease_generators
-
+from core import performance_chart
 
 logger = setup_logger(__name__)
 
@@ -456,12 +456,18 @@ def finish(request):
             shutil.rmtree(test_dir)
         test_dir.mkdir()
 
+        report_paths = []
         for service_name in service_names:
             try:
-                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", test_dir.resolve() / f"performance-report-{service_name}")
+                report_path = test_dir.resolve() / f"performance-report-{service_name}"
+                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", report_path)
+                report_paths.append(report_path)
             except FileNotFoundError:
                 # The container doesn't generate the performance report.
                 pass
+
+        if len(report_paths) != 0:
+            performance_chart.plot_reports(report_paths, test_dir / "performance-chart.png")
 
         # Collect logs only for failed cases
         # If the test fails due to non-assertion error then the call status is
