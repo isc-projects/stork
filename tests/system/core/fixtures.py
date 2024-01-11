@@ -439,45 +439,22 @@ def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__
 
-    def collect_logs():
-        # TODO: Collect counters only on demand.
-        compose = create_docker_compose()
-        service_names = compose.get_created_services()
-
-        # prepare test directory for logs, etc
-        tests_dir = Path("test-results")
-        tests_dir.mkdir(exist_ok=True)
-        test_name = function_name
-        test_name = test_name.replace("[", "__")
-        test_name = test_name.replace("/", "_")
-        test_name = test_name.replace("]", "")
-        test_dir = tests_dir / test_name
-        if test_dir.exists():
-            shutil.rmtree(test_dir)
-        test_dir.mkdir()
-
-        report_paths = []
-        for service_name in service_names:
-            try:
-                report_path = test_dir.resolve() / f"performance-report-{service_name}"
-                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", report_path)
-                report_paths.append(report_path)
-            except FileNotFoundError:
-                # The container doesn't generate the performance report.
-                pass
-
-        if len(report_paths) != 0:
-            performance_chart.plot_reports(report_paths, test_dir / "performance-chart.png")
-
+    def collect_logs(test_dir: Path):
         # Collect logs only for failed cases
         # If the test fails due to non-assertion error then the call status is
         # unavailable.
         if hasattr(request.node, "rep_call") and not request.node.rep_call.failed:
             return
 
+        compose = create_docker_compose()
+        service_names = compose.get_created_services()
+
         # Collect logs only for docker-compose services
         if len(service_names) == 0:
             return
+
+        # prepare test directory for logs, etc
+        test_dir.mkdir(exist_ok=True)
 
         # Collect logs
         stdout, stderr = compose.logs()
@@ -506,8 +483,40 @@ def finish(request):
             with open(test_dir / "ps.out", "wt", encoding="utf-8") as f:
                 f.write(ps_stdout)
 
+    def collect_metrics(test_dir: Path):
+        test_dir.mkdir(exist_ok=True)
+
+        compose = create_docker_compose()
+        service_names = compose.get_created_services()
+
+        report_paths = []
+        for service_name in service_names:
+            try:
+                report_path = test_dir.resolve() / f"performance-report-{service_name}"
+                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", report_path)
+                report_paths.append(report_path)
+            except FileNotFoundError:
+                # The container doesn't generate the performance report.
+                pass
+
+        if len(report_paths) != 0:
+            performance_chart.plot_reports(report_paths, test_dir / "performance-charts.html")
+
     def collect_logs_and_down_all():
-        collect_logs()
+        tests_dir = Path("test-results")
+        tests_dir.mkdir(exist_ok=True)
+        test_name = function_name
+        test_name = test_name.replace("[", "__")
+        test_name = test_name.replace("/", "_")
+        test_name = test_name.replace("]", "")
+        test_dir = tests_dir / test_name
+        if test_dir.exists():
+            shutil.rmtree(test_dir)
+
+        # The result directory is not created yet.
+
+        collect_logs(test_dir)
+        collect_metrics(test_dir)
         # Down all containers
         compose = create_docker_compose()
         compose.down()
