@@ -4,63 +4,11 @@ Collects the performance metrics of the services managed by supervisor.
 Inspired by Superlance project: https://github.com/Supervisor/superlance
 '''
 
+from datetime import timedelta
 import time
 import subprocess
 import sys
 from xmlrpc.client import ServerProxy
-
-
-def write_stderr(s):
-    sys.stderr.write(s)
-    sys.stderr.flush()
-
-
-class EventListenerProtocol:
-    '''
-    Defines the methods to communicate with supervisor.
-    '''
-    def __init__(self, stdin=sys.stdin, stdout=sys.stdout):
-        '''
-        Accepts the stdin and stdout file-like objects.
-        The default values are sys.stdin and sys.stdout. They may be overriden
-        for testing purposes.
-        '''
-        self.stdin = stdin
-        self.stdout = stdout
-
-    def write_stdout(self, s):
-        '''
-        Write a string to stdout and flush it.
-        Noe, only eventlistener protocol messages may be sent to stdout
-        '''
-        self.stdout.write(s)
-        self.stdout.flush()
-
-    def send_ok(self):
-        '''
-        Transition from READY to ACKNOWLEDGED state.
-        The format of the message is:
-        RESULT <number of the content bytes><new line><content string>
-        '''
-        self.write_stdout('RESULT 2\nOK')
-
-    def send_ready(self):
-        '''Transition from ACKNOWLEDGED to READY state.'''
-        self.write_stdout('READY\n')
-
-    @staticmethod
-    def _parse_headers(line):
-        '''Parse the headers from supervisor.'''
-        headers = dict([ x.split(':') for x in line.split() ])
-        return headers
-
-    def read_event_data(self):
-        '''Read the event data from supervisor. Parses the headers and reads
-        the data.'''
-        header_line = self.stdin.readline()
-        headers = EventListenerProtocol._parse_headers(header_line)
-        data = sys.stdin.read(int(headers['len']))
-        return headers, data
 
 
 class PerformanceMetricsCollector:
@@ -71,10 +19,10 @@ class PerformanceMetricsCollector:
     <timestamp><tab><service name><tab><counter name><tab><counter value>
 
     '''
-    def __init__(self, output_path, protocol=None, rpc=None):
+    def __init__(self, output_path, interval=timedelta(seconds=1), rpc=None):
         '''Requires the path to the file where the metrics will be stored.'''
         self.output_path = output_path
-        self.protocol = protocol if protocol else EventListenerProtocol()
+        self.interval = interval
 
         self.rpc = rpc
         if rpc is None:
@@ -82,40 +30,22 @@ class PerformanceMetricsCollector:
 
     def run_forever(self):
         '''Collects the metrics until terminated.'''
+        interval_seconds = self.interval.total_seconds()
+        start_time = time.monotonic()
         while 1:
-            self.handle_next_event()
-
-    def handle_next_event(self):
-        '''Waits for, reads the next supervisor, and processes it.'''
-        # Transition from ACKNOWLEDGED to READY.
-        self.protocol.send_ready()
-
-        write_stderr("HELLO LOOP!")
-
-        # Read event payload.
-        headers, _ = self.protocol.read_event_data()
-
-        if not headers['eventname'].startswith('TICK'):
-            # Do nothing with non-TICK events.
-            self.protocol.send_ok()
-
-        # Collect the metrics.
-        self.handle_tick()
-
-        # Transition from READY to ACKNOWLEDGED.
-        self.protocol.send_ok()
+            self.handle_tick()
+            time.sleep(interval_seconds - (time.monotonic() - start_time) % interval_seconds)
 
     def handle_tick(self):
         '''Reads the performance counters of the supervisor services and
         writes them to the output file.'''
-        write_stderr("HELLO TICK!")
 
-        # The event frequency is 5 second so it should be enough to just pick
-        # the current time. In fact, it isn't an exact time when the data is
-        # collected.
+        # The event frequency is relatively long so it should be enough to just
+        # pick the current time. In fact, it isn't an exact time when the data
+        # is collected.
         timestamp = time.time()
         # Fetch the process details from the system.
-        processDetails = self.fetch_process_details()
+        process_details = self.fetch_process_details()
 
         # List the supervisor services.
         infos = self.rpc.supervisor.getAllProcessInfo()
@@ -131,7 +61,7 @@ class PerformanceMetricsCollector:
                     continue
 
                 # Sum the process counters with the counters of its children.
-                counters = self.cumulate_counters(processDetails, pid)
+                counters = self.cumulate_counters(process_details, pid)
                 # Write the counters to the file.
                 for counter_name, counter_value in counters.items():
                     f.write(f'{timestamp}\t{name}\t{counter_name}\t{counter_value}\n')  
@@ -192,11 +122,8 @@ class PerformanceMetricsCollector:
         return data
 
 
-
-
-
 def main():
-    write_stderr("HELLO WORLD!")
+    '''Runs the collector.'''
     collector = PerformanceMetricsCollector(sys.argv[1])
     collector.run_forever()
 
