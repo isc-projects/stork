@@ -5,6 +5,7 @@ Inspired by Superlance project: https://github.com/Supervisor/superlance
 '''
 
 from datetime import timedelta
+import os
 import time
 import subprocess
 import sys
@@ -32,7 +33,7 @@ class PerformanceMetricsCollector:
         '''Collects the metrics until terminated.'''
         interval_seconds = self.interval.total_seconds()
         start_time = time.monotonic()
-        while 1:
+        while True:
             self.handle_tick()
             time.sleep(interval_seconds - (time.monotonic() - start_time) % interval_seconds)
 
@@ -46,6 +47,8 @@ class PerformanceMetricsCollector:
         timestamp = time.time()
         # Fetch the process details from the system.
         process_details = self.fetch_process_details()
+        # Current process PID.
+        this_pid = os.getpid()
 
         # List the supervisor services.
         infos = self.rpc.supervisor.getAllProcessInfo()
@@ -58,6 +61,10 @@ class PerformanceMetricsCollector:
 
                 if not pid:
                     # The service is not running.
+                    continue
+
+                if pid == this_pid:
+                    # The process is the collector itself.
                     continue
 
                 # Sum the process counters with the counters of its children.
@@ -78,11 +85,11 @@ class PerformanceMetricsCollector:
                     children.extend(find_children(p))
             return children
 
-        children = find_children(pid)
+        pids = [pid,] + find_children(pid)
         counters = {}
 
-        for child in children:
-            child_counters = data[child]['counters']
+        for pid in pids:
+            child_counters = data[pid]['counters']
             for counter in child_counters:
                 if counter not in counters:
                     counters[counter] = 0
@@ -124,7 +131,10 @@ class PerformanceMetricsCollector:
 
 def main():
     '''Runs the collector.'''
-    collector = PerformanceMetricsCollector(sys.argv[1])
+    collector = PerformanceMetricsCollector(
+        output_path=sys.argv[1],
+        interval=timedelta(milliseconds=int(sys.argv[2]) if len(sys.argv) > 2 else 1000)
+    )
     collector.run_forever()
 
 

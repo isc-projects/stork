@@ -458,7 +458,7 @@ def finish(request):
 
         for service_name in service_names:
             try:
-                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", test_dir.resolve() / "performance-report")
+                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", test_dir.resolve() / f"performance-report-{service_name}")
             except FileNotFoundError:
                 # The container doesn't generate the performance report.
                 pass
