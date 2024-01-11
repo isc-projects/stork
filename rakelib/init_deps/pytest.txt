@@ -23,7 +23,11 @@ iniconfig==2.0.0
 multidict==6.1.0
     # via grpclib
 packaging==24.1
-    # via pytest
+    # via
+    #   plotly
+    #   pytest
+plotly==5.18.0
+    # via -r rakelib/init_deps/pytest.in
 pluggy==1.5.0
     # via pytest
 protobuf==5.28.2
@@ -44,6 +48,8 @@ pyyaml==6.0.2
     # via -r rakelib/init_deps/pytest.in
 six==1.16.0
     # via python-dateutil
+tenacity==8.2.3
+    # via plotly
 tomli==2.0.1
     # via pytest
 typing-extensions==4.12.2

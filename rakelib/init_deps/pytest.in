@@ -7,3 +7,4 @@ urllib3
 protobuf
 grpclib
 asyncio
+plotly

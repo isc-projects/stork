@@ -23,17 +23,13 @@ mccabe==0.7.0
 mypy-extensions==1.0.0
     # via black
 packaging==24.1
-    # via
-    #   black
-    #   plotly
+    # via black
 pathspec==0.12.1
     # via black
 platformdirs==4.3.6
     # via
     #   black
     #   pylint
-plotly==5.18.0
-    # via -r rakelib/init_deps/pylinters.in
 pycodestyle==2.12.1
     # via
     #   -r rakelib/init_deps/pylinters.in
@@ -42,8 +38,6 @@ pyflakes==3.2.0
     # via flake8
 pylint==3.3.0
     # via -r rakelib/init_deps/pylinters.in
-tenacity==8.2.3
-    # via plotly
 tomli==2.0.1
     # via
     #   black
