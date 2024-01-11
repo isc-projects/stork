@@ -28,8 +28,8 @@ services:
     volumes:
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/tests/system/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
-      - $PWD/tests/system/config/supervisor/supervisor-profiler.conf:/etc/supervisor/conf.d/supervisor-profiler.conf
-      - $PWD/tests/system/tools/supervisor-profiler.py:/usr/lib/supervisor-profiler.py
+      - $PWD/tests/system/config/supervisor/supervisor-monitor.conf:/etc/supervisor/conf.d/supervisor-monitor.conf
+      - $PWD/tests/system/tools/supervisor-monitor.py:/usr/lib/supervisor-monitor.py
     healthcheck:
       interval: 250ms
       timeout: 1s
@@ -144,8 +144,8 @@ services:
       - $PWD/docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
       - $PWD/docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
-      - $PWD/tests/system/config/supervisor/supervisor-profiler.conf:/etc/supervisor/conf.d/supervisor-profiler.conf
-      - $PWD/tests/system/tools/supervisor-profiler.py:/usr/lib/supervisor-profiler.py
+      - $PWD/tests/system/config/supervisor/supervisor-monitor.conf:/etc/supervisor/conf.d/supervisor-monitor.conf
+      - $PWD/tests/system/tools/supervisor-monitor.py:/usr/lib/supervisor-monitor.py
 
   agent-kea-many-subnets:
     extends: agent-kea
