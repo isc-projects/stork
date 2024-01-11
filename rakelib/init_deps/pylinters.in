@@ -2,3 +2,4 @@ pylint
 flake8
 pycodestyle
 black
+plotly
