@@ -355,6 +355,29 @@
       total:
         type: integer
 
+  CreateSubnetBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+      sharedNetworks4:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      SharedNetworks6:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      clientClasses:
+        type: array
+        items:
+          type: string
+
   UpdateSubnetBeginResponse:
     type: object
     properties:

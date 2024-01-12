@@ -996,6 +996,82 @@ func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transact
 	return 0, ""
 }
 
+// Implements the POST call to create new transaction for adding a new
+// subnet (subnets/new/transaction).
+func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubnetBeginParams) middleware.Responder {
+	// Execute the common part between create and update operations. It retrieves
+	// the daemons and creates a transaction context.
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	if code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSubnetBeginDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Begin subnet add transaction.
+	var err error
+	if cctx, err = r.ConfigManager.GetKeaModule().BeginSubnetAdd(cctx); err != nil {
+		msg := fmt.Sprintf("Problem with initializing transaction for creating subnet")
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewCreateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Retrieve the generated context ID.
+	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
+	if !ok {
+		msg := "problem with retrieving context ID for a transaction to create a subnet"
+		log.Error(msg)
+		rsp := dhcp.NewCreateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Remember the context, i.e. new transaction has been successfully created.
+	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
+
+	// Return transaction ID and daemons to the user.
+	contents := &models.CreateSubnetBeginResponse{
+		ID:              cctxID,
+		Daemons:         respDaemons,
+		SharedNetworks4: respIPv4SharedNetworks,
+		SharedNetworks6: respIPv6SharedNetworks,
+		ClientClasses:   respClientClasses,
+	}
+	rsp := dhcp.NewCreateSubnetBeginOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the POST call and commits a new subnet (subnets/new/transaction/{id}/submit).
+func (r *RestAPI) CreateSubnetSubmit(ctx context.Context, params dhcp.CreateSubnetSubmitParams) middleware.Responder {
+	if code, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetAdd); code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSubnetSubmitDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := dhcp.NewCreateSubnetSubmitOK()
+	return rsp
+}
+
+// Implements the DELETE call to cancel creating a subnet (subnets/new/transaction/{id}).
+// It removes the specified transaction from the config manager, if the transaction exists.
+func (r *RestAPI) CreateSubnetDelete(ctx context.Context, params dhcp.CreateSubnetDeleteParams) middleware.Responder {
+	if code, msg := r.commonCreateOrUpdateSubnetDelete(ctx, params.ID); code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSubnetDeleteDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := dhcp.NewCreateSubnetDeleteOK()
+	return rsp
+}
+
 // Implements the POST call to create new transaction for updating an
 // existing subnet (subnets/{subnetId}/transaction).
 func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubnetBeginParams) middleware.Responder {

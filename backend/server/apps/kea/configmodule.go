@@ -116,6 +116,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 			ctx, err = module.commitHostUpdate(ctx)
 		case "host_delete":
 			ctx, err = module.commitHostDelete(ctx)
+		case "subnet_add":
+			ctx, err = module.commitSubnetAdd(ctx)
 		case "subnet_update":
 			ctx, err = module.commitSubnetUpdate(ctx)
 		default:
@@ -435,6 +437,140 @@ func (module *ConfigModule) commitChanges(ctx context.Context) (context.Context,
 				err = pkgerrors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
 				return ctx, err
 			}
+		}
+	}
+	return ctx, nil
+}
+
+// Begins adding a new subnet. It initializes transaction state.
+func (module *ConfigModule) BeginSubnetAdd(ctx context.Context) (context.Context, error) {
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "subnet_add")
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Applies new subnet. It prepares necessary commands to be sent to Kea upon commit.
+func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
+	if len(subnet.LocalSubnets) == 0 {
+		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+	}
+
+	var sharedNetworkNameAfterUpdate string
+	if subnet.SharedNetwork != nil {
+		sharedNetworkNameAfterUpdate = subnet.SharedNetwork.Name
+	}
+
+	var commands []ConfigCommand
+	// Update the subnet instances.
+	for _, ls := range subnet.LocalSubnets {
+		if ls.Daemon == nil {
+			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+		}
+		if ls.Daemon.App == nil {
+			return ctx, pkgerrors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+		}
+		// Convert the updated subnet information to Kea subnet.
+		lookup := module.manager.GetDHCPOptionDefinitionLookup()
+		updateArguments := make(map[string]any)
+		appCommand := ConfigCommand{}
+		switch subnet.GetFamily() {
+		case 4:
+			// Create subnet4-add command.
+			subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
+			if err != nil {
+				return ctx, err
+			}
+			updateArguments["subnet4"] = []*keaconfig.Subnet4{
+				subnet4,
+			}
+			appCommand.Command = keactrl.NewCommand("subnet4-add", []string{ls.Daemon.Name}, updateArguments)
+			appCommand.App = ls.Daemon.App
+			commands = append(commands, appCommand)
+
+			// If the subnet is associated with a shared network, add this association
+			// in Kea.
+			if sharedNetworkNameAfterUpdate != "" {
+				arguments := make(map[string]any)
+				arguments["id"] = ls.LocalSubnetID
+				arguments["name"] = sharedNetworkNameAfterUpdate
+				appCommand.Command = keactrl.NewCommand("network4-subnet-add", []string{ls.Daemon.Name}, arguments)
+				commands = append(commands, appCommand)
+			}
+		default:
+			// Create subnet6-add command.
+			subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
+			if err != nil {
+				return ctx, err
+			}
+			updateArguments["subnet6"] = []*keaconfig.Subnet6{
+				subnet6,
+			}
+			appCommand.Command = keactrl.NewCommand("subnet6-add", []string{ls.Daemon.Name}, updateArguments)
+			appCommand.App = ls.Daemon.App
+			commands = append(commands, appCommand)
+
+			// If the subnet is associated with a new shared network, add this association
+			// in Kea.
+			if sharedNetworkNameAfterUpdate != "" {
+				arguments := make(map[string]any)
+				arguments["id"] = ls.LocalSubnetID
+				arguments["name"] = sharedNetworkNameAfterUpdate
+				appCommand.Command = keactrl.NewCommand("network6-subnet-add", []string{ls.Daemon.Name}, arguments)
+				commands = append(commands, appCommand)
+			}
+		}
+	}
+	// Create the commands to write the updated configuration to files. The subnet
+	// changes won't persist across the servers' restarts otherwise.
+	for _, ls := range append(subnet.LocalSubnets) {
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			App:     ls.Daemon.App,
+		})
+		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
+		// subnet_cmds hook library. Therefore, for these versions we send the config-reload
+		// command to force the statistics update. There is no lighter command to force the
+		// statistics update unfortunately.
+		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
+		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommand("config-reload", []string{ls.Daemon.Name}, nil),
+				App:     ls.Daemon.App,
+			})
+		}
+	}
+
+	// Store the data in the recipe.
+	recipe := &ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetAfterUpdate: subnet,
+		},
+		Commands: commands,
+	}
+	recipe.SubnetAfterUpdate = subnet
+	recipe.Commands = commands
+	return config.SetRecipeForUpdate(ctx, 0, recipe)
+}
+
+// Create the subnet in the Kea servers.
+func (module *ConfigModule) commitSubnetAdd(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.SubnetAfterUpdate == nil {
+			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet creation")
+		}
+		_, err = dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
+		if err != nil {
+			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil

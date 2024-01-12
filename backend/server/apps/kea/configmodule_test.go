@@ -1415,6 +1415,299 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	require.Nil(t, returnedHost)
 }
 
+// Test first stage of adding a subnet.
+func TestBeginSubnetAdd(t *testing.T) {
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	ctx, err := module.BeginSubnetAdd(context.Background())
+	require.NoError(t, err)
+
+	// There should be no locks on any daemons.
+	require.Empty(t, manager.locks)
+
+	// Make sure that the transaction state has been created.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, state.Updates, 1)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
+	require.Equal(t, "subnet_add", state.Updates[0].Operation)
+}
+
+// Test second stage of subnet creation.
+func TestApplySubnetAdd(t *testing.T) {
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// Transaction state is required because typically it is created by the
+	// BeginSubnetAdd function.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_add")
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	// Simulate creating new subnet entry.
+	subnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.100",
+						UpperBound: "192.0.2.200",
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name:    "dhcp4",
+					Version: "2.5.0",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "192.0.2.100",
+						UpperBound: "192.0.2.200",
+					},
+				},
+			},
+		},
+	}
+	ctx, err := module.ApplySubnetAdd(ctx, subnet)
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, stateReturned.Scheduled)
+
+	require.Len(t, stateReturned.Updates, 1)
+	update := stateReturned.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "subnet_add", update.Operation)
+	require.NotNil(t, update.Recipe)
+	require.Nil(t, update.Recipe.SubnetBeforeUpdate)
+
+	// There should be six commands ready to send.
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 5)
+
+	// Validate the commands to be sent to Kea.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "subnet4-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"subnet4": [
+							{
+								"id": 0,
+								"subnet": "192.0.2.0/24",
+								"pools": [
+									{
+										"pool": "192.0.2.100-192.0.2.200"
+									}
+								]
+							}
+						]
+					}
+				}`,
+				marshalled)
+		case i < 4:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-reload",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+		// Verify they are associated with appropriate apps.
+		require.NotNil(t, commands[i].App)
+	}
+}
+
+// Test committing created subnet, i.e. actually sending control commands to Kea.
+func TestCommitSubnetAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24",
+							"allocator": "random"
+						}
+					]
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Transaction state is required because typically it is created by the
+	// BeginSubnetAdd function.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_add")
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	ctx, err = module.ApplySubnetAdd(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 6)
+	require.Len(t, agents.RecordedCommands, 6)
+
+	// The respective commands should be sent to different servers.
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+	require.NotEqual(t, agents.RecordedURLs[4], agents.RecordedURLs[5])
+	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+
+	// Validate the sent commands and URLS.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		switch i {
+		case 0, 2:
+			require.JSONEq(t,
+				`{
+					"command": "subnet4-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"subnet4": [
+							{
+								"id": 1,
+								"subnet": "192.0.2.0/24",
+								"allocator": "random"
+							}
+						]
+					}
+				}`,
+				marshalled)
+		case 1, 3:
+			require.JSONEq(t,
+				`{
+					"command": "network4-subnet-add",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}`,
+				marshalled)
+
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the subnet has been updated in the database.
+	addedSubnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, addedSubnets, 1)
+	require.NotNil(t, addedSubnets[0])
+	require.Len(t, addedSubnets[0].LocalSubnets, 2)
+	require.NotNil(t, addedSubnets[0].LocalSubnets[0].KeaParameters)
+	require.NotNil(t, addedSubnets[0].LocalSubnets[0].KeaParameters.Allocator)
+	require.Equal(t, "random", *addedSubnets[0].LocalSubnets[0].KeaParameters.Allocator)
+	require.NotNil(t, addedSubnets[0].LocalSubnets[1].KeaParameters)
+	require.NotNil(t, addedSubnets[0].LocalSubnets[1].KeaParameters.Allocator)
+	require.Equal(t, "random", *addedSubnets[0].LocalSubnets[1].KeaParameters.Allocator)
+}
+
 // Test the first stage of updating a subnet. It checks that the subnet information
 // is fetched from the database and stored in the context. It also checks that
 // appropriate locks are applied.

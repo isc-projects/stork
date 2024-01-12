@@ -347,6 +347,79 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /subnets/new/transaction:
+    post:
+      summary: Begin transaction for adding new subnet.
+      description: >-
+        Creates a transaction in config manager to add a new subnet. It returns a
+        current list of the available DHCP servers, shared networks and client
+        classes. All are required in the form in which the user specifies the new
+        subnet.
+      operationId: createSubnetBegin
+      tags:
+        - DHCP
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/CreateSubnetBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /subnets/new/transaction/{id}:
+    delete:
+      summary: Cancel transaction to add new subnet.
+      description: Cancels the transaction to add a new subnet in the config manager.
+      operationId: createSubnetDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /subnets/new/transaction/{id}/submit:
+    post:
+      summary: Submit transaction adding new subnet.
+      description: >-
+        Submits a transaction causing the server to create subnets on the
+        respective DHCP servers. It applies and submits the transactions in Stork
+        config manager.
+      operationId:
+        createSubnetSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: subnet
+          description: Created subnet information.
+          schema:
+            $ref: '#/definitions/Subnet'
+      responses:
+        200:
+          description: Subnet successfully submitted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+
   /subnets/{subnetId}/transaction:
     post:
       summary: Begin transaction for updating an existing subnet.
