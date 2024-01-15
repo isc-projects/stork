@@ -627,16 +627,14 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	}
 	// Include pools, shared network the subnets belong to, local subnet info
 	// and the associated apps in the results.
-	q = q.Relation("SharedNetwork.LocalSharedNetworks").
+	q = q.Relation("SharedNetwork").
 		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
 		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("LocalSubnets.Daemon.App.Machine").
-		Relation("LocalSubnets.Daemon.KeaDaemon")
+		Relation("LocalSubnets.Daemon.App.Machine")
 
 	// Applicable family values are 4 and 6.
 	if filters.Family != nil {

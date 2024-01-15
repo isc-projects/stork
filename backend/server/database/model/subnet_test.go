@@ -660,13 +660,15 @@ func TestGetSubnetsByPage(t *testing.T) {
 	for _, s := range returned {
 		for _, ls := range s.LocalSubnets {
 			require.NotNil(t, ls.Daemon)
-			require.NotNil(t, ls.Daemon.KeaDaemon)
+			// It must be nil to limit memory usage.
+			require.Nil(t, ls.Daemon.KeaDaemon)
 		}
 	}
 
 	require.Nil(t, returned[0].SharedNetwork)
 	require.NotNil(t, returned[1].SharedNetwork)
-	require.Len(t, returned[1].SharedNetwork.LocalSharedNetworks, 1)
+	// The related shared networks are not presented on the subnet list.
+	require.Empty(t, returned[1].SharedNetwork.LocalSharedNetworks)
 
 	// This should match multiple pools in the first subnet. However,
 	// only one record should be returned.
@@ -678,11 +680,13 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
 
 	require.NotNil(t, returned[0].SharedNetwork)
-	require.NotNil(t, returned[0].SharedNetwork.LocalSharedNetworks, 1)
+	// The related shared networks are not presented on the subnet list.
+	require.Empty(t, returned[0].SharedNetwork.LocalSharedNetworks)
 
 	require.Len(t, returned[0].LocalSubnets, 1)
 	require.NotNil(t, returned[0].LocalSubnets[0].Daemon)
-	require.NotNil(t, returned[0].LocalSubnets[0].Daemon.KeaDaemon)
+	// It must be nil to limit memory usage.
+	require.Nil(t, returned[0].LocalSubnets[0].Daemon.KeaDaemon)
 
 	// This should have no match.
 	filters.Text = newPtr("192.0.5.0")
