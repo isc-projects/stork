@@ -16,7 +16,7 @@ import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { UpdateSubnetBeginResponse } from '../backend'
+import { CreateSubnetBeginResponse, UpdateSubnetBeginResponse } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -34,6 +34,81 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+
+let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
+    id: 123,
+    daemons: [
+        {
+            id: 1,
+            name: 'dhcp4',
+            app: {
+                name: 'first',
+            },
+        },
+        {
+            id: 3,
+            name: 'dhcp6',
+            app: {
+                name: 'first',
+            },
+        },
+        {
+            id: 2,
+            name: 'dhcp4',
+            app: {
+                name: 'second',
+            },
+        },
+        {
+            id: 4,
+            name: 'dhcp6',
+            app: {
+                name: 'second',
+            },
+        },
+        {
+            id: 5,
+            name: 'dhcp6',
+            app: {
+                name: 'third',
+            },
+        },
+    ],
+    sharedNetworks4: [
+        {
+            id: 1,
+            name: 'floor1',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                },
+            ],
+        },
+        {
+            id: 2,
+            name: 'floor2',
+            localSharedNetworks: [
+                {
+                    daemonId: 2,
+                },
+            ],
+        },
+        {
+            id: 3,
+            name: 'floor3',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                },
+                {
+                    daemonId: 2,
+                },
+            ],
+        },
+    ],
+    sharedNetworks6: [],
+    clientClasses: ['foo', 'bar'],
+}
 
 let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
     id: 123,
@@ -438,6 +513,13 @@ export default {
     parameters: {
         mockData: [
             {
+                url: 'http://localhost/api/subnets/new/transaction',
+                method: 'POST',
+                status: 200,
+                delay: 2000,
+                response: mockCreateSubnetBeginData,
+            },
+            {
                 url: 'http://localhost/api/subnets/123/transaction',
                 method: 'POST',
                 status: 200,
@@ -465,6 +547,9 @@ export default {
 const Template: Story<SubnetFormComponent> = (args: SubnetFormComponent) => ({
     props: args,
 })
+
+export const NewSubnet = Template.bind({})
+NewSubnet.args = {}
 
 export const UpdatedSubnet4 = Template.bind({})
 UpdatedSubnet4.args = {

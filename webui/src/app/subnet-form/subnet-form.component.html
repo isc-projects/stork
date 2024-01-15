@@ -11,10 +11,18 @@
                     (form.group.get('subnet').dirty || form.group.get('subnet').touched)
                 "
                 class="p-error block"
-                >A subnet prefix is required.
+                >A valid subnet prefix is required.
             </small>
 
-            <span class="p-float-label mt-5 mb-2">
+            <p-button
+                *ngIf="wizard"
+                [disabled]="form.group?.get('subnet').invalid"
+                label="Proceed"
+                styleClass="p-button-primary mt-3"
+                (onClick)="onSubnetProceed()"
+            ></p-button>
+
+            <span *ngIf="!wizard" class="p-float-label mt-5 mb-2">
                 <p-dropdown
                     inputId="shared-networks-select"
                     emptyMessage="No shared networks found"
@@ -30,7 +38,7 @@
                 <label for="shared-network-select">Shared Network</label>
             </span>
         </p-fieldset>
-        <p-fieldset legend="Assignments" styleClass="mt-4">
+        <p-fieldset *ngIf="!wizard" legend="Assignments" styleClass="mt-4">
             <div class="mt-4" [formGroup]="form.group">
                 <span class="p-float-label mb-2">
                     <p-multiSelect
@@ -57,7 +65,7 @@
                 </small>
             </div>
         </p-fieldset>
-        <p-fieldset legend="Pools" styleClass="mt-4">
+        <p-fieldset *ngIf="!wizard" legend="Pools" styleClass="mt-4">
             <p-accordion>
                 <p-accordionTab *ngFor="let pool of form.group.get('pools')?.controls; let i = index">
                     <ng-template pTemplate="header">
@@ -105,7 +113,7 @@
                 </div>
             </div>
         </p-fieldset>
-        <p-fieldset *ngIf="subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
+        <p-fieldset *ngIf="!wizard && subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
             <p-accordion>
                 <p-accordionTab *ngFor="let pool of form.group.get('prefixPools')?.controls; let i = index">
                     <ng-template pTemplate="header">
@@ -153,7 +161,7 @@
                 </div>
             </div>
         </p-fieldset>
-        <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
+        <p-fieldset *ngIf="!wizard" legend="DHCP Parameters" styleClass="mt-4">
             <app-shared-parameters-form
                 [clientClasses]="form.clientClasses"
                 [servers]="servers"
@@ -161,7 +169,7 @@
             >
             </app-shared-parameters-form>
         </p-fieldset>
-        <p-fieldset [formGroup]="form.group.get('options')" legend="DHCP Options" styleClass="mt-4">
+        <p-fieldset *ngIf="!wizard" [formGroup]="form.group.get('options')" legend="DHCP Options" styleClass="mt-4">
             <div class="flex mt-2 pb-4">
                 <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                 <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
@@ -183,7 +191,7 @@
                 </div>
             </ng-container>
         </p-fieldset>
-        <div class="flex align-items-center m-5">
+        <div *ngIf="!wizard" class="flex align-items-center m-5">
             <p-button
                 *ngIf="savedUpdateSubnetBeginData"
                 icon="pi pi-replay"
@@ -192,7 +200,7 @@
                 (onClick)="onRevert()"
             ></p-button>
             <p-button label="Cancel" styleClass="mr-2 p-button-secondary" (onClick)="onCancel()"></p-button>
-            <p-button label="Submit" [disabled]="form.group?.invalid" (onClick)="onSubmit()"></p-button>
+            <p-button *ngIf="!wizard" label="Submit" [disabled]="form.group?.invalid" (onClick)="onSubmit()"></p-button>
         </div>
     </ng-container>
 </ng-container>

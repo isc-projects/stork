@@ -435,6 +435,7 @@ describe('SubnetFormComponent', () => {
 
         fixture = TestBed.createComponent(SubnetFormComponent)
         component = fixture.componentInstance
+        component.subnetId = 123
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
@@ -443,6 +444,142 @@ describe('SubnetFormComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should open a form for creating an IPv4 subnet', fakeAsync(() => {
+        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        component.subnetId = undefined
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+        expect(component.form).toBeTruthy()
+        expect(component.form.preserved).toBeFalse()
+        expect(component.form.transactionId).toBe(123)
+        expect(component.form.group).toBeTruthy()
+        expect(component.form.allDaemons.length).toBe(5)
+        expect(component.form.filteredDaemons.length).toBe(5)
+        expect(component.form.dhcpv4).toBeFalse()
+        expect(component.form.dhcpv6).toBeFalse()
+        expect(component.wizard).toBeTrue()
+
+        const button = fixture.debugElement.query(By.css('[label="Proceed"]'))
+        expect(button).toBeTruthy()
+        expect(component.form.group.get('subnet').disabled).toBeFalse()
+        expect(component.form.group.get('subnet').invalid).toBeTrue()
+
+        component.form.group.get('subnet').setValue('192.0.2.0/24')
+        expect(component.form.group.get('subnet').invalid).toBeFalse()
+
+        component.onSubnetProceed()
+        expect(component.form.group.get('subnet').disabled).toBeTrue()
+        expect(component.wizard).toBeFalse()
+
+        component.form.group.get('selectedDaemons').setValue([1, 2])
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createSubnetSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetworkId: null,
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {},
+                    },
+                },
+                {
+                    daemonId: 2,
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {},
+                    },
+                },
+            ],
+        }
+
+        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.form.transactionId, subnet)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should open a form for creating an IPv6 subnet', fakeAsync(() => {
+        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        component.subnetId = undefined
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+        expect(component.form).toBeTruthy()
+        expect(component.form.preserved).toBeFalse()
+        expect(component.form.transactionId).toBe(123)
+        expect(component.form.group).toBeTruthy()
+        expect(component.form.allDaemons.length).toBe(5)
+        expect(component.form.filteredDaemons.length).toBe(5)
+        expect(component.form.dhcpv4).toBeFalse()
+        expect(component.form.dhcpv6).toBeFalse()
+        expect(component.wizard).toBeTrue()
+
+        const button = fixture.debugElement.query(By.css('[label="Proceed"]'))
+        expect(button).toBeTruthy()
+        expect(component.form.group.get('subnet').disabled).toBeFalse()
+        expect(component.form.group.get('subnet').invalid).toBeTrue()
+
+        component.form.group.get('subnet').setValue('2001:db8:3::/64')
+        expect(component.form.group.get('subnet').invalid).toBeFalse()
+
+        component.onSubnetProceed()
+        expect(component.form.group.get('subnet').disabled).toBeTrue()
+        expect(component.wizard).toBeFalse()
+
+        component.form.group.get('selectedDaemons').setValue([3, 4])
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createSubnetSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const subnet = {
+            subnet: '2001:db8:3::/64',
+            sharedNetworkId: null,
+            localSubnets: [
+                {
+                    daemonId: 3,
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {},
+                    },
+                },
+                {
+                    daemonId: 4,
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {},
+                    },
+                },
+            ],
+        }
+
+        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.form.transactionId, subnet)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
 
     it('should open a form for updating IPv4 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))

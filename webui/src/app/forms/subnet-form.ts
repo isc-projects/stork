@@ -108,9 +108,10 @@ export class SubnetFormState {
      * new daemons selection.
      *
      * @param selectedDaemons new set of selected daemons' ids.
+     * @param subnet subnet prefix.
      * @returns true if the update results in a breaking change, false otherwise.
      */
-    updateFormForSelectedDaemons(selectedDaemons: number[], subnet?: Subnet): boolean {
+    updateFormForSelectedDaemons(selectedDaemons: number[], subnet?: string): boolean {
         let dhcpv6 = false
         let dhcpv4 = selectedDaemons.some((ss) => {
             return this.allDaemons.find((d) => d.id === ss && d.name === 'dhcp4')
@@ -130,7 +131,7 @@ export class SubnetFormState {
         this.dhcpv6 = dhcpv6
 
         // Filter selectable other selectable servers based on the current selection.
-        if (dhcpv4 || subnet?.subnet?.includes('.')) {
+        if (dhcpv4 || subnet?.includes('.')) {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp4')
             this.selectableSharedNetworks =
                 this.allSharedNetworks4
@@ -140,7 +141,7 @@ export class SubnetFormState {
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }
                     }) || []
-        } else if (this.dhcpv6 || subnet?.subnet?.includes(':')) {
+        } else if (this.dhcpv6 || subnet?.includes(':')) {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp6')
             this.selectableSharedNetworks =
                 this.allSharedNetworks6

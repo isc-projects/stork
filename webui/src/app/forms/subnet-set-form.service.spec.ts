@@ -847,7 +847,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default form for a prefix pool', () => {
-        const form = service.createDefaultPrefixPoolForm('2001:db8:1::/64')
+        const form = service.createDefaultPrefixPoolForm()
         expect(form.get('prefixes.prefix')?.value).toBe('')
         expect(form.get('prefixes.delegatedLength')?.value).toBe(null)
         expect(form.get('prefixes.excludedPrefix')?.value).toBe('')
@@ -1598,7 +1598,7 @@ describe('SubnetSetFormService', () => {
         expect(fg.valid).toBeFalse()
     })
 
-    it('should create a default form for an IPv4 subnet', () => {
+    it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4)
         expect(Object.keys(form.controls).length).toBe(38)
 
@@ -1610,7 +1610,7 @@ describe('SubnetSetFormService', () => {
         }
     })
 
-    it('should create a default form for an IPv6 subnet', () => {
+    it('should create a default Kea parameters form for an IPv6 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6)
         expect(Object.keys(form.controls).length).toBe(36)
 
@@ -1620,6 +1620,46 @@ describe('SubnetSetFormService', () => {
             expect(control.controls?.unlocked?.value).toBeFalse()
             expect(control.controls?.values?.value.length).toBe(1)
         }
+    })
+
+    it('should create a default subnet form for no particular subnet', () => {
+        let form = service.createDefaultSubnetForm()
+        expect(form.get('subnet')?.value).toBeFalsy()
+        expect(form.get('subnet')?.disabled).toBeFalse()
+        expect(form.get('sharedNetwork')).toBeTruthy()
+        expect(form.get('sharedNetwork').value).toBeFalsy()
+        expect(form.get('pools')).toBeTruthy()
+        expect((form.get('pools') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('prefixPools')).toBeTruthy()
+        expect((form.get('prefixPools') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('parameters')).toBeTruthy()
+        expect(form.get('options')).toBeTruthy()
+        expect(form.get('options.unlocked')).toBeTruthy()
+        expect(form.get('options.unlocked').value).toBeFalse()
+        expect(form.get('options.data')).toBeTruthy()
+        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('selectedDaemons')).toBeTruthy()
+        expect(form.get('selectedDaemons').value.length).toBe(0)
+    })
+
+    it('should create a default subnet form for specific subnet', () => {
+        let form = service.createDefaultSubnetForm('192.0.2.0/24')
+        expect(form.get('subnet')?.value).toBe('192.0.2.0/24')
+        expect(form.get('subnet')?.disabled).toBeTrue()
+        expect(form.get('sharedNetwork')).toBeTruthy()
+        expect(form.get('sharedNetwork').value).toBeFalsy()
+        expect(form.get('pools')).toBeTruthy()
+        expect((form.get('pools') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('prefixPools')).toBeTruthy()
+        expect((form.get('prefixPools') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('parameters')).toBeTruthy()
+        expect(form.get('options')).toBeTruthy()
+        expect(form.get('options.unlocked')).toBeTruthy()
+        expect(form.get('options.unlocked').value).toBeFalse()
+        expect(form.get('options.data')).toBeTruthy()
+        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(0)
+        expect(form.get('selectedDaemons')).toBeTruthy()
+        expect(form.get('selectedDaemons').value.length).toBe(0)
     })
 
     it('should convert IPv4 subnet data to a form', () => {

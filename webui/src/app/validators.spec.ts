@@ -102,6 +102,26 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv6Prefix(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
     })
 
+    it('validates IP prefix', () => {
+        // Partial prefix is not valid.
+        expect(StorkValidators.ipPrefix(formBuilder.control('2001::'))).toBeTruthy()
+        expect(StorkValidators.ipPrefix(formBuilder.control('192.'))).toBeTruthy()
+        // Dots are not valid.
+        expect(StorkValidators.ipPrefix(formBuilder.control('3000../64'))).toBeTruthy()
+        // Colons are not valid.
+        expect(StorkValidators.ipPrefix(formBuilder.control('192:0:2:0/64'))).toBeTruthy()
+        // No colons at the end.
+        expect(StorkValidators.ipPrefix(formBuilder.control('3001:123/64'))).toBeTruthy()
+        // Incorrect IPv4 prefix length
+        expect(StorkValidators.ipPrefix(formBuilder.control('192.0.2.0/36'))).toBeTruthy()
+        // Incorrect IPv6 prefix length
+        expect(StorkValidators.ipPrefix(formBuilder.control('2001:db8:1::/129'))).toBeTruthy()
+        // IPv4 prefix is valid.
+        expect(StorkValidators.ipPrefix(formBuilder.control('192.0.2.0/24'))).toBeFalsy()
+        // IPv6 prefix is valid too.
+        expect(StorkValidators.ipPrefix(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
+    })
+
     it('validates if an address is in the IPv4 subnet', () => {
         // Skip validation when controls have no meaningful value.
         expect(StorkValidators.ipInSubnet('192.0.2.0/24')(formBuilder.control(null))).toEqual({

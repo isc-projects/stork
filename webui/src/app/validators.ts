@@ -107,8 +107,29 @@ export class StorkValidators {
     }
 
     /**
+     * A validator checking if an input is a valid IPv4 or IPv6 prefix (including length).
+     *
+     * @param control a form control holding a prefix.
+     * @returns validation errors if the prefix is invalid or null otherwise.
+     */
+    static ipPrefix(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
+        let ip = control.value
+        if (
+            !ip.includes('/') ||
+            !(Validator.isValidIPv4CidrNotation(ip)[0] || Validator.isValidIPv6CidrNotation(ip)[0])
+        ) {
+            return { ip: `${ip} is not a valid IP prefix.` }
+        }
+        return null
+    }
+
+    /**
      * A validator checking if an input is a valid IPv6 prefix (including length).
      *
+     * @param control a form control holding a prefix.
      * @returns validation errors if the prefix is invalid or null otherwise.
      */
     static ipv6Prefix(control: AbstractControl): ValidationErrors | null {
@@ -130,7 +151,7 @@ export class StorkValidators {
      * the CIDR format or are not specified. Validity of the CIDR
      * format should be performed by other validators.
      *
-     * @param prefix a prefix holding the excluded prefix.
+     * @param control a form control holding the excluded prefix.
      * @returns validation errors if the excluded prefix is invalid
      * or null otherwise.
      */

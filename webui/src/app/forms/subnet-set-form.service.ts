@@ -371,10 +371,9 @@ export class SubnetSetFormService {
     /**
      * Creates a default form for a prefix pool.
      *
-     * @param subnet subnet prefix.
      * @returns A default form group for a prefix pool.
      */
-    createDefaultPrefixPoolForm(subnet: string): FormGroup<PrefixPoolForm> {
+    createDefaultPrefixPoolForm(): FormGroup<PrefixPoolForm> {
         let formGroup = new FormGroup<PrefixPoolForm>({
             prefixes: new FormGroup<PrefixForm>(
                 {
@@ -990,6 +989,36 @@ export class SubnetSetFormService {
                 subnet.localSubnets?.map((ls) => ls.daemonId) || [],
                 Validators.required
             ),
+        })
+        return formGroup
+    }
+
+    /**
+     * Creates a default form for a subnet.
+     *
+     * When the subnet is specified, the subnet control is disabled and the subnet
+     * cannot be modified. That's because the validation of the remaining parameters
+     * depends on the exact subnet value. If the subnet is not specified, the subnet
+     * control remains enabled.
+     *
+     * @param subnet optional subnet prefix.
+     * @returns A default form group for a subnet.
+     */
+    createDefaultSubnetForm(subnet?: string): FormGroup<SubnetForm> {
+        let formGroup = new FormGroup<SubnetForm>({
+            subnet: new FormControl({ value: subnet || null, disabled: !!subnet }, [
+                Validators.required,
+                StorkValidators.ipPrefix,
+            ]),
+            sharedNetwork: new FormControl(null),
+            pools: new FormArray<FormGroup<AddressPoolForm>>([], StorkValidators.ipRangeOverlaps),
+            prefixPools: new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps),
+            parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4),
+            options: new FormGroup({
+                unlocked: new FormControl(false),
+                data: new UntypedFormArray([]),
+            }),
+            selectedDaemons: new FormControl<number[]>([], Validators.required),
         })
         return formGroup
     }
