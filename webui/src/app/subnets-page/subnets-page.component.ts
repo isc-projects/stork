@@ -14,7 +14,7 @@ import {
     parseSubnetStatisticValues,
 } from '../subnets'
 import { SettingService } from '../setting.service'
-import { Subscription, concat, of } from 'rxjs'
+import { Subscription, concat, lastValueFrom, of } from 'rxjs'
 import { filter, map, take } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
@@ -483,17 +483,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private createTab(subnetId: number): Promise<void> {
         return (
-            concat(
-                // Existing entry or undefined.
-                of(this.subnets.filter((s) => s.id == subnetId)[0])
-                    // Drop an undefined value if the entry was not found.
-                    .pipe(filter((s) => !!s)),
+            lastValueFrom(
                 // Fetch data from API.
-                this.dhcpApi.getSubnet(subnetId)
-            )
-                // Take 1 item (return existing entry if exist, otherwise fetch the API).
-                .pipe(take(1))
-                .pipe(
+                this.dhcpApi.getSubnet(subnetId).pipe(
                     map((subnet) => {
                         if (subnet) {
                             parseSubnetStatisticValues(subnet)
@@ -501,8 +493,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                         return subnet
                     })
                 )
+            )
                 // Execute and use.
-                .toPromise()
                 .then((data) => {
                     this.appendTab(data)
                 })

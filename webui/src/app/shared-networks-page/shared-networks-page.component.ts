@@ -13,7 +13,7 @@ import {
     extractUniqueSharedNetworkPools,
     SharedNetworkWithUniquePools,
 } from '../subnets'
-import { Subscription, concat, of } from 'rxjs'
+import { Subscription, concat, lastValueFrom, of } from 'rxjs'
 import { filter, map, take } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
@@ -213,7 +213,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             )
             .subscribe(
                 (data) => {
-                    this.networks = data.items ? extractUniqueSharedNetworkPools(data.items) : null
+                    this.networks = data.items
                     this.totalNetworks = data.total ?? 0
                 },
                 (error) => {
@@ -366,17 +366,9 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     private createTab(sharedNetworkId: number): Promise<void> {
         return (
-            concat(
-                // Existing entry or undefined.
-                of(this.networks.filter((s) => s.id == sharedNetworkId)[0])
-                    // Drop an undefined value if the entry was not found.
-                    .pipe(filter((s) => !!s)),
+            lastValueFrom(
                 // Fetch data from API.
-                this.dhcpApi.getSharedNetwork(sharedNetworkId)
-            )
-                // Take 1 item (return existing entry if exist, otherwise fetch the API).
-                .pipe(take(1))
-                .pipe(
+                this.dhcpApi.getSharedNetwork(sharedNetworkId).pipe(
                     map((sharedNetwork) => {
                         if (sharedNetwork) {
                             parseSubnetStatisticValues(sharedNetwork)
@@ -384,8 +376,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                         return sharedNetwork
                     })
                 )
+            )
                 // Execute and use.
-                .toPromise()
                 .then((data) => {
                     if (data) {
                         const networks = extractUniqueSharedNetworkPools([data])
