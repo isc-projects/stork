@@ -530,7 +530,7 @@ describe('SubnetsPageComponent', () => {
 
         spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
-        spyOn(dhcpService, 'getSubnet').and.returnValue(throwError({ status: 404 }))
+        spyOn(dhcpService, 'getSubnet').and.returnValues(of({ id: 5 }) as any, throwError({ status: 404 }))
 
         paramMapSubject.next(convertToParamMap({ id: 5 }))
         fixture.detectChanges()
@@ -603,6 +603,7 @@ describe('SubnetsPageComponent', () => {
 
         spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
         paramMapSubject.next(convertToParamMap({ id: 5 }))
         fixture.detectChanges()
@@ -673,6 +674,7 @@ describe('SubnetsPageComponent', () => {
 
         spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
         paramMapSubject.next(convertToParamMap({ id: 5 }))
         fixture.detectChanges()
@@ -742,6 +744,7 @@ describe('SubnetsPageComponent', () => {
 
         spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
         spyOn(messageService, 'add')
 
         paramMapSubject.next(convertToParamMap({ id: 5 }))
