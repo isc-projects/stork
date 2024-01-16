@@ -393,4 +393,16 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             },
         })
     }
+
+    /**
+     * Callback called when PrimeNG table state is restored.
+     *
+     * @param state restored table state
+     * @param table table being restored
+     */
+    stateRestored(state: any, table: Table) {
+        // Restore only pagination state.
+        // Do not restore filtering.
+        table.filters = {}
+    }
 }

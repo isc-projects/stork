@@ -72,6 +72,7 @@
         [totalRecords]="totalApps"
         [rowsPerPageOptions]="[10, 30, 100]"
         [showCurrentPageReport]="true"
+        (onStateRestore)="stateRestored($event, appsTable)"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
         stateStorage="session"
         stateKey="apps-table-session"
