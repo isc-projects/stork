@@ -461,8 +461,8 @@ describe('SubnetFormComponent', () => {
         expect(component.form.dhcpv6).toBeFalse()
         expect(component.wizard).toBeTrue()
 
-        const button = fixture.debugElement.query(By.css('[label="Proceed"]'))
-        expect(button).toBeTruthy()
+        expect(fixture.debugElement.query(By.css('[label="Proceed"]'))).toBeTruthy()
+        expect(fixture.debugElement.query(By.css('[label="Cancel"]'))).toBeTruthy()
         expect(component.form.group.get('subnet').disabled).toBeFalse()
         expect(component.form.group.get('subnet').invalid).toBeTrue()
 
