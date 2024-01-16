@@ -701,6 +701,19 @@ func GetSubnetsWithLocalSubnets(dbi dbops.DBI) ([]*Subnet, error) {
 	return subnets, nil
 }
 
+// Get a list of existing subnet prefixes.
+func GetSubnetPrefixes(dbi dbops.DBI) ([]string, error) {
+	subnets := []string{}
+	err := dbi.Model((*Subnet)(nil)).Column("prefix").Select(&subnets)
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, nil
+		}
+		err = pkgerrors.Wrap(err, "problem getting subnet prefixes")
+	}
+	return subnets, nil
+}
+
 // Associates a daemon with the subnet having a specified ID and prefix
 // in a transaction. Internally, the association is made via the local_subnet
 // table which holds the information about the subnet from the given daemon

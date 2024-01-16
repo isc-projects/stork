@@ -5,14 +5,21 @@
                 <input id="subnet" pInputText formControlName="subnet" class="w-full" />
                 <label for="subnet">Subnet</label>
             </span>
-            <small
+            <ng-container
                 *ngIf="
                     form.group.get('subnet').invalid &&
                     (form.group.get('subnet').dirty || form.group.get('subnet').touched)
                 "
-                class="p-error block"
-                >A valid subnet prefix is required.
-            </small>
+            >
+                <small
+                    *ngIf="form.group.get('subnet').hasError('prefixInList'); else otherPrefixError"
+                    class="p-error block"
+                    >A subnet with this prefix already exists.
+                </small>
+                <ng-template #otherPrefixError>
+                    <small class="p-error block">A valid subnet prefix is required.</small>
+                </ng-template>
+            </ng-container>
 
             <p-button
                 *ngIf="wizard"

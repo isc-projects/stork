@@ -149,7 +149,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.updateSubnetBegin()
         } else {
             // Send POST to /subnets/{id}/transaction/new.
-            this.form.group = this.subnetSetFormService.createDefaultSubnetForm()
             this.createSubnetBegin()
             this.wizard = true
         }
@@ -238,6 +237,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             .toPromise()
             .then((data) => {
                 this.savedSubnetBeginData = data
+                this.form.group = this.subnetSetFormService.createDefaultSubnetForm(data.subnets || [])
                 this.initializeForm(data)
             })
             .catch((err) => {

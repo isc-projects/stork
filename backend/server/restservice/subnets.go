@@ -1009,8 +1009,16 @@ func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubne
 		})
 		return rsp
 	}
+	respSubnets, err := dbmodel.GetSubnetPrefixes(r.DB)
+	if err != nil {
+		msg := "Problem with fetching subnets from the database"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewCreateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	// Begin subnet add transaction.
-	var err error
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginSubnetAdd(cctx); err != nil {
 		msg := fmt.Sprintf("Problem with initializing transaction for creating subnet")
 		log.WithError(err).Error(msg)
@@ -1039,6 +1047,7 @@ func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubne
 		Daemons:         respDaemons,
 		SharedNetworks4: respIPv4SharedNetworks,
 		SharedNetworks6: respIPv6SharedNetworks,
+		Subnets:         respSubnets,
 		ClientClasses:   respClientClasses,
 	}
 	rsp := dhcp.NewCreateSubnetBeginOK().WithPayload(contents)

@@ -1001,14 +1001,17 @@ export class SubnetSetFormService {
      * depends on the exact subnet value. If the subnet is not specified, the subnet
      * control remains enabled.
      *
-     * @param subnet optional subnet prefix.
+     * @param subnets an array of existing subnets that are compared with the subnet
+     * in the form for overlaps, or a specified subnet.
      * @returns A default form group for a subnet.
      */
-    createDefaultSubnetForm(subnet?: string): FormGroup<SubnetForm> {
+    createDefaultSubnetForm(subnets: string[] | string): FormGroup<SubnetForm> {
+        const isArray = Array.isArray(subnets)
         let formGroup = new FormGroup<SubnetForm>({
-            subnet: new FormControl({ value: subnet || null, disabled: !!subnet }, [
+            subnet: new FormControl({ value: isArray ? null : subnets, disabled: !isArray }, [
                 Validators.required,
                 StorkValidators.ipPrefix,
+                StorkValidators.prefixInList(isArray ? subnets : []),
             ]),
             sharedNetwork: new FormControl(null),
             pools: new FormArray<FormGroup<AddressPoolForm>>([], StorkValidators.ipRangeOverlaps),

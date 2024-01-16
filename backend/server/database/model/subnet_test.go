@@ -727,6 +727,55 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	require.Equal(t, subnet.ID, subnets[0].Subnet.ID)
 }
 
+// Test that subnet prefixes are fetched correctly.
+func TestGetSubnetPrefixes(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps to the database. They must exist to make any association between
+	// then and the subnet.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// Add several subnets matching configuration of the apps we have added.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			Prefix: "192.0.3.0/24",
+		},
+		{
+			Prefix: "10.0.0.0/8",
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+
+	}
+
+	// Get the subnet prefixes.
+	prefixes, err := GetSubnetPrefixes(db)
+	require.NoError(t, err)
+	require.Len(t, prefixes, 3)
+	require.Contains(t, prefixes, "192.0.2.0/24")
+	require.Contains(t, prefixes, "192.0.3.0/24")
+	require.Contains(t, prefixes, "10.0.0.0/8")
+}
+
+// Test that no error is returned when fetching subnet prefixes and
+// when there are no subnets.
+func TestGetSubnetPrefixesForNoSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	prefixes, err := GetSubnetPrefixes(db)
+	require.NoError(t, err)
+	require.Empty(t, prefixes)
+}
+
 // Check updating stats in LocalSubnet.
 func TestUpdateStats(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

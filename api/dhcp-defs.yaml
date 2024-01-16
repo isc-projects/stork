@@ -369,10 +369,14 @@
         type: array
         items:
           $ref: '#/definitions/SharedNetwork'
-      SharedNetworks6:
+      sharedNetworks6:
         type: array
         items:
           $ref: '#/definitions/SharedNetwork'
+      subnets:
+        type: array
+        items:
+          type: string
       clientClasses:
         type: array
         items:

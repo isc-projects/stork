@@ -7,7 +7,6 @@ import {
     ValidatorFn,
     Validators,
 } from '@angular/forms'
-import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
 import {
     AddressPoolForm,
     AddressRangeForm,
@@ -17,6 +16,7 @@ import {
 } from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
 import { SharedParameterFormGroup } from './forms/shared-parameter-form-group'
+import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator, collapseIPv6Number } from 'ip-num'
 
 /**
  * A class with various static form validation functions.
@@ -665,5 +665,34 @@ export class StorkValidators {
             return { 'full-fqdn': `${control.value} is not a valid full FQDN` }
         }
         return null
+    }
+
+    /**
+     * A validator checking if the specified subnet prefix does not already exist.
+     *
+     * @param prefixes a list of existing subnet prefixes.
+     * @returns validator errors or null of the prefix does not exist.
+     */
+    static prefixInList(prefixes: string[]): ValidatorFn {
+        const prefixSet = new Set(prefixes)
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+                return null
+            }
+            let cidr: string
+            try {
+                cidr = collapseIPv6Number(IPv6CidrRange.fromCidr(control.value).toCidrString())
+            } catch (_) {
+                try {
+                    cidr = IPv4CidrRange.fromCidr(control.value).toCidrString()
+                } catch (_) {
+                    return null
+                }
+            }
+            if (prefixSet.has(cidr)) {
+                return { prefixInList: true }
+            }
+            return null
+        }
     }
 }

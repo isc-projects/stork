@@ -1623,7 +1623,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default subnet form for no particular subnet', () => {
-        let form = service.createDefaultSubnetForm()
+        let form = service.createDefaultSubnetForm([])
         expect(form.get('subnet')?.value).toBeFalsy()
         expect(form.get('subnet')?.disabled).toBeFalse()
         expect(form.get('sharedNetwork')).toBeTruthy()

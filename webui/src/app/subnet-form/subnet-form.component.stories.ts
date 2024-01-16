@@ -107,6 +107,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
         },
     ],
     sharedNetworks6: [],
+    subnets: ['192.0.2.0/24', '192.0.3.0/24', '192.0.4.0/24', '2001:db8:1::/64', '2001:db8:2::/64'],
     clientClasses: ['foo', 'bar'],
 }
 
