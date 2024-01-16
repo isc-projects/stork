@@ -34,7 +34,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     viewSelectionOptions: any[]
     showUnauthorized = false
     serverToken = ''
-    selectedMachines!: Machine[]
+    selectedMachines: Machine[] = []
+    dataLoading: boolean
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
@@ -217,6 +218,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             })
         )
 
+        this.dataLoading = true
+
         // check current number of unauthorized machines
         this.refreshUnauthorizedMachinesCount()
     }
@@ -246,13 +249,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * @param event Pagination event
      */
     loadMachines(event) {
+        this.dataLoading = true
         let text
-        if (event.filters.text) {
+        if (event.filters && event.filters.text) {
             text = event.filters.text.value
         }
 
         let app
-        if (event.filters.app) {
+        if (event.filters && event.filters.app) {
             app = event.filters.app.value
         }
 
@@ -267,6 +271,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 // force refresh in UI
                 this.viewSelectionOptions = [...this.viewSelectionOptions]
             }
+            this.dataLoading = false
         })
         this.refreshUnauthorizedMachinesCount()
     }
@@ -611,6 +616,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
     /**
      * Authorizes machines stored in selectedMachines.
+     *
      * @param table table where selected machines are to be authorized.
      */
     authorizeSelectedMachines(table) {
@@ -622,5 +628,18 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
         // Clear selection after.
         this.selectedMachines = []
+    }
+
+    /**
+     * Callback called when PrimeNG table state is restored.
+     *
+     * @param state restored table state
+     * @param table table being restored
+     */
+    stateRestored(state: any, table: Table) {
+        // Restore only pagination state.
+        // Do not restore filtering and selection.
+        table.filters = {}
+        state.selection = []
     }
 }

@@ -264,6 +264,8 @@ sudo ./stork-install-agent.sh</textarea
         [showCurrentPageReport]="true"
         [selectionPageOnly]="true"
         [(selection)]="selectedMachines"
+        [loading]="dataLoading"
+        (onStateRestore)="stateRestored($event, machinesTable)"
         dataKey="id"
         stateStorage="session"
         stateKey="machines-table-session"
