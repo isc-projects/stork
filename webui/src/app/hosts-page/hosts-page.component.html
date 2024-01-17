@@ -81,9 +81,9 @@
                         that are associated with certain subnets.
                     </p>
                     <p>
-                        Hosts can be filtered by inconsistent DHCP configurations of their related daemons. Typing
-                        <b>is:conflict</b> will cause all hosts with different DHCP data configured in various host
-                        sources on the same daemon to be returned. This condition may be negative by typing:
+                        Hosts with inconsistent DHCP configurations can be filtered by typing <b>is:conflict</b>. It
+                        returns the hosts whose configurations are repeated in the configuration file and host database
+                        with some differences. Conversely, to display all hosts lacking the configuration conflicts type
                         <b>not:conflict</b>.
                     </p>
                     <p>
