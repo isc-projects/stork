@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms'
-import { SharedNetwork, Subnet } from '../backend'
+import { CreateSubnetBeginResponse, SharedNetwork, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SubnetForm } from './subnet-set-form.service'
@@ -28,6 +28,11 @@ export class SubnetFormState {
      * request to begin one.
      */
     transactionId: number = 0
+
+    /**
+     * A subnet id of the modified or created subnet.
+     */
+    subnetId: number = 0
 
     /**
      * An error to begin the transaction returned by the server.
@@ -83,6 +88,39 @@ export class SubnetFormState {
      * A flag set to true when DHCPv6 servers have been selected.
      */
     dhcpv6: boolean = false
+
+    /**
+     * Indicates if the form is at the wizard stage.
+     *
+     * When the form is used to create a new subnet, the form initially displays
+     * only the input box for the subnet prefix. This is because the form validation
+     * highly depends on the subnet prefix. This boolean flag indicates if the form
+     * is at this stage of subnet specification.
+     */
+    wizard: boolean = false
+
+    /**
+     * Names of the servers currently associated with the subnet.
+     *
+     * The names are displayed as tags next to the configuration parameters
+     * and DHCP options.
+     */
+    servers: string[] = []
+
+    /**
+     * Holds the received server's response to the createSubnetBegin or updateSubnetBegin
+     * call.
+     *
+     * It is required to revert the subnet edits.
+     */
+    savedSubnetBeginData: CreateSubnetBeginResponse | UpdateSubnetBeginResponse
+
+    /**
+     * Indicates if the form has been loaded.
+     *
+     * The component shows a progress spinner when this value is false.
+     */
+    loaded: boolean = false
 
     /**
      * Returns a daemon having the specified ID.

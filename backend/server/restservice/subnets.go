@@ -921,15 +921,15 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 // CreateSubnetSubmit) or updated (via UpdateSubnetSubmit). The apply functions
 // receive the transaction context and a pointer to the subnet. They return the
 // updated context and error. This function returns the HTTP error code if an
-// error occurs or 0 when there is no error. In addition it returns an error
-// string to be included in the HTTP response or an empty string if there is no
-// error.
-func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transactionID int64, restSubnet *models.Subnet, applyFunc func(context.Context, *dbmodel.Subnet) (context.Context, error)) (int, string) {
+// error occurs or 0 when there is no error. It also returns an ID of the
+// created of modified subnet. Finally, it returns an error string to be included
+// in the HTTP response or an empty string if there is no error.
+func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transactionID int64, restSubnet *models.Subnet, applyFunc func(context.Context, *dbmodel.Subnet) (context.Context, error)) (int, int64, string) {
 	// Make sure that the subnet information is present.
 	if restSubnet == nil {
 		msg := "Subnet information not specified"
 		log.Errorf("Problem with submitting a subnet because the subnet information is missing")
-		return http.StatusBadRequest, msg
+		return http.StatusBadRequest, 0, msg
 	}
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
@@ -937,7 +937,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	if cctx == nil {
 		msg := "Transaction expired for the subnet update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
-		return http.StatusNotFound, msg
+		return http.StatusNotFound, 0, msg
 	}
 
 	// Convert subnet information from REST API to database format.
@@ -945,13 +945,13 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	if err != nil {
 		msg := "Error parsing specified subnet"
 		log.WithError(err).Error(msg)
-		return http.StatusBadRequest, msg
+		return http.StatusBadRequest, 0, msg
 	}
 	err = subnet.PopulateDaemons(r.DB)
 	if err != nil {
 		msg := "Specified subnet is associated with daemons that no longer exist"
-		log.WithError(err).Error(err)
-		return http.StatusNotFound, msg
+		log.WithError(err).Error(msg)
+		return http.StatusNotFound, 0, msg
 	}
 	if restSubnet.SharedNetwork != "" {
 		subnet.SharedNetwork = &dbmodel.SharedNetwork{
@@ -963,18 +963,30 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	if err != nil {
 		msg := "Problem with applying subnet information"
 		log.WithError(err).Error(msg)
-		return http.StatusInternalServerError, msg
+		return http.StatusInternalServerError, 0, msg
 	}
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
 		msg := fmt.Sprintf("Problem with committing subnet information: %s", err)
 		log.WithError(err).Error(msg)
-		return http.StatusConflict, msg
+		return http.StatusConflict, 0, msg
+	}
+	subnetID := restSubnet.ID
+	if subnetID == 0 {
+		recipe, err := config.GetRecipeForUpdate[kea.ConfigRecipe](cctx, 0)
+		if err != nil {
+			msg := "Problem recovering subnet ID from the context"
+			log.WithError(err).Error(msg)
+			return http.StatusInternalServerError, 0, msg
+		}
+		if recipe.SubnetID != nil {
+			subnetID = *recipe.SubnetID
+		}
 	}
 	// Everything ok. Cleanup and send OK to the client.
 	r.ConfigManager.Done(cctx)
-	return 0, ""
+	return 0, subnetID, ""
 }
 
 // Common function that implements the DELETE calls to cancel adding new
@@ -1020,7 +1032,7 @@ func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubne
 	}
 	// Begin subnet add transaction.
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginSubnetAdd(cctx); err != nil {
-		msg := fmt.Sprintf("Problem with initializing transaction for creating subnet")
+		msg := "Problem with initializing transaction for creating subnet"
 		log.WithError(err).Error(msg)
 		rsp := dhcp.NewCreateSubnetBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -1056,14 +1068,18 @@ func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubne
 
 // Implements the POST call and commits a new subnet (subnets/new/transaction/{id}/submit).
 func (r *RestAPI) CreateSubnetSubmit(ctx context.Context, params dhcp.CreateSubnetSubmitParams) middleware.Responder {
-	if code, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetAdd); code != 0 {
+	code, subnetID, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetAdd)
+	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewCreateSubnetSubmitDefault(code).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
-	rsp := dhcp.NewCreateSubnetSubmitOK()
+	contents := &models.CreateSubnetSubmitResponse{
+		SubnetID: subnetID,
+	}
+	rsp := dhcp.NewCreateSubnetSubmitOK().WithPayload(contents)
 	return rsp
 }
 
@@ -1170,7 +1186,7 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 
 // Implements the POST call and commits an updated subnet (subnets/{subnetId}/transaction/{id}/submit).
 func (r *RestAPI) UpdateSubnetSubmit(ctx context.Context, params dhcp.UpdateSubnetSubmitParams) middleware.Responder {
-	if code, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetUpdate); code != 0 {
+	if code, _, msg := r.commonCreateOrUpdateSubnetSubmit(ctx, params.ID, params.Subnet, r.ConfigManager.GetKeaModule().ApplySubnetUpdate); code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSubnetSubmitDefault(code).WithPayload(&models.APIError{
 			Message: &msg,

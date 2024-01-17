@@ -414,7 +414,80 @@ describe('SubnetsPageComponent', () => {
         expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
     })
 
-    it('should close subnet form when form is submitted', fakeAsync(() => {
+    it('should close new subnet form when form is submitted', fakeAsync(() => {
+        component.loadSubnets({})
+        tick()
+        fixture.detectChanges()
+
+        const createSubnetBeginResp: any = {
+            id: 123,
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const getSubnetResp: any = {
+            id: 5,
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    id: 123,
+                    daemonId: 1,
+                    appName: 'server 1',
+                    pools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            allocator: 'random',
+                            options: [],
+                            optionsHash: '',
+                        },
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
+        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of(getSubnetResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        tick()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        component.onSubnetFormSubmit(component.openedTabs[1].state)
+        tick()
+
+        expect(dhcpService.getSubnet).toHaveBeenCalled()
+        expect(component.tabs.length).toBe(2)
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+
+        expect(dhcpService.createSubnetDelete).not.toHaveBeenCalled()
+    }))
+
+    it('should close subnet update form when form is submitted', fakeAsync(() => {
         component.loadSubnets({})
         tick()
         fixture.detectChanges()
@@ -560,7 +633,57 @@ describe('SubnetsPageComponent', () => {
         expect(dhcpService.updateSubnetDelete).not.toHaveBeenCalled()
     }))
 
-    it('should cancel transaction when a tab is closed', async () => {
+    it('should cancel a new subnet transaction when a tab is closed', fakeAsync(() => {
+        component.loadSubnets({})
+        tick()
+        fixture.detectChanges()
+
+        const createSubnetBeginResp: any = {
+            id: 123,
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
+        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        tick()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        component.closeTabByIndex(1)
+        fixture.detectChanges()
+        tick()
+
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
+    }))
+
+    it('should cancel an update transaction when a tab is closed', async () => {
         component.loadSubnets({})
         await fixture.whenStable()
         fixture.detectChanges()
@@ -630,6 +753,58 @@ describe('SubnetsPageComponent', () => {
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
     })
+
+    it('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
+        component.loadSubnets({})
+        tick()
+        fixture.detectChanges()
+
+        const createSubnetBeginResp: any = {
+            id: 123,
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
+        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        tick()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        component.onSubnetFormCancel()
+        fixture.detectChanges()
+        tick()
+
+        expect(component.tabs.length).toBe(2)
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+
+        expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
+    }))
 
     it('should cancel transaction when cancel button is clicked', async () => {
         component.loadSubnets({})
@@ -704,6 +879,47 @@ describe('SubnetsPageComponent', () => {
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
     })
+
+    it('should show error message when transaction canceling fails', fakeAsync(() => {
+        component.loadSubnets({})
+        tick()
+        fixture.detectChanges()
+
+        const createSubnetBeginResp: any = {
+            id: 123,
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
+
+        spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
+        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(messageService, 'add')
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        tick()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
+
+        component.onSubnetFormCancel()
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
 
     it('should show error message when transaction canceling fails', async () => {
         component.loadSubnets({})

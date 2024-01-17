@@ -711,7 +711,7 @@ func GetSubnetPrefixes(dbi dbops.DBI) ([]string, error) {
 		}
 		err = pkgerrors.Wrap(err, "problem getting subnet prefixes")
 	}
-	return subnets, nil
+	return subnets, err
 }
 
 // Associates a daemon with the subnet having a specified ID and prefix
@@ -978,4 +978,14 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
+}
+
+// Finds a maximum local subnet ID in the database. It returns 0, if no subnet IDs are found.
+func GetMaxLocalSubnetID(dbi dbops.DBI) (int64, error) {
+	count := int64(0)
+	err := dbi.Model((*LocalSubnet)(nil)).ColumnExpr("MAX(local_subnet_id)").Select(&count)
+	if err != nil {
+		return 0, pkgerrors.Wrapf(err, "problem getting max local subnet ID from the database")
+	}
+	return count, err
 }

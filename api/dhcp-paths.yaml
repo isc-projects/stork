@@ -414,6 +414,8 @@
       responses:
         200:
           description: Subnet successfully submitted.
+          schema:
+            $ref: '#/definitions/CreateSubnetSubmitResponse'
         default:
           description: generic error response
           schema:

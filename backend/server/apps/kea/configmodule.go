@@ -455,6 +455,16 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	if len(subnet.LocalSubnets) == 0 {
 		return ctx, pkgerrors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
 	}
+	// Get the highest local subnet ID from the database.
+	localSubnetID, err := dbmodel.GetMaxLocalSubnetID(module.manager.GetDB())
+	if err != nil {
+		return ctx, pkgerrors.WithMessagef(err, "failed querying the database to generate ID for the new subnet")
+	}
+	// Next subnet ID should be available. Assign it to all local subnets.
+	localSubnetID++
+	for i := range subnet.LocalSubnets {
+		subnet.LocalSubnets[i].LocalSubnetID = localSubnetID
+	}
 
 	var sharedNetworkNameAfterUpdate string
 	if subnet.SharedNetwork != nil {
@@ -523,7 +533,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	}
 	// Create the commands to write the updated configuration to files. The subnet
 	// changes won't persist across the servers' restarts otherwise.
-	for _, ls := range append(subnet.LocalSubnets) {
+	for _, ls := range subnet.LocalSubnets {
 		commands = append(commands, ConfigCommand{
 			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
 			App:     ls.Daemon.App,
@@ -564,13 +574,24 @@ func (module *ConfigModule) commitSubnetAdd(ctx context.Context) (context.Contex
 	if err != nil {
 		return ctx, err
 	}
-	for _, update := range state.Updates {
+	for i, update := range state.Updates {
 		if update.Recipe.SubnetAfterUpdate == nil {
 			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet creation")
 		}
-		_, err = dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
+		addedSubnets, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
 			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
+		}
+		if len(addedSubnets) != 1 {
+			return ctx, pkgerrors.Errorf("subnet has been successfully created in Kea but Stork was unable to determine its new identifier")
+		}
+		recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, i)
+		if err != nil {
+			return ctx, err
+		}
+		recipe.SubnetID = storkutil.Ptr(addedSubnets[0].ID)
+		if ctx, err = config.SetRecipeForUpdate(ctx, 0, recipe); err != nil {
+			return ctx, err
 		}
 	}
 	return ctx, nil
@@ -826,9 +847,9 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 		if update.Recipe.SubnetAfterUpdate == nil {
 			return ctx, pkgerrors.New("server logic error: the update.Recipe.SubnetAfterUpdate cannot be nil when committing the subnet update")
 		}
-		_, err = dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
+		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
+			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil

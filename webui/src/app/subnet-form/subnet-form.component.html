@@ -1,5 +1,5 @@
-<ng-container *ngIf="!form.initError; else showInitError">
-    <ng-container *ngIf="loaded; else showSpinner" [formGroup]="form.group">
+<ng-container *ngIf="!state.initError; else showInitError">
+    <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
         <p-fieldset legend="Subnet" styleClass="mt-4">
             <span class="p-float-label mt-4 mb-2">
                 <input id="subnet" pInputText formControlName="subnet" class="w-full" />
@@ -7,12 +7,12 @@
             </span>
             <ng-container
                 *ngIf="
-                    form.group.get('subnet').invalid &&
-                    (form.group.get('subnet').dirty || form.group.get('subnet').touched)
+                    state.group.get('subnet').invalid &&
+                    (state.group.get('subnet').dirty || state.group.get('subnet').touched)
                 "
             >
                 <small
-                    *ngIf="form.group.get('subnet').hasError('prefixInList'); else otherPrefixError"
+                    *ngIf="state.group.get('subnet').hasError('prefixInList'); else otherPrefixError"
                     class="p-error block"
                     >A subnet with this prefix already exists.
                 </small>
@@ -20,14 +20,14 @@
                     <small class="p-error block">A valid subnet prefix is required.</small>
                 </ng-template>
             </ng-container>
-            <span *ngIf="!wizard" class="p-float-label mt-5 mb-2">
+            <span *ngIf="!state.wizard" class="p-float-label mt-5 mb-2">
                 <p-dropdown
                     inputId="shared-networks-select"
                     emptyMessage="No shared networks found"
                     formControlName="sharedNetwork"
                     optionLabel="name"
                     optionValue="id"
-                    [options]="form.selectableSharedNetworks"
+                    [options]="state.selectableSharedNetworks"
                     [showClear]="true"
                     placeholder="not selected"
                     styleClass="w-full"
@@ -36,14 +36,14 @@
                 <label for="shared-network-select">Shared Network</label>
             </span>
         </p-fieldset>
-        <p-fieldset *ngIf="!wizard" legend="Assignments" styleClass="mt-4">
-            <div class="mt-4" [formGroup]="form.group">
+        <p-fieldset *ngIf="!state.wizard" legend="Assignments" styleClass="mt-4">
+            <div class="mt-4" [formGroup]="state.group">
                 <span class="p-float-label mb-2">
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
                         optionValue="id"
-                        [options]="form.filteredDaemons"
+                        [options]="state.filteredDaemons"
                         formControlName="selectedDaemons"
                         display="chip"
                         [showToggleAll]="false"
@@ -55,17 +55,17 @@
                 </span>
                 <small
                     *ngIf="
-                        form.group.get('selectedDaemons').invalid &&
-                        (form.group.get('selectedDaemons').dirty || form.group.get('selectedDaemons').touched)
+                        state.group.get('selectedDaemons').invalid &&
+                        (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
                     "
                     class="p-error block"
                     >At least one server must be selected.
                 </small>
             </div>
         </p-fieldset>
-        <p-fieldset *ngIf="!wizard" legend="Pools" styleClass="mt-4">
+        <p-fieldset *ngIf="!state.wizard" legend="Pools" styleClass="mt-4">
             <p-accordion>
-                <p-accordionTab *ngFor="let pool of form.group.get('pools')?.controls; let i = index">
+                <p-accordionTab *ngFor="let pool of state.group.get('pools')?.controls; let i = index">
                     <ng-template pTemplate="header">
                         <div class="flex align-items-center">
                             <span class="vertical-align-middle">{{ getPoolHeader(i)[0] }}</span>
@@ -111,9 +111,9 @@
                 </div>
             </div>
         </p-fieldset>
-        <p-fieldset *ngIf="!wizard && subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
+        <p-fieldset *ngIf="!state.wizard && subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
             <p-accordion>
-                <p-accordionTab *ngFor="let pool of form.group.get('prefixPools')?.controls; let i = index">
+                <p-accordionTab *ngFor="let pool of state.group.get('prefixPools')?.controls; let i = index">
                     <ng-template pTemplate="header">
                         <div class="flex align-items-center">
                             <span class="vertical-align-middle">{{ getPrefixPoolHeader(i)[0] }}</span>
@@ -159,30 +159,38 @@
                 </div>
             </div>
         </p-fieldset>
-        <p-fieldset *ngIf="!wizard" legend="DHCP Parameters" styleClass="mt-4">
+        <p-fieldset *ngIf="!state.wizard" legend="DHCP Parameters" styleClass="mt-4">
             <app-shared-parameters-form
-                [clientClasses]="form.clientClasses"
-                [servers]="servers"
-                [formGroup]="form.group.get('parameters')"
+                [clientClasses]="state.clientClasses"
+                [servers]="state.servers"
+                [formGroup]="state.group.get('parameters')"
             >
             </app-shared-parameters-form>
         </p-fieldset>
-        <p-fieldset *ngIf="!wizard" [formGroup]="form.group.get('options')" legend="DHCP Options" styleClass="mt-4">
+        <p-fieldset
+            *ngIf="!state.wizard"
+            [formGroup]="state.group.get('options')"
+            legend="DHCP Options"
+            styleClass="mt-4"
+        >
             <div class="flex mt-2 pb-4">
                 <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                 <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
             </div>
-            <ng-container *ngFor="let optionSet of form.group.get('options.data')?.controls; let i = index">
-                <div *ngIf="i === 0 || form.group.get('options.unlocked')?.value" class="mb-3 mt-3 host-form-abs-width">
-                    <div *ngIf="form.group.get('options.unlocked')?.value" class="pb-5">
-                        <p-divider *ngIf="form.group.get('options.data')?.length > 1" align="center">
+            <ng-container *ngFor="let optionSet of state.group.get('options.data')?.controls; let i = index">
+                <div
+                    *ngIf="i === 0 || state.group.get('options.unlocked')?.value"
+                    class="mb-3 mt-3 host-form-abs-width"
+                >
+                    <div *ngIf="state.group.get('options.unlocked')?.value" class="pb-5">
+                        <p-divider *ngIf="state.group.get('options.data')?.length > 1" align="center">
                             <p-tag [severity]="getServerTagSeverity(i)">
-                                {{ servers[i] }}
+                                {{ state.servers[i] }}
                             </p-tag>
                         </p-divider>
                     </div>
                     <app-dhcp-option-set-form
-                        [v6]="form.dhcpv6"
+                        [v6]="state.dhcpv6"
                         [formArray]="optionSet"
                         (optionAdd)="onOptionAdd(i)"
                     ></app-dhcp-option-set-form>
@@ -191,17 +199,22 @@
         </p-fieldset>
         <div class="flex align-items-center m-5">
             <p-button
-                *ngIf="!wizard && savedSubnetBeginData"
+                *ngIf="state.savedSubnetBeginData?.subnetId"
                 icon="pi pi-replay"
                 label="Revert Changes"
                 styleClass="mr-2 p-button-secondary"
                 (onClick)="onRevert()"
             ></p-button>
             <p-button label="Cancel" styleClass="mr-2 p-button-secondary" (onClick)="onCancel()"></p-button>
-            <p-button *ngIf="!wizard" label="Submit" [disabled]="form.group?.invalid" (onClick)="onSubmit()"></p-button>
             <p-button
-                *ngIf="wizard"
-                [disabled]="form.group?.get('subnet').invalid"
+                *ngIf="!state.wizard"
+                label="Submit"
+                [disabled]="state.group?.invalid"
+                (onClick)="onSubmit()"
+            ></p-button>
+            <p-button
+                *ngIf="state.wizard"
+                [disabled]="state.group?.get('subnet').invalid"
                 label="Proceed"
                 styleClass="p-button-primary"
                 (onClick)="onSubnetProceed()"
@@ -224,7 +237,7 @@
                         error:
                     </div>
                     <div class="flex align-items-center m-4 font-italic">
-                        {{ form.initError }}
+                        {{ state.initError }}
                     </div>
                     <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
                 </div>

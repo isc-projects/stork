@@ -31,59 +31,72 @@
 
 <!-- Subnet list tab -->
 <div *ngIf="activeTabIndex === 0; else openedTabBlock">
-    <div style="margin: 0 0 10px 5px; display: flex">
-        <div>
-            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
-            Filter subnets:
-            <input
-                type="text"
-                id="filter-subnets-text-field"
-                pInputText
-                [(ngModel)]="filterText"
-                placeholder="subnet or any other field"
-                (keyup)="keyupFilterText($event)"
-            />
-            <app-help-tip title="filtering" id="filtering-help-button">
-                <p>
-                    Subnets in the table below can be filtered by entering a text in the search box; the table shows all
-                    subnets matching the filter text. Currently supported fields for such filtering are:
-                </p>
-                <ul>
-                    <li>Subnet Prefix</li>
-                    <li>Lower and Upper Bound of Pools</li>
-                    <li>Shared Network Name</li>
-                </ul>
-                <p>
-                    The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all subnets
-                    that contain 192.0 octets. It can also filter by shared network name and/or pools.
-                </p>
-                <p>
-                    In addition, subnets can be filtered by an explicitly selected field using the expression:
-                    <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for explicit
-                    filtering are:
-                </p>
-                <ul>
-                    <li class="monospace">appId</li>
-                    <li>
-                        <span class="monospace">subnetId</span> - the subnet ID assigned in the Kea DHCP daemon
-                        configuration
-                    </li>
-                </ul>
-            </app-help-tip>
+    <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between">
+        <div style="display: flex; align-items: center">
+            <div>
+                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+                Filter subnets:
+                <input
+                    type="text"
+                    id="filter-subnets-text-field"
+                    pInputText
+                    [(ngModel)]="filterText"
+                    placeholder="subnet or any other field"
+                    (keyup)="keyupFilterText($event)"
+                />
+                <app-help-tip title="filtering" id="filtering-help-button">
+                    <p>
+                        Subnets in the table below can be filtered by entering a text in the search box; the table shows
+                        all subnets matching the filter text. Currently supported fields for such filtering are:
+                    </p>
+                    <ul>
+                        <li>Subnet Prefix</li>
+                        <li>Lower and Upper Bound of Pools</li>
+                        <li>Shared Network Name</li>
+                    </ul>
+                    <p>
+                        The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all
+                        subnets that contain 192.0 octets. It can also filter by shared network name and/or pools.
+                    </p>
+                    <p>
+                        In addition, subnets can be filtered by an explicitly selected field using the expression:
+                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
+                        explicit filtering are:
+                    </p>
+                    <ul>
+                        <li class="monospace">appId</li>
+                        <li>
+                            <span class="monospace">subnetId</span> - the subnet ID assigned in the Kea DHCP daemon
+                            configuration
+                        </li>
+                    </ul>
+                </app-help-tip>
+            </div>
+            <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
+            <div>
+                <p-dropdown
+                    [options]="[
+                        { label: 'any', value: null, id: 'any-menu' },
+                        { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
+                        { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' }
+                    ]"
+                    id="protocol-dropdown-menu"
+                    [(ngModel)]="queryParams.dhcpVersion"
+                    [style]="{ width: '10em' }"
+                    (onChange)="filterByDhcpVersion()"
+                ></p-dropdown>
+            </div>
         </div>
-        <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
         <div>
-            <p-dropdown
-                [options]="[
-                    { label: 'any', value: null, id: 'any-menu' },
-                    { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
-                    { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' }
-                ]"
-                id="protocol-dropdown-menu"
-                [(ngModel)]="queryParams.dhcpVersion"
-                [style]="{ width: '10em' }"
-                (onChange)="filterByDhcpVersion()"
-            ></p-dropdown>
+            <a
+                label="New Subnet"
+                icon="pi pi-plus"
+                class="p-button-primary no-underline"
+                style="display: block"
+                type="button"
+                routerLink="/dhcp/subnets/new"
+                pButton
+            ></a>
         </div>
     </div>
 
@@ -234,8 +247,15 @@
             (subnetEditBegin)="onSubnetEditBegin(openedTabs[activeTabIndex].subnet)"
         ></app-subnet-tab>
         <app-subnet-form
+            *ngSwitchCase="SubnetTabType.NewSubnet"
+            [state]="openedTabs[activeTabIndex].state"
+            (formDestroy)="onSubnetFormDestroy($event)"
+            (formSubmit)="onSubnetFormSubmit($event)"
+            (formCancel)="onSubnetFormCancel()"
+        ></app-subnet-form>
+        <app-subnet-form
             *ngSwitchCase="SubnetTabType.EditSubnet"
-            [form]="openedTabs[activeTabIndex].state"
+            [state]="openedTabs[activeTabIndex].state"
             [subnetId]="openedTabs[activeTabIndex].subnet.id"
             (formDestroy)="onSubnetFormDestroy($event)"
             (formSubmit)="onSubnetFormSubmit($event)"

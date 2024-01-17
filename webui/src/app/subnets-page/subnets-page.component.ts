@@ -54,7 +54,7 @@ export class SubnetTab {
         public tabType: SubnetTabType,
         public subnet?: Subnet
     ) {
-        this.setSubnetTabType(tabType)
+        this.setSubnetTabTypeInternal(tabType)
     }
 
     /**
@@ -232,6 +232,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 (params) => {
                     // Get subnet id.
                     const id = params.get('id')
+                    if (!id || id === 'all') {
+                        this.switchToTab(0)
+                        return
+                    }
+                    if (id === 'new') {
+                        this.openNewSubnetTab()
+                        return
+                    }
                     let numericId = parseInt(id, 10)
                     if (Number.isNaN(numericId)) {
                         numericId = 0
@@ -413,6 +421,19 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Opens an existing or new subnet tab for creating a subnet.
+     */
+    openNewSubnetTab() {
+        let index = this.openedTabs.findIndex((t) => t.tabType === SubnetTabType.NewSubnet)
+        if (index >= 0) {
+            this.switchToTab(index)
+            return
+        }
+        this.appendNewTab()
+        this.switchToTab(this.openedTabs.length - 1)
+    }
+
+    /**
      * Open a subnet tab.
      *
      * If the tab already exists, switch to it without fetching the data.
@@ -451,6 +472,26 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         ) {
             this.dhcpApi
                 .updateSubnetDelete(this.openedTabs[index].subnet.id, this.openedTabs[index].state.transactionId)
+                .toPromise()
+                .catch((err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
+                    })
+                })
+        } else if (
+            this.openedTabs[index].tabType === SubnetTabType.NewSubnet &&
+            this.openedTabs[index].state?.transactionId > 0 &&
+            !this.openedTabs[index].submitted
+        ) {
+            this.dhcpApi
+                .createSubnetDelete(this.openedTabs[index].state.transactionId)
                 .toPromise()
                 .catch((err) => {
                     let msg = err.statusText
@@ -522,6 +563,18 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     this.loading = false
                 })
         )
+    }
+
+    /**
+     * Appends a tab for creating a new subnet.
+     */
+    private appendNewTab() {
+        this.openedTabs.push(new SubnetTab(SubnetTabType.NewSubnet))
+        this.tabs.push({
+            label: 'New Subnet',
+            icon: 'pi pi-pencil',
+            routerLink: `/dhcp/subnets/new`,
+        })
     }
 
     /**
@@ -609,7 +662,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
         if (index >= 0) {
             this.dhcpApi
-                .getSubnet(this.openedTabs[index].subnet.id)
+                .getSubnet(event.subnetId)
                 .pipe(
                     map((subnet) => {
                         if (subnet) {
@@ -636,7 +689,10 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 })
                 .finally(() => {
                     this.tabs[index].icon = ''
+                    this.tabs[index].label = this.openedTabs[index].subnet.subnet
+                    this.tabs[index].routerLink = `/dhcp/subnets/${event.subnetId}`
                     this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+                    this.router.navigate([this.tabs[index].routerLink])
                 })
         }
     }
@@ -648,9 +704,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * event comes from the subnet update form, the tab is turned into the
      * subnet view. In both cases, the transaction is deleted in the server.
      *
-     * @param subnetId subnet identifier or zero for new subnet case.
+     * @param subnetId subnet identifier or null for new subnet case.
      */
-    onSubnetFormCancel(subnetId: number): void {
+    onSubnetFormCancel(subnetId?: number): void {
         const index = this.openedTabs.findIndex(
             (t) => t.subnet?.id === subnetId || (t.tabType === SubnetTabType.NewSubnet && !subnetId)
         )
@@ -658,10 +714,31 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             if (
                 subnetId &&
                 this.openedTabs[index].state?.transactionId &&
-                this.openedTabs[index].tabType !== SubnetTabType.Subnet
+                this.openedTabs[index].tabType === SubnetTabType.EditSubnet
             ) {
                 this.dhcpApi
                     .updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionId)
+                    .toPromise()
+                    .catch((err) => {
+                        let msg = err.statusText
+                        if (err.error && err.error.message) {
+                            msg = err.error.message
+                        }
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Failed to delete configuration transaction',
+                            detail: 'Failed to delete configuration transaction: ' + msg,
+                            life: 10000,
+                        })
+                    })
+                this.tabs[index].icon = ''
+                this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+            } else if (
+                this.openedTabs[index].state?.transactionId &&
+                this.openedTabs[index].tabType === SubnetTabType.NewSubnet
+            ) {
+                this.dhcpApi
+                    .createSubnetDelete(this.openedTabs[index].state.transactionId)
                     .toPromise()
                     .catch((err) => {
                         let msg = err.statusText

@@ -382,6 +382,13 @@
         items:
           type: string
 
+  CreateSubnetSubmitResponse:
+    type: object
+    properties:
+      subnetId:
+        type: integer
+        format: int64
+
   UpdateSubnetBeginResponse:
     type: object
     properties:

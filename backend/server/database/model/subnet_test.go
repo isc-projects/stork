@@ -753,7 +753,6 @@ func TestGetSubnetPrefixes(t *testing.T) {
 		err := AddSubnet(db, &subnets[i])
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
-
 	}
 
 	// Get the subnet prefixes.
@@ -1785,4 +1784,106 @@ func TestPopulateSubnetDaemons(t *testing.T) {
 	require.EqualValues(t, apps[0].Daemons[0].ID, subnet.LocalSubnets[0].Daemon.ID)
 	require.NotNil(t, subnet.LocalSubnets[1].Daemon)
 	require.EqualValues(t, apps[1].Daemons[0].ID, subnet.LocalSubnets[1].Daemon.ID)
+}
+
+// Test getting max local subnet IDs.
+func TestGetMaxLocalSubnetID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add several subnets with different local subnet IDs.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      apps[0].Daemons[0].ID,
+					LocalSubnetID: 50,
+				},
+			},
+		},
+		{
+			Prefix: "192.0.3.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      apps[0].Daemons[0].ID,
+					LocalSubnetID: 70,
+				},
+			},
+		},
+		{
+			Prefix: "192.0.4.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      apps[0].Daemons[0].ID,
+					LocalSubnetID: 63,
+				},
+			},
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+
+		err = AddLocalSubnets(db, &subnets[i])
+		require.NoError(t, err)
+	}
+
+	id, err := GetMaxLocalSubnetID(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 70, id)
+}
+
+// Test getting max local subnet id when it is set to NULL.
+func TestGetMaxLocalSubnetIDNullValues(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add several subnets with different local subnet IDs.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+			},
+		},
+		{
+			Prefix: "192.0.3.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+			},
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+
+		err = AddLocalSubnets(db, &subnets[i])
+		require.NoError(t, err)
+	}
+
+	id, err := GetMaxLocalSubnetID(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, id)
+}
+
+// Testing getting max local subnet ID when there are no local subnets
+// in the database.
+func TestGetMaxLocalSubnetIDEmptySet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	id, err := GetMaxLocalSubnetID(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, id)
 }

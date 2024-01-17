@@ -1779,6 +1779,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	require.Len(t, dbapps, 2)
 
 	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
 	require.Len(t, sharedNetworks, 1)
 
 	// Create fake agents receiving commands.
@@ -1986,6 +1987,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	}
 	rsp2 := rapi.CreateSubnetSubmit(ctx, params2)
 	require.IsType(t, &dhcp.CreateSubnetSubmitOK{}, rsp2)
+	require.NotZero(t, rsp2.(*dhcp.CreateSubnetSubmitOK).Payload.SubnetID)
 
 	// It should result in sending commands to two Kea servers. Each server
 	// receives the subnet4-add command.
@@ -2001,7 +2003,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 				"arguments": {
 					"subnet4": [
 						{
-							"id": 1,
+							"id": 104,
 							"subnet": "192.0.2.0/24",
 
 							"pools": [
@@ -2084,7 +2086,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 						"service": [ "dhcp4" ],
 						"arguments": {
 							"name": "foo",
-							"id": 1
+							"id": 104
 						}
 				}`,
 				c.Marshal())
@@ -2349,6 +2351,7 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	require.Len(t, dbapps, 2)
 
 	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
 	require.Len(t, sharedNetworks, 1)
 
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()

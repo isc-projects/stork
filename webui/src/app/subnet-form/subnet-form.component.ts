@@ -39,7 +39,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * the form (after edits) after the component has been (temporarily)
      * destroyed.
      */
-    @Input() form: SubnetFormState = null
+    @Input() state: SubnetFormState = null
 
     /**
      * Subnet identifier.
@@ -66,39 +66,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * An event emitter notifying that form editing has been canceled.
      */
     @Output() formCancel = new EventEmitter<number>()
-
-    /**
-     * Names of the servers currently associated with the subnet.
-     *
-     * The names are displayed as tags next to the configuration parameters
-     * and DHCP options.
-     */
-    servers: string[] = []
-
-    /**
-     * Holds the received server's response to the createSubnetBegin or updateSubnetBegin
-     * call.
-     *
-     * It is required to revert the subnet edits.
-     */
-    savedSubnetBeginData: CreateSubnetBeginResponse | UpdateSubnetBeginResponse
-
-    /**
-     * Indicates if the form has been loaded.
-     *
-     * The component shows a progress spinner when this value is false.
-     */
-    loaded: boolean = false
-
-    /**
-     * Indicates if the form is in the wizard stage.
-     *
-     * When the form is used to create a new subnet, the form initially displays
-     * only the input box for the subnet prefix. This is because the form validation
-     * highly depends on the subnet prefix. This boolean flag indicates if the form
-     * is at this stage of subnet specification.
-     */
-    wizard: boolean = false
 
     /**
      * Constructor.
@@ -130,15 +97,15 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // If the state was cached by the parent there is no need to create it.
         // It happens when a user switches between the subnet tabs and the
         // component is temporarily destroyed.
-        if (!this.form) {
-            this.form = new SubnetFormState()
+        if (!this.state) {
+            this.state = new SubnetFormState()
         }
 
         // Check if the form has been already edited and preserved in the
         // parent component. If so, use it. The user will continue making
         // edits.
-        if (this.form.preserved) {
-            this.loaded = true
+        if (this.state.preserved) {
+            this.state.loaded = true
             return
         }
 
@@ -148,9 +115,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             // Send POST to /subnets/{id}/transaction/new.
             this.updateSubnetBegin()
         } else {
-            // Send POST to /subnets/{id}/transaction/new.
+            // Send POST to /subnets/transaction/new.
             this.createSubnetBegin()
-            this.wizard = true
+            this.state.wizard = true
         }
     }
 
@@ -164,25 +131,25 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * skip initialization in the next ngOnInit function invocation.
      */
     ngOnDestroy(): void {
-        this.form.preserved = true
-        this.formDestroy.emit(this.form)
+        this.state.preserved = true
+        this.formDestroy.emit(this.state)
     }
 
     /**
-     * Initializes the subnet form using the data received from the server.
+     * Initializes the subnet form state using the data received from the server.
      *
      * @param response response received from the server holding the subnet data.
      */
-    initializeForm(response: CreateSubnetBeginResponse | UpdateSubnetBeginResponse) {
+    initializeState(response: CreateSubnetBeginResponse | UpdateSubnetBeginResponse) {
         // Success. Clear any existing errors.
-        this.form.initError = null
+        this.state.initError = null
 
         // The server should return new transaction id and a current list of
         // daemons to select.
-        this.form.transactionId = response.id
-        this.form.allDaemons = []
+        this.state.transactionId = response.id
+        this.state.allDaemons = []
         for (let d of response.daemons) {
-            this.form.allDaemons.push({
+            this.state.allDaemons.push({
                 id: d.id,
                 appId: d.app.id,
                 appType: d.app.type,
@@ -191,20 +158,22 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             })
         }
         // Initially, list all daemons.
-        this.form.filteredDaemons = this.form.allDaemons
-        this.form.allSharedNetworks4 = response.sharedNetworks4 || []
-        this.form.allSharedNetworks6 = response.sharedNetworks6 || []
-        this.form.clientClasses =
+        this.state.filteredDaemons = this.state.allDaemons
+        this.state.allSharedNetworks4 = response.sharedNetworks4 || []
+        this.state.allSharedNetworks6 = response.sharedNetworks6 || []
+        this.state.clientClasses =
             response.clientClasses?.map((c) => {
                 return { name: c }
             }) || []
         // If we update an existing subnet the subnet information should be in the response.
         if (this.subnetId && 'subnet' in response && response.subnet) {
+            // Remember the subnet identifier.
+            this.state.subnetId = response.subnet.id
             // Get the server names to be displayed next to the configuration parameters.
-            this.servers = response.subnet.localSubnets.map((ls) => this.form.getDaemonById(ls.daemonId)?.label)
+            this.state.servers = response.subnet.localSubnets.map((ls) => this.state.getDaemonById(ls.daemonId)?.label)
             // Save the subnet information in case we need to revert the form changes.
             // Determine whether it is an IPv6 or IPv4 subnet.
-            this.form.dhcpv6 = response.subnet.subnet?.includes(':')
+            this.state.dhcpv6 = response.subnet.subnet?.includes(':')
             // Initialize the subnet form controls.
             this.initializeSubnet(response.subnet)
         }
@@ -212,7 +181,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // that can be selected by a user for our subnet.
         this.handleDaemonsChange()
         // Hide the spinner and show the form.
-        this.loaded = true
+        this.state.loaded = true
     }
 
     /**
@@ -221,8 +190,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param subnet subnet data received from the server.
      */
     private initializeSubnet(subnet: Subnet): void {
-        this.form.group = this.subnetSetFormService.convertSubnetToForm(
-            this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
+        this.state.group = this.subnetSetFormService.convertSubnetToForm(
+            this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
             subnet
         )
     }
@@ -236,9 +205,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             .createSubnetBegin()
             .toPromise()
             .then((data) => {
-                this.savedSubnetBeginData = data
-                this.form.group = this.subnetSetFormService.createDefaultSubnetForm(data.subnets || [])
-                this.initializeForm(data)
+                this.state.savedSubnetBeginData = data
+                this.state.group = this.subnetSetFormService.createDefaultSubnetForm(data.subnets || [])
+                this.initializeState(data)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -248,8 +217,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     detail: `Failed to create transaction for creating a subnet: ` + msg,
                     life: 10000,
                 })
-                this.loaded = true
-                this.form.initError = msg
+                this.state.loaded = true
+                this.state.initError = msg
             })
     }
 
@@ -262,8 +231,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             .updateSubnetBegin(this.subnetId)
             .toPromise()
             .then((data) => {
-                this.savedSubnetBeginData = data
-                this.initializeForm(data)
+                this.state.savedSubnetBeginData = data
+                this.initializeState(data)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -273,8 +242,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     detail: `Failed to create transaction for updating subnet ${this.subnetId}: ` + msg,
                     life: 10000,
                 })
-                this.loaded = true
-                this.form.initError = msg
+                this.state.loaded = true
+                this.state.initError = msg
             })
     }
 
@@ -282,7 +251,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * Returns the current subnet prefix.
      */
     get subnet(): string {
-        return this.form.group.get('subnet')?.value || ''
+        return this.state.group.get('subnet')?.value || ''
     }
 
     /**
@@ -307,7 +276,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * indicating if the pool has a range specified.
      */
     getPoolHeader(index: number): [string, boolean] {
-        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        const pools = this.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         const rangeStart = pools?.at(index)?.get('range.start')?.value
         const rangeEnd = pools?.at(index)?.get('range.end')?.value
         return rangeStart && rangeEnd ? [`${rangeStart}-${rangeEnd}`, true] : ['New Pool', false]
@@ -321,7 +290,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * indicating if the pool has the prefix specified.
      */
     getPrefixPoolHeader(index: number): [string, boolean] {
-        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        const pools = this.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         return pools?.at(index)?.get('prefixes.prefix')?.value
             ? [`${pools.at(index)?.get('prefixes.prefix').value}`, true]
             : ['New Pool', false]
@@ -332,10 +301,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * button to proceed editing the form.
      */
     onSubnetProceed(): void {
-        this.form.group.get('subnet').disable()
-        this.form.group = this.subnetSetFormService.createDefaultSubnetForm(this.form.group.get('subnet').value)
-        this.initializeForm(this.savedSubnetBeginData)
-        this.wizard = false
+        this.state.group.get('subnet').disable()
+        this.state.group = this.subnetSetFormService.createDefaultSubnetForm(this.state.group.get('subnet').value)
+        this.initializeState(this.state.savedSubnetBeginData)
+        this.state.wizard = false
     }
 
     /**
@@ -346,7 +315,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param index server index in the {@link servers} array.
      */
     onOptionAdd(index: number): void {
-        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4))
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4))
     }
 
     /**
@@ -355,8 +324,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @returns A list of selected daemons.
      */
     getSelectedDaemons(): SelectableDaemon[] {
-        const selectedDaemons = this.form.group.get('selectedDaemons').value ?? []
-        return selectedDaemons.map((sd) => this.form.allDaemons.find((d) => d.id === sd))
+        const selectedDaemons = this.state.group.get('selectedDaemons').value ?? []
+        return selectedDaemons.map((sd) => this.state.allDaemons.find((d) => d.id === sd))
     }
 
     /**
@@ -372,9 +341,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     private handleDaemonsChange(toggledDaemonId?: number): void {
         const toggledDaemonIndex = toggledDaemonId
-            ? this.form.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
+            ? this.state.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
             : -1
-        this.subnetSetFormService.adjustFormForSelectedDaemons(this.form.group, toggledDaemonIndex, this.servers.length)
+        this.subnetSetFormService.adjustFormForSelectedDaemons(
+            this.state.group,
+            toggledDaemonIndex,
+            this.state.servers.length
+        )
         this.addressPoolComponents.forEach((apc) => {
             apc.handleDaemonsChange(toggledDaemonId)
             apc.selectableDaemons = this.getSelectedDaemons()
@@ -387,16 +360,16 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
-        const selectedDaemons = this.form.group.get('selectedDaemons').value ?? []
-        const subnetPrefix = this.form.group.get('subnet').value ?? ''
-        if (this.form.updateFormForSelectedDaemons(selectedDaemons, subnetPrefix)) {
+        const selectedDaemons = this.state.group.get('selectedDaemons').value ?? []
+        const subnetPrefix = this.state.group.get('subnet').value ?? ''
+        if (this.state.updateFormForSelectedDaemons(selectedDaemons, subnetPrefix)) {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
             this.resetParametersArray()
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
-        this.servers = selectedDaemons.map((sd) => this.form.getDaemonById(sd)?.label)
+        this.state.servers = selectedDaemons.map((sd) => this.state.getDaemonById(sd)?.label)
     }
 
     /**
@@ -414,7 +387,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * It extends the form to hold the new pool information.
      */
     onAddressPoolAdd(): void {
-        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        const pools = this.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         pools?.push(this.subnetSetFormService.createDefaultAddressPoolForm(this.subnet))
     }
 
@@ -428,7 +401,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onAddressPoolDelete(index: number): void {
         const [poolHeader, specified] = this.getPoolHeader(index)
-        const pools = this.form.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        const pools = this.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         if (pools?.length > index) {
             pools.removeAt(index)
             this.messageService.add({
@@ -446,7 +419,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * It extends the form to hold the new pool information.
      */
     onPrefixPoolAdd(): void {
-        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        const pools = this.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         pools?.push(this.subnetSetFormService.createDefaultPrefixPoolForm())
     }
 
@@ -460,7 +433,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onPrefixPoolDelete(index: number): void {
         const [poolHeader, specified] = this.getPrefixPoolHeader(index)
-        const pools = this.form.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        const pools = this.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         if (pools?.length > index) {
             pools.removeAt(index)
             this.messageService.add({
@@ -476,7 +449,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * A function called when user clicks the button to revert subnet changes.
      */
     onRevert(): void {
-        this.initializeForm(this.savedSubnetBeginData)
+        this.initializeState(this.state.savedSubnetBeginData)
     }
 
     /**
@@ -502,9 +475,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     onSubmit(): void {
         let subnet: Subnet
         try {
-            subnet = this.subnetSetFormService.convertFormToSubnet(this.form.group)
+            subnet = this.subnetSetFormService.convertFormToSubnet(this.state.group)
             if (subnet.sharedNetworkId) {
-                subnet.sharedNetwork = this.form.selectableSharedNetworks?.find(
+                subnet.sharedNetwork = this.state.selectableSharedNetworks?.find(
                     (sn) => subnet.sharedNetworkId === sn.id
                 )?.name
             }
@@ -520,7 +493,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
 
         if (this.subnetId) {
             // Updating an existing subnet.
-            const savedBeginData = this.savedSubnetBeginData as UpdateSubnetBeginResponse
+            const savedBeginData = this.state.savedSubnetBeginData as UpdateSubnetBeginResponse
             const originalSubnet = savedBeginData.subnet
             for (let ls of subnet.localSubnets) {
                 const originalLocalSubnet =
@@ -529,7 +502,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             }
             subnet.id = this.subnetId
             this.dhcpApi
-                .updateSubnetSubmit(this.subnetId, this.form.transactionId, subnet)
+                .updateSubnetSubmit(this.subnetId, this.state.transactionId, subnet)
                 .toPromise()
                 .then(() => {
                     this.messageService.add({
@@ -537,7 +510,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                         summary: 'Subnet successfully updated',
                     })
                     // Notify the parent component about successful submission.
-                    this.formSubmit.emit(this.form)
+                    this.formSubmit.emit(this.state)
                 })
                 .catch((err) => {
                     let msg = err.statusText
@@ -555,15 +528,16 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
         // Creating a new subnet.
         this.dhcpApi
-            .createSubnetSubmit(this.form.transactionId, subnet)
+            .createSubnetSubmit(this.state.transactionId, subnet)
             .toPromise()
-            .then(() => {
+            .then((data) => {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Subnet successfully created',
                 })
                 // Notify the parent component about successful submission.
-                this.formSubmit.emit(this.form)
+                this.state.subnetId = data.subnetId
+                this.formSubmit.emit(this.state)
             })
             .catch((err) => {
                 let msg = err.statusText
@@ -585,7 +559,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * It removes all existing controls and re-creates the default one.
      */
     private resetParametersArray() {
-        let parameters = this.form.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        let parameters = this.state.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
         if (!parameters) {
             return
         }
@@ -598,9 +572,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 values.controls.splice(0)
             }
         }
-        this.form.group.setControl(
+        this.state.group.setControl(
             'parameters',
-            this.subnetSetFormService.createDefaultKeaSubnetParametersForm(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
+            this.subnetSetFormService.createDefaultKeaSubnetParametersForm(
+                this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4
+            )
         )
     }
 
@@ -610,7 +586,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * It removes all existing option sets and re-creates the default one.
      */
     private resetOptionsArray() {
-        this.form.group.get('options.unlocked').setValue(false)
+        this.state.group.get('options.unlocked').setValue(false)
         this.getOptionsData().clear()
         this.getOptionsData().push(new UntypedFormArray([]))
     }
@@ -623,7 +599,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     private getOptionsData(index?: number): UntypedFormArray {
         return index === undefined
-            ? (this.form.group.get('options.data') as UntypedFormArray)
+            ? (this.state.group.get('options.data') as UntypedFormArray)
             : (this.getOptionsData().at(index) as UntypedFormArray)
     }
 }

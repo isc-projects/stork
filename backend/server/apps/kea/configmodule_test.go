@@ -1439,7 +1439,11 @@ func TestBeginSubnetAdd(t *testing.T) {
 
 // Test second stage of subnet creation.
 func TestApplySubnetAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
 		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
 	})
 	module := NewConfigModule(manager)
@@ -1535,7 +1539,7 @@ func TestApplySubnetAdd(t *testing.T) {
 					"arguments": {
 						"subnet4": [
 							{
-								"id": 0,
+								"id": 1,
 								"subnet": "192.0.2.0/24",
 								"pools": [
 									{
@@ -1586,14 +1590,7 @@ func TestCommitSubnetAdd(t *testing.T) {
 		"Dhcp4": {
 			"shared-networks": [
 				{
-					"name": "foo",
-					"subnet4": [
-						{
-							"id": 1,
-							"subnet": "192.0.2.0/24",
-							"allocator": "random"
-						}
-					]
+					"name": "foo"
 				}
 			]
 		}
@@ -1627,18 +1624,43 @@ func TestCommitSubnetAdd(t *testing.T) {
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
-	require.Len(t, subnets, 1)
+	require.Empty(t, subnets)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	subnet := dbmodel.Subnet{
+		Prefix:        "192.0.2.0/24",
+		SharedNetwork: &sharedNetworks[0],
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+				KeaParameters: &keaconfig.SubnetParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+				KeaParameters: &keaconfig.SubnetParameters{
+					Allocator: storkutil.Ptr("random"),
+				},
+			},
+		},
+	}
+	err = subnet.PopulateDaemons(db)
+	require.NoError(t, err)
 
 	// Transaction state is required because typically it is created by the
 	// BeginSubnetAdd function.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "subnet_add")
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
-	ctx, err = module.ApplySubnetAdd(ctx, &subnets[0])
+	ctx, err = module.ApplySubnetAdd(ctx, &subnet)
 	require.NoError(t, err)
 
 	// Committing the subnet should result in sending control commands to Kea servers.
-	_, err = module.Commit(ctx)
+	ctx, err = module.Commit(ctx)
 	require.NoError(t, err)
 
 	// Make sure that the correct number of commands were sent.
@@ -1706,6 +1728,11 @@ func TestCommitSubnetAdd(t *testing.T) {
 	require.NotNil(t, addedSubnets[0].LocalSubnets[1].KeaParameters)
 	require.NotNil(t, addedSubnets[0].LocalSubnets[1].KeaParameters.Allocator)
 	require.Equal(t, "random", *addedSubnets[0].LocalSubnets[1].KeaParameters.Allocator)
+
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	require.NoError(t, err)
+	require.NotNil(t, recipe.SubnetID)
+	require.EqualValues(t, addedSubnets[0].ID, *recipe.SubnetID)
 }
 
 // Test the first stage of updating a subnet. It checks that the subnet information
