@@ -1029,6 +1029,8 @@ func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
+	require.EqualValues(t, host0.ID, returned[0].ID)
+	require.EqualValues(t, host1.ID, returned[1].ID)
 }
 
 // Test that the combinations of the conflict and duplicate filters return
