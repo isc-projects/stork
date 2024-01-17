@@ -843,7 +843,7 @@ func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
 	require.Empty(t, returned)
 }
 
-// Test that page of the hosts doesn't contain the hosts with duplicated
+// Test that page of the hosts contains only hosts with duplicated local hosts
 // if the duplicated DHCP data filter is set.
 func TestGetHostsByPageDuplicate(t *testing.T) {
 	// Arrange
