@@ -53,7 +53,7 @@ function setDaemonStatusErred(app) {
 })
 export class AppsPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
-    breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
+    breadcrumbs: MenuItem[] = []
 
     appType = ''
     // apps table
@@ -125,7 +125,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
                 if (newAppType !== this.appType) {
                     this.appType = newAppType
-                    this.breadcrumbs[1]['label'] = this.getAppsLabel()
+                    this.breadcrumbs = [{ label: 'Services' }, { label: this.getAppsLabel() }]
 
                     this.tabs = [{ label: 'All', routerLink: '/apps/' + this.appType + '/all' }]
 
