@@ -133,7 +133,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Sets all currently displayed host reservations.
+     * Sets hosts reservations to be displayed.
      * Groups the local hosts by app ID and stores the result in
      * @this.localHostsGroupedByApp.
      */

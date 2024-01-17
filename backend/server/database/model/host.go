@@ -470,7 +470,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Where("daemon.app_id = ?", *filters.AppID)
 	}
 
-	// // Filter by conflict.
+	// Filter by conflict or duplicate.
 	if filters.DHCPDataConflict != nil || filters.DHCPDataDuplicate != nil {
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
@@ -493,7 +493,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Join("LEFT JOIN (?) AS duplicate", conflictSubquery).
 			JoinOn("host.id = duplicate.host_id")
 
-		// Joined 'conflict' column is TRUE is the DHCP data are inconsistent
+		// Joined 'conflict' column is TRUE if the DHCP data are inconsistent
 		// in the local hosts, FALSE if they are consistent/duplicated, or
 		// NULL if there is only one local host.
 		q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
@@ -724,7 +724,7 @@ func DeleteDaemonsFromHost(dbi dbops.DBI, hostID int64, dataSource HostDataSourc
 
 	result, err := q.Delete()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem deleting the daemons from the %d host and the '%s' data source", hostID, dataSource)
+		err = pkgerrors.Wrapf(err, "problem deleting the daemons from the host %d and the '%s' data source", hostID, dataSource)
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
