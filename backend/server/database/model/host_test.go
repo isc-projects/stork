@@ -820,8 +820,8 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	require.Contains(t, []int64{hosts[0].ID, hosts[2].ID}, returned[1].ID)
 }
 
-// Test that page of the hosts is empty if the inconsistent DHCP data filter
-// is set but there are no local hosts with conflicted or duplicated data.
+// Test that page of the hosts is empty if there is a filter for conflicted or
+// duplicated DHCP data and there is no such hosts.
 func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
