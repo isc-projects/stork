@@ -9,7 +9,7 @@ func init() {
 		_, err := db.Exec(`
 			ALTER TABLE local_host DROP CONSTRAINT local_host_pkey;
 			ALTER TABLE local_host
-                ADD CONSTRAINT local_host_pkey
+				ADD CONSTRAINT local_host_pkey
 					PRIMARY KEY (host_id, daemon_id, data_source);
 
 			-- Reset the Kea config hashes to re-calculate the hashes of the
