@@ -1133,7 +1133,7 @@ describe('HostTabComponent', () => {
         } as Host
 
         component.host = host
-        const groups = component.currentDifferentLocalHosts.appID
+        const groups = component.localHostsGroups.appID
 
         expect(groups.length).toBe(3)
         for (let group of groups) {
@@ -1189,7 +1189,7 @@ describe('HostTabComponent', () => {
         } as Host
 
         component.host = host
-        const groups = component.currentDifferentLocalHosts.bootFields
+        const groups = component.localHostsGroups.bootFields
 
         expect(groups.length).toBe(4)
         for (let group of groups) {
@@ -1242,7 +1242,7 @@ describe('HostTabComponent', () => {
         } as Host
 
         component.host = host
-        const groups = component.currentDifferentLocalHosts.clientClasses
+        const groups = component.localHostsGroups.clientClasses
 
         expect(groups.length).toBe(4)
         for (let group of groups) {
@@ -1295,7 +1295,7 @@ describe('HostTabComponent', () => {
         } as Host
 
         component.host = host
-        const groups = component.currentDifferentLocalHosts.dhcpOptions
+        const groups = component.localHostsGroups.dhcpOptions
 
         expect(groups.length).toBe(4)
         for (let group of groups) {
@@ -1345,9 +1345,9 @@ describe('HostTabComponent', () => {
         component.host = host
 
         for (const groups of [
-            component.currentDifferentLocalHosts.bootFields,
-            component.currentDifferentLocalHosts.clientClasses,
-            component.currentDifferentLocalHosts.dhcpOptions,
+            component.localHostsGroups.bootFields,
+            component.localHostsGroups.clientClasses,
+            component.localHostsGroups.dhcpOptions,
         ]) {
             expect(groups.length).toBe(1)
             const group = groups[0]

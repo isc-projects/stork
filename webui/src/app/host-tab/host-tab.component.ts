@@ -72,10 +72,10 @@ export class HostTabComponent {
 
     /**
      * Local hosts of the @currentHost grouped by differential daemons.
-     * If all the daemons have the same set of options, the array will
+     * If all the daemons have the same set of options, the nested array will
      * contain a single element.
      */
-    currentDifferentLocalHosts: {
+    localHostsGroups: {
         dhcpOptions: LocalHost[][]
         bootFields: LocalHost[][]
         clientClasses: LocalHost[][]
@@ -148,7 +148,7 @@ export class HostTabComponent {
     set host(host) {
         // Make the new host current.
         this.currentHost = host
-        this.currentDifferentLocalHosts = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
+        this.localHostsGroups = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
         // The host is null if the tab with a list of hosts is selected.
         if (!this.currentHost) {
             return
@@ -225,7 +225,7 @@ export class HostTabComponent {
             localHostsByClientClasses.push(this.host.localHosts)
         }
 
-        this.currentDifferentLocalHosts = {
+        this.localHostsGroups = {
             bootFields: localHostsByBootFields,
             dhcpOptions: localHostsByDhcpOptions,
             clientClasses: localHostsByClientClasses,

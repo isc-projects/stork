@@ -42,7 +42,7 @@
         <div>
             <div class="mb-4">
                 <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
-                    <p-table [value]="currentDifferentLocalHosts.appID">
+                    <p-table [value]="localHostsGroups.appID">
                         <ng-template pTemplate="body" let-ls>
                             <tr>
                                 <td class="border-none w-10rem">
@@ -179,7 +179,7 @@
             <ng-container *ngIf="host.localHosts?.length > 0">
                 <!-- Boot fields -->
                 <ng-container *ngIf="displayBootFields">
-                    <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.bootFields">
+                    <div class="mb-4" *ngFor="let localHosts of localHostsGroups.bootFields">
                         <p-fieldset>
                             <ng-template pTemplate="header">
                                 <ng-container
@@ -187,7 +187,7 @@
                                     [ngTemplateOutletContext]="{
                                         title: 'Boot Fields',
                                         localHosts: localHosts,
-                                        all: currentDifferentLocalHosts.bootFields.length === 1
+                                        all: localHostsGroups.bootFields.length === 1
                                     }"
                                 ></ng-container>
                             </ng-template>
@@ -223,7 +223,7 @@
                 </ng-container>
 
                 <!-- Client classes -->
-                <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.dhcpOptions">
+                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
                     <p-fieldset>
                         <ng-template pTemplate="header">
                             <ng-container
@@ -231,7 +231,7 @@
                                 [ngTemplateOutletContext]="{
                                     title: 'Client Classes',
                                     localHosts: localHosts,
-                                    all: currentDifferentLocalHosts.clientClasses.length === 1
+                                    all: localHostsGroups.clientClasses.length === 1
                                 }"
                             ></ng-container>
                         </ng-template>
@@ -241,7 +241,7 @@
                 </div>
 
                 <!-- DHCP options -->
-                <div class="mb-4" *ngFor="let localHosts of currentDifferentLocalHosts.dhcpOptions">
+                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
                     <p-fieldset>
                         <ng-template pTemplate="header">
                             <ng-container
@@ -249,7 +249,7 @@
                                 [ngTemplateOutletContext]="{
                                     title: 'DHCP Options',
                                     localHosts: localHosts,
-                                    all: currentDifferentLocalHosts.dhcpOptions.length === 1
+                                    all: localHostsGroups.dhcpOptions.length === 1
                                 }"
                             ></ng-container>
                         </ng-template>
