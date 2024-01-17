@@ -526,13 +526,12 @@ export class HostFormComponent implements OnInit, OnDestroy {
     private _initializeHost(host: Host): void {
         const selectedDaemons: number[] = []
         const localHosts = (host.localHosts || []).filter((lh) => lh.dataSource === 'api')
-        if (localHosts.length > 0) {
-            for (let lh of localHosts) {
-                selectedDaemons.push(lh.daemonId)
-            }
-            this.formGroup.get('selectedDaemons').setValue(selectedDaemons)
-            this._handleDaemonsChange()
+        for (let lh of localHosts) {
+            selectedDaemons.push(lh.daemonId)
         }
+        this.formGroup.get('selectedDaemons').setValue(selectedDaemons)
+        this._handleDaemonsChange()
+
         if (!host.subnetId) {
             this.formGroup.get('globalReservation').setValue(true)
         }
