@@ -371,7 +371,7 @@
         type: array
         items:
           $ref: '#/definitions/SharedNetwork'
-      SharedNetworks6:
+      sharedNetworks6:
         type: array
         items:
           $ref: '#/definitions/SharedNetwork'

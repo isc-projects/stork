@@ -186,12 +186,7 @@
                     </td>
                     <td>
                         <div *ngFor="let lsn of sn.localSubnets">
-                            <a
-                                *ngFor="let lsn of sn.localSubnets"
-                                routerLink="/apps/kea/{{ lsn.appId }}"
-                                style="display: block"
-                                >{{ lsn.appName }}</a
-                            >
+                            <a routerLink="/apps/kea/{{ lsn.appId }}" class="block">{{ lsn.appName }}</a>
                         </div>
                     </td>
                     <td>
