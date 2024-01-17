@@ -423,10 +423,10 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 // hosts from the global scope are returned (i.e. not assigned to any subnet), if false
 // then only hosts from subnets are returned.
 //
-// The DHCPDataConflict flag indicates whether to return only hosts with
+// The DHCPDataConflict flag indicates whether to return hosts with
 // conflicted (different) DHCP data in related Kea configurations.
 
-// The DHCPDataDuplicate flag indicates whether to return only hosts with
+// The DHCPDataDuplicate flag indicates whether to return hosts with
 // duplicated (the same) DHCP data in related Kea configurations.
 type HostsByPageFilters struct {
 	AppID             *int64
