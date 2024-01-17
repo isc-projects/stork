@@ -251,12 +251,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     loadMachines(event) {
         this.dataLoading = true
         let text
-        if (event.filters && event.filters.text) {
+        if (event.filters?.text) {
             text = event.filters.text.value
         }
 
         let app
-        if (event.filters && event.filters.app) {
+        if (event.filters?.app) {
             app = event.filters.app.value
         }
 
