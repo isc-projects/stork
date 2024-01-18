@@ -472,6 +472,43 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 
 	// Filter by conflict or duplicate.
 	if filters.DHCPDataConflict != nil || filters.DHCPDataDuplicate != nil {
+		// This subquery appends a "conflict" column with a boolean value
+		// indicating whether the DHCP data are inconsistent in the local hosts
+		// of the host.
+		// The conflict column is:
+		//
+		// - TRUE if the DHCP data are inconsistent in the local hosts (there
+		//   are at least two local hosts for a given host with different DHCP
+		//   data)
+		// - FALSE if they are consistent/duplicated (all local hosts for a
+		//   given host have the same DHCP data)
+		// - NULL if there is only one local host.
+		//
+		// The DHCP data are considered inconsistent if at least one of the
+		// following fields is different in the local hosts:
+		//
+		// - DHCP options (checked by comparing the hash of the DHCP option)
+		// - Boot options: next server, server hostname, boot file name
+		// - Client classes
+		//
+		// To compare a particular DHCP data field, we use the following idiom:
+		//     max(field) != min(field).
+		// In PostgresSQL the max and min functions accept any type.
+		// If the values for all local hosts are the same, the max and min
+		// functions return the same value, so the comparison returns FALSE
+		// (no conflict). If there are different values, the comparison returns
+		// TRUE (conflict). It doesn't matter which value is returned by the
+		// max and min functions.
+		// I didn't find a better way to compare arbitrary values in a single
+		// query that would support any number of referenced local hosts.
+		//
+		// The IS DISTINCT FROM operator is used because some of the fields
+		// may be NULL.
+		//
+		// The conflict column has NULL value if there is only one local host
+		// for a given host. This is because the HAVING clause filters out this
+		// kind of entries, so there are no corresponding rows in the subquery
+		// and the subquery results are joined with LEFT JOIN.
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
 			HostID    int64
@@ -479,13 +516,13 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		})(nil)).
 			DistinctOn("host_id").
 			Column("host_id").
-			ColumnExpr(`COALESCE(
-				max(dhcp_option_set_hash) != min(dhcp_option_set_hash)
-				OR max(client_classes) != min(client_classes)
-				OR max(next_server) != min(next_server)
-				OR max(server_hostname) != min(server_hostname)
-				OR max(boot_file_name) != min(boot_file_name)
-			, FALSE) AS conflict`).
+			ColumnExpr(`
+				max(dhcp_option_set_hash) IS DISTINCT FROM min(dhcp_option_set_hash)
+				OR max(client_classes) IS DISTINCT FROM min(client_classes)
+				OR max(next_server) IS DISTINCT FROM min(next_server)
+				OR max(server_hostname) IS DISTINCT FROM min(server_hostname)
+				OR max(boot_file_name) IS DISTINCT FROM min(boot_file_name)
+				AS conflict`).
 			Group("host_id", "daemon_id").
 			Having("COUNT(*) > 1").
 			Order("host_id")
