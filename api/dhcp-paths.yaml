@@ -73,8 +73,10 @@
         - name: conflict
           in: query
           description: >-
-            If true, then return only reservations related to daemons with inconsistent
-            (conflicted) DHCP configurations.
+            If true, return those reservations that have been defined
+            simultaneously in the JSON configuration and the host database and
+            whose parameters are not equivalent in both places - they are in
+            conflict.
           type: boolean
       responses:
         200:
