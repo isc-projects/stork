@@ -922,7 +922,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*model
 // receive the transaction context and a pointer to the subnet. They return the
 // updated context and error. This function returns the HTTP error code if an
 // error occurs or 0 when there is no error. It also returns an ID of the
-// created of modified subnet. Finally, it returns an error string to be included
+// created or modified subnet. Finally, it returns an error string to be included
 // in the HTTP response or an empty string if there is no error.
 func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transactionID int64, restSubnet *models.Subnet, applyFunc func(context.Context, *dbmodel.Subnet) (context.Context, error)) (int, int64, string) {
 	// Make sure that the subnet information is present.

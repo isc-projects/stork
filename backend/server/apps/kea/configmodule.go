@@ -849,7 +849,7 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 		}
 		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
-			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully created in Kea but updating it in the Stork database failed")
+			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil
