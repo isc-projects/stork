@@ -2568,26 +2568,34 @@ func TestApplySubnet4Delete(t *testing.T) {
 	require.Equal(t, "subnet_delete", update.Operation)
 	require.NotNil(t, update.Recipe)
 
-	// There should be two commands ready to send.
+	// There should be four commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 2)
+	require.Len(t, commands, 4)
 
 	// Validate the commands.
 	for i := range commands {
 		command := commands[i].Command
 		marshalled := command.Marshal()
-		require.JSONEq(t,
-			fmt.Sprintf(`{
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				fmt.Sprintf(`{
              "command": "subnet4-del",
              "service": [ "dhcp4" ],
              "arguments": {
                  "id": %d
              }
          }`, subnets[0].ID),
-			marshalled)
-
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+					 "command": "config-write",
+					 "service": [ "dhcp4" ]
+				 }`, marshalled)
+		}
 		app = commands[i].App
-		require.Equal(t, app, subnets[0].LocalSubnets[i].Daemon.App)
+		require.Equal(t, app, subnets[0].LocalSubnets[i%2].Daemon.App)
 	}
 }
 
@@ -2681,24 +2689,32 @@ func TestApplySubnet6Delete(t *testing.T) {
 
 	// There should be two commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 2)
+	require.Len(t, commands, 4)
 
 	// Validate the commands.
 	for i := range commands {
 		command := commands[i].Command
 		marshalled := command.Marshal()
-		require.JSONEq(t,
-			fmt.Sprintf(`{
-             "command": "subnet6-del",
-             "service": [ "dhcp6" ],
-             "arguments": {
-                 "id": %d
-             }
-         }`, subnets[0].ID),
-			marshalled)
-
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				fmt.Sprintf(`{
+				 "command": "subnet6-del",
+				 "service": [ "dhcp6" ],
+				 "arguments": {
+					 "id": %d
+				 }
+			 }`, subnets[0].ID),
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+						 "command": "config-write",
+						 "service": [ "dhcp6" ]
+					 }`, marshalled)
+		}
 		app = commands[i].App
-		require.Equal(t, app, subnets[0].LocalSubnets[i].Daemon.App)
+		require.Equal(t, app, subnets[0].LocalSubnets[i%2].Daemon.App)
 	}
 }
 
@@ -2783,22 +2799,33 @@ func TestCommitSubnetDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the commands were sent to different servers.
-	require.Len(t, agents.RecordedURLs, 2)
+	require.Len(t, agents.RecordedURLs, 4)
 	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
 
 	// Validate the sent commands.
-	require.Len(t, agents.RecordedCommands, 2)
-	for _, command := range agents.RecordedCommands {
+	require.Len(t, agents.RecordedCommands, 4)
+	for i, command := range agents.RecordedCommands {
 		marshalled := command.Marshal()
-		require.JSONEq(t,
-			fmt.Sprintf(`{
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				fmt.Sprintf(`{
              "command": "subnet4-del",
              "service": [ "dhcp4" ],
              "arguments": {
                  "id": %d
              }
          }`, subnets[0].ID),
-			marshalled)
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+					 "command": "config-write",
+					 "service": [ "dhcp4" ]
+				 }`,
+				marshalled)
+		}
 	}
 
 	// The subnet should have been deleted from the Stork database.

@@ -894,6 +894,13 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 		appCommand.App = ls.Daemon.App
 		commands = append(commands, appCommand)
 	}
+	// Persist the configuration changes.
+	for _, ls := range subnet.LocalSubnets {
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			App:     ls.Daemon.App,
+		})
+	}
 	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "subnet_delete", daemonIDs...)

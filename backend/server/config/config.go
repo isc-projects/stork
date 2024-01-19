@@ -68,6 +68,7 @@ type KeaModule interface {
 	ApplySubnetAdd(context.Context, *dbmodel.Subnet) (context.Context, error)
 	BeginSubnetUpdate(context.Context, int64) (context.Context, error)
 	ApplySubnetUpdate(context.Context, *dbmodel.Subnet) (context.Context, error)
+	ApplySubnetDelete(context.Context, *dbmodel.Subnet) (context.Context, error)
 }
 
 // Interface of the Kea configuration module used by the manager to

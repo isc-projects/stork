@@ -346,6 +346,25 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete subnet by ID.
+      description: Delete a subnet from the DHCP servers.
+      operationId: deleteSubnet
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Subnet ID.
+      responses:
+        200:
+          description: Subnet successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /subnets/new/transaction:
     post:

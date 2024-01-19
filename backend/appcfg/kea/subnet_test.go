@@ -741,8 +741,6 @@ func TestCreateSubnetCmdsDeletedSubnet(t *testing.T) {
 
 	// Subnet ID.
 	mock.EXPECT().GetID(gomock.Any()).Return(int64(5))
-	// Subnet prefix.
-	mock.EXPECT().GetPrefix().Return("192.0.2.0/24")
 
 	subnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(1, mock)
 	require.NoError(t, err)

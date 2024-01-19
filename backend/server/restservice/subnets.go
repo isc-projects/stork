@@ -1210,3 +1210,64 @@ func (r *RestAPI) UpdateSubnetDelete(ctx context.Context, params dhcp.UpdateSubn
 	rsp := dhcp.NewUpdateSubnetDeleteOK()
 	return rsp
 }
+
+// Implements the DELETE call for a subnet (subnets/{id}). It sends suitable commands
+// to the Kea servers owning the subnet. Deleting subnet is not transactional. It could be
+// implemented as a transaction with first REST API call ensuring that the subnet still
+// exists in Stork database and locking configuration changes for the daemons owning the
+// subnet. However, it seems to be too much overhead with little gain. If the subnet
+// doesn't exist this call will return an error anyway.
+func (r *RestAPI) DeleteSubnet(ctx context.Context, params dhcp.DeleteSubnetParams) middleware.Responder {
+	dbSubnet, err := dbmodel.GetSubnet(r.DB, params.ID)
+	if err != nil {
+		// Error while communicating with the database.
+		msg := fmt.Sprintf("Problem fetching subnet with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbSubnet == nil {
+		// Host not found.
+		msg := fmt.Sprintf("Cannot find a subnet with ID %d", params.ID)
+		rsp := dhcp.NewDeleteSubnetDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "Problem with creating transaction context for deleting the subnet"
+		log.WithError(err).Error(err)
+		rsp := dhcp.NewDeleteSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create Kea commands to delete the subnet.
+	cctx, err = r.ConfigManager.GetKeaModule().ApplySubnetDelete(cctx, dbSubnet)
+	if err != nil {
+		msg := "Problem with preparing commands for deleting the subnet"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send the commands to Kea servers.
+	_, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := fmt.Sprintf("Problem with deleting a subnet: %s", err)
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteSubnetDefault(http.StatusConflict).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send OK to the client.
+	rsp := dhcp.NewDeleteSubnetOK()
+	return rsp
+}

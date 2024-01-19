@@ -587,7 +587,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	_, user := r.SessionManager.Logged(ctx)
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
-		msg := "Problem with creating transaction context"
+		msg := "Problem with creating transaction context for deleting the host"
 		log.WithError(err).Error(err)
 		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
