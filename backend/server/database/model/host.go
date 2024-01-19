@@ -554,6 +554,13 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// in the local hosts, FALSE if they are consistent/duplicated, or
 		// NULL if there is only one local host.
 		q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+			// Glossary:
+			// Conflicted - the hosts that have at least two local hosts with
+			// 		different DHCP data.
+			// Duplicated - the hosts that have at least two local hosts and
+			// 		all of them have the same DHCP data.
+			// Single - the hosts that have only one local host.
+			//
 			// Filter by conflict -> Return conflicted.
 			// Filter by duplicate -> Return duplicated.
 			// Filter by conflict AND duplicate -> Return conflicted and duplicated.
