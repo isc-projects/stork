@@ -432,6 +432,13 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		if !hasLocalHostFromConfig {
 			err = dbmodel.DeleteHost(module.manager.GetDB(), *update.Recipe.HostID)
 		} else {
+			// TODO: The removal of the local hosts from the JSON configuration
+			// is not implemented yet. But it should be done soon because this
+			// feature is needed to clean up the configuration after migrating
+			// the hosts from the configuration to the database.
+			// After the implementation, the following code should be changed
+			// to always remove the hosts, not only when there are no local
+			// hosts from the configuration.
 			_, err = dbmodel.DeleteDaemonsFromHost(db, *update.Recipe.HostID, dbmodel.HostDataSourceAPI)
 		}
 		if err != nil {
