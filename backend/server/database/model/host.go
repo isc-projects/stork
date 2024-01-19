@@ -700,7 +700,10 @@ func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
 			OnConflict("(daemon_id, host_id, data_source) DO UPDATE").
 			Set("client_classes = EXCLUDED.client_classes").
 			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
-			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
+			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash").
+			Set("next_server = EXCLUDED.next_server").
+			Set("server_hostname = EXCLUDED.server_hostname").
+			Set("boot_file_name = EXCLUDED.boot_file_name")
 
 		_, err := q.Insert()
 		if err != nil {
