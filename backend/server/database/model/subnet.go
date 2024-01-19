@@ -980,6 +980,20 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 	return int64(result.RowsAffected()), nil
 }
 
+// Delete subnet by ID.
+func DeleteSubnet(dbi dbops.DBI, subnetID int64) error {
+	subnet := &Subnet{
+		ID: subnetID,
+	}
+	result, err := dbi.Model(subnet).WherePK().Delete()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem deleting the subnet with ID %d", subnetID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "subnet with ID %d does not exist", subnetID)
+	}
+	return err
+}
+
 // Finds a maximum local subnet ID in the database. It returns 0, if no subnet IDs are found.
 func GetMaxLocalSubnetID(dbi dbops.DBI) (int64, error) {
 	count := int64(0)

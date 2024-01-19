@@ -190,6 +190,12 @@ type SubnetParameters struct {
 	StoreExtendedInfo *bool
 }
 
+// Represents deleted subnet. It includes the fields required by Kea to
+// find the reservation and delete it.
+type SubnetCmdsDeletedSubnet struct {
+	ID int64 `json:"id"`
+}
+
 // Returns a subnet ID.
 func (s MandatorySubnetParameters) GetID() int64 {
 	return s.ID
@@ -513,4 +519,19 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		subnet6.OptionData = append(subnet6.OptionData, *optionData)
 	}
 	return subnet6, nil
+}
+
+// Converts a subnet in Stork to a structure accepted by the subent4-del and
+// subnet6-del commands in Kea.
+func CreateSubnetCmdsDeletedSubnet(daemonID int64, subnet SubnetAccessor) (deletedSubnet *SubnetCmdsDeletedSubnet, err error) {
+	var subnetID int64
+	if subnetID = subnet.GetID(daemonID); subnetID == 0 {
+		err = errors.Errorf("daemon %d is not associated with the subnet %s", daemonID, subnet.GetPrefix())
+		return
+	}
+	// Create the subnet instance.
+	deletedSubnet = &SubnetCmdsDeletedSubnet{
+		ID: subnetID,
+	}
+	return
 }

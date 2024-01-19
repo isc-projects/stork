@@ -730,3 +730,41 @@ func TestCreateSubnet6(t *testing.T) {
 	require.EqualValues(t, 0.44, *subnet6.T2Percent)
 	require.EqualValues(t, 1001, *subnet6.ValidLifetime)
 }
+
+// Test conversion of the subnet to a structure used when deleting the
+// subnet from Kea.
+func TestCreateSubnetCmdsDeletedSubnet(t *testing.T) {
+	controller := gomock.NewController(t)
+
+	// Mock a subnet in Stork.
+	mock := NewMockSubnetAccessor(controller)
+
+	// Subnet ID.
+	mock.EXPECT().GetID(gomock.Any()).Return(int64(5))
+	// Subnet prefix.
+	mock.EXPECT().GetPrefix().Return("192.0.2.0/24")
+
+	subnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(1, mock)
+	require.NoError(t, err)
+	require.NotNil(t, subnet)
+
+	require.EqualValues(t, 5, subnet.ID)
+}
+
+// Test that an error is returned when converting a subnet to a structure
+// used in deleting the subnet from Kea and the daemon ID is not matching.
+func TestCreateSubnetCmdsDeletedSubnetNoDaemon(t *testing.T) {
+	controller := gomock.NewController(t)
+
+	// Mock a subnet in Stork.
+	mock := NewMockSubnetAccessor(controller)
+
+	// Subnet ID.
+	mock.EXPECT().GetID(gomock.Any()).Return(int64(0))
+	// Subnet prefix.
+	mock.EXPECT().GetPrefix().Return("192.0.2.0/24")
+
+	subnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(1, mock)
+	require.Error(t, err)
+	require.Nil(t, subnet)
+}

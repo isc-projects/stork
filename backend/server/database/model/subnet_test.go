@@ -1347,6 +1347,43 @@ func TestUpdateSubnet(t *testing.T) {
 	require.Equal(t, createdAt, subnet.CreatedAt)
 }
 
+// Test that a subnet can be deleted by ID.
+func TestDeleteSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	// Add a subnet.
+	subnet := &Subnet{
+		Prefix: "2001:db8:1::/64",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	err = AddLocalSubnets(db, subnet)
+	require.NoError(t, err)
+
+	// Try to delete non-existing subnet. It should fail.
+	err = DeleteSubnet(db, subnet.ID+1)
+	require.Error(t, err)
+
+	// Deleting the existing one should pass.
+	err = DeleteSubnet(db, subnet.ID)
+	require.NoError(t, err)
+
+	// The subnet should be gone.
+	returnedSubnet, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSubnet)
+}
+
 // Test that the new pools are added and existing ones are untouched. The
 // out-of-date entries should be removed.
 func TestAddAndClearSubnetPools(t *testing.T) {

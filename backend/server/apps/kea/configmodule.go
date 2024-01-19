@@ -120,6 +120,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 			ctx, err = module.commitSubnetAdd(ctx)
 		case "subnet_update":
 			ctx, err = module.commitSubnetUpdate(ctx)
+		case "subnet_delete":
+			ctx, err = module.commitSubnetDelete(ctx)
 		default:
 			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
@@ -850,6 +852,82 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{}, []dbmodel.Subnet{*update.Recipe.SubnetAfterUpdate})
 		if err != nil {
 			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully updated in Kea but updating it in the Stork database failed")
+		}
+	}
+	return ctx, nil
+}
+
+// Begins deleting a subnet. Currently it is no-op but may evolve in the future.
+func (module *ConfigModule) BeginSubnetDelete(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+// Creates requests to delete a subnet. It prepares necessary commands to be sent
+// to Kea upon commit.
+func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
+	if len(subnet.LocalSubnets) == 0 {
+		return ctx, pkgerrors.Errorf("deleted subnet %d is not associated with any daemon", subnet.ID)
+	}
+	var commands []ConfigCommand
+	for _, ls := range subnet.LocalSubnets {
+		if ls.Daemon == nil {
+			return ctx, pkgerrors.Errorf("deleted subnet %d is associated with nil daemon", subnet.ID)
+		}
+		if ls.Daemon.App == nil {
+			return ctx, pkgerrors.Errorf("deleted subnet %d is associated with nil app", subnet.ID)
+		}
+		// Convert the host information to Kea reservation.
+		deletedSubnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(ls.DaemonID, subnet)
+		if err != nil {
+			return ctx, err
+		}
+		// Create command arguments.
+		arguments := deletedSubnet
+		// Associate the command with an app receiving this command.
+		appCommand := ConfigCommand{}
+		switch subnet.GetFamily() {
+		case 4:
+			appCommand.Command = keactrl.NewCommand("subnet4-del", []string{ls.Daemon.Name}, arguments)
+		default:
+			appCommand.Command = keactrl.NewCommand("subnet6-del", []string{ls.Daemon.Name}, arguments)
+		}
+		appCommand.App = ls.Daemon.App
+		commands = append(commands, appCommand)
+	}
+	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "subnet_delete", daemonIDs...)
+	recipe := ConfigRecipe{
+		Commands: commands,
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetID: &subnet.ID,
+		},
+	}
+	if err := state.SetRecipeForUpdate(0, &recipe); err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Delete subnet from the Kea servers.
+func (module *ConfigModule) commitSubnetDelete(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, pkgerrors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.SubnetID == nil {
+			return ctx, pkgerrors.New("server logic error: the subnet ID cannot be nil when committing subnet deletion")
+		}
+		err = dbmodel.DeleteSubnet(module.manager.GetDB(), *update.Recipe.SubnetID)
+		if err != nil {
+			return ctx, pkgerrors.WithMessagef(err, "subnet has been successfully deleted in Kea but deleting in the Stork database failed")
 		}
 	}
 	return ctx, nil

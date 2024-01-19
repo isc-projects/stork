@@ -2468,3 +2468,341 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
 	// Other commands should not be sent in this case.
 	require.Len(t, agents.RecordedCommands, 1)
 }
+
+// Test first stage of deleting a subnet.
+func TestBeginSubnetDelete(t *testing.T) {
+	module := NewConfigModule(nil)
+	require.NotNil(t, module)
+
+	ctx1 := context.Background()
+	ctx2, err := module.BeginSubnetDelete(ctx1)
+	require.NoError(t, err)
+	require.Equal(t, ctx1, ctx2)
+}
+
+// Test second stage of deleting an IPv4 subnet.
+func TestApplySubnet4Delete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	var daemonIDs []int64
+	for _, ls := range subnets[0].LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	ctx, err = module.ApplySubnetDelete(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, state.Scheduled)
+
+	require.Len(t, state.Updates, 1)
+	update := state.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "subnet_delete", update.Operation)
+	require.NotNil(t, update.Recipe)
+
+	// There should be two commands ready to send.
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 2)
+
+	// Validate the commands.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+		require.JSONEq(t,
+			fmt.Sprintf(`{
+             "command": "subnet4-del",
+             "service": [ "dhcp4" ],
+             "arguments": {
+                 "id": %d
+             }
+         }`, subnets[0].ID),
+			marshalled)
+
+		app = commands[i].App
+		require.Equal(t, app, subnets[0].LocalSubnets[i].Daemon.App)
+	}
+}
+
+// Test second stage of deleting an IPv6 subnet.
+func TestApplySubnet6Delete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp6": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet6": [
+						{
+							"id": 1,
+							"subnet": "2001:db8:1::/64"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	var daemonIDs []int64
+	for _, ls := range subnets[0].LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	ctx, err = module.ApplySubnetDelete(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, state.Scheduled)
+
+	require.Len(t, state.Updates, 1)
+	update := state.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "subnet_delete", update.Operation)
+	require.NotNil(t, update.Recipe)
+
+	// There should be two commands ready to send.
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 2)
+
+	// Validate the commands.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+		require.JSONEq(t,
+			fmt.Sprintf(`{
+             "command": "subnet6-del",
+             "service": [ "dhcp6" ],
+             "arguments": {
+                 "id": %d
+             }
+         }`, subnets[0].ID),
+			marshalled)
+
+		app = commands[i].App
+		require.Equal(t, app, subnets[0].LocalSubnets[i].Daemon.App)
+	}
+}
+
+// Test committing subnet deletion, i.e. actually sending control commands to Kea.
+func TestCommitSubnetDelete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	var daemonIDs []int64
+	for _, ls := range subnets[0].LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	ctx, err = module.ApplySubnetDelete(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	// Committing the subnet deletion should result in sending control commands to
+	// Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the commands were sent to different servers.
+	require.Len(t, agents.RecordedURLs, 2)
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+
+	// Validate the sent commands.
+	require.Len(t, agents.RecordedCommands, 2)
+	for _, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		require.JSONEq(t,
+			fmt.Sprintf(`{
+             "command": "subnet4-del",
+             "service": [ "dhcp4" ],
+             "arguments": {
+                 "id": %d
+             }
+         }`, subnets[0].ID),
+			marshalled)
+	}
+
+	// The subnet should have been deleted from the Stork database.
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSubnet)
+}
