@@ -641,6 +641,7 @@ func TestApplyHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 			{
 				DaemonID: 2,
@@ -656,6 +657,7 @@ func TestApplyHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -704,6 +706,7 @@ func TestApplyHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 			{
 				DaemonID: 2,
@@ -719,6 +722,7 @@ func TestApplyHostUpdate(t *testing.T) {
 						},
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}
@@ -964,6 +968,7 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 						Name: "kea@192.0.2.1",
 					},
 				},
+				DataSource: dbmodel.HostDataSourceAPI,
 			},
 		},
 	}

@@ -131,6 +131,30 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 	return hosts
 }
 
+// Test that the function returns true if the data source is config; otherwise,
+// it should return false.
+func TestHostDataSourceIsConfig(t *testing.T) {
+	require.True(t, HostDataSourceConfig.IsConfig())
+	require.False(t, HostDataSourceAPI.IsConfig())
+	require.False(t, HostDataSourceUnspecified.IsConfig())
+}
+
+// Test that the function returns true if the data source is API; otherwise,
+// it should return false.
+func TestHostDataSourceIsAPI(t *testing.T) {
+	require.False(t, HostDataSourceConfig.IsAPI())
+	require.True(t, HostDataSourceAPI.IsAPI())
+	require.False(t, HostDataSourceUnspecified.IsAPI())
+}
+
+// Test that the function returns true if the data source is unspecified;
+// otherwise, it should return false.
+func TestHostDataSourceIsUnspecified(t *testing.T) {
+	require.False(t, HostDataSourceConfig.IsUnspecified())
+	require.False(t, HostDataSourceAPI.IsUnspecified())
+	require.True(t, HostDataSourceUnspecified.IsUnspecified())
+}
+
 // This test verifies that the new host along with identifiers and reservations
 // can be added to the database.
 func TestAddHost(t *testing.T) {

@@ -224,7 +224,7 @@ func (module *ConfigModule) BeginHostUpdate(ctx context.Context, hostID int64) (
 	var daemonIDs []int64
 	for _, lh := range host.LocalHosts {
 		// Skip the local hosts from the configuration file.
-		if lh.DataSource == dbmodel.HostDataSourceAPI {
+		if lh.DataSource.IsAPI() {
 			daemonIDs = append(daemonIDs, lh.DaemonID)
 		}
 	}
@@ -269,7 +269,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
-		if lh.DataSource == dbmodel.HostDataSourceConfig {
+		if !lh.DataSource.IsAPI() {
 			continue
 		}
 		if lh.Daemon == nil {
@@ -291,7 +291,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	}
 	// Re-create the host reservations.
 	for _, lh := range host.LocalHosts {
-		if lh.DataSource == dbmodel.HostDataSourceConfig {
+		if !lh.DataSource.IsAPI() {
 			continue
 		}
 		if lh.Daemon == nil {
@@ -338,7 +338,7 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 		// Filter out the local hosts from the API.
 		localHostsFromAPI := []dbmodel.LocalHost{}
 		for _, lh := range update.Recipe.HostAfterUpdate.LocalHosts {
-			if lh.DataSource != dbmodel.HostDataSourceConfig {
+			if lh.DataSource.IsAPI() {
 				localHostsFromAPI = append(localHostsFromAPI, lh)
 			}
 		}
@@ -376,7 +376,7 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 	}
 	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
-		if lh.DataSource == dbmodel.HostDataSourceConfig {
+		if !lh.DataSource.IsAPI() {
 			continue
 		}
 		if lh.Daemon == nil {
@@ -441,7 +441,7 @@ func (module *ConfigModule) commitHostDelete(ctx context.Context) (context.Conte
 		// remove the local hosts from the API.
 		hasLocalHostFromConfig := false
 		for _, lh := range host.LocalHosts {
-			if lh.DataSource == dbmodel.HostDataSourceConfig {
+			if lh.DataSource.IsConfig() {
 				hasLocalHostFromConfig = true
 				break
 			}
