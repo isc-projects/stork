@@ -335,24 +335,6 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 			return ctx, errors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing the host update")
 		}
 
-		// Filter out the local hosts from the API.
-		localHostsFromAPI := []dbmodel.LocalHost{}
-		for _, lh := range update.Recipe.HostAfterUpdate.LocalHosts {
-			if lh.DataSource.IsAPI() {
-				localHostsFromAPI = append(localHostsFromAPI, lh)
-			}
-		}
-		// Keep unchanged the local hosts from the config file.
-		localHostsFromConfig, err := dbmodel.GetLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate.ID, dbmodel.HostDataSourceConfig)
-		if err != nil {
-			return ctx, errors.WithMessagef(err, "could not retrieve local hosts for host %d from the database", update.Recipe.HostAfterUpdate.ID)
-		}
-		// Concatenate the local hosts from the API and the config file.
-		localHosts := []dbmodel.LocalHost{}
-		localHosts = append(localHosts, localHostsFromAPI...)
-		localHosts = append(localHosts, localHostsFromConfig...)
-		update.Recipe.HostAfterUpdate.LocalHosts = localHosts
-
 		// Update the host in the database.
 		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
