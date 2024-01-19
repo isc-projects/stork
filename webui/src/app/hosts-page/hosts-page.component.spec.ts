@@ -1180,6 +1180,22 @@ describe('HostsPageComponent', () => {
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
 
+    it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        spyOn(dhcpApi, 'getHosts').and.callThrough()
+
+        component.filterText = 'not:conflict'
+        component.keyUpFilterText({ key: 'Enter' })
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, false)
+
+        expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
+    }))
+
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
         component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
