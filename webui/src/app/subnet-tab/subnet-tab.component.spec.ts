@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { ChartModule } from 'primeng/chart'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -27,25 +27,38 @@ import { TagModule } from 'primeng/tag'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { ToastModule } from 'primeng/toast'
+import { ConfirmationService, MessageService } from 'primeng/api'
+import { DHCPService } from '../backend'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { of, throwError } from 'rxjs'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
     let fixture: ComponentFixture<SubnetTabComponent>
+    let dhcpApi: DHCPService
+    let msgService: MessageService
+    let confirmService: ConfirmationService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            providers: [ConfirmationService, MessageService],
             imports: [
                 ButtonModule,
                 ChartModule,
                 CheckboxModule,
+                ConfirmDialogModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
+                HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 RouterTestingModule,
                 TableModule,
                 TagModule,
+                ToastModule,
                 TooltipModule,
                 TreeModule,
             ],
@@ -68,6 +81,9 @@ describe('SubnetTabComponent', () => {
 
         fixture = TestBed.createComponent(SubnetTabComponent)
         component = fixture.componentInstance
+        dhcpApi = fixture.debugElement.injector.get(DHCPService)
+        confirmService = fixture.debugElement.injector.get(ConfirmationService)
+        msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
@@ -513,4 +529,67 @@ describe('SubnetTabComponent', () => {
             name: 'bar',
         })
     })
+
+    it('should display subnet delete button', () => {
+        component.subnet = {
+            id: 123,
+            subnet: '2001:db8:1::/64',
+            localSubnets: [
+                {
+                    id: 12223,
+                    appName: 'foo@2001:db8:1::1',
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        fixture.detectChanges()
+        const deleteBtn = fixture.debugElement.query(By.css('[label=Delete]'))
+        expect(deleteBtn).toBeTruthy()
+
+        // Simulate clicking on the button and make sure that the confirm dialog
+        // has been displayed.
+        spyOn(confirmService, 'confirm')
+        deleteBtn.nativeElement.click()
+        expect(confirmService.confirm).toHaveBeenCalled()
+    })
+
+    it('should emit an event indicating successful subnet deletion', fakeAsync(() => {
+        const successResp: any = {}
+        spyOn(dhcpApi, 'deleteSubnet').and.returnValue(of(successResp))
+        spyOn(msgService, 'add')
+        spyOn(component.subnetDelete, 'emit')
+
+        // Delete the subnet.
+        component.subnet = {
+            id: 1,
+        }
+        component.deleteSubnet()
+        tick()
+        // Success message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // An event should be called.
+        expect(component.subnetDelete.emit).toHaveBeenCalledWith(component.subnet)
+        // This flag should be cleared.
+        expect(component.subnetDeleted).toBeFalse()
+    }))
+
+    it('should not emit an event when host deletion fails', fakeAsync(() => {
+        spyOn(dhcpApi, 'deleteSubnet').and.returnValue(throwError({ status: 404 }))
+        spyOn(msgService, 'add')
+        spyOn(component.subnetDelete, 'emit')
+
+        // Delete the host and receive an error.
+        component.subnet = {
+            id: 1,
+        }
+        component.deleteSubnet()
+        tick()
+        // Error message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // The event shouldn't be emitted on error.
+        expect(component.subnetDelete.emit).not.toHaveBeenCalledWith(component.subnet)
+        // This flag should be cleared.
+        expect(component.subnetDeleted).toBeFalse()
+    }))
 })

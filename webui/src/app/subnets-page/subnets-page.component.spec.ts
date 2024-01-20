@@ -11,7 +11,7 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { BehaviorSubject, of, throwError } from 'rxjs'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -50,6 +50,7 @@ import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { AccordionModule } from 'primeng/accordion'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -64,7 +65,7 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, UsersService, MessageService, SettingsService],
+            providers: [ConfirmationService, DHCPService, UsersService, MessageService, SettingsService],
             imports: [
                 AccordionModule,
                 FormsModule,
@@ -103,6 +104,7 @@ describe('SubnetsPageComponent', () => {
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToastModule,
+                ConfirmDialogModule,
             ],
             declarations: [
                 AddressPoolFormComponent,
@@ -982,4 +984,44 @@ describe('SubnetsPageComponent', () => {
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     })
+
+    it('should close subnet tab when subnet is deleted', fakeAsync(() => {
+        component.loadSubnets({})
+        tick()
+        fixture.detectChanges()
+
+        const subnet: any = {
+            id: 5,
+            subnet: '192.0.2.0/24',
+            localSubnets: [
+                {
+                    id: 123,
+                    daemonId: 1,
+                    appName: 'server 1',
+                    pools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            allocator: 'random',
+                            options: [],
+                            optionsHash: '',
+                        },
+                    },
+                },
+            ],
+        }
+
+        // Open subnet tab.
+        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        fixture.detectChanges()
+        tick()
+        expect(component.openedTabs.length).toBe(2)
+
+        // Simulate the notification that the subnet has been deleted.
+        component.onSubnetDelete(subnet)
+        fixture.detectChanges()
+        tick()
+
+        // The main subnet tab should only be left.
+        expect(component.openedTabs.length).toBe(1)
+    }))
 })

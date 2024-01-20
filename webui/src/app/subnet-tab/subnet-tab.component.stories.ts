@@ -26,19 +26,26 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { IPType } from '../iptype'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { ConfirmationService, MessageService } from 'primeng/api'
+import { toastDecorator } from '../utils-stories'
+import { importProvidersFrom } from '@angular/core'
+import { HttpClientModule } from '@angular/common/http'
+import { ToastModule } from 'primeng/toast'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 export default {
     title: 'App/SubnetTab',
     component: SubnetTabComponent,
     decorators: [
         applicationConfig({
-            providers: [],
+            providers: [importProvidersFrom(HttpClientModule)],
         }),
         moduleMetadata({
             imports: [
                 ButtonModule,
                 ChartModule,
                 CheckboxModule,
+                ConfirmDialogModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
@@ -47,6 +54,7 @@ export default {
                 RouterTestingModule,
                 TableModule,
                 TagModule,
+                ToastModule,
                 TooltipModule,
                 TreeModule,
             ],
@@ -64,7 +72,9 @@ export default {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],
+            providers: [ConfirmationService, MessageService],
         }),
+        toastDecorator,
     ],
 } as Meta
 
@@ -76,6 +86,7 @@ export const Subnet4 = Template.bind({})
 Subnet4.args = {
     leaseType: 'address',
     subnet: {
+        id: 123,
         subnet: '192.0.2.0/24',
         sharedNetwork: 'Fiber',
         addrUtilization: 30,

@@ -770,4 +770,19 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             tab.state = event
         }
     }
+
+    /**
+     * Event handler triggered when a subnet was deleted using a delete
+     * button on one of the tabs.
+     *
+     * @param subnet pointer to the deleted subnet.
+     */
+    onSubnetDelete(subnet: Subnet): void {
+        // Try to find a suitable tab by subnet id.
+        const index = this.openedTabs.findIndex((t) => t.subnet && t.subnet.id === subnet.id)
+        if (index >= 0) {
+            // Close the tab.
+            this.closeTabByIndex(index)
+        }
+    }
 }

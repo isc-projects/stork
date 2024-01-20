@@ -245,6 +245,7 @@
             *ngSwitchCase="SubnetTabType.Subnet"
             [subnet]="openedTabs[activeTabIndex].subnet"
             (subnetEditBegin)="onSubnetEditBegin(openedTabs[activeTabIndex].subnet)"
+            (subnetDelete)="onSubnetDelete(openedTabs[activeTabIndex].subnet)"
         ></app-subnet-tab>
         <app-subnet-form
             *ngSwitchCase="SubnetTabType.NewSubnet"

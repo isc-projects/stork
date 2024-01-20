@@ -1,8 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
-import { DHCPOption, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
+import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import { getErrorMessage } from '../utils'
+import { ConfirmationService, MessageService } from 'primeng/api'
 
 /**
  * A component displaying a tab for a selected subnet.
@@ -25,6 +27,12 @@ export class SubnetTabComponent implements OnInit {
     @Output() subnetEditBegin = new EventEmitter<any>()
 
     /**
+     * An event emitter notifying a parent that user has clicked the
+     * Delete button to delete the subnet.
+     */
+    @Output() subnetDelete = new EventEmitter<any>()
+
+    /**
      * DHCP parameters structured for display by the @link CascadedParametersBoard.
      *
      * The parameters are structured as an array of subnet-level, shared network-level
@@ -39,6 +47,26 @@ export class SubnetTabComponent implements OnInit {
      * and global options.
      */
     dhcpOptions: DHCPOption[][][] = []
+
+    /**
+     * Disables the button deleting a subnet after clicking this button.
+     */
+    subnetDeleted = false
+
+    /**
+     * Component constructor.
+     *
+     * @param dhcpApi service used to communicate with the server over REST API.
+     * @param confirmService confirmation service displaying the confirm dialog when
+     * attempting to delete the subnet.
+     * @param msgService service displaying error messages upon a communication
+     *                   error with the server.
+     */
+    constructor(
+        private dhcpApi: DHCPService,
+        private confirmService: ConfirmationService,
+        private msgService: MessageService
+    ) {}
 
     /**
      * A component lifecycle hook invoked upon the component initialization.
@@ -155,5 +183,53 @@ export class SubnetTabComponent implements OnInit {
      */
     onSubnetEditBegin(): void {
         this.subnetEditBegin.emit(this.subnet)
+    }
+
+    /**
+     * Displays a dialog to confirm subnet deletion.
+     */
+    confirmDeleteSubnet() {
+        this.confirmService.confirm({
+            message: 'Are you sure that you want to permanently delete this subnet?',
+            header: 'Delete Subnet',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.deleteSubnet()
+            },
+        })
+    }
+
+    /**
+     * Sends a request to the server to delete the subnet.
+     */
+    deleteSubnet() {
+        // Disable the button for deleting the subnet to prevent pressing the
+        // button multiple times and sending multiple requests.
+        this.subnetDeleted = true
+        this.dhcpApi
+            .deleteSubnet(this.subnet.id)
+            .toPromise()
+            .then((data) => {
+                // Re-enable the delete button.
+                this.subnetDeleted = false
+                this.msgService.add({
+                    severity: 'success',
+                    summary: 'Host reservation successfully deleted',
+                })
+                // Notify the parent that the subnet was deleted and the tab can be closed.
+                this.subnetDelete.emit(this.subnet)
+            })
+            .catch((err) => {
+                // Re-enable the delete button.
+                this.subnetDeleted = false
+                // Issues with deleting the host.
+                const msg = getErrorMessage(err)
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Cannot delete the subnet',
+                    detail: 'Failed to delete the subnet: ' + msg,
+                    life: 10000,
+                })
+            })
     }
 }

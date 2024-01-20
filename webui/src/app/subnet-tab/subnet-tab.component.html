@@ -1,3 +1,4 @@
+<p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <div *ngIf="subnet" class="mt-4 ml-2">
     <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
         <div class="fa fa-project-diagram mr-2"></div>
@@ -181,6 +182,15 @@
             icon="pi pi-pencil"
             class="p-button-info ml-2"
             (click)="onSubnetEditBegin()"
+        ></button>
+        <button
+            type="button"
+            pButton
+            [disabled]="subnetDeleted"
+            label="Delete"
+            icon="pi pi-times"
+            class="p-button-danger ml-2"
+            (click)="confirmDeleteSubnet()"
         ></button>
     </div>
 </div>
