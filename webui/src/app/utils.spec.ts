@@ -102,6 +102,20 @@ describe('utils', () => {
         expect(humanCount(199_900n)).toBe('199.9k')
         expect(humanCount(199_999)).toBe('200.0k')
         expect(humanCount(199_999n)).toBe('200.0k')
+
+            
+        expect(humanCount(
+            1_222_333_444_555_666_777_888_999_000n
+        )).toBe('1222.3Y')
+        expect(humanCount(
+            222_333_444_555_666_777_888_999_000n
+        )).toBe('222.3Y')
+        expect(humanCount(
+            22_333_444_555_666_777_888_999_000n
+        )).toBe('22.3Y')
+        expect(humanCount(
+            2_333_444_555_666_777_888_999_000n
+        )).toBe('2.3Y')
     })
 
     it('clamps should return return proper number', () => {

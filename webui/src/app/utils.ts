@@ -95,8 +95,8 @@ export function humanCount(count: string | bigint | number) {
     let exponent = 0
     if (typeof count === 'bigint') {
         while (count > BigInt(Number.MAX_SAFE_INTEGER)) {
-            count /= BigInt(10)
-            ++exponent
+            count /= BigInt(1000)
+            exponent += 3
         }
     }
 
