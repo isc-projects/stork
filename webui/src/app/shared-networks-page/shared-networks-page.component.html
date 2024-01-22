@@ -76,6 +76,7 @@
             [paginator]="true"
             [rows]="10"
             [lazy]="true"
+            [loading]="loading"
             (onLazyLoad)="loadNetworks($event)"
             [totalRecords]="totalNetworks"
             [rowsPerPageOptions]="[10, 30, 100]"

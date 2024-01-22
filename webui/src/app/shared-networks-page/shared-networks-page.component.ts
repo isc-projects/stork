@@ -78,6 +78,11 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     activeTabIndex = 0
 
     /**
+     * Indicates if the component is loading data from the server.
+     */
+    loading: boolean = false
+
+    /**
      * Holds the information about specific shared networks presented in the tabs.
      *
      * The entry corresponding to shared networks list is not related to any specific
@@ -196,30 +201,39 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned, dhcp version and text for networks filtering.
      */
     loadNetworks(event) {
+        if (this.loading) {
+            return
+        }
+        this.loading = true
+
         const params = this.queryParams
-        this.dhcpApi
-            .getSharedNetworks(
-                event.first,
-                event.rows,
-                Number(params.appId) || null,
-                Number(params.dhcpVersion) || null,
-                params.text
-            )
-            .pipe(
-                map((sharedNetworks) => {
-                    parseSubnetsStatisticValues(sharedNetworks.items)
-                    return sharedNetworks
-                })
-            )
-            .subscribe(
-                (data) => {
-                    this.networks = data.items
-                    this.totalNetworks = data.total ?? 0
-                },
-                (error) => {
-                    console.log(error)
-                }
-            )
+        lastValueFrom(
+            this.dhcpApi
+                .getSharedNetworks(
+                    event.first,
+                    event.rows,
+                    Number(params.appId) || null,
+                    Number(params.dhcpVersion) || null,
+                    params.text
+                )
+                .pipe(
+                    map((sharedNetworks) => {
+                        parseSubnetsStatisticValues(sharedNetworks.items)
+                        return sharedNetworks
+                    })
+                )
+        )
+            .then((data) => {
+                this.networks = data.items
+                this.totalNetworks = data.total ?? 0
+            })
+            .catch((error) => {
+                // ToDo: Silent error catching. We should display a message to the user.
+                console.log(error)
+            })
+            .finally(() => {
+                this.loading = false
+            })
     }
 
     /**

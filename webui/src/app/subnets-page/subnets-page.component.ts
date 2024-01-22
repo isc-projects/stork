@@ -151,6 +151,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     activeTabIndex = 0
 
     /**
+     * Indicates if the component is loading data from the server.
+     */
+    loading: boolean = false
+
+    /**
      * Holds the information about specific subnets presented in the tabs.
      *
      * The entry corresponding to subnets list is not related to any specific
@@ -285,27 +290,33 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned, dhcp version and text for subnets filtering.
      */
     loadSubnets(event) {
-        const params = this.queryParams
+        if (this.loading) {
+            return
+        }
 
-        this.dhcpApi
-            .getSubnets(
-                event.first,
-                event.rows,
-                Number(params.appId) || null,
-                Number(params.subnetId) || null,
-                Number(params.dhcpVersion) || null,
-                params.text
-            )
-            // Custom parsing for statistics
-            .pipe(
-                map((subnets) => {
-                    if (subnets.items) {
-                        parseSubnetsStatisticValues(subnets.items)
-                    }
-                    return subnets
-                })
-            )
-            .toPromise()
+        const params = this.queryParams
+        this.loading = true
+
+        lastValueFrom(
+            this.dhcpApi
+                .getSubnets(
+                    event.first,
+                    event.rows,
+                    Number(params.appId) || null,
+                    Number(params.subnetId) || null,
+                    Number(params.dhcpVersion) || null,
+                    params.text
+                )
+                // Custom parsing for statistics
+                .pipe(
+                    map((subnets) => {
+                        if (subnets.items) {
+                            parseSubnetsStatisticValues(subnets.items)
+                        }
+                        return subnets
+                    })
+                )
+        )
             .then((data) => {
                 this.subnets = data.items ? extractUniqueSubnetPools(data.items) : null
                 this.totalSubnets = data.total ?? 0
@@ -316,6 +327,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     summary: 'Cannot load subnets',
                     detail: getErrorMessage(error),
                 })
+            })
+            .finally(() => {
+                this.loading = false
             })
     }
 

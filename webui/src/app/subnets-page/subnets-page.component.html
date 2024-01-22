@@ -95,6 +95,7 @@
             [paginator]="true"
             [rows]="10"
             [lazy]="true"
+            [loading]="loading"
             (onLazyLoad)="loadSubnets($event)"
             [totalRecords]="totalSubnets"
             [rowsPerPageOptions]="[10, 30, 100]"
