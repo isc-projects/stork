@@ -498,8 +498,16 @@ def cmd():
         default=sys.stdout,
         help="Output target",
     )
+    parser.add_argument(
+        "--seed", type=int, default=0, help="Seed used to initialize PRNG, defaults to system time"
+    )
 
     args = parser.parse_args()
+
+    # If user specified a value, use it. If not (default 0), pass None to the seed(), so
+    # system clock will be used.
+    s = args.seed or None
+    random.seed(s)
 
     number_of_subnets = args.n
 
