@@ -13,8 +13,8 @@ import {
     extractUniqueSharedNetworkPools,
     SharedNetworkWithUniquePools,
 } from '../subnets'
-import { Subscription, concat, lastValueFrom, of } from 'rxjs'
-import { filter, map, take } from 'rxjs/operators'
+import { Subscription, lastValueFrom } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 

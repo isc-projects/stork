@@ -14,8 +14,8 @@ import {
     parseSubnetStatisticValues,
 } from '../subnets'
 import { SettingService } from '../setting.service'
-import { Subscription, concat, lastValueFrom, of } from 'rxjs'
-import { filter, map, take } from 'rxjs/operators'
+import { Subscription, lastValueFrom } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
