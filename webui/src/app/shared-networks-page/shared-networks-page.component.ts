@@ -379,6 +379,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * @param sharedNetworkId Shared network ID.
      */
     private createTab(sharedNetworkId: number): Promise<void> {
+        this.loading = true
         return (
             lastValueFrom(
                 // Fetch data from API.
@@ -406,6 +407,9 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                         detail: `Error getting shared network with ID ${sharedNetworkId}: ${msg}`,
                         life: 10000,
                     })
+                })
+                .finally(() => {
+                    this.loading = false
                 })
         )
     }

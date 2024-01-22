@@ -496,6 +496,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnetId Subnet Id.
      */
     private createTab(subnetId: number): Promise<void> {
+        this.loading = true
         return (
             lastValueFrom(
                 // Fetch data from API.
@@ -520,6 +521,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                         detail: `Error getting subnet with ID ${subnetId}: ${msg}`,
                         life: 10000,
                     })
+                })
+                .finally(() => {
+                    this.loading = false
                 })
         )
     }
