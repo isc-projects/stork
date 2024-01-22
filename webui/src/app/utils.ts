@@ -83,31 +83,36 @@ export function durationToString(duration: number, short = false) {
 }
 
 /**
- * Present count in human readable way ie. big numbers get unit, e.g. 102 M instead of 102342543.
+ * Present count in human readable way ie. big numbers get unit, e.g. 102.3 M
+ * instead of 102342543.
  */
 export function humanCount(count: string | bigint | number) {
     if (count == null || (typeof count !== 'number' && typeof count !== 'bigint') || Number.isNaN(count)) {
         return count + '' // Casting to string safe for null and undefined
     }
 
-    const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-    let u = -1
-    while (count >= 1000 && u < units.length - 1) {
-        if (typeof count === 'number') {
-            count /= 1000
-        } else {
-            count /= BigInt(1000)
+    // Decrease the input number to the safe range for the standard numeric type.
+    let exponent = 0
+    if (typeof count === 'bigint') {
+        while (count > BigInt(Number.MAX_SAFE_INTEGER)) {
+            count /= BigInt(10)
+            ++exponent
         }
-        ++u
     }
 
-    let countStr = ''
-    if (typeof count === 'number') {
-        countStr = count.toFixed(u >= 0 ? 1 : 0)
-    } else {
-        countStr = count.toString()
+    // Convert the count to a standard number.
+    count = Number(count)
+
+    const units = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+
+    // ~~number is the fastest way to truncate mantissa (fractional part).
+    while (count >= 1000 && ~~(exponent / 3) < (units.length - 1)) {
+        count /= 1000
+        exponent+=3
     }
-    return countStr + (u >= 0 ? units[u] : '')
+
+    const countStr = count.toFixed(exponent >= 3 ? 1 : 0)
+    return countStr + units[~~(exponent / 3)]
 }
 
 /**
