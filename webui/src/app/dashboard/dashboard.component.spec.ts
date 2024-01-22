@@ -282,7 +282,7 @@ describe('DashboardComponent', () => {
             By.css('.dashboard-dhcp__globals .dashboard-section__data .statistics-row')
         )
         const expected = [
-            ['Addresses', '6k / 65k (10% used)'],
+            ['Addresses', '6.6k / 65.5k (10% used)'],
             ['Declined', '100'],
             ['Addresses', '20 / 100 (20% used)'],
             ['Prefixes', '1 / 2 (50% used)'],

@@ -78,7 +78,7 @@ describe('utils', () => {
         // Assert
         expect(strInt).toBe('12.3M')
         expect(strFloat).toBe('1.2G')
-        expect(strBigInt).toBe('1234567890Y')
+        expect(strBigInt).toBe('1234567890.0Y')
         expect(strSmallInt).toBe('1')
         expect(strStr).toBe('foo')
         expect(nanStr).toBe('NaN')
@@ -89,12 +89,19 @@ describe('utils', () => {
     it('human count should round the numbers properly', () => {
         expect(humanCount(1900)).toBe('1.9k')
         expect(humanCount(1900n)).toBe('1.9k')
-        expect(humanCount(2000)).toBe('2k')
-        expect(humanCount(2000n)).toBe('2k')
-        expect(humanCount(2050)).toBe('2.1k')
-        expect(humanCount(2050n)).toBe('2.1k')
-        expect(humanCount(199_999)).toBe('2M')
-        expect(humanCount(199_999n)).toBe('2M')
+
+        expect(humanCount(2000)).toBe('2.0k')
+        expect(humanCount(2000n)).toBe('2.0k')
+
+        expect(humanCount(2050)).toBe('2.0k')
+        expect(humanCount(2050n)).toBe('2.0k')
+        expect(humanCount(2050.000001)).toBe('2.1k')
+        expect(humanCount(2051n)).toBe('2.1k')
+
+        expect(humanCount(199_900)).toBe('199.9k')
+        expect(humanCount(199_900n)).toBe('199.9k')
+        expect(humanCount(199_999)).toBe('200.0k')
+        expect(humanCount(199_999n)).toBe('200.0k')
     })
 
     it('clamps should return return proper number', () => {

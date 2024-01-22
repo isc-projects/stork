@@ -85,11 +85,11 @@ describe('UtilizationStatsChartComponent', () => {
         expect(stats.length).toBe(4)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
-        expect(stats[0].nativeElement.innerText).toContain('6k')
+        expect(stats[0].nativeElement.innerText).toContain('6.0k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
-        expect(stats[1].nativeElement.innerText).toContain('2k')
+        expect(stats[1].nativeElement.innerText).toContain('2.0k')
         expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('1k')
+        expect(stats[2].nativeElement.innerText).toContain('1.9k')
         expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
         expect(stats[3].nativeElement.innerText).toContain('100')
     })
@@ -119,7 +119,7 @@ describe('UtilizationStatsChartComponent', () => {
         expect(stats.length).toBe(2)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Prefixes')
-        expect(stats[0].nativeElement.innerText).toContain('1k')
+        expect(stats[0].nativeElement.innerText).toContain('1.0k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
         expect(stats[1].nativeElement.innerText).toContain('498')
     })
