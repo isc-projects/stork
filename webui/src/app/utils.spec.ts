@@ -86,6 +86,17 @@ describe('utils', () => {
         expect(nullStr).toBe('null')
     })
 
+    it('human count should round the numbers properly', () => {
+        expect(humanCount(1900)).toBe('1.9k')
+        expect(humanCount(1900n)).toBe('1.9k')
+        expect(humanCount(2000)).toBe('2k')
+        expect(humanCount(2000n)).toBe('2k')
+        expect(humanCount(2050)).toBe('2.1k')
+        expect(humanCount(2050n)).toBe('2.1k')
+        expect(humanCount(199_999)).toBe('2M')
+        expect(humanCount(199_999n)).toBe('2M')
+    })
+
     it('clamps should return return proper number', () => {
         // Integers - in range
         expect(clamp(1, 0, 2)).toBe(1)
