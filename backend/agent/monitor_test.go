@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
@@ -209,6 +210,75 @@ func TestDetectApps(t *testing.T) {
 	require.EqualValues(t, 1234, am.apps[0].GetBaseApp().Pid)
 	require.Equal(t, AppTypeBind9, am.apps[1].GetBaseApp().Type)
 	require.EqualValues(t, 5678, am.apps[1].GetBaseApp().Pid)
+}
+
+// Test that the processes for which the command line cannot be read are
+// not skipped.
+func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	bind9Process := NewMockProcess(ctrl)
+	bind9Process.EXPECT().GetName().Return("named", nil)
+	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().GetCwd().Return("", errors.New("no current working directory"))
+	bind9Process.EXPECT().GetPid().Return(int32(5678))
+
+	processManager := NewMockProcessManager(ctrl)
+	processManager.EXPECT().ListProcesses().Return([]Process{
+		bind9Process,
+	}, nil)
+
+	executor := newTestCommandExecutorDefault()
+	am := &appMonitor{processManager: processManager, commander: executor}
+	hm := NewHookManager()
+	httpClient := NewHTTPClient()
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+
+	// Act
+	am.detectApps(sa)
+
+	// Assert
+	require.Len(t, am.apps, 1)
+	require.Equal(t, AppTypeBind9, am.apps[0].GetBaseApp().Type)
+}
+
+// Test that the processes for which the current working directory cannot be
+// read are skipped.
+func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	noCwdProcess := NewMockProcess(ctrl)
+	noCwdProcess.EXPECT().GetName().Return("kea-ctrl-agent", nil)
+	noCwdProcess.EXPECT().GetCmdline().Return("kea-ctrl-agent -c /etc/kea/kea.conf", nil)
+	noCwdProcess.EXPECT().GetCwd().Return("", errors.New("no current working directory"))
+
+	bind9Process := NewMockProcess(ctrl)
+	bind9Process.EXPECT().GetName().Return("named", nil)
+	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().GetCwd().Return("/etc", nil)
+	bind9Process.EXPECT().GetPid().Return(int32(5678))
+
+	processManager := NewMockProcessManager(ctrl)
+	processManager.EXPECT().ListProcesses().Return([]Process{
+		noCwdProcess, bind9Process,
+	}, nil)
+
+	executor := newTestCommandExecutorDefault()
+	am := &appMonitor{processManager: processManager, commander: executor}
+	hm := NewHookManager()
+	httpClient := NewHTTPClient()
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+
+	// Act
+	am.detectApps(sa)
+
+	// Assert
+	require.Len(t, am.apps, 1)
+	require.Equal(t, AppTypeBind9, am.apps[0].GetBaseApp().Type)
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
