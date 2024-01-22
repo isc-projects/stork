@@ -106,9 +106,9 @@ export function humanCount(count: string | bigint | number) {
     const units = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
     // ~~number is the fastest way to truncate mantissa (fractional part).
-    while (count >= 1000 && ~~(exponent / 3) < (units.length - 1)) {
+    while (count >= 1000 && ~~(exponent / 3) < units.length - 1) {
         count /= 1000
-        exponent+=3
+        exponent += 3
     }
 
     const countStr = count.toFixed(exponent >= 3 ? 1 : 0)
