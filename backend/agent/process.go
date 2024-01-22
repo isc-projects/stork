@@ -13,7 +13,7 @@ type Process interface {
 	GetCwd() (string, error)
 }
 
-// Wrapper for gopsutil process.Process.
+// Wrapper for gopsutil process.
 type processWrapper struct {
 	process *process.Process
 }
