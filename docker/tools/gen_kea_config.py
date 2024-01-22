@@ -14,7 +14,7 @@ import random
 
 
 class ParseKwargs(argparse.Action):
-    """Parse ey-value pairs from CMD. Source: https://sumit-ghosh.com/articles/parsing-dictionary-key-value-pairs-kwargs-argparse-python/"""
+    """Parse key-value pairs from CMD. Source: https://sumit-ghosh.com/articles/parsing-dictionary-key-value-pairs-kwargs-argparse-python/"""
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, {})
@@ -397,7 +397,7 @@ def generate_v4_subnet(
     range_of_inner_scope,
     mac_selector,
     reservation_count=0,
-    subnet_id=1,
+    subnet_id_start=1,
     **kwargs,
 ):
     """
@@ -414,11 +414,13 @@ def generate_v4_subnet(
         Generator of MAC addresses.
     reservation_count: int
         Number of host reservations in each subnet.
-    subnetid: int
+    subnet_id_start: int
         The first subnet ID. The generated IDs are sequential.
     **kwargs: dict
         Additional subnet properties.
     """
+
+    subnet_id = subnet_id_start
 
     # TODO move to binary generator
     config = {"subnet4": []}
@@ -504,7 +506,7 @@ def cmd():
 
     args = parser.parse_args()
 
-    # If user specified a value, use it. If not (default 0), pass None to the seed(), so
+    # If user specified a seed value, use it. If not, pass None to the seed(), so
     # system clock will be used.
     s = args.seed or None
     random.seed(s)
@@ -526,11 +528,10 @@ def cmd():
         conf["Dhcp4"]["interfaces-config"]["interfaces"] = args.interface
 
     mac_selector = create_mac_selector()
-    conf["Dhcp4"].update(
-        generate_v4_subnet(
+    new_subnets = generate_v4_subnet(
             outer, inner, mac_selector, args.reservations, args.start_id, **args.kwargs
         )
-    )
+    conf["Dhcp4"].update(new_subnets)
 
     conf_json = json.dumps(conf)
     args.output.write(conf_json)
