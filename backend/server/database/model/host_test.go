@@ -845,7 +845,7 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 }
 
 // Test that page of the hosts is empty if there is a filter for conflicted or
-// duplicated DHCP data and there is no such hosts.
+// duplicated DHCP data and there are no such hosts.
 func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
