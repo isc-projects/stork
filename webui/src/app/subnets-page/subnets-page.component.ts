@@ -290,10 +290,6 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned, dhcp version and text for subnets filtering.
      */
     loadSubnets(event) {
-        if (this.loading) {
-            return
-        }
-
         const params = this.queryParams
         this.loading = true
 

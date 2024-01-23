@@ -440,15 +440,11 @@ describe('SharedNetworksPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
 
         component.closeTabByIndex(1)
-        tick()
-        fixture.detectChanges()
 
         expect(component.openedSharedNetworks.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
 
         component.closeTabByIndex(0)
-        tick()
-        fixture.detectChanges()
 
         expect(component.openedSharedNetworks.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)

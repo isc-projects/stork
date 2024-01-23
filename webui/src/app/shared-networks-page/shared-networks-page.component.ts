@@ -201,9 +201,6 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned, dhcp version and text for networks filtering.
      */
     loadNetworks(event) {
-        if (this.loading) {
-            return
-        }
         this.loading = true
 
         const params = this.queryParams
