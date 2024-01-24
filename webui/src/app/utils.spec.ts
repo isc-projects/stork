@@ -87,6 +87,9 @@ describe('utils', () => {
     })
 
     it('human count should round the numbers properly', () => {
+        expect(humanCount(999)).toBe('999')
+        expect(humanCount(999n)).toBe('999')
+
         expect(humanCount(1900)).toBe('1.9k')
         expect(humanCount(1900n)).toBe('1.9k')
 
