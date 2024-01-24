@@ -14,7 +14,7 @@ import (
 // SSE Broker. It stores subscribers in a map which is protected by mutex.
 type SSEBroker struct {
 	db               *dbops.PgDB
-	subscribers      map[chan []byte]*Subscriber
+	subscribers      map[chan dbmodel.Event]*Subscriber
 	subscribersMutex *sync.Mutex
 }
 
@@ -22,7 +22,7 @@ type SSEBroker struct {
 func NewSSEBroker(db *dbops.PgDB) *SSEBroker {
 	sb := &SSEBroker{
 		db:               db,
-		subscribers:      map[chan []byte]*Subscriber{},
+		subscribers:      map[chan dbmodel.Event]*Subscriber{},
 		subscribersMutex: &sync.Mutex{},
 	}
 	return sb
@@ -30,7 +30,7 @@ func NewSSEBroker(db *dbops.PgDB) *SSEBroker {
 
 // Server SSE request for new session.
 func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	s := newSubscriber(req.URL)
+	s := newSubscriber(req.URL, req.RemoteAddr)
 
 	if err := s.applyFiltersFromQuery(sb.db); err != nil {
 		log.Errorf("Failed to accept new SSE connection because query parameters are invalid: %+v", err)
@@ -50,7 +50,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// create a subscriber and a channel which is used
 	// to dispatch an event to this subscriber
-	ch := make(chan []byte)
+	ch := make(chan dbmodel.Event)
 
 	// store subscriber and its channel in a map, protect the map with mutex
 	sb.subscribersMutex.Lock()
@@ -61,9 +61,23 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for {
 		select {
 		case event := <-ch:
+			evJSON, err := json.Marshal(event)
+			if err != nil {
+				log.WithError(err).Error("Problem serializing event to json")
+			}
+
 			// send received event to subscriber and flush the connection
-			log.Printf("To %p sent %s", s, event)
-			fmt.Fprintf(w, "data: %s\n\n", event)
+			log.WithFields(log.Fields{
+				"subscriber": s,
+				"event":      event.Text,
+			}).Info("Sending an event to the subscriber")
+			for _, message := range event.SSEStreams {
+				if message != dbmodel.SSERegularMessage {
+					fmt.Fprintf(w, "event: %s\n", message)
+				}
+				fmt.Fprintf(w, "data: %s\n\n", evJSON)
+			}
+
 			// Not all ResponseWriter instances implement http.Flusher interface.
 			// Test if this instance implement it before attempting to use it.
 			if flusher, ok := w.(http.Flusher); ok {
@@ -86,15 +100,11 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	sb.subscribersMutex.Lock()
 	defer sb.subscribersMutex.Unlock()
 
-	evJSON, err := json.Marshal(event)
-	if err != nil {
-		log.Errorf("Problem serializing event to json: %+v", err)
-		return
-	}
-
 	for ch := range sb.subscribers {
-		if sb.subscribers[ch].AcceptsEvent(event) {
-			ch <- evJSON
+		streams := sb.subscribers[ch].GetEventStreams(event)
+		if len(streams) > 0 {
+			event.SSEStreams = streams
+			ch <- *event
 		}
 	}
 }

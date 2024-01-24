@@ -9,24 +9,28 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// This is an alias for dbmodel.Relations and it designates event
-// filters used by the subscriber.
-type subscriberFilters dbmodel.Relations
+// Holds the filters specified by an SSE subscriber connecting to
+// the server. They are all possible values that are accepted for
+// the supported types of streams.
+type subscriberFilters struct {
+	dbmodel.Relations
+	level      dbmodel.EventLevel
+	SSEStreams []dbmodel.SSEStream
+}
 
 // Structure describing SSE subscriber. Subscriber connects to the
 // server via an URL which may optionally include filtering parameters
 // for events. Filtering parameters are stored in filters structure
 // and they are populated by parsing the URL used to connect to the
-// server. In addition, the desired event level can be specified and
-// is stored in this structure. Finally, the useFilter boolean value
-// is set to true when it is detected that no filtering rules have
-// been set. If this value is set to false (which is a default), the
-// server sends all events to the subscriber.
+// server. Finally, the useFilter boolean value is set to true when
+// it is detected that no filtering rules have been set. If this
+// value is set to false (which is a default), the server sends all
+// events to the subscriber.
 type Subscriber struct {
-	serverURL *url.URL
-	useFilter bool
-	level     dbmodel.EventLevel
-	filters   subscriberFilters
+	serverURL         *url.URL
+	subscriberAddress string
+	useFilter         bool
+	filters           subscriberFilters
 }
 
 // Attempts to retrieve a named parameter from the subscriber's query
@@ -49,10 +53,11 @@ func getQueryValueAsInt64(name string, values url.Values) (int64, error) {
 }
 
 // Creates a new instance of the subscriber using URL. It doesn't populate filters.
-func newSubscriber(serverURL *url.URL) *Subscriber {
+func newSubscriber(serverURL *url.URL, subscriberAddress string) *Subscriber {
 	subscriber := &Subscriber{
-		serverURL: serverURL,
-		useFilter: false,
+		serverURL:         serverURL,
+		useFilter:         false,
+		subscriberAddress: subscriberAddress,
 	}
 	return subscriber
 }
@@ -68,6 +73,29 @@ func newSubscriber(serverURL *url.URL) *Subscriber {
 func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	f := &s.filters
 	queryValues := s.serverURL.Query()
+
+	// Level is also specified as numeric value. Possible values are 0, 1, 2.
+	level, err := getQueryValueAsInt64("level", queryValues)
+	if err != nil {
+		return err
+	}
+	s.filters.level = dbmodel.EventLevel(level)
+
+	messageStreamEnabled := false
+	if streams, ok := queryValues["stream"]; ok {
+		for _, stream := range streams {
+			f.SSEStreams = append(f.SSEStreams, dbmodel.SSEStream(stream))
+			if stream == string(dbmodel.SSERegularMessage) {
+				messageStreamEnabled = true
+			}
+		}
+	}
+
+	// The reminder of this function applies filters for the main SEE stream.
+	// If the stream is not enabled, there is nothing to do.
+	if !messageStreamEnabled {
+		return nil
+	}
 
 	// Check if direct event relations are specified in the URL. All of them
 	// are IDs pointing to some specific objects in the database.
@@ -86,13 +114,6 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	if f.UserID, err = getQueryValueAsInt64("user", queryValues); err != nil {
 		return err
 	}
-
-	// Level is also specified as numeric value. Possible values are 0, 1, 2.
-	level, err := getQueryValueAsInt64("level", queryValues)
-	if err != nil {
-		return err
-	}
-	s.level = dbmodel.EventLevel(level)
 
 	// There are additional query parameters supported by the server: appType and
 	// daemonName. They are mutually exclusive with app and daemon parmameters.
@@ -164,18 +185,30 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 			break
 		}
 	}
-
 	return nil
 }
 
-// Returns a boolean value indicating if the subscriber is eligible to receive
-// the specified event.
-func (s *Subscriber) AcceptsEvent(event *dbmodel.Event) bool {
-	return !s.useFilter ||
-		((s.filters.MachineID == 0 || event.Relations.MachineID == s.filters.MachineID) &&
-			(s.filters.AppID == 0 || event.Relations.AppID == s.filters.AppID) &&
-			(s.filters.SubnetID == 0 || event.Relations.SubnetID == s.filters.SubnetID) &&
-			(s.filters.DaemonID == 0 || event.Relations.DaemonID == s.filters.DaemonID) &&
-			(s.filters.UserID == 0 || event.Relations.UserID == s.filters.UserID) &&
-			(s.level == 0 || event.Level >= s.level))
+// Returns a list of SSE streams in which this event should be sent. The event is not
+// sent when the returned list is empty.
+func (s *Subscriber) GetEventStreams(event *dbmodel.Event) (streams []dbmodel.SSEStream) {
+	for _, stream := range s.filters.SSEStreams {
+		if stream == dbmodel.SSERegularMessage &&
+			(!s.useFilter ||
+				(s.filters.level == 0 || s.filters.level <= event.Level) &&
+					(s.filters.MachineID == 0 || event.Relations.MachineID == s.filters.MachineID) &&
+					(s.filters.AppID == 0 || event.Relations.AppID == s.filters.AppID) &&
+					(s.filters.SubnetID == 0 || event.Relations.SubnetID == s.filters.SubnetID) &&
+					(s.filters.DaemonID == 0 || event.Relations.DaemonID == s.filters.DaemonID) &&
+					(s.filters.UserID == 0 || event.Relations.UserID == s.filters.UserID)) {
+			streams = append(streams, dbmodel.SSERegularMessage)
+		} else {
+			for _, eventStream := range event.SSEStreams {
+				if eventStream == stream {
+					streams = append(streams, stream)
+					break
+				}
+			}
+		}
+	}
+	return streams
 }

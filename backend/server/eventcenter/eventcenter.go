@@ -71,41 +71,54 @@ func (ec *eventCenter) AddErrorEvent(text string, objects ...interface{}) {
 // AddEvent method of EventCenter. It takes event level, text and relating objects.
 func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) *dbmodel.Event {
 	relations := &dbmodel.Relations{}
+	streams := []dbmodel.SSEStream{}
 	var details string
 	for _, obj := range objects {
-		if d, ok := obj.(dbmodel.DaemonTag); ok {
-			text = strings.ReplaceAll(text, "{daemon}", daemonTag(d))
-			relations.DaemonID = d.GetID()
-			relations.AppID = d.GetAppID()
-			if machineID := d.GetMachineID(); machineID != nil {
+		switch entity := obj.(type) {
+		case dbmodel.DaemonTag:
+			text = strings.ReplaceAll(text, "{daemon}", daemonTag(entity))
+			relations.DaemonID = entity.GetID()
+			relations.AppID = entity.GetAppID()
+			if machineID := entity.GetMachineID(); machineID != nil {
 				relations.MachineID = *machineID
 			}
-		} else if app, ok := obj.(dbmodel.AppTag); ok {
-			text = strings.ReplaceAll(text, "{app}", appTag(app))
-			relations.AppID = app.GetID()
-			relations.MachineID = app.GetMachineID()
-		} else if m, ok := obj.(dbmodel.MachineTag); ok {
-			text = strings.ReplaceAll(text, "{machine}", machineTag(m))
-			relations.MachineID = m.GetID()
-		} else if s, ok := obj.(*dbmodel.Subnet); ok {
-			text = strings.ReplaceAll(text, "{subnet}", subnetTag(s))
-			relations.SubnetID = s.ID
-		} else if u, ok := obj.(*dbmodel.SystemUser); ok {
-			text = strings.ReplaceAll(text, "{user}", userTag(u))
-			relations.UserID = int64(u.ID)
-		} else if s, ok := obj.(string); ok {
+
+		case dbmodel.AppTag:
+			text = strings.ReplaceAll(text, "{app}", appTag(entity))
+			relations.AppID = entity.GetID()
+			relations.MachineID = entity.GetMachineID()
+
+		case dbmodel.MachineTag:
+			text = strings.ReplaceAll(text, "{machine}", machineTag(entity))
+			relations.MachineID = entity.GetID()
+
+		case *dbmodel.Subnet:
+			text = strings.ReplaceAll(text, "{subnet}", subnetTag(entity))
+			relations.SubnetID = entity.ID
+
+		case *dbmodel.SystemUser:
+			text = strings.ReplaceAll(text, "{user}", userTag(entity))
+			relations.UserID = int64(entity.ID)
+
+		case dbmodel.SSEStream:
+			streams = append(streams, entity)
+
+		case string:
+			s := obj.(string)
 			if len(s) > 0 {
 				details = s
 			}
-		} else {
+
+		default:
 			log.Warnf("Unknown object passed to CreateEvent: %v", obj)
 		}
 	}
 	e := &dbmodel.Event{
-		Text:      text,
-		Level:     level,
-		Relations: relations,
-		Details:   details,
+		Text:       text,
+		Level:      level,
+		Relations:  relations,
+		Details:    details,
+		SSEStreams: streams,
 	}
 	return e
 }

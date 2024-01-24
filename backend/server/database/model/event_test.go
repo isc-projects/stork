@@ -20,6 +20,7 @@ func TestEvent(t *testing.T) {
 		Relations: &Relations{
 			MachineID: 1,
 		},
+		SSEStreams: []SSEStream{"foo", "bar"},
 	}
 
 	err := AddEvent(db, mEv)
@@ -98,6 +99,9 @@ func TestEvent(t *testing.T) {
 		} else if ev.Level == EvInfo {
 			require.EqualValues(t, mEv.Relations.MachineID, ev.Relations.MachineID)
 			require.EqualValues(t, "some info event", ev.Text)
+			require.Len(t, ev.SSEStreams, 2)
+			require.EqualValues(t, "foo", ev.SSEStreams[0])
+			require.EqualValues(t, "bar", ev.SSEStreams[1])
 		}
 	}
 
@@ -118,6 +122,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvError, events[0].Level)
 	require.EqualValues(t, aEv.Relations.AppID, events[0].Relations.AppID)
 	require.EqualValues(t, "some error event", events[0].Text)
+	require.Nil(t, events[0].SSEStreams)
 
 	// get daemon events
 	d := "dhcp4"
@@ -128,6 +133,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvWarning, events[0].Level)
 	require.EqualValues(t, dEv.Relations.DaemonID, events[0].Relations.DaemonID)
 	require.EqualValues(t, "some warning event", events[0].Text)
+	require.Nil(t, events[0].SSEStreams)
 
 	// get app events
 	a := "kea"
@@ -138,6 +144,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvError, events[0].Level)
 	require.EqualValues(t, aEv.Relations.AppID, events[0].Relations.AppID)
 	require.EqualValues(t, "some error event", events[0].Text)
+	require.Nil(t, events[0].SSEStreams)
 
 	// get machine events
 	m := mEv.Relations.MachineID
@@ -148,6 +155,9 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvInfo, events[0].Level)
 	require.EqualValues(t, m, events[0].Relations.MachineID)
 	require.EqualValues(t, "some info event", events[0].Text)
+	require.Len(t, events[0].SSEStreams, 2)
+	require.EqualValues(t, "foo", events[0].SSEStreams[0])
+	require.EqualValues(t, "bar", events[0].SSEStreams[1])
 
 	// get user events
 	u := uEv.Relations.UserID
@@ -158,6 +168,7 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, EvWarning, events[0].Level)
 	require.EqualValues(t, u, events[0].Relations.UserID)
 	require.EqualValues(t, "some warning event", events[0].Text)
+	require.Nil(t, events[0].SSEStreams)
 
 	// no events
 	unknownDaemonType := "unknownDaemonType"

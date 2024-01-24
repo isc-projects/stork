@@ -32,6 +32,15 @@ func (t EventLevel) String() string {
 	}
 }
 
+// SSE stream type used in the event relations.
+type SSEStream string
+
+// Typical messages sent in the SSE stream.
+const (
+	SSERegularMessage = SSEStream("message")
+	SSEConnectivity   = SSEStream("connectivity")
+)
+
 // Relations between the event and other entities.
 type Relations struct {
 	MachineID int64 `json:",omitempty"`
@@ -43,12 +52,13 @@ type Relations struct {
 
 // Represents an event held in event table in the database.
 type Event struct {
-	ID        int64
-	CreatedAt time.Time
-	Text      string
-	Level     EventLevel `pg:",use_zero"`
-	Relations *Relations
-	Details   string
+	ID         int64
+	CreatedAt  time.Time
+	Text       string
+	Level      EventLevel `pg:",use_zero"`
+	Relations  *Relations
+	Details    string
+	SSEStreams []SSEStream `json:",omitempty" pg:"sse_streams,array"`
 }
 
 // Add given event to the database.

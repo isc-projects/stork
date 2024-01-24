@@ -314,6 +314,24 @@ func TestCreateEventAppAndUser(t *testing.T) {
 	require.EqualValues(t, 567, ev.Relations.UserID)
 }
 
+// Test that the event with the relationships with the SSE message types.
+func TestCreateEventSSEMessages(t *testing.T) {
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", dbmodel.SSEStream("prime"), dbmodel.SSEStream("second"))
+
+	// Assert
+	require.EqualValues(t, "foo bar baz", ev.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.Zero(t, ev.Relations.AppID)
+	require.Zero(t, ev.Relations.DaemonID)
+	require.Zero(t, ev.Relations.SubnetID)
+	require.Zero(t, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.UserID)
+	require.Len(t, ev.SSEStreams, 2)
+	require.EqualValues(t, "prime", ev.SSEStreams[0])
+	require.EqualValues(t, "second", ev.SSEStreams[1])
+}
+
 // Test that the event without tags is created properly.
 func TestCreateEventNoTags(t *testing.T) {
 	// Act

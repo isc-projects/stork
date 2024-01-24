@@ -17,8 +17,10 @@ import (
 	"isc.org/stork/server/metrics"
 )
 
-var _ http.Flusher = (*loggingResponseWriter)(nil)
-var _ http.ResponseWriter = (*loggingResponseWriter)(nil)
+var (
+	_ http.Flusher        = (*loggingResponseWriter)(nil)
+	_ http.ResponseWriter = (*loggingResponseWriter)(nil)
+)
 
 // Struct for holding response details.
 type responseData struct {

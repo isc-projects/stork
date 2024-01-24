@@ -14,15 +14,15 @@ import (
 // values are set correctly.
 func TestNewSubscriber(t *testing.T) {
 	// Use no filtering.
-	url, err := url.Parse("http://example.org/sse")
+	url, err := url.Parse("http://example.org/sse?stream=message")
 	require.NoError(t, err)
 
-	subscriber := newSubscriber(url)
+	subscriber := newSubscriber(url, "localhost:8080")
 	require.NotNil(t, subscriber)
 
 	// Make sure no filters are set.
 	require.False(t, subscriber.useFilter)
-	require.Equal(t, dbmodel.EvInfo, subscriber.level)
+	require.Equal(t, dbmodel.EvInfo, subscriber.filters.level)
 	require.Zero(t, subscriber.filters.MachineID)
 	require.Zero(t, subscriber.filters.AppID)
 	require.Zero(t, subscriber.filters.SubnetID)
@@ -36,10 +36,10 @@ func TestSetFilterValues(t *testing.T) {
 	defer teardown()
 
 	// Use an URL with all parameters set.
-	url, err := url.Parse("http://example.org/sse?machine=1&app=2&subnet=3&daemon=4&user=5&level=1")
+	url, err := url.Parse("http://example.org/sse?stream=connectivity&stream=message&machine=1&app=2&subnet=3&daemon=4&user=5&level=1")
 	require.NoError(t, err)
 
-	subscriber := newSubscriber(url)
+	subscriber := newSubscriber(url, "localhost:8080")
 	require.NotNil(t, subscriber)
 
 	// Apply the filters from the query.
@@ -50,12 +50,13 @@ func TestSetFilterValues(t *testing.T) {
 	require.True(t, subscriber.useFilter)
 
 	// Verify that the values were parsed correctly.
+	require.Len(t, subscriber.filters.SSEStreams, 2)
 	require.EqualValues(t, 1, subscriber.filters.MachineID)
 	require.EqualValues(t, 2, subscriber.filters.AppID)
 	require.EqualValues(t, 3, subscriber.filters.SubnetID)
 	require.EqualValues(t, 4, subscriber.filters.DaemonID)
 	require.EqualValues(t, 5, subscriber.filters.UserID)
-	require.EqualValues(t, 1, subscriber.level)
+	require.EqualValues(t, 1, subscriber.filters.level)
 }
 
 // A set of tests verifying that each ID type is supported as a filter.
@@ -68,11 +69,11 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 		tc := testCases[i]
 		t.Run(tc, func(t *testing.T) {
 			// Create an URL with a test case specific parameter.
-			rawURL := fmt.Sprintf("http://example.org/sse?%s=123", tc)
+			rawURL := fmt.Sprintf("http://example.org/sse?stream=message&%s=123", tc)
 			url, err := url.Parse(rawURL)
 			require.NoError(t, err)
 
-			subscriber := newSubscriber(url)
+			subscriber := newSubscriber(url, "localhost:8080")
 			require.NotNil(t, subscriber)
 
 			err = subscriber.applyFiltersFromQuery(db)
@@ -97,11 +98,11 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 				ev.Relations.UserID = 123
 			}
 			// Event should be accepted.
-			require.True(t, subscriber.AcceptsEvent(ev))
+			require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
 
 			// When event relations are cleared this event is no longer accepted.
 			ev.Relations = &dbmodel.Relations{}
-			require.False(t, subscriber.AcceptsEvent(ev))
+			require.Empty(t, subscriber.GetEventStreams(ev))
 		})
 	}
 }
@@ -113,10 +114,10 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	defer teardown()
 
 	// Create a filtering rule by machine ID, app ID and warning event level.
-	url, err := url.Parse("http://example.org/sse?machine=1&app=2&level=1")
+	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&app=2&level=1")
 	require.NoError(t, err)
 
-	subscriber := newSubscriber(url)
+	subscriber := newSubscriber(url, "localhost:8080")
 	require.NotNil(t, subscriber)
 
 	err = subscriber.applyFiltersFromQuery(db)
@@ -131,7 +132,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			MachineID: 1,
 		},
 	}
-	require.False(t, subscriber.AcceptsEvent(ev))
+	require.Empty(t, subscriber.GetEventStreams(ev))
 
 	// This is similar to previous case but this time app id is lacking.
 	ev = &dbmodel.Event{
@@ -140,7 +141,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID: 2,
 		},
 	}
-	require.False(t, subscriber.AcceptsEvent(ev))
+	require.Empty(t, subscriber.GetEventStreams(ev))
 
 	// The first parameter is not matching.
 	ev = &dbmodel.Event{
@@ -150,7 +151,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:  2,
 		},
 	}
-	require.False(t, subscriber.AcceptsEvent(ev))
+	require.Empty(t, subscriber.GetEventStreams(ev))
 
 	// Both IDs are matching but it doesn't match the event level.
 	ev = &dbmodel.Event{
@@ -160,7 +161,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:     2,
 		},
 	}
-	require.False(t, subscriber.AcceptsEvent(ev))
+	require.Empty(t, subscriber.GetEventStreams(ev))
 
 	// Everything is matching.
 	ev = &dbmodel.Event{
@@ -170,7 +171,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:     2,
 		},
 	}
-	require.True(t, subscriber.AcceptsEvent(ev))
+	require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
 
 	// More parameters is also fine as long as the first two are matching.
 	ev = &dbmodel.Event{
@@ -181,7 +182,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			UserID:    5,
 		},
 	}
-	require.True(t, subscriber.AcceptsEvent(ev))
+	require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
 }
 
 // Test that appType and daemonName can be specified instead of app and daemon
@@ -210,10 +211,10 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	url, err := url.Parse("http://example.org/sse?machine=1&appType=kea&daemonName=dhcp4&level=1")
+	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&appType=kea&daemonName=dhcp4&level=1")
 	require.NoError(t, err)
 
-	subscriber := newSubscriber(url)
+	subscriber := newSubscriber(url, "localhost:8080")
 	require.NotNil(t, subscriber)
 
 	err = subscriber.applyFiltersFromQuery(db)
@@ -223,7 +224,8 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 	require.EqualValues(t, 1, subscriber.filters.MachineID)
 	require.EqualValues(t, app.ID, subscriber.filters.AppID)
 	require.EqualValues(t, app.Daemons[0].ID, subscriber.filters.DaemonID)
-	require.EqualValues(t, dbmodel.EvWarning, subscriber.level)
+	require.EqualValues(t, dbmodel.EvWarning, subscriber.filters.level)
+	require.Equal(t, "localhost:8080", subscriber.subscriberAddress)
 }
 
 // Test that invalid combination of appType and daemonName parameters with other
@@ -254,10 +256,10 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("NoMachineID", func(t *testing.T) {
 		// App type and daemon name require machine id.
-		url, err := url.Parse("http://example.org/sse?appType=kea&daemonName=dhcp4")
+		url, err := url.Parse("http://example.org/sse?stream=message&appType=kea&daemonName=dhcp4")
 		require.NoError(t, err)
 
-		subscriber := newSubscriber(url)
+		subscriber := newSubscriber(url, "localhost:8080")
 		require.NotNil(t, subscriber)
 
 		err = subscriber.applyFiltersFromQuery(db)
@@ -266,10 +268,10 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("NoAppType", func(t *testing.T) {
 		// Daemon name requires app type.
-		url, err := url.Parse("http://example.org/sse?machine=1&daemonName=dhcp4")
+		url, err := url.Parse("http://example.org/sse?stream=message&machine=1&daemonName=dhcp4")
 		require.NoError(t, err)
 
-		subscriber := newSubscriber(url)
+		subscriber := newSubscriber(url, "localhost:8080")
 		require.NotNil(t, subscriber)
 
 		err = subscriber.applyFiltersFromQuery(db)
@@ -278,11 +280,11 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("AppAndAppType", func(t *testing.T) {
 		// App ID with app type are mutually exclusive.
-		rawURL := fmt.Sprintf("http://example.org/sse?machine=1&app=%d&appType=kea", app.ID)
+		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&app=%d&appType=kea", app.ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)
 
-		subscriber := newSubscriber(url)
+		subscriber := newSubscriber(url, "localhost:8080")
 		require.NotNil(t, subscriber)
 
 		err = subscriber.applyFiltersFromQuery(db)
@@ -291,12 +293,12 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("DaemonAndDaemonID", func(t *testing.T) {
 		// Daemon ID with daemon name are mutually exclusive.
-		rawURL := fmt.Sprintf("http://example.org/sse?machine=1&appType=kea&daemon=%d&daemonName=dhcp4",
+		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&appType=kea&daemon=%d&daemonName=dhcp4",
 			app.Daemons[0].ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)
 
-		subscriber := newSubscriber(url)
+		subscriber := newSubscriber(url, "localhost:8080")
 		require.NotNil(t, subscriber)
 
 		err = subscriber.applyFiltersFromQuery(db)

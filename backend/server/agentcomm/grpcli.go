@@ -215,7 +215,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 				"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
 			}).Warnf("Failed to send the following rndc command: %s", command)
 		}
-		agents.EventCenter.AddErrorEvent("cannot connect to agent on {machine}", app.GetMachineTag())
+		agents.EventCenter.AddErrorEvent("cannot connect to agent on {machine}", app.GetMachineTag(), dbmodel.SSEConnectivity)
 		return nil, err
 	}
 	response := resp.(*agentapi.ForwardRndcCommandRsp)
@@ -244,7 +244,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 		} else {
 			errStr = fmt.Sprintf("%s", result.Error)
 		}
-		agents.EventCenter.AddErrorEvent("Communication with {app} failed", errStr, app)
+		agents.EventCenter.AddErrorEvent("Communication with {app} failed", errStr, app, dbmodel.SSEConnectivity)
 	}
 
 	// Start updating error statistics for this agent and the BIND9 app we've
@@ -457,7 +457,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			// If this is the first time we failed to communicate with the
 			// agent, let's print the stack trace for debugging purposes.
 			err = errors.WithStack(err)
-			agents.EventCenter.AddErrorEvent("Cannot connect to agent on {machine}", err.Error(), app.GetMachineTag())
+			agents.EventCenter.AddErrorEvent("Cannot connect to agent on {machine}", err.Error(), app.GetMachineTag(), dbmodel.SSEConnectivity)
 		} else {
 			// This is not the first time we can't communicate with the
 			// agent. Let's be brief and say that the communication is
@@ -477,7 +477,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 
 	agent.Stats.CurrentErrors = 0
 	if prevAgentErrorsCnt > 0 {
-		agents.EventCenter.AddWarningEvent("Communication with stork agent on {machine} resumed", app.GetMachineTag())
+		agents.EventCenter.AddWarningEvent("Communication with stork agent on {machine} resumed", app.GetMachineTag(), dbmodel.SSEConnectivity)
 	}
 
 	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
@@ -606,9 +606,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, app)
+				agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, app, dbmodel.SSEConnectivity)
 			} else {
-				agents.EventCenter.AddErrorEvent("Communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), app)
+				agents.EventCenter.AddErrorEvent("Communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), app, dbmodel.SSEConnectivity)
 			}
 		}
 	} else {
@@ -618,9 +618,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 		if prevErrorsCA > 0 {
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", &dmn, app)
+				agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", &dmn, app, dbmodel.SSEConnectivity)
 			} else {
-				agents.EventCenter.AddWarningEvent("Communication with CA daemon of {app} resumed", app)
+				agents.EventCenter.AddWarningEvent("Communication with CA daemon of {app} resumed", app, dbmodel.SSEConnectivity)
 			}
 		}
 	}
@@ -640,9 +640,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			for _, dmn := range app.GetDaemonTags() {
 				if dmn.GetName() == dmnName {
 					if currentErrors == 0 {
-						agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", dmn, app)
+						agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", dmn, app, dbmodel.SSEConnectivity)
 					} else {
-						agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", dmn, app)
+						agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", dmn, app, dbmodel.SSEConnectivity)
 					}
 					break
 				}
