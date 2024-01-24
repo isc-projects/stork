@@ -309,6 +309,9 @@ func TestLoggingMiddlewareHelpers(t *testing.T) {
 	// check Header
 	hdr := lrw.Header()
 	require.Empty(t, hdr)
+
+	// Flush should cause no panic.
+	require.NotPanics(t, lrw.Flush)
 }
 
 // Test the file middleware. Includes the test to check if the middleware

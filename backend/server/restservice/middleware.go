@@ -17,6 +17,9 @@ import (
 	"isc.org/stork/server/metrics"
 )
 
+var _ http.Flusher = (*loggingResponseWriter)(nil)
+var _ http.ResponseWriter = (*loggingResponseWriter)(nil)
+
 // Struct for holding response details.
 type responseData struct {
 	status int
@@ -52,6 +55,13 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 // that returns the header.
 func (r *loggingResponseWriter) Header() http.Header {
 	return r.rw.Header()
+}
+
+// http.Flusher implementation wrapper.
+func (r *loggingResponseWriter) Flush() {
+	if flusher, ok := r.rw.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
 
 // Install a middleware that traces ReST calls using logrus.
