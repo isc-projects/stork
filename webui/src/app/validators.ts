@@ -680,12 +680,19 @@ export class StorkValidators {
                 return null
             }
             let cidr: string
+            let incorrect = false
             try {
+                // Is it an IPv6 prefix?
                 cidr = collapseIPv6Number(IPv6CidrRange.fromCidr(control.value).toCidrString())
             } catch (_) {
+                incorrect = true
+            }
+            if (incorrect) {
                 try {
+                    // Maybe it is an IPv4 prefix?
                     cidr = IPv4CidrRange.fromCidr(control.value).toCidrString()
                 } catch (_) {
+                    // It is neither IPv4 nor IPv6 prefix. This validator doesn't apply.
                     return null
                 }
             }
