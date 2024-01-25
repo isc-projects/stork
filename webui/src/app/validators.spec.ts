@@ -98,6 +98,8 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv6Prefix(formBuilder.control('3001:123/64'))).toBeTruthy()
         // IPv4 prefix is not valid.
         expect(StorkValidators.ipv6Prefix(formBuilder.control('192.0.2.0/24'))).toBeTruthy()
+        // Prefix length must match the number of meaningful bits.
+        expect(StorkValidators.ipv6Prefix(formBuilder.control('2001:db8:1::/18'))).toBeTruthy()
         // Valid prefix.
         expect(StorkValidators.ipv6Prefix(formBuilder.control('3000:1:2::/64'))).toBeFalsy()
     })
@@ -116,6 +118,9 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipPrefix(formBuilder.control('192.0.2.0/36'))).toBeTruthy()
         // Incorrect IPv6 prefix length
         expect(StorkValidators.ipPrefix(formBuilder.control('2001:db8:1::/129'))).toBeTruthy()
+        // The prefix must match the prefix length (mask).
+        expect(StorkValidators.ipPrefix(formBuilder.control('192.110.111.0/23'))).toBeTruthy()
+        expect(StorkValidators.ipPrefix(formBuilder.control('2001:db8:1::/16'))).toBeTruthy()
         // IPv4 prefix is valid.
         expect(StorkValidators.ipPrefix(formBuilder.control('192.0.2.0/24'))).toBeFalsy()
         // IPv6 prefix is valid too.

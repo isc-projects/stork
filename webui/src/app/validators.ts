@@ -16,7 +16,15 @@ import {
 } from './forms/subnet-set-form.service'
 import { AddressRange } from './address-range'
 import { SharedParameterFormGroup } from './forms/shared-parameter-form-group'
-import { IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator, collapseIPv6Number } from 'ip-num'
+import {
+    IPv4,
+    IPv4CidrRange,
+    IPv6,
+    IPv6CidrRange,
+    Validator,
+    collapseIPv6Number,
+    dottedDecimalNotationToBinaryString,
+} from 'ip-num'
 
 /**
  * A class with various static form validation functions.
@@ -117,11 +125,46 @@ export class StorkValidators {
             return null
         }
         let ip = control.value
-        if (
-            !ip.includes('/') ||
-            !(Validator.isValidIPv4CidrNotation(ip)[0] || Validator.isValidIPv6CidrNotation(ip)[0])
-        ) {
-            return { ip: `${ip} is not a valid IP prefix.` }
+        if (!ip.includes('/')) {
+            return { ipPrefix: `${ip} is not a valid IP prefix.` }
+        }
+        // Check if we're in the IPv4 or IPv6 space.
+        let isIPv4 = Validator.isValidIPv4CidrNotation(ip)[0]
+        let isIPv6 = false
+        if (!isIPv4) {
+            isIPv6 = Validator.isValidIPv6CidrNotation(ip)[0]
+        }
+        // One of them is expected. Otherwise it is not a prefix.
+        if (!isIPv4 && !isIPv6) {
+            return { ip: `${ip} is neither an IPv4 nor IPv6 prefix.` }
+        }
+        // Get the prefix and prefix length part separately.
+        let [prefix, len] = ip.split('/')
+        // Convert the prefix to a binary form.
+        let binary = isIPv4
+            ? dottedDecimalNotationToBinaryString(prefix)
+            : IPv6.fromHexadecatet(prefix).toBinaryString()
+        // The ip-num validators do not validate whether the prefix
+        // matches the prefix length. For example, they accept
+        // prefixes like 192.110.111.0/23. This would not work
+        // in PostgreSQL, so we have to demand a proper prefix.
+        // In this case 192.110.110.0/23. By converting the
+        // prefix and counting the trailing zeros we can detect
+        // such cases.
+        let count = 0
+        for (let i = binary.length - 1; i >= 0; i--) {
+            if (binary[i] == '0') {
+                // Still on zeros.
+                count++
+            } else {
+                // First first bit of 1.
+                break
+            }
+        }
+        // Compare the prefix length with the number meaningful
+        // bits in the prefix.
+        if (count < (isIPv4 ? 32 : 128) - Number(len)) {
+            return { ipPrefix: `Invalid prefix length for the prefix ${ip}.` }
         }
         return null
     }
@@ -138,7 +181,33 @@ export class StorkValidators {
         }
         let ipv6 = control.value
         if (!ipv6.includes('/') || !Validator.isValidIPv6CidrNotation(ipv6)[0]) {
-            return { ipv6: `${ipv6} is not a valid IPv6 prefix.` }
+            return { ipv6Prefix: `${ipv6} is not a valid IPv6 prefix.` }
+        }
+        // Get the prefix and prefix length part separately.
+        let [prefix, len] = ipv6.split('/')
+        // Convert the prefix to a binary form.
+        let binary = IPv6.fromHexadecatet(prefix).toBinaryString()
+        // The ip-num validators do not validate whether the prefix
+        // matches the prefix length. For example, they accept
+        // prefixes like 2001:db8:1::/32. This would not work
+        // in PostgreSQL, so we have to demand a proper prefix.
+        // In this case 2001:db8:1::/48. By converting the
+        // prefix and counting the trailing zeros we can detect
+        // such cases.
+        let count = 0
+        for (let i = binary.length - 1; i >= 0; i--) {
+            if (binary[i] == '0') {
+                // Still on zeros.
+                count++
+            } else {
+                // First first bit of 1.
+                break
+            }
+        }
+        // Compare the prefix length with the number meaningful
+        // bits in the prefix.
+        if (count < 128 - Number(len)) {
+            return { ipv6Prefix: `Invalid prefix length for the prefix ${ipv6}.` }
         }
         return null
     }

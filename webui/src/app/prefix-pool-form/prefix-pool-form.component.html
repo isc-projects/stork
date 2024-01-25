@@ -27,10 +27,10 @@
                 *ngIf="
                     formGroup.get('prefixes')?.get(control)?.invalid &&
                     (formGroup.get('prefixes').get(control).dirty || formGroup.get('prefixes').get(control).touched) &&
-                    formGroup.get('prefixes').get(control).hasError('ipv6')
+                    formGroup.get('prefixes').get(control).hasError('ipv6Prefix')
                 "
                 class="p-error block"
-                >{{ formGroup.get('prefixes').get(control).errors.ipv6 }}
+                >{{ formGroup.get('prefixes').get(control).errors.ipv6Prefix }}
             </small>
         </ng-container>
         <ng-container

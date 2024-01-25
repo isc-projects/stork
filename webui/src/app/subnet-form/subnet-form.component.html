@@ -11,14 +11,20 @@
                     (state.group.get('subnet').dirty || state.group.get('subnet').touched)
                 "
             >
-                <small
-                    *ngIf="state.group.get('subnet').hasError('prefixInList'); else otherPrefixError"
-                    class="p-error block"
+                <small *ngIf="state.group.get('subnet').hasError('prefixInList')" class="p-error block"
                     >A subnet with this prefix already exists.
                 </small>
-                <ng-template #otherPrefixError>
-                    <small class="p-error block">A valid subnet prefix is required.</small>
-                </ng-template>
+                <small *ngIf="state.group.get('subnet').hasError('ipPrefix')" class="p-error block"
+                    >{{ state.group.get('subnet').errors.ipPrefix }}
+                </small>
+                <small
+                    *ngIf="
+                        !state.group.get('subnet').hasError('prefixInList') &&
+                        !state.group.get('subnet').hasError('ipPrefix')
+                    "
+                    class="p-error block"
+                    >A valid subnet prefix is required.</small
+                >
             </ng-container>
             <span *ngIf="!state.wizard" class="p-float-label mt-5 mb-2">
                 <p-dropdown
