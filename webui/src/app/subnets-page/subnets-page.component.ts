@@ -494,10 +494,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 .createSubnetDelete(this.openedTabs[index].state.transactionId)
                 .toPromise()
                 .catch((err) => {
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
+                    let msg = getErrorMessage(err)
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Failed to delete configuration transaction',
@@ -720,10 +717,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     .updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionId)
                     .toPromise()
                     .catch((err) => {
-                        let msg = err.statusText
-                        if (err.error && err.error.message) {
-                            msg = err.error.message
-                        }
+                        let msg = getErrorMessage(err)
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Failed to delete configuration transaction',

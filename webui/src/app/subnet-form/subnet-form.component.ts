@@ -540,10 +540,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.formSubmit.emit(this.state)
             })
             .catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
+                let msg = getErrorMessage(err)
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit subnet',
