@@ -748,15 +748,14 @@ export class StorkValidators {
             if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
                 return null
             }
-            let cidr: string
-            let incorrect = false
+            let cidr: string = null
             try {
                 // Is it an IPv6 prefix?
                 cidr = collapseIPv6Number(IPv6CidrRange.fromCidr(control.value).toCidrString())
             } catch (_) {
-                incorrect = true
+                // Do nothing here. We'll check it is an IPv4 prefix.
             }
-            if (incorrect) {
+            if (cidr == null) {
                 try {
                     // Maybe it is an IPv4 prefix?
                     cidr = IPv4CidrRange.fromCidr(control.value).toCidrString()
