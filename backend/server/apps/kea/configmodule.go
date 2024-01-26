@@ -266,14 +266,6 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		return ctx, errors.New("internal server error: host instance cannot be nil when committing host update")
 	}
 
-	// Append the local hosts from the configuration file to the edited host.
-	// The edit form doesn't attach them to the data sent to the server.
-	for _, lh := range existingHost.LocalHosts {
-		if !lh.DataSource.IsAPI() {
-			host.LocalHosts = append(host.LocalHosts, lh)
-		}
-	}
-
 	var commands []ConfigCommand
 	// First, delete all instances of the host on all Kea servers.
 	for _, lh := range existingHost.LocalHosts {
@@ -322,6 +314,17 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		appCommand.App = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
+
+	// Append the local hosts from the configuration file to the edited host.
+	// The edit form doesn't attach them to the data sent to the server.
+	// It must be done after re-creating the host reservations to avoid
+	// duplicating the DHCP options.
+	for _, lh := range existingHost.LocalHosts {
+		if !lh.DataSource.IsAPI() {
+			host.LocalHosts = append(host.LocalHosts, lh)
+		}
+	}
+
 	recipe.HostAfterUpdate = host
 	recipe.Commands = commands
 	return config.SetRecipeForUpdate(ctx, 0, recipe)
