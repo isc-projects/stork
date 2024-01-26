@@ -113,6 +113,9 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 		// If the option definition is known, let's take the encapsulated option
 		// space name from it.
 		option.Encapsulate = def.GetEncapsulate()
+		if optionData.Name == "" {
+			option.Name = def.GetName()
+		}
 	} else {
 		// Generate the encapsulated option space name because option
 		// definition does not exist in Stork for this option.
