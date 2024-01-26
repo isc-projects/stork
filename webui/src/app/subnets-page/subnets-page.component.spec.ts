@@ -1010,6 +1010,8 @@ describe('SubnetsPageComponent', () => {
             ],
         }
 
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of(subnet))
+
         // Open subnet tab.
         paramMapSubject.next(convertToParamMap({ id: 5 }))
         fixture.detectChanges()
