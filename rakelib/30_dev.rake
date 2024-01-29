@@ -382,11 +382,19 @@ namespace :lint do
         sh DANGER, "--fail-on-errors=true", "--new-comment"
     end
 
-    desc 'Check frontend source code'
+    desc 'Check frontend source code
+        FIX - fix linting issues - default: false'
     task :ui => [NPX] + WEBUI_CODEBASE do
+        ng_opts = []
+        prettier_opts = []
+        if ENV["FIX"] == "true"
+            ng_opts += ["--fix"]
+            prettier_opts += ["--write"]
+        end
+
         Dir.chdir('webui') do
-            sh NPX, "ng", "lint"
-            sh NPX, "prettier", "--config", ".prettierrc", "--check", "**/*"
+            sh NPX, "ng", "lint", *ng_opts
+            sh NPX, "prettier", "--config", ".prettierrc", "--check", "**/*", *prettier_opts
         end
     end
 
