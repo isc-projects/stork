@@ -148,6 +148,7 @@ def test_wait_for_no_success_use_unexpected_exception():
     try:
         f()
     except LookupError:
+        # The exception is expected. See f() implementation above.
         pass
 
     # Assert
@@ -171,6 +172,7 @@ def test_wait_for_no_success_with_retries():
     try:
         f()
     except TimeoutError:
+        # We expect this to fail maximum number of counts. No need to log anything.
         pass
 
     # Assert
@@ -194,6 +196,7 @@ def test_wait_for_no_success_with_retries_use_custom_expected_exception():
     try:
         f()
     except TimeoutError:
+        # We don't care about Timeouts here. Let's continue.
         pass
 
     # Assert
