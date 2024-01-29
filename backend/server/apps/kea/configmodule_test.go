@@ -38,6 +38,7 @@ func newTestManager(server config.ManagerAccessors) *testManager {
 	return &testManager{
 		db:     server.GetDB(),
 		agents: server.GetConnectedAgents(),
+		lookup: server.GetDHCPOptionDefinitionLookup(),
 		locks:  make(map[int64]bool),
 	}
 }
@@ -617,6 +618,7 @@ func TestBeginHostUpdate(t *testing.T) {
 func TestApplyHostUpdate(t *testing.T) {
 	// Create dummy host to be stored in the context. We will later check if
 	// it is preserved after applying host update.
+	hasher := keaconfig.NewHasher()
 	host := &dbmodel.Host{
 		ID:       1,
 		Hostname: "cool.example.org",
@@ -642,6 +644,9 @@ func TestApplyHostUpdate(t *testing.T) {
 					},
 				},
 				DataSource: dbmodel.HostDataSourceAPI,
+				DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{{
+					Code: 1,
+				}}, hasher),
 			},
 			{
 				DaemonID: 2,
@@ -658,6 +663,28 @@ func TestApplyHostUpdate(t *testing.T) {
 					},
 				},
 				DataSource: dbmodel.HostDataSourceAPI,
+				DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{{
+					Code: 2,
+				}}, hasher),
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+				DataSource: dbmodel.HostDataSourceConfig,
+				DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{{
+					Code: 3,
+				}}, hasher),
 			},
 		},
 	}
@@ -707,6 +734,9 @@ func TestApplyHostUpdate(t *testing.T) {
 					},
 				},
 				DataSource: dbmodel.HostDataSourceAPI,
+				DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{{
+					Code: 4,
+				}}, hasher),
 			},
 			{
 				DaemonID: 2,
@@ -723,6 +753,9 @@ func TestApplyHostUpdate(t *testing.T) {
 					},
 				},
 				DataSource: dbmodel.HostDataSourceAPI,
+				DHCPOptionSet: dbmodel.NewDHCPOptionSet([]dbmodel.DHCPOption{{
+					Code: 4,
+				}}, hasher),
 			},
 		},
 	}
@@ -733,6 +766,28 @@ func TestApplyHostUpdate(t *testing.T) {
 	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.False(t, stateReturned.Scheduled)
+
+	// Verify the host after update.
+	recipeReturned, err := stateReturned.GetRecipeForUpdate(0)
+	require.NoError(t, err)
+	require.NotNil(t, recipeReturned)
+	require.EqualValues(t, 1, recipeReturned.HostAfterUpdate.ID)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts, 3)
+
+	require.EqualValues(t, 1, recipeReturned.HostAfterUpdate.LocalHosts[0].DaemonID)
+	require.EqualValues(t, dbmodel.HostDataSourceAPI, recipeReturned.HostAfterUpdate.LocalHosts[0].DataSource)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[0].DHCPOptionSet.Options, 1)
+	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[0].DHCPOptionSet.Options[0].Code)
+
+	require.EqualValues(t, 2, recipeReturned.HostAfterUpdate.LocalHosts[1].DaemonID)
+	require.EqualValues(t, dbmodel.HostDataSourceAPI, recipeReturned.HostAfterUpdate.LocalHosts[1].DataSource)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[1].DHCPOptionSet.Options, 1)
+	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[1].DHCPOptionSet.Options[0].Code)
+
+	require.EqualValues(t, 2, recipeReturned.HostAfterUpdate.LocalHosts[2].DaemonID)
+	require.EqualValues(t, dbmodel.HostDataSourceConfig, recipeReturned.HostAfterUpdate.LocalHosts[2].DataSource)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[2].DHCPOptionSet.Options, 1)
+	require.EqualValues(t, 3, recipeReturned.HostAfterUpdate.LocalHosts[2].DHCPOptionSet.Options[0].Code)
 
 	require.Len(t, stateReturned.Updates, 1)
 	update := stateReturned.Updates[0]
@@ -777,7 +832,11 @@ func TestApplyHostUpdate(t *testing.T) {
                          "reservation": {
                              "subnet-id": 0,
                              "hw-address": "020304050607",
-                             "hostname": "foo.example.org"
+                             "hostname": "foo.example.org",
+                             "option-data": [{
+                                "code": 4,
+                                "csv-format": false
+                             }]
                          }
                      }
                  }`,
