@@ -3,7 +3,7 @@
     "ignorePatterns": ["projects/**/*", "src/app/backend/**/*"],
     "overrides": [
         {
-            "plugins": ["jsdoc"],
+            "plugins": ["jsdoc", "unused-imports"],
             "files": ["*.ts"],
             "parserOptions": {
                 "project": ["tsconfig.json", "e2e/tsconfig.json"],
@@ -42,7 +42,9 @@
                         "checkGetters": false,
                         "checkSetters": false
                     }
-                ]
+                ],
+                "unused-imports/no-unused-imports": "error",
+                "unused-imports/no-unused-vars": "warn"
             }
         },
         {
