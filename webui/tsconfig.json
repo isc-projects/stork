@@ -13,10 +13,10 @@
         "target": "ES2022",
         "typeRoots": ["node_modules/@types"],
         "lib": ["ES2020", "DOM"],
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
     },
     "angularCompilerOptions": {
         "fullTemplateTypeCheck": true,
-        "strictInjectionParameters": true
-    }
+        "strictInjectionParameters": true,
+    },
 }

@@ -49,10 +49,10 @@
                     getActualState(checker) === 'enabled'
                         ? 'picker__state-cell--enabled'
                         : getActualState(checker) === 'disabled'
-                        ? 'picker__state-cell--disabled'
-                        : checker.globallyEnabled
-                        ? 'picker__state-cell--inherit-enabled'
-                        : 'picker__state-cell--inherit-disabled'
+                          ? 'picker__state-cell--disabled'
+                          : checker.globallyEnabled
+                            ? 'picker__state-cell--inherit-enabled'
+                            : 'picker__state-cell--inherit-disabled'
                 "
             >
                 <ng-container [ngTemplateOutlet]="stateSelector" [ngTemplateOutletContext]="{ checker: checker }">

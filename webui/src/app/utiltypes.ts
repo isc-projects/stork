@@ -41,11 +41,11 @@ export type ModifyDeep<A extends AnyObject, B extends DeepPartialAny<A>> = {
                 : // B[K] is an array but A[K] no: Use B[K].
                   B[K]
             : // A[K] and B[K] are not the arrays: Check if B[K] is an object.
-            B[K] extends AnyObject
-            ? // B[K] is an object: Modify the A[K] using B[K].
-              ModifyDeep<A[K], B[K]>
-            : // A[K] and B[K] are not the objects: Use B[K].
-              B[K]
+              B[K] extends AnyObject
+              ? // B[K] is an object: Modify the A[K] using B[K].
+                ModifyDeep<A[K], B[K]>
+              : // A[K] and B[K] are not the objects: Use B[K].
+                B[K]
         : // B doesn't have the K key: Use A[K].
           A[K]
 } & (A extends AnyObject ? Omit<B, keyof A> : A)

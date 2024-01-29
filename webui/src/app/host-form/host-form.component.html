@@ -105,8 +105,8 @@
                         formGroup.get('hostIdGroup.idInputHex').hasError('pattern')
                             ? 'Please specify valid hexadecimal digits (e.g., ab:09:ef:01).'
                             : formGroup.get('hostIdGroup.idInputHex').hasError('maxlength')
-                            ? formGroup.get('hostIdGroup.idInputHex').errors['maxlength']
-                            : 'DHCP identifier is required.'
+                              ? formGroup.get('hostIdGroup.idInputHex').errors['maxlength']
+                              : 'DHCP identifier is required.'
                     }}
                 </small>
             </div>
