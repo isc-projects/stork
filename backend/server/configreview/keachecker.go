@@ -90,12 +90,15 @@ func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 			details += storkutil.FormatNoun(singleCount, "shared network", "s")
 			details += " with only a single subnet"
 		}
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
-			"includes %s. Shared networks create overhead for a Kea server "+
-			"configuration and DHCP message processing, affecting their "+
-			"performance. It is recommended to remove any shared networks "+
-			"having none or a single subnet and specify these subnets at the "+
-			"global configuration level.", details)).
+		r, err := NewReport(ctx, fmt.Sprintf(
+			"Kea {daemon} configuration includes %s. Shared networks create "+
+				"overhead for a Kea server configuration and DHCP message "+
+				"processing, affecting their performance. It is recommended "+
+				"to remove any shared networks having none or a single "+
+				"subnet and specify these subnets at the global "+
+				"configuration level.",
+			details,
+		)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -111,12 +114,14 @@ func createSubnetDispensableReport(ctx *ReviewContext, dispensableCount int64) (
 	if dispensableCount == 0 {
 		return nil, nil
 	}
-	r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
-		"includes %s without pools and host reservations. The DHCP server "+
-		"will not assign any addresses to the devices within this subnet. "+
-		"It is recommended to add some pools or host reservations to this "+
-		"subnet or remove the subnet from the configuration.",
-		storkutil.FormatNoun(dispensableCount, "subnet", "s"))).
+	r, err := NewReport(ctx, fmt.Sprintf(
+		"Kea {daemon} configuration includes %s without pools and host "+
+			"reservations. The DHCP server will not assign any addresses to "+
+			"the devices within this subnet. It is recommended to add some "+
+			"pools or host reservations to this subnet or remove the subnet "+
+			"from the configuration.",
+		storkutil.FormatNoun(dispensableCount, "subnet", "s"),
+	)).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
 	return r, err
@@ -356,13 +361,15 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
-			"includes %s for which it is recommended to use out-of-pool "+
-			"host-reservation mode. Reservations specified for these subnets "+
-			"are outside the dynamic address pools. Using out-of-pool "+
-			"reservation mode prevents Kea from checking host-reservation "+
-			"existence when allocating in-pool addresses, thus improving "+
-			"performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf(
+			"Kea {daemon} configuration includes %s for which it is "+
+				"recommended to use out-of-pool host-reservation mode. "+
+				"Reservations specified for these subnets are outside the "+
+				"dynamic address pools. Using out-of-pool reservation mode "+
+				"prevents Kea from checking host-reservation existence when "+
+				"allocating in-pool addresses, thus improving performance.",
+			storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"),
+		)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -461,14 +468,16 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration "+
-			"includes %s for which it is recommended to use out-of-pool "+
-			"host-reservation mode. Reservations specified for these subnets "+
-			"appear outside the dynamic-address and/or prefix-delegation "+
-			"pools. Using out-of-pool reservation mode prevents Kea from "+
-			"checking host-reservation existence when allocating in-pool "+
-			"addresses and delegated prefixes, thus improving performance.",
-			storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf(
+			"Kea {daemon} configuration includes %s for which it is "+
+				"recommended to use out-of-pool host-reservation mode. "+
+				"Reservations specified for these subnets appear outside the "+
+				"dynamic-address and/or prefix-delegation pools. Using "+
+				"out-of-pool reservation mode prevents Kea from checking "+
+				"host-reservation existence when allocating in-pool "+
+				"addresses and delegated prefixes, thus improving performance.",
+			storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"),
+		)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -852,8 +861,8 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 			}
 		}
 
-		report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled "+
-			"High Availability hook configured to use dedicated HTTP "+
+		report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled High "+
+			"Availability hook configured to use dedicated HTTP "+
 			"listeners but the connections to the HA '%s' peer with the '%s' "+
 			"URL are performed over the Kea Control Agent omitting the "+
 			"dedicated HTTP listener of this peer. It may cause the "+
