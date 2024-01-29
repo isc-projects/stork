@@ -1,6 +1,7 @@
 import re
 import time
 from selenium.webdriver.common.action_chains import ActionChains
+import logging
 
 
 def find_element(sel, element_type, element, number_of_tests=10):
@@ -244,6 +245,7 @@ def find_and_check_tooltip(
             ActionChains(sel).move_to_element(element).perform()
             break
         except Exception:
+            logging.exception('find_and_check_tooltip() failed')
             pass
     display_sleep(sel)
     if not use_in_refresh:
