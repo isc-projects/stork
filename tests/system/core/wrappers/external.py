@@ -22,6 +22,9 @@ class ExternalPackages(Agent, Server):
             The name of the docker-compose service containing the Bind9 and
             Stork Agent.
         """
+
+        # TODO: Both server and Agent are derived from ComposeServiceWrapper.
+        # The code below calls ComposeServiceWrapper __init__ method twice.
         Server.__init__(self, compose, service_name)
         Agent.__init__(self, compose, service_name, self)
 
