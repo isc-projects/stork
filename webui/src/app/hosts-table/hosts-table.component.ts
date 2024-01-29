@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core'
 
-import { TableModule } from 'primeng/table'
-
 export interface Host {
     mac_address
     ip_address

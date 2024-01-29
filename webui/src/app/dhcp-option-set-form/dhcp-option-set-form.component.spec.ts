@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { UntypedFormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'

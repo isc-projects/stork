@@ -1,6 +1,6 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'

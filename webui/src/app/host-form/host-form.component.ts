@@ -11,7 +11,7 @@ import {
 } from '@angular/forms'
 import { MessageService, SelectItem } from 'primeng/api'
 import { map } from 'rxjs/operators'
-import { collapseIPv6Number, isIPv4, IPv4, IPv4CidrRange, IPv6, IPv6CidrRange, Validator } from 'ip-num'
+import { collapseIPv6Number, isIPv4, IPv4, IPv6, Validator } from 'ip-num'
 import { StorkValidators } from '../validators'
 import { DHCPService } from '../backend/api/api'
 import { CreateHostBeginResponse } from '../backend/model/createHostBeginResponse'

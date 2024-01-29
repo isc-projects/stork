@@ -1,10 +1,8 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 
-import * as moment from 'moment-timezone'
-
 import { forkJoin, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem } from 'primeng/api'
+import { MessageService } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'

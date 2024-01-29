@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core'
-import { datetimeToLocal } from '../utils'
 
 /**
  * Enumeration indicating the server's HA state.

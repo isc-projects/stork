@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms'
-import { CreateSubnetBeginResponse, SharedNetwork, Subnet, UpdateSubnetBeginResponse } from '../backend'
+import { CreateSubnetBeginResponse, SharedNetwork, UpdateSubnetBeginResponse } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SubnetForm } from './subnet-set-form.service'

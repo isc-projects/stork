@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { App, AppAccessPoint, ServicesService } from '../backend'
+import { App } from '../backend'
 import { AuthService } from '../auth.service'
 
 /**

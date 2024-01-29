@@ -1,5 +1,5 @@
 import { HttpClientModule } from '@angular/common/http'
-import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'

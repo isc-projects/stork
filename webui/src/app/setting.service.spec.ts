@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing'
 import { SettingService } from './setting.service'
 import { SettingsService, UsersService } from './backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ActivatedRoute, Router } from '@angular/router'
+import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 
 describe('SettingService', () => {

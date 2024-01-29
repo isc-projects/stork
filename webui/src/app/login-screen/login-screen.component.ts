@@ -1,11 +1,10 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnInit } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { GeneralService } from '../backend/api/api'
 import { AuthenticationMethod } from '../backend/model/authenticationMethod'
 import { AuthService } from '../auth.service'
-import { Subscription } from 'rxjs'
 
 @Component({
     selector: 'app-login-screen',

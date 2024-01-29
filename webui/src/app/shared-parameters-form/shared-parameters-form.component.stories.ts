@@ -2,7 +2,7 @@ import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angul
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ChipsModule } from 'primeng/chips'

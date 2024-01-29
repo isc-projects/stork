@@ -9,7 +9,6 @@ import { UsersService } from './backend/api/users.service'
 import { AuthenticationMethod } from './backend/model/authenticationMethod'
 import { SessionCredentials } from './backend/model/sessionCredentials'
 import { User } from './backend'
-import { getErrorMessage } from './utils'
 
 @Injectable({
     providedIn: 'root',

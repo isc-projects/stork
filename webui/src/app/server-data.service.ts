@@ -7,7 +7,6 @@ import { AuthService } from './auth.service'
 import { ServicesService, UsersService } from './backend/api/api'
 import { AppsStats } from './backend/model/appsStats'
 import { Groups } from './backend/model/groups'
-import { Machines } from './backend/model/machines'
 
 /**
  * Service for providing and caching data from the server.

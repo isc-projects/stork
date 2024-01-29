@@ -19,7 +19,7 @@ import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { DhcpDaemon, DhcpOverview, LocalSubnet, Subnet, Subnets } from '../backend'
+import { DhcpDaemon, DhcpOverview } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 
 type DhcpOverviewParsed = ModifyDeep<

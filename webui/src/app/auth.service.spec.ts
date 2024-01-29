@@ -6,7 +6,7 @@ import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { from, merge, of, throwError } from 'rxjs'
+import { from, of } from 'rxjs'
 import { HttpProgressEvent } from '@angular/common/http'
 
 describe('AuthService', () => {

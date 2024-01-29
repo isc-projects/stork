@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { Bind9AppTabComponent } from './bind9-app-tab.component'
-import { RouterLink, Router, RouterModule, ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { TooltipModule } from 'primeng/tooltip'
 import { TabViewModule } from 'primeng/tabview'

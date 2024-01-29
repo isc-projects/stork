@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input } from '@angular/core'
 import { getStatisticValue } from '../subnets'
 import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'

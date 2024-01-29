@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core'
-import { IPType } from './backend'
 import { DhcpOptionDef } from './dhcp-option-def'
 import { stdDhcpv4OptionDefs } from './std-dhcpv4-option-defs'
 import { stdDhcpv6OptionDefs } from './std-dhcpv6-option-defs'

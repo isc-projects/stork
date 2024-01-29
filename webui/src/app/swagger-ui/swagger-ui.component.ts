@@ -1,6 +1,4 @@
-import { Component, AfterViewInit, ElementRef } from '@angular/core'
-
-import { environment } from '../../environments/environment'
+import { Component, AfterViewInit } from '@angular/core'
 
 import { SwaggerUIBundle } from 'swagger-ui-dist'
 

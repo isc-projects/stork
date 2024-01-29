@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing'
 
 import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
-import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Pool, Subnet } from '../backend'
+import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'

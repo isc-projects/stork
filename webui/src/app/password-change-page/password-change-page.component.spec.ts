@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms'
 import { UsersService } from '../backend'
 import { MessageService } from 'primeng/api'

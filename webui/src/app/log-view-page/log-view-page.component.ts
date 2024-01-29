@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { Message } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
 

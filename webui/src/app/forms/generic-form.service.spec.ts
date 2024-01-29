@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { UntypedFormBuilder, UntypedFormArray } from '@angular/forms'
+import { UntypedFormBuilder } from '@angular/forms'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 
 import { GenericFormService } from './generic-form.service'

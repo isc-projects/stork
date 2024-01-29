@@ -1,9 +1,7 @@
 import { UntypedFormGroup } from '@angular/forms'
 import { IPv4CidrRange, IPv6CidrRange, Validator } from 'ip-num'
-import { KeaDaemon } from '../backend/model/keaDaemon'
 import { Subnet } from '../backend/model/subnet'
 import { SelectableDaemon } from '../forms/selectable-daemon'
-import { IPType } from '../iptype'
 import { SelectableClientClass } from './selectable-client-class'
 
 /**

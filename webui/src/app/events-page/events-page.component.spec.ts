@@ -1,6 +1,5 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, Router } from '@angular/router'
 
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page.component'

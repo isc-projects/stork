@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { SharedNetwork, Subnet } from './backend'
+import { SharedNetwork } from './backend'
 
 import {
     getTotalAddresses,

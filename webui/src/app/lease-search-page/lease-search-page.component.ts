@@ -5,7 +5,6 @@ import { map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { getErrorMessage } from '../utils'
 
 /**

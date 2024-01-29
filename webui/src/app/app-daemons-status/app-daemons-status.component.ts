@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core'
+import { Component, Input } from '@angular/core'
 
 import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
 import { App } from '../backend'

@@ -1,12 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
-import {
-    UntypedFormArray,
-    UntypedFormBuilder,
-    FormsModule,
-    ReactiveFormsModule,
-    SelectMultipleControlValueAccessor,
-} from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'

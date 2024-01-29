@@ -6,7 +6,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { Router, RouterModule } from '@angular/router'
 import { FormsModule } from '@angular/forms'
 import { RouterTestingModule } from '@angular/router/testing'
 

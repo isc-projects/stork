@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
-import { UntypedFormArray, UntypedFormBuilder, Validators } from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
 
 /**
  * A component aggregating multiple forms for editing DHCP option information.

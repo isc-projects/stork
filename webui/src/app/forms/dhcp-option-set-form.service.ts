@@ -1,19 +1,11 @@
 import { Injectable } from '@angular/core'
-import {
-    AbstractControl,
-    UntypedFormArray,
-    UntypedFormBuilder,
-    UntypedFormControl,
-    UntypedFormGroup,
-    Validators,
-} from '@angular/forms'
+import { AbstractControl, UntypedFormArray, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from './dhcp-option-form'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { DHCPOptionField } from '../backend/model/dHCPOptionField'
 import { StorkValidators } from '../validators'
-import { GenericFormService } from './generic-form.service'
 import { FormProcessor } from './form-processor'
 
 /**
