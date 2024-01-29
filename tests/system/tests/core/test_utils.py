@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+import logging
 
 from core.utils import memoize, wait_for_success, NoSuccessException
 from core.prometheus_parser import text_fd_to_metric_families
@@ -102,6 +103,7 @@ def test_wait_for_success_use_sleep_time():
     try:
         f()
     except Exception:
+        logging.exception('')  # Just log the exception and continue
         pass
 
     # Assert
