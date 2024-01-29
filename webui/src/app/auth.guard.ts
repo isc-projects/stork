@@ -18,7 +18,6 @@ export class AuthGuard {
 
     /** Indicates if a user has a permission to activate a given route. */
     canActivate(
-        next: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
         const currentUser = this.auth.currentUserValue

@@ -270,7 +270,6 @@ describe('HostTabComponent', () => {
     })
 
     it('should handle error while fetching host information', () => {
-        const fakeLeases: any = {}
         spyOn(dhcpApi, 'getLeases').and.returnValue(throwError({ status: 404 }))
         spyOn(msgService, 'add')
         const host = {

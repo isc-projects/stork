@@ -198,8 +198,6 @@ describe('JsonTreeComponent', () => {
             expect(instance.recursionLevel).toBe(index)
         }
 
-        const lastStandardNode = level
-
         // Reach limit - last node
         level = level.query(By.css('.tree-level'))
         instance = level.componentInstance as JsonTreeComponent

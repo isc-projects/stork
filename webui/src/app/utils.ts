@@ -441,7 +441,8 @@ export function formatShortExcludedPrefix(prefix: string, excludedPrefix: string
     }
 
     // Split the network and length.
-    let [baseNetwork, _] = prefix.split('/')
+    let tokens = prefix.split('/')
+    let baseNetwork = tokens[0]
     let [excludedNetwork, excludedLen] = excludedPrefix.split('/')
 
     let baseNetworkObj = IPv6.fromString(baseNetwork)
@@ -497,12 +498,12 @@ export function getBaseApiPath(apiUrl: string) {
 // Mock of the Angular ParamMap class.
 export class MockParamMap {
     /** Always returns null. */
-    get(name: string): string | null {
+    get(/* name: string */): string | null {
         return null
     }
 
     /** Always returns false. */
-    has(name: string): boolean {
+    has(/* name: string */): boolean {
         return false
     }
 }

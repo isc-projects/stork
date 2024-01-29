@@ -447,7 +447,7 @@ export class HostTabComponent {
         this.dhcpApi
             .deleteHost(this.host.id)
             .toPromise()
-            .then((data) => {
+            .then(() => {
                 // Re-enable the delete button.
                 this.hostDeleted = false
                 this.msgService.add({

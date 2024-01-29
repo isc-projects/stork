@@ -154,7 +154,6 @@ export class HostForm {
             return null
         }
         // Use the subnet to find the address range.
-        let subnetRange: IPv4CidrRange | IPv6CidrRange
         if (Validator.isValidIPv4CidrRange(selected.subnet)[0]) {
             return [selected.subnet, IPv4CidrRange.fromCidr(selected.subnet)]
         }

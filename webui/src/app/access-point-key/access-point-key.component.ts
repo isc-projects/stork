@@ -63,7 +63,7 @@ export class AccessPointKeyComponent {
                 // Set the new key.
                 this.key = key
             })
-            .catch((_) => {
+            .catch(() => {
                 // Reset the loading state.
                 this.key = undefined
             })

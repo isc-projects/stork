@@ -470,7 +470,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.usersApi
             .createUser(account)
             .toPromise()
-            .then((data) => {
+            .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
@@ -509,7 +509,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.usersApi
             .updateUser(account)
             .toPromise()
-            .then((data) => {
+            .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
@@ -552,7 +552,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.usersApi
             .deleteUser(this.userTab.user.id)
             .toPromise()
-            .then((data) => {
+            .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Existing user account deleted',

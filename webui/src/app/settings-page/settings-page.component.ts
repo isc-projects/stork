@@ -189,7 +189,7 @@ export class SettingsPageComponent implements OnInit {
         const settings = this.settingsForm.getRawValue()
 
         this.settingsApi.updateSettings(settings).subscribe(
-            (data) => {
+            (/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Settings updated',

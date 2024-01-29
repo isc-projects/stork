@@ -43,10 +43,10 @@ export class ServerDataService {
             // make an http request to fetch new data
             this.appsStats = merge(refreshTimer, this.reloadAppStats, this.auth.currentUser).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
-                switchMap((_) => {
+                switchMap(() => {
                     return this.servicesApi.getAppsStats().pipe(
                         // use subpipe to not complete source due to error
-                        catchError((err) => EMPTY) // in case of error drop the response (it should not be cached)
+                        catchError(() => EMPTY) // in case of error drop the response (it should not be cached)
                     )
                 }),
                 shareReplay(1) // cache the response for all subscribers
@@ -72,10 +72,10 @@ export class ServerDataService {
         if (!this.groups) {
             this.groups = this.auth.currentUser.pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
-                switchMap((_) =>
+                switchMap(() =>
                     this.usersApi.getGroups().pipe(
                         // use subpipe to not complete source due to error
-                        catchError((err) => EMPTY) // in case of error drop the response (it should not be cached)
+                        catchError(() => EMPTY) // in case of error drop the response (it should not be cached)
                     )
                 ),
                 shareReplay(1) // cache the response for all subscribers
@@ -167,7 +167,7 @@ export class ServerDataService {
                 this.auth.currentUser
             ).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
-                switchMap((_) => {
+                switchMap(() => {
                     return this.servicesApi.getDaemonConfig(daemonId).pipe(
                         // use subpipe to not complete source due to error
                         catchError((err) => of(err)) // in case of error continue with it to prevent broken pipe

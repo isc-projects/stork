@@ -24,7 +24,6 @@ import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-opt
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
     let fixture: ComponentFixture<DhcpOptionFormComponent>
-    let fb: UntypedFormBuilder
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -47,7 +46,6 @@ describe('DhcpOptionFormComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DhcpOptionFormComponent)
         component = fixture.componentInstance
-        fb = new UntypedFormBuilder()
         // Our component needs a form group instance to be initialized.
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
         fixture.detectChanges()

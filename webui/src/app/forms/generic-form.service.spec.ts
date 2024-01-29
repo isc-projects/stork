@@ -7,12 +7,11 @@ import { GenericFormService } from './generic-form.service'
 describe('GenericFormService', () => {
     let service: GenericFormService
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
-    let formArray: UntypedFormArray
 
     beforeEach(() => {
         TestBed.configureTestingModule({})
         service = TestBed.inject(GenericFormService)
-        formArray = formBuilder.array([
+        formBuilder.array([
             formBuilder.group({
                 alwaysSend: formBuilder.control(true),
                 optionCode: formBuilder.control(1024),

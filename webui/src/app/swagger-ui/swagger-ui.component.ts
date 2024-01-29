@@ -11,7 +11,7 @@ export class SwaggerUiComponent implements AfterViewInit {
     constructor() {}
 
     ngAfterViewInit() {
-        const ui = SwaggerUIBundle({
+        SwaggerUIBundle({
             url: '/swagger.json',
             dom_id: '#swagger-container',
             deepLinking: true,

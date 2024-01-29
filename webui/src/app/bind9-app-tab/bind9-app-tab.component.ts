@@ -249,7 +249,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     handleRenameDialogSubmitted(event) {
         this.appRenameDialogVisible = false
         this.servicesApi.renameApp(this.appTab.app.id, { name: event }).subscribe(
-            (data) => {
+            (/* data */) => {
                 // Renaming the app was successful.
                 this.msgService.add({
                     severity: 'success',
@@ -303,7 +303,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                 this.appRenameDialogVisible = true
                 this.showRenameDialogClicked = false
             },
-            (err) => {
+            (/* err */) => {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Fetching apps and machines failed',

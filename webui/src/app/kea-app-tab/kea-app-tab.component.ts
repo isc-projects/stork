@@ -286,10 +286,10 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
     changeMonitored(daemon: KeaDaemon) {
         const dmn = { monitored: !daemon.monitored }
         this.servicesApi.updateDaemon(daemon.id, dmn).subscribe(
-            (data) => {
+            (/* data */) => {
                 daemon.monitored = dmn.monitored
             },
-            (err) => {
+            (/* err */) => {
                 console.warn('Failed to update monitoring flag in daemon')
             }
         )
@@ -333,7 +333,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      */
     handleRenameDialogSubmitted(name: string) {
         this.servicesApi.renameApp(this.appTab.app.id, { name: name }).subscribe(
-            (data) => {
+            (/* data */) => {
                 // Renaming the app was successful.
                 this.msgService.add({
                     severity: 'success',
@@ -387,7 +387,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 this.appRenameDialogVisible = true
                 this.showRenameDialogClicked = false
             },
-            (err) => {
+            (/* err */) => {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Failed to fetch apps and machines',

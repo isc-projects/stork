@@ -48,14 +48,14 @@ export class HaStatusComponent implements OnInit, OnDestroy {
         this.refreshStatus()
 
         this.subscriptions.add(
-            interval(this._haRefreshInterval).subscribe((x) => {
+            interval(this._haRefreshInterval).subscribe(() => {
                 this.refreshStatus()
             })
         )
         // Run the live age counters for both local and remote servers.
         // ToDo: Check that it works as expected. Does the timer reset when the component is destroyed?
         this.subscriptions.add(
-            interval(this._countUpInterval).subscribe((x) => {
+            interval(this._countUpInterval).subscribe(() => {
                 if (this.hasStatus()) {
                     // Only increase the age counters if they are non-negative.
                     // Negative values indicate that the status age was unknown,

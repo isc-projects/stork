@@ -312,7 +312,7 @@ export class ConfigReviewPanelComponent implements OnInit {
         this.servicesApi
             .putDaemonConfigReview(this.daemonId, 'response')
             .toPromise()
-            .then((resp) => {
+            .then((/* resp */) => {
                 this.busy = false
                 this.refreshDaemonConfigReports(null, useRefreshDelay)
             })

@@ -61,7 +61,7 @@ export class AuthService {
                     this.router.navigate([returnUrl])
                 }
             },
-            (err) => {
+            (/* err */) => {
                 this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
             }
         )
@@ -72,7 +72,7 @@ export class AuthService {
      * Destroys user session.
      */
     logout() {
-        this.api.deleteSession('response').subscribe((resp) => {
+        this.api.deleteSession('response').subscribe((/* resp */) => {
             this.destroyLocalSession()
         })
     }

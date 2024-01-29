@@ -15,12 +15,12 @@ describe('FormProcessor', () => {
     let formBuilder: UntypedFormBuilder = new UntypedFormBuilder()
 
     it('copies a complex form control with multiple nesting levels', () => {
-        let validator1: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+        let validator1: ValidatorFn = (): ValidationErrors | null => {
             return null
         }
-        let validator2: AsyncValidatorFn = (
-            control: AbstractControl
-        ): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> => {
+        let validator2: AsyncValidatorFn = ():
+            | Promise<ValidationErrors | null>
+            | Observable<ValidationErrors | null> => {
             return new Promise(null)
         }
         let formArray = formBuilder.array([

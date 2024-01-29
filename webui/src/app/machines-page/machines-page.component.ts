@@ -395,7 +395,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         machine.authorized = authorized
         const txt = 'Machine ' + (authorized ? '' : 'un')
         this.servicesApi.updateMachine(machine.id, machine).subscribe(
-            (data) => {
+            (/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: txt + 'authorized',
@@ -481,7 +481,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * @param machineId ID of machine
      */
     deleteMachine(machineId) {
-        this.servicesApi.deleteMachine(machineId).subscribe((data) => {
+        this.servicesApi.deleteMachine(machineId).subscribe((/* data */) => {
             // reload apps stats to reflect new state (adjust menu content)
             this.serverData.forceReloadAppsStats()
 
