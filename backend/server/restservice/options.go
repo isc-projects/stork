@@ -129,7 +129,6 @@ func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.D
 		// matches what Kea server expects.
 		if def := r.DHCPOptionDefinitionLookup.Find(0, option); def != nil {
 			option.Encapsulate = def.GetEncapsulate()
-			option.Name = def.GetName()
 		}
 		// Go over the option fields belonging to our options.
 		for _, restField := range restOption.Fields {
