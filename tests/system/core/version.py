@@ -16,6 +16,8 @@ def get_version():
             if match is None:
                 continue
             return match.group(1)
+    # If we got here, the regex above failed.
+    return "unknown"
 
 
 def parse_version_info(version):

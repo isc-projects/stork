@@ -46,6 +46,9 @@ def find_element(sel, element_type, element, number_of_tests=10):
             )
             time.sleep(1)
 
+    # If we got here, the find failed.
+    return None
+
 
 def display_sleep(sel, sec=1):
     """
