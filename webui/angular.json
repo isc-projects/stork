@@ -78,18 +78,18 @@
                 "serve": {
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "options": {
-                        "browserTarget": "stork:build"
+                      "buildTarget": "stork:build"
                     },
                     "configurations": {
                         "production": {
-                            "browserTarget": "stork:build:production"
+                          "buildTarget": "stork:build:production"
                         }
                     }
                 },
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",
                     "options": {
-                        "browserTarget": "stork:build"
+                      "buildTarget": "stork:build"
                     }
                 },
                 "test": {
