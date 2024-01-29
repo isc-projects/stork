@@ -5,6 +5,7 @@ import { hasDifferentLocalSubnetPools } from '../subnets'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { getErrorMessage } from '../utils'
 import { ConfirmationService, MessageService } from 'primeng/api'
+import { lastValueFrom } from 'rxjs'
 
 /**
  * A component displaying a tab for a selected subnet.
@@ -51,7 +52,7 @@ export class SubnetTabComponent implements OnInit {
     /**
      * Disables the button deleting a subnet after clicking this button.
      */
-    subnetDeleted = false
+    subnetDeleting = false
 
     /**
      * Component constructor.
@@ -205,29 +206,27 @@ export class SubnetTabComponent implements OnInit {
     deleteSubnet() {
         // Disable the button for deleting the subnet to prevent pressing the
         // button multiple times and sending multiple requests.
-        this.subnetDeleted = true
-        this.dhcpApi
-            .deleteSubnet(this.subnet.id)
-            .toPromise()
+        this.subnetDeleting = true
+        lastValueFrom(this.dhcpApi.deleteSubnet(this.subnet.id))
             .then((data) => {
                 // Re-enable the delete button.
-                this.subnetDeleted = false
+                this.subnetDeleting = false
                 this.msgService.add({
                     severity: 'success',
-                    summary: 'Host reservation successfully deleted',
+                    summary: `Subnet id=${this.subnet.id} successfully deleted`,
                 })
                 // Notify the parent that the subnet was deleted and the tab can be closed.
                 this.subnetDelete.emit(this.subnet)
             })
             .catch((err) => {
                 // Re-enable the delete button.
-                this.subnetDeleted = false
+                this.subnetDeleting = false
                 // Issues with deleting the host.
                 const msg = getErrorMessage(err)
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Cannot delete the subnet',
-                    detail: 'Failed to delete the subnet: ' + msg,
+                    detail: `Failed to delete the subnet id=${this.subnet.id}: ` + msg,
                     life: 10000,
                 })
             })

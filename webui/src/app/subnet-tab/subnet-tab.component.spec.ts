@@ -571,7 +571,7 @@ describe('SubnetTabComponent', () => {
         // An event should be called.
         expect(component.subnetDelete.emit).toHaveBeenCalledWith(component.subnet)
         // This flag should be cleared.
-        expect(component.subnetDeleted).toBeFalse()
+        expect(component.subnetDeleting).toBeFalse()
     }))
 
     it('should not emit an event when host deletion fails', fakeAsync(() => {
@@ -590,6 +590,6 @@ describe('SubnetTabComponent', () => {
         // The event shouldn't be emitted on error.
         expect(component.subnetDelete.emit).not.toHaveBeenCalledWith(component.subnet)
         // This flag should be cleared.
-        expect(component.subnetDeleted).toBeFalse()
+        expect(component.subnetDeleting).toBeFalse()
     }))
 })
