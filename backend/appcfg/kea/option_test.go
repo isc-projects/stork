@@ -89,7 +89,7 @@ func (option testDHCPOption) GetUniverse() storkutil.IPType {
 // Test that a DHCP option in the Kea format is created from the Stork's
 // option representation. It creates an option with many different option
 // fields and simulates the case that a definition for this option exists.
-func TestCreateSingleOptionDataMultiplFields(t *testing.T) {
+func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 	option := &testDHCPOption{
 		alwaysSend:  true,
 		code:        1600,

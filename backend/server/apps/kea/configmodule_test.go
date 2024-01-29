@@ -2245,7 +2245,7 @@ func TestCommitSubnetUpdate(t *testing.T) {
 	require.Len(t, agents.RecordedURLs, 4)
 	require.Len(t, agents.RecordedCommands, 4)
 
-	// The resective commands should be sent to different servers.
+	// The respective commands should be sent to different servers.
 	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
 	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
 	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
