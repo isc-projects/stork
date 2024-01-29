@@ -2909,6 +2909,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 											"code": 3,
 											"csv-format": true,
 											"data": "192.0.2.2",
+											"name": "routers",
 											"space": "dhcp4"
 										}
 									]
@@ -2964,6 +2965,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"code": 3,
 									"csv-format": true,
 									"data": "192.0.2.1",
+									"name": "routers",
 									"space": "dhcp4"
 								}
 							]
@@ -3940,6 +3942,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 											"code": 23,
 											"csv-format": true,
 											"data": "2001:db8:1::1",
+											"name": "dns-servers",
 											"space": "dhcp6"
 										}
 									]

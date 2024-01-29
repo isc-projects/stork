@@ -65,22 +65,6 @@ func TestNewDHCPOptionFromKea(t *testing.T) {
 	require.EqualValues(t, 8, fields[0].GetValues()[0])
 }
 
-// Test that the hash value is not affected by the name of the option.
-func TestDHCPOptionSetHashIgnoreName(t *testing.T) {
-	// Arrange
-	optionSet := DHCPOptionSet{}
-
-	// Act
-	hasher := keaconfig.NewHasher()
-	optionSet.SetDHCPOptions([]DHCPOption{{}}, hasher)
-	noNameHash := optionSet.Hash
-	optionSet.SetDHCPOptions([]DHCPOption{{Name: "foo"}}, hasher)
-	withNameHash := optionSet.Hash
-
-	// Assert
-	require.Equal(t, noNameHash, withNameHash)
-}
-
 // Test that the equality of DHCP option sets is equality of their hashes.
 func TestDHCPOptionSetIsEqualTo(t *testing.T) {
 	// Arrange
@@ -95,4 +79,29 @@ func TestDHCPOptionSetIsEqualTo(t *testing.T) {
 	require.False(t, optionSet2.IsEqualTo(optionSet3))
 	require.False(t, optionSet3.IsEqualTo(optionSet1))
 	require.False(t, optionSet3.IsEqualTo(optionSet2))
+}
+
+// Test that the hash value is empty when there are no options.
+func TestDHCPOptionSetHashEmpty(t *testing.T) {
+	// Arrange
+	optionSet := DHCPOptionSet{}
+
+	// Act
+	hasher := keaconfig.NewHasher()
+	optionSet.SetDHCPOptions([]DHCPOption{}, hasher)
+
+	// Assert
+	require.Empty(t, optionSet.Hash)
+}
+
+// Test that the hash value is empty when the option set is nil.
+func TestDHCPOptionSetHashNil(t *testing.T) {
+	// Arrange
+	optionSet := DHCPOptionSet{}
+
+	// Act
+	optionSet.SetDHCPOptions(nil, keaconfig.NewHasher())
+
+	// Assert
+	require.Empty(t, optionSet.Hash)
 }

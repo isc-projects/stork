@@ -28,7 +28,9 @@ func NewDHCPOptionSet(options []DHCPOption, hasher storkutil.Hasher) DHCPOptionS
 // Sets the specified DHCP options and calculates the hash.
 func (s *DHCPOptionSet) SetDHCPOptions(options []DHCPOption, hasher storkutil.Hasher) {
 	s.Options = options
-	s.Hash = hasher.Hash(options)
+	if len(options) != 0 {
+		s.Hash = hasher.Hash(options)
+	}
 }
 
 // Checks if two DHCP option sets are equal by comparing their hashes.
