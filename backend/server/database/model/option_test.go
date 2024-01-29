@@ -65,6 +65,22 @@ func TestNewDHCPOptionFromKea(t *testing.T) {
 	require.EqualValues(t, 8, fields[0].GetValues()[0])
 }
 
+// Test that the hash value is not affected by the name of the option.
+func TestDHCPOptionSetHashIgnoreName(t *testing.T) {
+	// Arrange
+	optionSet := DHCPOptionSet{}
+
+	// Act
+	hasher := keaconfig.NewHasher()
+	optionSet.SetDHCPOptions([]DHCPOption{{}}, hasher)
+	noNameHash := optionSet.Hash
+	optionSet.SetDHCPOptions([]DHCPOption{{Name: "foo"}}, hasher)
+	withNameHash := optionSet.Hash
+
+	// Assert
+	require.Equal(t, noNameHash, withNameHash)
+}
+
 // Test that the equality of DHCP option sets is equality of their hashes.
 func TestDHCPOptionSetIsEqualTo(t *testing.T) {
 	// Arrange

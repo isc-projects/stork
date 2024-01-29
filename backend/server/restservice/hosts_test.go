@@ -996,7 +996,6 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 								"code": 3,
 								"csv-format": true,
 								"data": "192.0.2.1",
-								"name": "routers",
 								"space": "dhcp4"
 							}
 						]
