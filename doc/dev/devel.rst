@@ -1332,7 +1332,7 @@ and continue the build process.
 
 The above flow was implemented in Stork CI only. It is not a part of the standard
 build system (the Rake tasks). It was specified only for the DEB package and
-AMD64 architecture. 
+AMD64 architecture.
 
 If you build Stork in your environment, remember the Go compiler uses the GLIBC
 library installed in the system, so the output binaries will only be compatible
@@ -1374,3 +1374,28 @@ formatted to pass the linter checks. Next, commit the new versions of these file
 
 The ``stork-code-gen`` tool can also be run directly (outside of the Rake build system)
 to customize the file names and other parameters.
+
+
+Linters
+=======
+
+There are many linters available for checking and cleaning Stork code. You can get the list with
+the following command:
+
+.. code-block:: console
+
+  $ rake -T | grep lint
+    rake hook:lint                          # Lint hooks against the Stork core rules
+    rake lint:backend                       # Check backend source code
+    rake lint:git                           # Run danger commit linter
+    rake lint:python                        # Runs pylint and flake8, python linter tools
+    rake lint:python:black                  # Runs black, python linter tool
+    rake lint:python:flake8                 # Runs flake8, python linter tool
+    rake lint:python:pylint                 # Runs pylint, python linter tool
+    rake lint:shell                         # Check shell scripts
+    rake lint:ui                            # Check frontend source code
+
+
+This list will probably be grow over time. ``rake -D`` will produce more detailed description of the tasks.
+Some, but not all, take optional ``FIX`` variable. If set to ``true``, the linter will fix specific code.
+For example, to fix some black (python linter) issues, one can use ``rake lint:python:black FIX=true``.
