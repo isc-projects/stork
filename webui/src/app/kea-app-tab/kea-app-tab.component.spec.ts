@@ -129,7 +129,7 @@ describe('KeaAppTabComponent', () => {
                 DataViewModule,
                 ProgressSpinnerModule,
                 DividerModule,
-                TagModule
+                TagModule,
             ],
             declarations: [
                 KeaAppTabComponent,
@@ -141,7 +141,7 @@ describe('KeaAppTabComponent', () => {
                 ConfigReviewPanelComponent,
                 HelpTipComponent,
                 AppOverviewComponent,
-                EventTextComponent
+                EventTextComponent,
             ],
         }).compileComponents()
     }))

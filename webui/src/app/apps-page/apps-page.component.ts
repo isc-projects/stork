@@ -112,10 +112,13 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this.openedApps.push({
             app,
         })
-        this.tabs = [...this.tabs, {
-            label: `${app.name}`,
-            routerLink: '/apps/' + this.appType + '/' + app.id,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: `${app.name}`,
+                routerLink: '/apps/' + this.appType + '/' + app.id,
+            },
+        ]
     }
 
     ngOnInit() {

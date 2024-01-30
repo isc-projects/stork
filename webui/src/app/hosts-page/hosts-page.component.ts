@@ -502,10 +502,13 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param routerLink tab router link.
      */
     private createMenuItem(label: string, routerLink: string) {
-        this.tabs = [...this.tabs, {
-            label: label,
-            routerLink: routerLink,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: label,
+                routerLink: routerLink,
+            },
+        ]
         this.switchToTab(this.tabs.length - 1)
     }
 

@@ -89,11 +89,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         this.openedMachines.push({
             machine,
         })
-        this.tabs = [...this.tabs, {
-            label: machine.address,
-            id: 'machine-tab' + machine.id,
-            routerLink: '/machines/' + machine.id,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: machine.address,
+                id: 'machine-tab' + machine.id,
+                routerLink: '/machines/' + machine.id,
+            },
+        ]
     }
 
     ngOnInit() {

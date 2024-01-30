@@ -197,10 +197,13 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.openedTabs.push(userTab)
         // The new tab is now current one
         this.userTab = userTab
-        this.tabs = [...this.tabs, {
-            label: tabType === UserTabType.NewUser ? 'New account' : user.login || user.email,
-            routerLink: userTab.tabRoute,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: tabType === UserTabType.NewUser ? 'New account' : user.login || user.email,
+                routerLink: userTab.tabRoute,
+            },
+        ]
         this.switchToTab(this.tabs.length - 1)
     }
 

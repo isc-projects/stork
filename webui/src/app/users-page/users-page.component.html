@@ -40,7 +40,12 @@
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
-                <div class="pi pi-times" style="margin: -2px 0 0 8px" (click)="closeTab($event, i)" *ngIf="i !== 0"></div>
+                <div
+                    class="pi pi-times"
+                    style="margin: -2px 0 0 8px"
+                    (click)="closeTab($event, i)"
+                    *ngIf="i !== 0"
+                ></div>
             </div>
         </a>
     </ng-template>

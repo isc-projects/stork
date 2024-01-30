@@ -567,11 +567,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private appendNewTab() {
         this.openedTabs.push(new SubnetTab(SubnetTabType.NewSubnet))
-        this.tabs = [...this.tabs, {
-            label: 'New Subnet',
-            icon: 'pi pi-pencil',
-            routerLink: `/dhcp/subnets/new`,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: 'New Subnet',
+                icon: 'pi pi-pencil',
+                routerLink: `/dhcp/subnets/new`,
+            },
+        ]
     }
 
     /**
@@ -581,10 +584,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private appendTab(subnet: Subnet) {
         this.openedTabs.push(new SubnetTab(SubnetTabType.Subnet, subnet))
-        this.tabs = [...this.tabs, {
-            label: subnet.subnet,
-            routerLink: `/dhcp/subnets/${subnet.id}`,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: subnet.subnet,
+                routerLink: `/dhcp/subnets/${subnet.id}`,
+            },
+        ]
     }
 
     /**

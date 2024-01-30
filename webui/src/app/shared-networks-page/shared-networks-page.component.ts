@@ -418,10 +418,13 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     private appendTab(sharedNetwork: SharedNetwork) {
         this.openedSharedNetworks.push(sharedNetwork)
-        this.tabs = [...this.tabs, {
-            label: sharedNetwork.name,
-            routerLink: `/dhcp/shared-networks/${sharedNetwork.id}`,
-        }]
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: sharedNetwork.name,
+                routerLink: `/dhcp/shared-networks/${sharedNetwork.id}`,
+            },
+        ]
     }
 
     /**
