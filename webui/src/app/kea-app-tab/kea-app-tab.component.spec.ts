@@ -34,6 +34,9 @@ import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { DividerModule } from 'primeng/divider'
+import { TagModule } from 'primeng/tag'
+import { EventTextComponent } from '../event-text/event-text.component'
 
 class Details {
     daemons: any = [
@@ -125,6 +128,8 @@ describe('KeaAppTabComponent', () => {
                 ToggleButtonModule,
                 DataViewModule,
                 ProgressSpinnerModule,
+                DividerModule,
+                TagModule
             ],
             declarations: [
                 KeaAppTabComponent,
@@ -136,6 +141,7 @@ describe('KeaAppTabComponent', () => {
                 ConfigReviewPanelComponent,
                 HelpTipComponent,
                 AppOverviewComponent,
+                EventTextComponent
             ],
         }).compileComponents()
     }))

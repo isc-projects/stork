@@ -466,7 +466,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         }
 
         // Remove the MenuItem representing the tab.
-        this.tabs.splice(tabIndex, 1)
+        this.tabs = [...this.tabs.slice(0, tabIndex), ...this.tabs.slice(tabIndex + 1)]
         // Remove host specific information associated with the tab.
         this.openedTabs.splice(tabIndex - 1, 1)
         if (this.activeTabIndex === tabIndex) {
@@ -501,11 +501,11 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param label tab label.
      * @param routerLink tab router link.
      */
-    private createMenuItem(label: string, routerLink: string): any {
-        this.tabs.push({
+    private createMenuItem(label: string, routerLink: string) {
+        this.tabs = [...this.tabs, {
             label: label,
             routerLink: routerLink,
-        })
+        }]
         this.switchToTab(this.tabs.length - 1)
     }
 

@@ -20,18 +20,20 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
-        <div style="display: flex; justify-content: space-between">
-            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-            <div class="p-menuitem-text">
-                <b>{{ item.label }}</b>
+        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+            <div style="display: flex; justify-content: space-between">
+                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+                <div class="p-menuitem-text">
+                    <b>{{ item.label }}</b>
+                </div>
+                <div
+                    *ngIf="i !== 0"
+                    class="pi pi-times"
+                    style="margin: -2px 0 0 8px"
+                    (click)="closeHostTab($event, i)"
+                ></div>
             </div>
-            <div
-                *ngIf="i !== 0"
-                class="pi pi-times"
-                style="margin: -2px 0 0 8px"
-                (click)="closeHostTab($event, i)"
-            ></div>
-        </div>
+        </a>
     </ng-template>
 </p-tabMenu>
 
@@ -107,8 +109,7 @@
                     <a
                         label="New Host"
                         icon="pi pi-plus"
-                        class="p-button-primary no-underline"
-                        style="display: block"
+                        class="block p-button p-button-primary no-underline"
                         type="button"
                         routerLink="/dhcp/hosts/new"
                         pButton

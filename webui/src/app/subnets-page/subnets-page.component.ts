@@ -505,7 +505,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         }
 
         this.openedTabs.splice(index, 1)
-        this.tabs.splice(index, 1)
+        this.tabs = [...this.tabs.slice(0, index), ...this.tabs.slice(index + 1)]
 
         if (this.activeTabIndex === index) {
             // Closing currently selected tab. Switch to previous tab.
@@ -567,11 +567,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private appendNewTab() {
         this.openedTabs.push(new SubnetTab(SubnetTabType.NewSubnet))
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: 'New Subnet',
             icon: 'pi pi-pencil',
             routerLink: `/dhcp/subnets/new`,
-        })
+        }]
     }
 
     /**
@@ -581,10 +581,10 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     private appendTab(subnet: Subnet) {
         this.openedTabs.push(new SubnetTab(SubnetTabType.Subnet, subnet))
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: subnet.subnet,
             routerLink: `/dhcp/subnets/${subnet.id}`,
-        })
+        }]
     }
 
     /**

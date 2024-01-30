@@ -112,10 +112,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this.openedApps.push({
             app,
         })
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: `${app.name}`,
             routerLink: '/apps/' + this.appType + '/' + app.id,
-        })
+        }]
     }
 
     ngOnInit() {
@@ -267,7 +267,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     /** Closes tab with a given index. */
     closeTab(event: PointerEvent, idx: number) {
         this.openedApps.splice(idx - 1, 1)
-        this.tabs.splice(idx, 1)
+        this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
         if (this.activeTabIdx === idx) {
             this.switchToTab(idx - 1)
             if (idx - 1 > 0) {

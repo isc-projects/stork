@@ -197,10 +197,10 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.openedTabs.push(userTab)
         // The new tab is now current one
         this.userTab = userTab
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: tabType === UserTabType.NewUser ? 'New account' : user.login || user.email,
             routerLink: userTab.tabRoute,
-        })
+        }]
         this.switchToTab(this.tabs.length - 1)
     }
 
@@ -298,7 +298,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      */
     private closeActiveTab() {
         this.openedTabs.splice(this.activeTabIdx, 1)
-        this.tabs.splice(this.activeTabIdx, 1)
+        this.tabs = [...this.tabs.slice(0, this.activeTabIdx), ...this.tabs.slice(this.activeTabIdx + 1)]
         this.switchToTab(0)
     }
 
@@ -309,7 +309,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         const i = Number(idx)
 
         this.openedTabs.splice(i, 1)
-        this.tabs.splice(i, 1)
+        this.tabs = [...this.tabs.slice(0, i), ...this.tabs.slice(i + 1)]
         if (this.activeTabIdx === i) {
             this.switchToTab(i - 1)
         } else if (this.activeTabIdx > i) {

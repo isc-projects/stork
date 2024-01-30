@@ -6,18 +6,20 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" class="mt-2">
     <ng-template pTemplate="item" let-item let-i="index">
-        <div class="flex justify-content-space-between">
-            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-            <div class="p-menuitem-text">
-                <b>{{ item.label }}</b>
+        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+            <div class="flex justify-content-space-between">
+                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+                <div class="p-menuitem-text">
+                    <b>{{ item.label }}</b>
+                </div>
+                <div
+                    *ngIf="i !== 0"
+                    class="pi pi-times"
+                    style="margin: -2px 0 0 8px"
+                    (click)="closeTabByIndex(i, $event)"
+                ></div>
             </div>
-            <div
-                *ngIf="i !== 0"
-                class="pi pi-times"
-                style="margin: -2px 0 0 8px"
-                (click)="closeTabByIndex(i, $event)"
-            ></div>
-        </div>
+        </a>
     </ng-template>
 </p-tabMenu>
 

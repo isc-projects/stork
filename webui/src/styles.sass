@@ -21,6 +21,11 @@ a
   &.no-underline:hover
     text-decoration: none
 
+  &.p-button, &.p-menuitem-link, &.p-tabview-nav-link, &.p-element
+    // Use the PrimeNG styles for the PrimeNG internal links.
+    color: revert-layer
+    text-decoration: revert-layer
+
 // header should occupy 100% width of parent div so elements inside a header could be right aligned
 p-header
   width: 100%

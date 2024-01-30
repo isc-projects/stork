@@ -351,7 +351,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         }
 
         this.openedSharedNetworks.splice(index, 1)
-        this.tabs.splice(index, 1)
+        this.tabs = [...this.tabs.slice(0, index), ...this.tabs.slice(index + 1)]
 
         if (this.activeTabIndex === index) {
             // Closing currently selected tab. Switch to previous tab.
@@ -418,10 +418,10 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     private appendTab(sharedNetwork: SharedNetwork) {
         this.openedSharedNetworks.push(sharedNetwork)
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: sharedNetwork.name,
             routerLink: `/dhcp/shared-networks/${sharedNetwork.id}`,
-        })
+        }]
     }
 
     /**

@@ -89,11 +89,11 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         this.openedMachines.push({
             machine,
         })
-        this.tabs.push({
+        this.tabs = [...this.tabs, {
             label: machine.address,
             id: 'machine-tab' + machine.id,
             routerLink: '/machines/' + machine.id,
-        })
+        }]
     }
 
     ngOnInit() {
@@ -319,7 +319,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     /** Closes a tab with the given index. */
     closeTab(event: PointerEvent, idx: number) {
         this.openedMachines.splice(idx - 1, 1)
-        this.tabs.splice(idx, 1)
+        this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
         if (this.activeTabIdx === idx) {
             this.switchToTab(idx - 1)
             if (idx - 1 > 0) {
