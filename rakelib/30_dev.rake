@@ -452,12 +452,19 @@ namespace :lint do
             sh FLAKE8, '--config', '.flake8', '--color=auto', *python_files
         end
 
-        desc 'Runs black, python linter tool'
+        desc 'Runs black, python linter tool
+        FIX - fix linting issues - default: false'
         task :black => [BLACK] do
             python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
             python_files = python_files.split("\n").map{ |string| string.strip }
-            puts "Running black:"
-            sh BLACK, "--check", *python_files
+            if ENV["FIX"] == "true"
+                puts "Running black (fix mode):"
+                sh BLACK, *python_files
+            else
+                puts "Running black (check mode):"
+                sh BLACK, "--check", *python_files
+            end
+
         end
     end
 end
