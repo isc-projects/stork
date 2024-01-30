@@ -103,8 +103,7 @@ def test_wait_for_success_use_sleep_time():
     try:
         f()
     except Exception:
-        logging.exception('')  # Just log the exception and continue
-        pass
+        logging.exception("")  # Just log the exception and continue
 
     # Assert
     assert call_count == 5

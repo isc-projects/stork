@@ -501,7 +501,10 @@ def cmd():
         help="Output target",
     )
     parser.add_argument(
-        "--seed", type=int, default=0, help="Seed used to initialize PRNG, defaults to system time"
+        "--seed",
+        type=int,
+        default=0,
+        help="Seed used to initialize PRNG, defaults to system time",
     )
 
     args = parser.parse_args()
@@ -529,8 +532,8 @@ def cmd():
 
     mac_selector = create_mac_selector()
     new_subnets = generate_v4_subnet(
-            outer, inner, mac_selector, args.reservations, args.start_id, **args.kwargs
-        )
+        outer, inner, mac_selector, args.reservations, args.start_id, **args.kwargs
+    )
     conf["Dhcp4"].update(new_subnets)
 
     conf_json = json.dumps(conf)

@@ -248,7 +248,7 @@ def find_and_check_tooltip(
             ActionChains(sel).move_to_element(element).perform()
             break
         except Exception:
-            logging.exception('find_and_check_tooltip() failed')
+            logging.exception("find_and_check_tooltip() failed")
             pass
     display_sleep(sel)
     if not use_in_refresh:
