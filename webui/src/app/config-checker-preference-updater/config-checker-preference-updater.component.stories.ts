@@ -14,6 +14,8 @@ import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { ButtonModule } from 'primeng/button'
 import { importProvidersFrom } from '@angular/core'
+import { FormsModule } from '@angular/forms'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 
 const mockData: ConfigCheckers = {
     items: [
@@ -51,6 +53,8 @@ export default {
                 HttpClientModule,
                 ToastModule,
                 ButtonModule,
+                FormsModule,
+                TriStateCheckboxModule
             ],
             declarations: [
                 HelpTipComponent,

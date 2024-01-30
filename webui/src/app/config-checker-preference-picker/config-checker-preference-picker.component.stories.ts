@@ -8,6 +8,8 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { ButtonModule } from 'primeng/button'
+import { FormsModule } from '@angular/forms'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 
 export default {
     title: 'App/ConfigCheckerPreferencePicker',
@@ -17,7 +19,7 @@ export default {
             providers: [],
         }),
         moduleMetadata({
-            imports: [TableModule, ChipModule, OverlayPanelModule, BrowserAnimationsModule, ButtonModule],
+            imports: [TableModule, ChipModule, OverlayPanelModule, BrowserAnimationsModule, ButtonModule, FormsModule, TriStateCheckboxModule],
             declarations: [ConfigCheckerPreferencePickerComponent, HelpTipComponent],
         }),
     ],
