@@ -125,8 +125,6 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
 
     /**
      * Event handler triggered when dialog box gets hidden.
-     *
-     * @param event triggered event.
      */
     handleOnHide() {
         this.hidden.emit()

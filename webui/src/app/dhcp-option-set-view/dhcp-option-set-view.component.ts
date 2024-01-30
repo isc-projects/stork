@@ -254,8 +254,6 @@ export class DhcpOptionSetViewComponent implements OnInit {
      *
      * When the checkbox is on, only the first-level options are displayed. Otherwise,
      * all options are displayed including inheritance from all levels.
-     *
-     * @param event an event emitted when the checkbox is clicked.
      */
     onCombinedChange() {
         this.displayedOptionNodes = this.currentLevelOnlyMode ? this.optionNodes[0] : this.combinedOptionNodes

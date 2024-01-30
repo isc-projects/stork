@@ -7,7 +7,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { Router, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { BehaviorSubject, of, throwError } from 'rxjs'
@@ -266,8 +266,10 @@ describe('SubnetsPageComponent', () => {
 
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
+        const route = fixture.debugElement.injector.get(ActivatedRoute)
         paramMap = convertToParamMap({})
         paramMapSubject = new BehaviorSubject(paramMap)
+        spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
         fixture.detectChanges()
     })
 

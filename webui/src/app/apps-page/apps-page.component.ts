@@ -350,8 +350,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      *
      * Clearing the config hashes causes the server to fetch and update
      * Kea configurations in the Stork database.
-     *
-     * @param event event triggered on button click.
      */
     onSyncKeaConfigs(): void {
         this.confirmService.confirm({
