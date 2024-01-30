@@ -181,9 +181,9 @@ describe('MachinesPageComponent', () => {
         expect(component.showUnauthorized).toBeFalse()
 
         // get references to select buttons
-        const selectBtns = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
-        const authSelectBtnEl = selectBtns[0]
-        const unauthSelectBtnEl = selectBtns[1]
+        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const authSelectBtnEl = selectButtons[0]
+        const unauthSelectBtnEl = selectButtons[1]
 
         // prepare response for call to getMachines for (un)authorized machines
         const getUnauthorizedMachinesResp: any = {

@@ -106,15 +106,16 @@
 <!-- State selector - tri-state checkbox -->
 <ng-template #stateSelector let-checker="checker">
     <div class="form-check">
-        <input
-            class="form-check-input"
+        <p-triStateCheckbox
+            [ngModel]="
+                getActualState(checker) === 'enabled' ? true : getActualState(checker) === 'disabled' ? false : null
+            "
+            (onChange)="onCheckerStateChanged(checker)"
             name="select-{{ checker.name }}"
-            id="select-{{ checker.name }}"
-            type="checkbox"
-            [checked]="getActualState(checker) === 'enabled'"
-            [indeterminate]="getActualState(checker) === 'inherit'"
-            (change)="onCheckerStateChanged(checker)"
-        />
+            inputId="select-{{ checker.name }}"
+            class="mr-2"
+        >
+        </p-triStateCheckbox>
         <label class="form-check-label p-capitalize-first" for="select-{{ checker.name }}">
             <span *ngIf="getActualState(checker) !== 'inherit'">
                 {{ getActualState(checker) }}

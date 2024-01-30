@@ -8,6 +8,8 @@ import { TableModule } from 'primeng/table'
 import { ConfigChecker } from '../backend'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker.component'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { FormsModule } from '@angular/forms'
 
 describe('ConfigCheckerPreferencePickerComponent', () => {
     let component: ConfigCheckerPreferencePickerComponent
@@ -15,7 +17,15 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [TableModule, ChipModule, OverlayPanelModule, NoopAnimationsModule, ButtonModule],
+            imports: [
+                TableModule,
+                ChipModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                ButtonModule,
+                FormsModule,
+                TriStateCheckboxModule,
+            ],
             declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
         }).compileComponents()
     })
