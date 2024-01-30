@@ -66,8 +66,8 @@
             </div>
         </div>
     </ng-template>
-    <ng-template let-report pTemplate="listItem">
-        <div class="w-full">
+    <ng-template pTemplate="list" let-reports>
+        <div class="w-full" *ngFor="let report of reports">
             <p-divider styleClass="report-divider" type="solid" align="left">
                 <p-tag [severity]="!report.content ? 'success' : ''">
                     {{ report.checker }}

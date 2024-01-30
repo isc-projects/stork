@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
@@ -226,7 +226,7 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).not.toContain('aaa')
     }))
 
-    it('should button menu click trigger the download handler', async () => {
+    it('should button menu click trigger the download handler', fakeAsync(() => {
         // Prepare the data
         const getAuthorizedMachinesResp: any = {
             items: [
@@ -239,7 +239,7 @@ describe('MachinesPageComponent', () => {
         // ngOnInit was already called before we prepared the static response.
         // We have to reload the machines list manually.
         component.loadMachines({ first: 0, rows: 0, filters: {} })
-        await fixture.whenStable()
+        flush()
         fixture.detectChanges()
 
         // Show the menu.
@@ -247,8 +247,7 @@ describe('MachinesPageComponent', () => {
         expect(menuButton).not.toBeNull()
 
         menuButton.triggerEventHandler('click', { currentTarget: menuButton.nativeElement })
-        await fixture.whenStable()
-        await fixture.whenRenderingDone()
+        flush()
         fixture.detectChanges()
 
         // Check the dump button.
@@ -260,13 +259,14 @@ describe('MachinesPageComponent', () => {
 
         const downloadSpy = spyOn(component, 'downloadDump').and.returnValue()
 
-        dumpButton.triggerEventHandler('click', new PointerEvent('click', { relatedTarget: dumpButton.nativeElement }))
-        await fixture.whenStable()
+        const dumpButtonElement = dumpButton.nativeElement as HTMLButtonElement
+        dumpButtonElement.click()
+        flush()
         fixture.detectChanges()
 
         expect(downloadSpy).toHaveBeenCalledTimes(1)
         expect(downloadSpy.calls.first().args[0].id).toBe(1)
-    })
+    }))
 
     it('should have breadcrumbs', () => {
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
