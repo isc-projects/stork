@@ -857,11 +857,6 @@ func (module *ConfigModule) commitSubnetUpdate(ctx context.Context) (context.Con
 	return ctx, nil
 }
 
-// Begins deleting a subnet. Currently it is no-op but may evolve in the future.
-func (module *ConfigModule) BeginSubnetDelete(ctx context.Context) (context.Context, error) {
-	return ctx, nil
-}
-
 // Creates requests to delete a subnet. It prepares necessary commands to be sent
 // to Kea upon commit.
 func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {

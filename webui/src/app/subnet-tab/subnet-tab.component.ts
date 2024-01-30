@@ -213,7 +213,7 @@ export class SubnetTabComponent implements OnInit {
                 this.subnetDeleting = false
                 this.msgService.add({
                     severity: 'success',
-                    summary: `Subnet id=${this.subnet.id} successfully deleted`,
+                    summary: `Subnet ${this.subnet.subnet} successfully deleted`,
                 })
                 // Notify the parent that the subnet was deleted and the tab can be closed.
                 this.subnetDelete.emit(this.subnet)
@@ -226,7 +226,7 @@ export class SubnetTabComponent implements OnInit {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Cannot delete the subnet',
-                    detail: `Failed to delete the subnet id=${this.subnet.id}: ` + msg,
+                    detail: `Failed to delete the subnet ${this.subnet.subnet} : ` + msg,
                     life: 10000,
                 })
             })

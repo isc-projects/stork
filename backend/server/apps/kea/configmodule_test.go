@@ -2469,17 +2469,6 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
 	require.Len(t, agents.RecordedCommands, 1)
 }
 
-// Test first stage of deleting a subnet.
-func TestBeginSubnetDelete(t *testing.T) {
-	module := NewConfigModule(nil)
-	require.NotNil(t, module)
-
-	ctx1 := context.Background()
-	ctx2, err := module.BeginSubnetDelete(ctx1)
-	require.NoError(t, err)
-	require.Equal(t, ctx1, ctx2)
-}
-
 // Test second stage of deleting an IPv4 subnet.
 func TestApplySubnet4Delete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

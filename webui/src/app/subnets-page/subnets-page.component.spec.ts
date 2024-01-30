@@ -51,6 +51,7 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { AccordionModule } from 'primeng/accordion'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { HttpEvent } from '@angular/common/http'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -990,7 +991,7 @@ describe('SubnetsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        const subnet: any = {
+        const subnet: Subnet & HttpEvent<Subnet> = {
             id: 5,
             subnet: '192.0.2.0/24',
             localSubnets: [
@@ -1008,6 +1009,7 @@ describe('SubnetsPageComponent', () => {
                     },
                 },
             ],
+            type: undefined,
         }
 
         spyOn(dhcpService, 'getSubnet').and.returnValue(of(subnet))
