@@ -219,6 +219,33 @@ Detailed instructions for setting up the operating system to use this
 repository are available under the ``Set Me Up`` button on the
 Cloudsmith repository page.
 
+A few command line tools are required for setting up the repository:
+
+- ``bash`` to execute the ``setup.*.sh`` scripts that use bash-specific features
+  like ``==`` inside the ``test`` expression, ``local`` variables, ``function``
+  keyword in function declarations.
+- ``curl`` to fetch the ``setup.*.sh`` script itself, but also for actions
+  carried out by the script like fetching GPG keys, checking if URLs are
+  available, or fetching other scripts.
+- ``cut`` for the output manipulation done by the script
+- ``gpg`` for importing GPG keys in the script
+- ``sed`` for various textual substitutions done by the script
+- ``sudo`` for elevating privileges required by the package manager
+- ``apt-get`` in case of a Debian-based distribution
+- ``rpm`` in case of an RPM-based distribution
+- one of ``dnf``, ``microdnf``, ``yum``, ``zypper`` in case of an RPM-based
+  distribution
+
+Other command line tools may be required based on how the script evolves or
+based on what OS the script is running on:
+
+- ``grep`` and ``head`` for filtering output
+- ``sort`` for sorting output
+- ``fmt`` and ``xargs`` for better reporting of errors
+- ``uname`` to detect the OS the script is running on
+- ``python`` and ``pip`` for a redundant way of automatically detecting the OS in
+  case the main OS detection mechanism does not work
+
 It is possible to install both ``stork-agent`` and ``stork-server`` on
 the same machine. It is useful in small deployments with a single
 monitored machine, to avoid setting up a dedicated system for the Stork
@@ -311,7 +338,7 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 
    Providing the CA certificate path enables the TLS client certificate
    verification. Any HTTP request to the server assigned with a missing,
-   invalid, or untrusted TLS certificate will be rejected. 
+   invalid, or untrusted TLS certificate will be rejected.
 
 * ``STORK_REST_STATIC_FILES_DIR`` - a directory with static files served in the user interface
 
@@ -398,7 +425,7 @@ Stork is distributed with a basic configuration for Nginx. It is available,
 after installation from a package, in the ``dist/server/usr/share/stork/examples/nginx-stork.conf`` file.
 The same file is located in git repository: ``etc/nginx-stork.conf``.
 
-Stork Server can be configured to expose the web application from a URL subdirectory. 
+Stork Server can be configured to expose the web application from a URL subdirectory.
 It may be needed when there is no dedicated domain for Stork Server, and the
 web application is served from the subdirectory of an existing domain
 (e.g., ``http://example.com/stork``).
@@ -1261,7 +1288,7 @@ The Stork build system fully supports Linux and MacOS operating systems on the A
 prepared to handle FreeBSD and OpenBSD with some limitations but support for these systems isn't actively maintained.
 
 The Stork agent, server, and tool are written in pure Golang, which means they can be easily cross-compiled on all
-supported platforms. 
+supported platforms.
 
 You can use the ``rake utils:list_go_supported_platforms`` to get a list of all supported operating systems and
 architectures.
@@ -1293,7 +1320,7 @@ to build the packages:
 It is not recommended to compile Stork for 32-bit architectures as it may cause problems with unexpected integer
 overflows. Stork was never designed to operate on non-posix platforms, so Windows is not
 and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
-may suppress some errors related to the file operations on the NTFS filesystem. 
+may suppress some errors related to the file operations on the NTFS filesystem.
 
 Integration With Prometheus and Grafana
 =======================================
