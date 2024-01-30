@@ -19,7 +19,15 @@ export default {
             providers: [],
         }),
         moduleMetadata({
-            imports: [TableModule, ChipModule, OverlayPanelModule, BrowserAnimationsModule, ButtonModule, FormsModule, TriStateCheckboxModule],
+            imports: [
+                TableModule,
+                ChipModule,
+                OverlayPanelModule,
+                BrowserAnimationsModule,
+                ButtonModule,
+                FormsModule,
+                TriStateCheckboxModule,
+            ],
             declarations: [ConfigCheckerPreferencePickerComponent, HelpTipComponent],
         }),
     ],
