@@ -128,7 +128,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
      *
      * @param event triggered event.
      */
-    handleOnHide(event) {
+    handleOnHide() {
         this.hidden.emit()
     }
 

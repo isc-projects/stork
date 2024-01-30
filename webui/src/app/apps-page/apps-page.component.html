@@ -55,7 +55,7 @@
                     label="Resynchronize Kea Configs"
                     icon="pi pi-file-import"
                     styleClass="p-button-warning"
-                    (click)="onSyncKeaConfigs($event)"
+                    (click)="onSyncKeaConfigs()"
                 ></p-button>
             </div>
         </div>
@@ -127,14 +127,14 @@
         *ngIf="appTab.app.type === 'bind9'"
         [appTab]="appTab"
         [refreshedAppTab]="refreshedAppTab"
-        (refreshApp)="onRefreshApp($event)"
+        (refreshApp)="onRefreshApp()"
         (renameApp)="onRenameApp($event)"
     ></app-bind9-app-tab>
     <app-kea-app-tab
         *ngIf="appTab.app.type === 'kea'"
         [appTab]="appTab"
         [refreshedAppTab]="refreshedAppTab"
-        (refreshApp)="onRefreshApp($event)"
+        (refreshApp)="onRefreshApp()"
         (renameApp)="onRenameApp($event)"
     ></app-kea-app-tab>
 </div>

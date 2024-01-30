@@ -27,5 +27,6 @@ describe('util types', () => {
                 biz: 'biz',
             },
         }
+        expect(obj).toBeDefined()
     })
 })

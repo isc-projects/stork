@@ -335,7 +335,7 @@ describe('DhcpOptionSetViewComponent', () => {
 
         // Toggle displaying all options to subnet-level options only.
         component.currentLevelOnlyMode = true
-        component.onCombinedChange(new Event('click'))
+        component.onCombinedChange()
 
         // Now, we should have 3 options only.
         expect(component.displayedOptionNodes.length).toBe(3)
@@ -346,7 +346,7 @@ describe('DhcpOptionSetViewComponent', () => {
 
         // Toggle again and we should be back to 4 options.
         component.currentLevelOnlyMode = false
-        component.onCombinedChange(new Event('click'))
+        component.onCombinedChange()
 
         expect(component.displayedOptionNodes.length).toBe(4)
     })

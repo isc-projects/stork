@@ -320,7 +320,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /** Callback called on click the refresh button. */
-    onRefreshApp(event: PointerEvent) {
+    onRefreshApp() {
         this._refreshAppState(this.appTab.app)
     }
 
@@ -353,7 +353,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      *
      * @param event event triggered on button click.
      */
-    onSyncKeaConfigs(event): void {
+    onSyncKeaConfigs(): void {
         this.confirmService.confirm({
             message:
                 'This operation instructs the server to fetch the configurations from all Kea servers' +

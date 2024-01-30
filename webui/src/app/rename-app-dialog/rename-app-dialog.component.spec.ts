@@ -139,7 +139,7 @@ describe('RenameAppDialogComponent', () => {
         // Cancel the rename and simulate emitting the onHide event from the
         // component. Appropriate emitter should be triggered.
         component.cancel()
-        component.handleOnHide(new Event('onHide'))
+        component.handleOnHide()
         expect(component.submitted.emit).not.toHaveBeenCalled()
         expect(component.hidden.emit).toHaveBeenCalled()
 

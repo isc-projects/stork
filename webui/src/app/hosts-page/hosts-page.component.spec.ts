@@ -7,7 +7,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
+import { convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError, BehaviorSubject } from 'rxjs'
@@ -41,13 +41,10 @@ import { DividerModule } from 'primeng/divider'
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
     let fixture: ComponentFixture<HostsPageComponent>
-    let router: Router
-    let route: ActivatedRoute
     let dhcpApi: DHCPService
     let messageService: MessageService
     let paramMap: any
     let paramMapSubject: BehaviorSubject<any>
-    let paramMapSpy: any
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -109,13 +106,10 @@ describe('HostsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsPageComponent)
         component = fixture.componentInstance
-        router = fixture.debugElement.injector.get(Router)
-        route = fixture.debugElement.injector.get(ActivatedRoute)
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
         paramMap = convertToParamMap({})
         paramMapSubject = new BehaviorSubject(paramMap)
-        paramMapSpy = spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
         fixture.detectChanges()
     })
 

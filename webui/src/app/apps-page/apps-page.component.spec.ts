@@ -137,7 +137,7 @@ describe('AppsPageComponent', () => {
     })
 
     it('should request synchronization configurations from Kea', fakeAsync(() => {
-        component.onSyncKeaConfigs(null)
+        component.onSyncKeaConfigs()
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
@@ -158,7 +158,7 @@ describe('AppsPageComponent', () => {
     }))
 
     it('should report an error while requesting synchronization configurations from Kea', fakeAsync(() => {
-        component.onSyncKeaConfigs(null)
+        component.onSyncKeaConfigs()
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
@@ -179,7 +179,7 @@ describe('AppsPageComponent', () => {
     }))
 
     it('should cancel synchronizing conifgurations from Kea', fakeAsync(() => {
-        component.onSyncKeaConfigs(null)
+        component.onSyncKeaConfigs()
         fixture.detectChanges()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))

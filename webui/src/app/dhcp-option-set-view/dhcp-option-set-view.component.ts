@@ -257,7 +257,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      *
      * @param event an event emitted when the checkbox is clicked.
      */
-    onCombinedChange(event) {
+    onCombinedChange() {
         this.displayedOptionNodes = this.currentLevelOnlyMode ? this.optionNodes[0] : this.combinedOptionNodes
     }
 }

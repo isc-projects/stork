@@ -26,7 +26,6 @@ describe('UsersPageComponent', () => {
     let component: UsersPageComponent
     let fixture: ComponentFixture<UsersPageComponent>
     let usersApi: UsersService
-    let msgService: MessageService
     let confirmService: ConfirmationService
     let paramMapValue: Subject<ParamMap> = new Subject()
 
@@ -83,7 +82,6 @@ describe('UsersPageComponent', () => {
         component = fixture.componentInstance
         usersApi = fixture.debugElement.injector.get(UsersService)
         confirmService = fixture.debugElement.injector.get(ConfirmationService)
-        msgService = fixture.debugElement.injector.get(MessageService)
         paramMapValue.next(convertToParamMap({ id: 'list' }))
         fixture.detectChanges()
     })
