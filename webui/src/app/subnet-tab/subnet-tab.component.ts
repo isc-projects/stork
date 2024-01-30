@@ -208,7 +208,7 @@ export class SubnetTabComponent implements OnInit {
         // button multiple times and sending multiple requests.
         this.subnetDeleting = true
         lastValueFrom(this.dhcpApi.deleteSubnet(this.subnet.id))
-            .then((data) => {
+            .then((/* data */) => {
                 // Re-enable the delete button.
                 this.subnetDeleting = false
                 this.msgService.add({
