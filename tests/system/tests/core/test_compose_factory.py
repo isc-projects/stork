@@ -39,21 +39,25 @@ def test_create_compose_single_compose_file():
 
 @patch("subprocess.run")
 def test_create_compose_uses_environment_variables(subprocess_run_mock: MagicMock):
-    source_env_vars = {"foo": "1", "bar": "2"}
     compose = create_docker_compose(
-        env_vars=source_env_vars, compose_detector=fake_compose_binary_detector
+        extra_env_vars={"foo": "1", "bar": "2"},
+        compose_detector=fake_compose_binary_detector,
+        base_env_vars={"boz": "3"},
     )
     compose.up()
     subprocess_run_mock.assert_called_once()
     target_env_vars = subprocess_run_mock.call_args.kwargs["env"]
-    assert source_env_vars.items() <= target_env_vars.items()
+
+    assert "PWD" in target_env_vars
+    del target_env_vars["PWD"]
+    assert target_env_vars == {"foo": "1", "bar": "2", "boz": "3"}
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"0.0.0.0:42080", b""))
 def test_port_uses_localhost_instead_of_zero_host(subprocess_run_mock: MagicMock):
-    if "DEFAULT_MAPPED_ADDRESS" in os.environ:
-        del os.environ["DEFAULT_MAPPED_ADDRESS"]
-    compose = create_docker_compose(compose_detector=fake_compose_binary_detector)
+    compose = create_docker_compose(
+        compose_detector=fake_compose_binary_detector, base_env_vars={}
+    )
     address, _ = compose.port("server", 8080)
     subprocess_run_mock.assert_called_once()
     assert address == "localhost"
@@ -71,11 +75,10 @@ def test_port_preserves_custom_address(subprocess_run_mock: MagicMock):
 def test_port_uses_default_address_from_environment_variable(
     subprocess_run_mock: MagicMock,
 ):
-    try:
-        os.environ["DEFAULT_MAPPED_ADDRESS"] = "foobar"
-        compose = create_docker_compose(compose_detector=fake_compose_binary_detector)
-        address, _ = compose.port("server", 8080)
-        subprocess_run_mock.assert_called_once()
-        assert address == "foobar"
-    finally:
-        del os.environ["DEFAULT_MAPPED_ADDRESS"]
+    compose = create_docker_compose(
+        compose_detector=fake_compose_binary_detector,
+        base_env_vars={"DEFAULT_MAPPED_ADDRESS": "foobar"},
+    )
+    address, _ = compose.port("server", 8080)
+    subprocess_run_mock.assert_called_once()
+    assert address == "foobar"

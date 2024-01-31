@@ -835,8 +835,7 @@ def test_call_command_adds_env_vars(subprocess_run_mock: MagicMock):
     assert env["global_foo"] == "1"
     assert env["local_bar"] == "2"
     assert env["PWD"] == "project-dir"
-    # There is more variables from OS
-    assert len(env) > 3
+    assert len(env) == 3
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))

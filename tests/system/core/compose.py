@@ -168,7 +168,7 @@ class DockerCompose:
         used by default.
     use_build_kit: bool
         Builds images using a BuiltKit mode
-    default_mapped_address: str
+    default_mapped_hostname: str
         If provided, then the port command's default address (0.0.0.0) will be
         replaced with this value.
     compose_base: list[str]
@@ -202,7 +202,7 @@ class DockerCompose:
         self._pull = pull
         self._build = build
         self._env_file = env_file
-        self._env_vars = env_vars
+        self._env_vars = env_vars if env_vars is not None else os.environ.copy()
         self._use_build_kit = use_build_kit
         self._default_mapped_hostname = default_mapped_hostname
         self._compose_base = (
@@ -640,9 +640,7 @@ class DockerCompose:
         return yaml.safe_load(stdout)
 
     def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
-        env = os.environ.copy()
-        if self._env_vars is not None:
-            env.update(self._env_vars)
+        env = self._env_vars.copy()
         if env_vars is not None:
             env.update(env_vars)
         env["PWD"] = self._project_directory

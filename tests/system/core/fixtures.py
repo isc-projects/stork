@@ -306,7 +306,7 @@ def _prepare_kea_wrapper(
         lease_generators.gen_dhcp6_lease_file(f)
 
     # Setup wrapper
-    compose = create_docker_compose(env_vars=env_vars)
+    compose = create_docker_compose(extra_env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service_instance)
@@ -361,7 +361,7 @@ def bind9_service(request):
 
     # Setup wrapper
     service_name = param["service_name"]
-    compose = create_docker_compose(env_vars=env_vars, build_args=build_args)
+    compose = create_docker_compose(extra_env_vars=env_vars, build_args=build_args)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Bind9(compose, service_name, server_service_instance)

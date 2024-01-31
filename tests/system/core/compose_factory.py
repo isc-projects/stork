@@ -29,16 +29,17 @@ def detect_compose_binary():
 
 
 def create_docker_compose(
-    env_vars: Dict[str, str] = None,
+    extra_env_vars: Dict[str, str] = None,
     build_args: Dict[str, str] = None,
     compose_detector=detect_compose_binary,
+    base_env_vars: Dict[str, str] = None,
 ) -> DockerCompose:
     """
     Creates the docker-compose controller that uses the system tests
     docker-compose file.
 
-    The provided environment variables will be used in all system calls. The
-    build arguments will be used in build calls.
+    The provided extra environment variables will be used in all system calls.
+    The build arguments will be used in build calls.
 
     The docker-compose runs with a fixed project name to avoid duplicating the
     containers when the developer works with multiple project directories.
@@ -54,9 +55,17 @@ def create_docker_compose(
 
     If the CS_REPO_ACCESS_TOKEN is set to non-empty value, the premium profile
     is enabled.
+
+    The factory accepts the base environment dictionary to allow overriding the
+    environment variables in the tests. If provided, it is used instead of the
+    system environment variables.
     """
     profiles = []
-    if os.environ.get("CS_REPO_ACCESS_TOKEN", "") != "":
+
+    env_vars = base_env_vars if base_env_vars is not None else os.environ.copy()
+    env_vars.update(extra_env_vars if extra_env_vars is not None else {})
+
+    if env_vars.get("CS_REPO_ACCESS_TOKEN", "") != "":
         profiles.append("premium")
 
     return DockerCompose(
@@ -66,7 +75,7 @@ def create_docker_compose(
         env_vars=env_vars,
         build_args=build_args,
         build=True,
-        default_mapped_hostname=os.environ.get("DEFAULT_MAPPED_ADDRESS", "localhost"),
+        default_mapped_hostname=env_vars.get("DEFAULT_MAPPED_ADDRESS", "localhost"),
         compose_base=compose_detector(),
         profiles=profiles,
     )
