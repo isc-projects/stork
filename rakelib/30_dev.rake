@@ -160,7 +160,8 @@ namespace :unittest do
                     rel_path = file.gsub("isc.org/stork/", "backend/")
 
                     # Skips the mock files.
-                    if file.end_with? "mock_test.go"
+                    filename = file.gsub(/:\d+:/, "")
+                    if filename.end_with? "mock_test.go"
                         next
                     end
 
@@ -204,7 +205,7 @@ namespace :unittest do
                     ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
-                                        'ExportSecret'])
+                                            'ExportSecret'])
                     end
 
                     if cov < 35 and not ignore_list.include? func
