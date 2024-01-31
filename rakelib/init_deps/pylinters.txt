@@ -4,17 +4,17 @@
 #
 #    pip-compile --strip-extras rakelib/init_deps/pylinters.in
 #
-astroid==3.0.1
+astroid==3.0.2
     # via pylint
-black==23.10.0
+black==24.1.1
     # via -r rakelib/init_deps/pylinters.in
 click==8.1.7
     # via black
-dill==0.3.7
+dill==0.3.8
     # via pylint
-flake8==6.1.0
+flake8==7.0.0
     # via -r rakelib/init_deps/pylinters.in
-isort==5.12.0
+isort==5.13.2
     # via pylint
 mccabe==0.7.0
     # via
@@ -24,9 +24,9 @@ mypy-extensions==1.0.0
     # via black
 packaging==23.2
     # via black
-pathspec==0.11.2
+pathspec==0.12.1
     # via black
-platformdirs==3.11.0
+platformdirs==4.2.0
     # via
     #   black
     #   pylint
@@ -34,17 +34,17 @@ pycodestyle==2.11.1
     # via
     #   -r rakelib/init_deps/pylinters.in
     #   flake8
-pyflakes==3.1.0
+pyflakes==3.2.0
     # via flake8
-pylint==3.0.1
+pylint==3.0.3
     # via -r rakelib/init_deps/pylinters.in
 tomli==2.0.1
     # via
     #   black
     #   pylint
-tomlkit==0.12.1
+tomlkit==0.12.3
     # via pylint
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   astroid
     #   black
