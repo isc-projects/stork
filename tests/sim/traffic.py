@@ -1,6 +1,7 @@
 """
 This file contains functions that generate DHCP and DNS traffic.
 """
+
 import re
 import subprocess
 import sys

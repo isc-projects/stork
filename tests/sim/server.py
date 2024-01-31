@@ -3,6 +3,7 @@ This module provides a simple interface to the Stork server for use in the
 simulator.
 TODO: Replace it with OpenAPI client generated from the Stork server API.
 """
+
 import os
 import requests
 
