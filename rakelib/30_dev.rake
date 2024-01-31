@@ -498,6 +498,16 @@ namespace :audit do
             sh GOVULNCHECK, "-test", "./..."
         end
     end
+
+    desc 'Check the Python security issues'
+    task :python => [PIP_AUDIT] do
+        opts = []
+        python_requirement_files.each do |r|
+            opts.append "-r", r.ext('txt')
+        end
+
+        sh PIP_AUDIT, *opts
+    end
 end
 
 

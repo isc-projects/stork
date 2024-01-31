@@ -555,6 +555,7 @@ yamlinc_ver='0.1.10'
 bundler_ver='2.3.26'
 shellcheck_ver='0.9.0'
 pip_tools_ver='7.3.0'
+pip_audit_ver='2.7.0'
 
 # System-dependent variables
 case OS
@@ -1073,6 +1074,13 @@ add_version_guard(PIP_COMPILE, pip_tools_ver)
 
 PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
 file PIP_SYNC => [PIP_COMPILE]
+
+PIP_AUDIT = File.join(python_tools_dir, "bin", "pip-audit")
+file PIP_AUDIT => [PIP] do
+    sh PIP, "install", "pip-audit==#{pip_audit_ver}"
+    sh "touch", "-c", PIP_AUDIT
+    sh PIP_AUDIT, "--version"
+end
 
 PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
