@@ -23,6 +23,7 @@ from openapi_client.models.update_host_begin_response import UpdateHostBeginResp
 from openapi_client.models.event import Event
 from openapi_client.models.host import Host
 from openapi_client.models.puller import Puller
+from openapi_client.exceptions import ServiceException
 
 
 T1 = TypeVar("T1")
@@ -333,8 +334,16 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     # Delete
 
+    @wait_for_success(
+        ServiceException, wait_msg="Waiting to delete machine...", max_tries=5
+    )
     def delete_machine(self, machine_id: int):
-        """Deletes a machine and references."""
+        """
+        Deletes a machine and references.
+
+        A deadlock may occur if the config review is in progress. The waiting
+        decorator is used as a workaround.
+        """
         api_instance = ServicesApi(self._api_client)
         return api_instance.delete_machine(id=machine_id)
 
