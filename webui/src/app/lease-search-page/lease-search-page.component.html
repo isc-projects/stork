@@ -31,14 +31,43 @@
                     Use the input box to specify a searched lease. You can search the lease by one of the following
                     lease properties:
                 </p>
-                <ul>
-                    <li>IP address</li>
-                    <li>delegated prefix (excluding prefix length)</li>
-                    <li>MAC address</li>
-                    <li>DHCPv4 client identifier</li>
-                    <li>DHCPv6 DUID</li>
-                    <li>hostname</li>
-                </ul>
+                <table class="alternate-row-colors">
+                    <tr>
+                        <th></th>
+                        <th>kea-dhcp4</th>
+                        <th>kea-dhcp6</th>
+                    </tr>
+                    <tr>
+                        <th>IP address</th>
+                        <td>&#x2705;</td>
+                        <td>&#x2705;</td>
+                    </tr>
+                    <tr>
+                        <th>hostname</th>
+                        <td>&#x2705;</td>
+                        <td>&#x2705;</td>
+                    </tr>
+                    <tr>
+                        <th>MAC address</th>
+                        <td>&#x2705;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>DHCPv4 client identifier</th>
+                        <td>&#x2705;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>delegated prefix (excluding prefix length)</th>
+                        <td></td>
+                        <td>&#x2705;</td>
+                    </tr>
+                    <tr>
+                        <th>DHCPv6 DUID</th>
+                        <td></td>
+                        <td>&#x2705;</td>
+                    </tr>
+                </table>
                 <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
                 <ul>
                     <li>01:02:03:04:05</li>
@@ -248,8 +277,8 @@
                     </td>
                     <td *ngIf="searchStatus === Status.NotSearched" colspan="5">
                         <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
-                        Search for DHCP leases on the Kea servers by IP address, delegated prefix, client identifier,
-                        DHCPv6 DUID or hostname. Click help button for details.
+                        Search for leases on the Kea DHCP servers by IP address, delegated prefix, MAC address, client
+                        identifier, DHCPv6 DUID, or hostname. Click the help button next to the search form for details.
                     </td>
                 </tr>
             </ng-template>
