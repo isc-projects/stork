@@ -1,12 +1,7 @@
 <!-- filter bar -->
 <div *ngIf="isTable" style="margin: 10px 0; display: flex; flex-wrap: wrap">
     <div style="width: 20em">
-        <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)">
-            <ng-template let-item>
-                <i [ngClass]="item.icon" style="margin-right: 6px; font-size: 1.2em"></i>
-                <span>{{ item.label }}</span>
-            </ng-template>
-        </p-selectButton>
+        <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)"></p-selectButton>
     </div>
 
     <div style="display: flex">

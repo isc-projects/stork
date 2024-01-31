@@ -28,7 +28,7 @@
                             [options]="authenticationMethods"
                             [(ngModel)]="authenticationMethod"
                         >
-                            <ng-template let-item>
+                            <ng-template let-item pTemplate>
                                 <img
                                     src="/assets/authentication-methods/{{ item.id }}.png"
                                     (error)="onMissingIcon($event)"
