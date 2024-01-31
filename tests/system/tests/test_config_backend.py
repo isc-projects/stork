@@ -16,10 +16,10 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
     assert hosts is not None
     assert len(hosts.items) == 1
     host = hosts.items[0]
-    local_hosts = host["local_hosts"]
+    local_hosts = host.local_hosts
     assert len(local_hosts) == 1
     local_host = local_hosts[0]
-    assert local_host["data_source"] == "api"
+    assert local_host.data_source == "api"
 
 
 @kea_parametrize("agent-kea-premium-host-database")
@@ -41,8 +41,8 @@ def test_add_host_reservation(kea_service: Kea, server_service: Server):
     }
 
     with server_service.transaction_create_host_reservation() as (ctx, submit, _):
-        daemon = [d for d in ctx["daemons"] if d["name"] == "dhcp4"][0]
-        raw_host["local_hosts"].append({"daemon_id": daemon["id"]})
+        daemon = [d for d in ctx.daemons if d.name == "dhcp4"][0]
+        raw_host["local_hosts"].append({"daemon_id": daemon.id})
         submit(raw_host)
 
     server_service.wait_for_host_reservation_pulling()
@@ -64,7 +64,7 @@ def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: S
     server_service.wait_for_next_machine_states()
     server_service.wait_for_host_reservation_pulling()
 
-    host_id = server_service.list_hosts("192.0.2.42")["items"][0]["id"]
+    host_id = server_service.list_hosts("192.0.2.42").items[0].id
 
     # Only one transaction for a given user may exist. The transaction
     # recreation after canceling checks if the previous one was correctly
@@ -94,11 +94,11 @@ def test_update_host_reservation(kea_service: Kea, server_service: Server):
     host = hosts.items[0]
 
     # Modify the host reservation.
-    host["id"] = host.id
-    host["hostname"] = "barfoo"
-    host["host_identifiers"][0]["id_type"] = "client-id"
-    host["host_identifiers"][0]["id_hex_value"] = "06:05:04:03:02:01"
-    host["address_reservations"][0]["address"] = "192.0.2.24"
+    host.id = host.id
+    host.hostname = "barfoo"
+    host.host_identifiers[0].id_type = "client-id"
+    host.host_identifiers[0].id_hex_value = "06:05:04:03:02:01"
+    host.address_reservations[0].address = "192.0.2.24"
 
     # Apply changes.
     server_service.update_host_reservation(host)
@@ -157,7 +157,7 @@ def test_get_host_reservations_from_radius(
     assert hosts is not None
     assert len(hosts.items) == 1
     host = hosts.items[0]
-    local_hosts = host["local_hosts"]
+    local_hosts = host.local_hosts
     assert len(local_hosts) == 1
     local_host = local_hosts[0]
-    assert local_host["data_source"] == "api"
+    assert local_host.data_source == "api"

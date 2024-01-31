@@ -4,6 +4,8 @@
 #
 #    pip-compile --strip-extras rakelib/init_deps/pytest.in
 #
+annotated-types==0.6.0
+    # via pydantic
 exceptiongroup==1.2.0
     # via pytest
 iniconfig==2.0.0
@@ -12,6 +14,10 @@ packaging==23.2
     # via pytest
 pluggy==1.4.0
     # via pytest
+pydantic==2.6.0
+    # via -r rakelib/init_deps/pytest.in
+pydantic-core==2.16.1
+    # via pydantic
 pytest==8.0.0
     # via
     #   -r rakelib/init_deps/pytest.in
@@ -26,5 +32,9 @@ six==1.16.0
     # via python-dateutil
 tomli==2.0.1
     # via pytest
+typing-extensions==4.9.0
+    # via
+    #   pydantic
+    #   pydantic-core
 urllib3==2.2.0
     # via -r rakelib/init_deps/pytest.in

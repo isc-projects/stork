@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from typing import Callable, List, Optional, TypeVar
 
 import openapi_client
-import openapi_client.model_utils
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.base import ComposeServiceWrapper
@@ -19,12 +18,11 @@ from openapi_client.api.services_api import (
 )
 from openapi_client.api.settings_api import SettingsApi
 from openapi_client.api.users_api import Groups, User, UserAccount, Users, UsersApi
-from openapi_client.model.create_host_begin_response import CreateHostBeginResponse
-from openapi_client.model.update_host_begin_response import UpdateHostBeginResponse
-from openapi_client.model.event import Event
-from openapi_client.model.host import Host
-from openapi_client.model.puller import Puller
-from openapi_client.model.dhcp_daemon import DhcpDaemon
+from openapi_client.models.create_host_begin_response import CreateHostBeginResponse
+from openapi_client.models.update_host_begin_response import UpdateHostBeginResponse
+from openapi_client.models.event import Event
+from openapi_client.models.host import Host
+from openapi_client.models.puller import Puller
 
 
 T1 = TypeVar("T1")
@@ -59,7 +57,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     def close(self):
         """Free the resources used by the wrapper."""
-        self._api_client.close()
+        self._api_client = None
 
     def __enter__(self):
         """
@@ -111,14 +109,16 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     ) -> User:
         """Logs in a user. Returns the user info."""
         api_instance = UsersApi(self._api_client)
-        user, _, headers = api_instance.create_session(
+        http_info = api_instance.create_session_with_http_info(
             credentials={
                 "identifier": username,
                 "secret": password,
                 "authentication_method_id": authentication_method_id,
             },
-            _return_http_data_only=False,
         )
+        headers = http_info.headers
+        user = http_info.data
+
         session_cookie = headers["Set-Cookie"]
         self._api_client.cookie = session_cookie
         return user
@@ -164,8 +164,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             params["dhcp_version"] = family
 
         api_instance = DHCPApi(self._api_client)
-        with _allow_nulls():
-            return api_instance.get_subnets(**params)
+        return api_instance.get_subnets(**params)
 
     def list_events(
         self,
@@ -237,8 +236,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             params["host_id"] = host_id
 
         api_instance = DHCPApi(self._api_client)
-        with _allow_nulls():
-            return api_instance.get_leases(**params)
+        return api_instance.get_leases(**params)
 
     def list_hosts(self, text=None) -> Hosts:
         """Lists the hosts based on the host identifier."""
@@ -246,8 +244,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         if text is not None:
             params["text"] = text
         api_instance = DHCPApi(self._api_client)
-        with _allow_nulls():
-            return api_instance.get_hosts(**params)
+        return api_instance.get_hosts(**params)
 
     def list_config_reports(
         self, daemon_id: int, limit=10, start=0
@@ -257,21 +254,12 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         params = {"start": start, "limit": limit, "id": daemon_id}
         api_instance = ServicesApi(self._api_client)
 
-        # OpenAPI generator doesn't support multiple status codes and empty
-        # responses. It expects that the data will always be returned. It is
-        # a workaround that adds a string to a list of accepted types. The
-        # empty string is received if the status is not equal to 200.
-        settings = api_instance.get_daemon_config_reports_endpoint.settings
-        settings["response_type"] = tuple(
-            list(settings["response_type"])
-            + [
-                str,
-            ]
+        http_info = api_instance.get_daemon_config_reports_with_http_info(
+            **params,
         )
 
-        reports, status, _ = api_instance.get_daemon_config_reports(
-            **params, _return_http_data_only=False
-        )
+        status = http_info.status_code
+        reports = http_info.data
 
         if status == 202:
             return None
@@ -284,15 +272,19 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         partially deserializes the response. The nested keys don't follow the
         convention, and raw types aren't converted. See Gitlab #727."""
         api_instance = DHCPApi(self._api_client)
-        with _allow_nulls():
-            return api_instance.get_dhcp_overview()
+        return api_instance.get_dhcp_overview()
 
     # Create
 
     def create_user(self, user: User, password: str) -> User:
         """Creates the user account."""
         user.id = 0
-        account = UserAccount(user, password)
+        account = UserAccount.from_dict(
+            {
+                "user": user,
+                "password": password,
+            }
+        )
         api_instance = UsersApi(self._api_client)
         return api_instance.create_user(account=account)
 
@@ -329,11 +321,10 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = ServicesApi(self._api_client)
 
         # This endpoint doesn't return the applications.
-        with _allow_nulls():
-            return api_instance.update_machine(
-                id=machine["id"],
-                machine=machine,
-            )
+        return api_instance.update_machine(
+            id=machine.id,
+            machine=machine,
+        )
 
     def update_host_reservation(self, host: Host):
         """Shorthand to update a host reservation."""
@@ -356,8 +347,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         def on_begin() -> CreateHostBeginResponse:
             # Begin transaction response contains the daemons without related
             # app access points.
-            with _allow_nulls():
-                return api_instance.create_host_begin()
+            return api_instance.create_host_begin()
 
         def on_submit(transaction_id: int, host: Host):
             api_instance.create_host_submit(id=transaction_id, host=host)
@@ -374,8 +364,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         def on_begin() -> UpdateHostBeginResponse:
             # Begin transaction response contains the daemons without related
             # app access points.
-            with _allow_nulls():
-                return api_instance.update_host_begin(host_id=host_id)
+            return api_instance.update_host_begin(host_id=host_id)
 
         def on_submit(transaction_id: int, host: Host):
             api_instance.update_host_submit(
@@ -450,9 +439,8 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     def authorize_all_machines(self) -> Machines:
         """Authorizes all unauthorized machines and returns them."""
         machines = self.list_machines(False)
-        machine: Machine
-        for machine in machines["items"]:
-            machine["authorized"] = True
+        for machine in machines.items:
+            machine.authorized = True
             self.update_machine(machine)
         return machines
 
@@ -471,9 +459,9 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             # It should list all events, not only the latest. If the events
             # are produced quickly, the expected one may be omitted.
             events = self.list_events(limit=100, **kwargs)
-            for event in reversed(events["items"]):
+            for event in reversed(events.items):
                 # Skip older events
-                timestamp = event["created_at"]
+                timestamp = event.created_at
                 if Server._is_before(timestamp, fetch_timestamp):
                     continue
                 fetch_timestamp = timestamp
@@ -534,8 +522,8 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
             puller = self._read_puller(puller_id)
 
-            last_invoked_at = puller["last_invoked_at"]
-            last_finished_at = puller["last_finished_at"]
+            last_invoked_at = puller.last_invoked_at
+            last_finished_at = puller.last_finished_at
 
             # Wait for start new pulling
             if pulling_started_at is None:
@@ -582,7 +570,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """
         self._wait_for_states_pulling(start)
         state = self.read_machine_state(machine_id)
-        if wait_for_apps and len(state["apps"]) == 0:
+        if wait_for_apps and len(state.apps) == 0:
             raise NoSuccessException("the apps are missing")
         return state
 
@@ -599,9 +587,9 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         self._wait_for_states_pulling(start)
         machines = self.list_machines(authorized=True)
         states = []
-        for machine in machines["items"]:
-            state = self.read_machine_state(machine["id"])
-            if wait_for_apps and len(state["apps"]) == 0:
+        for machine in machines.items:
+            state = self.read_machine_state(machine.id)
+            if wait_for_apps and len(state.apps) == 0:
                 raise NoSuccessException("the apps are missing")
             states.append(state)
         return states
@@ -624,13 +612,13 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """
 
         def condition(event: Event):
-            text = event["text"]
+            text = event.text
             if not text.startswith("Communication with CA daemon of"):
                 return False
             if not text.endswith("failed"):
                 return False
 
-            if check_unauthorized and "Unauthorized" not in event["details"]:
+            if check_unauthorized and "Unauthorized" not in event.details:
                 return False
             return True
 
@@ -657,91 +645,9 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         overview = self.overview()
 
-        daemon: DhcpDaemon
-        for daemon in overview["dhcp_daemons"]:
-            if daemon.get("ha_state") not in valid_states:
-                identifier = (
-                    f"{daemon['app_name']}@{daemon['machine']}/{daemon['name']}"
-                )
+        for daemon in overview.dhcp_daemons:
+            if daemon.ha_state not in valid_states:
+                identifier = f"{daemon.app_name}@{daemon.machine}/{daemon.name}"
                 raise NoSuccessException(
-                    f"The {identifier} HA peer is {daemon.get('ha_state')}"
+                    f"The {identifier} HA peer is {daemon.ha_state}"
                 )
-
-    @contextmanager
-    def no_validate(self):
-        """
-        Prepares a context where the validation and parsing of the API values
-        are disabled. It allows suppressing the errors related to
-        non-compliance with the contract Swagger contract.
-
-        Returns
-        -------
-        This wrapper with disabled input parsing and output validation.
-
-        Examples
-        --------
-        > server = Server()
-        > with server.no_validate() as legacy:
-        >     legacy.list_machines()
-
-        Notes
-        -----
-        It disables the input validation. It causes the parameter names to use
-        camelCase instead of snake_case, and timestamps are string instead of
-        the Python datetime objects.
-        """
-        # Suppresses the output validation
-        original_validation_rules = (
-            self._api_client.configuration.disabled_client_side_validations
-        )
-        self._api_client.configuration.disabled_client_side_validations = ",".join(
-            [
-                "multipleOf",
-                "maximum",
-                "exclusiveMaximum",
-                "minimum",
-                "exclusiveMinimum",
-                "maxLength",
-                "minLength",
-                "pattern",
-                "maxItems",
-                "minItems",
-            ]
-        )
-
-        original_discard_unknown_types = (
-            self._api_client.configuration.discard_unknown_keys
-        )
-        self._api_client.configuration.discard_unknown_keys = True
-
-        # Suppresses the input parsing and validation - a little hack
-        original_call = self._api_client.call_api
-        params = {"_check_type": False}
-
-        def injector(*args, **kwargs):
-            kwargs.update(params)
-            return original_call(*args, **kwargs)
-
-        self._api_client.call_api = injector
-
-        # Returns the patched wrapper
-        yield self
-
-        # Restores the standard behavior
-        self._api_client.call_api = original_call
-        self._api_client.configuration.discard_unknown_keys = (
-            original_discard_unknown_types
-        )
-        self._api_client.configuration.disabled_client_side_validations = (
-            original_validation_rules
-        )
-
-
-@contextmanager
-def _allow_nulls():
-    """Creates a context within which the unexpected nulls (Nones) are allowed
-    in API requests and responses."""
-    original = openapi_client.model_utils.is_type_nullable
-    openapi_client.model_utils.is_type_nullable = lambda _: True
-    yield
-    openapi_client.model_utils.is_type_nullable = original

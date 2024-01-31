@@ -71,8 +71,11 @@ def test_port_preserves_custom_address(subprocess_run_mock: MagicMock):
 def test_port_uses_default_address_from_environment_variable(
     subprocess_run_mock: MagicMock,
 ):
-    os.environ["DEFAULT_MAPPED_ADDRESS"] = "foobar"
-    compose = create_docker_compose(compose_detector=fake_compose_binary_detector)
-    address, _ = compose.port("server", 8080)
-    subprocess_run_mock.assert_called_once()
-    assert address == "foobar"
+    try:
+        os.environ["DEFAULT_MAPPED_ADDRESS"] = "foobar"
+        compose = create_docker_compose(compose_detector=fake_compose_binary_detector)
+        address, _ = compose.port("server", 8080)
+        subprocess_run_mock.assert_called_once()
+        assert address == "foobar"
+    finally:
+        del os.environ["DEFAULT_MAPPED_ADDRESS"]

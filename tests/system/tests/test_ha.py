@@ -15,5 +15,5 @@ def test_get_ha_config_review_reports(
     overview = server_service.overview()
 
     # Require 4 daemons - 2 DHCPv4 and 2 DHCPv6.
-    assert len(overview["dhcp_daemons"]) == 4
-    assert all(d.get("ha_enabled") for d in overview["dhcp_daemons"])
+    assert len(overview.dhcp_daemons) == 4
+    assert all(getattr(d, "ha_enabled") for d in overview.dhcp_daemons)
