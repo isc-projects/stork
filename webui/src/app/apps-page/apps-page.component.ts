@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { BehaviorSubject, Subscription } from 'rxjs'
 
@@ -52,6 +52,8 @@ function setDaemonStatusErred(app) {
     styleUrls: ['./apps-page.component.sass'],
 })
 export class AppsPageComponent implements OnInit, OnDestroy {
+    @ViewChild('appsTable') appsTable: Table
+
     private subscriptions = new Subscription()
     breadcrumbs: MenuItem[] = []
 
@@ -139,7 +141,11 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
                     this.openedApps = []
 
-                    this.loadApps({ first: 0, rows: 10 })
+                    if (this.appsTable) {
+                        this.refreshAppsList(this.appsTable)
+                    } else {
+                        this.loadApps({ first: 0, rows: 10 })
+                    }
                 }
 
                 const appIdStr = params.get('id')
