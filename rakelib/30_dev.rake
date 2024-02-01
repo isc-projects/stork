@@ -159,12 +159,6 @@ namespace :unittest do
                     cov = items[2].strip()[0..-2].to_f
                     rel_path = file.gsub("isc.org/stork/", "backend/")
 
-                    # Skips the mock files.
-                    filename = file.gsub(/:\d+:/, "")
-                    if filename.end_with? "mock_test.go"
-                        next
-                    end
-
                     ignore_list = [
                         'DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
                         'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
