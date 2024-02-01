@@ -291,6 +291,7 @@ tarball:
     - aws
     - runner-manager
     - amd64
+  needs: []
   script:
     - rake release:tarball
   artifacts:
