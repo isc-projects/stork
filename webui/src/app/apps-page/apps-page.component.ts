@@ -60,9 +60,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     apps: any[]
     totalApps: number
     appMenuItems: MenuItem[]
-
-    // action panel
-    filterText = ''
+    dataLoading: boolean
 
     // app tabs
     activeTabIdx = 0
@@ -119,6 +117,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
+        this.dataLoading = true
         this.subscriptions.add(
             this.route.paramMap.subscribe((params) => {
                 const newAppType = params.get('appType')
@@ -218,6 +217,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             // appType has not been set yet so do not load anything
             return
         }
+        this.dataLoading = true
         let text
         if (event.filters && event.filters.text) {
             text = event.filters.text.value
@@ -236,15 +236,21 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     htmlizeExtVersion(s)
                     setDaemonStatusErred(s)
                 }
+                this.dataLoading = false
             })
     }
 
     /**
-     * Callback called on typing in the filter input box.
+     * Callback called on input event emitted by the filter input box.
+     *
+     * @param table table on which the filtering will apply
+     * @param filterTxt text value of the filter input
      */
-    keyUpFilterText(appsTable: Table, event: KeyboardEvent) {
-        if (this.filterText.length >= 3 || event.key === 'Enter') {
-            appsTable.filter(this.filterText, 'text', 'equals')
+    inputFilterText(table: Table, filterTxt?: string) {
+        if (filterTxt.length >= 3) {
+            table.filter(filterTxt, 'text', 'contains')
+        } else if (filterTxt.length == 0) {
+            this.clearFilters(table)
         }
     }
 
@@ -395,14 +401,11 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Callback called when PrimeNG table state is restored.
+     * Clears filtering on given table.
      *
-     * @param state restored table state
-     * @param table table being restored
+     * @param table table where filtering is to be cleared
      */
-    stateRestored(state: any, table: Table) {
-        // Restore only pagination state.
-        // Do not restore filtering.
-        table.filters = {}
+    clearFilters(table: Table) {
+        table.filter(null, 'text', 'contains')
     }
 }

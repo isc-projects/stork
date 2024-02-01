@@ -28,10 +28,17 @@
                     type="text"
                     id="filter-apps-text-field"
                     pInputText
-                    [(ngModel)]="filterText"
                     placeholder="version or any other field"
-                    (keyup)="keyUpFilterText(appsTable, $event)"
+                    (input)="inputFilterText(appsTable, $event.target?.value)"
+                    [value]="appsTable.filters?.text?.value"
                 />
+                <button
+                    pButton
+                    label="Clear"
+                    class="ml-2"
+                    icon="pi pi-filter-slash"
+                    (click)="clearFilters(appsTable)"
+                ></button>
             </span>
             <!-- TODO: this is a starting point for implementing a form for filtering apps. -->
             <!-- <span style="margin-left: 40px;"> -->
@@ -68,11 +75,11 @@
         [paginator]="true"
         [rows]="10"
         [lazy]="true"
+        [loading]="dataLoading"
         (onLazyLoad)="loadApps($event)"
         [totalRecords]="totalApps"
         [rowsPerPageOptions]="[10, 30, 100]"
         [showCurrentPageReport]="true"
-        (onStateRestore)="stateRestored($event, appsTable)"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
         stateStorage="session"
         stateKey="apps-table-session"
@@ -119,6 +126,23 @@
         <ng-template pTemplate="paginatorright" let-state>
             Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
             {{ state.totalRecords === 1 ? 'app' : 'apps' }}
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="6">
+                    No apps were found.
+                    <span *ngIf="appsTable.hasFilter()">
+                        Try to clear filtering.
+                        <button
+                            pButton
+                            label="Clear"
+                            class="p-button-outlined"
+                            icon="pi pi-filter-slash"
+                            (click)="clearFilters(appsTable)"
+                        ></button>
+                    </span>
+                </td>
+            </tr>
         </ng-template>
     </p-table>
 </div>
