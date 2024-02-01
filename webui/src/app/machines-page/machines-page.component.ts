@@ -42,7 +42,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     unauthorizedMachinesCount = 0
 
     // action panel
-    filterText = ''
     appTypes: AppType[]
     selectedAppType: AppType
 
@@ -296,12 +295,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Callback called on key press in the search box.
-     * Triggers filtering the displayed machines by text.
+     * Callback called on input event emitted by the filter input box.
+     *
+     * @param table table on which the filtering will apply
+     * @param filterTxt text value of the filter input
      */
-    keyUpFilterText(machinesTable: Table, event: KeyboardEvent) {
-        if (this.filterText.length >= 3 || event.key === 'Enter') {
-            machinesTable.filter(this.filterText, 'text', 'equals')
+    inputFilterText(table: Table, filterTxt?: string) {
+        if (filterTxt.length >= 3) {
+            table.filter(filterTxt, 'text', 'contains')
+        } else if (filterTxt.length == 0) {
+            this.clearFilters(table)
         }
     }
 
@@ -634,12 +637,18 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * Callback called when PrimeNG table state is restored.
      *
      * @param state restored table state
-     * @param table table being restored
      */
-    stateRestored(state: any, table: Table) {
-        // Restore only pagination state.
-        // Do not restore filtering and selection.
-        table.filters = {}
+    stateRestored(state: any) {
+        // Do not restore selection.
         state.selection = []
+    }
+
+    /**
+     * Clears filtering on given table.
+     *
+     * @param table table where filtering is to be cleared
+     */
+    clearFilters(table: Table) {
+        table.filter(null, 'text', 'contains')
     }
 }

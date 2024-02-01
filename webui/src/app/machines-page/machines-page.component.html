@@ -179,9 +179,9 @@ sudo ./stork-install-agent.sh</textarea
                     type="text"
                     id="filter-machines-text-field"
                     pInputText
-                    [(ngModel)]="filterText"
                     placeholder="name or any other field"
-                    (keyup)="keyUpFilterText(machinesTable, $event)"
+                    (input)="inputFilterText(machinesTable, $event.target?.value)"
+                    [value]="machinesTable.filters?.text?.value"
                 />
                 <app-help-tip title="filtering" id="filtering-help-button">
                     <p>
@@ -207,6 +207,13 @@ sudo ./stork-install-agent.sh</textarea
                         characters is 3.
                     </p>
                 </app-help-tip>
+                <button
+                    pButton
+                    label="Clear"
+                    class="ml-2"
+                    icon="pi pi-filter-slash"
+                    (click)="clearFilters(machinesTable)"
+                ></button>
             </span>
             <!-- <span style="margin-left: 40px;"> -->
             <!--   App: -->
@@ -265,7 +272,7 @@ sudo ./stork-install-agent.sh</textarea
         [selectionPageOnly]="true"
         [(selection)]="selectedMachines"
         [loading]="dataLoading"
-        (onStateRestore)="stateRestored($event, machinesTable)"
+        (onStateRestore)="stateRestored($event)"
         dataKey="id"
         stateStorage="session"
         stateKey="machines-table-session"
@@ -277,6 +284,16 @@ sudo ./stork-install-agent.sh</textarea
                 <td [attr.colspan]="showUnauthorized ? 5 : 12" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
                     <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #fff"></i>
                     No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
+                    <span *ngIf="machinesTable.hasFilter()">
+                        Try to clear filtering.
+                        <button
+                            pButton
+                            label="Clear"
+                            class="p-button-outlined"
+                            icon="pi pi-filter-slash"
+                            (click)="clearFilters(machinesTable)"
+                        ></button>
+                    </span>
                     <div style="margin-top: 15px">
                         <i
                             class="pi pi-info-circle"
