@@ -56,3 +56,10 @@ p-header
 // screens to avoid overlapping on other UI blocks.
 .word-break-all
   word-break: break-all
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus:not(:hover)
+  // Specifies the style for the highlighted item in the dropdown.
+  // It was changed between PrimeNG 15 and 17. The new style is gray and
+  // it looks too similar to the on hover style.
+  color: #1D4ED8
+  background: #EFF6FF
