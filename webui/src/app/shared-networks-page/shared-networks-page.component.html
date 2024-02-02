@@ -84,6 +84,7 @@
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
             stateStorage="session"
             stateKey="networks-table-session"
+            styleClass="alternate-list"
         >
             <ng-template pTemplate="header">
                 <tr>
@@ -105,7 +106,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-net>
-                <tr class="alternate-list">
+                <tr>
                     <td>
                         <app-entity-link
                             entity="shared-network"

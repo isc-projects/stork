@@ -270,6 +270,7 @@ sudo ./stork-install-agent.sh</textarea
         stateStorage="session"
         stateKey="machines-table-session"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
+        styleClass="alternate-list"
     >
         <ng-template pTemplate="emptymessage" let-columns>
             <tr>
@@ -380,7 +381,7 @@ sudo ./stork-install-agent.sh</textarea
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-m>
-            <tr class="alternate-list" *ngIf="!showUnauthorized">
+            <tr *ngIf="!showUnauthorized">
                 <td>
                     <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                 </td>
@@ -410,7 +411,7 @@ sudo ./stork-install-agent.sh</textarea
                     ></button>
                 </td>
             </tr>
-            <tr class="alternate-list" *ngIf="showUnauthorized">
+            <tr *ngIf="showUnauthorized">
                 <td>
                     <p-tableCheckbox [value]="m"></p-tableCheckbox>
                 </td>

@@ -282,7 +282,7 @@
 
             <h1 class="section-heading">Services Status</h1>
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
-                <table style="width: 100%" class="dhcp-services-table">
+                <table style="width: 100%" class="alternate-list dhcp-services-table">
                     <tr>
                         <th style="vertical-align: top">Host</th>
                         <th style="vertical-align: top">App Version</th>
@@ -297,7 +297,7 @@
                         <th style="vertical-align: top">Uptime</th>
                     </tr>
 
-                    <tr *ngFor="let d of overview.dhcpDaemons" class="alternate-list">
+                    <tr *ngFor="let d of overview.dhcpDaemons">
                         <td>
                             <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                         </td>

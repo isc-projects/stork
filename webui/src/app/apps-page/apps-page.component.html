@@ -76,6 +76,7 @@
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
         stateStorage="session"
         stateKey="apps-table-session"
+        styleClass="alternate-list"
     >
         <ng-template pTemplate="header">
             <tr>
@@ -88,7 +89,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-a>
-            <tr class="alternate-list">
+            <tr>
                 <td>
                     <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.name }}</a>
                 </td>

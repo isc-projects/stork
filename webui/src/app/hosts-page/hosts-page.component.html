@@ -147,6 +147,7 @@
             stateStorage="session"
             stateKey="hosts-table-session"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            styleClass="alternate-list"
         >
             <ng-template pTemplate="header">
                 <tr>
@@ -159,7 +160,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-h>
-                <tr id="host-row-{{ h.id }}" class="alternate-list">
+                <tr id="host-row-{{ h.id }}">
                     <td>
                         <app-identifier
                             *ngFor="let i of h.hostIdentifiers"

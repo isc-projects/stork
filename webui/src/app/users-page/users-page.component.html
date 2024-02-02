@@ -73,6 +73,7 @@
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
         stateStorage="session"
         stateKey="users-table-session"
+        styleClass="alternate-list"
     >
         <ng-template pTemplate="header">
             <tr>
@@ -86,7 +87,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-u>
-            <tr class="alternate-list">
+            <tr>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
                     <sup *ngIf="auth.currentUserValue.id === u.id"><span id="youtag">It's you</span></sup>
@@ -222,7 +223,7 @@
                         severity="info"
                         text="The external authorization service '{{
                             userTab.user.authenticationMethodId
-                        }}' manages this user 
+                        }}' manages this user
                             profile. It can be only modified via the administrator panel of the authentication service."
                     >
                     </p-message>
