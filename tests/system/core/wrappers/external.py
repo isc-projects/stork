@@ -23,7 +23,7 @@ class ExternalPackages(Agent, Server):
             Stork Agent.
         """
 
-        super(ExternalPackages, self).__init__(compose, service_name, self)
+        super().__init__(compose, service_name, self)
 
     def _install_package(self, path):
         """Installs a given Debian package."""
