@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { BehaviorSubject, Subscription } from 'rxjs'
+import { BehaviorSubject, lastValueFrom, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -232,9 +232,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         // ToDo: Uncaught promise
         // If any HTTP exception will be thrown then the promise
         // fails, but a user doesn't get any message, popup, log.
-        this.servicesApi
-            .getApps(event.first, event.rows, text, this.appType)
-            .toPromise()
+        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text, this.appType))
             .then((data) => {
                 this.apps = data.items ?? []
                 this.totalApps = data.total ?? 0
@@ -242,6 +240,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     htmlizeExtVersion(s)
                     setDaemonStatusErred(s)
                 }
+            })
+            .finally(() => {
                 this.dataLoading = false
             })
     }
