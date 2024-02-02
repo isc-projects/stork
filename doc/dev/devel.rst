@@ -1397,5 +1397,17 @@ the following command:
 
 
 This list will probably be grow over time. ``rake -D`` will produce more detailed description of the tasks.
+
+Some linters can fix simpler formatting errors. There's a group of tasks for this:
+
+.. code-block:: console
+
+  $ rake -T | grep fmt
+    rake fmt:backend                        # Format backend source code
+    rake fmt:python                         # Format Python source code
+    rake fmt:ui                             # Make frontend source code prettier
+
+
 Some, but not all, take optional ``FIX`` variable. If set to ``true``, the linter will fix specific code.
-For example, to fix some black (python linter) issues, one can use ``rake lint:python:black FIX=true``.
+You may check the details using ``rake -D``. For example, to fix some black (python linter) issues, one
+can use ``rake lint:shell FIX=true``.

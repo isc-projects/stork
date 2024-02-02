@@ -1,6 +1,7 @@
 [build] tomek
 
     Fixed several smaller Python issues reported by CodeQL and other Python linters. The
-    `rake lint:python:black` now takes option FIX parameter that, when set to true, will
-    fix the formatting issues.
+    `gen_kea_config.py` tool used in demo now takes an optional `--seed` parameter that,
+    if specified, will initiate the PRNG to given value. This allows to use repeat
+    randomized test runs, if necessary.
     (Gitlab #1264)

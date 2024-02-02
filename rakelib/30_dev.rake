@@ -456,18 +456,12 @@ namespace :lint do
         end
 
         desc 'Runs black, python linter tool
-        FIX - fix linting issues - default: false'
+        To run it in fixing mode, please use fmt:python task'
         task :black => [BLACK] do
             python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
             python_files = python_files.split("\n").map{ |string| string.strip }
-            if ENV["FIX"] == "true"
-                puts "Running black (fix mode):"
-                sh BLACK, *python_files
-            else
-                puts "Running black (check mode):"
-                sh BLACK, "--check", *python_files
-            end
-
+            puts "Running black (check mode):"
+            sh BLACK, "--check", *python_files
         end
     end
 end
