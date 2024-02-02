@@ -102,8 +102,9 @@ def test_wait_for_success_use_sleep_time():
     # Act
     try:
         f()
-    except Exception:
-        logging.exception("")  # Just log the exception and continue
+    except TimeoutError:
+        # The exception is expected. See f() implementation above.
+        pass
 
     # Assert
     assert call_count == 5
