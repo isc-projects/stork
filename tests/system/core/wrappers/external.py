@@ -23,10 +23,7 @@ class ExternalPackages(Agent, Server):
             Stork Agent.
         """
 
-        # TODO: Both server and Agent are derived from ComposeServiceWrapper.
-        # The code below calls ComposeServiceWrapper __init__ method twice.
-        Server.__init__(self, compose, service_name)
-        Agent.__init__(self, compose, service_name, self)
+        super(ExternalPackages, self).__init__(compose, service_name, self)
 
     def _install_package(self, path):
         """Installs a given Debian package."""
