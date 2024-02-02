@@ -31,6 +31,12 @@
       // On hover the background is white, so use black text.
       color: black !important
 
+:host ::ng-deep .p-menubar .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content
+  // In the newest PrimeNG version, the menu item is grayed out after clicking
+  // it. This is a workaround to restore the original color.
+  color: inherit
+  background: inherit
+
 @keyframes p-progress-spinner-color
   0%
     stroke: #fff
