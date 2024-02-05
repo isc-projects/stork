@@ -253,15 +253,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      */
     loadMachines(event) {
         this.dataLoading = true
-        let text
+        let text: string = null
         if (event.filters?.text?.[0]) {
             text = event.filters.text[0].value
         }
 
-        let app
+        let app: string = null
         if (event.filters?.app?.[0]) {
             app = event.filters.app[0].value
-        }
         }
 
         this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
