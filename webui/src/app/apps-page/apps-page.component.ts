@@ -179,6 +179,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
                     // if app is not loaded in list fetch it individually
                     if (!found) {
+                        this.dataLoading = true
                         this.servicesApi
                             .getApp(appId)
                             .toPromise()
@@ -208,6 +209,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                                     life: 10000,
                                 })
                                 this.router.navigate(['/apps/' + this.appType + '/all'])
+                            })
+                            .finally(() => {
+                                this.dataLoading = false
                             })
                     }
                 }

@@ -30,6 +30,7 @@
                     pInputText
                     placeholder="version or any other field"
                     (input)="inputFilterText(appsTable, $event.target?.value)"
+                    (keyup.enter)="inputFilterText(appsTable, $event.target?.value)"
                     [value]="appsTable.filters?.text?.value"
                 />
                 <button
