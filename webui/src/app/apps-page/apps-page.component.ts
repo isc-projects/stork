@@ -232,7 +232,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
         this.dataLoading = true
         let text
-        if (event.filters && event.filters.text) {
+        if (event.filters && event.filters.text?.[0]) {
             text = event.filters.text[0].value
         }
 

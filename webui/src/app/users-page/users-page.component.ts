@@ -331,7 +331,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      */
     loadUsers(event) {
         this.usersApi
-            .getUsers(event.first, event.rows, event.filters.text)
+            .getUsers(event.first, event.rows, event.filters.text?.[0]?.value)
             .toPromise()
             .then((data) => {
                 this.users = data.items ?? []
