@@ -36,8 +36,8 @@
                     id="filter-apps-text-field"
                     pInputText
                     placeholder="version or any other field"
-                    (input)="inputFilterText(appsTable, $event)"
-                    (keyup.enter)="inputFilterText(appsTable, $event)"
+                    (input)="inputFilterText(appsTable, $event.target?.value)"
+                    (keyup.enter)="inputFilterText(appsTable, $event.target?.value, true)"
                     [value]="appsTable.filters?.text?.[0]?.value"
                 />
                 <button

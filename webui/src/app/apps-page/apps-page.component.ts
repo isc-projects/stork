@@ -257,13 +257,11 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      * Callback called on input event emitted by the filter input box.
      *
      * @param table table on which the filtering will apply
-     * @param event input or keyup event
+     * @param filterText text value of the filter input
+     * @param force force filtering for shorter lookup keywords
      */
-    inputFilterText(table: Table, event: KeyboardEvent | InputEvent) {
-        const target = event.target as HTMLInputElement
-        const filterText = target?.value
-
-        if (filterText.length >= 3 || event.type === 'keyup') {
+    inputFilterText(table: Table, filterText: string, force: boolean = false) {
+        if (filterText.length >= 3 || (force && filterText != '')) {
             table.filter(filterText, 'text', 'contains')
         } else if (filterText.length == 0) {
             this.clearFilters(table)
