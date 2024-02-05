@@ -36,6 +36,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     serverToken = ''
     selectedMachines: Machine[] = []
     dataLoading: boolean
+    stateKey = 'machines-table-session'
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
@@ -631,6 +632,11 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         }
         // Clear selection after.
         this.selectedMachines = []
+
+        // Force clear selection in session storage.
+        let state = JSON.parse(sessionStorage.getItem(this.stateKey))
+        state.selection = []
+        sessionStorage.setItem(this.stateKey, JSON.stringify(state))
     }
 
     /**

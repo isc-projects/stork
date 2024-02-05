@@ -276,7 +276,7 @@ sudo ./stork-install-agent.sh</textarea
         (onStateRestore)="stateRestored($event)"
         dataKey="id"
         stateStorage="session"
-        stateKey="machines-table-session"
+        [stateKey]="stateKey"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
         styleClass="alternate-list"
     >
