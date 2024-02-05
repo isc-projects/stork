@@ -344,6 +344,26 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /apps/communication-issues:
+    get:
+      summary: Get a list of apps for which the server found communication issues.
+      description: >-
+        The returned list excludes the detailed information about the apps and
+        the daemons. The returned data primarly contains statistics about the
+        communication failures.
+      operationId: getAppsCommunicationIssues
+      tags:
+        - Services
+      responses:
+        200:
+          description: List of apps and daemons with communication statistics.
+          schema:
+            $ref: '#/definitions/Apps'
+        default:
+          description: 'generic error response'
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /apps/{id}:
     get:
       summary: Get app by ID.

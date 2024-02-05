@@ -864,7 +864,8 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 	}
 
-	if isKeaApp {
+	switch {
+	case isKeaApp:
 		var keaStats *agentcomm.AgentKeaCommStats
 		if agentStats != nil && accessPoint != nil {
 			keaStats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{
@@ -893,14 +894,14 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			},
 			models.AppBind9{},
 		}
-	}
-
-	if isBind9App {
+	case isBind9App:
 		var bind9DaemonDB *dbmodel.Daemon
 		var namedStats *dbmodel.Bind9NamedStats
 		if len(dbApp.Daemons) > 0 {
 			bind9DaemonDB = dbApp.Daemons[0]
-			namedStats = bind9DaemonDB.Bind9Daemon.Stats.NamedStats
+			if bind9DaemonDB.Bind9Daemon != nil {
+				namedStats = bind9DaemonDB.Bind9Daemon.Stats.NamedStats
+			}
 		}
 
 		var queryHitRatio float64
@@ -933,13 +934,15 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 				Version:         bind9DaemonDB.Version,
 				Uptime:          bind9DaemonDB.Uptime,
 				ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
-				ZoneCount:       bind9DaemonDB.Bind9Daemon.Stats.ZoneCount,
-				AutoZoneCount:   bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount,
 				QueryHits:       queryHits,
 				QueryMisses:     queryMisses,
 				QueryHitRatio:   queryHitRatio,
 				AgentCommErrors: agentErrors,
 			}
+		}
+		if bind9DaemonDB.Bind9Daemon != nil {
+			bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
+			bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
 		}
 
 		var bind9Stats *agentcomm.AgentBind9CommStats
@@ -1008,7 +1011,7 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 	}
 
 	// Files and backends.
-	if dbDaemon.KeaDaemon.Config != nil {
+	if dbDaemon.KeaDaemon != nil && dbDaemon.KeaDaemon.Config != nil {
 		daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
 	}
 	return daemon
@@ -1094,6 +1097,47 @@ func (r *RestAPI) GetAppsDirectory(ctx context.Context, params services.GetAppsD
 	}
 
 	rsp := services.NewGetAppsDirectoryOK().WithPayload(apps)
+	return rsp
+}
+
+// Returns a list of apps for which the server discovered some communication problems.
+// It includes a lack of communication with the agent or the daemons behind it.
+func (r *RestAPI) GetAppsCommunicationIssues(ctx context.Context, params services.GetAppsCommunicationIssuesParams) middleware.Responder {
+	// Get all apps with a minimal set of relations.
+	dbApps, err := dbmodel.GetAllAppsWithRelations(r.DB, dbmodel.AppRelationMachine, dbmodel.AppRelationAccessPoints, dbmodel.AppRelationDaemons)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot get apps from the database"
+		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	apps := []*models.App{}
+	for i := range dbApps {
+		// Convert the apps to the REST API format.
+		app := r.appToRestAPI(&dbApps[i])
+		// Is it a BIND9 daemon?
+		daemon := app.Details.Daemon
+		// Append the app to the list if there is any kind of communication issue.
+		if daemon != nil && daemon.Monitored && (daemon.AgentCommErrors > 0 || daemon.RndcCommErrors > 0 || daemon.StatsCommErrors > 0) {
+			apps = append(apps, app)
+			continue
+		}
+		// Apparently these are Kea daemons.
+		for _, daemon := range app.Details.Daemons {
+			// Append the app to the list if there is any kind of communication issue.
+			if daemon.Monitored && (daemon.AgentCommErrors > 0 || daemon.CaCommErrors > 0 || daemon.DaemonCommErrors > 0) {
+				apps = append(apps, app)
+				break
+			}
+		}
+	}
+	// Send the list.
+	rsp := services.NewGetAppsCommunicationIssuesOK().WithPayload(&models.Apps{
+		Items: apps,
+		Total: int64(len(apps)),
+	})
 	return rsp
 }
 

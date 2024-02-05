@@ -1360,6 +1360,188 @@ func TestGetAllApps(t *testing.T) {
 	}
 }
 
+// Test that the relations can be selected when querying for all apps.
+func TestGetAllAppsWithRelations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add first machine, should be no error
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	var keaPoints []*AccessPoint
+	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
+
+	aKea := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					KeaDHCPDaemon: &KeaDHCPDaemon{},
+				},
+				LogTargets: []*LogTarget{
+					{
+						Name:     "frog",
+						Severity: "ERROR",
+						Output:   "stdout",
+					},
+				},
+			},
+		},
+	}
+	_, err = AddApp(db, aKea)
+	require.NoError(t, err)
+	require.NotZero(t, aKea.ID)
+
+	var bind9Points []*AccessPoint
+	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
+
+	aBind := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeBind9,
+		Active:       true,
+		AccessPoints: bind9Points,
+		Daemons: []*Daemon{
+			{
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
+	}
+	_, err = AddApp(db, aBind)
+	require.NoError(t, err)
+	require.NotZero(t, aBind.ID)
+
+	t.Run("machine", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Empty(t, app.Daemons)
+			require.Empty(t, app.AccessPoints)
+		}
+	})
+
+	t.Run("access points", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationAccessPoints)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Empty(t, app.Daemons)
+			require.Len(t, app.AccessPoints, 1)
+		}
+	})
+
+	t.Run("daemons", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationDaemons)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Len(t, app.Daemons, 1)
+			require.Nil(t, app.Daemons[0].KeaDaemon)
+			require.Empty(t, app.AccessPoints)
+		}
+	})
+
+	t.Run("log targets", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationDaemonsLogTargets)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Len(t, app.Daemons, 1)
+			require.Nil(t, app.Daemons[0].KeaDaemon)
+			require.Empty(t, app.AccessPoints)
+
+			switch app.Type {
+			case AppTypeKea:
+				require.Len(t, app.Daemons[0].LogTargets, 1)
+			default:
+				require.Empty(t, app.Daemons[0].LogTargets)
+			}
+		}
+	})
+
+	t.Run("kea daemons", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationDaemons, AppRelationKeaDaemons)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Len(t, app.Daemons, 1)
+			require.Empty(t, app.AccessPoints)
+
+			switch app.Type {
+			case AppTypeKea:
+				require.NotNil(t, app.Daemons[0].KeaDaemon)
+				require.Nil(t, app.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+			default:
+				require.Nil(t, app.Daemons[0].KeaDaemon)
+			}
+		}
+	})
+
+	t.Run("kea dhcp daemons", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationDaemons, AppRelationKeaDaemons, AppRelationKeaDHCPDaemons)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Len(t, app.Daemons, 1)
+			require.Empty(t, app.AccessPoints)
+
+			switch app.Type {
+			case AppTypeKea:
+				require.NotNil(t, app.Daemons[0].KeaDaemon)
+				require.NotNil(t, app.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+			default:
+				require.Nil(t, app.Daemons[0].KeaDaemon)
+			}
+		}
+	})
+
+	t.Run("bind9 daemons", func(t *testing.T) {
+		apps, err := GetAllAppsWithRelations(db, AppRelationMachine, AppRelationDaemons, AppRelationKeaDaemons, AppRelationBind9Daemons)
+		require.NoError(t, err)
+		require.Len(t, apps, 2)
+		require.NotEqual(t, apps[0].Type, apps[1].Type)
+		for _, app := range apps {
+			require.NotNil(t, app.Machine)
+			require.Len(t, app.Daemons, 1)
+			require.Empty(t, app.AccessPoints)
+
+			switch app.Type {
+			case AppTypeKea:
+				require.NotNil(t, app.Daemons[0].KeaDaemon)
+				require.Nil(t, app.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+				require.Nil(t, app.Daemons[0].Bind9Daemon)
+			default:
+				require.Nil(t, app.Daemons[0].KeaDaemon)
+				require.NotNil(t, app.Daemons[0].Bind9Daemon)
+			}
+		}
+	})
+}
+
 // Tests that daemon can be found by name for an app.
 func TestGetDaemonByName(t *testing.T) {
 	app := &App{

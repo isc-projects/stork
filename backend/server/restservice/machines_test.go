@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/pki"
@@ -30,6 +31,8 @@ import (
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
+
+//go:generate mockgen -package=restservice -destination=connectedagentsmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
 
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1194,6 +1197,349 @@ func TestGetAppsDirectory(t *testing.T) {
 	require.Equal(t, bind9App.ID, apps.Items[1].ID)
 	require.NotNil(t, apps.Items[1].Name)
 	require.Equal(t, bind9App.Name, apps.Items[1].Name)
+}
+
+// Test that a list of apps with communication issues is returned.
+func TestGetAppsCommunicationIssues(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ctx := context.Background()
+
+	// Add a first machine.
+	m1 := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m1)
+	require.NoError(t, err)
+
+	// Add a second machine.
+	m2 := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8081,
+	}
+	err = dbmodel.AddMachine(db, m2)
+	require.NoError(t, err)
+
+	// Add a third machine.
+	m3 := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8082,
+	}
+	err = dbmodel.AddMachine(db, m3)
+	require.NoError(t, err)
+
+	// Add Kea app to the first machine.
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
+	keaApp := &dbmodel.App{
+		MachineID:    m1.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		Name:         "kea1",
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Monitored: true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+
+	// Add Kea app to the second machine.
+	accessPoints = []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345, false)
+	keaApp = &dbmodel.App{
+		MachineID:    m2.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		Name:         "kea2",
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Monitored: true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+
+	// Add Bind9 app to the third machine.
+	accessPoints = []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 3456, false)
+	bind9App := &dbmodel.App{
+		MachineID:    m3.ID,
+		Type:         dbmodel.AppTypeBind9,
+		Active:       true,
+		Name:         "bind9",
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:        "bind9",
+				Monitored:   true,
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, bind9App)
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	rapi, err := NewRestAPI(&settings, dbSettings, db, mock, fec, fd)
+	require.NoError(t, err)
+
+	t.Run("current errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 1,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "kea1", apps.Items[0].Name)
+	})
+
+	t.Run("ca errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+				AppCommStats: map[agentcomm.AppCommStatsKey]any{
+					{
+						Address: "localhost",
+						Port:    1234,
+					}: &agentcomm.AgentKeaCommStats{
+						CurrentErrorsCA: 10,
+						CurrentErrorsDaemons: map[string]int64{
+							"dhcp4": 0,
+						},
+					},
+				},
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "kea1", apps.Items[0].Name)
+	})
+
+	t.Run("kea daemon errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+				AppCommStats: map[agentcomm.AppCommStatsKey]any{
+					{
+						Address: "localhost",
+						Port:    1234,
+					}: &agentcomm.AgentKeaCommStats{
+						CurrentErrorsCA: 0,
+						CurrentErrorsDaemons: map[string]int64{
+							"dhcp4": 1,
+						},
+					},
+				},
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "kea1", apps.Items[0].Name)
+	})
+
+	t.Run("bind9 current errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 1,
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "bind9", apps.Items[0].Name)
+	})
+
+	t.Run("rndc errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+				AppCommStats: map[agentcomm.AppCommStatsKey]any{
+					{
+						Address: "localhost",
+						Port:    3456,
+					}: &agentcomm.AgentBind9CommStats{
+						CurrentErrorsRNDC: 10,
+					},
+				},
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "bind9", apps.Items[0].Name)
+	})
+
+	t.Run("stats errors", func(t *testing.T) {
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+			})
+
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
+			Return(&agentcomm.AgentStats{
+				CurrentErrors: 0,
+				AppCommStats: map[agentcomm.AppCommStatsKey]any{
+					{
+						Address: "localhost",
+						Port:    3456,
+					}: &agentcomm.AgentBind9CommStats{
+						CurrentErrorsRNDC:  0,
+						CurrentErrorsStats: 10,
+					},
+				},
+			})
+
+		params := services.GetAppsCommunicationIssuesParams{}
+		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, apps.Total)
+		require.Equal(t, "bind9", apps.Items[0].Name)
+	})
+}
+
+// Test that non-monitored apps are not returned even when they
+// report communication issues.
+func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ctx := context.Background()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea app to the machine.
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
+	keaApp := &dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		Name:         "kea1",
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Monitored: false,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	rapi, err := NewRestAPI(&settings, dbSettings, db, mock, fec, fd)
+	require.NoError(t, err)
+
+	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
+		Return(&agentcomm.AgentStats{
+			CurrentErrors: 1,
+		})
+
+	params := services.GetAppsCommunicationIssuesParams{}
+	rsp := rapi.GetAppsCommunicationIssues(ctx, params)
+	require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
+	apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+	require.EqualValues(t, 0, apps.Total)
 }
 
 // Test that status of two HA services for a Kea application is parsed

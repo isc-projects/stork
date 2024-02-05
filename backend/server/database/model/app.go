@@ -12,6 +12,20 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
+// Identifier of the relations between the app and other tables.
+type AppRelation string
+
+// Names of the app table relations. They must be valid in the go-pg sense.
+const (
+	AppRelationAccessPoints      = "AccessPoints"
+	AppRelationMachine           = "Machine"
+	AppRelationDaemons           = "Daemons"
+	AppRelationKeaDaemons        = "Daemons.KeaDaemon"
+	AppRelationKeaDHCPDaemons    = "Daemons.KeaDaemon.KeaDHCPDaemon"
+	AppRelationBind9Daemons      = "Daemons.Bind9Daemon"
+	AppRelationDaemonsLogTargets = "Daemons.LogTargets"
+)
+
 // A short for datamodel.AppType.
 type AppType = datamodel.AppType
 
@@ -441,24 +455,23 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 // access points and machines information. If it is set to false, only
 // the data belonging to the app table are returned.
 func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
-	var apps []App
+	return GetAllAppsWithRelations(dbi, AppRelationAccessPoints, AppRelationKeaDHCPDaemons, AppRelationBind9Daemons, AppRelationDaemonsLogTargets, AppRelationMachine)
+}
 
-	// prepare query
+// Retrieves all apps with custom relations. If no relations are specified
+// it returns only the data contained in the app table.
+func GetAllAppsWithRelations(dbi dbops.DBI, relations ...AppRelation) ([]App, error) {
+	var apps []App
 	q := dbi.Model(&apps)
 
-	if withRelations {
-		q = q.Relation("AccessPoints")
-		q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
-		q = q.Relation("Daemons.Bind9Daemon")
-		q = q.Relation("Daemons.LogTargets")
-		q = q.Relation("Machine")
+	for _, relation := range relations {
+		q = q.Relation(string(relation))
 	}
 	q = q.OrderExpr("id ASC")
 
-	// retrieve apps from db
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem getting apps")
+		return nil, pkgerrors.Wrapf(err, "problem getting apps from the database")
 	}
 	return apps, nil
 }
