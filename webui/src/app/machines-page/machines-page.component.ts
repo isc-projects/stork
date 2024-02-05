@@ -255,7 +255,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         this.dataLoading = true
         let text
         if (event.filters?.text) {
-            text = event.filters.text.value
+            text = event.filters.text[0].value
         }
 
         let app
@@ -302,12 +302,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * Callback called on input event emitted by the filter input box.
      *
      * @param table table on which the filtering will apply
-     * @param filterTxt text value of the filter input
+     * @param event input or keyup event
      */
-    inputFilterText(table: Table, filterTxt?: string) {
-        if (filterTxt.length >= 3) {
-            table.filter(filterTxt, 'text', 'contains')
-        } else if (filterTxt.length == 0) {
+    inputFilterText(table: Table, event: KeyboardEvent | InputEvent) {
+        const target = event.target as HTMLInputElement
+        const filterText = target?.value
+
+        if (filterText.length >= 3 || event.type === 'keyup') {
+            table.filter(filterText, 'text', 'contains')
+        } else if (filterText.length == 0) {
             this.clearFilters(table)
         }
     }

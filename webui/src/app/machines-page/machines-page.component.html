@@ -182,9 +182,9 @@ sudo ./stork-install-agent.sh</textarea
                     id="filter-machines-text-field"
                     pInputText
                     placeholder="name or any other field"
-                    (input)="inputFilterText(machinesTable, $event.target?.value)"
-                    (keyup.enter)="inputFilterText(machinesTable, $event.target?.value)"
-                    [value]="machinesTable.filters?.text?.value"
+                    (input)="inputFilterText(machinesTable, $event)"
+                    (keyup.enter)="inputFilterText(machinesTable, $event)"
+                    [value]="machinesTable.filters?.text?.[0]?.value"
                 />
                 <app-help-tip title="filtering" id="filtering-help-button">
                     <p>
