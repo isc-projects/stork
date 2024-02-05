@@ -1,8 +1,157 @@
+Stork 1.15.0 released on 2024-02-07.
+
+* 381 [build] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot and
+    updated dependencies including the Go 1.21.6, Angular 17, PrimeNG 17,
+    OpenAPI Generator 7 and several Python and Ruby packages. Added a
+    vulnerability scanner for Python dependencies.
+    (Gitlab #1285)
+
+* 380 [ui] andrei
+
+    The help tip on the leases search page now shows a table of criteria that
+    leases can be searched by for kea-dhcp4 and kea-dhcp6 respectively.
+    (Gitlab #1150)
+
+* 379 [build] tomek
+
+    Fixed several smaller Python issues reported by CodeQL and other Python linters. The
+    `gen_kea_config.py` tool used in demo now takes an optional `--seed` parameter that,
+    if specified, will initiate the PRNG to given value. This allows to use repeat
+    randomized test runs, if necessary.
+    (Gitlab #1264)
+
+* 378 [build] andrei
+
+    Coverage reporting was enabled for unit tests in the LDAP hook project.
+    (Gitlab #1174)
+
+* 377 [bug] piotrek
+
+    Fixed a bug where Apps list view applied old filtering
+    without user's intention. Also fixed a bug where wrong
+    Kea/Bind app name was displayed in breadcrumbs.
+    (Gitlab #1267)
+
+* 376 [build] andrei
+
+    UI linters for unused variables and unused imports are now run with
+    "rake lint:ui". Setting the FIX environment variable enables autofixing, but
+    it only works with unused imports. The reported lint errors were fixed.
+    (Gitlab #994)
+
+* 375 [doc] andrei
+
+    The command line tools required to install Stork packages via Cloudsmith are
+    now documented in the ARM.
+    (Gitlab #1147)
+
+* 374 [func] marcin
+
+    Subnets can be selectively deleted using the Stork UI.
+    (Gitlab #1284)
+
+* 373 [doc] slawek
+
+    Documented changes provided in the CI docker images for particular tags.
+    (#1209)
+
+* 372 [func] marcin
+
+    New subnets in Kea can be now created using the Stork UI.
+    (Gitlab #1277)
+
+* 371 [func] slawek
+
+    Covered the application detection loop of the Stork agent with unit tests.
+    (Gitlab #1163)
+
+* 370 [bug] slawek
+
+    Address and prefix counters are now approximated to one digit after decimal
+    point instead of rounded down.
+    (Gitlab #1256)
+
+* 369 [perf] slawek
+
+    Fixed a high memory usage while browsing the subnet and shared network
+    lists.
+    (Gitlab #1263)
+
+* 368 [func] marcin
+
+    Subnet edit form allows for moving a subnet between shared networks.
+    (Gitlab #1271)
+
+* 367 [func] piotrek
+
+    Added a possibilty to authorize more than one machine at once.
+    User can select some machines and then authorize them with one click.
+    Selection of all visible machines on the page is also possible.
+    (Gitlab #1270)
+
+* 366 [func] marcin
+
+    Extended subnet edit form to allow pool-id specification.
+    (Gitlab #1225)
+
+* 365 [build] slawek
+
+    Restored compatibility of the Stork hooks with Ubuntu 18.04 and Ubuntu
+    20.04.
+    (Gitlab #1254)
+
+* 364 [bug] piotrek
+
+    Fixed a bug in host reservation tab page where longer IPv6 address
+    could overlap the reservation status information.
+    Now, this tab is responsive and the overlap should not be visible
+    no matter the screen width.
+    (Gitlab #1260)
+
+* 363 [sec] slawek
+
+    Added the SHA256 digest to the RPM packages for compatibility with the FIPS
+    mode of RedHat-like operating systems.
+    (Gitlab #1171)
+
+* 362 [bug] marcin
+
+    Stork server enforces statistics updates in Kea after a subnet update.
+    Applied small fixes in the subnet form validation.
+    (Gitlab #1259)
+
+* 361 [bug] piotrek
+
+    Fixed a bug where after clicking the Home breadcrumb anchor, Home page
+    was opened in a new tab. Now, it will open in the same tab.
+    (Gitlab #1248)
+
+* 360 [bug] piotrek
+
+    Fixed a bug in hosts reservation filtering.
+    Now, whenever new filter is applied, pagination is reset
+    by default to the first page of the filtered results.
+    (Gitlab #917)
+
+* 359 [func] piotrek
+
+    Improved Kea Apps tab view to be fully responsive and
+    look good on all types of devices and screen resolutions.
+    (Gitlab #1237)
+
+* 358 [bug] slawek
+
+    Fixed the simulator that stopped working due to missing explicitly provided
+    dependency.
+    (Gitlab #1257)
+
 Stork 1.14.0 released on 2023-12-06.
 
 * 357 [bug] piotrek
 
-    Corrected wrong anchors to Kea hooks ARM docs in 
+    Corrected wrong anchors to Kea hooks ARM docs in
     Kea application page.
     For Kea version >= 2.4 new std-ischooklib-* anchors are
     used.
