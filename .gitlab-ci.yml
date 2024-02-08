@@ -809,13 +809,12 @@ upload_to_repo:
     - aws
     - runner-manager
     - amd64
-    - stork-repo
   needs:
     - tarball
   script:
     - eval $(ssh-agent -s)
     - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
-    - ssh-keyscan -4 repo.isc.org >> ~/.ssh/known_hosts
+    - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
     - rake release:notes
     - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
   artifacts:
