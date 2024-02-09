@@ -10,6 +10,7 @@ import {
     datetimeToLocal,
     uncamelCase,
     getSeverityByIndex,
+    formatNoun,
 } from './utils'
 
 describe('utils', () => {
@@ -311,5 +312,16 @@ describe('utils', () => {
         expect(getSeverityByIndex(2)).toBe('danger')
         expect(getSeverityByIndex(3)).toBe('info')
         expect(getSeverityByIndex(4)).toBe('info')
+    })
+
+    it('should format a singular noun', () => {
+        expect(formatNoun(1, 'dog', 's')).toBe('1 dog')
+        expect(formatNoun(-1, 'dog', 's')).toBe('-1 dog')
+    })
+
+    it('should format a plural noun', () => {
+        expect(formatNoun(0, 'access', 'es')).toBe('0 accesses')
+        expect(formatNoun(-2, 'access', 'es')).toBe('-2 accesses')
+        expect(formatNoun(6, 'access', 'es')).toBe('6 accesses')
     })
 })

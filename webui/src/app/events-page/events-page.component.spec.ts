@@ -15,6 +15,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterTestingModule } from '@angular/router/testing'
+import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -22,7 +23,11 @@ describe('EventsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [EventsService, MessageService],
+            providers: [
+                EventsService,
+                MessageService,
+                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+            ],
             declarations: [
                 BreadcrumbsComponent,
                 EventsPageComponent,

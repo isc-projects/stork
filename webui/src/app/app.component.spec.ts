@@ -13,6 +13,9 @@ import { GlobalSearchComponent } from './global-search/global-search.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
+import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
+import { ServerSentEventsService, TestableServerSentEventsService } from './server-sent-events.service'
+import { MessagesModule } from 'primeng/messages'
 
 describe('AppComponent', () => {
     beforeEach(waitForAsync(() => {
@@ -28,9 +31,17 @@ describe('AppComponent', () => {
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 FormsModule,
+                MessagesModule,
             ],
-            declarations: [AppComponent, GlobalSearchComponent],
-            providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
+            declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
+            providers: [
+                GeneralService,
+                UsersService,
+                MessageService,
+                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                ServicesService,
+                SettingsService,
+            ],
         }).compileComponents()
     }))
 

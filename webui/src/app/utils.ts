@@ -559,3 +559,19 @@ export function getSeverityByIndex(index: number): string {
             return 'info'
     }
 }
+
+/**
+ * Returns a string comprising a count and a noun in the plural or
+ * singular form, depending on the count.
+ *
+ * @param count a number of counted items
+ * @param noun a noun
+ * @param postfix a postfix to be appended to the noun in the plural form
+ * @returns formatted noun.
+ */
+export function formatNoun(count: number, noun, postfix: string): string {
+    if (Math.abs(count) != 1) {
+        return `${count} ${noun}${postfix}`
+    }
+    return `${count} ${noun}`
+}

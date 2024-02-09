@@ -1,48 +1,47 @@
 <div
     *ngIf="currentUser"
-    style="
-        background-color: #005b9f;
-        margin: -8px -8px 0 -8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    "
+    style="background-color: #005b9f; margin: -8px -8px 0 -8px; justify-content: space-between; align-items: center"
 >
-    <a
-        href="/"
-        class="logo"
-        pTooltip="Version: {{ storkVersion }} <br> Build Date: {{ storkBuildDate }}"
-        tooltipStyleClass="stork-version-tooltip"
-        [appendTo]="logoTooltipTarget"
-        [escape]="false"
-        #logoTooltipTarget
-    >
-        <img src="assets/stork-logo-small.png" id="small-stork-logo-img" />
-        <span> Stork </span>
-    </a>
+    <div class="flex align-items-center">
+        <a
+            href="/"
+            class="logo"
+            pTooltip="Version: {{ storkVersion }} <br> Build Date: {{ storkBuildDate }}"
+            tooltipStyleClass="stork-version-tooltip"
+            [appendTo]="logoTooltipTarget"
+            [escape]="false"
+            #logoTooltipTarget
+        >
+            <img src="assets/stork-logo-small.png" id="small-stork-logo-img" />
+            <span> Stork </span>
+        </a>
 
-    <div style="flex-grow: 1">
-        <p-menubar [model]="menuItems" styleClass="stork-menubar">
-            <p-progressSpinner
-                *ngIf="(loadingInProgress | async)['state']"
-                [pTooltip]="(loadingInProgress | async)['text']"
-                [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
-                strokeWidth="6"
-                fill="#005B9F"
-                animationDuration=".5s"
-            ></p-progressSpinner>
-            <app-global-search></app-global-search>
-        </p-menubar>
+        <div style="flex-grow: 1">
+            <p-menubar [model]="menuItems" styleClass="stork-menubar">
+                <p-progressSpinner
+                    *ngIf="(loadingInProgress | async)['state']"
+                    [pTooltip]="(loadingInProgress | async)['text']"
+                    [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
+                    strokeWidth="6"
+                    fill="#005B9F"
+                    animationDuration=".5s"
+                ></p-progressSpinner>
+                <app-global-search></app-global-search>
+            </p-menubar>
+        </div>
+
+        <p-splitButton
+            label="Logout ({{ this.currentUser.login || this.currentUser.email }})"
+            icon="pi pi-sign-out"
+            id="logout-button"
+            [style]="{ margin: '0 0.4em 0 0.25em' }"
+            (onClick)="signOut()"
+            [model]="userMenuItems"
+        ></p-splitButton>
     </div>
-
-    <p-splitButton
-        label="Logout ({{ this.currentUser.login || this.currentUser.email }})"
-        icon="pi pi-sign-out"
-        id="logout-button"
-        [style]="{ margin: '0 0.4em 0 0.25em' }"
-        (onClick)="signOut()"
-        [model]="userMenuItems"
-    ></p-splitButton>
+    <div>
+        <app-priority-errors-panel></app-priority-errors-panel>
+    </div>
 </div>
 
 <p-toast></p-toast>

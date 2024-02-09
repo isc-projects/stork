@@ -7,6 +7,7 @@ import { AuthService } from '../auth.service'
 import { Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Events } from '../backend'
+import { ServerSentEventsService } from '../server-sent-events.service'
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -18,7 +19,7 @@ import { Events } from '../backend'
     styleUrls: ['./events-panel.component.sass'],
 })
 export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
-    private subscriptions = new Subscription()
+    subscriptions = new Subscription()
     events: Events = { items: [], total: 0 }
     errorCnt = 0
     start = 0
@@ -80,8 +81,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     selectedDaemonType: any
     selectedUser: any
 
-    eventSource: EventSource
-
     /**
      * Indicates if the component was initialized.
      *
@@ -100,15 +99,12 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         private usersApi: UsersService,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
-        public auth: AuthService
+        public auth: AuthService,
+        private sse: ServerSentEventsService
     ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
-
-        if (this.eventSource) {
-            this.eventSource.close()
-        }
     }
 
     /**
@@ -122,7 +118,18 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     private applyFilter(): void {
         const loadEvent: LazyLoadEvent = { first: 0, rows: this.limit }
         this.refreshEvents(loadEvent)
-        this.registerServerSentEvents()
+        this.subscriptions.add(
+            this.sse.receiveConnectivityAndMessageEvents(this.filter).subscribe((event) => {
+                switch (event.stream) {
+                    case 'all':
+                        break
+                    case 'message':
+                        this.eventHandler(event.originalEvent)
+                    default:
+                        break
+                }
+            })
+        )
 
         if (this.filter.appType) {
             for (const at of this.appTypes) {
@@ -274,71 +281,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     /**
-     * Establishes the SSE connection to the server.
-     *
-     * If the connection already exists, it is closed and a new connection
-     * is established.
-     */
-    registerServerSentEvents() {
-        // Close existing connection.
-        if (this.eventSource) {
-            this.eventSource.close()
-        }
-
-        // Build event source URL from filters.
-        const searchParams = new URLSearchParams()
-        if (this.filter.machine) {
-            searchParams.append('machine', String(this.filter.machine))
-        }
-        if (this.filter.appType) {
-            searchParams.append('appType', this.filter.appType)
-        }
-        if (this.filter.daemonType) {
-            searchParams.append('daemonName', this.filter.daemonType)
-        }
-        if (this.filter.user) {
-            searchParams.append('user', String(this.filter.user))
-        }
-        if (this.filter.level) {
-            searchParams.append('level', String(this.filter.level))
-        }
-        this.eventSource = new EventSource('/sse?' + searchParams.toString())
-
-        this.eventSource.addEventListener(
-            'error',
-            (ev) => {
-                // some error appeared - close session and start again but after 10s or 5mins
-                console.info('sse error', ev)
-                this.eventSource.close()
-                this.errorCnt += 1
-                if (this.errorCnt < 10) {
-                    // try to re-register every 10s but only 10 times
-                    setTimeout(() => {
-                        this.registerServerSentEvents()
-                    }, 10000)
-                } else {
-                    // try to re-register every 5mins if there are too many errors
-                    setTimeout(() => {
-                        this.registerServerSentEvents()
-                    }, 600000)
-                }
-            },
-            false
-        )
-
-        this.eventSource.addEventListener(
-            'message',
-            (ev) => {
-                const data = JSON.parse(ev.data)
-                this.eventHandler(data)
-                // when events are coming then reset error counter
-                this.errorCnt = 0
-            },
-            false
-        )
-    }
-
-    /**
      * Take an event received via SSE and put it to list of all events
      * so it is presented in events panel.
      */
@@ -353,7 +295,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             text: event.Text,
             details: event.Details,
             level: event.Level,
-            createAt: event.CreateAt,
+            createdAt: event.CreatedAt,
         }
 
         // put new event in front of all events

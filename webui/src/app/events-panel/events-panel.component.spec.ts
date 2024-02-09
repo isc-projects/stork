@@ -12,6 +12,8 @@ import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventsPanelComponent } from './events-panel.component'
+import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { of } from 'rxjs'
 
 /**
  * Fake event value.
@@ -34,20 +36,7 @@ class TestEvent {
 describe('EventsPanelComponent', () => {
     let component: EventsPanelComponent
     let fixture: ComponentFixture<EventsPanelComponent>
-
-    /** Checks if component contains an event with a given name and value. */
-    function itContainsSearchParam(name, value) {
-        const source = component.eventSource
-        expect(source).toBeTruthy()
-
-        // Capture source's URL.
-        const url = new URL(source.url)
-        expect(url.pathname).toBe('/sse')
-
-        // Make sure the source is using correct filtering.
-        const params = url.searchParams
-        expect(params.get(name)).toBe(value)
-    }
+    let sseService: ServerSentEventsService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -60,6 +49,7 @@ describe('EventsPanelComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
+                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
             ],
             imports: [
                 HttpClientTestingModule,
@@ -77,109 +67,107 @@ describe('EventsPanelComponent', () => {
         fixture = TestBed.createComponent(EventsPanelComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
+        sseService = fixture.debugElement.injector.get(ServerSentEventsService)
     })
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should create event source with correct URL', () => {
+    it('should establish SSE connection with correct filtering rules', () => {
         component.filter.level = 1
         component.filter.machine = 2
         component.filter.appType = 'kea'
         component.filter.daemonType = 'dhcp4'
         component.filter.user = 3
 
-        // Event source should be created.
-        component.registerServerSentEvents()
-        const source = component.eventSource
-        expect(source).toBeTruthy()
+        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+            of({
+                stream: 'foo',
+                originalEvent: {},
+            })
+        )
 
-        // Capture source's URL.
-        const url = new URL(source.url)
-        expect(url.pathname).toBe('/sse')
+        component.ngOnInit()
+        fixture.detectChanges()
 
-        // Validate parameters.
-        const params = url.searchParams
-        expect(params.get('level')).toBe('1')
-        expect(params.get('machine')).toBe('2')
-        expect(params.get('appType')).toBe('kea')
-        expect(params.get('daemonName')).toBe('dhcp4')
-        expect(params.get('user')).toBe('3')
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledOnceWith(component.filter)
     })
 
-    it('should update event source after changes', () => {
-        // Set initial filter.
+    it('should renew subscription upon filter changes', () => {
         component.filter.level = 1
 
-        // Create event source using this filter.
-        component.registerServerSentEvents()
-        let source = component.eventSource
-        expect(source).toBeTruthy()
+        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+            of({
+                stream: 'foo',
+                originalEvent: {},
+            })
+        )
 
-        // Capture source's URL.
-        const url = new URL(source.url)
-        expect(url.pathname).toBe('/sse')
+        component.ngOnInit()
+        fixture.detectChanges()
 
-        // Make sure the source is using correct filtering.
-        itContainsSearchParam('level', '1')
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledTimes(1)
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
-        // Change the filter.
         component.filter.level = 2
-
-        // Calling this again should cause the old SSE connection to
-        // be closed and create new connection using the new filter.
-        component.registerServerSentEvents()
-        source = component.eventSource
-        expect(source).toBeTruthy()
-
-        // Make sure the filter was applied correctly.
-        itContainsSearchParam('level', '2')
-    })
-
-    it('should refresh events when changes are detected', () => {
-        // Capture calls to refreshEvents and registerServerSentEvents.
-        spyOn(component, 'refreshEvents')
-        spyOn(component, 'registerServerSentEvents')
         component.ngOnChanges()
-        // ngOnChanges should call refreshEvents function to update the
-        // list of events according to new filters. It should also call
-        // the registerServerSentEvents to subscribe to the updates.
-        expect(component.refreshEvents).toHaveBeenCalled()
-        expect(component.registerServerSentEvents).toHaveBeenCalled()
+
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledTimes(2)
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
     })
 
     it('should re-establish SSE connection on events', () => {
-        component.registerServerSentEvents()
+        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+            of({
+                stream: 'foo',
+                originalEvent: {},
+            })
+        )
 
-        const event = new TestEvent()
+        component.ngOnInit()
+        fixture.detectChanges()
 
         // Select specific machine, app type, daemon type and user. In each
         // case, the SSE connection should be re-established with appropriate
         // filtering parameters.
 
+        const event = new TestEvent()
+
         event.value.id = 1
         component.onMachineSelect(event)
-        itContainsSearchParam('machine', '1')
+        expect(component.filter.machine).toBe(1)
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'kea'
         component.onAppTypeSelect(event)
-        itContainsSearchParam('appType', 'kea')
+        expect(component.filter.appType).toBe('kea')
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'dhcp4'
         component.onDaemonTypeSelect(event)
-        itContainsSearchParam('daemonName', 'dhcp4')
+        expect(component.filter.daemonType).toBe('dhcp4')
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.id = 5
         component.onUserSelect(event)
-        itContainsSearchParam('user', '5')
+        expect(component.filter.user).toBe(5)
+        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
     })
 
-    it('should close the connection on destroy', () => {
-        component.registerServerSentEvents()
-        expect(component.eventSource.readyState).toBe(EventSource.CONNECTING)
+    it('should unsubscribe from events on destroy', () => {
+        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+            of({
+                stream: 'foo',
+                originalEvent: {},
+            })
+        )
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        spyOn(component.subscriptions, 'unsubscribe')
         component.ngOnDestroy()
-        expect(component.eventSource.readyState).toBe(EventSource.CLOSED)
+        expect(component.subscriptions.unsubscribe).toHaveBeenCalled()
     })
 
     it('should recognize the layout type', () => {
