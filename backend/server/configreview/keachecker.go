@@ -740,7 +740,7 @@ func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	haMultiThreadingConfig := haConfig.GetFirst().MultiThreading
+	haMultiThreadingConfig := haConfig.GetFirstRelationship().MultiThreading
 	if haMultiThreadingConfig != nil &&
 		haMultiThreadingConfig.EnableMultiThreading != nil &&
 		*haMultiThreadingConfig.EnableMultiThreading {
@@ -779,15 +779,15 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	if haConfig.GetFirst().MultiThreading == nil ||
-		haConfig.GetFirst().MultiThreading.EnableMultiThreading == nil ||
-		!*haConfig.GetFirst().MultiThreading.EnableMultiThreading {
+	if haConfig.GetFirstRelationship().MultiThreading == nil ||
+		haConfig.GetFirstRelationship().MultiThreading.EnableMultiThreading == nil ||
+		!*haConfig.GetFirstRelationship().MultiThreading.EnableMultiThreading {
 		// There is no HA+MT configured.
 		return nil, nil
 	}
 
-	if haConfig.GetFirst().MultiThreading.HTTPDedicatedListener == nil ||
-		!*haConfig.GetFirst().MultiThreading.HTTPDedicatedListener {
+	if haConfig.GetFirstRelationship().MultiThreading.HTTPDedicatedListener == nil ||
+		!*haConfig.GetFirstRelationship().MultiThreading.HTTPDedicatedListener {
 		// The dedicated listener is disabled.
 		return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
 			"use dedicated HTTP listeners to handle communication between HA "+
@@ -802,7 +802,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 
 	// The loop checks if the subject daemon connects directly to the
 	// dedicated listeners on the external peers.
-	for _, peer := range haConfig.GetFirst().Peers {
+	for _, peer := range haConfig.GetFirstRelationship().Peers {
 		if !peer.IsValid() {
 			// Invalid peer. Skip.
 			continue

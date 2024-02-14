@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 // Checks if the HA peer structure validation works as expected.
@@ -45,4 +46,22 @@ func TestHAConfigParametersValid(t *testing.T) {
 	p := Peer{}
 	cfg.Peers = append(cfg.Peers, p)
 	require.False(t, cfg.IsValid())
+}
+
+// Test getting all HA relationships from the HA library params.
+func TestGetAllRelationships(t *testing.T) {
+	cfg := HALibraryParams{
+		HA: []HA{
+			{
+				ThisServerName: storkutil.Ptr("server1"),
+			},
+			{
+				ThisServerName: storkutil.Ptr("server2"),
+			},
+		},
+	}
+	relationships := cfg.GetAllRelationships()
+	require.Len(t, relationships, 2)
+	require.Equal(t, "server1", *relationships[0].ThisServerName)
+	require.Equal(t, "server2", *relationships[1].ThisServerName)
 }

@@ -2,6 +2,8 @@ package kea
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,6 +13,84 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
+
+// Returns DHCP server configuration created from a template. The template
+// parameters include root parameter, i.e. Dhcp4 or Dhcp6, High Availability
+// mode and a variadic list of HA peers. The peers are identified by names:
+// server1, server2 ...  server5. The server1 is a primary, the server2
+// is a secondary, the server3 is a standby and the remaining ones are the
+// backup servers.
+func getHATestConfig(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
+	type peerInfo struct {
+		URL  string
+		Role string
+	}
+	// Map server names to peer configurations.
+	peers := map[string]peerInfo{
+		"server1": {
+			URL:  "http://192.0.2.33:8000",
+			Role: "primary",
+		},
+		"server2": {
+			URL:  "http://192.0.2.66:8000",
+			Role: "secondary",
+		},
+		"server3": {
+			URL:  "http://192.0.2.66:8000",
+			Role: "standby",
+		},
+		"server4": {
+			URL:  "http://192.0.2.133:8000",
+			Role: "backup",
+		},
+		"server5": {
+			URL:  "http://192.0.2.166:8000",
+			Role: "backup",
+		},
+	}
+
+	// Output configuration of the peers from the template.
+	var peersList string
+	for _, peerName := range peerNames {
+		if peer, ok := peers[peerName]; ok {
+			peerTemplate := `
+                {
+                    "name": "%s",
+                    "url":  "%s",
+                    "role": "%s"
+                }`
+			peerTemplate = fmt.Sprintf(peerTemplate, peerName, peer.URL, peer.Role)
+			if len(peersList) > 0 {
+				peersList += ",\n"
+			}
+			peersList += peerTemplate
+		}
+	}
+
+	// Output the server configuration from the template.
+	configStr := `{
+        "%s": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "%s",
+                            "mode": "%s",
+                            "peers": [ %s ]
+                        }]
+                    }
+                }
+            ]
+        }
+    }`
+	configStr = fmt.Sprintf(configStr, rootName, thisServerName, mode, peersList)
+
+	// Convert the configuration from JSON to KeaConfig.
+	var config dbmodel.KeaConfig
+	_ = json.Unmarshal([]byte(configStr), &config)
+	return &config
+}
 
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6.

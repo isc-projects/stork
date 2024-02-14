@@ -38,15 +38,17 @@ type Peer struct {
 	AutoFailover *bool   `json:"auto-failover"`
 }
 
-// Convenience function returning the first HA configuration. Note that Kea in
-// fact supports only one configuration these days. It may be extended in the
-// future but for now it is convenient to directly access the first HA
-// configuration.
-func (params HALibraryParams) GetFirst() *HA {
+// Convenience function returning the first HA configuration.
+func (params HALibraryParams) GetFirstRelationship() *HA {
 	if len(params.HA) > 0 {
 		return &params.HA[0]
 	}
 	return &HA{}
+}
+
+// Returns configurations of all HA relationships.
+func (params HALibraryParams) GetAllRelationships() []HA {
+	return params.HA
 }
 
 // Checks if the mandatory Kea HA configuration parameters are set. It doesn't

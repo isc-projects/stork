@@ -1,93 +1,14 @@
 package kea
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
-
-// Returns DHCP server configuration created from a template. The template
-// parameters include root parameter, i.e. Dhcp4 or Dhcp6, High Availability
-// mode and a variadic list of HA peers. The peers are identified by names:
-// server1, server2 ...  server5. The server1 is a primary, the server2
-// is a secondary, the server3 is a standby and the remaining ones are the
-// backup servers.
-func getHATestConfig(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
-	type peerInfo struct {
-		URL  string
-		Role string
-	}
-	// Map server names to peer configurations.
-	peers := map[string]peerInfo{
-		"server1": {
-			URL:  "http://192.0.2.33:8000",
-			Role: "primary",
-		},
-		"server2": {
-			URL:  "http://192.0.2.66:8000",
-			Role: "secondary",
-		},
-		"server3": {
-			URL:  "http://192.0.2.66:8000",
-			Role: "standby",
-		},
-		"server4": {
-			URL:  "http://192.0.2.133:8000",
-			Role: "backup",
-		},
-		"server5": {
-			URL:  "http://192.0.2.166:8000",
-			Role: "backup",
-		},
-	}
-
-	// Output configuration of the peers from the template.
-	var peersList string
-	for _, peerName := range peerNames {
-		if peer, ok := peers[peerName]; ok {
-			peerTemplate := `
-                {
-                    "name": "%s",
-                    "url":  "%s",
-                    "role": "%s"
-                }`
-			peerTemplate = fmt.Sprintf(peerTemplate, peerName, peer.URL, peer.Role)
-			if len(peersList) > 0 {
-				peersList += ",\n"
-			}
-			peersList += peerTemplate
-		}
-	}
-
-	// Output the server configuration from the template.
-	configStr := `{
-        "%s": {
-            "hooks-libraries": [
-                {
-                    "library": "libdhcp_ha.so",
-                    "parameters": {
-                        "high-availability": [{
-                            "this-server-name": "%s",
-                            "mode": "%s",
-                            "peers": [ %s ]
-                        }]
-                    }
-                }
-            ]
-        }
-    }`
-	configStr = fmt.Sprintf(configStr, rootName, thisServerName, mode, peersList)
-
-	// Convert the configuration from JSON to KeaConfig.
-	var config dbmodel.KeaConfig
-	_ = json.Unmarshal([]byte(configStr), &config)
-	return &config
-}
 
 // Multi step test verifying that services can be gradually created from the
 // Kea apps being added to the database.
@@ -95,53 +16,87 @@ func TestDetectHAServices(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add the first machine.
-	m := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, m)
+	kea, err := dbmodeltest.NewKea(db)
 	require.NoError(t, err)
 
-	// Add the first Kea being a DHCPv4 secondary in load-balancing configuration
-	// and the DHCPv6 standby in the standby configuration.
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000, false)
-
-	app := dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
-						"server1", "server2", "server4"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-			{
-				Name: "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp6", "server3", "hot-standby",
-						"server1", "server3"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-
-	// Add the app to the database so as it gets its ID.
-	_, err = dbmodel.AddApp(db, &app)
+	dhcp4, err := kea.NewKeaDHCPv4Server()
 	require.NoError(t, err)
-	require.NotZero(t, app.ID)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server2",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	dhcp6, err := kea.NewKeaDHCPv6Server()
+	require.NoError(t, err)
+
+	err = dhcp6.Configure(`{
+		"Dhcp6": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server3",
+                            "mode": "hot-standby",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server3",
+									"url":  "http://192.0.2.66:8000",
+									"role": "standby"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	app, err := dhcp4.GetKea()
+	require.NoError(t, err)
 
 	// Run service detection for all daemons in this app.
 	var services []dbmodel.Service
 	for i := range app.Daemons {
-		services = append(services, DetectHAServices(db, app.Daemons[i])...)
+		detected, err := DetectHAServices(db, app.Daemons[i])
+		require.NoError(t, err)
+		services = append(services, detected...)
 	}
 
 	// There should be two services returned, one for DHCPv4 and one for DHCPv6.
@@ -152,6 +107,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.NotNil(t, services[0].HAService)
 	require.Equal(t, "dhcp4", services[0].HAService.HAType)
 	require.Equal(t, "load-balancing", services[0].HAService.HAMode)
+	require.Equal(t, "server2", services[0].HAService.Relationship)
 	require.Zero(t, services[0].HAService.PrimaryID)
 	require.Equal(t, app.Daemons[0].ID, services[0].HAService.SecondaryID)
 	require.Empty(t, services[0].HAService.BackupID)
@@ -165,6 +121,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.NotNil(t, services[1].HAService)
 	require.Equal(t, "dhcp6", services[1].HAService.HAType)
 	require.Equal(t, "hot-standby", services[1].HAService.HAMode)
+	require.Equal(t, "server2", services[0].HAService.Relationship)
 	require.Zero(t, services[1].HAService.PrimaryID)
 	require.Equal(t, app.Daemons[1].ID, services[1].HAService.SecondaryID)
 	require.Empty(t, services[1].HAService.BackupID)
@@ -186,7 +143,9 @@ func TestDetectHAServices(t *testing.T) {
 	// Run service detection again. The existing services should be returned.
 	services = []dbmodel.Service{}
 	for i := range app.Daemons {
-		services = append(services, DetectHAServices(db, app.Daemons[i])...)
+		detected, err := DetectHAServices(db, app.Daemons[i])
+		require.NoError(t, err)
+		services = append(services, detected...)
 	}
 	require.Len(t, services, 2)
 
@@ -209,39 +168,51 @@ func TestDetectHAServices(t *testing.T) {
 	require.Len(t, services[0].Daemons, 1)
 	require.Len(t, services[1].Daemons, 1)
 
-	// Add machine and app for the DHCPv4 backup server.
-	m = &dbmodel.Machine{
-		ID:        0,
-		Address:   "backup1",
-		AgentPort: 8080,
-	}
-	err = dbmodel.AddMachine(db, m)
+	// Add a backup server.
+	dhcp4, err = dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
 
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.133", "", 8000, false)
-	app = dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server4", "load-balancing",
-						"server1", "server2", "server4"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, &app)
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server4",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
 	require.NoError(t, err)
-	require.NotZero(t, app.ID)
+
+	app, err = dhcp4.GetKea()
+	require.NoError(t, err)
 
 	// This time, we've added the server with only a DHCPv4 configuration.
 	// Therefore, only a DHCPv4 service should be returned for this app.
-	services = DetectHAServices(db, app.Daemons[0])
+	services, err = DetectHAServices(db, app.Daemons[0])
+	require.NoError(t, err)
 	require.Len(t, services, 1)
 	require.False(t, services[0].IsNew())
 	require.NotNil(t, services[0].HAService)
@@ -263,50 +234,89 @@ func TestDetectHAServices(t *testing.T) {
 	err = dbmodel.AddDaemonToService(db, services[0].ID, app.Daemons[0])
 	require.NoError(t, err)
 
-	// Add machine and app for the primary server.
-	m = &dbmodel.Machine{
-		ID:        0,
-		Address:   "primary",
-		AgentPort: 8080,
-	}
-	err = dbmodel.AddMachine(db, m)
+	// Add a primary server.
+	kea, err = dbmodeltest.NewKea(db)
 	require.NoError(t, err)
 
-	// The primary server includes both DHCPv4 and DHCPv6 configurations.
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.33", "", 8000, true)
-	app = dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
-						"server1", "server2", "server4"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-			{
-				Name: "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp6", "server1", "hot-standby",
-						"server1", "server3"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, &app)
+	dhcp4, err = kea.NewKeaDHCPv4Server()
 	require.NoError(t, err)
-	require.NotZero(t, app.ID)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	dhcp6, err = kea.NewKeaDHCPv6Server()
+	require.NoError(t, err)
+
+	err = dhcp6.Configure(`{
+		"Dhcp6": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "hot-standby",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server3",
+									"url":  "http://192.0.2.66:8000",
+									"role": "standby"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	app, err = dhcp4.GetKea()
+	require.NoError(t, err)
 
 	// Since we have added two HA configurations for this app, there should
 	// be two services returned, one for DHCPv4 and one for DHCPv6.
 	services = []dbmodel.Service{}
 	for i := range app.Daemons {
-		services = append(services, DetectHAServices(db, app.Daemons[i])...)
+		detected, err := DetectHAServices(db, app.Daemons[i])
+		require.NoError(t, err)
+		services = append(services, detected...)
 	}
 	require.Len(t, services, 2)
 	require.False(t, services[0].IsNew())
@@ -345,39 +355,60 @@ func TestDetectHAServices(t *testing.T) {
 	err = dbmodel.AddDaemonToService(db, services[1].ID, app.Daemons[1])
 	require.NoError(t, err)
 
-	// Add machine and app for another DHCPv4 backup server.
-	m = &dbmodel.Machine{
-		ID:        0,
-		Address:   "backup2",
-		AgentPort: 8080,
-	}
-	err = dbmodel.AddMachine(db, m)
+	// Add another DHCPv4 backup server.
+	kea, err = dbmodeltest.NewKea(db)
 	require.NoError(t, err)
 
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.166", "", 8000, false)
-	app = dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server5", "load-balancing",
-						"server1", "server2", "server4", "server5"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, &app)
+	dhcp4, err = kea.NewKeaDHCPv4Server()
 	require.NoError(t, err)
-	require.NotZero(t, app.ID)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server5",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								},
+								{
+									"name": "server5",
+									"url":  "http://192.0.2.166:8000",
+									"role": "backup2"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	app, err = dhcp4.GetKea()
+	require.NoError(t, err)
 
 	services = []dbmodel.Service{}
 	for i := range app.Daemons {
-		services = append(services, DetectHAServices(db, app.Daemons[i])...)
+		detected, err := DetectHAServices(db, app.Daemons[i])
+		require.NoError(t, err)
+		services = append(services, detected...)
 	}
 	require.Len(t, services, 1)
 	require.False(t, services[0].IsNew())
@@ -395,37 +426,69 @@ func TestDetectHAServices(t *testing.T) {
 // Test that a daemon doesn't belong to a blank service , i.e. a
 // service that comprises no daemons.
 func TestAppBelongsToHAServiceBlankService(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	// Create blank service.
 	service := &dbmodel.Service{
 		BaseService: dbmodel.BaseService{
 			ServiceType: "ha_dhcp",
 		},
 		HAService: &dbmodel.BaseHAService{
-			HAType: "dhcp4",
+			HAType:       "dhcp4",
+			Relationship: "server1",
 		},
 	}
-	// Create an app.
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000, true)
-	app := &dbmodel.App{
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
-						"server1", "server2", "server4"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
+	err := dbmodel.AddService(db, service)
+	require.NoError(t, err)
 
-	// The daemon doesn't belong to the service because the service includes
-	// no meaningful information to make such determination. In that case
-	// it is up to the administrator to explicitly add the daemon to the service.
-	require.False(t, daemonBelongsToHAService(app.Daemons[0], service))
+	kea, err := dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	app, err := dhcp4.GetKea()
+	require.NoError(t, err)
+
+	services, err := DetectHAServices(db, app.Daemons[0])
+	require.NoError(t, err)
+	require.Len(t, services, 1)
+	require.True(t, services[0].IsNew())
 }
 
 // Test that a daemon can be dissociated with all services it belongs to.
@@ -436,45 +499,92 @@ func TestReduceHAServices(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
-	// Add a machine.
-	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, m)
+	kea, err := dbmodeltest.NewKea(db)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine.
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Machine:      m,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
-						"server1", "server2", "server4"),
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "load-balancing",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	keaApp, err := dhcp4.GetKea()
+	require.NoError(t, err)
 
 	// This call, apart from adding the app to the machine, will also associate the
 	// app with the HA services.
 	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
 	require.NoError(t, err)
 
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "hot-standby",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server3",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								},
+								{
+									"name": "server4",
+									"url":  "http://192.0.2.133:8000",
+									"role": "backup"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
 	// Modify the HA configuration. It should replace the existing service with
 	// a new one.
-	keaApp.Daemons[0].KeaDaemon.Config = getHATestConfig("Dhcp4", "server1", "hot-standby",
-		"server1", "server2", "server3")
+	keaApp, err = dhcp4.GetKea()
+	require.NoError(t, err)
 
 	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
 	require.NoError(t, err)
@@ -485,4 +595,345 @@ func TestReduceHAServices(t *testing.T) {
 	require.Len(t, services, 1)
 	require.NotNil(t, services[0].HAService)
 	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+}
+
+// Test that a hub server and multiple branch servers can be grouped
+// into services.
+func TestHubAndSpokeHAServices(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// Create first branch server.
+	kea, err := dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "hot-standby",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "secondary"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	keaApp, err := dhcp4.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	services, err := dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 1)
+	require.NotNil(t, services[0].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+	require.Len(t, services[0].Daemons, 1)
+	require.EqualValues(t, keaApp.Daemons[0].ID, services[0].HAService.PrimaryID)
+
+	// Create the hub
+	kea, err = dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err = kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+			"Dhcp4": {
+				"hooks-libraries": [
+					{
+						"library": "libdhcp_ha.so",
+						"parameters": {
+							"high-availability": [
+								{
+									"this-server-name": "server2",
+									"mode": "hot-standby",
+									"peers": [
+										{
+											"name": "server1",
+											"url":  "http://192.0.2.33:8000",
+											"role": "primary"
+										},
+										{
+											"name": "server2",
+											"url":  "http://192.0.2.66:8000",
+											"role": "standby"
+										}
+									]
+								},
+								{
+									"this-server-name": "server4",
+									"mode": "hot-standby",
+									"peers": [
+										{
+											"name": "server3",
+											"url":  "http://192.0.2.99:8000",
+											"role": "primary"
+										},
+										{
+											"name": "server4",
+											"url":  "http://192.0.2.133:8000",
+											"role": "standby"
+										}
+									]
+								}
+							]
+						}
+					}
+				]
+			}
+		}`)
+	require.NoError(t, err)
+
+	keaApp, err = dhcp4.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	services, err = dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+	require.NotNil(t, services[0].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+	require.Len(t, services[0].Daemons, 2)
+	require.EqualValues(t, keaApp.Daemons[0].ID, services[0].HAService.SecondaryID)
+	require.Equal(t, "hot-standby", services[1].HAService.HAMode)
+	require.Len(t, services[1].Daemons, 1)
+	require.EqualValues(t, keaApp.Daemons[0].ID, services[1].HAService.SecondaryID)
+
+	// Create another branch server.
+	kea, err = dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err = kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+			"Dhcp4": {
+				"hooks-libraries": [
+					{
+						"library": "libdhcp_ha.so",
+						"parameters": {
+							"high-availability": [
+								{
+									"this-server-name": "server3",
+									"mode": "hot-standby",
+									"peers": [
+										{
+											"name": "server3",
+											"url":  "http://192.0.2.99:8000",
+											"role": "primary"
+										},
+										{
+											"name": "server4",
+											"url":  "http://192.0.2.133:8000",
+											"role": "standby"
+										}
+									]
+								}
+							]
+						}
+					}
+				]
+			}
+		}`)
+	require.NoError(t, err)
+
+	keaApp, err = dhcp4.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	services, err = dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+	require.NotNil(t, services[0].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+	require.Len(t, services[0].Daemons, 2)
+	require.Equal(t, "hot-standby", services[1].HAService.HAMode)
+	require.Len(t, services[1].Daemons, 2)
+	require.EqualValues(t, keaApp.Daemons[0].ID, services[1].HAService.PrimaryID)
+}
+
+// Test error cases while detecting the HA services.
+func TestDetectHAServicesErrors(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	kea, err := dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+		"Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [{
+                            "this-server-name": "server1",
+                            "mode": "hot-standby",
+                            "peers": [
+								{
+									"name": "server1",
+									"url":  "http://192.0.2.33:8000",
+									"role": "primary"
+								},
+								{
+									"name": "server2",
+									"url":  "http://192.0.2.66:8000",
+									"role": "standby"
+								}
+							]
+                        }]
+                    }
+                }
+            ]
+		}
+	}`)
+	require.NoError(t, err)
+
+	keaApp, err := dhcp4.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	services, err := dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 1)
+
+	t.Run("not a Kea daemon", func(t *testing.T) {
+		daemon := &dbmodel.Daemon{}
+		services, err := DetectHAServices(db, daemon)
+		require.NoError(t, err)
+		require.Empty(t, services)
+	})
+
+	t.Run("no HA hook library", func(t *testing.T) {
+		config, err := dbmodel.NewKeaConfigFromJSON(`{
+			"Dhcp4": {}
+		}`)
+		require.NoError(t, err)
+		daemon := &dbmodel.Daemon{
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config:        config,
+				KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+			},
+		}
+
+		services, err := DetectHAServices(db, daemon)
+		require.NoError(t, err)
+		require.Empty(t, services)
+	})
+
+	t.Run("invalid HA configuration", func(t *testing.T) {
+		config, err := dbmodel.NewKeaConfigFromJSON(`{
+			"Dhcp4": {
+				"hooks-libraries": [
+					{
+						"library": "libdhcp_ha.so",
+						"parameters": {
+							"high-availability": [{
+								"this-server-name": "server2",
+								"mode": "hot-standby",
+								"peers": [
+									{
+										"name": "server1",
+										"role": "primary"
+									},
+									{
+										"name": "server2",
+										"role": "standby"
+									}
+								]
+							}]
+						}
+					}
+				]
+			}
+		}`)
+		require.NoError(t, err)
+		daemon := &dbmodel.Daemon{
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config:        config,
+				KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+			},
+		}
+		services, err := DetectHAServices(db, daemon)
+		require.Error(t, err)
+		require.Empty(t, services)
+	})
+
+	t.Run("no matching peer", func(t *testing.T) {
+		config, err := dbmodel.NewKeaConfigFromJSON(`{
+			"Dhcp4": {
+				"hooks-libraries": [
+					{
+						"library": "libdhcp_ha.so",
+						"parameters": {
+							"high-availability": [{
+								"this-server-name": "server3",
+								"mode": "hot-standby",
+								"peers": [
+									{
+										"name": "server1",
+										"url":  "http://192.0.2.33:8000",
+										"role": "primary"
+									},
+									{
+										"name": "server2",
+										"url":  "http://192.0.2.66:8000",
+										"role": "standby"
+									}
+								]
+							}]
+						}
+					}
+				]
+			}
+		}`)
+		require.NoError(t, err)
+		daemon := &dbmodel.Daemon{
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config:        config,
+				KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+			},
+		}
+		services, err := DetectHAServices(db, daemon)
+		require.Error(t, err)
+		require.Empty(t, services)
+	})
 }

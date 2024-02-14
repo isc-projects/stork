@@ -277,6 +277,7 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 		},
 		HAService: &BaseHAService{
 			HAType:                     "dhcp4",
+			Relationship:               "server1",
 			PrimaryID:                  a.Daemons[0].ID,
 			PrimaryStatusCollectedAt:   time.Now(),
 			SecondaryStatusCollectedAt: time.Now(),

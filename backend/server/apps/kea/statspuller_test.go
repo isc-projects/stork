@@ -753,7 +753,8 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 
 	// Detect HA services
 	for _, daemon := range daemons {
-		services := DetectHAServices(db, daemon)
+		services, err := DetectHAServices(db, daemon)
+		require.NoError(t, err)
 		err = dbmodel.CommitServicesIntoDB(db, services, daemon)
 		require.NoError(t, err)
 	}
@@ -905,7 +906,7 @@ func TestGetHATestConfigWithSubnets(t *testing.T) {
 	path, params, ok := config.GetHookLibraries().GetHAHookLibrary()
 	require.True(t, ok)
 	require.NotEmpty(t, path)
-	require.Equal(t, "server1", *params.GetFirst().ThisServerName)
+	require.Equal(t, "server1", *params.GetFirstRelationship().ThisServerName)
 	subnets := config.GetSubnets()
 	require.NotEmpty(t, subnets)
 }

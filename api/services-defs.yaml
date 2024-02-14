@@ -423,6 +423,8 @@
       haServers:
         type: object
         properties:
+          relationship:
+            type: string
           primaryServer:
             $ref: '#/definitions/KeaHAServerStatus'
           secondaryServer:

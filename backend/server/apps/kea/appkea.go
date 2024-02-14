@@ -545,11 +545,14 @@ func deleteEmptyAndOrphanedObjects(tx *pg.Tx) error {
 func detectAndCommitServices(tx *pg.Tx, app *dbmodel.App) error {
 	for _, daemon := range app.Daemons {
 		// Check what HA services the daemon belongs to.
-		services := DetectHAServices(tx, daemon)
+		services, err := DetectHAServices(tx, daemon)
+		if err != nil {
+			return err
+		}
 
 		// For the given daemon, iterate over the services and add/update them in the
 		// database.
-		err := dbmodel.CommitServicesIntoDB(tx, services, daemon)
+		err = dbmodel.CommitServicesIntoDB(tx, services, daemon)
 		if err != nil {
 			return err
 		}

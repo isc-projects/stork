@@ -223,6 +223,7 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	commInterrupted[1] = false
 	service2.HAService = &BaseHAService{
 		HAType:                      "dhcp4",
+		Relationship:                "server1",
 		PrimaryID:                   service2.Daemons[0].ID,
 		SecondaryID:                 service2.Daemons[1].ID,
 		BackupID:                    []int64{service2.Daemons[2].ID, service2.Daemons[3].ID},
@@ -322,6 +323,7 @@ func TestUpdateService(t *testing.T) {
 	// Update the existing service by adding HA specific information to it.
 	services[0].HAService = &BaseHAService{
 		HAType:                     "dhcp4",
+		Relationship:               "server1",
 		PrimaryID:                  services[0].Daemons[0].ID,
 		SecondaryID:                services[0].Daemons[1].ID,
 		PrimaryStatusCollectedAt:   storkutil.UTCNow(),
@@ -341,6 +343,7 @@ func TestUpdateService(t *testing.T) {
 	require.Equal(t, "ha_dhcp", service.ServiceType)
 	require.NotNil(t, service.HAService)
 	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, "server1", service.HAService.Relationship)
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
 	require.Len(t, service.HAService.PrimaryLastScopes, 1)

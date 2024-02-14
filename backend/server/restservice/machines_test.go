@@ -1498,7 +1498,7 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 	require.EqualValues(t, 0, apps.Total)
 }
 
-// Test that status of two HA services for a Kea application is parsed
+// Test that status of three HA services for a Kea application is parsed
 // correctly.
 func TestRestGetAppServicesStatus(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1549,6 +1549,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 			HAService: &dbmodel.BaseHAService{
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
+				Relationship:                "server1",
 				PrimaryID:                   keaApp.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
@@ -1575,8 +1576,38 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				ServiceType: "ha_dhcp",
 			},
 			HAService: &dbmodel.BaseHAService{
+				HAType:                      "dhcp4",
+				HAMode:                      "load-balancing",
+				Relationship:                "server3",
+				PrimaryID:                   keaApp.ID,
+				PrimaryStatusCollectedAt:    exampleTime,
+				SecondaryStatusCollectedAt:  exampleTime,
+				PrimaryLastState:            "load-balancing",
+				SecondaryLastState:          "load-balancing",
+				PrimaryLastScopes:           []string{"server3"},
+				SecondaryLastScopes:         []string{"server4"},
+				PrimaryLastFailoverAt:       exampleTime,
+				SecondaryLastFailoverAt:     exampleTime,
+				PrimaryCommInterrupted:      &commInterrupted[0],
+				SecondaryCommInterrupted:    &commInterrupted[1],
+				PrimaryConnectingClients:    1,
+				SecondaryConnectingClients:  2,
+				PrimaryUnackedClients:       3,
+				SecondaryUnackedClients:     4,
+				PrimaryUnackedClientsLeft:   5,
+				SecondaryUnackedClientsLeft: 6,
+				PrimaryAnalyzedPackets:      7,
+				SecondaryAnalyzedPackets:    8,
+			},
+		},
+		{
+			BaseService: dbmodel.BaseService{
+				ServiceType: "ha_dhcp",
+			},
+			HAService: &dbmodel.BaseHAService{
 				HAType:                      "dhcp6",
 				HAMode:                      "hot-standby",
+				Relationship:                "server1",
 				PrimaryID:                   keaApp.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
@@ -1618,19 +1649,22 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	okRsp := rsp.(*services.GetAppServicesStatusOK)
 	require.NotNil(t, okRsp.Payload.Items)
 
-	// There should be two structures returned, one with a status of
-	// the DHCPv4 server and one with the status of the DHCPv6 server.
-	require.Len(t, okRsp.Payload.Items, 2)
+	// There should be three structures returned, two with the status of
+	// the DHCPv4 server relationships and one with the status of the DHCPv6
+	// server relationship.
+	require.Len(t, okRsp.Payload.Items, 3)
 
 	statusList := okRsp.Payload.Items
 
-	// Validate the status of the DHCPv4 pair.
+	// Validate the status of the first relationship.
 	status := statusList[0].Status.KeaStatus
 	require.NotNil(t, status.HaServers)
 
 	haStatus := status.HaServers
 	require.NotNil(t, haStatus.PrimaryServer)
 	require.NotNil(t, haStatus.SecondaryServer)
+
+	require.Equal(t, "server1", haStatus.Relationship)
 
 	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
@@ -1661,13 +1695,54 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.EqualValues(t, 9, haStatus.SecondaryServer.UnackedClientsLeft)
 	require.EqualValues(t, 11, haStatus.SecondaryServer.AnalyzedPackets)
 
-	// Validate the status of the DHCPv6 pair.
+	// Validate the status of the second relationship.
 	status = statusList[1].Status.KeaStatus
 	require.NotNil(t, status.HaServers)
 
 	haStatus = status.HaServers
 	require.NotNil(t, haStatus.PrimaryServer)
 	require.NotNil(t, haStatus.SecondaryServer)
+
+	require.Equal(t, "server3", haStatus.Relationship)
+
+	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
+	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
+	require.Contains(t, haStatus.PrimaryServer.Scopes, "server3")
+	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
+	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
+	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
+	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
+	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
+	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
+	require.EqualValues(t, 1, haStatus.PrimaryServer.ConnectingClients)
+	require.EqualValues(t, 3, haStatus.PrimaryServer.UnackedClients)
+	require.EqualValues(t, 5, haStatus.PrimaryServer.UnackedClientsLeft)
+	require.EqualValues(t, 7, haStatus.PrimaryServer.AnalyzedPackets)
+
+	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
+	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
+	require.Contains(t, haStatus.SecondaryServer.Scopes, "server4")
+	require.Equal(t, "load-balancing", haStatus.SecondaryServer.State)
+	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
+	require.False(t, haStatus.SecondaryServer.InTouch)
+	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
+	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime.String())
+	require.EqualValues(t, 1, haStatus.SecondaryServer.CommInterrupted)
+	require.EqualValues(t, 2, haStatus.SecondaryServer.ConnectingClients)
+	require.EqualValues(t, 4, haStatus.SecondaryServer.UnackedClients)
+	require.EqualValues(t, 6, haStatus.SecondaryServer.UnackedClientsLeft)
+	require.EqualValues(t, 8, haStatus.SecondaryServer.AnalyzedPackets)
+
+	// Validate the status of the DHCPv6 pair.
+	status = statusList[2].Status.KeaStatus
+	require.NotNil(t, status.HaServers)
+
+	haStatus = status.HaServers
+	require.NotNil(t, haStatus.PrimaryServer)
+	require.NotNil(t, haStatus.SecondaryServer)
+
+	require.Equal(t, "server1", haStatus.Relationship)
 
 	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
@@ -1745,6 +1820,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 			HAService: &dbmodel.BaseHAService{
 				HAType:                   "dhcp4",
 				HAMode:                   "passive-backup",
+				Relationship:             "server1",
 				PrimaryID:                keaApp.ID,
 				PrimaryStatusCollectedAt: exampleTime,
 				PrimaryLastState:         "passive-backup",
@@ -2003,6 +2079,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 		HAService: &dbmodel.BaseHAService{
 			HAType:                   "dhcp4",
 			HAMode:                   "load-balancing",
+			Relationship:             "server1",
 			PrimaryID:                keaApp.ID,
 			PrimaryStatusCollectedAt: exampleTime,
 			PrimaryLastState:         "load-balancing",

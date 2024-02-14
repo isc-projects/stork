@@ -80,6 +80,7 @@ type BaseHAService struct {
 	ServiceID                   int64
 	HAType                      HAType
 	HAMode                      HAMode
+	Relationship                string
 	PrimaryID                   int64
 	SecondaryID                 int64
 	BackupID                    []int64 `pg:",array"`
